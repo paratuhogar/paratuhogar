@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para Tu Hogar - Catálogo para Gestores</title>
+    <title>Para Tu Hogar - Catálogo Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .bg-glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .animate-cart { animation: slideIn 0.3s ease-out; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 font-sans pb-24">
@@ -17,110 +18,145 @@
     <!-- Header -->
     <header class="bg-blue-700 text-white p-4 shadow-lg sticky top-0 z-[100]">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-black uppercase italic tracking-tighter">Para Tu Hogar</h1>
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-black uppercase italic tracking-tighter">Para Tu Hogar</h1>
+                <button onclick="openGestorGen()" class="hidden md:block bg-blue-800 hover:bg-blue-900 px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all">
+                    <i class="fas fa-user-tie mr-1"></i> Zona Gestores
+                </button>
+            </div>
+            
             <div id="gestor-badge" class="hidden flex flex-col items-end">
                 <span id="gestor-name" class="bg-white/20 border border-white/30 px-3 py-1 rounded-full text-[10px] font-bold"></span>
-                <span id="admin-status" class="hidden text-[9px] text-green-300 font-bold mt-1 uppercase">● Modo Gestor Activo</span>
+                <span id="admin-status" class="hidden text-[9px] text-green-300 font-bold mt-1 uppercase tracking-widest">● Modo Gestor Activo</span>
             </div>
+
+            <!-- Botón móvil para gestores -->
+            <button onclick="openGestorGen()" class="md:hidden text-white text-lg px-2">
+                <i class="fas fa-link"></i>
+            </button>
         </div>
     </header>
 
-    <!-- Catálogo -->
+    <!-- Catálogo de Productos -->
     <main class="container mx-auto p-4 md:p-8">
         <div id="productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div class="col-span-full flex flex-col items-center py-20 text-slate-400">
                 <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                <p>Cargando información técnica...</p>
+                <p class="font-medium">Sincronizando inventario real...</p>
             </div>
         </div>
     </main>
 
-    <!-- BOTÓN CARRITO -->
+    <!-- BOTÓN FLOTANTE CARRITO -->
     <div id="cart-btn" onclick="toggleCartModal()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center cursor-pointer z-[80] hover:scale-110 transition-transform">
         <i class="fas fa-shopping-basket text-xl"></i>
         <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">0</span>
     </div>
 
+    <!-- MODAL GENERADOR DE ENLACES (ZONA GESTORES) -->
+    <div id="gestor-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[200]">
+        <div class="bg-white rounded-3xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative">
+            <button onclick="closeGestorGen()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+            <h2 class="text-2xl font-black text-slate-800 mb-2 uppercase italic tracking-tight text-blue-700">Sé parte del equipo</h2>
+            <p class="text-slate-500 text-sm mb-6">Genera tus enlaces personalizados para gestionar ventas y ganar comisiones.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Tu Nombre Completo</label>
+                    <input type="text" id="gen-name" class="w-full p-3 bg-slate-100 rounded-xl border-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: Carlos Rodríguez">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Tu Teléfono (WhatsApp)</label>
+                    <input type="tel" id="gen-tel" class="w-full p-3 bg-slate-100 rounded-xl border-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: 5351234567">
+                </div>
+                <button onclick="generateLinks()" class="w-full bg-blue-700 text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-800 transition-all shadow-lg">
+                    Generar Mis Enlaces
+                </button>
+            </div>
+
+            <div id="links-result" class="hidden mt-8 space-y-4 border-t pt-6">
+                <div class="bg-green-50 p-4 rounded-2xl border border-green-100">
+                    <p class="text-[10px] font-bold text-green-600 uppercase mb-2"><i class="fas fa-lock mr-1"></i> Mi Enlace de Control (Privado)</p>
+                    <p class="text-[9px] text-slate-500 mb-2">Usa este para hacer pedidos tú mismo y ver cuánto ganas.</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="link-admin" readonly class="flex-1 text-[10px] p-2 bg-white rounded border border-green-200 overflow-hidden">
+                        <button onclick="copy('link-admin')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold">COPIAR</button>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <p class="text-[10px] font-bold text-blue-600 uppercase mb-2"><i class="fas fa-share-alt mr-1"></i> Enlace para Clientes (Público)</p>
+                    <p class="text-[9px] text-slate-500 mb-2">Comparte este con tus clientes. Las comisiones estarán OCULTAS.</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="link-client" readonly class="flex-1 text-[10px] p-2 bg-white rounded border border-blue-200">
+                        <button onclick="copy('link-client')" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold">COPIAR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- VENTANA DETALLE PRODUCTO -->
     <div id="detail-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-sm hidden flex items-center justify-center p-2 md:p-4 z-[110]">
         <div class="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
-            <button onclick="closeDetail()" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 w-10 h-10 rounded-full z-20 transition-colors"><i class="fas fa-times"></i></button>
-            
-            <!-- Galería -->
+            <button onclick="closeDetail()" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 w-10 h-10 rounded-full z-20"><i class="fas fa-times"></i></button>
             <div class="md:w-1/2 p-4 bg-slate-100 flex flex-col h-full">
-                <div class="flex-1 flex items-center justify-center bg-white rounded-2xl p-4 shadow-inner mb-4">
-                    <img id="detail-main-img" src="" class="max-w-full max-h-64 md:max-h-full object-contain">
+                <div class="flex-1 flex items-center justify-center bg-white rounded-2xl p-4 shadow-inner mb-4 overflow-hidden">
+                    <img id="detail-main-img" src="" class="max-w-full max-h-full object-contain">
                 </div>
                 <div id="detail-thumbnails" class="flex gap-2 overflow-x-auto pb-2 justify-center"></div>
             </div>
-
-            <!-- Información -->
             <div class="md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto">
                 <span id="detail-cat" class="text-blue-600 font-bold text-[10px] uppercase tracking-widest mb-1"></span>
-                <h2 id="detail-name" class="text-xl md:text-2xl font-black text-slate-800 mb-3 leading-tight"></h2>
-                
-                <div class="flex items-center gap-3 mb-6">
+                <h2 id="detail-name" class="text-xl md:text-2xl font-black text-slate-800 mb-3 leading-tight uppercase italic"></h2>
+                <div class="flex items-center gap-3 mb-4">
                     <span id="detail-price" class="text-3xl font-black text-slate-900"></span>
-                    <div id="detail-admin-comm" class="hidden bg-green-100 text-green-700 px-3 py-1 rounded-lg font-bold text-xs italic"></div>
+                    <div id="detail-admin-comm" class="hidden bg-green-100 text-green-700 px-3 py-1 rounded-lg font-bold text-xs italic border border-green-200"></div>
                 </div>
-
-                <div class="flex-1 border-t border-b py-4 my-4 overflow-y-auto">
-                    <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Descripción Técnica:</h4>
-                    <p id="detail-desc" class="text-slate-600 text-sm whitespace-pre-line leading-relaxed"></p>
+                <div id="detail-warranty-box" class="mb-4 bg-slate-50 p-2 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-100 inline-block uppercase italic"></div>
+                <div class="flex-1 border-t py-4 my-4 overflow-y-auto">
+                    <p id="detail-desc" class="text-slate-600 text-sm whitespace-pre-line leading-relaxed font-medium"></p>
                 </div>
-                
-                <div class="mt-4 space-y-4">
-                    <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
-                        <span class="font-bold text-sm">Cantidad de unidades:</span>
-                        <div class="flex items-center bg-white border rounded-lg shadow-sm">
-                            <button onclick="updateQty(-1)" class="px-3 py-1 hover:bg-slate-100 text-lg">-</button>
-                            <input type="number" id="detail-qty" value="1" min="1" class="w-10 text-center font-bold border-none focus:ring-0">
-                            <button onclick="updateQty(1)" class="px-3 py-1 hover:bg-slate-100 text-lg">+</button>
+                <div class="mt-auto space-y-4 pt-4 border-t">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm uppercase text-slate-400 italic">Unidades:</span>
+                        <div class="flex items-center bg-white border-2 border-slate-100 rounded-xl overflow-hidden shadow-sm">
+                            <button onclick="updateQty(-1)" class="px-4 py-2 hover:bg-slate-100 font-bold text-lg text-blue-600">-</button>
+                            <input type="number" id="detail-qty" value="1" min="1" class="w-10 text-center font-black border-none focus:ring-0 text-slate-700">
+                            <button onclick="updateQty(1)" class="px-4 py-2 hover:bg-slate-100 font-bold text-lg text-blue-600">+</button>
                         </div>
                     </div>
-                    <button onclick="addItemToCart()" class="w-full bg-blue-700 text-white py-4 rounded-xl font-black uppercase tracking-wider hover:bg-blue-800 shadow-lg shadow-blue-100 flex items-center justify-center gap-3 transition-all">
-                        <i class="fas fa-cart-plus"></i> Añadir a la Orden
+                    <button onclick="addItemToCart()" class="w-full bg-blue-700 text-white py-4 rounded-xl font-black uppercase tracking-wider hover:bg-blue-800 shadow-xl flex items-center justify-center gap-3 transition-all">
+                        <i class="fas fa-cart-plus"></i> Añadir a mi orden
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- VENTANA CARRITO / CHECKOUT -->
+    <!-- VENTANA CARRITO -->
     <div id="cart-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-end z-[120]">
-        <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-slide-left">
+        <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-cart">
             <div class="p-5 border-b flex justify-between items-center bg-blue-700 text-white">
-                <h2 class="text-lg font-bold uppercase tracking-tighter"><i class="fas fa-clipboard-list mr-2"></i> Resumen de Orden</h2>
+                <h2 class="text-lg font-black uppercase italic tracking-tighter"><i class="fas fa-clipboard-check mr-2"></i> Finalizar Pedido</h2>
                 <button onclick="toggleCartModal()" class="text-2xl opacity-80 hover:opacity-100">&times;</button>
             </div>
-            
-            <div id="cart-items" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
-
-            <div class="p-6 bg-slate-50 border-t">
+            <div id="cart-items" class="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/50"></div>
+            <div class="p-6 bg-white border-t rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                 <div class="space-y-2 mb-6 text-sm">
-                    <div class="flex justify-between"><span>Precio Equipos:</span> <span id="cart-subtotal" class="font-bold"></span></div>
-                    <div class="flex justify-between"><span>Mensajería:</span> <span id="cart-shipping" class="font-bold"></span></div>
-                    <div class="flex justify-between text-lg font-black text-blue-700 border-t pt-2 uppercase"><span>Total a Pagar:</span> <span id="cart-total"></span></div>
+                    <div class="flex justify-between text-slate-400 font-bold uppercase text-[10px]"><span>Subtotal Equipos:</span> <span id="cart-subtotal" class="text-slate-800 font-black"></span></div>
+                    <div class="flex justify-between text-slate-400 font-bold uppercase text-[10px]"><span>Mensajería:</span> <span id="cart-shipping" class="text-red-500 font-black"></span></div>
+                    <div class="flex justify-between text-xl font-black text-blue-700 border-t pt-2 uppercase italic italic"><span>Total a Pagar:</span> <span id="cart-total"></span></div>
                 </div>
-                
-                <form id="checkout-form" class="space-y-3">
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Datos Obligatorios del Cliente</label>
-                        <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full p-3 rounded-xl border-slate-200 text-sm focus:ring-blue-600" required>
-                        <div class="flex gap-2">
-                            <input type="text" id="check-ci" placeholder="CI (Identidad)" class="w-full p-3 rounded-xl border-slate-200 text-sm focus:ring-blue-600" required>
-                            <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-3 rounded-xl border-slate-200 text-sm focus:ring-blue-600" required>
-                        </div>
-                        <textarea id="check-dir" placeholder="Dirección exacta de entrega" class="w-full p-3 rounded-xl border-slate-200 text-sm focus:ring-blue-600 h-20" required></textarea>
+                <form id="checkout-form" class="space-y-4">
+                    <input type="text" id="check-nombre" placeholder="Nombre completo del cliente" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500" required>
+                    <div class="flex gap-2">
+                        <input type="text" id="check-ci" placeholder="Carnet (CI)" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
+                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
                     </div>
-
-                    <div class="pt-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Información de Pago</label>
-                        <input type="text" id="check-vuelto" placeholder="¿Necesita vuelto? (Especifique con cuánto paga)" class="w-full p-3 rounded-xl border-blue-100 bg-blue-50 text-sm focus:ring-blue-600">
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2 mt-4">
-                        <i class="fab fa-whatsapp text-xl"></i> Enviar Orden Completa
+                    <textarea id="check-dir" placeholder="Dirección exacta (Calle, Entre calles, Municipio)" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500 h-16" required></textarea>
+                    <input type="text" id="check-vuelto" placeholder="¿Necesita vuelto? (¿Con cuánto paga?)" class="w-full p-3 rounded-xl bg-blue-50 border-2 border-blue-100 text-sm font-bold italic text-blue-700 focus:ring-0">
+                    <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:bg-green-700 flex items-center justify-center gap-2 mt-4 transition-all scale-100 active:scale-95">
+                        <i class="fab fa-whatsapp text-xl"></i> Enviar a Oficina
                     </button>
                 </form>
             </div>
@@ -145,6 +181,31 @@
             if (isAdmin) document.getElementById('admin-status').classList.remove('hidden');
         }
 
+        // GENERADOR DE ENLACES
+        function openGestorGen() { document.getElementById('gestor-modal').classList.remove('hidden'); }
+        function closeGestorGen() { document.getElementById('gestor-modal').classList.add('hidden'); }
+        
+        function generateLinks() {
+            const name = document.getElementById('gen-name').value.trim();
+            const tel = document.getElementById('gen-tel').value.trim();
+            if(!name || !tel) return alert("Por favor, llena ambos campos");
+
+            const baseUrl = window.location.origin + window.location.pathname;
+            const adminUrl = `${baseUrl}?gestor=${encodeURIComponent(name)}&tel=${tel}&admin=true`;
+            const clientUrl = `${baseUrl}?gestor=${encodeURIComponent(name)}&tel=${tel}`;
+
+            document.getElementById('link-admin').value = adminUrl;
+            document.getElementById('link-client').value = clientUrl;
+            document.getElementById('links-result').classList.remove('hidden');
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            alert("Enlace copiado correctamente.");
+        }
+
         function fixDriveUrl(url) {
             if (!url) return '';
             if (url.includes('drive.google.com')) {
@@ -160,7 +221,7 @@
                 productosData = await response.json();
                 renderProducts();
             } catch (error) {
-                document.getElementById('productos').innerHTML = `<p class="col-span-full text-center py-20 text-red-500">Error: No se pudo cargar el inventario.</p>`;
+                document.getElementById('productos').innerHTML = `<p class="col-span-full text-center py-20 text-red-500 font-bold">Error al cargar datos.</p>`;
             }
         }
 
@@ -171,21 +232,24 @@
                 const precio = parseFloat(p.Precio) || 0;
                 
                 return `
-                <div onclick="openDetail('${p.Nombre}')" class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl transition-all cursor-pointer group flex flex-col">
-                    <div class="h-48 bg-slate-100 relative overflow-hidden">
-                        <img src="${fixDriveUrl(p.Thumbnail)}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                        <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-2 py-0.5 rounded-lg text-[10px] font-black uppercase text-blue-800 shadow-sm border border-blue-50">
+                <div onclick="openDetail('${p.Nombre}')" class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-2xl transition-all cursor-pointer group flex flex-col relative">
+                    <div class="h-48 bg-slate-50 relative overflow-hidden p-2">
+                        <img src="${fixDriveUrl(p.Thumbnail)}" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute top-3 left-3 bg-blue-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase shadow-sm">
                             ${p.Categoria || 'Equipo'}
                         </div>
                     </div>
                     <div class="p-5 flex flex-col flex-1">
-                        <h3 class="font-bold text-slate-800 text-sm mb-3 line-clamp-2 leading-snug">${p.Nombre}</h3>
-                        <div class="mt-auto flex justify-between items-end">
-                            <div>
-                                <span class="text-xl font-black text-slate-900">$${precio}</span>
-                                ${isAdmin ? `<p class="text-green-600 text-[9px] font-bold italic uppercase mt-0.5">Comisión: $${p.Comision}</p>` : ''}
+                        <h3 class="font-black text-slate-800 text-[13px] mb-2 line-clamp-2 leading-snug uppercase italic">${p.Nombre}</h3>
+                        <div class="flex flex-col gap-1 mb-4">
+                            <span class="text-2xl font-black text-blue-700 tracking-tighter">$${precio}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-black text-slate-400 uppercase italic"><i class="fas fa-shield-alt mr-1"></i>${p.Garantía || 'S/G'}</span>
+                                ${isAdmin ? `<span class="text-[9px] font-black text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded-full">Ganas: $${p.Comision}</span>` : ''}
                             </div>
-                            <span class="text-[9px] font-bold text-white bg-blue-600 px-3 py-1.5 rounded-full uppercase">Detalles</span>
+                        </div>
+                        <div class="mt-auto">
+                            <button class="w-full bg-slate-900 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest group-hover:bg-blue-600 transition-colors">Ver Detalles</button>
                         </div>
                     </div>
                 </div>`;
@@ -195,19 +259,17 @@
         function openDetail(name) {
             selectedProduct = productosData.find(p => p.Nombre === name);
             const p = selectedProduct;
-            
             document.getElementById('detail-name').innerText = p.Nombre;
             document.getElementById('detail-desc').innerText = p.Descripcion;
             document.getElementById('detail-price').innerText = `$${p.Precio}`;
             document.getElementById('detail-cat').innerText = p.Categoria;
+            document.getElementById('detail-warranty-box').innerHTML = `<i class="fas fa-shield-alt mr-2"></i> Garantía: ${p.Garantía || 'N/A'}`;
             document.getElementById('detail-qty').value = 1;
-            
-            const mainImg = document.getElementById('detail-main-img');
-            mainImg.src = fixDriveUrl(p.Thumbnail);
+            document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
 
             if(isAdmin) {
                 const commDiv = document.getElementById('detail-admin-comm');
-                commDiv.innerText = `Comisión: $${p.Comision}`;
+                commDiv.innerText = `Comisión de Gestor: $${p.Comision}`;
                 commDiv.classList.remove('hidden');
             } else {
                 document.getElementById('detail-admin-comm').classList.add('hidden');
@@ -215,7 +277,7 @@
 
             const thumbs = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url && url !== "");
             document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
-                <img src="${fixDriveUrl(url)}" onclick="changeMainImg('${fixDriveUrl(url)}')" class="w-14 h-14 object-cover rounded-lg border-2 border-transparent hover:border-blue-500 cursor-pointer bg-white shadow-sm">
+                <img src="${fixDriveUrl(url)}" onclick="changeMainImg('${fixDriveUrl(url)}')" class="w-14 h-14 object-contain rounded-lg border-2 border-transparent hover:border-blue-500 cursor-pointer bg-white shadow-sm">
             `).join('');
 
             document.getElementById('detail-modal').classList.remove('hidden');
@@ -239,7 +301,6 @@
             const existing = cart.find(item => item.Nombre === selectedProduct.Nombre);
             if(existing) existing.qty += qty;
             else cart.push({...selectedProduct, qty: qty});
-            
             updateCartCount();
             closeDetail();
             toggleCartModal(true);
@@ -260,26 +321,24 @@
         function renderCart() {
             const container = document.getElementById('cart-items');
             if(cart.length === 0) {
-                container.innerHTML = `<div class="text-center py-20 text-slate-300"><i class="fas fa-shopping-basket text-5xl mb-4"></i><p class="font-bold">Orden vacía</p></div>`;
+                container.innerHTML = `<div class="text-center py-20 text-slate-300"><p class="font-black italic uppercase tracking-widest">Carrito Vacío</p></div>`;
                 updateTotals(0, 0);
                 return;
             }
-
             container.innerHTML = cart.map((item, index) => `
-                <div class="flex gap-4 bg-white p-3 rounded-2xl border shadow-sm relative">
-                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-14 h-14 object-cover rounded-xl">
+                <div class="flex gap-4 bg-white p-4 rounded-3xl border shadow-sm relative">
+                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-12 h-12 object-contain rounded-xl bg-slate-50">
                     <div class="flex-1">
-                        <h4 class="text-xs font-bold pr-6 leading-tight">${item.Nombre}</h4>
-                        <p class="text-[10px] text-slate-500 mt-1">${item.qty} x $${item.Precio}</p>
-                        <p class="text-sm font-black text-blue-700">$${item.qty * item.Precio}</p>
+                        <h4 class="text-[10px] font-black uppercase italic leading-tight pr-6">${item.Nombre}</h4>
+                        <p class="text-[9px] text-slate-400 font-bold mt-1">${item.qty} UNIDADES x $${item.Precio}</p>
+                        <p class="text-sm font-black text-blue-700 tracking-tighter">$${item.qty * item.Precio}</p>
                     </div>
-                    <button onclick="removeFromCart(${index})" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="removeFromCart(${index})" class="absolute top-4 right-4 text-slate-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `).join('');
-
-            const subtotal = cart.reduce((acc, item) => acc + (item.Precio * item.qty), 0);
-            const shipping = cart.reduce((acc, item) => acc + (parseFloat(item.Mensajeria) || 0), 0);
-            updateTotals(subtotal, shipping);
+            const sub = cart.reduce((acc, item) => acc + (item.Precio * item.qty), 0);
+            const ship = cart.reduce((acc, item) => acc + (parseFloat(item.Mensajeria) || 0), 0);
+            updateTotals(sub, ship);
         }
 
         function updateTotals(sub, ship) {
@@ -294,38 +353,27 @@
             renderCart();
         }
 
-        // ENVÍO DE WHATSAPP CON FORMATO SOLICITADO
         document.getElementById('checkout-form').onsubmit = (e) => {
             e.preventDefault();
-            
-            let totalEquipos = 0;
-            let totalMensajeria = 0;
-            let totalComision = 0;
-            let listaNombres = cart.map(item => `${item.qty}x ${item.Nombre}`).join(', ');
-
-            cart.forEach(item => {
-                totalEquipos += (item.Precio * item.qty);
-                totalMensajeria += (parseFloat(item.Mensajeria) || 0);
-                totalComision += ((parseFloat(item.Comision) || 0) * item.qty);
-            });
-
-            const nombreCli = document.getElementById('check-nombre').value;
-            const ciCli = document.getElementById('check-ci').value;
-            const telCli = document.getElementById('check-tel').value;
-            const dirCli = document.getElementById('check-dir').value;
-            const vuelto = document.getElementById('check-vuelto').value || "No requerido";
+            let eqTotal = 0, mTotal = 0, cTotal = 0;
+            let pList = cart.map(item => {
+                eqTotal += (item.Precio * item.qty);
+                mTotal += (parseFloat(item.Mensajeria) || 0);
+                cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
+                return `${item.qty}x ${item.Nombre}`;
+            }).join(', ');
 
             const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
-                `💪🏻Nombre: ${nombreCli}%0A` +
-                `💪🏻CI: ${ciCli}%0A` +
-                `💪🏻Teléfono: ${telCli}%0A` +
-                `💪🏻Dirección: ${dirCli}%0A%0A` +
-                `💪🏻Producto: ${listaNombres}%0A` +
-                `💪🏻Total a Pagar: ${totalEquipos + totalMensajeria}%0A` +
-                `-Precio equipo: ${totalEquipos}%0A` +
-                `-Mensajería: ${totalMensajeria}%0A%0A` +
-                `💪🏻Vuelto: ${vuelto}%0A` +
-                `💪🏻Comisión: ${totalComision}%0A` +
+                `💪🏻Nombre: ${document.getElementById('check-nombre').value}%0A` +
+                `💪🏻CI: ${document.getElementById('check-ci').value}%0A` +
+                `💪🏻Teléfono: ${document.getElementById('check-tel').value}%0A` +
+                `💪🏻Dirección: ${document.getElementById('check-dir').value}%0A%0A` +
+                `💪🏻Producto: ${pList}%0A` +
+                `💪🏻Total a Pagar: ${eqTotal + mTotal}%0A` +
+                `-Precio equipo: ${eqTotal}%0A` +
+                `-Mensajería: ${mTotal}%0A%0A` +
+                `💪🏻Vuelto: ${document.getElementById('check-vuelto').value || "No requerido"}%0A` +
+                `💪🏻Comisión: ${cTotal}%0A` +
                 `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
                 `☎(${gestorTel || ''})`;
 
