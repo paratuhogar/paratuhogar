@@ -1,244 +1,275 @@
 <!DOCTYPE html>
-<html lang="es">
+<html class="light" lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Para Tu Hogar | Business Suite v6.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>paratuhogar | Electrodomésticos para Cuba</title>
+    
+    <!-- Fuentes y Estilos Externos -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#33ccc4",
+                        "background-light": "#fafaf9",
+                        "background-dark": "#1e2024",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+
     <style>
-        :root { --bg: #020617; --card: #0f172a; --accent: #3b82f6; }
-        body { background-color: var(--bg); color: #f8fafc; font-family: ui-sans-serif, system-ui; overflow-x: hidden; }
-        .nav-tab { border-radius: 12px; transition: all 0.3s; font-size: 10px; font-weight: 800; color: #64748b; }
-        .nav-tab.active { background: var(--accent); color: white; box-shadow: 0 4px 20px -5px var(--accent); }
-        .app-card { background: var(--card); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; }
-        .glass-header { background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .category-pill { flex-shrink: 0; padding: 10px 18px; border-radius: 16px; background: #1e293b; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; }
-        .category-pill.active { border-color: #3b82f6; color: white; background: rgba(59, 130, 246, 0.2); }
-        .btn-period { font-size: 9px; font-weight: 900; padding: 6px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-period.active { background: #3b82f6; color: white; border-color: #3b82f6; }
-        input, textarea { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; outline: none !important; }
-        .loader { width: 24px; height: 24px; border: 3px solid #3b82f6; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .modal-scroll { max-height: 45vh; overflow-y: auto; scrollbar-width: thin; }
-        @media (min-width: 768px) { .modal-scroll { max-height: none; } }
+        body { font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .category-tab.active { border-bottom: 3px solid #33ccc4; color: #33ccc4; }
+        .loader { width: 40px; height: 40px; border: 4px solid #33ccc4; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="pb-32">
 
-    <!-- Header -->
-    <header class="glass-header sticky top-0 z-[100] px-5 py-4">
-        <div class="container mx-auto space-y-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/40"><i class="fas fa-rocket text-white"></i></div>
-                    <div>
-                        <h1 class="text-sm font-black uppercase italic leading-none">Para Tu Hogar</h1>
-                        <p id="gestor-label" class="text-[8px] font-black uppercase text-blue-400 mt-1 italic tracking-widest">Sincronizando...</p>
-                    </div>
+<body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 w-full border-b border-[#e5e7eb] dark:border-gray-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-4 md:px-10 lg:px-20 py-3">
+        <div class="max-w-[1200px] mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-3xl text-primary">home_iot_device</span>
+                    <h1 class="text-xl font-extrabold tracking-tight">para<span class="text-primary">tuhogar</span></h1>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="toggleCurrency()" class="bg-blue-600/10 border border-blue-500/20 px-3 py-1.5 rounded-xl text-[10px] font-black text-blue-400 uppercase"><span id="currency-label">USD</span></button>
-                    <button id="btn-open-gen" onclick="openGestorGen()" class="w-9 h-9 bg-white/5 rounded-xl flex items-center justify-center border border-white/10 active:scale-90 transition-all"><i class="fas fa-link text-xs text-slate-400"></i></button>
+                <div class="hidden md:flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-200 dark:border-gray-700">
+                    <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
+                    <input id="search-bar" oninput="filterProducts()" type="text" placeholder="Buscar equipo..." class="bg-transparent border-none focus:ring-0 text-sm w-64">
                 </div>
             </div>
 
-            <div class="relative">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                <input type="text" id="search-bar" oninput="filterProducts()" placeholder="¿Qué equipo buscas?" class="w-full bg-slate-900 border-none rounded-2xl py-4 pl-11 pr-4 text-xs font-bold focus:ring-2 focus:ring-blue-500 transition-all">
-            </div>
-
-            <div id="category-list" class="flex gap-2 overflow-x-auto scrollbar-hide py-1">
-                <button onclick="filterByCategory('TODOS')" class="category-pill active">Todos</button>
-                <button onclick="filterByCategory('CLIMATIZACIÓN')" class="category-pill">Clima</button>
-                <button onclick="filterByCategory('COCINA')" class="category-pill">Cocina</button>
-                <button onclick="filterByCategory('FRÍO')" class="category-pill">Frío</button>
-                <button onclick="filterByCategory('ENERGÍA')" class="category-pill">Energía</button>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleCurrency()" class="text-xs font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    <span id="currency-label">USD</span>
+                </button>
+                <button onclick="toggleCartModal(true)" class="relative p-2 bg-primary/10 text-primary rounded-full">
+                    <span class="material-symbols-outlined">shopping_cart</span>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                </button>
+                <button id="btn-open-gen" onclick="openGestorGen()" class="p-2 text-gray-400"><span class="material-symbols-outlined">settings</span></button>
+                <p id="gestor-label" class="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-primary"></p>
             </div>
         </div>
     </header>
 
-    <nav id="main-nav" class="container mx-auto px-5 mt-4 flex gap-2">
-        <button onclick="showSection('catalogo')" id="tab-cat" class="nav-tab active px-5 py-3 uppercase flex-1 border border-white/5">Catálogo</button>
-        <button onclick="showSection('dashboard')" id="tab-dash" class="nav-tab px-5 py-3 uppercase flex-1 hidden bg-slate-900">Dashboard</button>
-    </nav>
-
-    <main class="container mx-auto px-5 pt-6">
-        <!-- CATÁLOGO -->
-        <section id="sec-catalogo" class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div id="productos-container" class="col-span-full py-32 text-center"><span class="loader"></span></div>
+    <main class="max-w-[1200px] mx-auto pb-20">
+        
+        <!-- Hero Section -->
+        <section class="px-6 py-10 lg:py-16">
+            <div class="max-w-2xl">
+                <h2 class="text-4xl lg:text-5xl font-black leading-tight mb-4">Equipos para tu familia en Cuba</h2>
+                <p class="text-gray-500 dark:text-gray-400 text-lg">Catálogo optimizado. Ordena por WhatsApp y paga al recibir en la puerta de tu casa.</p>
+                <div class="flex gap-3 mt-6">
+                    <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">bolt</span> Entrega 24-48h</span>
+                    <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">verified_user</span> Garantía Real</span>
+                </div>
+            </div>
         </section>
 
-        <!-- DASHBOARD -->
-        <section id="sec-dashboard" class="hidden space-y-6">
-            <div class="app-card p-7 bg-gradient-to-br from-blue-600/20 to-transparent border-blue-500/20 flex justify-between items-center relative overflow-hidden">
-                <div>
-                    <p class="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1 italic opacity-70">Profit Acumulado</p>
-                    <h2 id="dash-money" class="text-4xl font-black tracking-tighter">$0.00</h2>
-                </div>
-                <i class="fas fa-wallet absolute -right-4 -bottom-4 text-7xl text-white/5"></i>
+        <!-- Category Tabs (Sticky) -->
+        <div class="sticky top-[65px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur shadow-sm border-b border-gray-200 dark:border-gray-800">
+            <div id="category-list" class="flex gap-8 px-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button onclick="filterByCategory('TODOS')" class="category-tab active py-4 text-sm font-bold transition-all">Todos</button>
+                <button onclick="filterByCategory('REFRIGERACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Refrigeración</button>
+                <button onclick="filterByCategory('COCINA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Cocina</button>
+                <button onclick="filterByCategory('LAVADO')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Lavado</button>
+                <button onclick="filterByCategory('CLIMATIZACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Climatización</button>
+                <button onclick="filterByCategory('ENERGÍA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Energía</button>
             </div>
+        </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div class="app-card p-5 border-l-4 border-blue-500">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Entregas</p>
-                    <p id="dash-ok" class="text-2xl font-black italic">0</p>
-                </div>
-                <div class="app-card p-5 border-l-4 border-emerald-500">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Unidades</p>
-                    <p id="dash-units" class="text-2xl font-black text-emerald-400">0</p>
-                </div>
-            </div>
-
-            <div class="app-card overflow-hidden">
-                <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                    <h3 class="text-[11px] font-black uppercase italic tracking-widest text-blue-400">Ranking Élite</h3>
-                    <div class="flex gap-2">
-                        <button onclick="changeRankingPeriod('week')" id="p-week" class="btn-period active bg-slate-800">7D</button>
-                        <button onclick="changeRankingPeriod('month')" id="p-month" class="btn-period bg-slate-800">MES</button>
-                    </div>
-                </div>
-                <div id="ranking-list" class="divide-y divide-white/5"></div>
-            </div>
+        <!-- Product Grid -->
+        <section id="productos-container" class="px-6 py-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
+            <div class="col-span-full py-20 text-center"><span class="loader"></span></div>
         </section>
     </main>
 
-    <!-- FAB Carrito -->
-    <div onclick="toggleCartModal()" class="fixed bottom-8 right-6 bg-blue-600 text-white w-16 h-16 rounded-[24px] shadow-2xl flex items-center justify-center cursor-pointer z-[110] active:scale-90 border-2 border-white/20">
-        <i class="fas fa-shopping-basket text-xl"></i>
-        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-black w-7 h-7 rounded-xl flex items-center justify-center border-2 border-slate-950">0</span>
-    </div>
-
-    <!-- MODALES: DETALLE, CARRITO, GESTOR (Se mantienen igual pero con IDs corregidos) -->
-    <!-- (Para brevedad, se integran en el script la lógica de apertura) -->
-    <!-- MODAL DETALLE (CORREGIDO PARA SCROLL Y BOTÓN VISIBLE) -->
-    <!-- MODAL DETALLE DEFINITIVO: SCROLL + GALERIA + BOTON COMPRAR -->
-    <div id="detail-modal" class="fixed inset-0 bg-slate-950/98 backdrop-blur-xl hidden flex items-center justify-center p-2 z-[150]">
-        <div class="bg-slate-900 rounded-[40px] w-full max-w-4xl max-h-[95vh] overflow-y-auto flex flex-col md:flex-row border border-white/5 relative scrollbar-hide">
-            
-            <!-- Botón Cerrar (Sticky para móviles) -->
-            <button onclick="closeDetail()" class="sticky top-5 left-[88%] md:absolute md:top-5 md:right-5 text-white w-12 h-12 rounded-full z-[170] flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/10">
-                <i class="fas fa-times"></i>
+    <!-- MODAL DETALLE (ESTILO IMAGEN) -->
+    <div id="detail-modal" class="fixed inset-0 z-[100] hidden overflow-y-auto bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div class="bg-white dark:bg-background-dark w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row relative">
+            <button onclick="closeDetail()" class="absolute top-4 right-4 z-10 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-transform">
+                <span class="material-symbols-outlined">close</span>
             </button>
-            
-            <!-- SECCIÓN IZQUIERDA: IMÁGENES -->
-            <div class="w-full md:w-5/12 bg-white flex flex-col border-r border-white/5">
-                <!-- Imagen Principal -->
-                <div class="p-8 flex-1 flex items-center justify-center min-h-[320px]">
-                    <img id="detail-main-img" src="" class="max-w-full max-h-72 object-contain transition-all duration-500">
-                </div>
-                <!-- Miniaturas (Galería) -->
-                <div id="detail-thumbnails" class="p-4 bg-slate-100 flex gap-2 overflow-x-auto justify-center scrollbar-hide border-t border-slate-200">
-                    <!-- Las fotos se cargan aquí vía JS -->
-                </div>
+
+            <!-- Imagen Izquierda -->
+            <div class="lg:w-1/2 bg-white p-8 flex flex-col items-center justify-center border-r border-gray-100 dark:border-gray-800">
+                <img id="detail-main-img" src="" class="max-h-[450px] object-contain mb-6">
+                <div id="detail-thumbnails" class="flex gap-2 overflow-x-auto scrollbar-hide"></div>
+                <p class="mt-6 text-[10px] text-gray-400 flex items-center gap-1 uppercase tracking-widest">
+                    <span class="material-symbols-outlined text-sm">info</span> Imagen real del equipo en almacén
+                </p>
             </div>
 
-            <!-- SECCIÓN DERECHA: INFO -->
-            <div class="w-full md:w-7/12 p-8 md:p-12 flex flex-col bg-slate-900">
-                <span id="detail-cat" class="text-blue-500 font-black text-[9px] uppercase tracking-widest mb-2"></span>
-                <h2 id="detail-name" class="text-2xl md:text-3xl font-black mb-5 uppercase italic leading-tight text-white"></h2>
+            <!-- Info Derecha -->
+            <div class="lg:w-1/2 p-8 lg:p-12 flex flex-col">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-primary/10 text-primary px-2.5 py-1 rounded-full text-[10px] font-black uppercase">En Stock</span>
+                    <span id="detail-cat" class="text-[10px] text-gray-400 font-bold uppercase"></span>
+                </div>
+                <h2 id="detail-name" class="text-3xl font-black mb-4"></h2>
                 
-                <div class="flex items-center gap-5 mb-4">
-                    <span id="detail-price" class="text-4xl font-black text-white"></span>
-                    <span id="detail-price-cup" class="text-sm font-bold text-slate-500 italic"></span>
+                <div class="flex items-baseline gap-4 mb-8">
+                    <span id="detail-price" class="text-4xl font-black text-primary"></span>
+                    <span id="detail-price-cup" class="text-lg text-gray-400"></span>
                 </div>
 
-                <div id="detail-warranty" class="mb-6 bg-blue-500/10 px-4 py-2 rounded-2xl text-[10px] font-black text-blue-400 self-start border border-blue-500/20 uppercase"></div>
-                
+                <!-- Specs Grid -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Garantía</p>
+                        <p id="detail-warranty" class="font-bold text-sm"></p>
+                    </div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Mensajería</p>
+                        <p id="detail-shipping" class="font-bold text-sm"></p>
+                    </div>
+                </div>
+
                 <div class="mb-8">
-                    <p id="detail-desc" class="text-slate-400 text-[14px] leading-relaxed whitespace-pre-line font-medium"></p>
+                    <h3 class="text-xs font-black uppercase text-gray-400 mb-3 tracking-widest">Descripción</h3>
+                    <p id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></p>
                 </div>
 
-                <!-- Botón de Compra -->
-                <button onclick="addItemToCart()" class="w-full bg-blue-600 hover:bg-blue-500 py-6 rounded-[24px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-600/20 transition-all active:scale-95 mb-4">
-                    <i class="fas fa-cart-plus mr-2"></i> Añadir a la orden
-                </button>
+                <!-- WhatsApp Actions -->
+                <div class="mt-auto space-y-3">
+                    <button onclick="addItemToCart()" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all">
+                        <i class="fab fa-whatsapp text-2xl"></i> Comprar por WhatsApp
+                    </button>
+                    <button onclick="copyOffer()" class="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50">
+                        <span class="material-symbols-outlined text-lg">content_copy</span> Copiar descripción
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL CARRITO -->
-    <div id="cart-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl hidden flex items-center justify-end z-[160]">
-        <div class="bg-slate-900 w-full max-w-md h-full p-7 overflow-y-auto">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-xs font-black uppercase text-blue-500">Mi Pedido</h2>
-                <button onclick="toggleCartModal()" class="text-2xl text-slate-600">&times;</button>
+    <!-- MODAL CARRITO / FORMULARIO -->
+    <div id="cart-modal" class="fixed inset-0 z-[110] hidden bg-black/80 flex justify-end">
+        <div class="bg-white dark:bg-background-dark w-full max-w-md h-full shadow-2xl flex flex-col p-6 animate-slide-left">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-black uppercase italic text-primary">Mi Pedido</h2>
+                <button onclick="toggleCartModal(false)" class="p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
             </div>
-            <div id="cart-items" class="space-y-5 mb-8"></div>
-            <div class="border-t border-white/10 pt-5 text-white font-black text-2xl uppercase mb-8">
-                <div class="flex justify-between items-end">
-    <span>TOTAL:</span> 
-    <div class="text-right">
-        <span id="cart-total" class="block text-sm opacity-50">$0.00</span>
-        <span id="total-convertido" class="block text-blue-500 text-3xl">$0.00</span>
-    </div>
-</div>
-            </div>
-            <form id="checkout-form" class="space-y-4">
-                <input type="text" id="check-nombre" placeholder="Nombre completo (Obligatorio)" class="w-full p-4 rounded-2xl" required>
-                <div class="flex gap-4">
-                    <input type="text" id="check-ci" placeholder="CI (Obligatorio)" class="w-full p-4 rounded-2xl" required>
-                    <input type="tel" id="check-tel" placeholder="Teléfono (Obligatorio)" class="w-full p-4 rounded-2xl" required>
-                </div>
-                <textarea id="check-dir" placeholder="Dirección detallada (Obligatorio)" class="w-full p-4 rounded-2xl h-20" required></textarea>
-                
-                
-                <!-- SELECTOR DE MONEDA DINÁMICO -->
-                <div class="p-4 bg-purple-900/20 rounded-2xl border border-purple-500/30 mb-4">
-                    <label class="text-[10px] font-black text-purple-400 uppercase block mb-2 italic">Moneda / Método de Pago</label>
-                    <select id="check-moneda" class="w-full bg-slate-900 text-white border-none text-sm font-black rounded-lg p-1 outline-none">
-                        <!-- Se llena automáticamente con JS -->
-                    </select>
+            
+            <div id="cart-items" class="flex-1 overflow-y-auto space-y-4 mb-6 scrollbar-hide"></div>
+
+            <div class="border-t pt-6 mb-6">
+                <div class="flex justify-between items-end mb-4">
+                    <span class="text-gray-400 font-bold uppercase text-xs">Total a Pagar</span>
+                    <div class="text-right">
+                        <p id="cart-total" class="text-gray-400 text-xs line-through">$0.00</p>
+                        <p id="total-convertido" class="text-3xl font-black text-primary">$0.00</p>
+                    </div>
                 </div>
 
-                <div class="p-4 bg-blue-900/20 rounded-2xl border border-blue-500/30">
-                    <label class="text-[10px] font-black text-blue-400 uppercase block mb-1">Monto del vuelto (en la moneda elegida)</label>
-                    <input type="number" id="check-vuelto" placeholder="Ej: 50 (Ponga 0 si no requiere)" class="w-full bg-transparent border-none text-sm font-black text-white p-0" min="0">
-                </div>
+                <form id="checkout-form" class="space-y-4">
+                    <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700" required>
+                    <div class="flex gap-2">
+                        <input type="text" id="check-ci" placeholder="Carnet (CI)" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700" required>
+                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700" required>
+                    </div>
+                    <textarea id="check-dir" placeholder="Dirección de entrega" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-20" required></textarea>
+                    
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-gray-400">Método de Pago</label>
+                            <select id="check-moneda" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0"></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-gray-400">Vuelto (Monto exacto)</label>
+                            <input type="number" id="check-vuelto" placeholder="Ej: 50" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0">
+                        </div>
+                    </div>
 
-                <button type="submit" id="final-submit-btn" class="w-full bg-emerald-600 py-5 rounded-[22px] font-black uppercase">Tramitar Pedido</button>
-            </form>
+                    <button type="submit" id="final-submit-btn" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95">Tramitar Pedido</button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL GESTOR -->
-    <div id="gestor-modal" class="fixed inset-0 bg-slate-950/98 backdrop-blur-2xl hidden flex items-center justify-center p-6 z-[200]">
-        <div class="app-card w-full max-w-md p-8">
-            <h2 class="text-xl font-black mb-4 uppercase italic text-blue-400">Vincular Gestor</h2>
-            <div class="space-y-4">
-                <input type="password" id="master-pass" class="w-full p-4 rounded-2xl" placeholder="Código Maestro">
-                <input type="text" id="gen-name" class="w-full p-4 rounded-2xl" placeholder="Tu Nombre">
-                <input type="tel" id="gen-tel" class="w-full p-4 rounded-2xl" placeholder="WhatsApp (Ej: 535...)">
-                <button onclick="processGestor()" class="w-full bg-blue-600 py-4.5 rounded-2xl font-black uppercase">Generar Links</button>
+    <!-- MODAL GESTORES (OCULTO) -->
+    <div id="gestor-modal" class="fixed inset-0 z-[200] hidden bg-black/90 p-6 flex items-center justify-center">
+        <div class="bg-white dark:bg-background-dark w-full max-w-sm rounded-3xl p-8 space-y-4">
+            <h2 class="text-xl font-black uppercase text-primary">Zona de Agentes</h2>
+            <input type="password" id="master-pass" placeholder="Código Maestro" class="w-full rounded-xl border-gray-200">
+            <input type="text" id="gen-name" placeholder="Tu Nombre" class="w-full rounded-xl border-gray-200">
+            <input type="tel" id="gen-tel" placeholder="WhatsApp" class="w-full rounded-xl border-gray-200">
+            <button onclick="processGestor()" class="w-full bg-primary text-white py-3 rounded-xl font-bold uppercase">Vincular</button>
+            <div id="links-result" class="hidden space-y-2 pt-4">
+                <input type="text" id="link-client" readonly class="w-full text-[10px] bg-gray-100 p-2 rounded">
+                <button onclick="copy('link-client')" class="text-xs font-bold text-primary">COPIAR LINK PÚBLICO</button>
             </div>
-            <div id="links-result" class="hidden mt-8 space-y-4">
-                <input type="text" id="link-admin" readonly class="w-full text-[9px] p-3 bg-slate-950 rounded">
-                <button onclick="copy('link-admin')" class="text-blue-500 font-bold text-[10px]">COPIAR PANEL CONTROL</button>
-                <input type="text" id="link-client" readonly class="w-full text-[9px] p-3 bg-slate-950 rounded">
-                <button onclick="copy('link-client')" class="text-white font-bold text-[10px]">COPIAR LINK PÚBLICO</button>
-            </div>
-            <button onclick="closeGestorGen()" class="w-full mt-6 text-slate-600 text-[10px] uppercase">Cerrar</button>
+            <button onclick="closeGestorGen()" class="w-full text-gray-400 text-xs font-bold uppercase">Cerrar</button>
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12 px-6">
+        <div class="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="col-span-1 md:col-span-1">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-3xl text-primary">home_iot_device</span>
+                    <h1 class="text-lg font-extrabold tracking-tight italic">para<span class="text-primary">tuhogar</span></h1>
+                </div>
+                <p class="text-gray-500 text-sm">Calidad y confort para tu hogar en Cuba. Paga seguro al recibir.</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-xs uppercase tracking-widest mb-4 text-primary">Categorías</h4>
+                <ul class="text-sm space-y-2 text-gray-500">
+                    <li><a href="#" class="hover:text-primary">Refrigeración</a></li>
+                    <li><a href="#" class="hover:text-primary">Cocina</a></li>
+                    <li><a href="#" class="hover:text-primary">Lavado</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-xs uppercase tracking-widest mb-4 text-primary">Ayuda</h4>
+                <ul class="text-sm space-y-2 text-gray-500">
+                    <li><a href="#" class="hover:text-primary">Garantía</a></li>
+                    <li><a href="#" class="hover:text-primary">Cómo Comprar</a></li>
+                    <li><a href="#" class="hover:text-primary">WhatsApp</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-xs uppercase tracking-widest mb-4 text-primary">Contacto</h4>
+                <ul class="text-sm space-y-2 text-gray-500">
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">mail</span> info@paratuhogar.cu</li>
+                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">location_on</span> La Habana, Cuba</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts de Lógica -->
     <script>
-        // --- CONFIGURACIÓN ---
         const API_URL = 'https://script.google.com/macros/s/AKfycbw3iUQm9fNB8orXe8xt6bwufheyAeg77EPQG8H_sP6QxfoLlD8TeSPA5vwTHLjAmBfV/exec'; 
         const MASTER_KEY = "HOGAR2025"; 
         
         let productosRaw = [], cart = [], selectedProduct = null;
-        let cupRate = 450, showInCUP = false, activeCategory = 'TODOS', currentPeriod = 'week';
+        let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
 
         const urlParams = new URLSearchParams(window.location.search);
-        const gestorName = urlParams.get('gestor'), gestorTel = urlParams.get('tel'), isAdmin = urlParams.get('admin') === 'true';
+        const gestorName = urlParams.get('gestor'), gestorTel = urlParams.get('tel');
 
         window.addEventListener('load', () => {
             if (gestorName) {
-                document.getElementById('gestor-label').innerText = `Agente: ${gestorName.toUpperCase()}`;
-                if (isAdmin) document.getElementById('tab-dash').classList.remove('hidden');
-            } else { document.getElementById('gestor-label').innerText = "Catálogo Público"; }
+                document.getElementById('gestor-label').innerText = `AGENTE: ${gestorName.toUpperCase()}`;
+            }
             loadProducts();
         });
 
@@ -249,34 +280,30 @@
                 productosRaw = data.productos;
                 cupRate = data.tasa || 450;
                 renderProducts();
-            } catch (e) { 
-                console.error("Error cargando productos:", e);
-                document.getElementById('productos-container').innerHTML = "Error al conectar con la base de datos."; 
-            }
+            } catch (e) { document.getElementById('productos-container').innerHTML = "Error de conexión"; }
         }
 
         function renderProducts() {
             const query = document.getElementById('search-bar').value.toLowerCase();
             const container = document.getElementById('productos-container');
-            
             const filtered = productosRaw.filter(p => {
                 const matchSearch = p.Nombre.toLowerCase().includes(query);
                 const matchCat = activeCategory === 'TODOS' || (p.Categoria && p.Categoria.toUpperCase().includes(activeCategory));
                 return matchSearch && matchCat && p.Disponible === "SI";
             });
 
-            container.className = "grid grid-cols-2 lg:grid-cols-4 gap-4 col-span-full";
             container.innerHTML = filtered.map(p => {
                 const precio = parseFloat(p.Precio) || 0;
                 const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
                 return `
-                <div onclick="openDetail('${p.Nombre.replace(/'/g, "\\'")}')" class="app-card overflow-hidden cursor-pointer active:scale-95 transition-all">
-                    <div class="h-40 bg-white p-4 flex items-center justify-center">
-                        <img src="${fixDriveUrl(p.Thumbnail)}" class="max-w-full max-h-full object-contain">
+                <div onclick="openDetail('${p.Nombre.replace(/'/g, "\\'")}')" class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all cursor-pointer">
+                    <div class="w-full aspect-square bg-white p-4">
+                        <img src="${fixDriveUrl(p.Thumbnail)}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
                     </div>
                     <div class="p-4">
-                        <h3 class="text-[10px] font-black uppercase mb-2 line-clamp-2 h-8">${p.Nombre}</h3>
-                        <p class="text-xl font-black text-blue-500">${pDisplay}</p>
+                        <h3 class="text-sm font-bold leading-tight mb-2 line-clamp-2 min-h-[40px]">${p.Nombre}</h3>
+                        <p class="text-primary text-xl font-black">${pDisplay}</p>
+                        <button class="mt-4 w-full bg-primary/10 text-primary py-2 rounded-xl text-xs font-black uppercase hover:bg-primary hover:text-white transition-all">Ver Detalles</button>
                     </div>
                 </div>`;
             }).join('');
@@ -288,104 +315,104 @@
             if(!p) return;
 
             document.getElementById('detail-name').innerText = p.Nombre;
-            document.getElementById('detail-desc').innerText = p.Descripcion || p.Descripción || '';
-            document.getElementById('detail-price').innerText = `$${p.Precio}`;
+            document.getElementById('detail-desc').innerText = p.Descripcion || '';
+            document.getElementById('detail-price').innerText = `$${p.Precio}.00 USD`;
             document.getElementById('detail-price-cup').innerText = `/ CUP ${(p.Precio * cupRate).toLocaleString()}`;
             document.getElementById('detail-cat').innerText = p.Categoria || '';
-            document.getElementById('detail-warranty').innerText = `Garantía: ${p.Garantía || p.Garantia || 'S/G'}`;
-            
-            // --- Etiquetas de Envío y Pagos ---
-            const oldBadges = document.querySelectorAll('.detail-extra-info');
-            oldBadges.forEach(b => b.remove());
-
-            const extraInfo = `
-                <div class="detail-extra-info flex flex-wrap gap-2 mb-6">
-                    <div class="bg-emerald-500/10 px-3 py-1.5 rounded-xl text-[10px] font-black text-emerald-400 border border-emerald-500/20 uppercase">
-                        <i class="fas fa-truck mr-1"></i> Envío: ${p.Mensajeria || p.Mensajería || 'Consultar'}
-                    </div>
-                    <div class="bg-purple-500/10 px-3 py-1.5 rounded-xl text-[10px] font-black text-purple-400 border border-purple-500/20 uppercase">
-                        <i class="fas fa-credit-card mr-1"></i> Pagos: ${p.Pagos || 'Ver detalles'}
-                    </div>
-                </div>
-            `;
-            document.getElementById('detail-warranty').insertAdjacentHTML('afterend', extraInfo);
-
+            document.getElementById('detail-warranty').innerText = p.Garantía || '1 Mes';
+            document.getElementById('detail-shipping').innerText = p.Mensajeria || 'Consultar';
             document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
-
-            // Cargar Miniaturas
-            const thumbsContainer = document.getElementById('detail-thumbnails');
-            const photos = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url && url.length > 5);
-            if (photos.length > 1) {
-                thumbsContainer.classList.remove('hidden');
-                thumbsContainer.innerHTML = photos.map(url => `
-                    <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-14 h-14 object-contain rounded-lg border-2 border-transparent bg-white p-1 cursor-pointer hover:border-blue-500 transition-all">
-                `).join('');
-            } else { thumbsContainer.classList.add('hidden'); }
+            
+            const thumbs = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url && url.length > 5);
+            document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
+                <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer">
+            `).join('');
 
             document.getElementById('detail-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
 
-        // Función para convertir texto de mensajería en número
         function parseMensajeria(texto) {
             if (!texto) return 0;
             let t = texto.toString().toLowerCase();
-            // Si dice gratis y no menciona precio extra de periferia, es 0
             if (t.includes('gratis') && !t.includes('periferia')) return 0;
-            // Busca el primer número en el texto (ej: "15 usd" -> 15)
             let match = t.match(/\d+/);
             return match ? parseFloat(match[0]) : 0;
+        }
+
+        function recalcularTotalFinal() {
+            const select = document.getElementById('check-moneda');
+            const totalUSD = cart.reduce((acc, item) => acc + (Number(item.Precio) * item.qty) + (parseMensajeria(item.Mensajeria || item.Mensajería) * item.qty), 0);
+            
+            const opcionElegida = select.value || "USD";
+            let totalFinal = totalUSD;
+            let simbolo = "$";
+
+            if (opcionElegida.toUpperCase().includes("CUP")) {
+                let tasaFinal = cupRate;
+                if (opcionElegida.includes("+")) {
+                    const incremento = parseFloat(opcionElegida.match(/\d+/) || 0);
+                    tasaFinal = cupRate + incremento;
+                } else {
+                    const tasaFija = parseFloat(opcionElegida.match(/\d+/) || cupRate);
+                    tasaFinal = (tasaFija > 100) ? tasaFija : cupRate;
+                }
+                totalFinal = totalUSD * tasaFinal;
+                simbolo = "CUP";
+            } else if (opcionElegida.toLowerCase().includes("euro") && opcionElegida.includes("1.05")) {
+                totalFinal = totalUSD / 1.05;
+                simbolo = "€";
+            }
+
+            document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
+            document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        }
+
+        function actualizarOpcionesMoneda() {
+            const select = document.getElementById('check-moneda');
+            if (!select || cart.length === 0) return;
+            const pagosTexto = cart[0].Pagos || "USD, CUP +10, Zelle";
+            const opciones = pagosTexto.split(',').map(opt => opt.trim());
+            select.innerHTML = opciones.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+            select.onchange = recalcularTotalFinal;
+            recalcularTotalFinal();
         }
 
         document.getElementById('checkout-form').onsubmit = function(e) {
             e.preventDefault();
             const btn = document.getElementById('final-submit-btn');
-            
             const nombreC = document.getElementById('check-nombre').value;
             const ciC = document.getElementById('check-ci').value;
             const telC = document.getElementById('check-tel').value;
             const dirC = document.getElementById('check-dir').value;
-            const monedaC = document.getElementById('check-moneda').value; // <--- CAPTURAR MONEDA
+            const monedaC = document.getElementById('check-moneda').value;
             const valVuelto = document.getElementById('check-vuelto').value;
-            const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto} (${monedaC.split(' ')[0]})` : "No requiere";
-            
+            const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "No requiere";
             const listaProductos = cart.map(i => `${i.qty}x ${i.Nombre}`).join(', ');
 
             let precioEquipo = 0, totalMensajeria = 0, totalComision = 0;
-
             cart.forEach(i => {
                 precioEquipo += (Number(i.Precio) * i.qty);
                 totalMensajeria += (parseMensajeria(i.Mensajeria || i.Mensajería) * i.qty);
-                if (gestorName) { totalComision += (Number(i.Comision || i['Comisión'] || 0) * i.qty); }
+                if (gestorName) { totalComision += (Number(i.Comision || 0) * i.qty); }
             });
 
-            const granTotal = precioEquipo + totalMensajeria;
-            
-            // --- NUEVAS VARIABLES PARA EL MENSAJE ---
-            const totalTextoConvertido = document.getElementById('total-convertido').innerText;
-            const monedaElegida = document.getElementById('check-moneda').value;
+            const totalConvertidoStr = document.getElementById('total-convertido').innerText;
 
-            // Mensaje de WhatsApp corregido
             let msj = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0A` +
                       `💪🏻Nombre: ${nombreC}%0A` +
                       `💪🏻CI: ${ciC}%0A` +
                       `💪🏻Teléfono: ${telC}%0A` +
                       `💪🏻Dirección: ${dirC}%0A%0A` +
                       `💪🏻Producto: ${listaProductos}%0A` +
-                      `💪🏻Total a Pagar: *${totalTextoConvertido}*%0A` + // <--- AQUÍ USA EL CONVERTIDO (CUP/EUR)
-                      `-Equivalente base: $${granTotal.toFixed(2)} USD%0A` +
-                      `-Precio equipo: $${precioEquipo.toFixed(2)}%0A` +
-                      `-Mensajería: $${totalMensajeria.toFixed(2)} (${cart[0].Mensajeria || 'Ver detalles'})%0A%0A` +
-                      `💪🏻Método de Pago: *${monedaElegida}*%0A` + 
+                      `💪🏻Total a Pagar: *${totalConvertidoStr}*%0A` +
+                      `-Mensajería: $${totalMensajeria.toFixed(2)}%0A` +
+                      `💪🏻Metodo de Pago: ${monedaC}%0A` +
                       `💪🏻Vuelto: ${vueltoC}%0A`;
 
-            if (gestorName) { msj += `💪🏻Comisión: $${totalComision.toFixed(2)}%0A`; }
-            msj += `💪🏻Gestor: ${gestorName || 'Directo'}%0A☎(${gestorTel || 'Hogar'})`;
+            if (gestorName) { msj += `💪🏻Comisión: $${totalComision.toFixed(2)}%0A💪🏻Gestor: ${gestorName}%0A☎(${gestorTel})`; }
 
-            const whatsappUrl = `https://wa.me/5356071095?text=${msj}`;
-
-            window.open(whatsappUrl, '_blank');
-
+            window.open(`https://wa.me/5356071095?text=${msj}`, '_blank');
             btn.disabled = true; btn.innerText = "REGISTRANDO...";
 
             fetch(API_URL, { 
@@ -393,177 +420,75 @@
                 mode: 'no-cors', 
                 body: JSON.stringify({
                     gestor: gestorName || "Venta Directa",
-                    cliente: nombreC,
-                    ci: ciC,
-                    telefono: telC,
-                    direccion: dirC,
-                    producto: `${listaProductos} [Pago: ${monedaC}]`, // <--- REGISTRAR EN SHEET
-                    total: granTotal,
+                    cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC,
+                    producto: `${listaProductos} [${monedaC}]`,
+                    total: precioEquipo + totalMensajeria,
                     comision: gestorName ? totalComision : 0
                 })
-            }).then(() => {
-                setTimeout(() => { location.reload(); }, 1500);
-            }).catch(() => { location.reload(); });
+            }).then(() => { setTimeout(() => { location.reload(); }, 1500); });
         };
 
-        // --- FUNCIONES AUXILIARES RESTANTES ---
+        // Auxiliares
         function fixDriveUrl(url) {
-            if (!url) return '';
-            if (url.includes('imgur')) return url;
+            if (!url) return 'https://placehold.co/400x400?text=No+Imagen';
             const id = url.includes('/d/') ? url.split('/d/')[1]?.split('/')[0] : (url.includes('id=') ? url.split('id=')[1] : url);
-            return id ? `https://lh3.googleusercontent.com/u/0/d/${id}` : url;
+            return id.length > 15 ? `https://lh3.googleusercontent.com/u/0/d/${id}` : url;
         }
-        function toggleCartModal(force) { 
+
+        function toggleCartModal(show) {
             const m = document.getElementById('cart-modal');
-            if(force) m.classList.remove('hidden'); else m.classList.toggle('hidden');
-            renderCart();
+            m.classList.toggle('hidden', !show);
+            if(show) renderCart();
         }
-        function updateCartCount() { document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); }
-        function renderCart() {
-            const container = document.getElementById('cart-items');
-            container.innerHTML = cart.map((item, index) => `
-                <div class="flex gap-4 bg-white/5 p-3 rounded-xl relative">
-                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-10 h-10 object-contain bg-white rounded">
-                    <div>
-                        <h4 class="text-[9px] font-bold uppercase text-slate-300 pr-6">${item.Nombre}</h4>
-                        <p class="text-blue-500 font-black">$${item.Precio * item.qty}</p>
-                    </div>
-                    <button onclick="removeFromCart(${index})" class="absolute right-3 top-3 text-slate-500">×</button>
-                </div>`).join('');
-            
-            // Llamamos a la función de monedas para que actualice el total
-            actualizarOpcionesMoneda(); 
-        }
-        function removeFromCart(i) { cart.splice(i, 1); updateCartCount(); renderCart(); }
+
         function addItemToCart() {
             const existing = cart.find(item => item.Nombre === selectedProduct.Nombre);
             if(existing) existing.qty++; else cart.push({...selectedProduct, qty: 1});
-            updateCartCount();
+            document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
             closeDetail();
             toggleCartModal(true);
         }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = cart.map((item, index) => `
+                <div class="flex gap-4 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl relative">
+                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-12 h-12 object-contain bg-white rounded">
+                    <div class="flex-1">
+                        <h4 class="text-xs font-bold leading-tight pr-6">${item.Nombre}</h4>
+                        <p class="text-primary font-black text-sm">$${item.Precio * item.qty}</p>
+                    </div>
+                    <button onclick="removeFromCart(${index})" class="absolute right-2 top-2 text-gray-400"><span class="material-symbols-outlined text-sm">delete</span></button>
+                </div>`).join('');
+            actualizarOpcionesMoneda();
+        }
+
+        function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); }
         function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
         function toggleCurrency() { showInCUP = !showInCUP; document.getElementById('currency-label').innerText = showInCUP ? 'CUP' : 'USD'; renderProducts(); }
         function filterByCategory(cat) { 
             activeCategory = cat; 
-            document.querySelectorAll('.category-pill').forEach(b => b.classList.toggle('active', b.innerText.includes(cat) || (cat==='TODOS' && b.innerText==='Todos')));
+            document.querySelectorAll('.category-tab').forEach(b => {
+                b.classList.toggle('active', b.innerText.toUpperCase() === cat);
+            });
             renderProducts(); 
-        }
-        function showSection(s) {
-            document.getElementById('sec-catalogo').classList.toggle('hidden', s!=='catalogo');
-            document.getElementById('sec-dashboard').classList.toggle('hidden', s!=='dashboard');
-            document.getElementById('tab-cat').classList.toggle('active', s==='catalogo');
-            document.getElementById('tab-dash').classList.toggle('active', s==='dashboard');
-            if(s==='dashboard') loadFullDashboard();
-        }
-        async function loadFullDashboard() {
-            try {
-                const rResp = await fetch(`${API_URL}?action=getRanking&gestor=${encodeURIComponent(gestorName)}&period=${currentPeriod}`);
-                const ranking = await rResp.json();
-                const sResp = await fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`);
-                const stats = await sResp.json();
-                const entregados = stats.filter(s => s.Estado === "Entregado");
-                document.getElementById('dash-money').innerText = `$${entregados.reduce((a,c) => a + (parseFloat(c.Comision || c['Comisión'] || 0)), 0)}`;
-                document.getElementById('dash-ok').innerText = entregados.length;
-                document.getElementById('ranking-list').innerHTML = ranking.map((r, i) => `
-                    <div class="flex items-center justify-between p-4 ${r.isMe ? 'bg-blue-600/10' : ''}">
-                        <div class="text-[10px] font-bold">#${i+1} ${r.name}</div>
-                        <div class="text-blue-400 font-black">$${r.sales}</div>
-                    </div>`).join('');
-            } catch (e) { console.log(e) }
         }
         function openGestorGen() { document.getElementById('gestor-modal').classList.remove('hidden'); }
         function closeGestorGen() { document.getElementById('gestor-modal').classList.add('hidden'); }
         function processGestor() {
             const pass = document.getElementById('master-pass').value;
-            if(pass !== MASTER_KEY) return alert("Código incorrecto");
+            if(pass !== MASTER_KEY) return alert("Error");
             const name = document.getElementById('gen-name').value;
             const tel = document.getElementById('gen-tel').value;
             const base = window.location.origin + window.location.pathname;
-            document.getElementById('link-admin').value = `${base}?gestor=${name}&tel=${tel}&admin=true`;
             document.getElementById('link-client').value = `${base}?gestor=${name}&tel=${tel}`;
             document.getElementById('links-result').classList.remove('hidden');
         }
         function copy(id) { const e = document.getElementById(id); e.select(); document.execCommand('copy'); alert("Copiado"); }
-
-        function actualizarOpcionesMoneda() {
-            const select = document.getElementById('check-moneda');
-            if (cart.length === 0) {
-                select.innerHTML = '<option>Carrito vacío</option>';
-                return;
-            }
-
-            // Tomamos las opciones de pago del primer producto en el carrito
-            // (Asumimos que los términos de pago son similares para la orden)
-            const pagosTexto = cart[0].Pagos || "USD, Zelle, CUP";
-            const opciones = pagosTexto.split(',').map(opt => opt.trim());
-
-            select.innerHTML = opciones.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+        function copyOffer() {
+            const text = `🔥 *OFERTA DISPONIBLE*\n📦 ${selectedProduct.Nombre}\n💰 Precio: $${selectedProduct.Precio} USD\n🛡️ Garantía: ${selectedProduct.Garantía}\n🚛 Envío: ${selectedProduct.Mensajeria}`;
+            navigator.clipboard.writeText(text).then(() => alert("Copiado!"));
         }
-
-        // NUEVA FUNCIÓN 1: Hace la cuenta matemática
-function recalcularTotalFinal() {
-    const select = document.getElementById('check-moneda');
-    // Calculamos el total base en USD incluyendo mensajería
-    const totalUSD = cart.reduce((acc, item) => acc + (Number(item.Precio) * item.qty) + (parseMensajeria(item.Mensajeria || item.Mensajería) * item.qty), 0);
-    
-    const opcionElegida = select.value || "USD";
-    let totalFinal = totalUSD;
-    let simbolo = "$";
-
-    if (opcionElegida.toUpperCase().includes("CUP")) {
-        let tasaFinal = cupRate; // cupRate es el valor del Sheet (ej: 450)
-
-        if (opcionElegida.includes("+")) {
-            // Lógica para "CUP +10": Toma la tasa del día y le suma el número encontrado
-            const incrementoMatch = opcionElegida.match(/\d+/);
-            const incremento = incrementoMatch ? parseFloat(incrementoMatch[0]) : 0;
-            tasaFinal = cupRate + incremento;
-        } else {
-            // Lógica para tasa fija tipo "CUP 470":
-            const tasaFijaMatch = opcionElegida.match(/\d+/);
-            if (tasaFijaMatch) {
-                const valorExtraido = parseFloat(tasaFijaMatch[0]);
-                // Si el número es grande (ej: 470), es una tasa fija. 
-                // Si es pequeño (ej: 10), probablemente faltó el '+' pero lo usamos como tasa fija si así viene en el sheet.
-                tasaFinal = valorExtraido; 
-            }
-        }
-        
-        totalFinal = totalUSD * tasaFinal;
-        simbolo = "CUP";
-    } 
-    else if (opcionElegida.toLowerCase().includes("euro")) {
-        // Lógica Euro: Si dice 1.05 aplica división, sino 1x1
-        if (opcionElegida.includes("1.05")) { 
-            totalFinal = totalUSD / 1.05; 
-        }
-        simbolo = "€";
-    }
-
-    // Actualizar los textos en el modal
-    document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
-    document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-}
-
-// NUEVA FUNCIÓN 2: Llena el selector con lo que dice tu Excel
-function actualizarOpcionesMoneda() {
-    const select = document.getElementById('check-moneda');
-    if (!select || cart.length === 0) return;
-
-    // Leemos la columna "Pagos" del primer producto del carrito
-    const pagosTexto = cart[0].Pagos || "USD, Zelle, CUP efectivo 470";
-    const opciones = pagosTexto.split(',').map(opt => opt.trim());
-
-    // Metemos las opciones en el <select>
-    select.innerHTML = opciones.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-    
-    // Le decimos que cuando el usuario cambie la opción, recalcule el total
-    select.onchange = recalcularTotalFinal;
-    
-    // Calculamos el total por primera vez
-    recalcularTotalFinal();
-}
     </script>
 </body>
 </html>
