@@ -212,7 +212,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxPWI0tuEfyewVbStxU_T2TVBpVozOEAffOC-h7zAQ4wX0vFPSVCKs2UL73VjsFf7Yu3Q/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxHsHIVC1uB2o0HxiGZoAWZe6Dtza5tLeai9HrH92wbCZEQPSB7AQ_1YloeIbzt_28Kkg/exec';
         const MASTER_KEY = "HOGAR2025"; 
         
         let productosRaw = [], cart = [], selectedProduct = null;
@@ -375,7 +375,10 @@
 
         // UI HELPERS
         function openDetail(name) {
-    // ESTO ENVÍA LA ESTADÍSTICA AL EXCEL AUTOMÁTICAMENTE
+    selectedProduct = productosRaw.find(p => p.Nombre === name);
+    const p = selectedProduct;
+
+    // REGISTRAR VISITA EN EXCEL
     fetch(API_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -385,6 +388,28 @@
             gestor: gestorName || "Directo"
         })
     });
+
+    // LLENAR DATOS EN EL MODAL (Asegúrate de que estos IDs existan en tu HTML)
+    document.getElementById('detail-name').innerText = p.Nombre;
+    document.getElementById('detail-desc').innerText = p.Descripcion;
+    document.getElementById('detail-price').innerText = `$${p.Precio}`;
+    document.getElementById('detail-price-cup').innerText = `/ CUP ${Math.round(p.Precio * cupRate).toLocaleString()}`;
+    document.getElementById('detail-cat').innerText = p.Categoria;
+    document.getElementById('detail-warranty').innerHTML = `<i class="fas fa-shield-alt mr-2 text-blue-400"></i> Garantía: ${p.Garantía}`;
+    document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
+    
+    const commBox = document.getElementById('detail-admin-comm');
+    if(isAdmin) { commBox.innerText = `GANAS: $${p.Comision}`; commBox.classList.remove('hidden'); } 
+    else { commBox.classList.add('hidden'); }
+
+    const thumbs = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url && url.length > 5);
+    document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
+        <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-16 h-16 object-contain rounded-2xl border-2 border-white/5 bg-white p-2 cursor-pointer hover:border-blue-500">
+    `).join('');
+
+    document.getElementById('detail-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
 
             
             selectedProduct = productosRaw.find(p => p.Nombre === name);
