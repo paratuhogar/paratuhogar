@@ -426,15 +426,16 @@
         document.getElementById('checkout-form').onsubmit = async (e) => {
     e.preventDefault();
     const btn = document.getElementById('final-submit-btn');
+    const originalText = btn.innerHTML;
     
-    // Feedback visual para el gestor
     btn.disabled = true;
-    btn.innerHTML = `Sincronizando pedido...`;
+    btn.innerHTML = `Sincronizando...`;
 
     let eqTotal = 0, mTotal = 0, cTotal = 0;
     let pList = cart.map(item => {
         eqTotal += (item.Precio * item.qty);
         mTotal += (parseFloat(item.Mensajeria) || 0);
+        // Sumamos comisión solo si hay un gestor
         cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
         return `${item.qty}x ${item.Nombre}`;
     }).join(', ');
@@ -447,46 +448,46 @@
         direccion: document.getElementById('check-dir').value,
         producto: pList,
         total: eqTotal + mTotal,
-        comision: cTotal
+        // CORRECCIÓN 1: Si no hay gestorName, la comisión enviada al Excel es 0
+        comision: gestorName ? cTotal : 0 
     };
 
     try {
-        // ENVIAR A GOOGLE SHEETS
-        // Usamos text/plain para evitar problemas de CORS pre-flight
         await fetch(API_URL, {
             method: 'POST',
-            mode: 'no-cors', 
+            mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(datosParaEnviar)
         });
 
-        // MENSAJE WHATSAPP
+        // CORRECCIÓN 2: El mensaje de WhatsApp solo incluye la línea de comisión si hay gestorName
+        const lineaComision = gestorName ? `💪🏻Comisión: ${cTotal}%0A` : "";
+
         const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
             `💪🏻Nombre: ${datosParaEnviar.cliente}%0A` +
             `💪🏻CI: ${datosParaEnviar.ci}%0A` +
-                `💪🏻Teléfono: ${datosParaEnviar.telefono}%0A` +
+            `💪🏻Teléfono: ${datosParaEnviar.telefono}%0A` +
             `💪🏻Dirección: ${datosParaEnviar.direccion}%0A%0A` +
             `💪🏻Producto: ${pList}%0A` +
             `💪🏻Total a Pagar: ${datosParaEnviar.total}%0A` +
             `-Precio equipo: ${eqTotal}%0A` +
             `-Mensajería: ${mTotal}%0A%0A` +
             `💪🏻Vuelto: ${document.getElementById('check-vuelto').value || "No requerido"}%0A` +
-            `💪🏻Comisión: ${cTotal}%0A` +
+            lineaComision + // Se inserta la línea o queda vacío si no hay gestor
             `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
             `☎(${gestorTel || ''})`;
 
-        // Pequeña pausa para asegurar que el fetch se dispare antes de abrir otra ventana
         setTimeout(() => {
             window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
-            alert("¡Pedido registrado en base de datos y enviado a WhatsApp!");
+            alert("¡Pedido enviado con éxito!");
             cart = [];
             location.reload(); 
         }, 500);
 
     } catch (error) {
-        console.error(error);
-        alert("Error de conexión. El pedido se enviará solo por WhatsApp.");
-        window.open(`https://wa.me/5356071095?text=ERROR_REGISTRO_PERO_PEDIDO_SIGUE...`, '_blank');
+        alert("Error de conexión.");
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 };
     </script>
