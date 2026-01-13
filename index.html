@@ -283,30 +283,77 @@
             const btn = document.getElementById('final-submit-btn');
             btn.disabled = true; btn.innerText = "Procesando...";
 
-            let totalEq = 0, totalCom = 0;
-            const pList = cart.map(i => {
-                totalEq += (i.Precio * i.qty);
-                totalCom += ((parseFloat(i.Comision || i['Comisión'] || 0)) * i.qty);
-                return `${i.qty}x ${i.Nombre}`;
-            }).join(', ');
+            let precioEquipo = 0, totalMensajeria = 0, totalComision = 0;
+            
+            // Calculamos los totales
+            cart.forEach(i => {
+                precioEquipo += (i.Precio * i.qty);
+                totalMensajeria += (parseFloat(i.Mensajeria || 0) * i.qty);
+                
+                // SOLO sumar comisión si existe un gestor activo
+                if (gestorName) {
+                    totalComision += (parseFloat(i.Comision || i['Comisión'] || 0) * i.qty);
+                }
+            });
+
+            // Si no hay gestor, nos aseguramos que sea 0 para la Hoja 2
+            if (!gestorName) {
+                totalComision = 0;
+            }
 
             const datos = {
-                gestor: gestorName || "Venta Directa",
-                cliente: document.getElementById('check-nombre').value,
+                nombre: document.getElementById('check-nombre').value,
                 ci: document.getElementById('check-ci').value,
-                telefono: document.getElementById('check-tel').value,
-                direccion: document.getElementById('check-dir').value,
-                producto: pList,
-                total: totalEq,
-                comision: totalCom
+                tel: document.getElementById('check-tel').value,
+                dir: document.getElementById('check-dir').value,
+                vuelto: document.getElementById('check-vuelto').value || "No necesario",
+                total: precioEquipo + totalMensajeria,
+                pList: cart.map(i => `${i.qty}x ${i.Nombre}`).join(', ')
             };
 
             try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(datos) });
-                const text = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0ACliente: ${datos.cliente}%0AProducto: ${pList}%0ATotal: $${datos.total}%0ADirección: ${datos.direccion}%0A%0AGestor: ${gestorName || 'Directo'}`;
-                window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
+                // Enviar a Google Sheets
+                await fetch(API_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify({
+                        gestor: gestorName || "Venta Directa",
+                        cliente: datos.nombre,
+                        ci: datos.ci,
+                        telefono: datos.tel,
+                        direccion: datos.dir,
+                        producto: datos.pList,
+                        total: datos.total,
+                        comision: totalComision // Aquí irá 0 si es cliente directo
+                    })
+                });
+
+                // Formato de mensaje WhatsApp
+                let msj = `💪🏻Nombre: ${datos.nombre}%0A` +
+                          `💪🏻CI: ${datos.ci}%0A` +
+                          `💪🏻Teléfono: ${datos.tel}%0A` +
+                          `💪🏻Dirección: ${datos.dir}%0A%0A` +
+                          `💪🏻Producto: ${datos.pList}%0A` +
+                          `💪🏻Total a Pagar: $${datos.total.toFixed(2)}%0A` +
+                          `-Precio equipo: $${precioEquipo.toFixed(2)}%0A` +
+                          `-Mensajería: $${totalMensajeria.toFixed(2)}%0A%0A` +
+                          `💪🏻Vuelto: ${datos.vuelto}%0A`;
+
+                // Solo mostrar la línea de comisión en el WhatsApp si hay gestor
+                if (gestorName) {
+                    msj += `💪🏻Comisión: $${totalComision.toFixed(2)}%0A`;
+                }
+
+                msj += `💪🏻Gestor: ${gestorName || 'Directo'}%0A` +
+                       `☎(${gestorTel || 'Para Tu Hogar'})`;
+
+                window.open(`https://wa.me/5356071095?text=${msj}`, '_blank');
                 location.reload();
-            } catch (error) { alert("Error al enviar"); btn.disabled = false; }
+            } catch (error) { 
+                alert("Error al tramitar el pedido"); 
+                btn.disabled = false; 
+                btn.innerText = "Tramitar Pedido";
+            }
         };
 
         // --- FUNCIONES AUXILIARES ---
