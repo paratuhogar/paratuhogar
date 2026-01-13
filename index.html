@@ -35,7 +35,14 @@
                 <i class="fas fa-link"></i>
             </button>
         </div>
+
+        <!-- Añadir esto justo antes de cerrar el </header> -->
+<nav class="container mx-auto px-4 pb-2 flex gap-4 overflow-x-auto">
+    <button onclick="showSection('catalogo')" class="text-xs font-bold uppercase tracking-widest border-b-2 border-white pb-1">Catálogo</button>
+    <button onclick="showSection('dashboard')" id="nav-dash" class="hidden text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-all pb-1">Mi Panel de Ventas</button>
+</nav>
     </header>
+
 
     <!-- Catálogo de Productos -->
     <main class="container mx-auto p-4 md:p-8">
@@ -45,6 +52,129 @@
                 <p class="font-medium">Sincronizando inventario real...</p>
             </div>
         </div>
+
+        <!-- Añadir estas secciones dentro del <main> -->
+<section id="sec-catalogo">
+    <!-- Aquí va el grid de productos que ya teníamos -->
+    <div id="productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+</section>
+
+<section id="sec-dashboard" class="hidden space-y-6">
+    <!-- Resumen de KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Comisión Total</p>
+            <p id="stat-total-money" class="text-2xl font-black text-green-600">$0</p>
+        </div>
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Pedidos Entregados</p>
+            <p id="stat-orders" class="text-2xl font-black text-blue-700">0</p>
+        </div>
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">En Proceso</p>
+            <p id="stat-pending" class="text-2xl font-black text-orange-500">0</p>
+        </div>
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Eficiencia</p>
+            <p id="stat-eff" class="text-2xl font-black text-slate-800">0%</p>
+        </div>
+    </div>
+
+    <!-- Gráfico y Tabla -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h4 class="text-sm font-black uppercase italic mb-4">Estado de mis ventas</h4>
+            <canvas id="chartVentas"></canvas>
+        </div>
+        <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h4 class="text-sm font-black uppercase italic mb-4">Historial de Clientes</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="text-slate-400 border-b">
+                            <th class="py-3">CLIENTE</th>
+                            <th class="py-3">PRODUCTO</th>
+                            <th class="py-3">TOTAL</th>
+                            <th class="py-3">GANANCIA</th>
+                            <th class="py-3">ESTADO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dash-table-body">
+                        <!-- Se llena con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Script para manejar el Dashboard -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function showSection(sec) {
+        document.getElementById('sec-catalogo').classList.toggle('hidden', sec !== 'catalogo');
+        document.getElementById('sec-dashboard').classList.toggle('hidden', sec !== 'dashboard');
+        if(sec === 'dashboard') loadDashboardStats();
+    }
+
+    if(gestorName) {
+        document.getElementById('nav-dash').classList.remove('hidden');
+    }
+
+    async function loadDashboardStats() {
+        try {
+            const resp = await fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`);
+            const data = await resp.json();
+            renderDashboard(data);
+        } catch (e) {
+            console.error("Error cargando dashboard");
+        }
+    }
+
+    function renderDashboard(data) {
+        const entregados = data.filter(d => d.Estado === "Entregado");
+        const pendientes = data.filter(d => d.Estado === "Pendiente");
+        const totalComision = entregados.reduce((acc, curr) => acc + (parseFloat(curr.Comisión) || 0), 0);
+
+        // Actualizar KPIs
+        document.getElementById('stat-total-money').innerText = `$${totalComision.toFixed(2)}`;
+        document.getElementById('stat-orders').innerText = entregados.length;
+        document.getElementById('stat-pending').innerText = pendientes.length;
+        document.getElementById('stat-eff').innerText = data.length > 0 ? Math.round((entregados.length / data.length) * 100) + "%" : "0%";
+
+        // Llenar Tabla
+        document.getElementById('dash-table-body').innerHTML = data.map(d => `
+            <tr class="border-b hover:bg-slate-50 transition-colors">
+                <td class="py-4 font-bold">${d.Nombre}</td>
+                <td class="py-4 text-slate-500">${d.Producto}</td>
+                <td class="py-4 font-black">$${d["Total a Pagar"]}</td>
+                <td class="py-4 text-green-600 font-bold">$${d.Comisión}</td>
+                <td class="py-4">
+                    <span class="px-2 py-1 rounded-full text-[9px] font-black uppercase ${
+                        d.Estado === "Entregado" ? "bg-green-100 text-green-700" : 
+                        d.Estado === "Pendiente" ? "bg-orange-100 text-orange-700" : "bg-red-100 text-red-700"
+                    }">${d.Estado || "Recibido"}</span>
+                </td>
+            </tr>
+        `).join('');
+
+        // Renderizar Gráfico circular
+        const ctx = document.getElementById('chartVentas').getContext('2d');
+        if (window.myChart) window.myChart.destroy();
+        window.myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Entregados', 'Pendientes', 'Cancelados'],
+                datasets: [{
+                    data: [entregados.length, pendientes.length, data.filter(d => d.Estado === "Cancelado").length],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+</script>
     </main>
 
     <!-- BOTÓN FLOTANTE CARRITO -->
