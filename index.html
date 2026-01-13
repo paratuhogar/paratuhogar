@@ -168,7 +168,13 @@
             </div>
             <div id="cart-items" class="space-y-5 mb-8"></div>
             <div class="border-t border-white/10 pt-5 text-white font-black text-2xl uppercase mb-8">
-                <div class="flex justify-between"><span>TOTAL:</span> <span id="cart-total">$0</span></div>
+                <div class="flex justify-between items-end">
+    <span>TOTAL:</span> 
+    <div class="text-right">
+        <span id="cart-total" class="block text-sm opacity-50">$0.00</span>
+        <span id="total-convertido" class="block text-blue-500 text-3xl">$0.00</span>
+    </div>
+</div>
             </div>
             <form id="checkout-form" class="space-y-4">
                 <input type="text" id="check-nombre" placeholder="Nombre completo (Obligatorio)" class="w-full p-4 rounded-2xl" required>
@@ -178,9 +184,17 @@
                 </div>
                 <textarea id="check-dir" placeholder="Dirección detallada (Obligatorio)" class="w-full p-4 rounded-2xl h-20" required></textarea>
                 
-                <!-- CAMPO DE VUELTO ACTUALIZADO -->
+                
+                <!-- SELECTOR DE MONEDA DINÁMICO -->
+                <div class="p-4 bg-purple-900/20 rounded-2xl border border-purple-500/30 mb-4">
+                    <label class="text-[10px] font-black text-purple-400 uppercase block mb-2 italic">Moneda / Método de Pago</label>
+                    <select id="check-moneda" class="w-full bg-slate-900 text-white border-none text-sm font-black rounded-lg p-1 outline-none">
+                        <!-- Se llena automáticamente con JS -->
+                    </select>
+                </div>
+
                 <div class="p-4 bg-blue-900/20 rounded-2xl border border-blue-500/30">
-                    <label class="text-[10px] font-black text-blue-400 uppercase block mb-1">Monto del vuelto que debe llevar el mensajero</label>
+                    <label class="text-[10px] font-black text-blue-400 uppercase block mb-1">Monto del vuelto (en la moneda elegida)</label>
                     <input type="number" id="check-vuelto" placeholder="Ej: 50 (Ponga 0 si no requiere)" class="w-full bg-transparent border-none text-sm font-black text-white p-0" min="0">
                 </div>
 
@@ -235,7 +249,10 @@
                 productosRaw = data.productos;
                 cupRate = data.tasa || 450;
                 renderProducts();
-            } catch (e) { document.getElementById('productos-container').innerHTML = "Error de conexión"; }
+            } catch (e) { 
+                console.error("Error cargando productos:", e);
+                document.getElementById('productos-container').innerHTML = "Error al conectar con la base de datos."; 
+            }
         }
 
         function renderProducts() {
@@ -277,42 +294,131 @@
             document.getElementById('detail-cat').innerText = p.Categoria || '';
             document.getElementById('detail-warranty').innerText = `Garantía: ${p.Garantía || p.Garantia || 'S/G'}`;
             
-            // Cargar Imagen Principal
-            const mainImg = document.getElementById('detail-main-img');
-            mainImg.src = fixDriveUrl(p.Thumbnail);
+            // --- Etiquetas de Envío y Pagos ---
+            const oldBadges = document.querySelectorAll('.detail-extra-info');
+            oldBadges.forEach(b => b.remove());
 
-            // CARGAR GALERÍA DE MINIATURAS
+            const extraInfo = `
+                <div class="detail-extra-info flex flex-wrap gap-2 mb-6">
+                    <div class="bg-emerald-500/10 px-3 py-1.5 rounded-xl text-[10px] font-black text-emerald-400 border border-emerald-500/20 uppercase">
+                        <i class="fas fa-truck mr-1"></i> Envío: ${p.Mensajeria || p.Mensajería || 'Consultar'}
+                    </div>
+                    <div class="bg-purple-500/10 px-3 py-1.5 rounded-xl text-[10px] font-black text-purple-400 border border-purple-500/20 uppercase">
+                        <i class="fas fa-credit-card mr-1"></i> Pagos: ${p.Pagos || 'Ver detalles'}
+                    </div>
+                </div>
+            `;
+            document.getElementById('detail-warranty').insertAdjacentHTML('afterend', extraInfo);
+
+            document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
+
+            // Cargar Miniaturas
             const thumbsContainer = document.getElementById('detail-thumbnails');
-            // Buscamos todas las posibles fotos en tus columnas (Thumbnail, Image1, Image2, Image3)
             const photos = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url && url.length > 5);
-            
             if (photos.length > 1) {
                 thumbsContainer.classList.remove('hidden');
                 thumbsContainer.innerHTML = photos.map(url => `
-                    <img src="${fixDriveUrl(url)}" 
-                         onclick="document.getElementById('detail-main-img').src=this.src" 
-                         class="w-14 h-14 object-contain rounded-lg border-2 border-transparent bg-white p-1 cursor-pointer hover:border-blue-500 transition-all">
+                    <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-14 h-14 object-contain rounded-lg border-2 border-transparent bg-white p-1 cursor-pointer hover:border-blue-500 transition-all">
                 `).join('');
-            } else {
-                thumbsContainer.classList.add('hidden'); // Ocultar si solo hay una foto
-            }
-            
+            } else { thumbsContainer.classList.add('hidden'); }
+
             document.getElementById('detail-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
 
-        function addItemToCart() {
-            const existing = cart.find(item => item.Nombre === selectedProduct.Nombre);
-            if(existing) existing.qty++; else cart.push({...selectedProduct, qty: 1});
-            updateCartCount();
-            closeDetail();
-            toggleCartModal(true);
+        // Función para convertir texto de mensajería en número
+        function parseMensajeria(texto) {
+            if (!texto) return 0;
+            let t = texto.toString().toLowerCase();
+            // Si dice gratis y no menciona precio extra de periferia, es 0
+            if (t.includes('gratis') && !t.includes('periferia')) return 0;
+            // Busca el primer número en el texto (ej: "15 usd" -> 15)
+            let match = t.match(/\d+/);
+            return match ? parseFloat(match[0]) : 0;
         }
 
-        function updateCartCount() {
-            document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
-        }
+        document.getElementById('checkout-form').onsubmit = function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('final-submit-btn');
+            
+            const nombreC = document.getElementById('check-nombre').value;
+            const ciC = document.getElementById('check-ci').value;
+            const telC = document.getElementById('check-tel').value;
+            const dirC = document.getElementById('check-dir').value;
+            const monedaC = document.getElementById('check-moneda').value; // <--- CAPTURAR MONEDA
+            const valVuelto = document.getElementById('check-vuelto').value;
+            const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto} (${monedaC.split(' ')[0]})` : "No requiere";
+            
+            const listaProductos = cart.map(i => `${i.qty}x ${i.Nombre}`).join(', ');
 
+            let precioEquipo = 0, totalMensajeria = 0, totalComision = 0;
+
+            cart.forEach(i => {
+                precioEquipo += (Number(i.Precio) * i.qty);
+                totalMensajeria += (parseMensajeria(i.Mensajeria || i.Mensajería) * i.qty);
+                if (gestorName) { totalComision += (Number(i.Comision || i['Comisión'] || 0) * i.qty); }
+            });
+
+            const granTotal = precioEquipo + totalMensajeria;
+            
+            // --- NUEVAS VARIABLES PARA EL MENSAJE ---
+            const totalTextoConvertido = document.getElementById('total-convertido').innerText;
+            const monedaElegida = document.getElementById('check-moneda').value;
+
+            // Mensaje de WhatsApp corregido
+            let msj = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0A` +
+                      `💪🏻Nombre: ${nombreC}%0A` +
+                      `💪🏻CI: ${ciC}%0A` +
+                      `💪🏻Teléfono: ${telC}%0A` +
+                      `💪🏻Dirección: ${dirC}%0A%0A` +
+                      `💪🏻Producto: ${listaProductos}%0A` +
+                      `💪🏻Total a Pagar: *${totalTextoConvertido}*%0A` + // <--- AQUÍ USA EL CONVERTIDO (CUP/EUR)
+                      `-Equivalente base: $${granTotal.toFixed(2)} USD%0A` +
+                      `-Precio equipo: $${precioEquipo.toFixed(2)}%0A` +
+                      `-Mensajería: $${totalMensajeria.toFixed(2)} (${cart[0].Mensajeria || 'Ver detalles'})%0A%0A` +
+                      `💪🏻Método de Pago: *${monedaElegida}*%0A` + 
+                      `💪🏻Vuelto: ${vueltoC}%0A`;
+
+            if (gestorName) { msj += `💪🏻Comisión: $${totalComision.toFixed(2)}%0A`; }
+            msj += `💪🏻Gestor: ${gestorName || 'Directo'}%0A☎(${gestorTel || 'Hogar'})`;
+
+            const whatsappUrl = `https://wa.me/5356071095?text=${msj}`;
+
+            window.open(whatsappUrl, '_blank');
+
+            btn.disabled = true; btn.innerText = "REGISTRANDO...";
+
+            fetch(API_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                body: JSON.stringify({
+                    gestor: gestorName || "Venta Directa",
+                    cliente: nombreC,
+                    ci: ciC,
+                    telefono: telC,
+                    direccion: dirC,
+                    producto: `${listaProductos} [Pago: ${monedaC}]`, // <--- REGISTRAR EN SHEET
+                    total: granTotal,
+                    comision: gestorName ? totalComision : 0
+                })
+            }).then(() => {
+                setTimeout(() => { location.reload(); }, 1500);
+            }).catch(() => { location.reload(); });
+        };
+
+        // --- FUNCIONES AUXILIARES RESTANTES ---
+        function fixDriveUrl(url) {
+            if (!url) return '';
+            if (url.includes('imgur')) return url;
+            const id = url.includes('/d/') ? url.split('/d/')[1]?.split('/')[0] : (url.includes('id=') ? url.split('id=')[1] : url);
+            return id ? `https://lh3.googleusercontent.com/u/0/d/${id}` : url;
+        }
+        function toggleCartModal(force) { 
+            const m = document.getElementById('cart-modal');
+            if(force) m.classList.remove('hidden'); else m.classList.toggle('hidden');
+            renderCart();
+        }
+        function updateCartCount() { document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); }
         function renderCart() {
             const container = document.getElementById('cart-items');
             container.innerHTML = cart.map((item, index) => `
@@ -323,119 +429,19 @@
                         <p class="text-blue-500 font-black">$${item.Precio * item.qty}</p>
                     </div>
                     <button onclick="removeFromCart(${index})" class="absolute right-3 top-3 text-slate-500">×</button>
-                </div>
-            `).join('');
+                </div>`).join('');
             
-            const total = cart.reduce((acc, item) => acc + (item.Precio * item.qty), 0);
-            document.getElementById('cart-total').innerText = `$${total}`;
+            // Llamamos a la función de monedas para que actualice el total
+            actualizarOpcionesMoneda(); 
         }
-
-        document.getElementById('checkout-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('final-submit-btn');
-            
-            // Bloqueo visual
-            btn.disabled = true; 
-            btn.innerText = "ENVIANDO DATOS...";
-
-            try {
-                let precioEquipo = 0;
-                let totalMensajeria = 0;
-                let totalComision = 0;
-                
-                // Cálculos
-                cart.forEach(i => {
-                    const p = Number(i.Precio) || 0;
-                    const m = Number(i.Mensajeria || i.Mensajería || 0);
-                    const c = Number(i.Comision || i['Comisión'] || 0);
-                    
-                    precioEquipo += (p * i.qty);
-                    totalMensajeria += (m * i.qty);
-                    
-                    if (gestorName) {
-                        totalComision += (c * i.qty);
-                    }
-                });
-
-                const nombreC = document.getElementById('check-nombre').value;
-                const ciC = document.getElementById('check-ci').value;
-                const telC = document.getElementById('check-tel').value;
-                const dirC = document.getElementById('check-dir').value;
-                // Si el campo está vacío o es 0, poner "No requiere"
-                const valVuelto = document.getElementById('check-vuelto').value;
-                const vueltoC = (valVuelto && valVuelto > 0) ? `$${valVuelto}` : "No requiere";
-                
-                const listaProductos = cart.map(i => `${i.qty}x ${i.Nombre}`).join(', ');
-                const granTotal = precioEquipo + totalMensajeria;
-
-                // 1. Enviar a Google Sheets (Hoja 2)
-                await fetch(API_URL, { 
-                    method: 'POST', 
-                    mode: 'no-cors', 
-                    body: JSON.stringify({
-                        gestor: gestorName || "Venta Directa",
-                        cliente: nombreC,
-                        ci: ciC,
-                        telefono: telC,
-                        direccion: dirC,
-                        producto: listaProductos,
-                        total: granTotal,
-                        comision: gestorName ? totalComision : 0
-                    })
-                });
-
-                // 2. Construir Mensaje de WhatsApp con formato exacto
-                let msj = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0A` +
-                          `💪🏻Nombre: ${nombreC}%0A` +
-                          `💪🏻CI: ${ciC}%0A` +
-                          `💪🏻Teléfono: ${telC}%0A` +
-                          `💪🏻Dirección: ${dirC}%0A%0A` +
-                          `💪🏻Producto: ${listaProductos}%0A` +
-                          `💪🏻Total a Pagar: $${granTotal.toFixed(2)}%0A` +
-                          `-Precio equipo: $${precioEquipo.toFixed(2)}%0A` +
-                          `-Mensajería: $${totalMensajeria.toFixed(2)}%0A%0A` +
-                          `💪🏻Vuelto: ${vueltoC}%0A`;
-
-                if (gestorName) {
-                    msj += `💪🏻Comisión: $${totalComision.toFixed(2)}%0A`;
-                }
-
-                msj += `💪🏻Gestor: ${gestorName || 'Directo'}%0A` +
-                       `☎(${gestorTel || 'Para Tu Hogar'})`;
-
-                // 3. Redirección directa (Más fiable que window.open)
-                const whatsappUrl = `https://wa.me/5356071095?text=${msj}`;
-                
-                btn.innerText = "¡PEDIDO LISTO!";
-                
-                // Pequeño delay para que el usuario vea el éxito antes de saltar a WhatsApp
-                setTimeout(() => {
-                    window.location.href = whatsappUrl;
-                }, 800);
-
-            } catch (error) { 
-                console.error(error);
-                alert("Error de conexión. Intente de nuevo."); 
-                btn.disabled = false; 
-                btn.innerText = "Tramitar Pedido";
-            }
-        };
-
-        // --- FUNCIONES AUXILIARES ---
-        function fixDriveUrl(url) {
-            if (!url) return '';
-            if (url.includes('imgur')) return url;
-            const id = url.includes('/d/') ? url.split('/d/')[1]?.split('/')[0] : (url.includes('id=') ? url.split('id=')[1] : url);
-            return id ? `https://lh3.googleusercontent.com/u/0/d/${id}` : url;
-        }
-
-        function toggleCartModal(force) { 
-            const m = document.getElementById('cart-modal');
-            if(force) m.classList.remove('hidden'); else m.classList.toggle('hidden');
-            renderCart();
-        }
-
         function removeFromCart(i) { cart.splice(i, 1); updateCartCount(); renderCart(); }
+        function addItemToCart() {
+            const existing = cart.find(item => item.Nombre === selectedProduct.Nombre);
+            if(existing) existing.qty++; else cart.push({...selectedProduct, qty: 1});
+            updateCartCount();
+            closeDetail();
+            toggleCartModal(true);
+        }
         function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
         function toggleCurrency() { showInCUP = !showInCUP; document.getElementById('currency-label').innerText = showInCUP ? 'CUP' : 'USD'; renderProducts(); }
         function filterByCategory(cat) { 
@@ -443,28 +449,6 @@
             document.querySelectorAll('.category-pill').forEach(b => b.classList.toggle('active', b.innerText.includes(cat) || (cat==='TODOS' && b.innerText==='Todos')));
             renderProducts(); 
         }
-
-        async function loadFullDashboard() {
-            try {
-                const rResp = await fetch(`${API_URL}?action=getRanking&gestor=${encodeURIComponent(gestorName)}&period=${currentPeriod}`);
-                const ranking = await rResp.json();
-                
-                const sResp = await fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`);
-                const stats = await sResp.json();
-                
-                const entregados = stats.filter(s => s.Estado === "Entregado");
-                document.getElementById('dash-money').innerText = `$${entregados.reduce((a,c) => a + (parseFloat(c.Comision || c['Comisión'] || 0)), 0)}`;
-                document.getElementById('dash-ok').innerText = entregados.length;
-                
-                document.getElementById('ranking-list').innerHTML = ranking.map((r, i) => `
-                    <div class="flex items-center justify-between p-4 ${r.isMe ? 'bg-blue-600/10' : ''}">
-                        <div class="text-[10px] font-bold">#${i+1} ${r.name}</div>
-                        <div class="text-blue-400 font-black">$${r.sales}</div>
-                    </div>
-                `).join('');
-            } catch (e) { console.log(e) }
-        }
-
         function showSection(s) {
             document.getElementById('sec-catalogo').classList.toggle('hidden', s!=='catalogo');
             document.getElementById('sec-dashboard').classList.toggle('hidden', s!=='dashboard');
@@ -472,7 +456,22 @@
             document.getElementById('tab-dash').classList.toggle('active', s==='dashboard');
             if(s==='dashboard') loadFullDashboard();
         }
-
+        async function loadFullDashboard() {
+            try {
+                const rResp = await fetch(`${API_URL}?action=getRanking&gestor=${encodeURIComponent(gestorName)}&period=${currentPeriod}`);
+                const ranking = await rResp.json();
+                const sResp = await fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`);
+                const stats = await sResp.json();
+                const entregados = stats.filter(s => s.Estado === "Entregado");
+                document.getElementById('dash-money').innerText = `$${entregados.reduce((a,c) => a + (parseFloat(c.Comision || c['Comisión'] || 0)), 0)}`;
+                document.getElementById('dash-ok').innerText = entregados.length;
+                document.getElementById('ranking-list').innerHTML = ranking.map((r, i) => `
+                    <div class="flex items-center justify-between p-4 ${r.isMe ? 'bg-blue-600/10' : ''}">
+                        <div class="text-[10px] font-bold">#${i+1} ${r.name}</div>
+                        <div class="text-blue-400 font-black">$${r.sales}</div>
+                    </div>`).join('');
+            } catch (e) { console.log(e) }
+        }
         function openGestorGen() { document.getElementById('gestor-modal').classList.remove('hidden'); }
         function closeGestorGen() { document.getElementById('gestor-modal').classList.add('hidden'); }
         function processGestor() {
@@ -486,6 +485,85 @@
             document.getElementById('links-result').classList.remove('hidden');
         }
         function copy(id) { const e = document.getElementById(id); e.select(); document.execCommand('copy'); alert("Copiado"); }
+
+        function actualizarOpcionesMoneda() {
+            const select = document.getElementById('check-moneda');
+            if (cart.length === 0) {
+                select.innerHTML = '<option>Carrito vacío</option>';
+                return;
+            }
+
+            // Tomamos las opciones de pago del primer producto en el carrito
+            // (Asumimos que los términos de pago son similares para la orden)
+            const pagosTexto = cart[0].Pagos || "USD, Zelle, CUP";
+            const opciones = pagosTexto.split(',').map(opt => opt.trim());
+
+            select.innerHTML = opciones.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+        }
+
+        // NUEVA FUNCIÓN 1: Hace la cuenta matemática
+function recalcularTotalFinal() {
+    const select = document.getElementById('check-moneda');
+    // Calculamos el total base en USD incluyendo mensajería
+    const totalUSD = cart.reduce((acc, item) => acc + (Number(item.Precio) * item.qty) + (parseMensajeria(item.Mensajeria || item.Mensajería) * item.qty), 0);
+    
+    const opcionElegida = select.value || "USD";
+    let totalFinal = totalUSD;
+    let simbolo = "$";
+
+    if (opcionElegida.toUpperCase().includes("CUP")) {
+        let tasaFinal = cupRate; // cupRate es el valor del Sheet (ej: 450)
+
+        if (opcionElegida.includes("+")) {
+            // Lógica para "CUP +10": Toma la tasa del día y le suma el número encontrado
+            const incrementoMatch = opcionElegida.match(/\d+/);
+            const incremento = incrementoMatch ? parseFloat(incrementoMatch[0]) : 0;
+            tasaFinal = cupRate + incremento;
+        } else {
+            // Lógica para tasa fija tipo "CUP 470":
+            const tasaFijaMatch = opcionElegida.match(/\d+/);
+            if (tasaFijaMatch) {
+                const valorExtraido = parseFloat(tasaFijaMatch[0]);
+                // Si el número es grande (ej: 470), es una tasa fija. 
+                // Si es pequeño (ej: 10), probablemente faltó el '+' pero lo usamos como tasa fija si así viene en el sheet.
+                tasaFinal = valorExtraido; 
+            }
+        }
+        
+        totalFinal = totalUSD * tasaFinal;
+        simbolo = "CUP";
+    } 
+    else if (opcionElegida.toLowerCase().includes("euro")) {
+        // Lógica Euro: Si dice 1.05 aplica división, sino 1x1
+        if (opcionElegida.includes("1.05")) { 
+            totalFinal = totalUSD / 1.05; 
+        }
+        simbolo = "€";
+    }
+
+    // Actualizar los textos en el modal
+    document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
+    document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+}
+
+// NUEVA FUNCIÓN 2: Llena el selector con lo que dice tu Excel
+function actualizarOpcionesMoneda() {
+    const select = document.getElementById('check-moneda');
+    if (!select || cart.length === 0) return;
+
+    // Leemos la columna "Pagos" del primer producto del carrito
+    const pagosTexto = cart[0].Pagos || "USD, Zelle, CUP efectivo 470";
+    const opciones = pagosTexto.split(',').map(opt => opt.trim());
+
+    // Metemos las opciones en el <select>
+    select.innerHTML = opciones.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+    
+    // Le decimos que cuando el usuario cambie la opción, recalcule el total
+    select.onchange = recalcularTotalFinal;
+    
+    // Calculamos el total por primera vez
+    recalcularTotalFinal();
+}
     </script>
 </body>
 </html>
