@@ -375,6 +375,18 @@
 
         // UI HELPERS
         function openDetail(name) {
+    // ESTO ENVÍA LA ESTADÍSTICA AL EXCEL AUTOMÁTICAMENTE
+    fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+            type: "view",
+            producto: name,
+            gestor: gestorName || "Directo"
+        })
+    });
+
+            
             selectedProduct = productosRaw.find(p => p.Nombre === name);
             const p = selectedProduct;
             document.getElementById('detail-name').innerText = p.Nombre;
