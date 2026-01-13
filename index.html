@@ -440,32 +440,79 @@
 
         function removeFromCart(index) { cart.splice(index, 1); updateCartCount(); renderCart(); }
 
-        document.getElementById('checkout-form').onsubmit = (e) => {
-            e.preventDefault();
-            let eqTotal = 0, mTotal = 0, cTotal = 0;
-            let pList = cart.map(item => {
-                eqTotal += (item.Precio * item.qty);
-                mTotal += (parseFloat(item.Mensajeria) || 0);
-                cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
-                return `${item.qty}x ${item.Nombre}`;
-            }).join(', ');
+        document.getElementById('checkout-form').onsubmit = async (e) => {
+    e.preventDefault();
+    
+    // Deshabilitar botón para evitar doble envío
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Registrando pedido...";
 
-            const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
-                `💪🏻Nombre: ${document.getElementById('check-nombre').value}%0A` +
-                `💪🏻CI: ${document.getElementById('check-ci').value}%0A` +
-                `💪🏻Teléfono: ${document.getElementById('check-tel').value}%0A` +
-                `💪🏻Dirección: ${document.getElementById('check-dir').value}%0A%0A` +
-                `💪🏻Producto: ${pList}%0A` +
-                `💪🏻Total a Pagar: ${eqTotal + mTotal}%0A` +
-                `-Precio equipo: ${eqTotal}%0A` +
-                `-Mensajería: ${mTotal}%0A%0A` +
-                `💪🏻Vuelto: ${document.getElementById('check-vuelto').value || "No requerido"}%0A` +
-                `💪🏻Comisión: ${cTotal}%0A` +
-                `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
-                `☎(${gestorTel || ''})`;
+    let eqTotal = 0, mTotal = 0, cTotal = 0;
+    let pList = cart.map(item => {
+        eqTotal += (item.Precio * item.qty);
+        mTotal += (parseFloat(item.Mensajeria) || 0);
+        cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
+        return `${item.qty}x ${item.Nombre}`;
+    }).join(', ');
 
-            window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
-        };
+    const nombreCli = document.getElementById('check-nombre').value;
+    const ciCli = document.getElementById('check-ci').value;
+    const telCli = document.getElementById('check-tel').value;
+    const dirCli = document.getElementById('check-dir').value;
+    const vueltoCli = document.getElementById('check-vuelto').value || "No requerido";
+
+    // 1. PREPARAR DATOS PARA LA HOJA 2
+    const datosPedido = {
+        gestor: gestorName || "Venta Directa",
+        cliente: nombreCli,
+        ci: ciCli,
+        telefono: telCli,
+        direccion: dirCli,
+        producto: pList,
+        total: eqTotal + mTotal,
+        comision: cTotal
+    };
+
+    try {
+        // 2. ENVIAR A GOOGLE SHEETS (POST)
+        await fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Necesario para Google Apps Script
+            body: JSON.stringify(datosPedido)
+        });
+
+        // 3. PREPARAR MENSAJE PARA WHATSAPP
+        const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
+            `💪🏻Nombre: ${nombreCli}%0A` +
+            `💪🏻CI: ${ciCli}%0A` +
+            `💪🏻Teléfono: ${telCli}%0A` +
+            `💪🏻Dirección: ${dirCli}%0A%0A` +
+            `💪🏻Producto: ${pList}%0A` +
+            `💪🏻Total a Pagar: ${eqTotal + mTotal}%0A` +
+            `-Precio equipo: ${eqTotal}%0A` +
+            `-Mensajería: ${mTotal}%0A%0A` +
+            `💪🏻Vuelto: ${vueltoCli}%0A` +
+            `💪🏻Comisión: ${cTotal}%0A` +
+            `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
+            `☎(${gestorTel || ''})`;
+
+        // 4. ABRIR WHATSAPP Y LIMPIAR
+        window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
+        
+        cart = [];
+        updateCartCount();
+        toggleCartModal();
+        alert("Pedido registrado y enviado con éxito.");
+        location.reload(); // Recargamos para actualizar el dashboard
+
+    } catch (error) {
+        alert("Error al registrar el pedido. Intente de nuevo.");
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Enviar a Oficina";
+    }
+};
 
         // Iniciar
         loadProducts();
