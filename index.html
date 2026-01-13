@@ -145,12 +145,19 @@
                 <div class="flex justify-between"><span>TOTAL:</span> <span id="cart-total">$0</span></div>
             </div>
             <form id="checkout-form" class="space-y-4">
-                <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full p-4 rounded-2xl" required>
+                <input type="text" id="check-nombre" placeholder="Nombre completo (Obligatorio)" class="w-full p-4 rounded-2xl" required>
                 <div class="flex gap-4">
-                    <input type="text" id="check-ci" placeholder="CI" class="w-full p-4 rounded-2xl" required>
-                    <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-4 rounded-2xl" required>
+                    <input type="text" id="check-ci" placeholder="CI (Obligatorio)" class="w-full p-4 rounded-2xl" required>
+                    <input type="tel" id="check-tel" placeholder="Teléfono (Obligatorio)" class="w-full p-4 rounded-2xl" required>
                 </div>
-                <textarea id="check-dir" placeholder="Dirección detallada..." class="w-full p-4 rounded-2xl h-20" required></textarea>
+                <textarea id="check-dir" placeholder="Dirección detallada (Obligatorio)" class="w-full p-4 rounded-2xl h-20" required></textarea>
+                
+                <!-- CAMPO DE VUELTO ACTUALIZADO -->
+                <div class="p-4 bg-blue-900/20 rounded-2xl border border-blue-500/30">
+                    <label class="text-[10px] font-black text-blue-400 uppercase block mb-1">Monto del vuelto que debe llevar el mensajero</label>
+                    <input type="number" id="check-vuelto" placeholder="Ej: 50 (Ponga 0 si no requiere)" class="w-full bg-transparent border-none text-sm font-black text-white p-0" min="0">
+                </div>
+
                 <button type="submit" id="final-submit-btn" class="w-full bg-emerald-600 py-5 rounded-[22px] font-black uppercase">Tramitar Pedido</button>
             </form>
         </div>
@@ -281,65 +288,69 @@
         document.getElementById('checkout-form').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('final-submit-btn');
-            btn.disabled = true; btn.innerText = "Procesando...";
-
-            let precioEquipo = 0, totalMensajeria = 0, totalComision = 0;
             
-            // Calculamos los totales
-            cart.forEach(i => {
-                precioEquipo += (i.Precio * i.qty);
-                totalMensajeria += (parseFloat(i.Mensajeria || 0) * i.qty);
-                
-                // SOLO sumar comisión si existe un gestor activo
-                if (gestorName) {
-                    totalComision += (parseFloat(i.Comision || i['Comisión'] || 0) * i.qty);
-                }
-            });
-
-            // Si no hay gestor, nos aseguramos que sea 0 para la Hoja 2
-            if (!gestorName) {
-                totalComision = 0;
-            }
-
-            const datos = {
-                nombre: document.getElementById('check-nombre').value,
-                ci: document.getElementById('check-ci').value,
-                tel: document.getElementById('check-tel').value,
-                dir: document.getElementById('check-dir').value,
-                vuelto: document.getElementById('check-vuelto').value || "No necesario",
-                total: precioEquipo + totalMensajeria,
-                pList: cart.map(i => `${i.qty}x ${i.Nombre}`).join(', ')
-            };
+            // Bloqueo visual
+            btn.disabled = true; 
+            btn.innerText = "ENVIANDO DATOS...";
 
             try {
-                // Enviar a Google Sheets
+                let precioEquipo = 0;
+                let totalMensajeria = 0;
+                let totalComision = 0;
+                
+                // Cálculos
+                cart.forEach(i => {
+                    const p = Number(i.Precio) || 0;
+                    const m = Number(i.Mensajeria || i.Mensajería || 0);
+                    const c = Number(i.Comision || i['Comisión'] || 0);
+                    
+                    precioEquipo += (p * i.qty);
+                    totalMensajeria += (m * i.qty);
+                    
+                    if (gestorName) {
+                        totalComision += (c * i.qty);
+                    }
+                });
+
+                const nombreC = document.getElementById('check-nombre').value;
+                const ciC = document.getElementById('check-ci').value;
+                const telC = document.getElementById('check-tel').value;
+                const dirC = document.getElementById('check-dir').value;
+                // Si el campo está vacío o es 0, poner "No requiere"
+                const valVuelto = document.getElementById('check-vuelto').value;
+                const vueltoC = (valVuelto && valVuelto > 0) ? `$${valVuelto}` : "No requiere";
+                
+                const listaProductos = cart.map(i => `${i.qty}x ${i.Nombre}`).join(', ');
+                const granTotal = precioEquipo + totalMensajeria;
+
+                // 1. Enviar a Google Sheets (Hoja 2)
                 await fetch(API_URL, { 
                     method: 'POST', 
                     mode: 'no-cors', 
                     body: JSON.stringify({
                         gestor: gestorName || "Venta Directa",
-                        cliente: datos.nombre,
-                        ci: datos.ci,
-                        telefono: datos.tel,
-                        direccion: datos.dir,
-                        producto: datos.pList,
-                        total: datos.total,
-                        comision: totalComision // Aquí irá 0 si es cliente directo
+                        cliente: nombreC,
+                        ci: ciC,
+                        telefono: telC,
+                        direccion: dirC,
+                        producto: listaProductos,
+                        total: granTotal,
+                        comision: gestorName ? totalComision : 0
                     })
                 });
 
-                // Formato de mensaje WhatsApp
-                let msj = `💪🏻Nombre: ${datos.nombre}%0A` +
-                          `💪🏻CI: ${datos.ci}%0A` +
-                          `💪🏻Teléfono: ${datos.tel}%0A` +
-                          `💪🏻Dirección: ${datos.dir}%0A%0A` +
-                          `💪🏻Producto: ${datos.pList}%0A` +
-                          `💪🏻Total a Pagar: $${datos.total.toFixed(2)}%0A` +
+                // 2. Construir Mensaje de WhatsApp con formato exacto
+                let msj = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0A` +
+                          `💪🏻Nombre: ${nombreC}%0A` +
+                          `💪🏻CI: ${ciC}%0A` +
+                          `💪🏻Teléfono: ${telC}%0A` +
+                          `💪🏻Dirección: ${dirC}%0A%0A` +
+                          `💪🏻Producto: ${listaProductos}%0A` +
+                          `💪🏻Total a Pagar: $${granTotal.toFixed(2)}%0A` +
                           `-Precio equipo: $${precioEquipo.toFixed(2)}%0A` +
                           `-Mensajería: $${totalMensajeria.toFixed(2)}%0A%0A` +
-                          `💪🏻Vuelto: ${datos.vuelto}%0A`;
+                          `💪🏻Vuelto: ${vueltoC}%0A`;
 
-                // Solo mostrar la línea de comisión en el WhatsApp si hay gestor
                 if (gestorName) {
                     msj += `💪🏻Comisión: $${totalComision.toFixed(2)}%0A`;
                 }
@@ -347,10 +358,19 @@
                 msj += `💪🏻Gestor: ${gestorName || 'Directo'}%0A` +
                        `☎(${gestorTel || 'Para Tu Hogar'})`;
 
-                window.open(`https://wa.me/5356071095?text=${msj}`, '_blank');
-                location.reload();
+                // 3. Redirección directa (Más fiable que window.open)
+                const whatsappUrl = `https://wa.me/5356071095?text=${msj}`;
+                
+                btn.innerText = "¡PEDIDO LISTO!";
+                
+                // Pequeño delay para que el usuario vea el éxito antes de saltar a WhatsApp
+                setTimeout(() => {
+                    window.location.href = whatsappUrl;
+                }, 800);
+
             } catch (error) { 
-                alert("Error al tramitar el pedido"); 
+                console.error(error);
+                alert("Error de conexión. Intente de nuevo."); 
                 btn.disabled = false; 
                 btn.innerText = "Tramitar Pedido";
             }
