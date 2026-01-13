@@ -22,6 +22,8 @@
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .modal-scroll { max-height: 45vh; overflow-y: auto; scrollbar-width: thin; }
         @media (min-width: 768px) { .modal-scroll { max-height: none; } }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="pb-32">
@@ -111,24 +113,48 @@
 
     <!-- MODALES: DETALLE, CARRITO, GESTOR (Se mantienen igual pero con IDs corregidos) -->
     <!-- (Para brevedad, se integran en el script la lógica de apertura) -->
+    <!-- MODAL DETALLE (CORREGIDO PARA SCROLL Y BOTÓN VISIBLE) -->
+    <!-- MODAL DETALLE DEFINITIVO: SCROLL + GALERIA + BOTON COMPRAR -->
     <div id="detail-modal" class="fixed inset-0 bg-slate-950/98 backdrop-blur-xl hidden flex items-center justify-center p-2 z-[150]">
-        <div class="bg-slate-900 rounded-[40px] w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col md:flex-row border border-white/5">
-            <button onclick="closeDetail()" class="absolute top-5 right-5 text-white w-12 h-12 rounded-full z-[170] flex items-center justify-center bg-white/10">×</button>
-            <div class="md:w-5/12 p-4 bg-white/5 flex items-center justify-center">
-                <img id="detail-main-img" src="" class="max-w-full max-h-64 object-contain">
+        <div class="bg-slate-900 rounded-[40px] w-full max-w-4xl max-h-[95vh] overflow-y-auto flex flex-col md:flex-row border border-white/5 relative scrollbar-hide">
+            
+            <!-- Botón Cerrar (Sticky para móviles) -->
+            <button onclick="closeDetail()" class="sticky top-5 left-[88%] md:absolute md:top-5 md:right-5 text-white w-12 h-12 rounded-full z-[170] flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/10">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- SECCIÓN IZQUIERDA: IMÁGENES -->
+            <div class="w-full md:w-5/12 bg-white flex flex-col border-r border-white/5">
+                <!-- Imagen Principal -->
+                <div class="p-8 flex-1 flex items-center justify-center min-h-[320px]">
+                    <img id="detail-main-img" src="" class="max-w-full max-h-72 object-contain transition-all duration-500">
+                </div>
+                <!-- Miniaturas (Galería) -->
+                <div id="detail-thumbnails" class="p-4 bg-slate-100 flex gap-2 overflow-x-auto justify-center scrollbar-hide border-t border-slate-200">
+                    <!-- Las fotos se cargan aquí vía JS -->
+                </div>
             </div>
-            <div class="md:w-7/12 p-8 flex flex-col">
-                <span id="detail-cat" class="text-blue-500 font-black text-[9px] uppercase mb-2"></span>
-                <h2 id="detail-name" class="text-2xl font-black mb-5 uppercase italic"></h2>
+
+            <!-- SECCIÓN DERECHA: INFO -->
+            <div class="w-full md:w-7/12 p-8 md:p-12 flex flex-col bg-slate-900">
+                <span id="detail-cat" class="text-blue-500 font-black text-[9px] uppercase tracking-widest mb-2"></span>
+                <h2 id="detail-name" class="text-2xl md:text-3xl font-black mb-5 uppercase italic leading-tight text-white"></h2>
+                
                 <div class="flex items-center gap-5 mb-4">
                     <span id="detail-price" class="text-4xl font-black text-white"></span>
                     <span id="detail-price-cup" class="text-sm font-bold text-slate-500 italic"></span>
                 </div>
-                <div id="detail-warranty" class="mb-6 bg-blue-500/10 px-4 py-2 rounded-2xl text-[10px] font-black text-blue-400 self-start"></div>
-                <div class="flex-1 overflow-y-auto modal-scroll pr-2">
-                    <p id="detail-desc" class="text-slate-400 text-[13px] leading-relaxed whitespace-pre-line"></p>
+
+                <div id="detail-warranty" class="mb-6 bg-blue-500/10 px-4 py-2 rounded-2xl text-[10px] font-black text-blue-400 self-start border border-blue-500/20 uppercase"></div>
+                
+                <div class="mb-8">
+                    <p id="detail-desc" class="text-slate-400 text-[14px] leading-relaxed whitespace-pre-line font-medium"></p>
                 </div>
-                <button onclick="addItemToCart()" class="w-full bg-blue-600 py-5 rounded-[22px] font-black uppercase mt-6">Añadir a la orden</button>
+
+                <!-- Botón de Compra -->
+                <button onclick="addItemToCart()" class="w-full bg-blue-600 hover:bg-blue-500 py-6 rounded-[24px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-600/20 transition-all active:scale-95 mb-4">
+                    <i class="fas fa-cart-plus mr-2"></i> Añadir a la orden
+                </button>
             </div>
         </div>
     </div>
@@ -250,7 +276,26 @@
             document.getElementById('detail-price-cup').innerText = `/ CUP ${(p.Precio * cupRate).toLocaleString()}`;
             document.getElementById('detail-cat').innerText = p.Categoria || '';
             document.getElementById('detail-warranty').innerText = `Garantía: ${p.Garantía || p.Garantia || 'S/G'}`;
-            document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
+            
+            // Cargar Imagen Principal
+            const mainImg = document.getElementById('detail-main-img');
+            mainImg.src = fixDriveUrl(p.Thumbnail);
+
+            // CARGAR GALERÍA DE MINIATURAS
+            const thumbsContainer = document.getElementById('detail-thumbnails');
+            // Buscamos todas las posibles fotos en tus columnas (Thumbnail, Image1, Image2, Image3)
+            const photos = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url && url.length > 5);
+            
+            if (photos.length > 1) {
+                thumbsContainer.classList.remove('hidden');
+                thumbsContainer.innerHTML = photos.map(url => `
+                    <img src="${fixDriveUrl(url)}" 
+                         onclick="document.getElementById('detail-main-img').src=this.src" 
+                         class="w-14 h-14 object-contain rounded-lg border-2 border-transparent bg-white p-1 cursor-pointer hover:border-blue-500 transition-all">
+                `).join('');
+            } else {
+                thumbsContainer.classList.add('hidden'); // Ocultar si solo hay una foto
+            }
             
             document.getElementById('detail-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
