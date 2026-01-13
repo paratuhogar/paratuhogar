@@ -198,7 +198,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwdmKIbF3Sc-qtgAvKosAZj44uidtnPcZTpafQHrma5JjW-7hhp8VQunG5BH48h57cxrA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwSHE85FIh5yA4AIgMU8Y3ZR5k-rJjI_LjTvVD1vM1jH6ei9xIN9eJMEoWlo_quKEoGrw/exec';
         
         let productosData = [];
         let cart = [];
@@ -424,46 +424,71 @@
         function removeFromCart(index) { cart.splice(index, 1); updateCartCount(); renderCart(); }
 
         document.getElementById('checkout-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('final-submit-btn');
-            btn.disabled = true;
-            btn.innerHTML = `Registrando...`;
+    e.preventDefault();
+    const btn = document.getElementById('final-submit-btn');
+    const originalText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = `Sincronizando...`;
 
-            let eqTotal = 0, mTotal = 0, cTotal = 0;
-            let pList = cart.map(item => {
-                eqTotal += (item.Precio * item.qty);
-                mTotal += (parseFloat(item.Mensajeria) || 0);
-                cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
-                return `${item.qty}x ${item.Nombre}`;
-            }).join(', ');
+    let eqTotal = 0, mTotal = 0, cTotal = 0;
+    let pList = cart.map(item => {
+        eqTotal += (item.Precio * item.qty);
+        mTotal += (parseFloat(item.Mensajeria) || 0);
+        cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
+        return `${item.qty}x ${item.Nombre}`;
+    }).join(', ');
 
-            const nombreCli = document.getElementById('check-nombre').value;
-            const ciCli = document.getElementById('check-ci').value;
-            const telCli = document.getElementById('check-tel').value;
-            const dirCli = document.getElementById('check-dir').value;
-            const vueltoCli = document.getElementById('check-vuelto').value || "No requerido";
+    const datosParaEnviar = {
+        gestor: gestorName || "Venta Directa",
+        cliente: document.getElementById('check-nombre').value,
+        ci: document.getElementById('check-ci').value,
+        telefono: document.getElementById('check-tel').value,
+        direccion: document.getElementById('check-dir').value,
+        producto: pList,
+        total: eqTotal + mTotal,
+        comision: cTotal
+    };
 
-            const payload = {
-                gestor: gestorName || "Venta Directa",
-                cliente: nombreCli,
-                ci: ciCli,
-                telefono: telCli,
-                direccion: dirCli,
-                producto: pList,
-                total: eqTotal + mTotal,
-                comision: cTotal
-            };
+    try {
+        // ENVIAR A GOOGLE SHEETS
+        await fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Muy importante para Apps Script
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosParaEnviar)
+        });
 
-            try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                const text = `*PEDIDO: PARA TU HOGAR*%0A%0A` +
-                    `💪🏻Nombre: ${nombreCli}%0A💪🏻CI: ${ciCli}%0A💪🏻Tel: ${telCli}%0A💪🏻Dirección: ${dirCli}%0A%0A` +
-                    `💪🏻Producto: ${pList}%0A💪🏻Total: ${eqTotal + mTotal}%0A-Equipo: ${eqTotal}%0A-Envío: ${mTotal}%0A%0A` +
-                    `💪🏻Vuelto: ${vueltoCli}%0A💪🏻Comisión: ${cTotal}%0A💪🏻Gestor: ${gestorName || 'Directo'}%0A☎(${gestorTel || ''})`;
-                window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
-                location.reload();
-            } catch (error) { alert("Error"); }
-        };
+        // MENSAJE WHATSAPP
+        const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
+            `💪🏻Nombre: ${datosParaEnviar.cliente}%0A` +
+            `💪🏻CI: ${datosParaEnviar.ci}%0A` +
+            `💪🏻Teléfono: ${datosParaEnviar.telefono}%0A` +
+            `💪🏻Dirección: ${datosParaEnviar.direccion}%0A%0A` +
+            `💪🏻Producto: ${pList}%0A` +
+            `💪🏻Total a Pagar: ${datosParaEnviar.total}%0A` +
+            `-Precio equipo: ${eqTotal}%0A` +
+            `-Mensajería: ${mTotal}%0A%0A` +
+            `💪🏻Vuelto: ${document.getElementById('check-vuelto').value || "No requerido"}%0A` +
+            `💪🏻Comisión: ${cTotal}%0A` +
+            `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
+            `☎(${gestorTel || ''})`;
+
+        // Abrir WhatsApp
+        window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
+        
+        // Limpiar y refrescar
+        alert("¡Pedido enviado con éxito!");
+        cart = [];
+        location.reload(); 
+
+    } catch (error) {
+        alert("Error de conexión. Inténtalo de nuevo.");
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+};
     </script>
 </body>
 </html>
