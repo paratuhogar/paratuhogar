@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para Tu Hogar | Gestión de Ventas</title>
+    <title>Para Tu Hogar | Gestión Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -12,63 +12,62 @@
         body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
         .tech-card { background: white; border: 1px solid #e2e8f0; border-radius: 24px; transition: all 0.3s ease; }
         .tech-card:hover { border-color: #3b82f6; box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.2); }
-        .btn-primary { background: var(--primary); color: white; transition: all 0.2s; }
-        .btn-primary:active { transform: scale(0.95); }
-        .glass-header { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .loader { width: 24px; height: 24px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        .glass-header { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .loader { width: 20px; height: 20px; border: 3px solid #3b82f6; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .animate-cart { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body class="pb-24">
 
-    <!-- Header Tecnológico -->
-    <header class="glass-header text-white sticky top-0 z-[100] shadow-2xl">
+    <!-- Header -->
+    <header class="glass-header text-white sticky top-0 z-[100] shadow-xl">
         <div class="container mx-auto p-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="bg-accent p-2 rounded-xl shadow-lg shadow-blue-500/20">
-                    <i class="fas fa-home-alt text-lg"></i>
+                <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-bolt text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-black tracking-tighter uppercase italic italic">Para Tu Hogar</h1>
-                    <p id="mode-text" class="text-[9px] text-blue-300 font-bold uppercase tracking-widest">Tienda Oficial</p>
+                    <h1 class="text-lg font-black tracking-tighter uppercase italic">Para Tu Hogar</h1>
+                    <p id="mode-text" class="text-[9px] text-blue-300 font-bold uppercase tracking-widest">Store Oficial</p>
                 </div>
             </div>
             
             <div id="gestor-badge" class="hidden flex items-center gap-3 bg-white/10 px-3 py-1.5 rounded-2xl border border-white/10">
                 <div class="text-right">
-                    <p id="gestor-name" class="text-[10px] font-black leading-none"></p>
-                    <p class="text-[8px] text-blue-300 font-bold uppercase">Agente Verificado</p>
+                    <p id="gestor-name-display" class="text-[10px] font-black leading-none"></p>
+                    <!-- EL ELEMENTO QUE FALTABA -->
+                    <p id="admin-status" class="hidden text-[8px] text-green-400 font-black uppercase tracking-tighter mt-0.5">● Modo Admin</p>
                 </div>
-                <i class="fas fa-id-badge text-blue-400"></i>
+                <i class="fas fa-shield-check text-blue-400"></i>
             </div>
         </div>
 
-        <nav id="main-nav" class="container mx-auto px-4 pb-2 flex gap-6 overflow-x-auto scrollbar-hide">
+        <nav id="main-nav" class="container mx-auto px-4 pb-2 flex gap-6">
             <button onclick="showSection('catalogo')" id="btn-nav-catalogo" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-blue-500 pb-1">Catálogo</button>
-            <button onclick="showSection('dashboard')" id="nav-dash" class="hidden text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 transition-all pb-1">Dashboard Real-Time</button>
-            <button onclick="openGestorGen()" class="text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 pb-1 ml-auto text-blue-400">Generar Links</button>
+            <button onclick="showSection('dashboard')" id="nav-dash" class="hidden text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 transition-all pb-1">Dashboard</button>
+            <button onclick="openGestorGen()" class="text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 pb-1 ml-auto text-blue-400"><i class="fas fa-link mr-1"></i> Links</button>
         </nav>
     </header>
 
     <main class="container mx-auto p-4 md:p-8">
         
-        <!-- SECCIÓN CATÁLOGO -->
-        <section id="sec-catalogo" class="space-y-6">
+        <!-- CATÁLOGO -->
+        <section id="sec-catalogo">
             <div id="productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Skeleton Loader -->
                 <div class="col-span-full py-20 text-center space-y-4">
-                    <span class="loader border-blue-500"></span>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Cargando Inventario...</p>
+                    <span class="loader"></span>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronizando Inventario...</p>
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN DASHBOARD -->
-        <section id="sec-dashboard" class="hidden animate-in fade-in duration-500">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <!-- DASHBOARD (Solo Admin) -->
+        <section id="sec-dashboard" class="hidden space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="tech-card p-5">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Ganancia Total</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Comisión Total</p>
                     <p id="stat-total-money" class="text-2xl font-black text-blue-600">$0</p>
                 </div>
                 <div class="tech-card p-5">
@@ -76,114 +75,91 @@
                     <p id="stat-orders" class="text-2xl font-black text-slate-800">0</p>
                 </div>
                 <div class="tech-card p-5">
-                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">En Proceso</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Pendientes</p>
                     <p id="stat-pending" class="text-2xl font-black text-orange-500">0</p>
                 </div>
-                <div class="tech-card p-5 border-blue-100 bg-blue-50/30">
-                    <p class="text-[9px] font-bold text-blue-400 uppercase mb-1">Conversión</p>
+                <div class="tech-card p-5 bg-blue-50/50">
+                    <p class="text-[9px] font-bold text-blue-400 uppercase mb-1">Ratio Éxito</p>
                     <p id="stat-eff" class="text-2xl font-black text-blue-700">0%</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-1 tech-card p-6">
-                    <h4 class="text-xs font-black uppercase mb-6 flex items-center gap-2">
-                        <i class="fas fa-chart-pie text-blue-500"></i> Distribución de Ventas
-                    </h4>
                     <canvas id="chartVentas"></canvas>
                 </div>
                 <div class="lg:col-span-2 tech-card overflow-hidden">
-                    <h4 class="text-xs font-black uppercase p-6 border-b">Historial de Operaciones</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-[11px]">
-                            <thead class="bg-slate-50 text-slate-400">
-                                <tr>
-                                    <th class="py-3 px-6 uppercase">Cliente / ID</th>
-                                    <th class="py-3 px-6 uppercase">Detalle Pedido</th>
-                                    <th class="py-3 px-6 uppercase text-center">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-table-body"></tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left text-[11px]">
+                        <thead class="bg-slate-50"><tr><th class="p-4">CLIENTE</th><th class="p-4">PEDIDO</th><th class="p-4 text-center">ESTADO</th></tr></thead>
+                        <tbody id="dash-table-body"></tbody>
+                    </table>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Botón Carrito Float -->
-    <div id="cart-btn" onclick="toggleCartModal()" class="fixed bottom-6 right-6 bg-primary text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center cursor-pointer z-[80] transition-transform active:scale-90">
+    <!-- Botón Flotante -->
+    <div id="cart-btn" onclick="toggleCartModal()" class="fixed bottom-6 right-6 bg-slate-900 text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center cursor-pointer z-[80] transition-transform active:scale-90">
         <i class="fas fa-shopping-basket text-lg"></i>
         <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center border-2 border-white shadow-lg">0</span>
     </div>
 
-    <!-- MODAL GENERADOR -->
+    <!-- MODALES (DETALLE, CARRITO, GENERADOR) - Simplificados para velocidad -->
     <div id="gestor-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-[200]">
-        <div class="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl relative border border-white/20">
-            <button onclick="closeGestorGen()" class="absolute top-6 right-6 text-slate-300 hover:text-slate-500"><i class="fas fa-times"></i></button>
-            <h2 class="text-xl font-black text-slate-800 mb-2 uppercase italic tracking-tighter">Networking Gestores</h2>
-            <p class="text-slate-400 text-[11px] mb-8 font-medium">Genera tus credenciales de acceso para empezar a vender.</p>
+        <div class="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl relative">
+            <h2 class="text-xl font-black text-slate-800 mb-6 uppercase italic tracking-tighter">Zona de Gestores</h2>
             <div class="space-y-4">
-                <input type="text" id="gen-name" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" placeholder="Nombre completo">
-                <input type="tel" id="gen-tel" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" placeholder="Teléfono WhatsApp">
-                <button onclick="generateLinks()" class="w-full btn-primary py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/10">Generar Accesos</button>
+                <input type="text" id="gen-name" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold" placeholder="Nombre">
+                <input type="tel" id="gen-tel" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold" placeholder="WhatsApp">
+                <button onclick="generateLinks()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl">Generar Links</button>
             </div>
-            <div id="links-result" class="hidden mt-8 space-y-4 animate-in slide-in-from-bottom duration-500">
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                    <p class="text-[9px] font-black text-blue-600 uppercase mb-2 italic">● Acceso Administración (Privado)</p>
-                    <div class="flex gap-2">
-                        <input type="text" id="link-admin" readonly class="flex-1 text-[10px] p-2 bg-white rounded-lg border border-blue-200">
-                        <button onclick="copy('link-admin')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold">COPY</button>
-                    </div>
+            <div id="links-result" class="hidden mt-6 space-y-3">
+                <div class="p-3 bg-green-50 rounded-xl border border-green-100">
+                    <p class="text-[8px] font-black text-green-600 uppercase mb-1">Link con Dashboard (Privado)</p>
+                    <input type="text" id="link-admin" readonly class="w-full text-[9px] p-2 bg-white rounded border border-green-200">
+                    <button onclick="copy('link-admin')" class="mt-2 text-[8px] font-black text-blue-600 uppercase">Copiar Enlace Privado</button>
                 </div>
-                <div class="bg-slate-900 p-4 rounded-2xl">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2 italic">● Enlace para Clientes (Público)</p>
-                    <div class="flex gap-2">
-                        <input type="text" id="link-client" readonly class="flex-1 text-[10px] p-2 bg-white/10 text-white rounded-lg border border-white/10">
-                        <button onclick="copy('link-client')" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-[9px] font-bold">COPY</button>
-                    </div>
+                <div class="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-[8px] font-black text-blue-600 uppercase mb-1">Link Clientes (Público)</p>
+                    <input type="text" id="link-client" readonly class="w-full text-[9px] p-2 bg-white rounded border border-blue-200">
+                    <button onclick="copy('link-client')" class="mt-2 text-[8px] font-black text-blue-600 uppercase">Copiar Enlace Público</button>
                 </div>
             </div>
+            <button onclick="closeGestorGen()" class="w-full mt-4 text-[10px] font-bold text-slate-400 uppercase">Cerrar</button>
         </div>
     </div>
 
     <!-- MODAL DETALLE -->
     <div id="detail-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md hidden flex items-center justify-center p-2 z-[110]">
-        <div class="bg-white rounded-[40px] w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
-            <button onclick="closeDetail()" class="absolute top-6 right-6 bg-white/80 backdrop-blur w-10 h-10 rounded-full z-20 shadow-xl border"><i class="fas fa-times"></i></button>
-            
+        <div class="bg-white rounded-[40px] w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative animate-in zoom-in duration-300">
+            <button onclick="closeDetail()" class="absolute top-6 right-6 bg-white w-10 h-10 rounded-full z-20 shadow-xl border flex items-center justify-center text-slate-400"><i class="fas fa-times"></i></button>
             <div class="md:w-1/2 p-4 bg-slate-50 flex flex-col h-full border-r">
                 <div class="flex-1 flex items-center justify-center bg-white rounded-[32px] p-8 shadow-sm mb-4">
-                    <img id="detail-main-img" src="" class="max-w-full max-h-full object-contain">
+                    <img id="detail-main-img" src="" class="max-w-full max-h-64 object-contain">
                 </div>
-                <div id="detail-thumbnails" class="flex gap-3 overflow-x-auto pb-2 justify-center scrollbar-hide"></div>
+                <div id="detail-thumbnails" class="flex gap-3 overflow-x-auto pb-2 justify-center"></div>
             </div>
-
-            <div class="md:w-1/2 p-8 md:p-12 flex flex-col overflow-y-auto">
-                <span id="detail-cat" class="text-blue-500 font-black text-[10px] uppercase tracking-widest mb-2"></span>
-                <h2 id="detail-name" class="text-2xl md:text-3xl font-black text-slate-800 mb-4 leading-tight uppercase italic tracking-tighter"></h2>
-                
-                <div class="flex items-center gap-4 mb-6">
+            <div class="md:w-1/2 p-8 flex flex-col overflow-y-auto">
+                <span id="detail-cat" class="text-blue-500 font-black text-[9px] uppercase tracking-widest mb-2"></span>
+                <h2 id="detail-name" class="text-xl md:text-2xl font-black text-slate-800 mb-4 leading-tight uppercase italic tracking-tighter"></h2>
+                <div class="flex items-center gap-4 mb-4">
                     <span id="detail-price" class="text-4xl font-black text-slate-900 tracking-tighter"></span>
-                    <div id="detail-admin-comm" class="hidden bg-green-500 text-white px-3 py-1 rounded-lg font-black text-[10px] uppercase italic"></div>
+                    <div id="detail-admin-comm-box" class="hidden bg-green-500 text-white px-2 py-1 rounded-lg font-black text-[9px] uppercase italic"></div>
                 </div>
-
-                <div id="detail-warranty-box" class="mb-6 bg-blue-50 px-3 py-1.5 rounded-xl text-[10px] font-black text-blue-600 border border-blue-100 inline-flex items-center gap-2 self-start uppercase italic"></div>
-                
-                <div class="flex-1 border-t py-6 overflow-y-auto">
-                    <p id="detail-desc" class="text-slate-500 text-sm whitespace-pre-line leading-relaxed font-medium"></p>
+                <div id="detail-warranty-box" class="mb-6 bg-blue-50 px-3 py-1.5 rounded-xl text-[9px] font-black text-blue-600 border border-blue-100 uppercase italic"></div>
+                <div class="flex-1 border-t py-6 overflow-y-auto text-slate-500 text-xs leading-relaxed font-medium">
+                    <p id="detail-desc" class="whitespace-pre-line"></p>
                 </div>
-
                 <div class="mt-auto space-y-4 pt-6 border-t">
                     <div class="flex items-center justify-between bg-slate-100 p-2 rounded-2xl">
-                        <span class="font-black text-[10px] uppercase text-slate-400 italic ml-2">Seleccionar Cantidad</span>
-                        <div class="flex items-center bg-white rounded-xl shadow-sm overflow-hidden">
-                            <button onclick="updateQty(-1)" class="px-5 py-2 hover:bg-slate-50 font-black text-blue-600 text-lg">-</button>
+                        <span class="font-black text-[9px] uppercase text-slate-400 italic ml-2">Unidades</span>
+                        <div class="flex items-center bg-white rounded-xl shadow-sm">
+                            <button onclick="updateQty(-1)" class="px-5 py-2 hover:bg-slate-50 font-black text-blue-600">-</button>
                             <input type="number" id="detail-qty" value="1" min="1" class="w-12 text-center font-black border-none focus:ring-0">
-                            <button onclick="updateQty(1)" class="px-5 py-2 hover:bg-slate-50 font-black text-blue-600 text-lg">+</button>
+                            <button onclick="updateQty(1)" class="px-5 py-2 hover:bg-slate-50 font-black text-blue-600">+</button>
                         </div>
                     </div>
-                    <button onclick="addItemToCart()" class="w-full btn-primary py-5 rounded-2xl font-black uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all hover:bg-blue-600">
+                    <button onclick="addItemToCart()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-all">
                         <i class="fas fa-cart-plus"></i> Añadir a la orden
                     </button>
                 </div>
@@ -194,30 +170,26 @@
     <!-- MODAL CARRITO -->
     <div id="cart-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-end z-[120]">
         <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-cart">
-            <div class="p-6 border-b flex justify-between items-center bg-primary text-white">
-                <h2 class="text-lg font-black uppercase italic tracking-tighter italic"><i class="fas fa-check-circle mr-2 text-blue-400"></i> Checkout Final</h2>
-                <button onclick="toggleCartModal()" class="text-2xl opacity-50 hover:opacity-100">&times;</button>
+            <div class="p-6 border-b flex justify-between items-center bg-slate-900 text-white">
+                <h2 class="text-sm font-black uppercase italic tracking-tighter"><i class="fas fa-clipboard-list mr-2 text-blue-400"></i> Checkout de Orden</h2>
+                <button onclick="toggleCartModal()" class="text-xl opacity-50">&times;</button>
             </div>
-            
             <div id="cart-items" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50"></div>
-
             <div class="p-8 bg-white border-t rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.1)]">
-                <div class="space-y-3 mb-8">
-                    <div class="flex justify-between text-[10px] font-black text-slate-400 uppercase"><span>Equipos:</span> <span id="cart-subtotal" class="text-slate-900 font-black"></span></div>
-                    <div class="flex justify-between text-[10px] font-black text-slate-400 uppercase"><span>Logística:</span> <span id="cart-shipping" class="text-blue-600 font-black"></span></div>
-                    <div class="flex justify-between text-2xl font-black text-primary border-t pt-4 uppercase italic"><span>TOTAL:</span> <span id="cart-total"></span></div>
+                <div class="space-y-3 mb-6">
+                    <div class="flex justify-between text-[9px] font-black text-slate-400 uppercase"><span>Subtotal:</span> <span id="cart-subtotal" class="text-slate-900 font-black"></span></div>
+                    <div class="flex justify-between text-[9px] font-black text-slate-400 uppercase"><span>Envío:</span> <span id="cart-shipping" class="text-blue-600 font-black"></span></div>
+                    <div class="flex justify-between text-2xl font-black text-slate-900 border-t pt-4 uppercase italic"><span>Total:</span> <span id="cart-total"></span></div>
                 </div>
-
                 <form id="checkout-form" class="space-y-4">
-                    <input type="text" id="check-nombre" placeholder="Nombre completo del cliente" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
+                    <input type="text" id="check-nombre" placeholder="Cliente" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold" required>
                     <div class="flex gap-3">
-                        <input type="text" id="check-ci" placeholder="CI" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
-                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
+                        <input type="text" id="check-ci" placeholder="CI" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold" required>
+                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold" required>
                     </div>
-                    <textarea id="check-dir" placeholder="Dirección detallada" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500 h-16" required></textarea>
-                    <input type="text" id="check-vuelto" placeholder="¿Con cuánto paga el cliente?" class="w-full p-4 bg-blue-50 border-2 border-blue-100 text-blue-700 rounded-2xl text-sm font-black italic">
-                    
-                    <button type="submit" id="final-submit-btn" class="w-full bg-green-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 mt-4 active:scale-95 transition-all">
+                    <textarea id="check-dir" placeholder="Dirección de entrega" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold h-16" required></textarea>
+                    <input type="text" id="check-vuelto" placeholder="¿Paga con cuánto? (Vuelto)" class="w-full p-4 bg-blue-50 border-2 border-blue-100 text-blue-700 rounded-2xl text-sm font-black italic">
+                    <button type="submit" id="final-submit-btn" class="w-full bg-green-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
                         <i class="fab fa-whatsapp text-xl"></i> Tramitar Pedido
                     </button>
                 </form>
@@ -226,7 +198,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwSdOIGCANWyYNVoAOuxjg_jGP90BJD4Sw_A06LeByONyjT_bxA1xFnlqzvwoVpDnnJrQ/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwdmKIbF3Sc-qtgAvKosAZj44uidtnPcZTpafQHrma5JjW-7hhp8VQunG5BH48h57cxrA/exec';
         
         let productosData = [];
         let cart = [];
@@ -238,18 +210,24 @@
         const gestorTel = urlParams.get('tel');
         const isAdmin = urlParams.get('admin') === 'true';
 
-        // Gestión de Interfaz
-        if (gestorName) {
-            document.getElementById('gestor-badge').classList.remove('hidden');
-            document.getElementById('gestor-name').innerText = gestorName;
-            document.getElementById('mode-text').innerText = "Catálogo Personalizado";
-            
-            // EL PANEL SOLO SE MUESTRA SI isAdmin ES TRUE
-            if (isAdmin) {
-                document.getElementById('nav-dash').classList.remove('hidden');
-                document.getElementById('admin-status').classList.remove('hidden');
+        // INICIALIZACIÓN SEGURA
+        window.addEventListener('load', () => {
+            if (gestorName) {
+                const badge = document.getElementById('gestor-badge');
+                if(badge) badge.classList.remove('hidden');
+                
+                const nameDisplay = document.getElementById('gestor-name-display');
+                if(nameDisplay) nameDisplay.innerText = gestorName;
+
+                if (isAdmin) {
+                    const navDash = document.getElementById('nav-dash');
+                    const adminStatus = document.getElementById('admin-status');
+                    if(navDash) navDash.classList.remove('hidden');
+                    if(adminStatus) adminStatus.classList.remove('hidden');
+                }
             }
-        }
+            loadProducts(); // Solo carga productos cuando el DOM esté listo
+        });
 
         function showSection(sec) {
             document.getElementById('sec-catalogo').classList.toggle('hidden', sec !== 'catalogo');
@@ -273,7 +251,7 @@
                 const resp = await fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`);
                 const data = await resp.json();
                 renderDashboard(data);
-            } catch (e) { console.error("Error Dashboard"); }
+            } catch (e) { console.error("Error Stats"); }
         }
 
         function renderDashboard(data) {
@@ -287,14 +265,13 @@
             document.getElementById('stat-pending').innerText = pendientes.length;
             document.getElementById('stat-eff').innerText = data.length > 0 ? Math.round((entregados.length / data.length) * 100) + "%" : "0%";
 
-            document.getElementById('dash-table-body').innerHTML = data.reverse().slice(0,15).map(d => `
-                <tr class="border-b hover:bg-slate-50/50">
-                    <td class="py-5 px-6 font-bold text-slate-800">${d.Cliente}<br><span class="text-[9px] text-slate-400 font-medium">${d.CI || ''}</span></td>
-                    <td class="py-5 px-6 text-slate-500 font-medium">${d.Producto.substring(0,30)}...</td>
-                    <td class="py-5 px-6 text-center">
-                        <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase ${
-                            d.Estado === "Entregado" ? "bg-green-100 text-green-700" : 
-                            d.Estado === "Cancelado" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
+            document.getElementById('dash-table-body').innerHTML = data.reverse().slice(0,10).map(d => `
+                <tr class="border-b">
+                    <td class="p-4 font-bold text-slate-800">${d.Cliente}</td>
+                    <td class="p-4 text-slate-500">${d.Producto.substring(0,25)}...</td>
+                    <td class="p-4 text-center">
+                        <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                            d.Estado === "Entregado" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
                         }">${d.Estado || "Trámite"}</span>
                     </td>
                 </tr>
@@ -305,21 +282,19 @@
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Success', 'Pending', 'Failed'],
+                    labels: ['OK', 'PEND', 'FAIL'],
                     datasets: [{
                         data: [entregados.length, pendientes.length, cancelados.length],
                         backgroundColor: ['#3b82f6', '#f59e0b', '#f43f5e'],
-                        borderWidth: 0,
-                        hoverOffset: 10
+                        borderWidth: 0
                     }]
                 },
                 options: { cutout: '80%', plugins: { legend: { display: false } } }
             });
         }
 
-        // Utilidades e Imágenes
         function fixDriveUrl(url) {
-            if (!url) return '';
+            if (!url) return 'https://via.placeholder.com/300?text=Sin+Imagen';
             if (url.includes('drive.google.com')) {
                 const id = url.split('/d/')[1]?.split('/')[0] || url.split('id=')[1];
                 return `https://lh3.googleusercontent.com/u/0/d/${id}`;
@@ -332,7 +307,7 @@
                 const response = await fetch(API_URL);
                 productosData = await response.json();
                 renderProducts();
-            } catch (error) { console.error("Error productos"); }
+            } catch (error) { console.error("Error load"); }
         }
 
         function renderProducts() {
@@ -342,32 +317,29 @@
                 const precio = parseFloat(p.Precio) || 0;
                 return `
                 <div onclick="openDetail('${p.Nombre}')" class="tech-card overflow-hidden cursor-pointer group flex flex-col relative">
-                    <div class="h-56 bg-white relative overflow-hidden p-6 flex items-center justify-center">
+                    <div class="h-48 bg-white relative overflow-hidden p-6 flex items-center justify-center">
                         <img src="${fixDriveUrl(p.Thumbnail)}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-700">
-                        <div class="absolute top-4 left-4 bg-primary text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">${p.Categoria || 'Stock'}</div>
                     </div>
-                    <div class="p-6 flex flex-col flex-1 border-t border-slate-50 bg-white">
-                        <h3 class="font-black text-slate-800 text-xs mb-3 line-clamp-2 leading-tight uppercase italic tracking-tighter">${p.Nombre}</h3>
+                    <div class="p-6 flex flex-col flex-1 border-t border-slate-50">
+                        <h3 class="font-black text-slate-800 text-[11px] mb-2 line-clamp-2 leading-tight uppercase italic tracking-tighter">${p.Nombre}</h3>
                         <div class="flex flex-col gap-1 mb-4">
-                            <span class="text-2xl font-black text-primary tracking-tighter">$${precio}</span>
+                            <span class="text-2xl font-black text-slate-900 tracking-tighter">$${precio}</span>
                             <div class="flex items-center gap-2">
-                                <span class="text-[8px] font-black text-slate-400 uppercase italic"><i class="fas fa-shield-alt mr-1"></i>Garantía: ${p.Garantía || 'S/G'}</span>
-                                ${isAdmin ? `<span class="text-[8px] font-black text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded-lg border border-green-100">Profit: $${p.Comision}</span>` : ''}
+                                <span class="text-[8px] font-bold text-slate-400 uppercase italic">Garantía: ${p.Garantía || 'S/G'}</span>
+                                ${isAdmin ? `<span class="text-[8px] font-black text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded-lg">Ganas: $${p.Comision}</span>` : ''}
                             </div>
                         </div>
-                        <button class="w-full btn-primary py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest group-hover:bg-blue-600">Ficha Técnica</button>
+                        <button class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest group-hover:bg-blue-600 transition-all">Ver Ficha</button>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // Modales
         function openGestorGen() { document.getElementById('gestor-modal').classList.remove('hidden'); }
         function closeGestorGen() { document.getElementById('gestor-modal').classList.add('hidden'); }
         function generateLinks() {
             const name = document.getElementById('gen-name').value.trim();
             const tel = document.getElementById('gen-tel').value.trim();
-            if(!name || !tel) return alert("Completa los campos");
             const baseUrl = window.location.origin + window.location.pathname;
             document.getElementById('link-admin').value = `${baseUrl}?gestor=${encodeURIComponent(name)}&tel=${tel}&admin=true`;
             document.getElementById('link-client').value = `${baseUrl}?gestor=${encodeURIComponent(name)}&tel=${tel}`;
@@ -382,17 +354,17 @@
             document.getElementById('detail-desc').innerText = p.Descripcion;
             document.getElementById('detail-price').innerText = `$${p.Precio}`;
             document.getElementById('detail-cat').innerText = p.Categoria;
-            document.getElementById('detail-warranty-box').innerHTML = `<i class="fas fa-check-circle"></i> Garantía Oficial: ${p.Garantía || 'S/G'}`;
+            document.getElementById('detail-warranty-box').innerHTML = `<i class="fas fa-shield-alt mr-1"></i> Garantía: ${p.Garantía || 'N/A'}`;
             document.getElementById('detail-qty').value = 1;
             document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
             
-            const commDiv = document.getElementById('detail-admin-comm');
-            if(isAdmin) { commDiv.innerText = `Profit: $${p.Comision}`; commDiv.classList.remove('hidden'); } 
-            else commDiv.classList.add('hidden');
+            const commBox = document.getElementById('detail-admin-comm-box');
+            if(isAdmin) { commBox.innerText = `GANAS: $${p.Comision}`; commBox.classList.remove('hidden'); } 
+            else commBox.classList.add('hidden');
 
             const thumbs = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url);
             document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
-                <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-16 h-16 object-contain rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer bg-white shadow-sm p-1">
+                <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-14 h-14 object-contain rounded-lg border bg-white cursor-pointer p-1">
             `).join('');
 
             document.getElementById('detail-modal').classList.remove('hidden');
@@ -426,17 +398,17 @@
         function renderCart() {
             const container = document.getElementById('cart-items');
             if(cart.length === 0) {
-                container.innerHTML = `<div class="text-center py-20 text-slate-300 font-black uppercase text-[10px] tracking-widest">Orden Vacía</div>`;
+                container.innerHTML = `<div class="text-center py-20 text-[10px] font-black text-slate-300 uppercase">Orden Vacía</div>`;
                 updateTotals(0, 0); return;
             }
             container.innerHTML = cart.map((item, index) => `
-                <div class="flex gap-4 bg-white p-5 rounded-[24px] border shadow-sm relative">
-                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-14 h-14 object-contain rounded-xl bg-slate-50">
+                <div class="flex gap-4 bg-white p-4 rounded-2xl border relative">
+                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-12 h-12 object-contain rounded-lg">
                     <div class="flex-1">
-                        <h4 class="text-[10px] font-black uppercase italic leading-tight pr-6">${item.Nombre}</h4>
-                        <p class="text-sm font-black text-blue-600 mt-1">$${item.qty * item.Precio}</p>
+                        <h4 class="text-[9px] font-black uppercase italic leading-tight pr-6">${item.Nombre}</h4>
+                        <p class="text-[11px] font-black text-blue-600 mt-1">$${item.qty * item.Precio}</p>
                     </div>
-                    <button onclick="removeFromCart(${index})" class="absolute top-5 right-5 text-slate-300 hover:text-red-500"><i class="fas fa-trash-alt text-xs"></i></button>
+                    <button onclick="removeFromCart(${index})" class="absolute top-4 right-4 text-slate-300"><i class="fas fa-trash-alt text-xs"></i></button>
                 </div>`).join('');
             const sub = cart.reduce((acc, item) => acc + (item.Precio * item.qty), 0);
             const ship = cart.reduce((acc, item) => acc + (parseFloat(item.Mensajeria) || 0), 0);
@@ -451,12 +423,11 @@
 
         function removeFromCart(index) { cart.splice(index, 1); updateCartCount(); renderCart(); }
 
-        // --- SOLUCIÓN ERROR DE GUARDADO EN HOJA 2 ---
         document.getElementById('checkout-form').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('final-submit-btn');
             btn.disabled = true;
-            btn.innerHTML = `<span class="loader border-white"></span> Procesando...`;
+            btn.innerHTML = `Registrando...`;
 
             let eqTotal = 0, mTotal = 0, cTotal = 0;
             let pList = cart.map(item => {
@@ -472,7 +443,7 @@
             const dirCli = document.getElementById('check-dir').value;
             const vueltoCli = document.getElementById('check-vuelto').value || "No requerido";
 
-            const dataToSave = {
+            const payload = {
                 gestor: gestorName || "Venta Directa",
                 cliente: nombreCli,
                 ci: ciCli,
@@ -484,46 +455,15 @@
             };
 
             try {
-                // Registrar en Google Sheets
-                await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(dataToSave)
-                });
-
-                // Preparar mensaje WhatsApp
-                const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
-                    `💪🏻Nombre: ${nombreCli}%0A` +
-                    `💪🏻CI: ${ciCli}%0A` +
-                    `💪🏻Teléfono: ${telCli}%0A` +
-                    `💪🏻Dirección: ${dirCli}%0A%0A` +
-                    `💪🏻Producto: ${pList}%0A` +
-                    `💪🏻Total a Pagar: ${eqTotal + mTotal}%0A` +
-                    `-Precio equipo: ${eqTotal}%0A` +
-                    `-Mensajería: ${mTotal}%0A%0A` +
-                    `💪🏻Vuelto: ${vueltoCli}%0A` +
-                    `💪🏻Comisión: ${cTotal}%0A` +
-                    `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
-                    `☎(${gestorTel || ''})`;
-
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                const text = `*PEDIDO: PARA TU HOGAR*%0A%0A` +
+                    `💪🏻Nombre: ${nombreCli}%0A💪🏻CI: ${ciCli}%0A💪🏻Tel: ${telCli}%0A💪🏻Dirección: ${dirCli}%0A%0A` +
+                    `💪🏻Producto: ${pList}%0A💪🏻Total: ${eqTotal + mTotal}%0A-Equipo: ${eqTotal}%0A-Envío: ${mTotal}%0A%0A` +
+                    `💪🏻Vuelto: ${vueltoCli}%0A💪🏻Comisión: ${cTotal}%0A💪🏻Gestor: ${gestorName || 'Directo'}%0A☎(${gestorTel || ''})`;
                 window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
-                
-                // Reset
-                cart = [];
-                updateCartCount();
-                toggleCartModal();
-                alert("¡Pedido Registrado!");
                 location.reload();
-
-            } catch (error) {
-                alert("Error de conexión");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fab fa-whatsapp text-xl"></i> Tramitar Pedido`;
-            }
+            } catch (error) { alert("Error"); }
         };
-
-        loadProducts();
     </script>
 </body>
 </html>
