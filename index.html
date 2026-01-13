@@ -3,95 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Para Tu Hogar - Catálogo Oficial</title>
+    <title>Para Tu Hogar | Gestión de Ventas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root { --primary: #0f172a; --accent: #3b82f6; }
+        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .tech-card { background: white; border: 1px solid #e2e8f0; border-radius: 24px; transition: all 0.3s ease; }
+        .tech-card:hover { border-color: #3b82f6; box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.2); }
+        .btn-primary { background: var(--primary); color: white; transition: all 0.2s; }
+        .btn-primary:active { transform: scale(0.95); }
+        .glass-header { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        .animate-cart { animation: slideIn 0.3s ease-out; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .loader { width: 24px; height: 24px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans pb-24">
+<body class="pb-24">
 
-    <!-- Header -->
-    <header class="bg-blue-700 text-white shadow-lg sticky top-0 z-[100]">
+    <!-- Header Tecnológico -->
+    <header class="glass-header text-white sticky top-0 z-[100] shadow-2xl">
         <div class="container mx-auto p-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <h1 class="text-xl font-black uppercase italic tracking-tighter">Para Tu Hogar</h1>
-                <button onclick="openGestorGen()" class="hidden md:block bg-blue-800 hover:bg-blue-900 px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all">
-                    <i class="fas fa-user-tie mr-1"></i> Zona Gestores
-                </button>
+            <div class="flex items-center gap-3">
+                <div class="bg-accent p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                    <i class="fas fa-home-alt text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-tighter uppercase italic italic">Para Tu Hogar</h1>
+                    <p id="mode-text" class="text-[9px] text-blue-300 font-bold uppercase tracking-widest">Tienda Oficial</p>
+                </div>
             </div>
             
-            <div id="gestor-badge" class="hidden flex flex-col items-end">
-                <span id="gestor-name" class="bg-white/20 border border-white/30 px-3 py-1 rounded-full text-[10px] font-bold"></span>
-                <span id="admin-status" class="hidden text-[9px] text-green-300 font-bold mt-1 uppercase tracking-widest">● Modo Gestor Activo</span>
+            <div id="gestor-badge" class="hidden flex items-center gap-3 bg-white/10 px-3 py-1.5 rounded-2xl border border-white/10">
+                <div class="text-right">
+                    <p id="gestor-name" class="text-[10px] font-black leading-none"></p>
+                    <p class="text-[8px] text-blue-300 font-bold uppercase">Agente Verificado</p>
+                </div>
+                <i class="fas fa-id-badge text-blue-400"></i>
             </div>
-
-            <button onclick="openGestorGen()" class="md:hidden text-white text-lg px-2">
-                <i class="fas fa-link"></i>
-            </button>
         </div>
 
-        <!-- Navegación de secciones -->
-        <nav id="main-nav" class="container mx-auto px-4 pb-2 flex gap-4 overflow-x-auto">
-            <button onclick="showSection('catalogo')" id="btn-nav-catalogo" class="text-xs font-bold uppercase tracking-widest border-b-2 border-white pb-1">Catálogo</button>
-            <button onclick="showSection('dashboard')" id="nav-dash" class="hidden text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-all pb-1">Mi Panel de Ventas</button>
+        <nav id="main-nav" class="container mx-auto px-4 pb-2 flex gap-6 overflow-x-auto scrollbar-hide">
+            <button onclick="showSection('catalogo')" id="btn-nav-catalogo" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-blue-500 pb-1">Catálogo</button>
+            <button onclick="showSection('dashboard')" id="nav-dash" class="hidden text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 transition-all pb-1">Dashboard Real-Time</button>
+            <button onclick="openGestorGen()" class="text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 pb-1 ml-auto text-blue-400">Generar Links</button>
         </nav>
     </header>
 
     <main class="container mx-auto p-4 md:p-8">
         
         <!-- SECCIÓN CATÁLOGO -->
-        <section id="sec-catalogo">
+        <section id="sec-catalogo" class="space-y-6">
             <div id="productos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <div class="col-span-full flex flex-col items-center py-20 text-slate-400">
-                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                    <p class="font-medium">Sincronizando inventario real...</p>
+                <!-- Skeleton Loader -->
+                <div class="col-span-full py-20 text-center space-y-4">
+                    <span class="loader border-blue-500"></span>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Cargando Inventario...</p>
                 </div>
             </div>
         </section>
 
         <!-- SECCIÓN DASHBOARD -->
-        <section id="sec-dashboard" class="hidden space-y-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comisión Ganada</p>
-                    <p id="stat-total-money" class="text-2xl font-black text-green-600">$0</p>
+        <section id="sec-dashboard" class="hidden animate-in fade-in duration-500">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="tech-card p-5">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Ganancia Total</p>
+                    <p id="stat-total-money" class="text-2xl font-black text-blue-600">$0</p>
                 </div>
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Entregados</p>
-                    <p id="stat-orders" class="text-2xl font-black text-blue-700">0</p>
+                <div class="tech-card p-5">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Entregados</p>
+                    <p id="stat-orders" class="text-2xl font-black text-slate-800">0</p>
                 </div>
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pendientes</p>
+                <div class="tech-card p-5">
+                    <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">En Proceso</p>
                     <p id="stat-pending" class="text-2xl font-black text-orange-500">0</p>
                 </div>
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Eficiencia</p>
-                    <p id="stat-eff" class="text-2xl font-black text-slate-800">0%</p>
+                <div class="tech-card p-5 border-blue-100 bg-blue-50/30">
+                    <p class="text-[9px] font-bold text-blue-400 uppercase mb-1">Conversión</p>
+                    <p id="stat-eff" class="text-2xl font-black text-blue-700">0%</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <h4 class="text-sm font-black uppercase italic mb-4">Estado de Ventas</h4>
+                <div class="lg:col-span-1 tech-card p-6">
+                    <h4 class="text-xs font-black uppercase mb-6 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-blue-500"></i> Distribución de Ventas
+                    </h4>
                     <canvas id="chartVentas"></canvas>
                 </div>
-                <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                    <h4 class="text-sm font-black uppercase italic mb-4 px-2">Historial Reciente</h4>
+                <div class="lg:col-span-2 tech-card overflow-hidden">
+                    <h4 class="text-xs font-black uppercase p-6 border-b">Historial de Operaciones</h4>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead>
-                                <tr class="text-slate-400 border-b">
-                                    <th class="py-3 px-2 uppercase font-bold">Cliente</th>
-                                    <th class="py-3 px-2 uppercase font-bold">Producto</th>
-                                    <th class="py-3 px-2 uppercase font-bold">Total</th>
-                                    <th class="py-3 px-2 uppercase font-bold text-center">Estado</th>
+                        <table class="w-full text-left text-[11px]">
+                            <thead class="bg-slate-50 text-slate-400">
+                                <tr>
+                                    <th class="py-3 px-6 uppercase">Cliente / ID</th>
+                                    <th class="py-3 px-6 uppercase">Detalle Pedido</th>
+                                    <th class="py-3 px-6 uppercase text-center">Estado</th>
                                 </tr>
                             </thead>
                             <tbody id="dash-table-body"></tbody>
@@ -102,36 +111,36 @@
         </section>
     </main>
 
-    <!-- MODALES Y BOTONES FLOTANTES (IGUAL QUE ANTES) -->
-    <div id="cart-btn" onclick="toggleCartModal()" class="fixed bottom-6 right-6 bg-blue-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center cursor-pointer z-[80] hover:scale-110 transition-transform">
-        <i class="fas fa-shopping-basket text-xl"></i>
-        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">0</span>
+    <!-- Botón Carrito Float -->
+    <div id="cart-btn" onclick="toggleCartModal()" class="fixed bottom-6 right-6 bg-primary text-white w-14 h-14 rounded-2xl shadow-2xl flex items-center justify-center cursor-pointer z-[80] transition-transform active:scale-90">
+        <i class="fas fa-shopping-basket text-lg"></i>
+        <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-black w-6 h-6 rounded-lg flex items-center justify-center border-2 border-white shadow-lg">0</span>
     </div>
 
-    <!-- MODAL GESTORES -->
-    <div id="gestor-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[200]">
-        <div class="bg-white rounded-3xl w-full max-w-lg p-6 md:p-8 shadow-2xl relative">
-            <button onclick="closeGestorGen()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">&times;</button>
-            <h2 class="text-2xl font-black text-slate-800 mb-2 uppercase italic tracking-tight text-blue-700">Sé parte del equipo</h2>
-            <p class="text-slate-500 text-sm mb-6 font-medium">Genera tus enlaces para vender y ver tus estadísticas.</p>
+    <!-- MODAL GENERADOR -->
+    <div id="gestor-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-[200]">
+        <div class="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl relative border border-white/20">
+            <button onclick="closeGestorGen()" class="absolute top-6 right-6 text-slate-300 hover:text-slate-500"><i class="fas fa-times"></i></button>
+            <h2 class="text-xl font-black text-slate-800 mb-2 uppercase italic tracking-tighter">Networking Gestores</h2>
+            <p class="text-slate-400 text-[11px] mb-8 font-medium">Genera tus credenciales de acceso para empezar a vender.</p>
             <div class="space-y-4">
-                <input type="text" id="gen-name" class="w-full p-3 bg-slate-100 rounded-xl border-none focus:ring-2 focus:ring-blue-500" placeholder="Tu Nombre">
-                <input type="tel" id="gen-tel" class="w-full p-3 bg-slate-100 rounded-xl border-none focus:ring-2 focus:ring-blue-500" placeholder="Tu WhatsApp">
-                <button onclick="generateLinks()" class="w-full bg-blue-700 text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-800 shadow-lg transition-all">Generar Enlaces</button>
+                <input type="text" id="gen-name" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" placeholder="Nombre completo">
+                <input type="tel" id="gen-tel" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" placeholder="Teléfono WhatsApp">
+                <button onclick="generateLinks()" class="w-full btn-primary py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/10">Generar Accesos</button>
             </div>
-            <div id="links-result" class="hidden mt-8 space-y-4 border-t pt-6">
-                <div class="bg-green-50 p-4 rounded-2xl border border-green-100">
-                    <p class="text-[10px] font-bold text-green-600 uppercase mb-2">Enlace de Control (Admin)</p>
+            <div id="links-result" class="hidden mt-8 space-y-4 animate-in slide-in-from-bottom duration-500">
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <p class="text-[9px] font-black text-blue-600 uppercase mb-2 italic">● Acceso Administración (Privado)</p>
                     <div class="flex gap-2">
-                        <input type="text" id="link-admin" readonly class="flex-1 text-[10px] p-2 bg-white rounded border border-green-200">
-                        <button onclick="copy('link-admin')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold">COPIAR</button>
+                        <input type="text" id="link-admin" readonly class="flex-1 text-[10px] p-2 bg-white rounded-lg border border-blue-200">
+                        <button onclick="copy('link-admin')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold">COPY</button>
                     </div>
                 </div>
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                    <p class="text-[10px] font-bold text-blue-600 uppercase mb-2">Enlace para Clientes</p>
+                <div class="bg-slate-900 p-4 rounded-2xl">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2 italic">● Enlace para Clientes (Público)</p>
                     <div class="flex gap-2">
-                        <input type="text" id="link-client" readonly class="flex-1 text-[10px] p-2 bg-white rounded border border-blue-200">
-                        <button onclick="copy('link-client')" class="bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold">COPIAR</button>
+                        <input type="text" id="link-client" readonly class="flex-1 text-[10px] p-2 bg-white/10 text-white rounded-lg border border-white/10">
+                        <button onclick="copy('link-client')" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-[9px] font-bold">COPY</button>
                     </div>
                 </div>
             </div>
@@ -139,37 +148,43 @@
     </div>
 
     <!-- MODAL DETALLE -->
-    <div id="detail-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-sm hidden flex items-center justify-center p-2 md:p-4 z-[110]">
-        <div class="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
-            <button onclick="closeDetail()" class="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 w-10 h-10 rounded-full z-20"><i class="fas fa-times"></i></button>
-            <div class="md:w-1/2 p-4 bg-slate-100 flex flex-col h-full">
-                <div class="flex-1 flex items-center justify-center bg-white rounded-2xl p-4 shadow-inner mb-4 overflow-hidden">
+    <div id="detail-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md hidden flex items-center justify-center p-2 z-[110]">
+        <div class="bg-white rounded-[40px] w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
+            <button onclick="closeDetail()" class="absolute top-6 right-6 bg-white/80 backdrop-blur w-10 h-10 rounded-full z-20 shadow-xl border"><i class="fas fa-times"></i></button>
+            
+            <div class="md:w-1/2 p-4 bg-slate-50 flex flex-col h-full border-r">
+                <div class="flex-1 flex items-center justify-center bg-white rounded-[32px] p-8 shadow-sm mb-4">
                     <img id="detail-main-img" src="" class="max-w-full max-h-full object-contain">
                 </div>
-                <div id="detail-thumbnails" class="flex gap-2 overflow-x-auto pb-2 justify-center"></div>
+                <div id="detail-thumbnails" class="flex gap-3 overflow-x-auto pb-2 justify-center scrollbar-hide"></div>
             </div>
-            <div class="md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto">
-                <span id="detail-cat" class="text-blue-600 font-bold text-[10px] uppercase tracking-widest mb-1"></span>
-                <h2 id="detail-name" class="text-xl md:text-2xl font-black text-slate-800 mb-3 leading-tight uppercase italic"></h2>
-                <div class="flex items-center gap-3 mb-4">
-                    <span id="detail-price" class="text-3xl font-black text-slate-900"></span>
-                    <div id="detail-admin-comm" class="hidden bg-green-100 text-green-700 px-3 py-1 rounded-lg font-bold text-xs italic border border-green-200"></div>
+
+            <div class="md:w-1/2 p-8 md:p-12 flex flex-col overflow-y-auto">
+                <span id="detail-cat" class="text-blue-500 font-black text-[10px] uppercase tracking-widest mb-2"></span>
+                <h2 id="detail-name" class="text-2xl md:text-3xl font-black text-slate-800 mb-4 leading-tight uppercase italic tracking-tighter"></h2>
+                
+                <div class="flex items-center gap-4 mb-6">
+                    <span id="detail-price" class="text-4xl font-black text-slate-900 tracking-tighter"></span>
+                    <div id="detail-admin-comm" class="hidden bg-green-500 text-white px-3 py-1 rounded-lg font-black text-[10px] uppercase italic"></div>
                 </div>
-                <div id="detail-warranty-box" class="mb-4 bg-slate-50 p-2 rounded-lg text-[10px] font-bold text-slate-500 border border-slate-100 inline-block uppercase italic"></div>
-                <div class="flex-1 border-t py-4 my-4 overflow-y-auto">
-                    <p id="detail-desc" class="text-slate-600 text-sm whitespace-pre-line leading-relaxed font-medium"></p>
+
+                <div id="detail-warranty-box" class="mb-6 bg-blue-50 px-3 py-1.5 rounded-xl text-[10px] font-black text-blue-600 border border-blue-100 inline-flex items-center gap-2 self-start uppercase italic"></div>
+                
+                <div class="flex-1 border-t py-6 overflow-y-auto">
+                    <p id="detail-desc" class="text-slate-500 text-sm whitespace-pre-line leading-relaxed font-medium"></p>
                 </div>
-                <div class="mt-auto space-y-4 pt-4 border-t">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-sm uppercase text-slate-400 italic">Unidades:</span>
-                        <div class="flex items-center bg-white border-2 border-slate-100 rounded-xl overflow-hidden shadow-sm">
-                            <button onclick="updateQty(-1)" class="px-4 py-2 hover:bg-slate-100 font-bold text-lg text-blue-600">-</button>
-                            <input type="number" id="detail-qty" value="1" min="1" class="w-10 text-center font-black border-none focus:ring-0 text-slate-700">
-                            <button onclick="updateQty(1)" class="px-4 py-2 hover:bg-slate-100 font-bold text-lg text-blue-600">+</button>
+
+                <div class="mt-auto space-y-4 pt-6 border-t">
+                    <div class="flex items-center justify-between bg-slate-100 p-2 rounded-2xl">
+                        <span class="font-black text-[10px] uppercase text-slate-400 italic ml-2">Seleccionar Cantidad</span>
+                        <div class="flex items-center bg-white rounded-xl shadow-sm overflow-hidden">
+                            <button onclick="updateQty(-1)" class="px-5 py-2 hover:bg-slate-50 font-black text-blue-600 text-lg">-</button>
+                            <input type="number" id="detail-qty" value="1" min="1" class="w-12 text-center font-black border-none focus:ring-0">
+                            <button onclick="updateQty(1)" class="px-5 py-2 hover:bg-slate-50 font-black text-blue-600 text-lg">+</button>
                         </div>
                     </div>
-                    <button onclick="addItemToCart()" class="w-full bg-blue-700 text-white py-4 rounded-xl font-black uppercase tracking-wider hover:bg-blue-800 shadow-xl flex items-center justify-center gap-3 transition-all">
-                        <i class="fas fa-cart-plus"></i> Añadir a mi orden
+                    <button onclick="addItemToCart()" class="w-full btn-primary py-5 rounded-2xl font-black uppercase tracking-widest shadow-2xl flex items-center justify-center gap-3 transition-all hover:bg-blue-600">
+                        <i class="fas fa-cart-plus"></i> Añadir a la orden
                     </button>
                 </div>
             </div>
@@ -177,38 +192,41 @@
     </div>
 
     <!-- MODAL CARRITO -->
-    <div id="cart-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-end z-[120]">
+    <div id="cart-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-end z-[120]">
         <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-cart">
-            <div class="p-5 border-b flex justify-between items-center bg-blue-700 text-white">
-                <h2 class="text-lg font-black uppercase italic tracking-tighter"><i class="fas fa-clipboard-check mr-2"></i> Finalizar Pedido</h2>
-                <button onclick="toggleCartModal()" class="text-2xl opacity-80 hover:opacity-100">&times;</button>
+            <div class="p-6 border-b flex justify-between items-center bg-primary text-white">
+                <h2 class="text-lg font-black uppercase italic tracking-tighter italic"><i class="fas fa-check-circle mr-2 text-blue-400"></i> Checkout Final</h2>
+                <button onclick="toggleCartModal()" class="text-2xl opacity-50 hover:opacity-100">&times;</button>
             </div>
-            <div id="cart-items" class="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/50"></div>
-            <div class="p-6 bg-white border-t rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-                <div class="space-y-2 mb-6 text-sm">
-                    <div class="flex justify-between text-slate-400 font-bold uppercase text-[10px]"><span>Subtotal Equipos:</span> <span id="cart-subtotal" class="text-slate-800 font-black"></span></div>
-                    <div class="flex justify-between text-slate-400 font-bold uppercase text-[10px]"><span>Mensajería:</span> <span id="cart-shipping" class="text-red-500 font-black"></span></div>
-                    <div class="flex justify-between text-xl font-black text-blue-700 border-t pt-2 uppercase italic"><span>Total a Pagar:</span> <span id="cart-total"></span></div>
+            
+            <div id="cart-items" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50"></div>
+
+            <div class="p-8 bg-white border-t rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.1)]">
+                <div class="space-y-3 mb-8">
+                    <div class="flex justify-between text-[10px] font-black text-slate-400 uppercase"><span>Equipos:</span> <span id="cart-subtotal" class="text-slate-900 font-black"></span></div>
+                    <div class="flex justify-between text-[10px] font-black text-slate-400 uppercase"><span>Logística:</span> <span id="cart-shipping" class="text-blue-600 font-black"></span></div>
+                    <div class="flex justify-between text-2xl font-black text-primary border-t pt-4 uppercase italic"><span>TOTAL:</span> <span id="cart-total"></span></div>
                 </div>
+
                 <form id="checkout-form" class="space-y-4">
-                    <input type="text" id="check-nombre" placeholder="Nombre completo del cliente" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
-                    <div class="flex gap-2">
-                        <input type="text" id="check-ci" placeholder="CI (Identidad)" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
-                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
+                    <input type="text" id="check-nombre" placeholder="Nombre completo del cliente" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
+                    <div class="flex gap-3">
+                        <input type="text" id="check-ci" placeholder="CI" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
+                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500" required>
                     </div>
-                    <textarea id="check-dir" placeholder="Dirección exacta de entrega" class="w-full p-3 rounded-xl bg-slate-100 border-none text-sm font-bold focus:ring-2 focus:ring-blue-500 h-16" required></textarea>
-                    <input type="text" id="check-vuelto" placeholder="¿Necesita vuelto? (¿Con cuánto paga?)" class="w-full p-3 rounded-xl bg-blue-50 border-2 border-blue-100 text-sm font-bold italic text-blue-700 focus:ring-0">
-                    <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl hover:bg-green-700 flex items-center justify-center gap-2 mt-4 transition-all scale-100 active:scale-95">
-                        <i class="fab fa-whatsapp text-xl"></i> Enviar a Oficina
+                    <textarea id="check-dir" placeholder="Dirección detallada" class="w-full p-4 bg-slate-100 rounded-2xl border-none text-sm font-bold focus:ring-2 focus:ring-blue-500 h-16" required></textarea>
+                    <input type="text" id="check-vuelto" placeholder="¿Con cuánto paga el cliente?" class="w-full p-4 bg-blue-50 border-2 border-blue-100 text-blue-700 rounded-2xl text-sm font-black italic">
+                    
+                    <button type="submit" id="final-submit-btn" class="w-full bg-green-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 mt-4 active:scale-95 transition-all">
+                        <i class="fab fa-whatsapp text-xl"></i> Tramitar Pedido
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT UNIFICADO -->
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzVbaRkGVivs8TReNaHE7SZaqGnWer_cL4y1lNyggBeiyDoEaqYQ4QfoWISz2LkN0YvKQ/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwSdOIGCANWyYNVoAOuxjg_jGP90BJD4Sw_A06LeByONyjT_bxA1xFnlqzvwoVpDnnJrQ/exec';
         
         let productosData = [];
         let cart = [];
@@ -220,44 +238,42 @@
         const gestorTel = urlParams.get('tel');
         const isAdmin = urlParams.get('admin') === 'true';
 
-        // Inicialización de Interfaz Gestor
+        // Gestión de Interfaz
         if (gestorName) {
             document.getElementById('gestor-badge').classList.remove('hidden');
-            document.getElementById('gestor-name').innerText = `Gestor: ${gestorName}`;
-            document.getElementById('nav-dash').classList.remove('hidden');
-            if (isAdmin) document.getElementById('admin-status').classList.remove('hidden');
+            document.getElementById('gestor-name').innerText = gestorName;
+            document.getElementById('mode-text').innerText = "Catálogo Personalizado";
+            
+            // EL PANEL SOLO SE MUESTRA SI isAdmin ES TRUE
+            if (isAdmin) {
+                document.getElementById('nav-dash').classList.remove('hidden');
+                document.getElementById('admin-status').classList.remove('hidden');
+            }
         }
 
-        // --- FUNCIONES DE SECCIÓN ---
         function showSection(sec) {
             document.getElementById('sec-catalogo').classList.toggle('hidden', sec !== 'catalogo');
             document.getElementById('sec-dashboard').classList.toggle('hidden', sec !== 'dashboard');
             
-            // Estilo de botones
             const btnCat = document.getElementById('btn-nav-catalogo');
             const btnDash = document.getElementById('nav-dash');
             
             if(sec === 'catalogo') {
-                btnCat.classList.add('border-b-2', 'opacity-100');
-                btnDash.classList.remove('border-b-2');
-                btnDash.classList.add('opacity-60');
+                btnCat.classList.add('border-b-2'); btnCat.classList.remove('opacity-50');
+                btnDash.classList.remove('border-b-2'); btnDash.classList.add('opacity-50');
             } else {
-                btnDash.classList.add('border-b-2', 'opacity-100');
-                btnCat.classList.remove('border-b-2');
-                btnCat.classList.add('opacity-60');
+                btnDash.classList.add('border-b-2'); btnDash.classList.remove('opacity-50');
+                btnCat.classList.remove('border-b-2'); btnCat.classList.add('opacity-50');
                 loadDashboardStats();
             }
         }
 
-        // --- DASHBOARD LOGIC ---
         async function loadDashboardStats() {
             try {
                 const resp = await fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`);
                 const data = await resp.json();
                 renderDashboard(data);
-            } catch (e) {
-                console.error("Error cargando dashboard");
-            }
+            } catch (e) { console.error("Error Dashboard"); }
         }
 
         function renderDashboard(data) {
@@ -271,16 +287,15 @@
             document.getElementById('stat-pending').innerText = pendientes.length;
             document.getElementById('stat-eff').innerText = data.length > 0 ? Math.round((entregados.length / data.length) * 100) + "%" : "0%";
 
-            document.getElementById('dash-table-body').innerHTML = data.reverse().slice(0,10).map(d => `
-                <tr class="border-b hover:bg-slate-50 transition-colors">
-                    <td class="py-4 px-2 font-bold">${d.Nombre}</td>
-                    <td class="py-4 px-2 text-slate-500">${d.Producto.substring(0,20)}...</td>
-                    <td class="py-4 px-2 font-black">$${d["Total a Pagar"]}</td>
-                    <td class="py-4 px-2 text-center">
-                        <span class="px-2 py-1 rounded-full text-[8px] font-black uppercase ${
+            document.getElementById('dash-table-body').innerHTML = data.reverse().slice(0,15).map(d => `
+                <tr class="border-b hover:bg-slate-50/50">
+                    <td class="py-5 px-6 font-bold text-slate-800">${d.Cliente}<br><span class="text-[9px] text-slate-400 font-medium">${d.CI || ''}</span></td>
+                    <td class="py-5 px-6 text-slate-500 font-medium">${d.Producto.substring(0,30)}...</td>
+                    <td class="py-5 px-6 text-center">
+                        <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase ${
                             d.Estado === "Entregado" ? "bg-green-100 text-green-700" : 
                             d.Estado === "Cancelado" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
-                        }">${d.Estado || "Proceso"}</span>
+                        }">${d.Estado || "Trámite"}</span>
                     </td>
                 </tr>
             `).join('');
@@ -290,18 +305,19 @@
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Entregados', 'Pendientes', 'Cancelados'],
+                    labels: ['Success', 'Pending', 'Failed'],
                     datasets: [{
                         data: [entregados.length, pendientes.length, cancelados.length],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                        borderWidth: 0
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#f43f5e'],
+                        borderWidth: 0,
+                        hoverOffset: 10
                     }]
                 },
-                options: { cutout: '75%', plugins: { legend: { display: false } } }
+                options: { cutout: '80%', plugins: { legend: { display: false } } }
             });
         }
 
-        // --- LÓGICA DE PRODUCTOS (IGUAL QUE ANTES) ---
+        // Utilidades e Imágenes
         function fixDriveUrl(url) {
             if (!url) return '';
             if (url.includes('drive.google.com')) {
@@ -316,9 +332,7 @@
                 const response = await fetch(API_URL);
                 productosData = await response.json();
                 renderProducts();
-            } catch (error) {
-                document.getElementById('productos').innerHTML = `<p class="col-span-full text-center py-20 text-red-500 font-bold">Error al cargar datos.</p>`;
-            }
+            } catch (error) { console.error("Error productos"); }
         }
 
         function renderProducts() {
@@ -327,42 +341,39 @@
                 if(!p.Disponible || p.Disponible.toString().toUpperCase() !== "SI") return '';
                 const precio = parseFloat(p.Precio) || 0;
                 return `
-                <div onclick="openDetail('${p.Nombre}')" class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-2xl transition-all cursor-pointer group flex flex-col relative">
-                    <div class="h-48 bg-slate-50 relative overflow-hidden p-2">
-                        <img src="${fixDriveUrl(p.Thumbnail)}" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500">
-                        <div class="absolute top-3 left-3 bg-blue-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase shadow-sm">${p.Categoria || 'Equipo'}</div>
+                <div onclick="openDetail('${p.Nombre}')" class="tech-card overflow-hidden cursor-pointer group flex flex-col relative">
+                    <div class="h-56 bg-white relative overflow-hidden p-6 flex items-center justify-center">
+                        <img src="${fixDriveUrl(p.Thumbnail)}" loading="lazy" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-700">
+                        <div class="absolute top-4 left-4 bg-primary text-white px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">${p.Categoria || 'Stock'}</div>
                     </div>
-                    <div class="p-5 flex flex-col flex-1">
-                        <h3 class="font-black text-slate-800 text-[13px] mb-2 line-clamp-2 leading-snug uppercase italic">${p.Nombre}</h3>
+                    <div class="p-6 flex flex-col flex-1 border-t border-slate-50 bg-white">
+                        <h3 class="font-black text-slate-800 text-xs mb-3 line-clamp-2 leading-tight uppercase italic tracking-tighter">${p.Nombre}</h3>
                         <div class="flex flex-col gap-1 mb-4">
-                            <span class="text-2xl font-black text-blue-700 tracking-tighter">$${precio}</span>
+                            <span class="text-2xl font-black text-primary tracking-tighter">$${precio}</span>
                             <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-black text-slate-400 uppercase italic"><i class="fas fa-shield-alt mr-1"></i>${p.Garantía || 'S/G'}</span>
-                                ${isAdmin ? `<span class="text-[9px] font-black text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded-full">Ganas: $${p.Comision}</span>` : ''}
+                                <span class="text-[8px] font-black text-slate-400 uppercase italic"><i class="fas fa-shield-alt mr-1"></i>Garantía: ${p.Garantía || 'S/G'}</span>
+                                ${isAdmin ? `<span class="text-[8px] font-black text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded-lg border border-green-100">Profit: $${p.Comision}</span>` : ''}
                             </div>
                         </div>
-                        <div class="mt-auto"><button class="w-full bg-slate-900 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest group-hover:bg-blue-600 transition-colors">Ver Detalles</button></div>
+                        <button class="w-full btn-primary py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest group-hover:bg-blue-600">Ficha Técnica</button>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // --- FUNCIONES AUXILIARES (MODALES, CARRITO, COPIAR) ---
+        // Modales
         function openGestorGen() { document.getElementById('gestor-modal').classList.remove('hidden'); }
         function closeGestorGen() { document.getElementById('gestor-modal').classList.add('hidden'); }
         function generateLinks() {
             const name = document.getElementById('gen-name').value.trim();
             const tel = document.getElementById('gen-tel').value.trim();
-            if(!name || !tel) return alert("Llena ambos campos");
+            if(!name || !tel) return alert("Completa los campos");
             const baseUrl = window.location.origin + window.location.pathname;
             document.getElementById('link-admin').value = `${baseUrl}?gestor=${encodeURIComponent(name)}&tel=${tel}&admin=true`;
             document.getElementById('link-client').value = `${baseUrl}?gestor=${encodeURIComponent(name)}&tel=${tel}`;
             document.getElementById('links-result').classList.remove('hidden');
         }
-        function copy(id) {
-            const el = document.getElementById(id); el.select(); document.execCommand('copy');
-            alert("Copiado!");
-        }
+        function copy(id) { const el = document.getElementById(id); el.select(); document.execCommand('copy'); alert("Copiado!"); }
 
         function openDetail(name) {
             selectedProduct = productosData.find(p => p.Nombre === name);
@@ -371,17 +382,17 @@
             document.getElementById('detail-desc').innerText = p.Descripcion;
             document.getElementById('detail-price').innerText = `$${p.Precio}`;
             document.getElementById('detail-cat').innerText = p.Categoria;
-            document.getElementById('detail-warranty-box').innerHTML = `<i class="fas fa-shield-alt mr-2"></i> Garantía: ${p.Garantía || 'N/A'}`;
+            document.getElementById('detail-warranty-box').innerHTML = `<i class="fas fa-check-circle"></i> Garantía Oficial: ${p.Garantía || 'S/G'}`;
             document.getElementById('detail-qty').value = 1;
             document.getElementById('detail-main-img').src = fixDriveUrl(p.Thumbnail);
             
             const commDiv = document.getElementById('detail-admin-comm');
-            if(isAdmin) { commDiv.innerText = `Ganas: $${p.Comision}`; commDiv.classList.remove('hidden'); } 
+            if(isAdmin) { commDiv.innerText = `Profit: $${p.Comision}`; commDiv.classList.remove('hidden'); } 
             else commDiv.classList.add('hidden');
 
             const thumbs = [p.Thumbnail, p.Image1, p.Image2, p.Image3].filter(url => url);
             document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
-                <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-14 h-14 object-contain rounded-lg border-2 border-transparent hover:border-blue-500 cursor-pointer bg-white shadow-sm">
+                <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-16 h-16 object-contain rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer bg-white shadow-sm p-1">
             `).join('');
 
             document.getElementById('detail-modal').classList.remove('hidden');
@@ -415,17 +426,17 @@
         function renderCart() {
             const container = document.getElementById('cart-items');
             if(cart.length === 0) {
-                container.innerHTML = `<div class="text-center py-20 text-slate-300 font-bold uppercase tracking-widest">Carrito Vacío</div>`;
+                container.innerHTML = `<div class="text-center py-20 text-slate-300 font-black uppercase text-[10px] tracking-widest">Orden Vacía</div>`;
                 updateTotals(0, 0); return;
             }
             container.innerHTML = cart.map((item, index) => `
-                <div class="flex gap-4 bg-white p-4 rounded-3xl border shadow-sm relative">
-                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-12 h-12 object-contain rounded-xl bg-slate-50">
+                <div class="flex gap-4 bg-white p-5 rounded-[24px] border shadow-sm relative">
+                    <img src="${fixDriveUrl(item.Thumbnail)}" class="w-14 h-14 object-contain rounded-xl bg-slate-50">
                     <div class="flex-1">
                         <h4 class="text-[10px] font-black uppercase italic leading-tight pr-6">${item.Nombre}</h4>
-                        <p class="text-sm font-black text-blue-700">$${item.qty * item.Precio}</p>
+                        <p class="text-sm font-black text-blue-600 mt-1">$${item.qty * item.Precio}</p>
                     </div>
-                    <button onclick="removeFromCart(${index})" class="absolute top-4 right-4 text-slate-300 hover:text-red-500"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="removeFromCart(${index})" class="absolute top-5 right-5 text-slate-300 hover:text-red-500"><i class="fas fa-trash-alt text-xs"></i></button>
                 </div>`).join('');
             const sub = cart.reduce((acc, item) => acc + (item.Precio * item.qty), 0);
             const ship = cart.reduce((acc, item) => acc + (parseFloat(item.Mensajeria) || 0), 0);
@@ -433,88 +444,85 @@
         }
 
         function updateTotals(sub, ship) {
-            document.getElementById('cart-subtotal').innerText = `$${sub}`;
-            document.getElementById('cart-shipping').innerText = `$${ship}`;
-            document.getElementById('cart-total').innerText = `$${sub + ship}`;
+            document.getElementById('cart-subtotal').innerText = `$${sub.toFixed(2)}`;
+            document.getElementById('cart-shipping').innerText = `$${ship.toFixed(2)}`;
+            document.getElementById('cart-total').innerText = `$${(sub + ship).toFixed(2)}`;
         }
 
         function removeFromCart(index) { cart.splice(index, 1); updateCartCount(); renderCart(); }
 
+        // --- SOLUCIÓN ERROR DE GUARDADO EN HOJA 2 ---
         document.getElementById('checkout-form').onsubmit = async (e) => {
-    e.preventDefault();
-    
-    // Deshabilitar botón para evitar doble envío
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerText = "Registrando pedido...";
+            e.preventDefault();
+            const btn = document.getElementById('final-submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="loader border-white"></span> Procesando...`;
 
-    let eqTotal = 0, mTotal = 0, cTotal = 0;
-    let pList = cart.map(item => {
-        eqTotal += (item.Precio * item.qty);
-        mTotal += (parseFloat(item.Mensajeria) || 0);
-        cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
-        return `${item.qty}x ${item.Nombre}`;
-    }).join(', ');
+            let eqTotal = 0, mTotal = 0, cTotal = 0;
+            let pList = cart.map(item => {
+                eqTotal += (item.Precio * item.qty);
+                mTotal += (parseFloat(item.Mensajeria) || 0);
+                cTotal += ((parseFloat(item.Comision) || 0) * item.qty);
+                return `${item.qty}x ${item.Nombre}`;
+            }).join(', ');
 
-    const nombreCli = document.getElementById('check-nombre').value;
-    const ciCli = document.getElementById('check-ci').value;
-    const telCli = document.getElementById('check-tel').value;
-    const dirCli = document.getElementById('check-dir').value;
-    const vueltoCli = document.getElementById('check-vuelto').value || "No requerido";
+            const nombreCli = document.getElementById('check-nombre').value;
+            const ciCli = document.getElementById('check-ci').value;
+            const telCli = document.getElementById('check-tel').value;
+            const dirCli = document.getElementById('check-dir').value;
+            const vueltoCli = document.getElementById('check-vuelto').value || "No requerido";
 
-    // 1. PREPARAR DATOS PARA LA HOJA 2
-    const datosPedido = {
-        gestor: gestorName || "Venta Directa",
-        cliente: nombreCli,
-        ci: ciCli,
-        telefono: telCli,
-        direccion: dirCli,
-        producto: pList,
-        total: eqTotal + mTotal,
-        comision: cTotal
-    };
+            const dataToSave = {
+                gestor: gestorName || "Venta Directa",
+                cliente: nombreCli,
+                ci: ciCli,
+                telefono: telCli,
+                direccion: dirCli,
+                producto: pList,
+                total: eqTotal + mTotal,
+                comision: cTotal
+            };
 
-    try {
-        // 2. ENVIAR A GOOGLE SHEETS (POST)
-        await fetch(API_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Necesario para Google Apps Script
-            body: JSON.stringify(datosPedido)
-        });
+            try {
+                // Registrar en Google Sheets
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(dataToSave)
+                });
 
-        // 3. PREPARAR MENSAJE PARA WHATSAPP
-        const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
-            `💪🏻Nombre: ${nombreCli}%0A` +
-            `💪🏻CI: ${ciCli}%0A` +
-            `💪🏻Teléfono: ${telCli}%0A` +
-            `💪🏻Dirección: ${dirCli}%0A%0A` +
-            `💪🏻Producto: ${pList}%0A` +
-            `💪🏻Total a Pagar: ${eqTotal + mTotal}%0A` +
-            `-Precio equipo: ${eqTotal}%0A` +
-            `-Mensajería: ${mTotal}%0A%0A` +
-            `💪🏻Vuelto: ${vueltoCli}%0A` +
-            `💪🏻Comisión: ${cTotal}%0A` +
-            `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
-            `☎(${gestorTel || ''})`;
+                // Preparar mensaje WhatsApp
+                const text = `*ORDEN DE PEDIDO - PARA TU HOGAR*%0A%0A` +
+                    `💪🏻Nombre: ${nombreCli}%0A` +
+                    `💪🏻CI: ${ciCli}%0A` +
+                    `💪🏻Teléfono: ${telCli}%0A` +
+                    `💪🏻Dirección: ${dirCli}%0A%0A` +
+                    `💪🏻Producto: ${pList}%0A` +
+                    `💪🏻Total a Pagar: ${eqTotal + mTotal}%0A` +
+                    `-Precio equipo: ${eqTotal}%0A` +
+                    `-Mensajería: ${mTotal}%0A%0A` +
+                    `💪🏻Vuelto: ${vueltoCli}%0A` +
+                    `💪🏻Comisión: ${cTotal}%0A` +
+                    `💪🏻Gestor: ${gestorName || 'Venta Directa'}%0A` +
+                    `☎(${gestorTel || ''})`;
 
-        // 4. ABRIR WHATSAPP Y LIMPIAR
-        window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
-        
-        cart = [];
-        updateCartCount();
-        toggleCartModal();
-        alert("Pedido registrado y enviado con éxito.");
-        location.reload(); // Recargamos para actualizar el dashboard
+                window.open(`https://wa.me/5356071095?text=${text}`, '_blank');
+                
+                // Reset
+                cart = [];
+                updateCartCount();
+                toggleCartModal();
+                alert("¡Pedido Registrado!");
+                location.reload();
 
-    } catch (error) {
-        alert("Error al registrar el pedido. Intente de nuevo.");
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "Enviar a Oficina";
-    }
-};
+            } catch (error) {
+                alert("Error de conexión");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fab fa-whatsapp text-xl"></i> Tramitar Pedido`;
+            }
+        };
 
-        // Iniciar
         loadProducts();
     </script>
 </body>
