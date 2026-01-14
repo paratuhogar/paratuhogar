@@ -70,34 +70,69 @@
 
     <main class="max-w-[1200px] mx-auto pb-20">
         
-        <!-- Hero Section -->
-        <section class="px-6 py-10 lg:py-16">
-            <div class="max-w-2xl">
-                <h2 class="text-4xl lg:text-5xl font-black leading-tight mb-4">Equipos para tu familia en Cuba</h2>
-                <p class="text-gray-500 dark:text-gray-400 text-lg">Catálogo optimizado. Ordena por WhatsApp y paga al recibir en la puerta de tu casa.</p>
-                <div class="flex gap-3 mt-6">
-                    <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">bolt</span> Entrega 24-48h</span>
-                    <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">verified_user</span> Garantía Real</span>
+        <!-- 1. NAVEGACIÓN ADMIN (Fuera de los contenedores para que nunca desaparezca) -->
+        <nav id="admin-nav" class="hidden px-6 max-w-[1200px] mx-auto mt-4 flex gap-2">
+            <button onclick="showSection('catalogo')" id="tab-cat" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white">Catálogo</button>
+            <button onclick="showSection('dashboard')" id="tab-dash" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400">Mi Dashboard</button>
+        </nav>
+
+        <!-- 2. CONTENEDOR DEL CATÁLOGO (Solo envuelve cosas del catálogo) -->
+        <div id="sec-catalogo">
+            <!-- Hero Section -->
+            <section class="px-6 py-10 lg:py-16">
+                <div class="max-w-2xl">
+                    <h2 class="text-4xl lg:text-5xl font-black leading-tight mb-4">Equipos para tu familia en Cuba</h2>
+                    <p class="text-gray-500 dark:text-gray-400 text-lg">Catálogo optimizado. Ordena por WhatsApp y paga al recibir en la puerta de tu casa.</p>
+                    <div class="flex gap-3 mt-6">
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">bolt</span> Entrega 24-48h</span>
+                        <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">verified_user</span> Garantía Real</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Category Tabs (Sticky) -->
+            <div class="sticky top-[65px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur shadow-sm border-b border-gray-200 dark:border-gray-800">
+                <div id="category-list" class="flex gap-8 px-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                    <button onclick="filterByCategory('TODOS')" class="category-tab active py-4 text-sm font-bold transition-all">Todos</button>
+                    <button onclick="filterByCategory('REFRIGERACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Refrigeración</button>
+                    <button onclick="filterByCategory('COCINA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Cocina</button>
+                    <button onclick="filterByCategory('LAVADO')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Lavado</button>
+                    <button onclick="filterByCategory('CLIMATIZACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Climatización</button>
+                    <button onclick="filterByCategory('ENERGÍA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Energía</button>
                 </div>
             </div>
-        </section>
 
-        <!-- Category Tabs (Sticky) -->
-        <div class="sticky top-[65px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur shadow-sm border-b border-gray-200 dark:border-gray-800">
-            <div id="category-list" class="flex gap-8 px-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                <button onclick="filterByCategory('TODOS')" class="category-tab active py-4 text-sm font-bold transition-all">Todos</button>
-                <button onclick="filterByCategory('REFRIGERACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Refrigeración</button>
-                <button onclick="filterByCategory('COCINA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Cocina</button>
-                <button onclick="filterByCategory('LAVADO')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Lavado</button>
-                <button onclick="filterByCategory('CLIMATIZACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Climatización</button>
-                <button onclick="filterByCategory('ENERGÍA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Energía</button>
+            <!-- Product Grid -->
+            <section id="productos-container" class="px-6 py-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
+                <div class="col-span-full py-20 text-center"><span class="loader"></span></div>
+            </section>
+        </div> <!-- FIN sec-catalogo -->
+
+        <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
+        <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
+            <div class="bg-primary p-8 rounded-3xl text-white shadow-xl shadow-primary/20 relative overflow-hidden">
+                <p class="text-[10px] font-black uppercase opacity-80 mb-1 italic">Comisiones Acumuladas</p>
+                <h2 id="dash-money" class="text-4xl font-black italic">$0.00</h2>
+                <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl opacity-10">payments</span>
             </div>
-        </div>
-
-        <!-- Product Grid -->
-        <section id="productos-container" class="px-6 py-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
-            <div class="col-span-full py-20 text-center"><span class="loader"></span></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:bg-gray-800">
+                    <p class="text-[9px] font-black text-gray-400 uppercase">Pedidos Entregados</p>
+                    <p id="dash-ok" class="text-2xl font-black text-primary">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:bg-gray-800">
+                    <p class="text-[9px] font-black text-gray-400 uppercase">Pedidos Pendientes</p>
+                    <p id="dash-pending" class="text-2xl font-black text-orange-500">0</p>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">Ranking de Agentes</h3>
+                </div>
+                <div id="ranking-list" class="divide-y divide-gray-50 dark:divide-gray-700"></div>
+            </div>
         </section>
+
     </main>
 
     <!-- MODAL DETALLE (ESTILO IMAGEN) -->
@@ -206,20 +241,32 @@
     </div>
 
     <!-- MODAL GESTORES (OCULTO) -->
-    <div id="gestor-modal" class="fixed inset-0 z-[200] hidden bg-black/90 p-6 flex items-center justify-center">
-        <div class="bg-white dark:bg-background-dark w-full max-w-sm rounded-3xl p-8 space-y-4">
-            <h2 class="text-xl font-black uppercase text-primary">Zona de Agentes</h2>
-            <input type="password" id="master-pass" placeholder="Código Maestro" class="w-full rounded-xl border-gray-200">
-            <input type="text" id="gen-name" placeholder="Tu Nombre" class="w-full rounded-xl border-gray-200">
-            <input type="tel" id="gen-tel" placeholder="WhatsApp" class="w-full rounded-xl border-gray-200">
-            <button onclick="processGestor()" class="w-full bg-primary text-white py-3 rounded-xl font-bold uppercase">Vincular</button>
-            <div id="links-result" class="hidden space-y-2 pt-4">
-                <input type="text" id="link-client" readonly class="w-full text-[10px] bg-gray-100 p-2 rounded">
-                <button onclick="copy('link-client')" class="text-xs font-bold text-primary">COPIAR LINK PÚBLICO</button>
+    <!-- MODAL GESTORES ACTUALIZADO -->
+<div id="gestor-modal" class="fixed inset-0 z-[200] hidden bg-black/90 p-6 flex items-center justify-center">
+    <div class="bg-white dark:bg-background-dark w-full max-w-sm rounded-3xl p-8 space-y-4">
+        <h2 class="text-xl font-black uppercase text-primary">Zona de Agentes</h2>
+        <input type="password" id="master-pass" placeholder="Código Maestro" class="w-full rounded-xl border-gray-200">
+        <input type="text" id="gen-name" placeholder="Tu Nombre" class="w-full rounded-xl border-gray-200">
+        <input type="tel" id="gen-tel" placeholder="WhatsApp" class="w-full rounded-xl border-gray-200">
+        <button onclick="processGestor()" class="w-full bg-primary text-white py-3 rounded-xl font-bold uppercase">Generar Enlaces</button>
+        
+        <div id="links-result" class="hidden space-y-4 pt-4 border-t border-gray-100">
+            <!-- Link Privado -->
+            <div>
+                <p class="text-[9px] font-black text-red-500 uppercase mb-1">● Mi Panel Privado (Solo para ti)</p>
+                <input type="text" id="link-admin" readonly class="w-full text-[10px] bg-gray-100 p-2 rounded border-none">
+                <button onclick="copy('link-admin')" class="text-[10px] font-bold text-primary mt-1">COPIAR LINK PRIVADO</button>
             </div>
-            <button onclick="closeGestorGen()" class="w-full text-gray-400 text-xs font-bold uppercase">Cerrar</button>
+            <!-- Link Público -->
+            <div>
+                <p class="text-[9px] font-black text-gray-400 uppercase mb-1">● Link Público (Para enviar a clientes)</p>
+                <input type="text" id="link-client" readonly class="w-full text-[10px] bg-gray-100 p-2 rounded border-none">
+                <button onclick="copy('link-client')" class="text-[10px] font-bold text-primary mt-1">COPIAR LINK CLIENTE</button>
+            </div>
         </div>
+        <button onclick="closeGestorGen()" class="w-full text-gray-400 text-xs font-bold uppercase">Cerrar</button>
     </div>
+</div>
 
     <!-- Footer -->
     <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12 px-6">
@@ -266,11 +313,18 @@
         let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
 
         const urlParams = new URLSearchParams(window.location.search);
-        const gestorName = urlParams.get('gestor'), gestorTel = urlParams.get('tel');
+        const gestorName = urlParams.get('gestor');
+        const gestorTel = urlParams.get('tel');
+        const isAdmin = urlParams.get('admin') === 'true'; // <--- Detecta si es el link privado
 
         window.addEventListener('load', () => {
             if (gestorName) {
                 document.getElementById('gestor-label').innerText = `AGENTE: ${gestorName.toUpperCase()}`;
+                if (isAdmin) {
+                    // Si es admin, mostramos el menú de navegación para entrar al Dashboard
+                    document.getElementById('admin-nav').classList.remove('hidden');
+                    document.getElementById('gestor-label').innerText += " (PANEL PRIVADO)";
+                }
             }
             loadProducts();
         });
@@ -297,6 +351,10 @@
             container.innerHTML = filtered.map(p => {
                 const precio = parseFloat(p.Precio) || 0;
                 const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
+                
+                // SOLO SI ES ADMIN MOSTRAR GANANCIA EN LA TARJETA
+                const htmlGanancia = isAdmin ? `<p class="text-[10px] font-black text-emerald-500 mt-1 uppercase italic tracking-tighter">Tu Ganancia: $${p.Comision || 0}</p>` : '';
+
                 return `
                 <div onclick="openDetail('${p.Nombre.replace(/'/g, "\\'")}')" class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all cursor-pointer">
                     <div class="w-full aspect-square bg-white p-4">
@@ -305,6 +363,7 @@
                     <div class="p-4">
                         <h3 class="text-sm font-bold leading-tight mb-2 line-clamp-2 min-h-[40px]">${p.Nombre}</h3>
                         <p class="text-primary text-xl font-black">${pDisplay}</p>
+                        ${htmlGanancia}
                         <button class="mt-4 w-full bg-primary/10 text-primary py-2 rounded-xl text-xs font-black uppercase hover:bg-primary hover:text-white transition-all">Ver Detalles</button>
                     </div>
                 </div>`;
@@ -318,6 +377,17 @@
 
             document.getElementById('detail-name').innerText = p.Nombre;
             document.getElementById('detail-desc').innerText = p.Descripcion || '';
+            // --- MOSTRAR GANANCIA SOLO AL ADMIN EN EL DETALLE ---
+            const oldBadge = document.getElementById('admin-comm-badge');
+            if(oldBadge) oldBadge.remove();
+            
+            if(isAdmin) {
+                const badge = `<div id="admin-comm-badge" class="bg-emerald-500 text-white px-3 py-2 rounded-xl font-black text-[11px] mb-4 flex justify-between items-center shadow-lg shadow-emerald-500/20 uppercase italic">
+                    <span>Ganancia de Agente:</span>
+                    <span>$${p.Comision || 0}.00</span>
+                </div>`;
+                document.getElementById('detail-name').insertAdjacentHTML('beforebegin', badge);
+            }
             document.getElementById('detail-price').innerText = `$${p.Precio}.00 USD`;
             document.getElementById('detail-price-cup').innerText = `/ CUP ${(p.Precio * cupRate).toLocaleString()}`;
             document.getElementById('detail-cat').innerText = p.Categoria || '';
@@ -480,17 +550,80 @@
         function closeGestorGen() { document.getElementById('gestor-modal').classList.add('hidden'); }
         function processGestor() {
             const pass = document.getElementById('master-pass').value;
-            if(pass !== MASTER_KEY) return alert("Error");
-            const name = document.getElementById('gen-name').value;
-            const tel = document.getElementById('gen-tel').value;
+            if(pass !== MASTER_KEY) return alert("Código Maestro Incorrecto");
+            
+            const name = document.getElementById('gen-name').value.trim();
+            const tel = document.getElementById('gen-tel').value.trim();
+            if(!name || !tel) return alert("Faltan datos");
+
             const base = window.location.origin + window.location.pathname;
-            document.getElementById('link-client').value = `${base}?gestor=${name}&tel=${tel}`;
+            
+            // Generar los dos enlaces
+            document.getElementById('link-admin').value = `${base}?gestor=${encodeURIComponent(name)}&tel=${tel}&admin=true`;
+            document.getElementById('link-client').value = `${base}?gestor=${encodeURIComponent(name)}&tel=${tel}`;
+            
             document.getElementById('links-result').classList.remove('hidden');
         }
         function copy(id) { const e = document.getElementById(id); e.select(); document.execCommand('copy'); alert("Copiado"); }
         function copyOffer() {
             const text = `🔥 *OFERTA DISPONIBLE*\n📦 ${selectedProduct.Nombre}\n💰 Precio: $${selectedProduct.Precio} USD\n🛡️ Garantía: ${selectedProduct.Garantía}\n🚛 Envío: ${selectedProduct.Mensajeria}`;
             navigator.clipboard.writeText(text).then(() => alert("Copiado!"));
+        }
+
+        function showSection(section) {
+            const isCat = section === 'catalogo';
+            
+            const catElement = document.getElementById('sec-catalogo');
+            const dashElement = document.getElementById('sec-dashboard');
+            const btnCat = document.getElementById('tab-cat');
+            const btnDash = document.getElementById('tab-dash');
+
+            if (isCat) {
+                catElement.style.display = 'block';
+                dashElement.classList.add('hidden');
+                btnCat.className = "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white";
+                btnDash.className = "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400";
+            } else {
+                catElement.style.display = 'none';
+                dashElement.classList.remove('hidden');
+                btnCat.className = "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400";
+                btnDash.className = "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white";
+                loadFullDashboard(); // Cargar los datos del Excel
+            }
+            window.scrollTo(0, 0);
+        }
+
+        async function loadFullDashboard() {
+            try {
+                // Obtenemos estadísticas y ranking de tu Google Apps Script
+                const [sResp, rResp] = await Promise.all([
+                    fetch(`${API_URL}?action=getStats&gestor=${encodeURIComponent(gestorName)}`),
+                    fetch(`${API_URL}?action=getRanking&gestor=${encodeURIComponent(gestorName)}&period=month`)
+                ]);
+                
+                const stats = await sResp.json();
+                const ranking = await rResp.json();
+
+                // Filtrar pedidos
+                const entregados = stats.filter(s => s.Estado === "Entregado");
+                const pendientes = stats.filter(s => s.Estado === "Pendiente");
+
+                // Actualizar UI
+                document.getElementById('dash-money').innerText = `$${entregados.reduce((a,c) => a + (parseFloat(c.Comisión || 0)), 0).toFixed(2)}`;
+                document.getElementById('dash-ok').innerText = entregados.length;
+                document.getElementById('dash-pending').innerText = pendientes.length;
+
+                // Dibujar Ranking
+                document.getElementById('ranking-list').innerHTML = ranking.map((r, i) => `
+                    <div class="flex items-center justify-between p-4 ${r.isMe ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-black text-gray-300">#${i+1}</span>
+                            <p class="text-xs font-bold ${r.isMe ? 'text-primary' : ''}">${r.name}</p>
+                        </div>
+                        <p class="text-xs font-black">$${r.sales.toFixed(0)}</p>
+                    </div>`).join('');
+                    
+            } catch (e) { console.log("Error cargando dashboard", e); }
         }
     </script>
 </body>
