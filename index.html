@@ -90,6 +90,17 @@
 }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Quill Editor (Estilo Word) -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+<style>
+    /* Estilo para que el editor se vea bien en el móvil */
+    .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+    .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
+</style>
 
 </head>
 
@@ -383,8 +394,20 @@
 
     <!-- Contenido: Logística -->
     <div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+    <!-- Barra de búsqueda y Exportar -->
+    <div class="p-4 border-b flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
+        <div class="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl border w-full md:w-96">
+            <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
+            <input type="text" id="search-logistica" oninput="renderAdminLogistica()" placeholder="Buscar por fecha, cliente o equipo..." class="bg-transparent border-none focus:ring-0 text-xs w-full font-bold">
+        </div>
+        <button onclick="exportToExcel('admin-table-logistica', 'Reporte_Logistica')" class="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20">
+            <span class="material-symbols-outlined text-sm">download</span> Descargar Excel
+        </button>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table id="admin-table-logistica" class="w-full text-left border-collapse">
+            <!-- El thead se queda igual, pero asegúrate que la tabla tenga el ID: admin-table-logistica -->
                 <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
                     <tr>
                         <th class="p-6">Fecha/Cliente</th>
@@ -399,15 +422,35 @@
         </div>
     </div> <!-- DIV CERRADO CORRECTAMENTE -->
 
-    <!-- Contenido: Corte Sábado -->
+    <!-- Contenido: Corte Sábado (ACTUALIZADO CON EXCEL) -->
     <div id="cnt-pagos" class="tab-cnt hidden space-y-4">
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex items-center gap-4">
-            <span class="material-symbols-outlined text-gray-400">search</span>
-            <input type="text" id="search-gestor-pago" oninput="renderAdminCortes()" placeholder="Buscar gestor..." class="w-full bg-transparent border-none focus:ring-0 text-sm font-bold">
+        <!-- Contenedor del Buscador y Botón Excel -->
+        <div class="flex gap-2">
+            <div class="flex-1 bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex items-center gap-4">
+                <span class="material-symbols-outlined text-gray-400">search</span>
+                <input type="text" id="search-gestor-pago" oninput="renderAdminCortes()" placeholder="Buscar gestor..." class="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-700 dark:text-white">
+            </div>
+            <!-- Botón de Excel -->
+            <button onclick="exportToExcel('admin-table-pagos', 'Corte_Sabado')" class="bg-emerald-500 text-white px-4 md:px-6 rounded-3xl font-black text-[10px] uppercase shadow-lg shadow-emerald-500/20 flex items-center gap-2 hover:bg-emerald-600 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-sm">download</span> <span class="hidden md:inline">Descargar Excel</span>
+            </button>
         </div>
+        
+        <!-- Tabla con ID para el Exportador -->
         <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-            <table class="w-full text-left">
-                <tbody id="list-admin-cortes" class="divide-y dark:divide-gray-700"></tbody>
+            <table id="admin-table-pagos" class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                    <tr>
+                        <th class="p-4">Gestor</th>
+                        <th class="p-4">Ventas</th>
+                        <th class="p-4">Total USD</th>
+                        <th class="p-4 text-emerald-500">Total CUP</th>
+                        <th class="p-4 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="list-admin-cortes" class="divide-y dark:divide-gray-700">
+                    <!-- JS inyecta aquí -->
+                </tbody>
             </table>
         </div>
     </div>
@@ -487,38 +530,64 @@
         <h3 class="text-2xl font-black mb-6 italic uppercase">Añadir Nuevo <span class="text-primary">Equipo</span></h3>
         
         <form id="form-nuevo-prod" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
-            <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
-            <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
-            <select id="p-categoria" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
-    <option value="REFRIGERACIÓN">Refrigeración</option>
-    <option value="COCINA">Cocina</option>
-    <option value="LAVADO">Lavado</option>
-    <option value="CLIMATIZACIÓN">Climatización</option>
-    <option value="ENERGÍA">Energía</option>
-    <option value="VARIOS">Varios</option>
-</select>
-            <input type="text" id="p-garantia" placeholder="Garantía (ej: 3 meses)" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
-            <input type="text" id="p-mensajeria" placeholder="Mensajería (ej: 5 USD)" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
-            
-            <div class="md:col-span-2 space-y-2">
-                <label class="text-[10px] font-black text-gray-400 uppercase italic">Foto del Equipo (Se optimizará sola)</label>
-                <div class="flex items-center gap-4">
-                    <input type="file" id="p-file" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
-                    <button type="button" id="btn-upload" onclick="document.getElementById('p-file').click()" class="flex-1 bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl py-3 text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-200 transition-all">
-                        <span class="material-symbols-outlined">add_a_photo</span> Seleccionar Foto
-                    </button>
-                </div>
-                <!-- Texto donde aparecerá el nombre del archivo cuando se suba -->
-                <!-- Asegúrate de tener el campo oculto para la imagen justo debajo del mensaje -->
-<p id="upload-msg" class="text-[9px] font-black text-primary text-center uppercase tracking-widest"></p>
-<input type="hidden" id="p-img-name">
-            </div>
+    <!-- ID Oculto para cuando editemos -->
+    <input type="hidden" id="p-id-edit">
 
-            <textarea id="p-desc" placeholder="Descripción del producto" class="md:col-span-2 rounded-xl border-gray-100 dark:bg-gray-700 h-24 font-medium"></textarea>
-            
-            <button type="submit" class="md:col-span-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30 mt-4">Guardar en Catálogo</button>
-        </form>
+    <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 font-bold" required>
+    <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 font-bold" required>
+    <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 font-bold" required>
+    
+    <select id="p-categoria" class="rounded-xl border-gray-100 font-bold">
+        <option value="REFRIGERACIÓN">Refrigeración</option>
+        <option value="COCINA">Cocina</option>
+        <option value="LAVADO">Lavado</option>
+        <option value="CLIMATIZACIÓN">Climatización</option>
+        <option value="ENERGÍA">Energía</option>
+        <option value="VARIOS">Varios</option>
+    </select>
+    <input type="text" id="p-garantia" placeholder="Garantía" class="rounded-xl border-gray-100 font-bold">
+
+    <!-- SECCIÓN DE FOTOS (4 espacios) -->
+    <div class="md:col-span-2 border-y py-4 my-2">
+        <p class="text-[10px] font-black text-gray-400 uppercase mb-3 italic">Galería de Imágenes (Máx 4)</p>
+        <div class="grid grid-cols-4 gap-2">
+            <!-- Espacio para 4 fotos -->
+            <div onclick="document.getElementById('file-0').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
+                <input type="file" id="file-0" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 0)">
+                <img id="prev-0" class="absolute inset-0 w-full h-full object-cover hidden">
+                <span id="icon-0" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+                <input type="hidden" id="img-path-0">
+            </div>
+            <div onclick="document.getElementById('file-1').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
+                <input type="file" id="file-1" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 1)">
+                <img id="prev-1" class="absolute inset-0 w-full h-full object-cover hidden">
+                <span id="icon-1" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+                <input type="hidden" id="img-path-1">
+            </div>
+            <!-- Repetir para 2 y 3 -->
+            <div onclick="document.getElementById('file-2').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
+                <input type="file" id="file-2" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 2)">
+                <img id="prev-2" class="absolute inset-0 w-full h-full object-cover hidden">
+                <span id="icon-2" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+                <input type="hidden" id="img-path-2">
+            </div>
+            <div onclick="document.getElementById('file-3').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
+                <input type="file" id="file-3" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 3)">
+                <img id="prev-3" class="absolute inset-0 w-full h-full object-cover hidden">
+                <span id="icon-3" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+                <input type="hidden" id="img-path-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- EDITOR TIPO WORD -->
+    <div class="md:col-span-2 space-y-2">
+        <label class="text-[10px] font-black text-gray-400 uppercase italic">Descripción Detallada</label>
+        <div id="editor-container"></div>
+    </div>
+    
+    <button type="submit" id="btn-save-prod" class="md:col-span-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30 mt-4">Guardar Cambios</button>
+</form>
     </div>
 </div>
 
@@ -851,7 +920,7 @@ async function loadAdminData() {
 
     if (pedidos) {
         pedidosRawAdmin = pedidos; // Guardamos para el buscador
-        renderAdminLogistica(pedidos);
+        renderAdminLogistica();
         renderAdminCortes(); // Ahora no le pasamos parámetros
         updateAdminStats(pedidos);
         renderAnaliticaGestores(pedidos);
@@ -873,27 +942,53 @@ function updateAdminStats(pedidos) {
     document.getElementById('m-stat-gestores').innerText = new Set(pedidos.map(p => p.gestor)).size;
 }
 
-function renderAdminLogistica(pedidos) {
+// --- NUEVA FUNCIÓN DE LOGÍSTICA CON FILTRO Y BLOQUEO ---
+function renderAdminLogistica() {
     const container = document.getElementById('list-admin-pedidos');
-    container.innerHTML = pedidos.map(p => `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs">
+    const searchInput = document.getElementById('search-logistica');
+    if (!container) return;
+
+    const query = searchInput ? searchInput.value.toLowerCase() : "";
+    
+    // Filtrar por fecha, cliente o producto
+    const filtrados = pedidosRawAdmin.filter(p => {
+        const fecha = new Date(p.fecha).toLocaleDateString().toLowerCase();
+        const cliente = (p.cliente || "").toLowerCase();
+        const producto = (p.producto || "").toLowerCase();
+        return fecha.includes(query) || cliente.includes(query) || producto.includes(query);
+    });
+
+    container.innerHTML = filtrados.map(p => {
+        // Lógica de Bloqueo: Si ya está Entregado o Cancelado, no se puede cambiar
+        const esEstadoFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
+
+        return `
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700">
             <td class="p-6 font-bold uppercase text-[10px]">
                 <p class="text-gray-400">${new Date(p.fecha).toLocaleDateString()}</p>
                 ${p.cliente}
             </td>
-            <td class="p-6">${p.producto}</td>
+            <td class="p-6 text-gray-500">${p.producto}</td>
             <td class="p-6"><span class="bg-primary/10 text-primary px-2 py-1 rounded-lg font-black uppercase text-[9px] italic">${p.gestor}</span></td>
             <td class="p-6 font-black text-primary">$${p.total}</td>
             <td class="p-6 text-right">
-                <select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-xl border-gray-100 dark:bg-gray-900">
-                    <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                    <option value="En Camino" ${p.estado === 'En Camino' ? 'selected' : ''}>🚚 En Camino</option>
-                    <option value="Entregado" ${p.estado === 'Entregado' ? 'selected' : ''}>✅ Entregado</option>
-                    <option value="Cancelado" ${p.estado === 'Cancelado' ? 'selected' : ''}>❌ Cancelado</option>
-                </select>
+                ${esEstadoFinal ? 
+                    `<div class="flex items-center justify-end gap-2">
+                        <span class="px-3 py-1.5 rounded-xl font-black text-[9px] uppercase ${p.estado === 'Entregado' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                            ● ${p.estado}
+                        </span>
+                        <span class="material-symbols-outlined text-gray-300 text-sm">lock</span>
+                    </div>` :
+                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-xl border-gray-100 bg-gray-50 dark:bg-gray-900">
+                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                        <option value="En Camino" ${p.estado === 'En Camino' ? 'selected' : ''}>🚚 En Camino</option>
+                        <option value="Entregado">✅ Marcar Entregado</option>
+                        <option value="Cancelado">❌ Cancelar Pedido</option>
+                    </select>`
+                }
             </td>
         </tr>
-    `).join('');
+    `; }).join('');
 }
 
 function renderAdminCortes() {
@@ -948,30 +1043,34 @@ async function updatePedidoStatus(id, nuevoEstado) {
 function renderAdminInventario(productos) {
     const container = document.getElementById('list-admin-inventario');
     
-    // 1. Verificación de seguridad: ¿Existe el contenedor en el HTML?
     if (!container) {
         console.error("Error: No se encontró el contenedor 'list-admin-inventario' en el HTML.");
         return;
     }
 
-    // 2. Verificación: ¿Hay productos?
     if (!productos || productos.length === 0) {
         container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold uppercase text-xs italic">No hay productos cargados en la base de datos.</div>`;
         return;
     }
 
-    // 3. Dibujar las tarjetas
     container.innerHTML = productos.map(p => `
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex flex-col justify-between">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex flex-col justify-between h-full text-left">
             <div>
                 <img src="${fixDriveUrl(p.thumbnail)}" class="w-full h-32 object-contain mb-4 bg-gray-50 rounded-2xl p-2">
                 <h6 class="text-[10px] font-black leading-tight mb-1 uppercase text-gray-700 dark:text-gray-200">${p.nombre}</h6>
                 <p class="text-primary font-black text-sm mb-4">$${p.precio}</p>
             </div>
-            <button onclick="toggleStockAdmin('${p.id}', '${p.disponible}')" 
-                class="w-full py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.disponible === 'SI' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}">
-                ${p.disponible === 'SI' ? '● En Stock' : '○ Agotado'}
-            </button>
+            
+            <!-- NUEVO BLOQUE DE BOTONES (STOCK + EDITAR) -->
+            <div class="flex gap-2">
+                <button onclick="toggleStockAdmin('${p.id}', '${p.disponible}')" 
+                    class="flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.disponible === 'SI' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}">
+                    ${p.disponible === 'SI' ? '● En Stock' : '○ Agotado'}
+                </button>
+                <button onclick="editProduct('${p.id}')" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-sm">edit</span>
+                </button>
+            </div>
         </div>
     `).join('');
 }
@@ -1038,7 +1137,43 @@ function openAdminMasterFromGestor() {
 // --- FUNCIONES PARA EL FORMULARIO DE PRODUCTOS ---
 
 function openModalProd() { 
-    document.getElementById('modal-producto').classList.remove('hidden'); 
+    // 1. Limpiar el ID de edición (para que sepa que es uno NUEVO)
+    const idEdit = document.getElementById('p-id-edit');
+    if(idEdit) idEdit.value = "";
+    
+    // 2. Resetear todos los inputs del formulario (nombres, precios, etc)
+    const form = document.getElementById('form-nuevo-prod');
+    if(form) form.reset();
+    
+    // 3. Limpiar el editor de texto (Quill)
+    if (typeof quill !== 'undefined' && quill !== null) {
+        quill.root.innerHTML = "";
+    }
+
+    // 4. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
+    for (let i = 0; i < 4; i++) {
+        const pathInput = document.getElementById(`img-path-${i}`);
+        const previewImg = document.getElementById(`prev-${i}`);
+        const iconSpan = document.getElementById(`icon-${i}`);
+
+        if(pathInput) pathInput.value = "";
+        if(previewImg) {
+            previewImg.src = "";
+            previewImg.classList.add('hidden');
+        }
+        if(iconSpan) {
+            iconSpan.classList.remove('hidden');
+            iconSpan.innerText = "add_a_photo";
+        }
+    }
+
+    // 5. Asegurar que el botón diga "Guardar Cambios" y no "Actualizar"
+    const btnSave = document.getElementById('btn-save-prod');
+    if(btnSave) btnSave.innerText = "Guardar Cambios";
+    
+    // 6. Mostrar el modal
+    const modal = document.getElementById('modal-producto');
+    if(modal) modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
 
@@ -1167,6 +1302,140 @@ function compressImage(file, maxWidth, maxHeight) {
         };
     });
 }
+
+// --- FUNCIÓN UNIVERSAL PARA EXPORTAR A EXCEL ---
+function exportToExcel(tableId, fileName) {
+    const table = document.getElementById(tableId);
+    if (!table) return alert("No hay datos para exportar");
+
+    // Creamos una hoja de trabajo a partir de la tabla HTML
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Reporte" });
+    
+    // Generamos el archivo y lo descargamos
+    // Le añade la fecha de hoy al nombre para que no se confundan los archivos
+    const fecha = new Date().toLocaleDateString().replace(/\//g, '-');
+    XLSX.writeFile(wb, `${fileName}_${fecha}.xlsx`);
+}
+
+// 1. Inicializar el Editor Quill
+let quill;
+window.addEventListener('load', () => {
+    quill = new Quill('#editor-container', {
+        theme: 'snow',
+        placeholder: 'Escribe aquí la descripción, garantía, detalles...',
+        modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }], [{ 'size': ['small', false, 'large'] }]] }
+    });
+});
+
+// 2. Subida de imágenes mejorada (para los 4 espacios)
+async function handlePowerUpload(input, index) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const icon = document.getElementById(`icon-${index}`);
+    const prev = document.getElementById(`prev-${index}`);
+    icon.innerText = "sync"; // Icono de cargando
+
+    try {
+        const compressedBlob = await compressImage(file, 800, 800);
+        const fileName = `${Date.now()}_${index}_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
+
+        const { error } = await supabaseClient.storage.from('productos').upload(fileName, compressedBlob);
+        if (error) throw error;
+
+        // Mostrar previsualización
+        document.getElementById(`img-path-${index}`).value = fileName;
+        prev.src = URL.createObjectURL(compressedBlob);
+        prev.classList.remove('hidden');
+        icon.classList.add('hidden');
+    } catch (e) {
+        alert("Error al subir foto " + (index + 1));
+        icon.innerText = "add_a_photo";
+    }
+}
+
+// 3. Función para EDITAR producto (Cargar datos en el modal)
+function editProduct(id) {
+    // Primero limpiamos por si acaso
+    // (Opcional, pero recomendado)
+    
+    const p = productosRaw.find(prod => prod.id === id);
+    if (!p) return;
+
+    // Llenar campos
+    document.getElementById('p-id-edit').value = p.id;
+    document.getElementById('p-nombre').value = p.nombre;
+    document.getElementById('p-precio').value = p.precio;
+    document.getElementById('p-comision').value = p.comision;
+    document.getElementById('p-categoria').value = p.categoria;
+    document.getElementById('p-garantia').value = p.garantia || "";
+    
+    // Cambiar texto del botón
+    document.getElementById('btn-save-prod').innerText = "Actualizar Producto";
+
+    // ... (resto de tu lógica de Quill y fotos que ya tienes)
+    quill.root.innerHTML = p.descripcion || "";
+
+    const fotos = [p.thumbnail, p.image1, p.image2, p.image3];
+    fotos.forEach((foto, i) => {
+        if (foto) {
+            document.getElementById(`img-path-${i}`).value = foto;
+            const prev = document.getElementById(`prev-${i}`);
+            prev.src = fixDriveUrl(foto);
+            prev.classList.remove('hidden');
+            document.getElementById(`icon-${i}`).classList.add('hidden');
+        } else {
+            // Si no hay foto en este slot, asegurar que esté vacío
+            document.getElementById(`img-path-${i}`).value = "";
+            document.getElementById(`prev-${i}`).classList.add('hidden');
+            document.getElementById(`icon-${i}`).classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('modal-producto').classList.remove('hidden');
+}
+
+// 4. Guardar (Funciona para NUEVO y para EDITAR)
+document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-prod');
+    const editId = document.getElementById('p-id-edit').value;
+    
+    btn.disabled = true; btn.innerText = "GUARDANDO...";
+
+    const datos = {
+        nombre: document.getElementById('p-nombre').value,
+        precio: parseFloat(document.getElementById('p-precio').value),
+        comision: parseFloat(document.getElementById('p-comision').value),
+        categoria: document.getElementById('p-categoria').value,
+        garantia: document.getElementById('p-garantia').value,
+        descripcion: quill.root.innerHTML, // Sacamos el HTML del editor Word
+        thumbnail: document.getElementById('img-path-0').value,
+        image1: document.getElementById('img-path-1').value,
+        image2: document.getElementById('img-path-2').value,
+        image3: document.getElementById('img-path-3').value,
+        disponible: 'SI'
+    };
+
+    let error;
+    if (editId) {
+        // SI TIENE ID, ACTUALIZAMOS
+        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
+        error = err;
+    } else {
+        // SI NO TIENE ID, INSERTAMOS NUEVO
+        const { error: err } = await supabaseClient.from('productos').insert([datos]);
+        error = err;
+    }
+
+    if (!error) {
+        alert("¡Guardado correctamente!");
+        location.reload();
+    } else {
+        alert("Error: " + error.message);
+        btn.disabled = false;
+    }
+});
 
 </script>
 
