@@ -35,6 +35,59 @@
         .category-tab.active { border-bottom: 3px solid #33ccc4; color: #33ccc4; }
         .loader { width: 40px; height: 40px; border: 4px solid #33ccc4; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* DISEÑO PRO PARA MÓVIL */
+@media (max-width: 768px) {
+    /* Ajustar los 4 cuadros de arriba para que quepan 2 y 2 */
+    #sec-admin-master .grid-cols-1, 
+    #sec-admin-master .grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* Ajustar las pestañas para que no se amontonen */
+    .btn-tab-admin {
+        font-size: 8px !important;
+        padding: 8px 2px !important;
+        letter-spacing: 0px !important;
+    }
+
+    /* Forzar que las tablas tengan scroll lateral y no se aplasten */
+    .overflow-x-auto {
+        margin: 0 -15px;
+        padding: 0 15px;
+    }
+    
+    table {
+        min-width: 500px !important;
+    }
+
+    /* Ajustar el texto de la tabla de logística */
+    #list-admin-pedidos td {
+        font-size: 10px !important;
+        padding: 10px 5px !important;
+    }
+
+    /* Ajustar las tarjetas de Inventario para que salgan de 2 en 2 */
+    #list-admin-inventario {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    #list-admin-inventario img {
+        height: 100px !important;
+    }
+    
+    /* Hacer el botón de añadir producto ancho total en móvil */
+    #cnt-inventario .flex.justify-between {
+        flex-direction: column;
+        gap: 15px;
+    }
+    #cnt-inventario button {
+        width: 100%;
+    }
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -280,6 +333,107 @@
     </div>
 </div>
 
+<section id="sec-admin-master" class="hidden px-4 md:px-10 lg:px-20 py-10 max-w-[1400px] mx-auto bg-gray-50 dark:bg-background-dark min-h-screen">
+    
+    <!-- Encabezado -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+        <div>
+            <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Master<span class="text-primary">Control</span></h2>
+            <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Gestión de Logística y Finanzas</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-2xl flex items-center gap-3 border px-4">
+                <span class="text-[10px] font-black text-gray-400 uppercase">Cambio Sábado:</span>
+                <input type="number" id="input-tasa-cup" value="450" onchange="loadAdminData()" class="w-20 bg-transparent border-none font-black text-primary p-0 focus:ring-0 text-xl">
+                <span class="text-xs font-bold text-gray-400">CUP</span>
+            </div>
+            <button onclick="location.reload()" class="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all">
+                <span class="material-symbols-outlined">power_settings_new</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Indicadores -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Ventas Entregadas</p>
+            <h3 id="m-stat-ventas" class="text-3xl font-black text-primary">$0</h3>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Comisiones x Pagar</p>
+            <h3 id="m-stat-deuda" class="text-3xl font-black text-orange-500">$0</h3>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">En Logística</p>
+            <h3 id="m-stat-pendientes" class="text-3xl font-black text-gray-800 dark:text-white">0</h3>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Gestores Activos</p>
+            <h3 id="m-stat-gestores" class="text-3xl font-black text-blue-500">0</h3>
+        </div>
+    </div>
+
+    <!-- Pestañas -->
+    <div class="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide whitespace-nowrap">
+        <button onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all">Logística</button>
+        <button onclick="changeAdminTab('pagos')" id="tab-pagos" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Corte Sábado</button>
+        <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
+        <button onclick="changeAdminTab('analitica')" id="tab-analitica" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Análisis</button>
+    </div>
+
+    <!-- Contenido: Logística -->
+    <div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                    <tr>
+                        <th class="p-6">Fecha/Cliente</th>
+                        <th class="p-6">Producto</th>
+                        <th class="p-6">Gestor</th>
+                        <th class="p-6">Total</th>
+                        <th class="p-6 text-right">Estado Logístico</th>
+                    </tr>
+                </thead>
+                <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700"></tbody>
+            </table>
+        </div>
+    </div> <!-- DIV CERRADO CORRECTAMENTE -->
+
+    <!-- Contenido: Corte Sábado -->
+    <div id="cnt-pagos" class="tab-cnt hidden space-y-4">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex items-center gap-4">
+            <span class="material-symbols-outlined text-gray-400">search</span>
+            <input type="text" id="search-gestor-pago" oninput="renderAdminCortes()" placeholder="Buscar gestor..." class="w-full bg-transparent border-none focus:ring-0 text-sm font-bold">
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+            <table class="w-full text-left">
+                <tbody id="list-admin-cortes" class="divide-y dark:divide-gray-700"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Contenido: Inventario -->
+    <div id="cnt-inventario" class="tab-cnt hidden space-y-6">
+        <div class="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm">
+            <p class="text-[10px] font-black uppercase text-gray-400 italic">Gestión de Catálogo</p>
+            <button onclick="openModalProd()" class="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase">+ Añadir</button>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="list-admin-inventario"></div>
+    </div>
+
+    <!-- Contenido: Análisis -->
+    <div id="cnt-analitica" class="tab-cnt hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border shadow-sm">
+            <h4 class="font-black uppercase text-xs mb-6 text-primary italic">🔥 Más Consultados</h4>
+            <div id="list-analitica-vistas" class="space-y-4"></div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border shadow-sm">
+            <h4 class="font-black uppercase text-xs mb-6 text-primary italic">🏆 Ranking de Ventas</h4>
+            <div id="list-analitica-gestores" class="space-y-4"></div>
+        </div>
+    </div>
+</section>
+
     <!-- Footer -->
     <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12 px-6">
         <div class="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -316,129 +470,57 @@
         </div>
 
         <!-- PANEL MAESTRO DE ADMINISTRACIÓN -->
-<section id="sec-admin-master" class="hidden px-4 md:px-10 lg:px-20 py-10 max-w-[1400px] mx-auto bg-gray-50 dark:bg-background-dark min-h-screen">
-    
-    <!-- Encabezado con Tasa de Cambio -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-        <div>
-            <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Master<span class="text-primary">Control</span></h2>
-            <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Gestión de Logística y Finanzas</p>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-2xl flex items-center gap-3 border px-4">
-                <span class="text-[10px] font-black text-gray-400 uppercase">Cambio Sábado:</span>
-                <input type="number" id="input-tasa-cup" value="450" onchange="loadAdminData()" class="w-20 bg-transparent border-none font-black text-primary p-0 focus:ring-0 text-xl">
-                <span class="text-xs font-bold text-gray-400">CUP</span>
-            </div>
-            <button onclick="location.reload()" class="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all">
-                <span class="material-symbols-outlined">power_settings_new</span>
-            </button>
-        </div>
-    </div>
 
-    <!-- Indicadores Rápidos -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Ventas Entregadas</p>
-            <h3 id="m-stat-ventas" class="text-3xl font-black text-primary">$0</h3>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Comisiones x Pagar</p>
-            <h3 id="m-stat-deuda" class="text-3xl font-black text-orange-500">$0</h3>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">En Logística</p>
-            <h3 id="m-stat-pendientes" class="text-3xl font-black text-gray-800 dark:text-white">0</h3>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-            <p class="text-[10px] font-black text-gray-400 uppercase mb-1 italic">Gestores Activos</p>
-            <h3 id="m-stat-gestores" class="text-3xl font-black text-blue-500">0</h3>
-        </div>
-    </div>
-
-    <!-- Pestañas de Navegación -->
-    <div class="flex gap-4 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide">
-        <button onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all">Logística</button>
-        <button onclick="changeAdminTab('pagos')" id="tab-pagos" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Corte Sábado</button>
-        <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
-        <button onclick="changeAdminTab('analitica')" id="tab-analitica" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Análisis</button>
-    </div>
-
-    <!-- Contenido: Logística -->
-    <div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-        <table class="w-full text-left">
-            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                <tr>
-                    <th class="p-6">Fecha/Cliente</th>
-                    <th class="p-6">Producto</th>
-                    <th class="p-6">Gestor</th>
-                    <th class="p-6">Total</th>
-                    <th class="p-6 text-right">Estado Logístico</th>
-                </tr>
-            </thead>
-            <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700"></tbody>
-        </table>
-    </div>
-
-    <!-- Contenido: Corte de Sábado -->
-    <!-- Contenido: Corte de Sábado (OPTIMIZADO PARA 60+ GESTORES) -->
-<div id="cnt-pagos" class="tab-cnt hidden space-y-4">
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex items-center gap-4">
-        <span class="material-symbols-outlined text-gray-400">search</span>
-        <input type="text" id="search-gestor-pago" oninput="renderAdminCortes()" placeholder="Buscar gestor por nombre..." class="w-full bg-transparent border-none focus:ring-0 text-sm font-bold">
-    </div>
-
-    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-        <table class="w-full text-left">
-            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                <tr>
-                    <th class="p-4">Gestor</th>
-                    <th class="p-4">Ventas</th>
-                    <th class="p-4">Total USD</th>
-                    <th class="p-4 text-emerald-500">Total CUP</th>
-                    <th class="p-4 text-right">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="list-admin-cortes" class="divide-y dark:divide-gray-700 text-sm">
-                <!-- Se llena con JS -->
-            </tbody>
-        </table>
-    </div>
-</div>
-
-    <!-- Contenido: Inventario -->
-    <!-- Contenido: Inventario (ACTUALIZADO) -->
-    <div id="cnt-inventario" class="tab-cnt hidden space-y-6">
-        <div class="flex justify-between items-center mb-6">
-            <p class="text-[10px] font-black uppercase text-gray-400 italic tracking-widest">Gestión de Stock y Precios</p>
-            <!-- BOTÓN PARA ABRIR EL MODAL -->
-            <button onclick="openModalProd()" class="bg-primary text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-tighter shadow-lg shadow-primary/30 active:scale-95 transition-transform">
-                + Añadir Producto
-            </button>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="list-admin-inventario">
-            <!-- Los productos se cargarán aquí -->
-        </div>
-    </div>
-
-    <!-- Contenido: Análisis -->
-    <div id="cnt-analitica" class="tab-cnt hidden grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border shadow-sm">
-            <h4 class="font-black uppercase text-xs mb-6 text-primary italic">🔥 Más Consultados (Tendencia)</h4>
-            <div id="list-analitica-vistas" class="space-y-4"></div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl border shadow-sm">
-            <h4 class="font-black uppercase text-xs mb-6 text-primary italic">🏆 Ranking de Ventas</h4>
-            <div id="list-analitica-gestores" class="space-y-4"></div>
-        </div>
-    </div>
-</section>
 
 <style>
     .btn-tab-admin.active { background: #33ccc4; color: white; box-shadow: 0 4px 15px rgba(51, 204, 196, 0.4); }
 </style>
 
     </footer>
+
+    <!-- MODAL NUEVO PRODUCTO -->
+<div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-center">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative my-auto">
+
+        <button onclick="closeModalProd()" class="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
+        
+        <h3 class="text-2xl font-black mb-6 italic uppercase">Añadir Nuevo <span class="text-primary">Equipo</span></h3>
+        
+        <form id="form-nuevo-prod" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
+            <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
+            <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
+            <select id="p-categoria" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
+    <option value="REFRIGERACIÓN">Refrigeración</option>
+    <option value="COCINA">Cocina</option>
+    <option value="LAVADO">Lavado</option>
+    <option value="CLIMATIZACIÓN">Climatización</option>
+    <option value="ENERGÍA">Energía</option>
+    <option value="VARIOS">Varios</option>
+</select>
+            <input type="text" id="p-garantia" placeholder="Garantía (ej: 3 meses)" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
+            <input type="text" id="p-mensajeria" placeholder="Mensajería (ej: 5 USD)" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
+            
+            <div class="md:col-span-2 space-y-2">
+                <label class="text-[10px] font-black text-gray-400 uppercase italic">Foto del Equipo (Se optimizará sola)</label>
+                <div class="flex items-center gap-4">
+                    <input type="file" id="p-file" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
+                    <button type="button" id="btn-upload" onclick="document.getElementById('p-file').click()" class="flex-1 bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl py-3 text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-200 transition-all">
+                        <span class="material-symbols-outlined">add_a_photo</span> Seleccionar Foto
+                    </button>
+                </div>
+                <!-- Texto donde aparecerá el nombre del archivo cuando se suba -->
+                <!-- Asegúrate de tener el campo oculto para la imagen justo debajo del mensaje -->
+<p id="upload-msg" class="text-[9px] font-black text-primary text-center uppercase tracking-widest"></p>
+<input type="hidden" id="p-img-name">
+            </div>
+
+            <textarea id="p-desc" placeholder="Descripción del producto" class="md:col-span-2 rounded-xl border-gray-100 dark:bg-gray-700 h-24 font-medium"></textarea>
+            
+            <button type="submit" class="md:col-span-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30 mt-4">Guardar en Catálogo</button>
+        </form>
+    </div>
+</div>
 
     <!-- Scripts de Lógica -->
     <script>
@@ -816,28 +898,26 @@ function renderAdminLogistica(pedidos) {
 
 function renderAdminCortes() {
     const container = document.getElementById('list-admin-cortes');
-    if (!container) return;
+    if (!container || !pedidosRawAdmin) return;
 
-    const searchTerm = document.getElementById('search-gestor-pago').value.toLowerCase();
+    const searchTerm = (document.getElementById('search-gestor-pago')?.value || "").toLowerCase();
     const tasa = parseFloat(document.getElementById('input-tasa-cup').value) || 450;
     
-    // Filtramos solo los pedidos entregados y no pagados
     const deuda = pedidosRawAdmin.filter(p => p.estado === 'Entregado' && p.pago_gestor === 'Pendiente');
 
-    // Agrupamos por gestor
     const porGestor = deuda.reduce((acc, p) => {
-        if (!acc[p.gestor]) acc[p.gestor] = { usd: 0, count: 0, ids: [] };
-        acc[p.gestor].usd += Number(p.comision_total || 0);
-        acc[p.gestor].count++;
-        acc[p.gestor].ids.push(p.id);
+        const gName = p.gestor || "Venta Directa";
+        if (!acc[gName]) acc[gName] = { usd: 0, count: 0, ids: [] };
+        acc[gName].usd += Number(p.comision_total || 0);
+        acc[gName].count++;
+        acc[gName].ids.push(p.id);
         return acc;
     }, {});
 
-    // Filtramos por el nombre que escriba el admin en el buscador
     const entries = Object.entries(porGestor).filter(([name]) => name.toLowerCase().includes(searchTerm));
 
     if (entries.length === 0) {
-        container.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-400 uppercase text-xs font-bold italic">No hay pagos pendientes con ese nombre.</td></tr>`;
+        container.innerHTML = `<tr><td class="p-10 text-center text-gray-400">Sin comisiones pendientes.</td></tr>`;
         return;
     }
 
@@ -848,7 +928,7 @@ function renderAdminCortes() {
             <td class="p-4 font-black text-sm">$${data.usd}</td>
             <td class="p-4 font-black text-emerald-500 text-sm italic">${(data.usd * tasa).toLocaleString()} CUP</td>
             <td class="p-4 text-right">
-                <button onclick="liquidarComisiones('${data.ids.join(',')}')" class="bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-primary transition-all shadow-md">Liquidar</button>
+                <button onclick="liquidarComisiones('${data.ids.join(',')}')" class="bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Liquidar</button>
             </td>
         </tr>
     `).join('');
@@ -1012,56 +1092,46 @@ async function handleImageUpload(input) {
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const btn = e.target.querySelector('button');
+    // 1. Validaciones previas
     const imgName = document.getElementById('p-img-name').value;
-
-    // 1. Verificamos la foto
     if (!imgName) {
-        alert("❌ Error: Debes subir una foto primero.");
+        alert("❌ Error: Debes subir una foto primero y esperar a que diga 'Foto lista'.");
         return;
     }
 
+    const btn = e.target.querySelector('button');
     btn.disabled = true; 
-    btn.innerText = "PROCESANDO REGISTRO...";
+    btn.innerText = "REGISTRANDO EN BASE DE DATOS...";
 
-    // 2. Capturamos los valores con IDs limpios
-    const nombre = document.getElementById('p-nombre').value;
-    const precio = parseFloat(document.getElementById('p-precio').value);
-    const comision = parseFloat(document.getElementById('p-comision').value) || 0;
-    const categoria = document.getElementById('p-categoria').value;
-    const garantia = document.getElementById('p-garantia').value;
-    const mensajeria = document.getElementById('p-mensajeria').value;
-    const descripcion = document.getElementById('p-desc').value;
-
-    // 3. Creamos el objeto EXACTAMENTE como las columnas de Supabase
+    // 2. Captura de datos (Asegúrate de que los IDs existan en el HTML)
     const objetoInsertar = {
-        nombre: nombre,
-        precio: precio,
-        comision: comision,
-        categoria: categoria,
-        descripcion: descripcion,
-        thumbnail: imgName,
-        mensajeria: mensajeria,
+        nombre: document.getElementById('p-nombre').value,
+        precio: parseFloat(document.getElementById('p-precio').value),
+        comision: parseFloat(document.getElementById('p-comision').value) || 0,
+        categoria: document.getElementById('p-categoria').value,
+        descripcion: document.getElementById('p-desc').value,
+        thumbnail: imgName, // El nombre que guardó handleImageUpload
+        mensajeria: document.getElementById('p-mensajeria').value,
         disponible: 'SI',
-        garantia: garantia,
+        garantia: document.getElementById('p-garantia').value,
         pagos: 'USD, CUP, Zelle'
     };
 
-    console.log("Intentando insertar:", objetoInsertar);
+    console.log("Enviando a Supabase:", objetoInsertar);
 
-    // 4. Intentamos insertar
+    // 3. Inserción en la tabla 'productos'
     const { data, error } = await supabaseClient
         .from('productos')
         .insert([objetoInsertar])
-        .select(); // El .select() es para confirmar que se creó
+        .select();
 
     if (error) {
-        console.error("DETALLE DEL ERROR:", error);
-        alert("❌ ERROR DE BASE DE DATOS: " + error.message + "\nCampo con error: " + error.details);
+        console.error("Error detallado:", error);
+        alert("❌ ERROR AL GUARDAR: " + error.message);
         btn.disabled = false;
         btn.innerText = "Guardar en Catálogo";
     } else {
-        alert("✅ PRODUCTO PUBLICADO CON ÉXITO");
+        alert("✅ PRODUCTO AÑADIDO CON ÉXITO");
         location.reload(); 
     }
 });
@@ -1099,47 +1169,6 @@ function compressImage(file, maxWidth, maxHeight) {
 }
 
 </script>
-<!-- MODAL NUEVO PRODUCTO -->
-<div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-center">
-    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] p-8 shadow-2xl relative">
-        <button onclick="closeModalProd()" class="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
-        
-        <h3 class="text-2xl font-black mb-6 italic uppercase">Añadir Nuevo <span class="text-primary">Equipo</span></h3>
-        
-        <form id="form-nuevo-prod" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
-            <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
-            <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold" required>
-            <select id="p-categoria" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
-    <option value="REFRIGERACIÓN">Refrigeración</option>
-    <option value="COCINA">Cocina</option>
-    <option value="LAVADO">Lavado</option>
-    <option value="CLIMATIZACIÓN">Climatización</option>
-    <option value="ENERGÍA">Energía</option>
-    <option value="VARIOS">Varios</option>
-</select>
-            <input type="text" id="p-garantia" placeholder="Garantía (ej: 3 meses)" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
-            <input type="text" id="p-mensajeria" placeholder="Mensajería (ej: 5 USD)" class="rounded-xl border-gray-100 dark:bg-gray-700 font-bold">
-            
-            <div class="md:col-span-2 space-y-2">
-                <label class="text-[10px] font-black text-gray-400 uppercase italic">Foto del Equipo (Se optimizará sola)</label>
-                <div class="flex items-center gap-4">
-                    <input type="file" id="p-file" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
-                    <button type="button" id="btn-upload" onclick="document.getElementById('p-file').click()" class="flex-1 bg-gray-100 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl py-3 text-xs font-bold flex items-center justify-center gap-2 hover:bg-gray-200 transition-all">
-                        <span class="material-symbols-outlined">add_a_photo</span> Seleccionar Foto
-                    </button>
-                </div>
-                <!-- Texto donde aparecerá el nombre del archivo cuando se suba -->
-                <!-- Asegúrate de tener el campo oculto para la imagen justo debajo del mensaje -->
-<p id="upload-msg" class="text-[9px] font-black text-primary text-center uppercase tracking-widest"></p>
-<input type="hidden" id="p-img-name">
-            </div>
 
-            <textarea id="p-desc" placeholder="Descripción del producto" class="md:col-span-2 rounded-xl border-gray-100 dark:bg-gray-700 h-24 font-medium"></textarea>
-            
-            <button type="submit" class="md:col-span-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30 mt-4">Guardar en Catálogo</button>
-        </form>
-    </div>
-</div>
 </body>
 </html>
