@@ -5,21 +5,33 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>paratuhogar | Electrodomésticos para Cuba</title>
     
-    <!-- Fuentes y Estilos Externos -->
+    <!-- 1. Estilos y Fuentes -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+    <!-- 2. Librerías de Funcionalidad (Supabase, Excel, Editor) -->
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <!-- Quill (Editor de Texto) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <!-- 3. Configuración de Diseño (ANEB Theme) -->
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#33ccc4",
-                        "background-light": "#fafaf9",
-                        "background-dark": "#1e2024",
+                        "primary": "#1a4789", // Azul ANEB
+                        "secondary": "#2c6fb5", // Azul Claro
+                        "accent": "#cbd5e1", 
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
                     },
                     fontFamily: { "display": ["Manrope", "sans-serif"] },
                     borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
@@ -28,113 +40,96 @@
         }
     </script>
 
-    <style>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .wave-bg {
+                background-color: #1a4789;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3%3Cpath fill='%232c6fb5' fill-opacity='0.4' d='M0,192L48,176C96,160,192,128,288,112C384,96,480,96,576,122.7C672,149,768,203,864,202.7C960,203,1056,149,1152,117.3C1248,85,1344,75,1392,69.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,106.7C672,117,768,171,864,170.7C960,171,1056,117,1152,106.7C1248,96,1344,128,1392,144L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+                background-size: cover;
+                background-position: top;
+            }
+            .wave-divider {
+                height: 40px;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3%3Cpath fill='%231a4789' d='M0,32L60,42.7C120,53,240,75,360,74.7C480,75,600,53,720,48C840,43,960,53,1080,58.7C1200,64,1320,64,1380,64L1440,64L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+                background-size: 100% 100%;
+            }
+        }
         body { font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; display: inline-block; vertical-align: middle; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .category-tab.active { border-bottom: 3px solid #33ccc4; color: #33ccc4; }
-        .loader { width: 40px; height: 40px; border: 4px solid #33ccc4; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        .category-tab.active { border-bottom: 3px solid #1a4789; color: #1a4789; }
+        .loader { width: 40px; height: 40px; border: 4px solid #1a4789; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* DISEÑO PRO PARA MÓVIL */
-@media (max-width: 768px) {
-    /* Ajustar los 4 cuadros de arriba para que quepan 2 y 2 */
-    #sec-admin-master .grid-cols-1, 
-    #sec-admin-master .grid-cols-2 {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px !important;
-    }
-
-    /* Ajustar las pestañas para que no se amontonen */
-    .btn-tab-admin {
-        font-size: 8px !important;
-        padding: 8px 2px !important;
-        letter-spacing: 0px !important;
-    }
-
-    /* Forzar que las tablas tengan scroll lateral y no se aplasten */
-    .overflow-x-auto {
-        margin: 0 -15px;
-        padding: 0 15px;
-    }
-    
-    table {
-        min-width: 500px !important;
-    }
-
-    /* Ajustar el texto de la tabla de logística */
-    #list-admin-pedidos td {
-        font-size: 10px !important;
-        padding: 10px 5px !important;
-    }
-
-    /* Ajustar las tarjetas de Inventario para que salgan de 2 en 2 */
-    #list-admin-inventario {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 10px !important;
-    }
-
-    #list-admin-inventario img {
-        height: 100px !important;
-    }
-    
-    /* Hacer el botón de añadir producto ancho total en móvil */
-    #cnt-inventario .flex.justify-between {
-        flex-direction: column;
-        gap: 15px;
-    }
-    #cnt-inventario button {
-        width: 100%;
-    }
-}
+        
+        /* ESTILOS DEL EDITOR WORD */
+        .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+        .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
+        
+        /* CORRECCIONES MÓVIL */
+        @media (max-width: 768px) {
+            #sec-admin-master .grid-cols-1, #sec-admin-master .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+            .overflow-x-auto { margin: 0 -15px; padding: 0 15px; }
+            table { min-width: 500px !important; }
+            #list-admin-inventario { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+            #list-admin-inventario img { height: 100px !important; }
+        }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-
-    <!-- Quill Editor (Estilo Word) -->
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-
-<style>
-    /* Estilo para que el editor se vea bien en el móvil */
-    .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
-    .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
-</style>
-
 </head>
 
 <body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
 
     <!-- Header / Navbar -->
-    <header class="sticky top-0 z-50 w-full border-b border-[#e5e7eb] dark:border-gray-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-4 md:px-10 lg:px-20 py-3">
-        <div class="max-w-[1200px] mx-auto flex items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-3xl text-primary">home_iot_device</span>
-                    <h1 class="text-xl font-extrabold tracking-tight">para<span class="text-primary">tuhogar</span></h1>
-                </div>
-                <div class="hidden md:flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-1.5 border border-gray-200 dark:border-gray-700">
-                    <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
-                    <input id="search-bar" oninput="filterProducts()" type="text" placeholder="Buscar equipo..." class="bg-transparent border-none focus:ring-0 text-sm w-64">
-                </div>
+    <!-- Header con Diseño Wave -->
+<header class="sticky top-0 z-50 w-full wave-bg px-4 md:px-10 lg:px-20 py-3 shadow-lg">
+    <div class="flex items-center justify-between gap-4 max-w-[1200px] mx-auto">
+        <!-- Logo -->
+        <div class="flex items-center gap-8">
+            <div class="flex items-center gap-2">
+                <div class="text-white"><span class="material-symbols-outlined text-3xl">home_iot_device</span></div>
+                <h1 class="text-white text-xl font-extrabold tracking-tight">para<span class="text-slate-200">tuhogar</span></h1>
             </div>
-
-            <div class="flex items-center gap-3">
-                <button onclick="toggleCurrency()" class="text-xs font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    <span id="currency-label">USD</span>
-                </button>
-                <button onclick="toggleCartModal(true)" class="relative p-2 bg-primary/10 text-primary rounded-full">
-                    <span class="material-symbols-outlined">shopping_cart</span>
-                    <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
-                </button>
-                <button id="btn-open-gen" onclick="openGestorGen()" class="p-2 text-gray-400">
-    <span class="material-symbols-outlined">settings</span>
-</button>
-                <p id="gestor-label" class="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-primary"></p>
+            
+            <!-- Barra de Búsqueda (Estilo Transparente) -->
+            <div class="hidden md:flex">
+                <label class="flex flex-col min-w-64 !h-10">
+                    <div class="flex w-full flex-1 items-stretch rounded-lg h-full overflow-hidden border border-white/20 bg-white/10 backdrop-blur-sm">
+                        <div class="text-white/80 flex items-center justify-center pl-4">
+                            <span class="material-symbols-outlined text-xl">search</span>
+                        </div>
+                        <input id="search-bar" oninput="filterProducts()" type="text" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
+                    </div>
+                </label>
             </div>
         </div>
-    </header>
+
+        <!-- Botones de Acción (Carrito, Login, Moneda) -->
+        <div class="flex items-center gap-2 md:gap-4">
+            <!-- Selector Moneda -->
+            <button onclick="toggleCurrency()" class="h-10 px-3 rounded-lg bg-white/10 text-white border border-white/20 text-xs font-bold hover:bg-white/20 transition-all">
+                <span id="currency-label">USD</span>
+            </button>
+            
+            <!-- Carrito -->
+            <button onclick="toggleCartModal(true)" class="relative flex items-center justify-center rounded-lg h-10 w-10 bg-white/20 text-white hover:bg-white/30 transition-all">
+                <span class="material-symbols-outlined">shopping_cart</span>
+                <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">0</span>
+            </button>
+
+            <!-- Configuración / Gestor -->
+            <button id="btn-open-gen" onclick="openGestorGen()" class="hidden flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+
+            <!-- Botón Salir (Logout) -->
+            <button onclick="doLogout()" id="btn-logout" class="hidden flex items-center justify-center rounded-lg h-10 w-10 bg-red-500/80 text-white hover:bg-red-500 transition-all" title="Cerrar Sesión">
+                <span class="material-symbols-outlined">logout</span>
+            </button>
+            
+            <!-- Nombre Agente -->
+            <p id="gestor-label" class="hidden lg:block text-[10px] font-bold text-white uppercase tracking-widest border-l pl-3 ml-1 border-white/20"></p>
+        </div>
+    </div>
+</header>
 
     <main class="max-w-[1200px] mx-auto pb-20">
         
@@ -168,6 +163,20 @@
                     <button onclick="filterByCategory('CLIMATIZACIÓN')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Climatización</button>
                     <button onclick="filterByCategory('ENERGÍA')" class="category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all">Energía</button>
                 </div>
+                <!-- === FILTROS AVANZADOS PARA GESTORES === -->
+                <div id="gestor-filters" class="hidden px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20">
+                <div class="flex items-center gap-2">
+                 <span class="material-symbols-outlined text-primary text-sm">tune</span>
+                 <span class="text-[10px] font-black uppercase text-gray-400">Ordenar por:</span>
+                </div>
+                <select id="sort-selector" onchange="applySort()" class="bg-white dark:bg-gray-800 border-none text-xs font-bold rounded-lg py-1 px-3 focus:ring-0 shadow-sm">
+                     <option value="defecto">Relevancia</option>
+                    <option value="comision_desc">💰 Mayor Comisión</option>
+                    <option value="precio_asc">💲 Precio: Bajo a Alto</option>
+                    <option value="precio_desc">💲 Precio: Alto a Bajo</option>
+                    <option value="nuevo">🆕 Lo Nuevo</option>
+                </select>
+                </div>
             </div>
 
             <!-- Product Grid -->
@@ -199,6 +208,63 @@
                 </div>
                 <div id="ranking-list" class="divide-y divide-gray-50 dark:divide-gray-700"></div>
             </div>
+            <!-- === MÓDULO DE INTELIGENCIA Y REPORTES (Nuevo) === -->
+<div class="space-y-6 mt-8">
+    
+    <!-- 1. ANALÍTICA DE VENTAS (Tus horas pico y tendencias) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+            <h4 class="text-xs font-black uppercase text-gray-400 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">schedule</span> Tu Mejor Horario
+            </h4>
+            <p id="ana-hora-pico" class="text-2xl font-black text-primary">--:--</p>
+            <p class="text-[10px] text-gray-400">Hora donde más cierras ventas.</p>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+            <h4 class="text-xs font-black uppercase text-gray-400 mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">trending_up</span> Tendencia Global
+            </h4>
+            <div id="ana-tendencia-global" class="text-sm font-bold text-gray-600 dark:text-gray-300">
+                Cargando datos del mercado...
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. BUZÓN DE INTELIGENCIA (Reportes) -->
+    <div class="bg-indigo-50 dark:bg-gray-800/50 p-6 rounded-3xl border border-indigo-100 dark:border-gray-700">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-indigo-500">campaign</span>
+            <h3 class="text-sm font-black uppercase text-indigo-900 dark:text-white">Buzón de Inteligencia</h3>
+        </div>
+        <p class="text-xs text-indigo-700 dark:text-gray-400 mb-4">Ayúdanos a mejorar. Reporta precios de competencia, pide productos o reporta fallos.</p>
+        
+        <form id="form-reporte-gestor" class="space-y-3">
+            <select id="rep-tipo" class="w-full rounded-xl border-none bg-white dark:bg-gray-900 text-xs font-bold p-3">
+                <option value="Solicitud">📦 Solicitar Producto (Demanda)</option>
+                <option value="Competencia">🕵️ Reporte Competencia (Precios)</option>
+                <option value="Problema">⚠️ Problema / Mensajería</option>
+                <option value="Sugerencia">💡 Sugerencia General</option>
+            </select>
+            
+            <textarea id="rep-msg" placeholder="Describe el detalle..." class="w-full rounded-xl border-none bg-white dark:bg-gray-900 text-xs p-3 h-20"></textarea>
+            
+            <!-- Subida de Foto Simple -->
+            <div class="flex items-center gap-2">
+                <label class="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl cursor-pointer border border-dashed border-gray-300">
+                    <span class="material-symbols-outlined text-gray-400 text-sm">add_a_photo</span>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">Adjuntar Foto</span>
+                    <input type="file" id="rep-file" accept="image/*" class="hidden" onchange="previewReportImg()">
+                </label>
+                <span id="rep-file-name" class="text-[10px] text-gray-400 truncate max-w-[150px]"></span>
+            </div>
+
+            <button type="button" onclick="sendGestorReport()" class="w-full bg-indigo-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg shadow-indigo-500/20">Enviar Informe</button>
+        </form>
+    </div>
+</div>
+
+
         </section>
 
     </main>
@@ -252,14 +318,30 @@
                 </div>
 
                 <!-- WhatsApp Actions -->
-                <div class="mt-auto space-y-3">
-                    <button onclick="addItemToCart()" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all">
-                        <i class="fab fa-whatsapp text-2xl"></i> Comprar por WhatsApp
-                    </button>
-                    <button onclick="copyOffer()" class="w-full py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-50">
-                        <span class="material-symbols-outlined text-lg">content_copy</span> Copiar descripción
-                    </button>
-                </div>
+                <!-- ACCIONES DEL GESTOR -->
+<div class="mt-auto space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+    
+    <!-- Fila 1: Herramientas de Marketing (Descargar y Copiar) -->
+    <div class="flex gap-3">
+        <button onclick="downloadProductImage()" class="flex-1 py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1">
+            <span class="material-symbols-outlined text-xl">download</span>
+            Descargar Foto
+        </button>
+        
+        <button onclick="copySmartOffer()" class="flex-1 py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1">
+            <span class="material-symbols-outlined text-xl">content_copy</span>
+            Copiar Oferta
+        </button>
+    </div>
+
+    <!-- Fila 2: ACCIÓN PRINCIPAL (Hacer la Orden) -->
+    <!-- Este botón mantiene la función addItemToCart() para seguir el flujo normal de venta -->
+    <button onclick="addItemToCart()" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-500/20 active:scale-95">
+        <span class="material-symbols-outlined text-2xl">shopping_cart_checkout</span>
+        <span>Añadir a la Orden / Tramitar</span>
+    </button>
+    
+</div>
             </div>
         </div>
     </div>
@@ -478,48 +560,57 @@
 </section>
 
     <!-- Footer -->
-    <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12 px-6">
-        <div class="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div class="col-span-1 md:col-span-1">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="material-symbols-outlined text-3xl text-primary">home_iot_device</span>
-                    <h1 class="text-lg font-extrabold tracking-tight italic">para<span class="text-primary">tuhogar</span></h1>
-                </div>
-                <p class="text-gray-500 text-sm">Calidad y confort para tu hogar en Cuba. Paga seguro al recibir.</p>
+    <footer class="bg-background-light dark:bg-background-dark pt-16 pb-8 px-4 md:px-10 lg:px-40 relative mt-20">
+    <!-- Onda Invertida Superior -->
+    <div class="absolute top-0 left-0 w-full overflow-hidden leading-[0] transform rotate-180">
+        <svg class="relative block w-full h-[30px]" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path class="fill-primary/5" d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"></path>
+        </svg>
+    </div>
+
+    <div class="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div class="flex flex-col gap-6">
+            <div class="flex items-center gap-2">
+                <div class="text-primary"><span class="material-symbols-outlined text-3xl">home_iot_device</span></div>
+                <h2 class="text-primary dark:text-white text-xl font-extrabold tracking-tight">para<span class="text-secondary">tuhogar</span></h2>
             </div>
-            <div>
-                <h4 class="font-bold text-xs uppercase tracking-widest mb-4 text-primary">Categorías</h4>
-                <ul class="text-sm space-y-2 text-gray-500">
-                    <li><a href="#" class="hover:text-primary">Refrigeración</a></li>
-                    <li><a href="#" class="hover:text-primary">Cocina</a></li>
-                    <li><a href="#" class="hover:text-primary">Lavado</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-xs uppercase tracking-widest mb-4 text-primary">Ayuda</h4>
-                <ul class="text-sm space-y-2 text-gray-500">
-                    <li><a href="#" class="hover:text-primary">Garantía</a></li>
-                    <li><a href="#" class="hover:text-primary">Cómo Comprar</a></li>
-                    <li><a href="#" class="hover:text-primary">WhatsApp</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-xs uppercase tracking-widest mb-4 text-primary">Contacto</h4>
-                <ul class="text-sm space-y-2 text-gray-500">
-                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">mail</span> info@paratuhogar.cu</li>
-                    <li class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">location_on</span> La Habana, Cuba</li>
-                </ul>
-            </div>
+            <p class="text-slate-600 dark:text-gray-400 text-sm leading-relaxed">
+                Llevando calidad y confort a los hogares cubanos con el sello de profesionalismo. La tienda de confianza.
+            </p>
         </div>
-
-        <!-- PANEL MAESTRO DE ADMINISTRACIÓN -->
-
-
-<style>
-    .btn-tab-admin.active { background: #33ccc4; color: white; box-shadow: 0 4px 15px rgba(51, 204, 196, 0.4); }
-</style>
-
-    </footer>
+        <div>
+            <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Categorías</h3>
+            <ul class="flex flex-col gap-3 text-sm text-slate-600 dark:text-gray-400">
+                <li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#" onclick="filterByCategory('REFRIGERACIÓN')"><span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>Refrigeración</a></li>
+                <li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#" onclick="filterByCategory('COCINA')"><span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>Cocina</a></li>
+                <li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#" onclick="filterByCategory('CLIMATIZACIÓN')"><span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>Climatización</a></li>
+            </ul>
+        </div>
+        <div>
+            <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Información</h3>
+            <ul class="flex flex-col gap-3 text-sm text-slate-600 dark:text-gray-400">
+                <li><a class="hover:text-primary transition-colors" href="#">Cómo comprar</a></li>
+                <li><a class="hover:text-primary transition-colors" href="#">Términos de Garantía</a></li>
+                <li><a class="hover:text-primary transition-colors" href="#">WhatsApp</a></li>
+            </ul>
+        </div>
+        <div>
+            <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Contacto</h3>
+            <ul class="flex flex-col gap-4 text-sm text-slate-600 dark:text-gray-400">
+                <li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">mail</span> info@paratuhogar.cu</li>
+                <li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">location_on</span> La Habana, Cuba</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="max-w-[1200px] mx-auto mt-16 pt-8 border-t border-slate-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-6">
+        <p class="text-slate-500 dark:text-gray-500 text-xs font-medium">© 2026 paratuhogar. Todos los derechos reservados.</p>
+        <div class="flex gap-3">
+             <div class="h-8 w-12 bg-white border border-slate-200 rounded-md flex items-center justify-center text-[10px] font-bold text-slate-400">CUP</div>
+             <div class="h-8 w-12 bg-white border border-slate-200 rounded-md flex items-center justify-center text-[10px] font-bold text-slate-400">USD</div>
+        </div>
+    </div>
+</footer>
 
     <!-- MODAL NUEVO PRODUCTO -->
 <div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-center">
@@ -591,6 +682,49 @@
     </div>
 </div>
 
+<!-- === PANTALLA DE ACCESO (LOGIN / REGISTRO) === -->
+<div id="login-overlay" class="fixed inset-0 z-[9999] bg-background-light dark:bg-background-dark flex flex-col items-center justify-center p-6 transition-all duration-500 overflow-y-auto">
+    <div class="w-full max-w-sm text-center space-y-6 my-auto">
+        
+        <!-- Logo -->
+        <div class="flex items-center justify-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-5xl text-primary">home_iot_device</span>
+            <h1 class="text-3xl font-extrabold tracking-tight italic">para<span class="text-primary">tuhogar</span></h1>
+        </div>
+
+        <!-- Caja Principal -->
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-[32px] shadow-xl border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+            
+            <!-- Tabs Superior -->
+            <div class="flex border-b border-gray-100 dark:border-gray-700 mb-6">
+                <button onclick="toggleLoginMode('login')" id="tab-login-btn" class="flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary">Entrar</button>
+                <button onclick="toggleLoginMode('register')" id="tab-register-btn" class="flex-1 pb-2 font-black text-xs uppercase text-gray-400">Registrarme</button>
+            </div>
+
+            <!-- FORMULARIO LOGIN -->
+            <div id="form-login" class="space-y-4">
+                <input type="text" id="log-user" placeholder="Tu Nombre de Usuario" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <button onclick="processLogin()" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase shadow-lg shadow-primary/30">Iniciar Sesión</button>
+            </div>
+
+            <!-- FORMULARIO REGISTRO -->
+            <div id="form-register" class="space-y-4 hidden">
+                <input type="text" id="reg-name" placeholder="Nombre y Apellido" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="email" id="reg-email" placeholder="Correo Electrónico" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="tel" id="reg-tel" placeholder="Teléfono (WhatsApp)" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="password" id="reg-pass" placeholder="Crea una Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <button onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
+            </div>
+
+        </div>
+
+        <button onclick="enterAsClient()" class="text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-primary mt-4">
+            Solo quiero ver el catálogo (Cliente)
+        </button>
+    </div>
+</div>
+
     <!-- Scripts de Lógica -->
     <script>
     // 1. CONFIGURACIÓN SUPABASE
@@ -611,16 +745,243 @@
     const gestorTel = urlParams.get('tel');
     const isAdmin = urlParams.get('admin') === 'true';
 
+    // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
     window.addEventListener('load', () => {
-        if (gestorName) {
-            document.getElementById('gestor-label').innerText = `AGENTE: ${gestorName.toUpperCase()}`;
-            if (isAdmin) {
-                document.getElementById('admin-nav').classList.remove('hidden');
-                document.getElementById('gestor-label').innerText += " (PANEL PRIVADO)";
-            }
+        // 1. Inicializar editor
+        if(document.getElementById('editor-container')) {
+            quill = new Quill('#editor-container', {
+                theme: 'snow',
+                placeholder: 'Descripción...',
+                modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
+            });
         }
-        loadProducts();
+
+        // 2. INTENTAR RECUPERAR SESIÓN GUARDADA
+        const savedSession = localStorage.getItem('pth_session');
+        
+        if (savedSession) {
+            // SI HAY SESIÓN GUARDADA, SALTAMOS EL LOGIN
+            const s = JSON.parse(savedSession);
+            document.getElementById('login-overlay').classList.add('hidden');
+            window.currentUserData = s.data || {}; // Restaurar datos (teléfono, etc)
+            setupSession(s.name, s.isAdmin);
+        } else {
+            // SI NO HAY SESIÓN, CARGAMOS DE FONDO PERO MOSTRAMOS LOGIN
+            loadProducts();
+            // (Si hubiera params en URL antiguos, también los manejaríamos aquí, pero ya usamos Login)
+        }
     });
+
+    
+
+    // Función para Clientes (Botón "Entrar como Cliente")
+    function enterAsClient() {
+        document.getElementById('login-overlay').classList.add('hidden');
+        // Solo cargamos catálogo, sin sesión
+        loadProducts();
+    }
+
+    // --- 1. LÓGICA DE ACCESO (LOGIN/REGISTRO) ---
+    
+    function toggleLoginMode(mode) {
+        const isLogin = mode === 'login';
+        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+        document.getElementById('form-register').classList.toggle('hidden', isLogin);
+        
+        document.getElementById('tab-login-btn').className = isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
+        document.getElementById('tab-register-btn').className = !isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
+    }
+
+    // REGISTRO DE NUEVO GESTOR
+    async function processRegister() {
+        const nombre = document.getElementById('reg-name').value;
+        const email = document.getElementById('reg-email').value;
+        const tel = document.getElementById('reg-tel').value;
+        const pass = document.getElementById('reg-pass').value;
+
+        if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
+
+        const { data, error } = await supabaseClient
+            .from('gestores')
+            .insert([{ nombre: nombre, email: email, telefono: tel, password: pass }])
+            .select();
+
+        if (error) {
+            alert("Error al registrar: " + error.message);
+        } else {
+            alert("✅ Cuenta creada con éxito. Ahora inicia sesión.");
+            toggleLoginMode('login');
+            document.getElementById('log-user').value = nombre;
+        }
+    }
+
+    // INICIO DE SESIÓN
+    // INICIO DE SESIÓN (CON MEMORIA)
+    async function processLogin() {
+        const user = document.getElementById('log-user').value.trim();
+        const pass = document.getElementById('log-pass').value.trim();
+
+        // 1. Verificar si es ADMIN SUPREMO
+        if (pass === ADMIN_SECRET_KEY) {
+            closeLogin();
+            saveSessionToMemory("Administrador", true, {}); // Guardar en memoria
+            setupSession("Administrador", true);
+            return;
+        }
+
+        // 2. Verificar en la base de datos de GESTORES
+        const { data, error } = await supabaseClient
+            .from('gestores')
+            .select('*')
+            .eq('nombre', user)
+            .eq('password', pass)
+            .single();
+
+        if (data) {
+            closeLogin();
+            window.currentUserData = data; 
+            saveSessionToMemory(data.nombre, false, data); // Guardar en memoria
+            setupSession(data.nombre, false);
+        } else {
+            alert("❌ Usuario o contraseña incorrectos.");
+        }
+    }
+
+    // Función auxiliar para guardar en el navegador
+    function saveSessionToMemory(name, isAdmin, data) {
+        const session = {
+            name: name,
+            isAdmin: isAdmin,
+            data: data
+        };
+        localStorage.setItem('pth_session', JSON.stringify(session));
+    }
+
+    function closeLogin() { document.getElementById('login-overlay').classList.add('hidden'); }
+    function enterAsClient() { closeLogin(); loadProducts(); }
+
+    function setupSession(name, adminMode) {
+        window.gestorName = name;
+        window.isAdmin = adminMode;
+        
+        const label = document.getElementById('gestor-label');
+        label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
+        document.getElementById('admin-nav').classList.remove('hidden');
+
+        if (adminMode) {
+            document.getElementById('sec-admin-master').classList.remove('hidden');
+            document.getElementById('sec-catalogo').style.display = 'none';
+            document.getElementById('admin-nav').classList.add('hidden');
+            loadAdminData();
+        } else {
+            showSection('dashboard');
+            // --- LÍNEAS NUEVAS A AÑADIR ---
+    loadAnalyticsPro(name); // Carga estadísticas de hora y tendencias
+    document.getElementById('gestor-filters').classList.remove('hidden'); // Muestra los filtros
+    // -------------------------------
+
+            loadProducts(); 
+            // Cargar dashboard avanzado
+            loadProDashboard(name);
+        }
+        // ... código anterior de la función ...
+
+    // FORZAR QUE SE VEA EL BOTÓN ROJO
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.classList.remove('hidden');
+        btnLogout.style.display = 'inline-flex'; // Fuerza bruta para que se vea
+    }
+
+    }
+
+    // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
+
+    async function loadProDashboard(nombreGestor) {
+        // A. Consultar TODOS los pedidos (para el ranking)
+        const { data: allPedidos } = await supabaseClient.from('pedidos').select('gestor, comision_total, estado');
+        
+        // Filtrar mis ventas
+        const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
+        const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
+        const misPendientes = misVentas.filter(p => p.estado === 'Pendiente' || p.estado === 'En Camino');
+        const miGanancia = misEntregados.reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+
+        // Actualizar Tarjetas
+        document.getElementById('dash-money').innerText = `$${miGanancia.toFixed(2)}`;
+        document.getElementById('dash-ok').innerText = misEntregados.length;
+        document.getElementById('dash-pending').innerText = misPendientes.length;
+
+        // B. GENERAR RANKING ANÓNIMO
+        const rankingMap = {};
+        allPedidos.forEach(p => {
+            if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
+                rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + (Number(p.comision_total) || 0);
+            }
+        });
+
+        // Convertir a array y ordenar
+        const rankingArray = Object.entries(rankingMap)
+            .sort(([,a], [,b]) => b - a) // Ordenar de mayor a menor
+            .slice(0, 10); // Top 10
+
+        // Renderizar Ranking
+        const rankingHTML = rankingArray.map(([gName, gTotal], index) => {
+            const isMe = gName === nombreGestor;
+            // Ocultar nombre: "Juan Perez" -> "Jua***"
+            const maskedName = isMe ? `${gName} (Tú)` : gName.substring(0, 3) + '***';
+            const icon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index+1}`));
+            
+            return `
+            <div class="flex justify-between items-center p-3 ${isMe ? 'bg-primary/10 border border-primary/20 rounded-xl' : ''}">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg">${icon}</span>
+                    <span class="text-xs font-black uppercase ${isMe ? 'text-primary' : 'text-gray-500'}">${maskedName}</span>
+                </div>
+                <span class="text-xs font-bold text-gray-800">$${gTotal.toFixed(0)}</span>
+            </div>`;
+        }).join('');
+
+        document.getElementById('ranking-list').innerHTML = rankingHTML;
+
+        // C. INYECTAR SECCIÓN DE "MIS ENLACES" EN EL DASHBOARD
+        injectLinksSection(nombreGestor);
+    }
+
+    function injectLinksSection(nombre) {
+        // Verificar si ya existe para no duplicar
+        if(document.getElementById('sec-links-gestor')) return;
+
+        const container = document.getElementById('sec-dashboard');
+        const userData = window.currentUserData || {};
+        
+        // Crear Enlace Base
+        const baseUrl = window.location.origin + window.location.pathname;
+        const myLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
+
+        const html = `
+        <div id="sec-links-gestor" class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm mt-6">
+            <h3 class="text-sm font-black uppercase text-primary mb-4 italic">🔗 Mi Enlace Inteligente</h3>
+            <p class="text-xs text-gray-400 mb-2">Comparte este enlace. Cuando un cliente entre, la web sabrá que viene de tu parte.</p>
+            
+            <div class="flex gap-2 mb-4">
+                <input type="text" value="${myLink}" readonly class="w-full bg-gray-50 text-xs p-3 rounded-xl border-none font-bold text-gray-500">
+                <button onclick="navigator.clipboard.writeText('${myLink}').then(()=>alert('Enlace copiado'))" class="bg-primary text-white px-4 rounded-xl font-bold text-xs uppercase">Copiar</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('¡Mira este catálogo! Envíos a toda Cuba: ' + myLink)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                    <i class="fab fa-whatsapp text-lg"></i> Enviar por WhatsApp
+                </button>
+                <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(myLink)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                    <i class="fab fa-facebook text-lg"></i> Compartir Facebook
+                </button>
+            </div>
+        </div>`;
+        
+        // Insertar después de las tarjetas
+        document.getElementById('ranking-list').parentElement.insertAdjacentHTML('afterend', html);
+    }
 
     // 2. CARGA DE PRODUCTOS
     async function loadProducts() {
@@ -645,6 +1006,9 @@
         const query = document.getElementById('search-bar').value.toLowerCase();
         const container = document.getElementById('productos-container');
         
+        // 1. DEFINIR SI ES GESTOR (Esto faltaba)
+        const isGestor = window.gestorName ? true : false;
+        
         const filtered = productosRaw.filter(p => {
             const matchSearch = p.nombre.toLowerCase().includes(query);
             const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
@@ -659,18 +1023,29 @@
         container.innerHTML = filtered.map(p => {
             const precio = parseFloat(p.precio) || 0;
             const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
-            const htmlGanancia = isAdmin ? `<p class="text-[10px] font-black text-emerald-500 mt-1 uppercase italic tracking-tighter">Tu Ganancia: $${p.comision || 0}</p>` : '';
+            
+            // 2. DEFINIR LA ETIQUETA DE COMISIÓN (Esto faltaba y causaba el error)
+            const htmlComision = isGestor ? 
+                `<div class="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10">
+                    GANAS $${p.comision || 0}
+                 </div>` : '';
 
+            // 3. Renderizar la tarjeta con el nuevo diseño
             return `
-            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all cursor-pointer">
-                <div class="w-full aspect-square bg-white p-4">
-                    <img src="${fixDriveUrl(p.thumbnail)}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300">
+            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative cursor-pointer">
+                ${htmlComision}
+                <div class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
                 </div>
-                <div class="p-4">
-                    <h3 class="text-sm font-bold leading-tight mb-2 line-clamp-2 min-h-[40px]">${p.nombre}</h3>
-                    <p class="text-primary text-xl font-black">${pDisplay}</p>
-                    ${htmlGanancia}
-                    <button class="mt-4 w-full bg-primary/10 text-primary py-2 rounded-xl text-xs font-black uppercase hover:bg-primary hover:text-white transition-all">Ver Detalles</button>
+                <div class="p-5 flex flex-col gap-3">
+                    <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
+                    <p class="text-primary text-2xl font-black">${pDisplay}</p>
+                    ${isGestor ? `<p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">${p.categoria}</p>` : ''}
+                    
+                    <button class="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-lg text-sm font-extrabold hover:bg-secondary transition-colors shadow-md active:scale-95">
+                        <span class="material-symbols-outlined text-lg">visibility</span>
+                        Ver Detalles
+                    </button>
                 </div>
             </div>`;
         }).join('');
@@ -773,12 +1148,14 @@
         recalcularTotalFinal();
     }
 
-    // 5. ENVÍO DE FORMULARIO A SUPABASE
+    // 5. ENVÍO DE PEDIDO A SUPABASE (CORREGIDO PARA LOGIN)
     document.getElementById('checkout-form').onsubmit = async function(e) {
         e.preventDefault();
         const btn = document.getElementById('final-submit-btn');
-        btn.disabled = true; btn.innerText = "REGISTRANDO...";
+        btn.disabled = true; 
+        btn.innerText = "REGISTRANDO...";
 
+        // DATOS DEL FORMULARIO
         const nombreC = document.getElementById('check-nombre').value;
         const ciC = document.getElementById('check-ci').value;
         const telC = document.getElementById('check-tel').value;
@@ -787,27 +1164,52 @@
         const valVuelto = document.getElementById('check-vuelto').value;
         const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "No requiere";
 
+        // --- CORRECCIÓN CLAVE: OBTENER GESTOR LOGUEADO ---
+        // 1. Buscamos en window.gestorName (Login)
+        // 2. Si no, buscamos en gestorName (URL antigua)
+        // 3. Si no, es Venta Directa
+        const activeGestor = window.gestorName || gestorName || "Venta Directa";
+        
+        // Recuperar teléfono del gestor si está logueado
+        const activeGestorTel = window.currentUserData?.telefono || gestorTel || ""; 
+
         let precioEquipo = 0, totalMensajeria = 0, totalComision = 0;
+        
         cart.forEach(i => {
             precioEquipo += (Number(i.precio) * i.qty);
             totalMensajeria += (parseMensajeria(i.mensajeria) * i.qty);
-            if (gestorName) { totalComision += (Number(i.comision || 0) * i.qty); }
+            
+            // Calculamos comisión solo si NO es venta directa
+            if (activeGestor !== "Venta Directa") { 
+                totalComision += (Number(i.comision || 0) * i.qty); 
+            }
         });
 
         const listaProductos = cart.map(i => `${i.qty}x ${i.nombre}`).join(', ');
         const totalConvertidoStr = document.getElementById('total-convertido').innerText;
+        const totalFinalNum = precioEquipo + totalMensajeria;
 
         // Registro en Supabase
         const { error } = await supabaseClient.from('pedidos').insert([{
-            gestor: gestorName || "Venta Directa",
-            cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC,
+            gestor: activeGestor, // Usamos la variable corregida
+            cliente: nombreC, 
+            ci: ciC, 
+            telefono: telC, 
+            direccion: dirC,
             producto: `${listaProductos} [${monedaC}]`,
-            total: precioEquipo + totalMensajeria,
+            total: totalFinalNum,
             comision_total: totalComision,
-            estado: 'Pendiente'
+            estado: 'Pendiente',
+            pago_gestor: 'Pendiente' // Aseguramos que empiece como deuda
         }]);
 
-        if (error) console.error("Error Supabase:", error);
+        if (error) {
+            console.error("Error Supabase:", error);
+            alert("Error al guardar el pedido. Intente nuevamente.");
+            btn.disabled = false;
+            btn.innerText = "Tramitar Pedido";
+            return;
+        }
 
         // Enlace WhatsApp
         let msj = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0A` +
@@ -818,10 +1220,22 @@
                   `💪🏻Producto: ${listaProductos}%0A` +
                   `💪🏻Total a Pagar: *${totalConvertidoStr}*%0A` +
                   `💪🏻Vuelto: ${vueltoC}%0A`;
-        if (gestorName) msj += `💪🏻Gestor: ${gestorName}%0A☎(${gestorTel})`;
+        
+        // Añadimos firma del gestor si existe
+        if (activeGestor !== "Venta Directa") {
+            msj += `------------------%0A👤 Atendido por: *${activeGestor}*`;
+            if(activeGestorTel) msj += `%0A☎ Contacto: ${activeGestorTel}`;
+        }
 
+        // Enviar a WhatsApp central (Tu número)
         window.open(`https://wa.me/5356071095?text=${msj}`, '_blank');
-        setTimeout(() => location.reload(), 1500);
+        
+        // Limpiar y recargar
+        setTimeout(() => {
+            cart = [];
+            toggleCartModal(false);
+            location.reload();
+        }, 1000);
     };
 
     // 6. FUNCIONES AUXILIARES
@@ -855,16 +1269,53 @@
     }
 
     // DASHBOARD DE GESTOR (Simplificado para Supabase)
+    // DASHBOARD DE GESTOR (Corregido para Login)
     async function loadFullDashboard() {
-        const { data, error } = await supabaseClient.from('pedidos').select('*').eq('gestor', gestorName);
-        if (error) return;
+        // Usamos window.gestorName que definimos en el Login
+        const currentGestor = window.gestorName || gestorName; 
+
+        if (!currentGestor) return;
+
+        console.log("Cargando dashboard para:", currentGestor); // Para depurar
+
+        // Consultamos SOLO los pedidos de este gestor
+        const { data, error } = await supabaseClient
+            .from('pedidos')
+            .select('*')
+            .eq('gestor', currentGestor);
+
+        if (error) {
+            console.error("Error cargando dashboard:", error);
+            return;
+        }
         
         const entregados = data.filter(p => p.estado === 'Entregado');
-        const pendientes = data.filter(p => p.estado === 'Pendiente');
+        const pendientes = data.filter(p => p.estado === 'Pendiente' || p.estado === 'En Camino');
         
-        document.getElementById('dash-money').innerText = `$${entregados.reduce((a,c) => a + (Number(c.comision_total || 0)), 0).toFixed(2)}`;
+        // Calculamos comisiones (Asumiendo que 'comision_total' es numérico en la BD)
+        const ganancia = entregados.reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+
+        // Actualizamos el HTML
+        document.getElementById('dash-money').innerText = `$${ganancia.toFixed(2)}`;
         document.getElementById('dash-ok').innerText = entregados.length;
         document.getElementById('dash-pending').innerText = pendientes.length;
+
+        // Ranking (Opcional: mostrar ranking global o solo tus ventas)
+        renderRankingGestor(data); 
+    }
+
+    function renderRankingGestor(misVentas) {
+        // Esta función lista las últimas ventas del propio gestor en la lista de abajo
+        const list = document.getElementById('ranking-list');
+        list.innerHTML = misVentas.slice(0, 5).map(v => `
+            <div class="p-4 flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400">${new Date(v.created_at || new Date()).toLocaleDateString()}</p>
+                    <p class="text-xs font-black uppercase text-gray-700">${v.producto.substring(0, 20)}...</p>
+                </div>
+                <span class="text-emerald-500 font-black text-xs">+$${v.comision_total}</span>
+            </div>
+        `).join('');
     }
 
     function showSection(section) {
@@ -1437,6 +1888,277 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     }
 });
 
+// --- 3. HERRAMIENTAS DE MARKETING (DESCARGAR Y COPIAR) ---
+
+    // Función mejorada para forzar la descarga de la imagen
+    async function downloadProductImage() {
+        if(!selectedProduct) return;
+        
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<span class="loader w-4 h-4 border-2 border-primary"></span>`; // Spinner pequeño
+        
+        try {
+            const url = fixDriveUrl(selectedProduct.thumbnail);
+            
+            // 1. Obtenemos la imagen como un "blob" (archivo crudo)
+            const response = await fetch(url);
+            const blob = await response.blob();
+            
+            // 2. Creamos un enlace temporal en memoria
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            // 3. Forzamos la descarga
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            // Limpiamos el nombre del archivo para que se guarde bonito
+            const cleanName = selectedProduct.nombre.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            link.download = `foto_${cleanName}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 4. Limpiamos memoria
+            window.URL.revokeObjectURL(blobUrl);
+            
+            btn.innerHTML = originalText;
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo descargar la imagen directamente. Intenta mantener presionado sobre la foto.");
+            btn.innerHTML = originalText;
+        }
+    }
+
+    // Función para copiar texto de venta profesional con enlace de afiliado
+    function copySmartOffer() {
+        if(!selectedProduct) return;
+        
+        const gestor = window.gestorName || '';
+        const userData = window.currentUserData || {}; 
+        
+        // Creamos el enlace que lleva directo al producto y marca al gestor
+        let trackingLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}`;
+        if (gestor) trackingLink += `&gestor=${encodeURIComponent(gestor)}`;
+        if (userData.telefono) trackingLink += `&tel=${userData.telefono}`;
+
+        // Texto persuasivo para redes sociales
+        const textoVenta = 
+`🔥 *¡OFERTA ESPECIAL!* 🔥
+📦 Modelo: *${selectedProduct.nombre}*
+
+💰 Precio: *$${selectedProduct.precio} USD*
+🚚 Mensajería: ${selectedProduct.mensajeria || 'A consultar'}
+🛡️ Garantía: ${selectedProduct.garantia || 'Garantía Incluida'}
+
+👇 *Ver fotos y detalles aquí:*
+${trackingLink}
+
+✅ *Pedir ahora por WhatsApp:*
+https://wa.me/${userData.telefono || '5356071095'}?text=${encodeURIComponent('Hola, me interesa el equipo: ' + selectedProduct.nombre)}`;
+
+        navigator.clipboard.writeText(textoVenta).then(() => {
+            alert("¡Oferta copiada! Pégala en WhatsApp o Facebook.");
+        });
+    }
+
+// ==========================================
+// NUEVO: MÓDULO PRO PARA GESTORES 2.0
+// ==========================================
+
+// --- 1. LÓGICA DE FILTROS Y ORDENAMIENTO ---
+
+function applySort() {
+    const criteria = document.getElementById('sort-selector').value;
+    let sorted = [...productosRaw]; // Copia para no dañar original
+
+    switch (criteria) {
+        case 'comision_desc':
+            // Ordenar por comisión (mayor a menor)
+            sorted.sort((a, b) => (parseFloat(b.comision) || 0) - (parseFloat(a.comision) || 0));
+            break;
+        case 'precio_asc':
+            sorted.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio));
+            break;
+        case 'precio_desc':
+            sorted.sort((a, b) => parseFloat(b.precio) - parseFloat(a.precio));
+            break;
+        case 'nuevo':
+            // Asumimos que ID más alto o fecha 'created_at' es más nuevo
+            sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            break;
+        default:
+            // Por defecto (Alfabético o como venga de DB)
+            sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }
+    
+    // Renderizamos pasando la lista ordenada
+    renderProductsCustom(sorted);
+}
+
+// Versión modificada de renderProducts que acepta una lista
+function renderProductsCustom(lista) {
+    const container = document.getElementById('productos-container');
+    const isGestor = window.gestorName ? true : false;
+    
+    container.innerHTML = lista.map(p => {
+        // Lógica de visualización (igual a la anterior pero optimizada)
+        const precio = parseFloat(p.precio) || 0;
+        const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
+        
+        // ETIQUETA DE COMISIÓN (Solo visible si hay gestor logueado)
+        const htmlComision = isGestor ? 
+            `<div class="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10">
+                GANAS $${p.comision || 0}
+             </div>` : '';
+
+       // Dentro de renderProductsCustom (y renderProducts), reemplaza el return del .map por esto:
+return `
+<div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative cursor-pointer">
+    ${htmlComision}
+    <div class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden">
+        <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
+    </div>
+    <div class="p-5 flex flex-col gap-3">
+        <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
+        <p class="text-primary text-2xl font-black">${pDisplay}</p>
+        ${isGestor ? `<p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">${p.categoria}</p>` : ''}
+        
+        <button class="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-lg text-sm font-extrabold hover:bg-secondary transition-colors shadow-md active:scale-95">
+            <span class="material-symbols-outlined text-lg">visibility</span>
+            Ver Detalles
+        </button>
+    </div>
+</div>`;
+    }).join('');
+}
+
+// IMPORTANTE: Modificar la función 'renderProducts' original para que use esta si no hay filtros,
+// O simplemente llamar a applySort() al cargar si hay gestor.
+// Agrega esto dentro de tu 'setupSession' cuando el modo NO es admin:
+// document.getElementById('gestor-filters').classList.remove('hidden');
+
+// --- 2. LÓGICA DE ANALÍTICA (HORARIOS Y TENDENCIAS) ---
+
+async function loadAnalyticsPro(nombreGestor) {
+    // Traer todos los pedidos entregados
+    const { data: pedidos } = await supabaseClient
+        .from('pedidos')
+        .select('created_at, producto, gestor, estado')
+        .eq('estado', 'Entregado');
+
+    if (!pedidos) return;
+
+    // A. CALCULAR HORA PICO DEL GESTOR
+    const misPedidos = pedidos.filter(p => p.gestor === nombreGestor);
+    if (misPedidos.length > 0) {
+        const horas = misPedidos.map(p => new Date(p.created_at).getHours());
+        const conteoHoras = {};
+        let maxHora = 0, maxCount = 0;
+        
+        horas.forEach(h => {
+            conteoHoras[h] = (conteoHoras[h] || 0) + 1;
+            if (conteoHoras[h] > maxCount) {
+                maxCount = conteoHoras[h];
+                maxHora = h;
+            }
+        });
+        
+        // Formato 14:00 - 15:00
+        document.getElementById('ana-hora-pico').innerText = `${maxHora}:00 - ${maxHora+1}:00`;
+    } else {
+        document.getElementById('ana-hora-pico').innerText = "Sin datos aún";
+    }
+
+    // B. TENDENCIA GLOBAL (TOP 3 PRODUCTOS WEB)
+    // Contamos frecuencia de nombres de productos en TODOS los pedidos
+    const conteoGlobal = {};
+    pedidos.forEach(p => {
+        // Limpiamos el string del producto (ej: "1x Olla Reina..." -> "Olla Reina")
+        // Simplificación: tomamos los primeros 15 caracteres para agrupar
+        const cleanName = p.producto.substring(3, 20); 
+        conteoGlobal[cleanName] = (conteoGlobal[cleanName] || 0) + 1;
+    });
+
+    const topGlobal = Object.entries(conteoGlobal)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3); // Top 3
+
+    document.getElementById('ana-tendencia-global').innerHTML = topGlobal.map((item, i) => `
+        <div class="flex justify-between items-center mb-1">
+            <span class="text-[10px] font-black uppercase">#${i+1} ${item[0]}...</span>
+            <span class="text-xs font-bold text-primary">${item[1]} vtas</span>
+        </div>
+    `).join('');
+}
+
+// --- 3. LÓGICA DE REPORTES (BUZÓN) ---
+
+function previewReportImg() {
+    const input = document.getElementById('rep-file');
+    if(input.files && input.files[0]) {
+        document.getElementById('rep-file-name').innerText = "📷 " + input.files[0].name;
+    }
+}
+
+async function sendGestorReport() {
+    const gestor = window.gestorName;
+    const tipo = document.getElementById('rep-tipo').value;
+    const msg = document.getElementById('rep-msg').value;
+    const fileInput = document.getElementById('rep-file');
+    
+    if (!msg) return alert("Por favor describe el detalle.");
+    
+    // Subir imagen si existe
+    let imgUrl = null;
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileName = `reportes/${Date.now()}_${gestor}_${file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        // Usamos la misma lógica de upload que ya tienes, pero al bucket 'reportes' o 'productos' si no creaste otro
+        // Si no creaste bucket 'reportes', usa 'productos' temporalmente
+        const { data, error } = await supabaseClient.storage.from('productos').upload(fileName, file);
+        if (!error) imgUrl = fileName;
+    }
+
+    // Guardar en Base de Datos
+    const { error } = await supabaseClient.from('reportes_gestor').insert([{
+        gestor: gestor,
+        categoria: tipo,
+        mensaje: msg,
+        imagen_url: imgUrl,
+        estado: 'Pendiente'
+    }]);
+
+    if (error) {
+        alert("Error al enviar reporte: " + error.message);
+    } else {
+        alert("✅ Gracias por tu aporte. Lo revisaremos.");
+        document.getElementById('form-reporte-gestor').reset();
+        document.getElementById('rep-file-name').innerText = "";
+    }
+}
+
+// ==========================================
+// FORZAR FUNCIÓN DE SALIDA (GLOBAL)
+// ==========================================
+window.doLogout = function() {
+    console.log("Botón de salir presionado..."); // Esto aparecerá en la consola si funciona
+    
+    // 1. Preguntar confirmación
+    if(confirm("¿Estás seguro de que quieres cerrar sesión y salir?")) {
+        
+        // 2. Borrar la memoria del navegador
+        localStorage.removeItem('pth_session');
+        
+        // 3. Limpiar variables globales por si acaso
+        window.gestorName = null;
+        window.currentUserData = null;
+
+        // 4. Limpiar la URL (quitar ?gestor=... si existe) y recargar
+        // Esto lleva al usuario de vuelta a la pantalla de Login limpia
+        window.location.href = window.location.origin + window.location.pathname;
+    }
+};
 </script>
 
 </body>
