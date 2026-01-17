@@ -1102,19 +1102,22 @@
         if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
         if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
 
-        // B. GENERAR RANKING ANÓNIMO (Igual que antes)
+        // B. GENERAR RANKING ANÓNIMO (Por Cantidad de Ventas)
         const rankingMap = {};
         allPedidos.forEach(p => {
+            // Solo contamos entregados
             if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
-                rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + (Number(p.comision_total) || 0);
+                // Sumamos 1 venta, no el dinero
+                rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + 1; 
             }
         });
 
+        // Convertir a array y ordenar (Mayor cantidad primero)
         const rankingArray = Object.entries(rankingMap)
             .sort(([,a], [,b]) => b - a)
-            .slice(0, 10);
+            .slice(0, 10); // Top 10
 
-        const rankingHTML = rankingArray.map(([gName, gTotal], index) => {
+        const rankingHTML = rankingArray.map(([gName, gCount], index) => {
             const isMe = gName === nombreGestor;
             const maskedName = isMe ? `${gName} (Tú)` : gName.substring(0, 3) + '***';
             const icon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index+1}`));
@@ -1125,7 +1128,7 @@
                     <span class="text-lg">${icon}</span>
                     <span class="text-xs font-black uppercase ${isMe ? 'text-primary' : 'text-gray-500'}">${maskedName}</span>
                 </div>
-                <span class="text-xs font-bold text-gray-800">$${gTotal.toFixed(0)}</span>
+                <span class="text-xs font-bold text-gray-800">${gCount} ventas</span>
             </div>`;
         }).join('');
 
