@@ -293,7 +293,38 @@
                     <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">Ranking de Agentes</h3>
                 </div>
                 <div id="ranking-list" class="divide-y divide-gray-50 dark:divide-gray-700"></div>
+                <!-- === NUEVA SECCIÓN: HISTORIAL DETALLADO DE PEDIDOS === -->
+                <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm mt-6 overflow-hidden">
+                    <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h3 class="text-sm font-black uppercase text-primary italic">📋 Mis Pedidos Recientes</h3>
+                            <p class="text-[10px] text-gray-400">Monitorea el estado logístico de tus ventas en tiempo real.</p>
+                        </div>
+                        
+                        <!-- Buscador interno -->
+                        <div class="w-full md:w-auto relative">
+                            <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
+                            <input type="text" id="search-mi-historial" oninput="filterMyOrders()" placeholder="Buscar cliente..." class="w-full md:w-64 pl-9 pr-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border-none text-xs font-bold">
+                        </div>
+                    </div>
+
+                    <!-- Encabezados de tabla (oculto en móvil) -->
+                    <div class="hidden md:grid grid-cols-12 gap-4 p-4 bg-gray-50/50 dark:bg-gray-900/30 text-[9px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
+                        <div class="col-span-3">Fecha / Cliente</div>
+                        <div class="col-span-4">Producto</div>
+                        <div class="col-span-2 text-right">Monto</div>
+                        <div class="col-span-3 text-right">Estado Actual</div>
+                    </div>
+
+                    <!-- Lista de Pedidos -->
+                    <div id="list-mis-pedidos" class="divide-y divide-gray-50 dark:divide-gray-700 max-h-[500px] overflow-y-auto">
+                        <!-- Se llena con JS -->
+                        <div class="p-8 text-center text-gray-400 text-xs">Cargando historial...</div>
+                    </div>
+                </div>
             </div>
+
+
             <!-- === MÓDULO DE INTELIGENCIA Y REPORTES (Nuevo) === -->
 <div class="space-y-6 mt-8">
     
@@ -569,44 +600,61 @@
     <!-- Contenido: Logística (CON EL ID CORREGIDO) -->
     <div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
         
-        <!-- 1. SUB-NAVEGACIÓN DE ESTADOS -->
-        <div class="bg-white dark:bg-gray-800 p-2 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-2">
-            <button onclick="filterLogisticaByStatus('TODOS')" class="sub-tab-log active px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all bg-primary text-white">Todos</button>
-            <button onclick="filterLogisticaByStatus('Pendiente')" class="sub-tab-log px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-400 hover:bg-gray-100">⏳ Pendientes</button>
-            <button onclick="filterLogisticaByStatus('En Camino')" class="sub-tab-log px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-400 hover:bg-gray-100">🚚 En Camino</button>
-            <button onclick="filterLogisticaByStatus('Entregado')" class="sub-tab-log px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-400 hover:bg-gray-100">✅ Entregados</button>
-            <button onclick="filterLogisticaByStatus('Cancelado')" class="sub-tab-log px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-400 hover:bg-gray-100">❌ Cancelados</button>
-        </div>
-
-        <!-- 2. HERRAMIENTAS (BUSCAR Y EXPORTAR) -->
-        <div class="p-4 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-            <div class="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 w-full md:w-96 shadow-sm">
-                <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
-                <input type="text" id="search-logistica" oninput="renderAdminLogistica()" placeholder="Buscar cliente, gestor o producto..." class="bg-transparent border-none focus:ring-0 text-xs w-full font-bold text-slate-700 dark:text-white">
-            </div>
+       <!-- 1. SUB-NAVEGACIÓN DE ESTADOS (CORREGIDA) -->
+        <div id="filter-buttons-container" class="bg-white dark:bg-gray-800 p-2 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-2 items-center">
             
-            <div class="flex gap-2">
-                <span class="bg-primary/10 text-primary px-3 py-2 rounded-lg text-[10px] font-bold border border-primary/20 flex items-center">
-                    Viendo: <span id="label-estado-actual" class="ml-1 uppercase">TODOS</span>
-                </span>
-                <button onclick="exportLogisticaCurrentView()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all">
-                    <span class="material-symbols-outlined text-sm">download</span> Excel
-                </button>
-            </div>
+            <!-- Botón TODOS -->
+            <button onclick="filterLogisticaByStatus('TODOS', this)" class="btn-filter active px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all bg-primary text-white shadow-md">
+                Todos
+            </button>
+            
+            <!-- Botón PENDIENTE -->
+            <button onclick="filterLogisticaByStatus('Pendiente', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 border border-transparent">
+                ⏳ Por Asignar
+            </button>
+            
+            <!-- Botón ALMACÉN -->
+            <button onclick="filterLogisticaByStatus('Recogida Almacén', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-orange-50 hover:text-orange-600 border border-transparent">
+                🏭 En Almacén
+            </button>
+
+            <!-- Botón MENSAJERO -->
+            <button onclick="filterLogisticaByStatus('Asignado Mensajero', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-blue-50 hover:text-blue-600 border border-transparent">
+                🏍️ Con Mensajero
+            </button>
+            
+            <!-- Botón HISTÓRICO (Agrupa Entregado y Cancelado) -->
+            <button onclick="filterLogisticaByStatus('FINALIZADOS', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent">
+                ✅ Histórico (Final)
+            </button>
+
+            <!-- Etiqueta oculta para evitar el error de JS, o informativa si quieres dejarla -->
+            <span id="label-estado-actual" class="hidden"></span>
         </div>
         
         <!-- 3. TABLA -->
         <div class="overflow-x-auto">
             <table id="admin-table-logistica" class="w-full text-left border-collapse">
-                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                    <tr>
-                        <th class="p-6">Fecha/Cliente</th>
-                        <th class="p-6">Producto</th>
-                        <th class="p-6">Gestor</th>
-                        <th class="p-6">Total</th>
-                        <th class="p-6 text-right">Estado Logístico</th>
-                    </tr>
-                </thead>
+                <!-- 3. TABLA -->
+                <div class="overflow-x-auto">
+                    <table id="admin-table-logistica" class="w-full text-left border-collapse">
+                        
+                        <!-- === AQUÍ EMPIEZA EL CAMBIO === -->
+                        <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                            <tr>
+                                <th class="p-6">Fecha/Cliente</th>
+                                <th class="p-6">Proveedor</th> <!-- NUEVO -->
+                                <th class="p-6">Producto</th>
+                                <th class="p-6">Gestor</th>
+                                <!-- Nota: Hemos quitado 'Total' para hacer espacio, pero puedes volver a ponerlo si quieres -->
+                                <th class="p-6 text-right">Estado Logística</th>
+                            </tr>
+                        </thead>
+                        <!-- === AQUÍ TERMINA EL CAMBIO === -->
+
+                        <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700"></tbody>
+                    </table>
+                </div>
                 <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700"></tbody>
             </table>
         </div>
@@ -753,6 +801,36 @@
     <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 font-bold" required>
     <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 font-bold" required>
     <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 font-bold" required>
+
+    <!-- ...inputs de precio y comisión... -->
+    <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 font-bold" required>
+    
+    <!-- === NUEVOS CAMPOS PROVEEDOR Y FLEXIBILIDAD === -->
+    <div class="md:col-span-2 grid grid-cols-2 gap-4">
+        <!-- Selector de Proveedor -->
+        <div>
+            <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Proveedor / Almacén</label>
+            <input type="text" id="p-proveedor" list="lista-proveedores" placeholder="Ej: Importadora A" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
+            <datalist id="lista-proveedores">
+                <option value="General">
+                <option value="Importadora A">
+                <option value="Importadora B">
+                <!-- Se irán guardando solos al escribir -->
+            </datalist>
+        </div>
+        
+        <!-- Selector de Flexibilidad de Precio -->
+        <div>
+            <label class="text-[10px] font-black uppercase text-gray-400 ml-1">¿Precio Subible?</label>
+            <select id="p-flexible" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
+                <option value="NO">🔒 Precio Fijo (No subir)</option>
+                <option value="SI">📈 Flexible (Gestor puede subir)</option>
+            </select>
+        </div>
+    </div>
+    <!-- ============================================== -->
+
+    <!-- CAMPO DE CATEGORÍA INTELIGENTE (Este ya lo tienes, sigue abajo) -->
     
     <!-- CAMPO DE CATEGORÍA INTELIGENTE -->
     <div class="relative">
@@ -1074,69 +1152,225 @@
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
 
-    async function loadProDashboard(nombreGestor) {
-        // A. Consultar TODOS los pedidos
-        const { data: allPedidos } = await supabaseClient.from('pedidos').select('gestor, comision_total, estado, pago_gestor');
+    // Variable global para guardar los pedidos del gestor y poder filtrar
+let myOrdersData = [];
+
+async function loadProDashboard(nombreGestor) {
+    // 1. Consultar TODOS los datos necesarios de los pedidos
+    // Nota: Agregamos 'fecha', 'cliente', 'producto', 'total', 'proveedor' a la consulta
+    const { data: allPedidos, error } = await supabaseClient
+        .from('pedidos')
+        .select('*') // Traemos todo para poder mostrar detalles
+        .order('fecha', { ascending: false }); // Ordenar del más reciente al más antiguo
+
+    if(error) { console.error(error); return; }
+    
+    // 2. Filtrar SOLO mis ventas
+    const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
+    myOrdersData = misVentas; // Guardamos para el buscador
+
+    // 3. Cálculos Financieros (Igual que tenías)
+    const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
+    const misPendientes = misVentas.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
+
+    const porCobrar = misEntregados
+        .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
+        .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+
+    const cobrado = misEntregados
+        .filter(p => p.pago_gestor === 'Pagado')
+        .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+
+    // Actualizar HTML Financiero
+    if(document.getElementById('dash-money-pending')) document.getElementById('dash-money-pending').innerText = `$${porCobrar.toFixed(2)}`;
+    if(document.getElementById('dash-money-paid')) document.getElementById('dash-money-paid').innerText = `$${cobrado.toFixed(2)}`;
+    if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
+    if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
+
+    // 4. RANKING (Igual que tenías)
+    renderRankingAnonimo(allPedidos, nombreGestor);
+
+    // 5. NUEVO: RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
+    renderMyOrdersList(misVentas);
+
+    // 6. Inyectar enlaces
+    injectLinksSection(nombreGestor);
+}
+
+// Función auxiliar para el Ranking (para mantener el código limpio)
+function renderRankingAnonimo(allPedidos, nombreGestor) {
+    const rankingMap = {};
+    allPedidos.forEach(p => {
+        if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
+            rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + (Number(p.comision_total) || 0);
+        }
+    });
+
+    const rankingArray = Object.entries(rankingMap)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10);
+
+    const rankingHTML = rankingArray.map(([gName, gTotal], index) => {
+        const isMe = gName === nombreGestor;
+        const maskedName = isMe ? `${gName} (Tú)` : gName.substring(0, 3) + '***';
+        const icon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index+1}`));
         
-        // Filtrar mis ventas
-        const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
-        const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
-        const misPendientes = misVentas.filter(p => p.estado === 'Pendiente' || p.estado === 'En Camino');
+        return `
+        <div class="flex justify-between items-center p-3 ${isMe ? 'bg-primary/10 border border-primary/20 rounded-xl' : ''}">
+            <div class="flex items-center gap-3">
+                <span class="text-lg">${icon}</span>
+                <span class="text-xs font-black uppercase ${isMe ? 'text-primary' : 'text-gray-500'}">${maskedName}</span>
+            </div>
+            <span class="text-xs font-bold text-gray-800">$${gTotal.toFixed(0)}</span>
+        </div>`;
+    }).join('');
 
-        // --- CÁLCULO FINANCIERO DESGLOSADO ---
-        // 1. Por Cobrar: Entregado Y pago_gestor es 'Pendiente' (o null)
-        const porCobrar = misEntregados
-            .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
-            .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+    const rankList = document.getElementById('ranking-list');
+    if(rankList) rankList.innerHTML = rankingHTML;
+}
 
-        // 2. Cobrado: Entregado Y pago_gestor es 'Pagado'
-        const cobrado = misEntregados
-            .filter(p => p.pago_gestor === 'Pagado')
-            .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+// --- NUEVA FUNCIÓN: RENDERIZAR LISTA DE MIS PEDIDOS ---
+// --- FUNCIÓN ACTUALIZADA: RENDERIZAR LISTA DE MIS PEDIDOS CON WHATSAPP ---
+function renderMyOrdersList(lista) {
+    const container = document.getElementById('list-mis-pedidos');
+    if(!container) return;
 
-        // Actualizar HTML
-        document.getElementById('dash-money-pending').innerText = `$${porCobrar.toFixed(2)}`;
-        document.getElementById('dash-money-paid').innerText = `$${cobrado.toFixed(2)}`;
-        
-        // Actualizar contadores simples
-        if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
-        if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
-
-        // B. GENERAR RANKING ANÓNIMO (Por Cantidad de Ventas)
-        const rankingMap = {};
-        allPedidos.forEach(p => {
-            // Solo contamos entregados
-            if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
-                // Sumamos 1 venta, no el dinero
-                rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + 1; 
-            }
-        });
-
-        // Convertir a array y ordenar (Mayor cantidad primero)
-        const rankingArray = Object.entries(rankingMap)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 10); // Top 10
-
-        const rankingHTML = rankingArray.map(([gName, gCount], index) => {
-            const isMe = gName === nombreGestor;
-            const maskedName = isMe ? `${gName} (Tú)` : gName.substring(0, 3) + '***';
-            const icon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index+1}`));
-            
-            return `
-            <div class="flex justify-between items-center p-3 ${isMe ? 'bg-primary/10 border border-primary/20 rounded-xl' : ''}">
-                <div class="flex items-center gap-3">
-                    <span class="text-lg">${icon}</span>
-                    <span class="text-xs font-black uppercase ${isMe ? 'text-primary' : 'text-gray-500'}">${maskedName}</span>
-                </div>
-                <span class="text-xs font-bold text-gray-800">${gCount} ventas</span>
-            </div>`;
-        }).join('');
-
-        const rankList = document.getElementById('ranking-list');
-        if(rankList) rankList.innerHTML = rankingHTML;
-
-        injectLinksSection(nombreGestor);
+    if (lista.length === 0) {
+        container.innerHTML = `<div class="p-10 text-center flex flex-col items-center gap-2 opacity-50">
+            <span class="material-symbols-outlined text-4xl">shopping_cart_off</span>
+            <p class="text-xs font-bold uppercase">Aún no tienes pedidos registrados.</p>
+        </div>`;
+        return;
     }
+
+    container.innerHTML = lista.map(p => {
+        // 1. CONFIGURACIÓN VISUAL DEL ESTADO
+        let estadoBadge = '', estadoIcon = '', estadoColor = '';
+        
+        switch(p.estado) {
+            case 'Pendiente':
+                estadoBadge = '⏳ Pendiente'; estadoColor = 'bg-yellow-100 text-yellow-700'; estadoIcon = 'hourglass_empty';
+                break;
+            case 'Recogida Almacén':
+                estadoBadge = '🏭 En Almacén'; estadoColor = 'bg-orange-100 text-orange-700'; estadoIcon = 'inventory_2';
+                break;
+            case 'Asignado Mensajero':
+                estadoBadge = '🏍️ En Camino'; estadoColor = 'bg-blue-100 text-blue-700'; estadoIcon = 'local_shipping';
+                break;
+            case 'Entregado':
+                estadoBadge = '✅ Entregado'; estadoColor = 'bg-emerald-100 text-emerald-700'; estadoIcon = 'check_circle';
+                break;
+            case 'Cancelado':
+                estadoBadge = '❌ Cancelado'; estadoColor = 'bg-red-100 text-red-700'; estadoIcon = 'cancel';
+                break;
+            default:
+                estadoBadge = p.estado; estadoColor = 'bg-gray-100 text-gray-600'; estadoIcon = 'info';
+        }
+
+        // 2. INDICADOR DE PAGO (SOLO ENTREGADOS)
+        let pagoBadge = '';
+        if(p.estado === 'Entregado') {
+            pagoBadge = (p.pago_gestor === 'Pagado') 
+                ? `<span class="text-[9px] font-black text-emerald-500 flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">payments</span> PAGADO</span>`
+                : `<span class="text-[9px] font-black text-orange-400 flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">pending</span> COBRO PENDIENTE</span>`;
+        }
+
+        // 3. GENERADOR DE MENSAJE WHATSAPP INTELIGENTE
+        let waButton = '';
+        if (p.telefono) {
+            // Limpiar teléfono (solo números)
+            const phoneClean = p.telefono.replace(/[^0-9]/g, '');
+            // Obtener primer nombre para ser amigable
+            const clienteName = p.cliente.split(' ')[0];
+            // Acortar nombre del producto
+            const prodShort = p.producto.substring(0, 25) + "...";
+            
+            let mensaje = "";
+            
+            if (p.estado === 'Pendiente') {
+                mensaje = `Hola ${clienteName} 👋, confirmo que tu pedido de *${prodShort}* está registrado y en proceso de almacén 📦.`;
+            } 
+            else if (p.estado === 'Recogida Almacén') {
+                mensaje = `Hola ${clienteName} 🏭, buenas noticias. Tu equipo *${prodShort}* ya está separado y LISTO para que pases a recogerlo por el almacén.`;
+            }
+            else if (p.estado === 'Asignado Mensajero') {
+                mensaje = `Hola ${clienteName} 🚚, te confirmo que tu equipo *${prodShort}* YA SALIÓ con el mensajero y va en camino a tu dirección.`;
+            }
+            else if (p.estado === 'Entregado') {
+                mensaje = `Hola ${clienteName} ⭐, muchas gracias por tu compra. Espero disfrutes tu equipo. Aquí estoy para lo que necesites.`;
+            }
+            else if (p.estado === 'Cancelado') {
+                mensaje = `Hola ${clienteName}, te confirmo que se ha procedido con la cancelación de la orden de *${prodShort}*.`;
+            }
+
+            // Solo mostrar botón si hay mensaje definido
+            if (mensaje) {
+                const url = `https://wa.me/${phoneClean}?text=${encodeURIComponent(mensaje)}`;
+                waButton = `
+                <a href="${url}" target="_blank" class="flex items-center justify-center h-6 w-6 rounded-full bg-[#25D366] text-white hover:scale-110 transition-transform shadow-sm" title="Informar al Cliente por WhatsApp">
+                    <i class="fab fa-whatsapp text-xs"></i>
+                </a>`;
+            }
+        }
+
+        // Formato Fecha
+        const fechaStr = new Date(p.fecha).toLocaleDateString();
+
+        // 4. HTML FINAL DE LA FILA
+        return `
+        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors flex flex-col md:grid md:grid-cols-12 gap-2 md:items-center group">
+            
+            <!-- Columna 1: Fecha y Cliente -->
+            <div class="md:col-span-3 flex items-start gap-3">
+                <div class="h-10 w-10 rounded-full flex items-center justify-center ${estadoColor} bg-opacity-20 shrink-0">
+                    <span class="material-symbols-outlined text-lg">${estadoIcon}</span>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold">${fechaStr}</p>
+                    <div class="flex items-center gap-2">
+                        <p class="text-xs font-black text-gray-800 dark:text-white uppercase truncate w-32 md:w-auto" title="${p.cliente}">${p.cliente}</p>
+                        <!-- AQUI ESTÁ EL BOTÓN DE WHATSAPP -->
+                        ${waButton}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna 2: Producto -->
+            <div class="md:col-span-4">
+                <p class="text-[10px] font-bold text-gray-500 leading-tight line-clamp-2" title="${p.producto}">${p.producto}</p>
+                ${p.proveedor ? `<span class="text-[8px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">${p.proveedor}</span>` : ''}
+            </div>
+
+            <!-- Columna 3: Monto -->
+            <div class="md:col-span-2 md:text-right flex flex-row md:flex-col justify-between items-center md:items-end">
+                <span class="md:hidden text-[10px] font-bold text-gray-400">Total:</span>
+                <div>
+                    <p class="text-xs font-black text-primary">$${p.total}</p>
+                    <p class="text-[9px] font-bold text-emerald-500">+ $${p.comision_total} Com.</p>
+                </div>
+            </div>
+
+            <!-- Columna 4: Estado -->
+            <div class="md:col-span-3 flex flex-row md:flex-col justify-between items-center md:items-end gap-1">
+                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${estadoColor}">
+                    ${estadoBadge}
+                </span>
+                ${pagoBadge}
+            </div>
+            
+        </div>`;
+    }).join('');
+}
+
+// Función para buscar dentro de mis pedidos
+function filterMyOrders() {
+    const query = document.getElementById('search-mi-historial').value.toLowerCase();
+    const filtered = myOrdersData.filter(p => 
+        p.cliente.toLowerCase().includes(query) || 
+        p.producto.toLowerCase().includes(query)
+    );
+    renderMyOrdersList(filtered);
+}
 
     function injectLinksSection(nombre) {
         // Verificar si ya existe para no duplicar
@@ -1221,80 +1455,83 @@
     }
 
     function renderProducts() {
-        // 1. OBTENCIÓN SEGURA DE ELEMENTOS
-        const searchInput = document.getElementById('search-bar');
-        const container = document.getElementById('productos-container');
-        
-        // Si por alguna razón el HTML no ha cargado, salimos para no dar error
-        if (!searchInput || !container) return;
+    // 1. OBTENCIÓN SEGURA DE ELEMENTOS
+    const searchInput = document.getElementById('search-bar');
+    const container = document.getElementById('productos-container');
+    
+    // Si por alguna razón el HTML no ha cargado, salimos para no dar error
+    if (!searchInput || !container) return;
 
-        const query = searchInput.value.toLowerCase();
+    const query = searchInput.value.toLowerCase();
+    
+    // 2. VARIABLES DE ESTADO
+    const isGestor = window.gestorName ? true : false;
+    const filterCheckbox = document.getElementById('filter-high-comm');
+    const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
+    
+    // 3. FILTRADO
+    const filtered = productosRaw.filter(p => {
+        const matchSearch = p.nombre.toLowerCase().includes(query);
+        const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
         
-        // 2. VARIABLES DE ESTADO
-        const isGestor = window.gestorName ? true : false;
-        const filterCheckbox = document.getElementById('filter-high-comm');
-        const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
+        // Lógica del filtro "Tiburón" (Ganancia > 10)
+        const matchComm = !filterHighComm || (Number(p.comision || 0) > 10);
+
+        return matchSearch && matchCat && matchComm && p.disponible === "SI";
+    });
+
+    // 4. ESTADO VACÍO
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold">No se encontraron equipos.</div>`;
+        return;
+    }
+
+    // 5. RENDERIZADO DE TARJETAS
+    container.innerHTML = filtered.map(p => {
+        const precio = parseFloat(p.precio) || 0;
+        const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
         
-        // 3. FILTRADO
-        const filtered = productosRaw.filter(p => {
-            const matchSearch = p.nombre.toLowerCase().includes(query);
-            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+        // --- INICIO DEL CAMBIO ---
+        // Etiqueta de Comisión + Indicador de Precio Flexible
+        let htmlComision = isGestor ? 
+            `<div class="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+                <span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md">GANAS $${p.comision || 0}</span>
+                ${p.precio_flexible === 'SI' ? '<span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-md border border-white">📈 PRECIO LIBRE</span>' : ''}
+             </div>` : '';
+        // --- FIN DEL CAMBIO ---
+
+        return `
+        <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
+            ${htmlComision}
             
-            // Lógica del filtro "Tiburón" (Ganancia > 10)
-            const matchComm = !filterHighComm || (Number(p.comision || 0) > 10);
+            <!-- Imagen Clickable -->
+            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
+                <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
+            </div>
 
-            return matchSearch && matchCat && matchComm && p.disponible === "SI";
-        });
-
-        // 4. ESTADO VACÍO
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold">No se encontraron equipos.</div>`;
-            return;
-        }
-
-        // 5. RENDERIZADO DE TARJETAS
-        container.innerHTML = filtered.map(p => {
-            const precio = parseFloat(p.precio) || 0;
-            const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
-            
-            // Etiqueta de Comisión (Solo visible para Gestores)
-            const htmlComision = isGestor ? 
-                `<div class="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10">
-                    GANAS $${p.comision || 0}
-                 </div>` : '';
-
-            return `
-            <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
-                ${htmlComision}
+            <!-- Info -->
+            <div class="p-5 flex flex-col gap-2 flex-1">
+                <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
+                <p class="text-primary text-2xl font-black">${pDisplay}</p>
                 
-                <!-- Imagen Clickable -->
-                <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
-                    <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
-                </div>
+                <button onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
+                    Ver Detalles
+                </button>
+            </div>
 
-                <!-- Info -->
-                <div class="p-5 flex flex-col gap-2 flex-1">
-                    <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
-                    <p class="text-primary text-2xl font-black">${pDisplay}</p>
-                    
-                    <button onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
-                        Ver Detalles
-                    </button>
-                </div>
-
-                <!-- BARRA SOCIAL -->
-                <div class="grid grid-cols-2 border-t border-gray-100 dark:border-gray-700 divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                    <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'wa')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all">
-                        <i class="fab fa-whatsapp text-lg"></i> <span class="text-[9px] font-bold uppercase">Estado</span>
-                    </button>
-                    <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'fb')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                        <i class="fab fa-facebook text-lg"></i> <span class="text-[9px] font-bold uppercase">Post</span>
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-        
-    } // <--- ¡ESTA LLAVE ES LA QUE ARREGLA TODO! (No la olvides)
+            <!-- BARRA SOCIAL -->
+            <div class="grid grid-cols-2 border-t border-gray-100 dark:border-gray-700 divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'wa')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all">
+                    <i class="fab fa-whatsapp text-lg"></i> <span class="text-[9px] font-bold uppercase">Estado</span>
+                </button>
+                <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'fb')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                    <i class="fab fa-facebook text-lg"></i> <span class="text-[9px] font-bold uppercase">Post</span>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+    
+}
 
     // 3. DETALLE DE PRODUCTO
     function openDetail(name) {
@@ -1427,61 +1664,72 @@
             activeGestorTel = referrerData.telefono;
         }
 
-        let precioEquipo = 0, totalMensajeria = 0, totalComision = 0;
+        // --- LÓGICA MULTI-PROVEEDOR ---
         
-        cart.forEach(i => {
-            precioEquipo += (Number(i.precio) * i.qty);
-            totalMensajeria += (parseMensajeria(i.mensajeria) * i.qty);
-            
-            if (activeGestor !== "Venta Directa") { 
-                totalComision += (Number(i.comision || 0) * i.qty); 
+        // 1. Agrupar productos por proveedor
+        const gruposPedidos = {};
+        
+        cart.forEach(item => {
+            const prov = item.proveedor || 'General';
+            if (!gruposPedidos[prov]) {
+                gruposPedidos[prov] = { items: [], totalEquipo: 0, totalComision: 0, totalMensajeria: 0 };
             }
+            gruposPedidos[prov].items.push(item);
+            gruposPedidos[prov].totalEquipo += (Number(item.precio) * item.qty);
+            gruposPedidos[prov].totalComision += (Number(item.comision || 0) * item.qty);
+            gruposPedidos[prov].totalMensajeria += (parseMensajeria(item.mensajeria) * item.qty);
         });
 
-        const listaProductos = cart.map(i => `${i.qty}x ${i.nombre}`).join(', ');
-        const totalConvertidoStr = document.getElementById('total-convertido').innerText;
-        const totalFinalNum = precioEquipo + totalMensajeria;
+        // 2. Iterar sobre cada grupo y crear un pedido independiente
+        const promesasInsert = [];
+        let resumenWhatsApp = "";
 
-        // Formatear texto de mensajería para WhatsApp
-        const textoMensajeria = totalMensajeria > 0 ? `$${totalMensajeria.toFixed(2)} USD` : "Gratis / Incluida";
+        for (const [proveedor, datos] of Object.entries(gruposPedidos)) {
+            
+            const listaProductosStr = datos.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
+            const totalFinalGrupo = datos.totalEquipo + datos.totalMensajeria; // Total USD de este sub-pedido
 
-        // Registro en Supabase
-        const { error } = await supabaseClient.from('pedidos').insert([{
-            gestor: activeGestor,
-            cliente: nombreC, 
-            ci: ciC, 
-            telefono: telC, 
-            direccion: dirC,
-            producto: `${listaProductos} [${monedaC}]`,
-            total: totalFinalNum,
-            comision_total: totalComision,
-            estado: 'Pendiente',
-            pago_gestor: 'Pendiente'
-        }]);
+            // Insertar en Supabase
+            const insertProm = supabaseClient.from('pedidos').insert([{
+                gestor: activeGestor,
+                cliente: nombreC, 
+                ci: ciC, 
+                telefono: telC, 
+                direccion: dirC,
+                producto: `${listaProductosStr} [${monedaC}]`,
+                total: totalFinalGrupo,
+                comision_total: datos.totalComision,
+                estado: 'Pendiente', // Estado inicial
+                pago_gestor: 'Pendiente',
+                proveedor: proveedor, // <--- GUARDAMOS EL PROVEEDOR AQUÍ
+                costo_mensajeria: datos.totalMensajeria
+            }]);
+            promesasInsert.push(insertProm);
 
-        if (error) {
-            console.error("Error Supabase:", error);
-            alert("Error al guardar el pedido. Intente nuevamente.");
-            btn.disabled = false;
-            btn.innerText = "Tramitar Pedido";
+            // Construir parte del mensaje de WhatsApp
+            resumenWhatsApp += `📦 *Pedido (${proveedor}):*\n${listaProductosStr}\n💵 Subtotal: $${totalFinalGrupo}\n\n`;
+        }
+
+        // 3. Ejecutar inserciones
+        const resultados = await Promise.all(promesasInsert);
+        const hayError = resultados.some(r => r.error);
+
+        if (hayError) {
+            alert("Error al guardar algunos pedidos. Verifique su conexión.");
+            btn.disabled = false; btn.innerText = "Tramitar Pedido";
             return;
         }
 
-        // --- ENLACE WHATSAPP ACTUALIZADO ---
-        let msj = `*NUEVO PEDIDO - PARA TU HOGAR*%0A%0A` +
+        // --- ENLACE WHATSAPP GLOBAL ---
+        let msj = `*NUEVA ORDEN - PARA TU HOGAR*%0A%0A` +
                   `👤 *Cliente:* ${nombreC}%0A` +
-                  `🆔 *CI:* ${ciC}%0A` +
                   `📞 *Teléfono:* ${telC}%0A` +
                   `📍 *Dirección:* ${dirC}%0A%0A` +
-                  `📦 *Productos:* ${listaProductos}%0A` +
-                  `🚚 *Mensajería:* ${textoMensajeria}%0A` +  // <--- LÍNEA NUEVA AÑADIDA
-                  `💰 *Total a Pagar:* *${totalConvertidoStr}*%0A` +
-                  `💵 *Vuelto:* ${vueltoC}%0A`;
+                  `------------------%0A` +
+                  encodeURIComponent(resumenWhatsApp) + 
+                  `💰 *Total Global:* *${document.getElementById('total-convertido').innerText}*%0A`;
         
-        if (activeGestor !== "Venta Directa") {
-            msj += `------------------%0A👨‍💻 *Gestor:* ${activeGestor}`;
-            if(activeGestorTel) msj += `%0A📱 *Contacto:* ${activeGestorTel}`;
-        }
+        if (activeGestor !== "Venta Directa") msj += `👨‍💻 *Gestor:* ${activeGestor}`;
 
         window.open(`https://wa.me/5356071095?text=${msj}`, '_blank');
         
@@ -1665,42 +1913,87 @@ function updateAdminStats(pedidos) {
 function renderAdminLogistica() {
     const container = document.getElementById('list-admin-pedidos');
     const searchInput = document.getElementById('search-logistica');
-    if (!container) return;
+    if (!container || !pedidosRawAdmin) return;
 
     const query = searchInput ? searchInput.value.toLowerCase() : "";
     
-    // Filtrar por fecha, cliente o producto
+    // Filtro
     const filtrados = pedidosRawAdmin.filter(p => {
         const fecha = new Date(p.fecha).toLocaleDateString().toLowerCase();
-        const cliente = (p.cliente || "").toLowerCase();
-        const producto = (p.producto || "").toLowerCase();
-        return fecha.includes(query) || cliente.includes(query) || producto.includes(query);
+        const textoMatch = fecha.includes(query) || 
+                           (p.cliente || "").toLowerCase().includes(query) || 
+                           (p.proveedor || "").toLowerCase().includes(query) || 
+                           (p.gestor || "").toLowerCase().includes(query);
+        
+        // Lógica para agrupar 'Finalizados' (Entregado y Cancelado) si se filtra por historial
+        /* Opcional: Si quieres ver Cancelados dentro de entregados, descomenta esto. 
+           Si no, déjalo estricto como está abajo */
+        
+        const estadoMatch = currentStatusFilter === 'TODOS' || p.estado === currentStatusFilter;
+        return textoMatch && estadoMatch;
     });
 
+    if (filtrados.length === 0) {
+        container.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400 font-bold uppercase text-xs">No hay pedidos en: ${currentStatusFilter}</td></tr>`;
+        return;
+    }
+
     container.innerHTML = filtrados.map(p => {
-        // Lógica de Bloqueo: Si ya está Entregado o Cancelado, no se puede cambiar
-        const esEstadoFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
+        // Colores según estado para identificación rápida visual
+        let colorClass = "bg-gray-100 text-gray-600"; // Default
+        let borderClass = "border-l-4 border-gray-200";
+
+        if(p.estado === 'Pendiente') {
+            colorClass = "bg-yellow-100 text-yellow-700";
+            borderClass = "border-l-4 border-yellow-400";
+        }
+        else if(p.estado === 'Recogida Almacén') {
+            colorClass = "bg-orange-100 text-orange-700";
+            borderClass = "border-l-4 border-orange-400";
+        }
+        else if(p.estado === 'Asignado Mensajero') {
+            colorClass = "bg-blue-100 text-blue-700";
+            borderClass = "border-l-4 border-blue-400";
+        }
+        else if(p.estado === 'Entregado') {
+            colorClass = "bg-emerald-100 text-emerald-700";
+            borderClass = "border-l-4 border-emerald-400";
+        }
+        else if(p.estado === 'Cancelado') {
+            colorClass = "bg-red-100 text-red-700";
+            borderClass = "border-l-4 border-red-400";
+        }
+
+        // Bloquear edición si ya es final
+        const esFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
 
         return `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700">
-            <td class="p-6 font-bold uppercase text-[10px]">
-                <p class="text-gray-400">${new Date(p.fecha).toLocaleDateString()}</p>
-                ${p.cliente}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 ${borderClass}">
+            <td class="p-4 font-bold uppercase text-[10px]">
+                <p class="text-gray-400 mb-1">${new Date(p.fecha).toLocaleDateString()}</p>
+                <span class="text-primary">${p.cliente}</span>
             </td>
-            <td class="p-6 text-gray-500">${p.producto}</td>
-            <td class="p-6"><span class="bg-primary/10 text-primary px-2 py-1 rounded-lg font-black uppercase text-[9px] italic">${p.gestor}</span></td>
-            <td class="p-6 font-black text-primary">$${p.total}</td>
-            <td class="p-6 text-right">
-                ${esEstadoFinal ? 
-                    `<div class="flex items-center justify-end gap-2">
-                        <span class="px-3 py-1.5 rounded-xl font-black text-[9px] uppercase ${p.estado === 'Entregado' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                            ● ${p.estado}
-                        </span>
-                        <span class="material-symbols-outlined text-gray-300 text-sm">lock</span>
-                    </div>` :
-                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-xl border-gray-100 bg-gray-50 dark:bg-gray-900">
-                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                        <option value="En Camino" ${p.estado === 'En Camino' ? 'selected' : ''}>🚚 En Camino</option>
+            <td class="p-4">
+                <span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 font-bold text-[9px] uppercase">
+                    ${p.proveedor || 'General'}
+                </span>
+            </td>
+            <td class="p-4 text-gray-500 max-w-xs truncate" title="${p.producto}">${p.producto}</td>
+            <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold">${p.gestor}</span></td>
+            
+            <!-- SELECTOR DE ESTADOS (LÓGICA ADMINISTRADOR) -->
+            <td class="p-4 text-right">
+                ${esFinal ? 
+                    `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass}">
+                        ${p.estado === 'Entregado' ? '✅ ENTREGADO' : '❌ CANCELADO'}
+                    </span>` 
+                    :
+                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-2 cursor-pointer focus:ring-0 w-40 text-center">
+                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Por Asignar</option>
+                        <option disabled>──────────</option>
+                        <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén (Cliente Recoge)</option>
+                        <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Asignar Mensajero</option>
+                        <option disabled>──────────</option>
                         <option value="Entregado">✅ Marcar Entregado</option>
                         <option value="Cancelado">❌ Cancelar Pedido</option>
                     </select>`
@@ -1993,6 +2286,9 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         thumbnail: imgName, // El nombre que guardó handleImageUpload
         mensajeria: document.getElementById('p-mensajeria').value,
         disponible: 'SI',
+        // === NUEVOS CAMPOS ===
+        proveedor: document.getElementById('p-proveedor').value || 'General',
+        precio_flexible: document.getElementById('p-flexible').value,
         garantia: document.getElementById('p-garantia').value,
         pagos: 'USD, CUP, Zelle'
     };
@@ -2108,7 +2404,9 @@ async function handlePowerUpload(input, index) {
             'p-precio': p.precio,
             'p-comision': p.comision,
             'p-categoria': p.categoria,
-            'p-garantia': p.garantia
+            'p-garantia': p.garantia,
+            'p-proveedor': p.proveedor,
+            'p-flexible': p.precio_flexible || 'NO'
         };
 
         for (const [key, value] of Object.entries(inputs)) {
@@ -2301,7 +2599,6 @@ function applySort() {
     renderProductsCustom(sorted);
 }
 
-// Versión modificada de renderProducts que acepta una lista
 function renderProductsCustom(lista) {
     const container = document.getElementById('productos-container');
     const isGestor = window.gestorName ? true : false;
@@ -2311,42 +2608,45 @@ function renderProductsCustom(lista) {
         const precio = parseFloat(p.precio) || 0;
         const pDisplay = showInCUP ? `CUP ${(precio * cupRate).toLocaleString()}` : `$${precio}`;
         
-        // ETIQUETA DE COMISIÓN (Solo visible si hay gestor logueado)
-        const htmlComision = isGestor ? 
-            `<div class="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md z-10">
-                GANAS $${p.comision || 0}
+        // --- AQUÍ ESTÁ EL CAMBIO ---
+        // Etiqueta de Comisión + Indicador de Precio Flexible
+        let htmlComision = isGestor ? 
+            `<div class="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+                <span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md">GANAS $${p.comision || 0}</span>
+                ${p.precio_flexible === 'SI' ? '<span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-md border border-white">📈 PRECIO LIBRE</span>' : ''}
              </div>` : '';
+        // ---------------------------
 
        // Dentro del .map de renderProductsCustom / renderProducts:
-return `
-<div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
-    ${htmlComision}
-    
-    <!-- Imagen Clickable -->
-    <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
-        <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
-    </div>
+        return `
+        <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
+            ${htmlComision}
+            
+            <!-- Imagen Clickable -->
+            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
+                <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
+            </div>
 
-    <!-- Info -->
-    <div class="p-5 flex flex-col gap-2 flex-1">
-        <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
-        <p class="text-primary text-2xl font-black">${pDisplay}</p>
-        
-        <button onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
-            Ver Detalles
-        </button>
-    </div>
+            <!-- Info -->
+            <div class="p-5 flex flex-col gap-2 flex-1">
+                <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
+                <p class="text-primary text-2xl font-black">${pDisplay}</p>
+                
+                <button onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
+                    Ver Detalles
+                </button>
+            </div>
 
-    <!-- BARRA SOCIAL (NUEVO) -->
-    <div class="grid grid-cols-2 border-t border-gray-100 dark:border-gray-700 divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-900/50">
-        <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'wa')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all">
-            <i class="fab fa-whatsapp text-lg"></i> <span class="text-[9px] font-bold uppercase">Estado</span>
-        </button>
-        <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'fb')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
-            <i class="fab fa-facebook text-lg"></i> <span class="text-[9px] font-bold uppercase">Post</span>
-        </button>
-    </div>
-</div>`;
+            <!-- BARRA SOCIAL (NUEVO) -->
+            <div class="grid grid-cols-2 border-t border-gray-100 dark:border-gray-700 divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'wa')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all">
+                    <i class="fab fa-whatsapp text-lg"></i> <span class="text-[9px] font-bold uppercase">Estado</span>
+                </button>
+                <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'fb')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
+                    <i class="fab fa-facebook text-lg"></i> <span class="text-[9px] font-bold uppercase">Post</span>
+                </button>
+            </div>
+        </div>`;
     }).join('');
 }
 
@@ -3030,81 +3330,122 @@ window.doLogout = function() {
     // ==========================================
 // 1. LÓGICA DE LOGÍSTICA (PESTAÑAS)
 // ==========================================
-let currentStatusFilter = 'TODOS'; // Estado actual seleccionado
+// Variable global para controlar el filtro
+let currentStatusFilter = 'TODOS';
 
-function filterLogisticaByStatus(status) {
+function filterLogisticaByStatus(status, btnElement) {
     currentStatusFilter = status;
     
-    // Actualizar botones visualmente
-    document.querySelectorAll('.sub-tab-log').forEach(btn => {
-        if(btn.innerText.includes(status) || (status === 'TODOS' && btn.innerText === 'Todos')) {
-            btn.className = "sub-tab-log active px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all bg-primary text-white shadow-md";
-        } else {
-            btn.className = "sub-tab-log px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700";
-        }
-    });
+    // 1. Solución al error de "innerText of null":
+    // Verificamos si el elemento existe antes de intentar escribir en él
+    const label = document.getElementById('label-estado-actual');
+    if (label) {
+        label.innerText = status;
+    }
 
-    document.getElementById('label-estado-actual').innerText = status;
+    // 2. Gestión Visual de los Botones (Estilo Activo)
+    // Quitamos el estilo 'active' de todos y lo ponemos solo al clickeado
+    if (btnElement) {
+        document.querySelectorAll('.btn-filter').forEach(b => {
+            // Restaurar estilo base (gris/transparente)
+            b.classList.remove('bg-primary', 'text-white', 'shadow-md');
+            b.classList.add('text-gray-500', 'border-transparent');
+        });
+        
+        // Aplicar estilo activo al botón actual
+        btnElement.classList.remove('text-gray-500', 'border-transparent');
+        btnElement.classList.add('bg-primary', 'text-white', 'shadow-md');
+    }
+
+    // 3. Renderizar la tabla con el nuevo filtro
     renderAdminLogistica();
 }
 
 function renderAdminLogistica() {
     const container = document.getElementById('list-admin-pedidos');
     const searchInput = document.getElementById('search-logistica');
+    
+    // Validación de seguridad
     if (!container || !pedidosRawAdmin) return;
 
     const query = searchInput ? searchInput.value.toLowerCase() : "";
     
-    // FILTRO DOBLE: Por Buscador Y Por Pestaña
+    // --- LÓGICA DE FILTRADO CORREGIDA ---
     const filtrados = pedidosRawAdmin.filter(p => {
-        // 1. Filtro de Texto
+        // 1. Filtro de Texto (Buscador)
         const fecha = new Date(p.fecha).toLocaleDateString().toLowerCase();
         const textoMatch = fecha.includes(query) || 
                            (p.cliente || "").toLowerCase().includes(query) || 
-                           (p.producto || "").toLowerCase().includes(query) ||
+                           (p.proveedor || "").toLowerCase().includes(query) || 
                            (p.gestor || "").toLowerCase().includes(query);
         
-        // 2. Filtro de Pestaña (Estado)
-        const estadoMatch = currentStatusFilter === 'TODOS' || p.estado === currentStatusFilter;
+        // 2. Filtro de Estado (Botones)
+        let estadoMatch = false;
+
+        if (currentStatusFilter === 'TODOS') {
+            estadoMatch = true;
+        } 
+        else if (currentStatusFilter === 'FINALIZADOS') {
+            // AQUÍ AGRUPAMOS: Si el botón es Histórico, mostramos Entregado Y Cancelado
+            estadoMatch = (p.estado === 'Entregado' || p.estado === 'Cancelado');
+        } 
+        else {
+            // Comparación exacta para Pendiente, Recogida Almacén, Asignado Mensajero
+            estadoMatch = (p.estado === currentStatusFilter);
+        }
 
         return textoMatch && estadoMatch;
     });
 
+    // Estado Vacío
     if (filtrados.length === 0) {
-        container.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 text-xs font-bold uppercase">No hay pedidos en estado: ${currentStatusFilter}</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-400 font-bold uppercase text-xs">No hay pedidos en esta sección.</td></tr>`;
         return;
     }
 
+    // Renderizado de Filas
     container.innerHTML = filtrados.map(p => {
-        const esEstadoFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
-        // Colores según estado para identificación rápida
-        let borderClass = "border-l-4 border-gray-200";
-        if(p.estado === 'Pendiente') borderClass = "border-l-4 border-yellow-400";
-        if(p.estado === 'En Camino') borderClass = "border-l-4 border-blue-400";
-        if(p.estado === 'Entregado') borderClass = "border-l-4 border-emerald-400";
-        if(p.estado === 'Cancelado') borderClass = "border-l-4 border-red-400";
+        // Definir colores para el SELECT (Visual individual)
+        let colorClass = "bg-gray-100 text-gray-600";
+        if(p.estado === 'Pendiente') colorClass = "bg-yellow-100 text-yellow-700";
+        if(p.estado === 'Recogida Almacén') colorClass = "bg-orange-100 text-orange-700";
+        if(p.estado === 'Asignado Mensajero') colorClass = "bg-blue-100 text-blue-700";
+        if(p.estado === 'Entregado') colorClass = "bg-emerald-100 text-emerald-700";
+        if(p.estado === 'Cancelado') colorClass = "bg-red-100 text-red-700";
+
+        // Determinar si es un estado final (Bloqueado)
+        const esFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
 
         return `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700 ${borderClass} bg-white dark:bg-gray-900">
-            <td class="p-6 font-bold uppercase text-[10px]">
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+            <td class="p-4 font-bold uppercase text-[10px]">
                 <p class="text-gray-400 mb-1">${new Date(p.fecha).toLocaleDateString()}</p>
                 <span class="text-primary">${p.cliente}</span>
             </td>
-            <td class="p-6 text-gray-500 max-w-xs truncate" title="${p.producto}">${p.producto}</td>
-            <td class="p-6"><span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md font-black uppercase text-[9px]">${p.gestor}</span></td>
-            <td class="p-6 font-black text-slate-800 dark:text-white">$${p.total}</td>
-            <td class="p-6 text-right">
-                ${esEstadoFinal ? 
-                    `<div class="flex items-center justify-end gap-2">
-                        <span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${p.estado === 'Entregado' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
-                            ${p.estado.toUpperCase()}
-                        </span>
-                    </div>` :
-                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-gray-200 bg-white dark:bg-gray-800 focus:ring-primary focus:border-primary py-1.5 cursor-pointer">
-                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                        <option value="En Camino" ${p.estado === 'En Camino' ? 'selected' : ''}>🚚 En Camino</option>
-                        <option value="Entregado">✅ Entregado</option>
-                        <option value="Cancelado">❌ Cancelar</option>
+            <td class="p-4">
+                <span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 font-bold text-[9px] uppercase">
+                    ${p.proveedor || 'General'}
+                </span>
+            </td>
+            <td class="p-4 text-gray-500 max-w-xs truncate" title="${p.producto}">${p.producto}</td>
+            <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold">${p.gestor}</span></td>
+            
+            <td class="p-4 text-right">
+                ${esFinal ? 
+                    // Si está finalizado, mostramos solo una etiqueta (no editable)
+                    `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass}">
+                        ${p.estado === 'Entregado' ? '✅ ENTREGADO' : '❌ CANCELADO'}
+                    </span>` 
+                    :
+                    // Si está activo, mostramos el SELECT completo
+                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-2 cursor-pointer focus:ring-0 text-center w-full max-w-[160px]">
+                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Por Asignar</option>
+                        <option disabled>──────────</option>
+                        <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén</option>
+                        <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Con Mensajero</option>
+                        <option disabled>──────────</option>
+                        <option value="Entregado">✅ Marcar Entregado</option>
+                        <option value="Cancelado">❌ Cancelar Pedido</option>
                     </select>`
                 }
             </td>
