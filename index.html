@@ -96,7 +96,8 @@
     <!-- Header / Navbar -->
     <!-- Header con Diseño Wave -->
 <header class="sticky top-0 z-50 w-full wave-bg px-4 md:px-10 lg:px-20 py-3 shadow-lg">
-    <div class="flex items-center justify-between gap-4 max-w-[1200px] mx-auto">
+    <!-- Agregamos flex-wrap para que permita saltos de línea en móvil -->
+    <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 max-w-[1200px] mx-auto">
         <!-- Logo -->
         <div class="flex items-center gap-8">
             <div class="flex items-center gap-2">
@@ -105,8 +106,9 @@
             </div>
             
             <!-- Barra de Búsqueda (Estilo Transparente) -->
-            <div class="hidden md:flex">
-                <label class="flex flex-col min-w-64 !h-10">
+            <!-- Barra de Búsqueda (Visible en móvil, orden último) -->
+            <div class="w-full md:w-auto order-last md:order-none mt-2 md:mt-0">
+                <label class="flex flex-col w-full md:min-w-64 !h-10">
                     <div class="flex w-full flex-1 items-stretch rounded-lg h-full overflow-hidden border border-white/20 bg-white/10 backdrop-blur-sm">
                         <div class="text-white/80 flex items-center justify-center pl-4">
                             <span class="material-symbols-outlined text-xl">search</span>
