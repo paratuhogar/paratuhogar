@@ -477,13 +477,13 @@
 
     <!-- MODAL CARRITO / FORMULARIO -->
     <div id="cart-modal" class="fixed inset-0 z-[110] hidden bg-black/80 flex justify-end">
-        <div class="bg-white dark:bg-background-dark w-full max-w-md h-full shadow-2xl flex flex-col p-6 animate-slide-left">
+        <div class="bg-white dark:bg-background-dark w-full max-w-md h-full shadow-2xl flex flex-col p-6 animate-slide-left overflow-y-auto pb-24">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-xl font-black uppercase italic text-primary">Mi Pedido</h2>
                 <button onclick="toggleCartModal(false)" class="p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
             </div>
             
-            <div id="cart-items" class="flex-1 overflow-y-auto space-y-4 mb-6 scrollbar-hide"></div>
+            <div id="cart-items" class="space-y-4 mb-6"></div>
 
             <div class="border-t pt-6 mb-6">
                 <div class="flex justify-between items-end mb-4">
@@ -1780,63 +1780,86 @@ function filterMyOrders() {
 
     function renderCart() {
     const container = document.getElementById('cart-items');
-    const isGestor = window.gestorName ? true : false; // Solo gestores pueden editar
+    const isGestor = window.gestorName ? true : false;
 
     container.innerHTML = cart.map((item, index) => {
-        // Lógica de Límites
-        // El precio mínimo es el Costo Real (Precio Original - Comisión Base)
-        // El gestor puede regalar SU comisión, pero no tocar el costo del equipo.
+        // Precios Min/Max
         const minPrice = Number(item.precio) - Number(item.comision);
-        
-        // El precio máximo: Si es flexible, infinito. Si no, es el precio original.
         const maxPrice = (item.precio_flexible === 'SI') ? 100000 : Number(item.precio);
         
-        // HTML del Input de Precio
+        // Input de Precio (Gestor vs Cliente)
         const precioInput = isGestor ? 
             `<div class="flex flex-col items-end">
-                <label class="text-[9px] text-gray-400 font-bold uppercase">Precio Venta</label>
-                <input type="number" 
-                       value="${item.precio_venta}" 
-                       min="${minPrice}" 
-                       max="${maxPrice}" 
+                <label class="text-[8px] text-gray-400 font-bold uppercase">Venta</label>
+                <input type="number" value="${item.precio_venta}" min="${minPrice}" max="${maxPrice}" 
                        onchange="updateCartItemPrice(${index}, this.value)"
-                       class="w-24 text-right font-black text-primary border-gray-200 rounded-lg py-1 px-2 text-sm focus:ring-primary focus:border-primary">
+                       class="w-20 text-right font-black text-primary border-gray-200 rounded-lg py-0 px-1 text-xs h-7">
              </div>` 
             : `<p class="text-primary font-black text-sm">$${item.precio_venta}</p>`;
 
-        // HTML de la Ganancia Dinámica
+        // Ganancia (Solo Gestor)
         let colorGanancia = "text-emerald-500";
-        if(item.comision_actual < item.comision) colorGanancia = "text-orange-500"; // Está perdiendo comisión
-        if(item.comision_actual > item.comision) colorGanancia = "text-blue-600";   // Está ganando extra
+        if(item.comision_actual < item.comision) colorGanancia = "text-orange-500";
+        if(item.comision_actual > item.comision) colorGanancia = "text-blue-600";
 
         const gananciaDisplay = isGestor ?
             `<p class="text-[9px] font-bold ${colorGanancia} mt-1 text-right">
-                Ganancia: $${item.comision_actual.toFixed(2)}
+                Ganancia: $${(item.comision_actual * item.qty).toFixed(2)}
              </p>` : '';
 
         return `
-        <div class="flex gap-4 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700">
-            <img src="${fixDriveUrl(item.thumbnail)}" class="w-12 h-12 object-contain bg-white rounded border border-gray-200">
+        <div class="flex gap-3 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700">
+            <!-- Imagen -->
+            <img src="${fixDriveUrl(item.thumbnail)}" class="w-14 h-14 object-contain bg-white rounded border border-gray-200">
             
             <div class="flex-1">
-                <h4 class="text-xs font-bold leading-tight pr-8 mb-2">${item.nombre}</h4>
-                
-                <div class="flex justify-between items-end">
-                    <div class="text-[10px] text-gray-400">
-                        Base: $${item.precio}
-                    </div>
-                    ${precioInput}
+                <div class="flex justify-between items-start">
+                    <h4 class="text-xs font-bold leading-tight pr-6 mb-1 line-clamp-2 w-3/4">${item.nombre}</h4>
+                    <!-- Botón Eliminar -->
+                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-1">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
                 </div>
-                ${gananciaDisplay}
-            </div>
+                
+                <div class="flex justify-between items-end mt-2">
+                    <!-- CONTROLES DE CANTIDAD (NUEVO) -->
+                    <div class="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 px-1 h-7">
+                        <button onclick="changeQty(${index}, -1)" class="w-5 flex items-center justify-center text-gray-500 hover:text-primary font-bold text-sm">-</button>
+                        <span class="text-xs font-black min-w-[15px] text-center">${item.qty}</span>
+                        <button onclick="changeQty(${index}, 1)" class="w-5 flex items-center justify-center text-gray-500 hover:text-primary font-bold text-sm">+</button>
+                    </div>
 
-            <button onclick="removeFromCart(${index})" class="absolute right-2 top-2 text-gray-300 hover:text-red-500 transition-colors">
-                <span class="material-symbols-outlined text-sm">delete</span>
-            </button>
+                    <div class="text-right">
+                        ${precioInput}
+                        ${gananciaDisplay}
+                    </div>
+                </div>
+            </div>
         </div>`;
     }).join('');
 
-    actualizarOpcionesMoneda(); // Esto recalcula los totales
+    actualizarOpcionesMoneda();
+}
+
+// Función para sumar o restar cantidad
+function changeQty(index, delta) {
+    const item = cart[index];
+    item.qty += delta;
+    
+    // Si baja de 1, preguntar si eliminar
+    if (item.qty < 1) {
+        if(confirm("¿Eliminar este producto?")) {
+            cart.splice(index, 1);
+        } else {
+            item.qty = 1; // Restaurar a 1 si dice que no
+        }
+    }
+    
+    // Actualizar contador rojo
+    document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
+    
+    // Volver a dibujar el carrito
+    renderCart();
 }
 
     function recalcularTotalFinal() {
