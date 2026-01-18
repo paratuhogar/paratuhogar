@@ -495,26 +495,54 @@
                 </div>
 
                 <form id="checkout-form" class="space-y-4">
-                    <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700" required>
-                    <div class="flex gap-2">
-                        <input type="text" id="check-ci" placeholder="Carnet (CI)" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700" required>
-                        <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700" required>
-                    </div>
-                    <textarea id="check-dir" placeholder="Dirección de entrega" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-20" required></textarea>
-                    
-                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-gray-400">Método de Pago</label>
-                            <select id="check-moneda" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0"></select>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-gray-400">Vuelto (Monto exacto)</label>
-                            <input type="number" id="check-vuelto" placeholder="Ej: 50" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0">
-                        </div>
-                    </div>
 
-                    <button type="submit" id="final-submit-btn" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95">Tramitar Pedido</button>
-                </form>
+                <!-- 1. BOTÓN DE VELOCIDAD (PEGAR WHATSAPP) -->
+                <div class="flex gap-2 mb-2">
+                    <button type="button" onclick="magicPaste()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-md flex items-center justify-center gap-2 hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-lg">content_paste_go</span>
+                        Pegar Datos de WhatsApp
+                    </button>
+                </div>
+
+                <!-- 2. BUSCADOR INTELIGENTE (CRM) -->
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                    <label class="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase mb-1">
+                        <span class="material-symbols-outlined text-sm">person_search</span> 
+                        Buscar Cliente Recurrente
+                    </label>
+                    <input type="text" id="crm-search" list="crm-datalist" onchange="autofillClient(this.value)" 
+                        placeholder="Escribe nombre o teléfono..." 
+                        class="w-full bg-white dark:bg-gray-900 border-none rounded-lg text-xs font-bold shadow-sm focus:ring-2 focus:ring-indigo-500">
+                    <datalist id="crm-datalist">
+                        <!-- Se llena con JS -->
+                    </datalist>
+                </div>
+
+                <!-- 3. CAMPOS DE TEXTO (SOLO UNA VEZ) -->
+                <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold" required>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="check-ci" placeholder="Carnet (CI)" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold">
+                    <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold" required>
+                </div>
+                
+                <textarea id="check-dir" placeholder="Dirección de entrega" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-20 font-bold" required></textarea>
+                
+                <!-- 4. PAGO Y VUELTO -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-gray-400">Método de Pago</label>
+                        <select id="check-moneda" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0"></select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-gray-400">Vuelto (Monto exacto)</label>
+                        <input type="number" id="check-vuelto" placeholder="Ej: 50" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0">
+                    </div>
+                </div>
+
+                <!-- 5. BOTÓN FINAL -->
+                <button type="submit" id="final-submit-btn" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95">Tramitar Pedido</button>
+            </form>
             </div>
         </div>
     </div>
@@ -1059,6 +1087,24 @@
             loadProducts();
             // Nota: Aquí NO activamos las herramientas de marketing para mantener la web limpia para el cliente
         }
+
+        // 1. Iniciar el sistema que guarda lo que escribes por si se va la luz
+        initAutoSaveSystem(); 
+
+        // 2. Cargar la base de datos de clientes para el buscador
+        loadClientCRM();      
+
+        // 3. Permitir enviar el formulario pulsando ENTER
+        const formInputs = document.querySelectorAll('#checkout-form input, #checkout-form textarea');
+        formInputs.forEach(input => {
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) { 
+                    e.preventDefault();
+                    document.getElementById('final-submit-btn').click();
+                }
+            });
+        });
+        // ===============================================
     });
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
@@ -1699,13 +1745,12 @@ function filterMyOrders() {
 
     // 4. CARRITO Y PAGOS
     function addItemToCart() {
-    // Buscar si el producto ya está en el carrito
+    // 1. Lógica original: Buscar si existe o añadir nuevo
     const existing = cart.find(item => item.nombre === selectedProduct.nombre);
     
     if(existing) {
         existing.qty++;
     } else {
-        // Guardamos los valores base para referencia
         cart.push({
             ...selectedProduct, 
             qty: 1,
@@ -1716,14 +1761,21 @@ function filterMyOrders() {
         });
     }
     
-    // === CORRECCIÓN AQUÍ ===
-    // Actualizamos el contador rojo directamente:
+    // 2. Actualizar el contador rojo del carrito
     const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
     document.getElementById('cart-count').innerText = totalItems;
-    // =======================
     
-    closeDetail();
-    toggleCartModal(true);
+    // 3. Transición de ventanas
+    closeDetail();         // Cierra la ficha del producto
+    toggleCartModal(true); // Abre el carrito inmediatamente
+
+    // 4. === NUEVO: FLUJO RÁPIDO ===
+    // Esperamos un instante (100ms) a que se abra el modal y ponemos el cursor
+    // automáticamente en el buscador de clientes.
+    setTimeout(() => {
+        const crmSearch = document.getElementById('crm-search');
+        if(crmSearch) crmSearch.focus();
+    }, 100);
 }
 
     function renderCart() {
@@ -1927,6 +1979,7 @@ function filterMyOrders() {
         
         setTimeout(() => {
             cart = [];
+            clearAutoSave();
             toggleCartModal(false);
             location.reload();
         }, 1000);
@@ -4182,6 +4235,236 @@ function renderFlashButton() {
 // 3. MENSAJE MOTIVACIONAL (Cuando hacen clic en el candado)
 function alertLockedFeature(faltan) {
     alert(`🔒 ¡HERRAMIENTA BLOQUEADA! 🔒\n\nEl "Botón Flash" te permite responder a clientes en 3 segundos.\n\n🎯 OBJETIVO: Necesitas 3 ventas entregadas.\n📉 TE FALTAN: ${faltan} ventas.\n\n¡Sigue vendiendo para desbloquear esta ventaja injusta! 🚀`);
+}
+// ==========================================
+// 🚀 NUEVAS FUNCIONES PRO: CRM Y PERSISTENCIA
+// ==========================================
+
+// 1. CARGA DE CLIENTES (CRM)
+let crmClients = [];
+
+async function loadClientCRM() {
+    // Descargamos pedidos anteriores para sacar la base de datos de clientes
+    const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('cliente, ci, telefono, direccion')
+        .order('fecha', { ascending: false })
+        .limit(500); // Analiza los últimos 500 pedidos
+
+    if (!data) return;
+
+    // Filtramos duplicados por Teléfono
+    const uniqueMap = new Map();
+    data.forEach(p => {
+        if (p.telefono && !uniqueMap.has(p.telefono)) {
+            uniqueMap.set(p.telefono, p);
+        }
+    });
+
+    crmClients = Array.from(uniqueMap.values());
+    
+    // Llenar el Datalist del HTML
+    const dataList = document.getElementById('crm-datalist');
+    if(dataList) {
+        dataList.innerHTML = crmClients.map(c => 
+            `<option value="${c.cliente} | ${c.telefono}">${c.direccion ? c.direccion.substring(0,30) + '...' : ''}</option>`
+        ).join('');
+    }
+}
+
+// 2. AUTO-RELLENADO (Al seleccionar en el buscador)
+function autofillClient(val) {
+    if(!val) return;
+
+    // Intentamos buscar en la base de datos
+    const phoneKey = val.split('|')[1]?.trim();
+    const client = crmClients.find(c => c.telefono === phoneKey);
+
+    if (client) {
+        // CASO 1: CLIENTE RECURRENTE (EXISTE)
+        document.getElementById('check-nombre').value = client.cliente || '';
+        document.getElementById('check-ci').value = client.ci || '';
+        document.getElementById('check-tel').value = client.telefono || '';
+        document.getElementById('check-dir').value = client.direccion || '';
+    } else {
+        // CASO 2: CLIENTE NUEVO (NO EXISTE EN LA LISTA)
+        // Si lo que escribiste en el buscador no es un cliente viejo, 
+        // asumimos que es el NOMBRE del nuevo cliente.
+        
+        // Solo copiamos si el campo nombre está vacío para no borrar lo que hayas pegado
+        if(document.getElementById('check-nombre').value === "") {
+             document.getElementById('check-nombre').value = val.replace('|', '').trim();
+        }
+    }
+}
+
+// 3. SISTEMA DE AUTO-GUARDADO (Anti-pérdida de datos)
+function initAutoSaveSystem() {
+    // Campos a vigilar
+    const fields = ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto'];
+    
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if(!el) return;
+
+        // A. Recuperar al cargar
+        const saved = localStorage.getItem('autosave_' + id);
+        if(saved) el.value = saved;
+
+        // B. Guardar al escribir
+        el.addEventListener('input', () => {
+            localStorage.setItem('autosave_' + id, el.value);
+        });
+    });
+}
+
+function clearAutoSave() {
+    // Borrar datos después de una venta exitosa
+    const fields = ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto'];
+    fields.forEach(id => {
+        localStorage.removeItem('autosave_' + id);
+        const el = document.getElementById(id);
+        if(el) el.value = "";
+    });
+    // Limpiar buscador
+    const search = document.getElementById('crm-search');
+    if(search) search.value = "";
+}
+// ==========================================
+// ⚡ MODO FLASH: PEGADO INTELIGENTE
+// ==========================================
+
+// ==========================================
+// ⚡ MODO FLASH 4.0: CORRECCIÓN DE TELÉFONO
+// ==========================================
+
+async function magicPaste() {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (!text) return alert("⚠️ El portapapeles está vacío.");
+
+        // 1. LIMPIEZA INICIAL
+        let raw = text
+            .replace(/(Nombre|Nom|Cliente|Dirección|Dir|Direccion|Teléfono|Telefono|Telf|Cel|Móvil|WhatsApp|CI|Carnet|Id):?/gi, " ")
+            .replace(/\t/g, " ")
+            .trim();
+
+        // ---------------------------------------------------------
+        // PASO A: EXTRACCIÓN DE DATOS
+        // ---------------------------------------------------------
+
+        // A1. CARNET DE IDENTIDAD (11 dígitos)
+        const ciMatch = raw.match(/\b\d{11}\b/);
+        let ci = ciMatch ? ciMatch[0] : "";
+        if (ci) raw = raw.replace(ci, " "); 
+
+        // A2. TELÉFONO (CORREGIDO)
+        // Esta nueva regex busca: Opcional (+53 o 53) + Bloque que empieza por 5 y tiene entre 7 y 15 caracteres (digitos, espacios o guiones)
+        const phoneRegex = /(?:\+?53)?\s*[\.\-]?\s*(5[\d\s\-\.]{7,15})/;
+        const phoneMatch = raw.match(phoneRegex);
+        let phone = "";
+        
+        if (phoneMatch) {
+            // Limpiamos todo lo que no sea número
+            let digits = phoneMatch[0].replace(/\D/g, ''); 
+            
+            // Si empieza con 53 y es largo (10 dígitos), quitamos el 53
+            if (digits.length === 10 && digits.startsWith('53')) digits = digits.substring(2);
+            
+            // VALIDACIÓN FINAL: Solo aceptamos si quedaron 8 dígitos exactos
+            if (digits.length === 8 && digits.startsWith('5')) {
+                phone = digits;
+                raw = raw.replace(phoneMatch[0], " "); // Borramos el teléfono del texto original
+            }
+        }
+
+        // ---------------------------------------------------------
+        // PASO B: SEPARACIÓN DE NOMBRE Y DIRECCIÓN
+        // ---------------------------------------------------------
+        
+        let cleanText = raw.replace(/\r\n|\n|\r/g, " , ").replace(/\s+/g, " ").trim();
+        
+        const addressKeywords = [
+            'calle', 'ave', 'avenida', 'av.', 'entre', 'esq', 'esquina', 
+            'pto', 'reparto', 'rpto', 'edif', 'edificio', 'apto', 'apartamento',
+            'carretera', 'finca', 'zona', 'municipio', 'provincia', 'habana', 
+            'bajos', 'altos', 'km', 'no.', 'número', '#'
+        ];
+
+        let nombre = "";
+        let direccion = "";
+
+        // ESTRATEGIA: Buscar dónde empieza la dirección
+        let splitIndex = -1;
+        const lowerText = cleanText.toLowerCase();
+
+        for (let word of addressKeywords) {
+            // Buscamos la palabra clave con espacio antes o después para no confundir (ej: "Calle")
+            const idx = lowerText.indexOf(word + " ") !== -1 ? lowerText.indexOf(word + " ") : lowerText.indexOf(" " + word);
+            
+            if (idx !== -1) {
+                // Si encontramos "Calle", cortamos ahí.
+                // Verificación extra: Si el índice es muy pequeño (< 3), es que el texto EMPIEZA con la dirección.
+                if (idx < 3) {
+                     // Caso raro: "Calle 23... Juan Perez". Asumimos que nombre está al final si hay comas, o es un caso difícil.
+                     // Para tu ejemplo, el nombre está ANTES, así que el idx será > 3.
+                } else {
+                    splitIndex = idx;
+                    break; // Nos quedamos con la primera coincidencia
+                }
+            }
+        }
+
+        if (splitIndex > -1) {
+            nombre = cleanText.substring(0, splitIndex).trim();
+            direccion = cleanText.substring(splitIndex).trim();
+        } else {
+            // Si no hay palabras clave, usamos comas
+            if (cleanText.includes(",")) {
+                const parts = cleanText.split(",");
+                // El más largo suele ser dirección
+                parts.sort((a, b) => a.length - b.length);
+                nombre = parts[0];
+                direccion = parts.slice(1).join(", ");
+            } else {
+                // Fallback final: Mitad y mitad
+                nombre = cleanText; 
+            }
+        }
+
+        // ---------------------------------------------------------
+        // PASO C: RELLENADO
+        // ---------------------------------------------------------
+
+        // Limpieza final
+        const cleanStr = (s) => s ? s.replace(/^[\s,.-]+|[\s,.-]+$/g, "").trim() : "";
+        nombre = cleanStr(nombre);
+        direccion = cleanStr(direccion);
+
+        // Convertir nombre a Mayúsculas Bonitas
+        if (nombre) document.getElementById('check-nombre').value = nombre.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.substr(1).toLowerCase());
+        
+        if (phone) document.getElementById('check-tel').value = phone;
+        if (ci) document.getElementById('check-ci').value = ci;
+        if (direccion) document.getElementById('check-dir').value = direccion;
+
+        // Disparar evento
+        document.getElementById('check-nombre').dispatchEvent(new Event('input'));
+
+        // Toast de confirmación
+        // alert(`✅ Datos Detectados:\n👤 ${nombre}\n📞 ${phone}\n🏠 ${direccion.substring(0, 20)}...`);
+
+    } catch (err) {
+        console.error(err);
+        alert("⚠️ Error al analizar. Pega manualmente.");
+    }
+}
+
+// Función auxiliar para poner Mayúsculas Bonitas
+function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function(txt){
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
 }
 </script>
 
