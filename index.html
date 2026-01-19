@@ -2804,9 +2804,21 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
 
     if (!error) {
         alert("✅ ¡Guardado correctamente!");
-        location.reload();
+        
+        // 1. Cerramos el modal
+        closeModalProd();
+        
+        // 2. Refrescamos los datos del administrador sin recargar la página
+        if (typeof loadAdminData === 'function') {
+            await loadAdminData(); 
+        }
+
+        // 3. Reactivamos el botón por si se quiere usar de nuevo
+        btn.disabled = false;
+        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
+        
     } else {
-        alert("Error de base de datos: " + error.message);
+        alert("Error: " + error.message);
         btn.disabled = false;
         btn.innerText = "Guardar Cambios";
     }
@@ -2980,7 +2992,8 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     const btn = document.getElementById('btn-save-prod');
     const editId = document.getElementById('p-id-edit').value;
     
-    btn.disabled = true; btn.innerText = "GUARDANDO...";
+    btn.disabled = true; 
+    btn.innerText = "GUARDANDO...";
 
     const datos = {
         nombre: document.getElementById('p-nombre').value,
@@ -2988,7 +3001,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         comision: parseFloat(document.getElementById('p-comision').value),
         categoria: document.getElementById('p-categoria').value,
         garantia: document.getElementById('p-garantia').value,
-        descripcion: quill.root.innerHTML, // Sacamos el HTML del editor Word
+        descripcion: quill.root.innerHTML, 
         thumbnail: document.getElementById('img-path-0').value,
         image1: document.getElementById('img-path-1').value,
         image2: document.getElementById('img-path-2').value,
@@ -3008,11 +3021,26 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     }
 
     if (!error) {
-        alert("¡Guardado correctamente!");
-        location.reload();
+        // --- ESTO ES LO QUE CAMBIA ---
+        closeModalProd(); // 1. Cierra el modal automáticamente
+        
+        if (typeof loadAdminData === 'function') {
+            await loadAdminData(); // 2. Refresca la lista de equipos sin recargar la web
+        }
+
+        // 3. Forzamos a que se quede en la pestaña de inventario
+        changeAdminTab('inventario'); 
+
+        alert("✅ ¡Guardado correctamente!");
+
+        // 4. Restauramos el botón
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
+        
     } else {
         alert("Error: " + error.message);
         btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
     }
 });
 
