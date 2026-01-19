@@ -972,20 +972,26 @@
         
         <h3 class="text-2xl font-black mb-6 italic uppercase">Añadir Nuevo <span class="text-primary">Equipo</span></h3>
 
-        <!-- PEGAR ESTO DENTRO DE id="modal-producto", DEBAJO DEL TÍTULO -->
-        <div class="mb-4 bg-green-50 p-4 rounded-xl border border-green-100">
-            <label class="text-[10px] font-black uppercase text-green-600 mb-2 block">⚡ Carga Rápida desde WhatsApp</label>
+        <!-- === INICIO DEL CAMBIO: NUEVO BLOQUE DE IA === -->
+        <div class="mb-6 bg-indigo-50 p-4 rounded-2xl border border-indigo-100 shadow-sm">
+            <label class="text-[10px] font-black uppercase text-indigo-400 mb-2 block tracking-widest">Asistente Inteligente</label>
             <div class="flex gap-2">
-                <button type="button" onclick="magicPasteProduct()" class="flex-1 bg-green-500 text-white py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-lg">content_paste_go</span>
-                    Pegar Texto del Grupo
+                <!-- 1. Botón para elegir las fotos -->
+                <button type="button" onclick="document.getElementById('file-0').click()" class="w-1/3 bg-white text-indigo-600 border border-indigo-200 py-3 rounded-xl font-bold text-xs shadow-sm active:scale-95 flex flex-col items-center justify-center gap-1 hover:bg-indigo-50 transition-colors">
+                    <span class="material-symbols-outlined text-xl">add_a_photo</span>
+                    1. Cargar Fotos
                 </button>
-                <button type="button" onclick="document.getElementById('file-0').click()" class="flex-1 bg-blue-500 text-white py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-lg">add_a_photo</span>
-                    Subir Foto
+
+                <!-- 2. EL SÚPER BOTÓN (HACE TODO) -->
+                <button type="button" onclick="superMagicAI()" class="w-2/3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-black text-sm shadow-lg shadow-indigo-500/30 active:scale-95 flex flex-col items-center justify-center gap-1 hover:brightness-110 transition-all">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-2xl">auto_awesome</span>
+                        <span>AUTO-COMPLETAR</span>
+                    </div>
+                    <span class="text-[9px] opacity-90 font-medium">Usa Texto Copiado + Fotos</span>
                 </button>
             </div>
-            <p class="text-[9px] text-gray-400 mt-2 text-center">Copia el mensaje entero de Ángel y presiona el botón verde.</p>
+            <p class="text-[9px] text-indigo-300 mt-2 text-center italic">Copia el texto de WhatsApp, sube las fotos y presiona el botón mágico.</p>
         </div>
         
         <form id="form-nuevo-prod" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2688,53 +2694,121 @@ async function handleImageUpload(input) {
 }
 
 // --- GUARDAR EL PRODUCTO COMPLETO EN LA TABLA ---
+// --- GUARDAR PRODUCTO CON VERIFICACIÓN INTELIGENTE (FUZZY MATCH) ---
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // 1. Validaciones previas
-    const imgName = document.getElementById('p-img-name').value;
-    if (!imgName) {
-        alert("❌ Error: Debes subir una foto primero y esperar a que diga 'Foto lista'.");
-        return;
+    const btn = document.getElementById('btn-save-prod');
+    const nombreInput = document.getElementById('p-nombre').value.trim();
+    const categoriaInput = document.getElementById('p-categoria').value;
+    const editId = document.getElementById('p-id-edit').value;
+    
+    // ============================================================
+    // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
+    // ============================================================
+    if (!editId) { 
+        // A. Limpiamos el nombre para sacar palabras clave importantes
+        // Quitamos palabras comunes que la IA pone siempre (Smart, TV, de, el, con...)
+        const palabrasIgnoradas = ['de', 'el', 'la', 'con', 'para', 'en', 'y', 'un', 'una', 'smart', 'nuevo', 'oferta'];
+        
+        // Separamos el nombre en palabras, filtramos las cortas (<3 letras) y las ignoradas
+        const palabrasClave = nombreInput.toLowerCase()
+            .split(/[\s\-\/\(\)]+/) // Separar por espacios o guiones
+            .filter(w => w.length > 2 && !palabrasIgnoradas.includes(w));
+
+        // Tomamos las 3 palabras más "raras" o largas (generalmente Marca y Modelo)
+        // Ejemplo: De "Smart TV Challenger 75 4K" -> busca "Challenger" y "75"
+        const keywords = palabrasClave.slice(0, 3).join(' & '); 
+
+        if (keywords.length > 0) {
+            // B. Preguntamos a Supabase usando Búsqueda de Texto Completo
+            // Busca productos que tengan ESAS palabras en CUALQUIER orden
+            const { data: similares, error: errCheck } = await supabaseClient
+                .from('productos')
+                .select('nombre, precio, categoria')
+                .textSearch('nombre', keywords) 
+                .limit(3);
+
+            // C. Si encuentra coincidencias, ALERTA al administrador
+            if (similares && similares.length > 0) {
+                // Filtramos para asegurar que sean de la misma categoría (para evitar falsos positivos)
+                const duplicadoReal = similares.find(p => p.categoria === categoriaInput);
+
+                if (duplicadoReal) {
+                    const confirmar = confirm(
+                        `⛔ POSIBLE DUPLICADO DETECTADO\n\n` +
+                        `Tú intentas subir: "${nombreInput}"\n\n` +
+                        `Pero ya existe en base de datos:\n` +
+                        `👉 "${duplicadoReal.nombre}" ($${duplicadoReal.precio})\n\n` +
+                        `¿Es el mismo equipo que subió otro admin?\n` +
+                        `[Aceptar] = Cancelar subida (No duplicar)\n` +
+                        `[Cancelar] = Subir de todas formas (Es diferente)`
+                    );
+
+                    if (confirmar) {
+                        return; // Detiene el proceso, no guarda nada.
+                    }
+                }
+            }
+        }
+    }
+    // ============================================================
+
+    // 2. Validación de Foto
+    const imgName = document.getElementById('p-img-name') ? document.getElementById('p-img-name').value : '';
+    // Revisamos las 4 casillas por si acaso
+    let tieneFoto = false;
+    for(let i=0; i<4; i++) {
+        if(document.getElementById(`img-path-${i}`).value) tieneFoto = true;
+    }
+    
+    if (!editId && !tieneFoto && !imgName) {
+         alert("❌ Error: Debes subir al menos una foto.");
+         return;
     }
 
-    const btn = e.target.querySelector('button');
     btn.disabled = true; 
-    btn.innerText = "REGISTRANDO EN BASE DE DATOS...";
+    btn.innerText = "GUARDANDO...";
 
-    // 2. Captura de datos (Asegúrate de que los IDs existan en el HTML)
-    const objetoInsertar = {
-        nombre: document.getElementById('p-nombre').value,
+    // 3. Recopilar Datos
+    const datos = {
+        nombre: nombreInput,
         precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
-        categoria: document.getElementById('p-categoria').value,
-        descripcion: document.getElementById('p-desc').value,
-        thumbnail: imgName, // El nombre que guardó handleImageUpload
-        mensajeria: document.getElementById('p-mensajeria').value,
+        categoria: categoriaInput,
+        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
+        
+        thumbnail: document.getElementById('img-path-0').value || imgName,
+        image1: document.getElementById('img-path-1').value,
+        image2: document.getElementById('img-path-2').value,
+        image3: document.getElementById('img-path-3').value,
+        
+        mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
         disponible: 'SI',
-        // === NUEVOS CAMPOS ===
         proveedor: document.getElementById('p-proveedor').value || 'General',
-        precio_flexible: document.getElementById('p-flexible').value,
+        precio_flexible: document.getElementById('p-flexible').value || 'NO',
         garantia: document.getElementById('p-garantia').value,
-        pagos: 'USD, CUP, Zelle'
+        pagos: 'USD, CUP, Zelle' 
     };
 
-    console.log("Enviando a Supabase:", objetoInsertar);
-
-    // 3. Inserción en la tabla 'productos'
-    const { data, error } = await supabaseClient
-        .from('productos')
-        .insert([objetoInsertar])
-        .select();
-
-    if (error) {
-        console.error("Error detallado:", error);
-        alert("❌ ERROR AL GUARDAR: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Guardar en Catálogo";
+    let error;
+    if (editId) {
+        // ACTUALIZAR
+        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
+        error = err;
     } else {
-        alert("✅ PRODUCTO AÑADIDO CON ÉXITO");
-        location.reload(); 
+        // INSERTAR NUEVO
+        const { error: err } = await supabaseClient.from('productos').insert([datos]);
+        error = err;
+    }
+
+    if (!error) {
+        alert("✅ ¡Guardado correctamente!");
+        location.reload();
+    } else {
+        alert("Error de base de datos: " + error.message);
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
     }
 });
 
@@ -5230,6 +5304,126 @@ ${descLimpia.trim()}
         
     }).catch(err => {
         alert("Error al copiar: " + err);
+    });
+}
+
+// --- SÚPER FUNCIÓN IA: MULTI-FOTO + CATEGORÍAS INTELIGENTES ---
+async function superMagicAI() {
+    const btn = event.currentTarget;
+    const originalContent = btn.innerHTML;
+
+    // --- 1. OBTENER CATEGORÍAS ---
+    const listaOrigen = (typeof inventoryRawAdmin !== 'undefined' && inventoryRawAdmin.length > 0) ? inventoryRawAdmin : productosRaw;
+    let categoriasTexto = "VARIOS";
+    if (listaOrigen && listaOrigen.length > 0) {
+        const catsUnicas = [...new Set(listaOrigen.map(p => p.categoria ? p.categoria.toUpperCase().trim() : 'VARIOS'))];
+        categoriasTexto = catsUnicas.join(', ');
+    }
+
+    // --- 2. DATOS DE ENTRADA ---
+    let clipboardText = "";
+    try { clipboardText = await navigator.clipboard.readText(); } catch (e) { }
+
+    const imageParts = [];
+    let photosFound = 0;
+    for (let i = 0; i < 4; i++) {
+        const input = document.getElementById(`file-${i}`);
+        if (input && input.files && input.files[0]) {
+            const base64Data = await fileToBase64(input.files[0]);
+            imageParts.push({ inline_data: { mime_type: input.files[0].type, data: base64Data } });
+            photosFound++;
+        }
+    }
+
+    if (!clipboardText && photosFound === 0) {
+        return alert("⚠️ Falta información: Copia texto o sube fotos.");
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = `<div class="flex items-center gap-2"><span class="loader w-4 h-4 border-white"></span><span>Contactando Google...</span></div>`;
+
+    try {
+        // --- 3. PROMPT ---
+        const parts = [];
+        let prompt = `Eres un asistente experto en inventario.
+        CATEGORÍAS EXISTENTES: [ ${categoriasTexto} ].
+        INSTRUCCIONES:
+        1. Analiza Texto y Fotos.
+        2. Elige una categoría de la lista o crea una nueva si es muy diferente.
+        3. Si hay datos técnicos en las fotos, úsalos en la descripción.
+        
+        Responde SOLO con este JSON:
+        {
+            "nombre": "Nombre producto", "precio": 0, "categoria": "CATEGORIA",
+            "garantia": "Garantía", "mensajeria": "Info envío",
+            "descripcion_html": "HTML con detalles"
+        }`;
+
+        parts.push({ text: prompt });
+        if (clipboardText) parts.push({ text: `TEXTO: ${clipboardText}` });
+        imageParts.forEach(imgPart => parts.push(imgPart));
+
+        // --- 4. PETICIÓN A GOOGLE (URL CORREGIDA) ---
+        // ¡¡¡ NO OLVIDES PONER TU CLAVE REAL AQUÍ !!!
+        const API_KEY = "AIzaSyDSZSF1Br9P1trG98UjF7fqq-0ucBpoYpc"; 
+        
+        if(API_KEY.includes("TU_CLAVE_REAL") || API_KEY.length < 10) {
+            throw new Error("¡Falta poner la API KEY en el código!");
+        }
+
+        // *** AQUÍ ESTÁ EL CAMBIO (AÑADIDO -latest) ***
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: parts }] })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("ERROR GOOGLE:", errorData);
+            throw new Error(`Google dice: ${errorData.error.message} (Código: ${response.status})`);
+        }
+
+        const data = await response.json();
+        
+        // --- 5. PROCESAR ---
+        const rawText = data.candidates[0].content.parts[0].text;
+        const jsonString = rawText.replace(/```json|```/g, '').trim();
+        const resultado = JSON.parse(jsonString);
+
+        // Rellenar campos
+        document.getElementById('p-nombre').value = resultado.nombre || "";
+        document.getElementById('p-precio').value = resultado.precio || "";
+        document.getElementById('p-categoria').value = resultado.categoria || "VARIOS";
+        document.getElementById('p-garantia').value = resultado.garantia || "";
+        if(document.getElementById('p-mensajeria')) document.getElementById('p-mensajeria').value = resultado.mensajeria || "";
+        
+        const precioNum = parseFloat(resultado.precio) || 0;
+        document.getElementById('p-comision').value = (precioNum > 100) ? 15 : 5;
+
+        if (typeof quill !== 'undefined') quill.root.innerHTML = resultado.descripcion_html || "";
+
+        btn.className = "w-2/3 bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2";
+        btn.innerHTML = `¡ÉXITO!`;
+        setTimeout(() => { btn.className = originalContent; btn.innerHTML = originalContent; btn.disabled = false; }, 2000);
+
+    } catch (error) {
+        console.error(error);
+        alert("❌ FALLÓ LA IA:\n\n" + error.message);
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    }
+}
+
+// Función auxiliar (Asegúrate de tenerla en el código, si ya la tienes no la dupliques)
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
     });
 }
 
