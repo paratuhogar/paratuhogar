@@ -350,35 +350,54 @@
                     <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">Ranking de Agentes</h3>
                 </div>
                 <div id="ranking-list" class="divide-y divide-gray-50 dark:divide-gray-700"></div>
-                <!-- === NUEVA SECCIÓN: HISTORIAL DETALLADO DE PEDIDOS === -->
+                <!-- SECCIÓN DE MIS PEDIDOS CON FILTROS -->
                 <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm mt-6 overflow-hidden">
-                    <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h3 class="text-sm font-black uppercase text-primary italic">📋 Mis Pedidos Recientes</h3>
-                            <p class="text-[10px] text-gray-400">Monitorea el estado logístico de tus ventas en tiempo real.</p>
+                    <div class="p-6 border-b border-gray-50 dark:border-gray-700">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div>
+                                <h3 class="text-sm font-black uppercase text-primary italic">📋 Mis Pedidos</h3>
+                                <p class="text-[10px] text-gray-400">Gestiona y notifica a tus clientes según el estado.</p>
+                            </div>
+                            <!-- Buscador -->
+                            <div class="w-full md:w-auto relative">
+                                <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
+                                <input type="text" id="search-mi-historial" oninput="filterMyOrders()" placeholder="Buscar cliente..." class="w-full md:w-64 pl-9 pr-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border-none text-xs font-bold">
+                            </div>
                         </div>
-                        
-                        <!-- Buscador interno -->
-                        <div class="w-full md:w-auto relative">
-                            <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
-                            <input type="text" id="search-mi-historial" oninput="filterMyOrders()" placeholder="Buscar cliente..." class="w-full md:w-64 pl-9 pr-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border-none text-xs font-bold">
-                        </div>
-                    </div>
 
-                    <!-- Encabezados de tabla (oculto en móvil) -->
-                    <div class="hidden md:grid grid-cols-12 gap-4 p-4 bg-gray-50/50 dark:bg-gray-900/30 text-[9px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
-                        <div class="col-span-3">Fecha / Cliente</div>
-                        <div class="col-span-4">Producto</div>
-                        <div class="col-span-2 text-right">Monto</div>
-                        <div class="col-span-3 text-right">Estado Actual</div>
+                        <!-- NAVEGACIÓN POR ESTADOS (TABS) -->
+                        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="my-orders-tabs">
+                            <button onclick="setMyOrdersFilter('TODOS', this)" class="my-order-tab active">Todos</button>
+                            <button onclick="setMyOrdersFilter('Pendiente', this)" class="my-order-tab">⏳ Pendientes</button>
+                            <button onclick="setMyOrdersFilter('Asignado Mensajero', this)" class="my-order-tab">🏍️ En Camino</button>
+                            <button onclick="setMyOrdersFilter('Entregado', this)" class="my-order-tab">✅ Entregados</button>
+                        </div>
                     </div>
 
                     <!-- Lista de Pedidos -->
-                    <div id="list-mis-pedidos" class="divide-y divide-gray-50 dark:divide-gray-700 max-h-[500px] overflow-y-auto">
+                    <div id="list-mis-pedidos" class="divide-y divide-gray-50 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
                         <!-- Se llena con JS -->
-                        <div class="p-8 text-center text-gray-400 text-xs">Cargando historial...</div>
                     </div>
                 </div>
+
+                <style>
+                    .my-order-tab {
+                        padding: 8px 16px;
+                        border-radius: 12px;
+                        font-size: 10px;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        white-space: nowrap;
+                        background: #f1f5f9;
+                        color: #64748b;
+                        transition: all 0.2s;
+                    }
+                    .my-order-tab.active {
+                        background: #1a4789;
+                        color: white;
+                        box-shadow: 0 4px 6px -1px rgba(26, 71, 137, 0.2);
+                    }
+                </style>
             </div>
 
 
@@ -1469,133 +1488,83 @@ function renderRankingAnonimo(allPedidos, nombreGestor) {
 
 // --- NUEVA FUNCIÓN: RENDERIZAR LISTA DE MIS PEDIDOS ---
 // --- FUNCIÓN ACTUALIZADA: RENDERIZAR LISTA DE MIS PEDIDOS CON WHATSAPP ---
+let currentMyOrdersFilter = 'TODOS';
+
+function setMyOrdersFilter(status, btn) {
+    currentMyOrdersFilter = status;
+    // Actualizar UI de botones
+    document.querySelectorAll('#my-orders-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Re-renderizar
+    filterMyOrders(); 
+}
+
 function renderMyOrdersList(lista) {
     const container = document.getElementById('list-mis-pedidos');
     if(!container) return;
 
-    if (lista.length === 0) {
-        container.innerHTML = `<div class="p-10 text-center flex flex-col items-center gap-2 opacity-50">
-            <span class="material-symbols-outlined text-4xl">shopping_cart_off</span>
-            <p class="text-xs font-bold uppercase">Aún no tienes pedidos registrados.</p>
-        </div>`;
+    // 1. Filtrar por estado si no es "TODOS"
+    const filteredByStatus = currentMyOrdersFilter === 'TODOS' 
+        ? lista 
+        : lista.filter(p => p.estado === currentMyOrdersFilter);
+
+    if (filteredByStatus.length === 0) {
+        container.innerHTML = `<div class="p-10 text-center text-gray-400 text-xs font-bold uppercase italic">No hay pedidos en esta pestaña.</div>`;
         return;
     }
 
-    container.innerHTML = lista.map(p => {
-        // 1. CONFIGURACIÓN VISUAL DEL ESTADO
-        let estadoBadge = '', estadoIcon = '', estadoColor = '';
+    container.innerHTML = filteredByStatus.map(p => {
+        const level = window.currentGestorLevel || 0; // Obtener nivel real
         
-        switch(p.estado) {
-            case 'Pendiente':
-                estadoBadge = '⏳ Pendiente'; estadoColor = 'bg-yellow-100 text-yellow-700'; estadoIcon = 'hourglass_empty';
-                break;
-            case 'Recogida Almacén':
-                estadoBadge = '🏭 En Almacén'; estadoColor = 'bg-orange-100 text-orange-700'; estadoIcon = 'inventory_2';
-                break;
-            case 'Asignado Mensajero':
-                estadoBadge = '🏍️ En Camino'; estadoColor = 'bg-blue-100 text-blue-700'; estadoIcon = 'local_shipping';
-                break;
-            case 'Entregado':
-                estadoBadge = '✅ Entregado'; estadoColor = 'bg-emerald-100 text-emerald-700'; estadoIcon = 'check_circle';
-                break;
-            case 'Cancelado':
-                estadoBadge = '❌ Cancelado'; estadoColor = 'bg-red-100 text-red-700'; estadoIcon = 'cancel';
-                break;
-            default:
-                estadoBadge = p.estado; estadoColor = 'bg-gray-100 text-gray-600'; estadoIcon = 'info';
-        }
+        // Configuración de Estados (Colores)
+        let colorClass = 'bg-gray-100 text-gray-500';
+        if(p.estado === 'Pendiente') colorClass = 'bg-yellow-100 text-yellow-700';
+        if(p.estado === 'Asignado Mensajero') colorClass = 'bg-blue-100 text-blue-700';
+        if(p.estado === 'Entregado') colorClass = 'bg-emerald-100 text-emerald-700';
+        if(p.estado === 'Cancelado') colorClass = 'bg-red-100 text-red-700';
 
-        // 2. INDICADOR DE PAGO (SOLO ENTREGADOS)
-        let pagoBadge = '';
-        if(p.estado === 'Entregado') {
-            pagoBadge = (p.pago_gestor === 'Pagado') 
-                ? `<span class="text-[9px] font-black text-emerald-500 flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">payments</span> PAGADO</span>`
-                : `<span class="text-[9px] font-black text-orange-400 flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">pending</span> COBRO PENDIENTE</span>`;
-        }
-
-        // 3. GENERADOR DE MENSAJE WHATSAPP INTELIGENTE
+        // --- LÓGICA DE WHATSAPP BLOQUEADO POR NIVEL ---
         let waButton = '';
         if (p.telefono) {
-            // Limpiar teléfono (solo números)
-            const phoneClean = p.telefono.replace(/[^0-9]/g, '');
-            // Obtener primer nombre para ser amigable
-            const clienteName = p.cliente.split(' ')[0];
-            // Acortar nombre del producto
-            const prodShort = p.producto.substring(0, 25) + "...";
-            
-            let mensaje = "";
-            
-            if (p.estado === 'Pendiente') {
-                mensaje = `Hola ${clienteName} 👋, confirmo que tu pedido de *${prodShort}* está registrado y en proceso de almacén 📦.`;
-            } 
-            else if (p.estado === 'Recogida Almacén') {
-                mensaje = `Hola ${clienteName} 🏭, buenas noticias. Tu equipo *${prodShort}* ya está separado y LISTO para que pases a recogerlo por el almacén.`;
-            }
-            else if (p.estado === 'Asignado Mensajero') {
-                mensaje = `Hola ${clienteName} 🚚, te confirmo que tu equipo *${prodShort}* YA SALIÓ con el mensajero y va en camino a tu dirección.`;
-            }
-            else if (p.estado === 'Entregado') {
-                mensaje = `Hola ${clienteName} ⭐, muchas gracias por tu compra. Espero disfrutes tu equipo. Aquí estoy para lo que necesites.`;
-            }
-            else if (p.estado === 'Cancelado') {
-                mensaje = `Hola ${clienteName}, te confirmo que se ha procedido con la cancelación de la orden de *${prodShort}*.`;
-            }
-
-            // Solo mostrar botón si hay mensaje definido
-            if (mensaje) {
-                const url = `https://wa.me/${phoneClean}?text=${encodeURIComponent(mensaje)}`;
+            if (level >= 1) {
+                // DESBLOQUEADO (Nivel 1+)
+                const clienteName = p.cliente.split(' ')[0];
+                let msj = `Hola ${clienteName}, tu pedido de *${p.producto.substring(0,20)}* está en estado: *${p.estado}* 📦.`;
+                const url = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msj)}`;
                 waButton = `
-                <a href="${url}" target="_blank" class="flex items-center justify-center h-6 w-6 rounded-full bg-[#25D366] text-white hover:scale-110 transition-transform shadow-sm" title="Informar al Cliente por WhatsApp">
-                    <i class="fab fa-whatsapp text-xs"></i>
-                </a>`;
+                    <a href="${url}" target="_blank" class="h-8 w-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
+                        <i class="fab fa-whatsapp"></i>
+                    </a>`;
+            } else {
+                // BLOQUEADO (Nivel 0)
+                waButton = `
+                    <button onclick="alert('🔒 FUNCIÓN BLOQUEADA\\n\\nSube a NIVEL 1 (3 ventas) para poder notificar a tus clientes por WhatsApp automáticamente.')" class="h-8 w-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center cursor-not-allowed">
+                        <span class="material-symbols-outlined text-sm">lock</span>
+                    </button>`;
             }
         }
 
-        // Formato Fecha
-        const fechaStr = new Date(p.fecha).toLocaleDateString();
-
-        // 4. HTML FINAL DE LA FILA
         return `
-        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors flex flex-col md:grid md:grid-cols-12 gap-2 md:items-center group">
+        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <p class="text-[9px] font-bold text-gray-400">${new Date(p.fecha).toLocaleDateString()}</p>
+                    <h4 class="text-xs font-black uppercase text-gray-800 dark:text-white">${p.cliente}</h4>
+                </div>
+                ${waButton}
+            </div>
             
-            <!-- Columna 1: Fecha y Cliente -->
-            <div class="md:col-span-3 flex items-start gap-3">
-                <div class="h-10 w-10 rounded-full flex items-center justify-center ${estadoColor} bg-opacity-20 shrink-0">
-                    <span class="material-symbols-outlined text-lg">${estadoIcon}</span>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-400 font-bold">${fechaStr}</p>
-                    <div class="flex items-center gap-2">
-                        <p class="text-xs font-black text-gray-800 dark:text-white uppercase truncate w-32 md:w-auto" title="${p.cliente}">${p.cliente}</p>
-                        <!-- AQUI ESTÁ EL BOTÓN DE WHATSAPP -->
-                        ${waButton}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Columna 2: Producto -->
-            <div class="md:col-span-4">
-                <p class="text-[10px] font-bold text-gray-500 leading-tight line-clamp-2" title="${p.producto}">${p.producto}</p>
-                ${p.proveedor ? `<span class="text-[8px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">${p.proveedor}</span>` : ''}
-            </div>
-
-            <!-- Columna 3: Monto -->
-            <div class="md:col-span-2 md:text-right flex flex-row md:flex-col justify-between items-center md:items-end">
-                <span class="md:hidden text-[10px] font-bold text-gray-400">Total:</span>
-                <div>
-                    <p class="text-xs font-black text-primary">$${p.total}</p>
-                    <p class="text-[9px] font-bold text-emerald-500">+ $${p.comision_total} Com.</p>
-                </div>
-            </div>
-
-            <!-- Columna 4: Estado -->
-            <div class="md:col-span-3 flex flex-row md:flex-col justify-between items-center md:items-end gap-1">
-                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${estadoColor}">
-                    ${estadoBadge}
+            <p class="text-[10px] text-gray-500 mb-3">${p.producto}</p>
+            
+            <div class="flex justify-between items-center">
+                <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase ${colorClass}">
+                    ${p.estado}
                 </span>
-                ${pagoBadge}
+                <div class="text-right">
+                    <p class="text-xs font-black text-primary">$${p.total}</p>
+                    <p class="text-[9px] font-bold text-emerald-500">+$${p.comision_total} Com.</p>
+                </div>
             </div>
-            
         </div>`;
     }).join('');
 }
@@ -1603,11 +1572,13 @@ function renderMyOrdersList(lista) {
 // Función para buscar dentro de mis pedidos
 function filterMyOrders() {
     const query = document.getElementById('search-mi-historial').value.toLowerCase();
-    const filtered = myOrdersData.filter(p => 
+    // Filtramos la data original por el texto
+    const filteredByText = myOrdersData.filter(p => 
         p.cliente.toLowerCase().includes(query) || 
         p.producto.toLowerCase().includes(query)
     );
-    renderMyOrdersList(filtered);
+    // Renderizamos (la función renderMyOrdersList se encargará de aplicar el filtro de pestaña)
+    renderMyOrdersList(filteredByText);
 }
 
     function injectLinksSection(nombre) {
@@ -1787,6 +1758,11 @@ function filterMyOrders() {
 
     // 3. DETALLE DE PRODUCTO
     function openDetail(name) {
+    // Esto convierte el &quot; de nuevo en " para poder buscarlo en la lista de productos
+    const nombreReal = name.replace(/&quot;/g, '"');
+    selectedProduct = productosRaw.find(p => p.nombre === nombreReal);
+    
+    if(!selectedProduct) return; // Si no lo encuentra, no hace nada
     // 1. Buscar producto
     selectedProduct = productosRaw.find(p => p.nombre === name);
     const p = selectedProduct;
@@ -3138,12 +3114,17 @@ function renderProductsCustom(lista) {
                 ${p.precio_flexible === 'SI' ? '<span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-md border border-white">📈 PRECIO LIBRE</span>' : ''}
              </div>` : '';
 
+             // Esta línea limpia tanto la comilla simple como la comilla doble de las pulgadas
+            const nombreSeguro = p.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
         return `
         <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
             ${htmlComision}
             
+            // --- REEMPLAZA TU BLOQUE POR ESTE ---
+
             <!-- Imagen Clickable -->
-            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
+            <div onclick="openDetail('${nombreSeguro}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
                 <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
             </div>
 
@@ -3152,7 +3133,8 @@ function renderProductsCustom(lista) {
                 <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
                 <p class="text-primary text-2xl font-black">${pDisplay}</p>
                 
-                <button onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
+                <!-- Aquí también cambiamos a nombreSeguro -->
+                <button onclick="openDetail('${nombreSeguro}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
                     Ver Detalles
                 </button>
             </div>
@@ -3178,55 +3160,54 @@ function renderProductsCustom(lista) {
 // --- 2. LÓGICA DE ANALÍTICA (HORARIOS Y TENDENCIAS) ---
 
 async function loadAnalyticsPro(nombreGestor) {
-    // Traer todos los pedidos entregados
-    const { data: pedidos } = await supabaseClient
+    console.log("📊 Iniciando carga de analíticas...");
+    
+    // 1. Obtener TODOS los pedidos (necesario para Tendencia Global y Mejor Horario)
+    // Usamos una consulta simple para evitar el Error 400
+    const { data: pedidos, error } = await supabaseClient
         .from('pedidos')
-        .select('created_at, producto, gestor, estado')
-        .eq('estado', 'Entregado');
+        .select('*');
 
-    if (!pedidos) return;
-
-    // A. CALCULAR HORA PICO DEL GESTOR
-    const misPedidos = pedidos.filter(p => p.gestor === nombreGestor);
-    if (misPedidos.length > 0) {
-        const horas = misPedidos.map(p => new Date(p.created_at).getHours());
-        const conteoHoras = {};
-        let maxHora = 0, maxCount = 0;
-        
-        horas.forEach(h => {
-            conteoHoras[h] = (conteoHoras[h] || 0) + 1;
-            if (conteoHoras[h] > maxCount) {
-                maxCount = conteoHoras[h];
-                maxHora = h;
-            }
-        });
-        
-        // Formato 14:00 - 15:00
-        document.getElementById('ana-hora-pico').innerText = `${maxHora}:00 - ${maxHora+1}:00`;
-    } else {
-        document.getElementById('ana-hora-pico').innerText = "Sin datos aún";
+    if (error) {
+        console.error("❌ Error de Supabase:", error.message);
+        return;
     }
 
-    // B. TENDENCIA GLOBAL (TOP 3 PRODUCTOS WEB)
-    // Contamos frecuencia de nombres de productos en TODOS los pedidos
-    const conteoGlobal = {};
-    pedidos.forEach(p => {
-        // Limpiamos el string del producto (ej: "1x Olla Reina..." -> "Olla Reina")
-        // Simplificación: tomamos los primeros 15 caracteres para agrupar
-        const cleanName = p.producto.substring(3, 20); 
-        conteoGlobal[cleanName] = (conteoGlobal[cleanName] || 0) + 1;
-    });
+    if (!pedidos || pedidos.length === 0) {
+        console.warn("⚠️ No hay pedidos en la base de datos.");
+        return;
+    }
 
-    const topGlobal = Object.entries(conteoGlobal)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 3); // Top 3
+    const level = window.currentGestorLevel || 0;
+    const misPedidos = pedidos.filter(p => p.gestor === nombreGestor && p.estado !== 'Cancelado');
 
-    document.getElementById('ana-tendencia-global').innerHTML = topGlobal.map((item, i) => `
-        <div class="flex justify-between items-center mb-1">
-            <span class="text-[10px] font-black uppercase">#${i+1} ${item[0]}...</span>
-            <span class="text-xs font-bold text-primary">${item[1]} vtas</span>
-        </div>
-    `).join('');
+    // --- PROCESAR "MEJOR HORARIO" (NIVEL 4) ---
+    const elHorario = document.getElementById('ana-hora-pico');
+    if (elHorario) {
+        if (level >= 4) {
+            const peakTime = getPeakSalesTime(misPedidos);
+            elHorario.innerText = peakTime;
+            elHorario.className = "text-2xl font-black text-primary"; // Asegurar color
+        } else {
+            elHorario.innerHTML = `<span class="text-xs text-gray-400 font-bold">BLOQUEADO (NIVEL 4)</span>`;
+        }
+    }
+
+    // --- PROCESAR "RADAR DE TENDENCIAS" (NIVEL 3) ---
+    const elTendencia = document.getElementById('ana-tendencia-global');
+    if (elTendencia) {
+        if (level >= 3) {
+            const tendencias = getGlobalTrendRadar(pedidos);
+            elTendencia.innerHTML = tendencias.map((t, i) => `
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] font-black uppercase text-gray-500">#${i+1} ${t.name}</span>
+                    <span class="text-[10px] font-bold text-emerald-500">${t.count} ventas</span>
+                </div>
+            `).join('');
+        } else {
+            elTendencia.innerHTML = `<span class="text-xs text-gray-400 font-bold">BLOQUEADO (NIVEL 3)</span>`;
+        }
+    }
 }
 
 // --- 3. LÓGICA DE REPORTES (BUZÓN) ---
@@ -4959,23 +4940,27 @@ async function checkGamificationStatus() {
     today.setDate(today.getDate() - 30);
     const dateThreshold = today.toISOString();
 
-    // CORRECCIÓN: Quitamos 'head: true' para evitar el error 400
+    // --- SOLUCIÓN AL ERROR 400 ---
+    // 1. Usamos '*' en el select.
+    // 2. Mantenemos { count: 'exact', head: true } para que sea rápido y no de error.
     const { count, error } = await supabaseClient
         .from('pedidos')
-        .select('id', { count: 'exact' }) 
+        .select('*', { count: 'exact', head: true }) 
         .eq('gestor', gestor)
         .eq('estado', 'Entregado')
         .gte('created_at', dateThreshold); 
 
-    if (!error) {
-        const sales = count || 0;
-        updateGamificationUI(sales);
-        window.currentGestorLevel = getLevelData(sales).lvl; 
-        renderFlashButton();     
-        applyLockedFeatures();   
-    } else {
-        console.error("Error DB:", error);
+    if (error) {
+        console.error("Error DB Gamificación:", error.message);
+        return;
     }
+
+    const sales = count || 0;
+    updateGamificationUI(sales);
+    window.currentGestorLevel = getLevelData(sales).lvl; 
+    loadAnalyticsPro(window.gestorName); 
+    renderFlashButton();     
+    applyLockedFeatures();   
 }
 
 // 2. ACTUALIZACIÓN VISUAL (Tarjeta + Modal)
@@ -5445,6 +5430,56 @@ function fileToBase64(file) {
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
+}
+
+// --- LÓGICA NIVEL 4: MEJOR HORARIO (Basado en pedidos del gestor) ---
+function getPeakSalesTime(misPedidos) {
+    if (!misPedidos || misPedidos.length === 0) return "Sin datos";
+
+    // Creamos un mapa de 24 horas
+    const horasConteo = Array(24).fill(0);
+
+    misPedidos.forEach(p => {
+        const fecha = new Date(p.fecha || p.created_at);
+        const hora = fecha.getHours();
+        horasConteo[hora]++;
+    });
+
+    // Encontramos la hora con más pedidos
+    const maxVentas = Math.max(...horasConteo);
+    const horaPico = horasConteo.indexOf(maxVentas);
+
+    // Formateamos el rango (Ej: 14:00 - 16:00)
+    const inicio = horaPico;
+    const fin = (horaPico + 2) % 24;
+    
+    const format = (h) => h === 0 ? "12 AM" : h > 12 ? `${h - 12} PM` : `${h} AM`;
+    
+    return `${format(inicio)} - ${format(fin)}`;
+}
+
+// --- LÓGICA NIVEL 3: RADAR DE TENDENCIAS (Global - Últimos 7 días) ---
+function getGlobalTrendRadar(todosLosPedidos) {
+    if (!todosLosPedidos || todosLosPedidos.length === 0) return "Analizando mercado...";
+
+    const hace7Dias = new Date();
+    hace7Dias.setDate(hace7Dias.getDate() - 7);
+
+    // Filtramos solo pedidos recientes para detectar "Tendencia", no historia
+    const pedidosRecientes = todosLosPedidos.filter(p => new Date(p.fecha || p.created_at) >= hace7Dias);
+
+    const conteoProductos = {};
+    pedidosRecientes.forEach(p => {
+        // Limpiamos el nombre del producto (ej: "1x Split..." -> "Split")
+        let nombre = p.producto.replace(/^\d+x\s+/, '').split('[')[0].trim();
+        conteoProductos[nombre] = (conteoProductos[nombre] || 0) + 1;
+    });
+
+    // Ordenamos y tomamos los 3 mejores
+    return Object.entries(conteoProductos)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3)
+        .map(([name, count]) => ({ name, count }));
 }
 
 </script>
