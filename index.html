@@ -225,20 +225,29 @@
                     <!-- 3. DERECHA: Botones de Acción (Iconos limpios) -->
                     <div class="flex gap-2 w-full xl:w-auto">
 
+                        <!-- === ¡TE FALTA ESTA LÍNEA! === -->
+    <!-- Aquí es donde JS inyectará el botón (candado o rayo) -->
+    <div id="container-flash-btn" class="flex-1 xl:flex-none"></div>
+    <!-- ============================= -->
+
                         <!-- 1. AQUÍ INYECTAREMOS EL BOTÓN FLASH (Bloqueado o Desbloqueado) -->
                         <div id="container-flash-btn"></div>
 
-                        <button onclick="copyCategoryOffers()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 text-xs font-bold" title="Copiar Lista Texto">
-                            <span class="material-symbols-outlined text-lg">content_copy</span> <span class="hidden sm:inline">Texto</span>
-                        </button>
-                        
-                        <button onclick="downloadCategoryPhotos()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 text-slate-600 dark:text-slate-300 text-xs font-bold" title="Descargar Fotos ZIP">
-                            <span class="material-symbols-outlined text-lg">folder_zip</span> <span class="hidden sm:inline">Fotos</span>
-                        </button>
-                        
-                        <button onclick="downloadCatalogPDF()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-bold shadow-sm" title="Descargar PDF">
-                            <span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>
-                        </button>
+                        <!-- 1. Botón Texto (Masivo) -->
+                        <!-- 1. Botón Texto (Masivo) -->
+<button id="btn-copy-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
+    <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
+</button>
+
+<!-- 2. Botón Fotos (Masivo) -->
+<button id="btn-zip-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
+    <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
+</button>
+
+<!-- 3. Botón PDF -->
+<button id="btn-pdf-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
+    <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
+</button>
                     </div>
 
                 </div>
@@ -266,6 +275,48 @@
 
         <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
+            <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
+<div class="bg-gradient-to-r from-[#1a4789] to-[#2c6fb5] rounded-[2rem] p-6 md:p-8 text-white shadow-xl shadow-primary/20 relative overflow-hidden mb-8">
+    <!-- Decoración de fondo -->
+    <div class="absolute right-0 top-0 h-full w-1/2 bg-white/5 skew-x-12 transform origin-bottom-right"></div>
+    
+    <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <!-- Izquierda: Info Nivel -->
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span id="lvl-badge" class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-white/30 shadow-sm">
+                    Nivel 0
+                </span>
+                <span id="lvl-name" class="text-sm font-bold text-blue-100">El Despertar</span>
+            </div>
+            <h2 id="lvl-title" class="text-3xl md:text-4xl font-black italic uppercase tracking-tighter mb-2">AGENTE INICIADO</h2>
+            <p class="text-xs md:text-sm text-blue-100 max-w-lg leading-relaxed">
+                Tu enlace de venta expira en <span id="lvl-link-duration" class="font-black text-amber-300">24 HORAS</span>. 
+                Sube de nivel para aumentar tu retención y desbloquear herramientas.
+            </p>
+        </div>
+
+        <!-- Derecha: Barra y Botón -->
+        <div class="w-full lg:w-auto flex flex-col items-end gap-3">
+            <div class="w-full lg:w-64">
+                <div class="flex justify-between text-[10px] font-bold uppercase mb-2 text-blue-100">
+                    <span>Meta Siguiente Nivel</span>
+                    <span id="lvl-counter">0 / 3 Ventas</span>
+                </div>
+                <!-- Barra de fondo -->
+                <div class="h-2 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
+                    <!-- Barra de progreso (Dinámica) -->
+                    <div id="lvl-progress-bar" class="h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] transition-all duration-1000" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <button onclick="openGamificationModal()" class="w-full lg:w-auto bg-white text-[#1a4789] px-6 py-3 rounded-xl font-black text-xs uppercase shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-lg">upgrade</span>
+                Ver Sistema de Ascenso
+            </button>
+        </div>
+    </div>
+</div>
             <!-- BLOQUE FINANCIERO DESGLOSADO -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- 1. Por Cobrar (Pendiente) -->
@@ -457,7 +508,8 @@
         </button>
 
         <!-- Botón Story -->
-        <button onclick="generateStoryImage()" class="flex-1 py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
+        <!-- Botón Story (Asegúrate que tenga id="btn-story-maker") -->
+        <button id="btn-story-maker" onclick="generateStoryImage()" class="flex-1 py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
             <span class="material-symbols-outlined text-xl">fit_screen</span>
             Crear Story
         </button>
@@ -1243,43 +1295,62 @@
     function enterAsClient() { closeLogin(); loadProducts(); }
 
     function setupSession(name, adminMode) {
-        window.gestorName = name;
-        window.isAdmin = adminMode;
+    window.gestorName = name;
+    window.isAdmin = adminMode;
+    
+    const label = document.getElementById('gestor-label');
+    label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
+    document.getElementById('admin-nav').classList.remove('hidden');
+
+    if (adminMode) {
+        // MODO ADMINISTRADOR
+        document.getElementById('sec-admin-master').classList.remove('hidden');
+        document.getElementById('sec-catalogo').style.display = 'none';
+        document.getElementById('admin-nav').classList.add('hidden');
+        loadAdminData();
+    } else {
+        // MODO GESTOR (Aquí está la magia)
         
-        const label = document.getElementById('gestor-label');
-        label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
-        document.getElementById('admin-nav').classList.remove('hidden');
+        // 1. Mostrar Dashboard y Cargar Datos
+        showSection('dashboard');
+        loadProducts(); 
+        loadProDashboard(name);
+        
+        // 2. Cargar Analíticas
+        if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
 
-        if (adminMode) {
-            document.getElementById('sec-admin-master').classList.remove('hidden');
-            document.getElementById('sec-catalogo').style.display = 'none';
-            document.getElementById('admin-nav').classList.add('hidden');
-            loadAdminData();
-        } else {
-            // 1. Mostrar Dashboard y Cargar Datos
-            showSection('dashboard');
-            loadProducts(); 
-            loadProDashboard(name);
-            
-            // 2. Cargar Analíticas
-            if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
+        // 3. MOSTRAR EL NUEVO CENTRO DE MANDO
+        const commandCenter = document.getElementById('gestor-command-center');
+        if (commandCenter) commandCenter.classList.remove('hidden');
 
-            // 3. MOSTRAR EL NUEVO CENTRO DE MANDO (UNIFICADO)
-            // Esto reemplaza a las líneas antiguas de 'marketing-tools' y 'filters'
-            const commandCenter = document.getElementById('gestor-command-center');
-            if (commandCenter) commandCenter.classList.remove('hidden');
+        // === INICIO DE SISTEMA DE NIVELES ===
+        
+        // A. Aplicar CANDADOS inmediatamente (Bloqueo por defecto)
+        // Esto evita que los botones aparezcan activos mientras carga la base de datos
+        if (typeof applyLockedFeatures === "function") {
+            applyLockedFeatures();
+        }
+
+        // B. Dibujar el botón Flash (Aparecerá gris/bloqueado inicialmente)
+        if (typeof renderFlashButton === "function") {
+            renderFlashButton();
+        }
+        
+        // C. Consultar nivel real en la Base de Datos
+        // (Si el usuario tiene nivel, esta función desbloqueará los botones en unos milisegundos)
+        if (typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
         }
-        // ... código anterior de la función ...
+    }
 
-    // FORZAR QUE SE VEA EL BOTÓN ROJO
+    // FORZAR QUE SE VEA EL BOTÓN ROJO DE SALIR
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.classList.remove('hidden');
-        btnLogout.style.display = 'inline-flex'; // Fuerza bruta para que se vea
+        btnLogout.style.display = 'inline-flex'; 
     }
-
-    }
+    loadClientCRM(); 
+}
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
 
@@ -1686,12 +1757,14 @@ function filterMyOrders() {
     if(!p) return;
 
     // 2. Registrar vista para analítica
-    registrarVistaAnalitica(p); 
+    if (typeof registrarVistaAnalitica === "function") {
+        registrarVistaAnalitica(p); 
+    }
 
     // 3. Llenar textos básicos
     document.getElementById('detail-name').innerText = p.nombre;
     
-    // CORRECCIÓN VISUAL: Usar innerHTML para que no salgan las etiquetas <p>
+    // Usar innerHTML para descripción (HTML enriquecido)
     document.getElementById('detail-desc').innerHTML = p.descripcion || ''; 
 
     // 4. Badge de Ganancia (Solo Admin)
@@ -1706,20 +1779,17 @@ function filterMyOrders() {
         document.getElementById('detail-name').insertAdjacentHTML('beforebegin', badge);
     }
 
-    // 5. PRECIOS (AQUÍ ESTÁ EL ARREGLO DEL CUP)
+    // 5. PRECIOS (Calculadora inteligente)
     document.getElementById('detail-price').innerText = `$${p.precio}.00 USD`;
     
-    // Usamos la calculadora inteligente
-    const precioCUP = calculateProductCUP(p.precio, p.pagos);
+    const precioCUP = typeof calculateProductCUP === "function" ? calculateProductCUP(p.precio, p.pagos) : null;
     const labelCUP = document.getElementById('detail-price-cup');
 
     if (precioCUP) {
-        // Si acepta CUP, mostramos el cálculo correcto
         labelCUP.innerText = `/ CUP ${precioCUP.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-        labelCUP.classList.remove('text-red-500', 'text-xs');
+        labelCUP.classList.remove('text-red-500', 'text-xs', 'font-bold', 'uppercase');
         labelCUP.classList.add('text-gray-400', 'text-lg');
     } else {
-        // Si no acepta CUP
         labelCUP.innerText = " (Solo USD/EUR)";
         labelCUP.classList.remove('text-gray-400', 'text-lg');
         labelCUP.classList.add('text-red-500', 'text-xs', 'font-bold', 'uppercase');
@@ -1738,7 +1808,27 @@ function filterMyOrders() {
         <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
     `).join('');
 
-    // 8. Mostrar Modal
+    // --- 8. LÓGICA DE BLOQUEO DE STORY MAKER (NIVEL 1 REQUERIDO) ---
+    const btnStory = document.getElementById('btn-story-maker');
+    
+    // Obtenemos nivel global (si no existe, es 0)
+    const currentLevel = window.currentGestorLevel || 0;
+
+    if (btnStory) {
+        if (currentLevel < 1) {
+            // BLOQUEAR (Gris y Candado)
+            btnStory.onclick = () => alert("🔒 BLOQUEADO: Story Maker\n\nNecesitas Nivel 1 (3 ventas) para crear diseños automáticos.");
+            btnStory.className = "flex-1 py-3 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center cursor-not-allowed gap-1";
+            btnStory.innerHTML = `<span class="material-symbols-outlined text-xl">lock</span>Story Bloqueado`;
+        } else {
+            // DESBLOQUEAR (Color y Función Original)
+            btnStory.onclick = generateStoryImage;
+            btnStory.className = "flex-1 py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20 cursor-pointer";
+            btnStory.innerHTML = `<span class="material-symbols-outlined text-xl">fit_screen</span>Crear Story`;
+        }
+    }
+
+    // 9. Mostrar Modal
     document.getElementById('detail-modal').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
@@ -1897,116 +1987,117 @@ function changeQty(index, delta) {
         recalcularTotalFinal();
     }
 
-    // 5. ENVÍO DE PEDIDO A SUPABASE (CON MENSAJERÍA EN WHATSAPP)
-    document.getElementById('checkout-form').onsubmit = async function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('final-submit-btn');
-        btn.disabled = true; 
-        btn.innerText = "REGISTRANDO...";
+    // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
+document.getElementById('checkout-form').onsubmit = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('final-submit-btn');
+    btn.disabled = true; 
+    btn.innerText = "REGISTRANDO...";
 
-        // DATOS DEL FORMULARIO
-        const nombreC = document.getElementById('check-nombre').value;
-        const ciC = document.getElementById('check-ci').value;
-        const telC = document.getElementById('check-tel').value;
-        const dirC = document.getElementById('check-dir').value;
-        const monedaC = document.getElementById('check-moneda').value;
-        const valVuelto = document.getElementById('check-vuelto').value;
-        const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "No requiere";
+    // 1. RECOGER DATOS DEL FORMULARIO
+    // (Estos son los datos que rellena el botón de Pegar WhatsApp)
+    const nombreC = document.getElementById('check-nombre').value;
+    const ciC = document.getElementById('check-ci').value || "No especificado";
+    const telC = document.getElementById('check-tel').value;
+    const dirC = document.getElementById('check-dir').value;
+    const monedaC = document.getElementById('check-moneda').value;
+    const valVuelto = document.getElementById('check-vuelto').value;
+    const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-        // GESTIÓN DE SESIÓN
-        // 1. ¿Es un Gestor logueado comprando para sí mismo? -> Prioridad Total
-        // 2. ¿Es un Cliente referido por un enlace? -> Usar referrerData
-        // 3. Si no, es Venta Directa.
+    // 2. DETECTAR GESTOR
+    let activeGestor = "Venta Directa";
+    if (window.gestorName) {
+        activeGestor = window.gestorName;
+    } else {
+        const referido = await getActiveReferrer();
+        if (referido) activeGestor = referido.nombre;
+    }
 
-        let activeGestor = "Venta Directa";
-        let activeGestorTel = "";
+    // 3. CÁLCULOS MATEMÁTICOS (Desglose financiero)
+    let totalEquipo = 0;
+    let totalMensajeria = 0;
+    let totalComision = 0;
+    let listaProductos = "";
 
-        if (window.gestorName) {
-            // CASO A: El propio gestor está haciendo la compra desde su panel
-            activeGestor = window.gestorName;
-            activeGestorTel = window.currentUserData?.telefono || "";
-        } else if (referrerData) {
-            // CASO B: Es un cliente que entró con un enlace (o tiene cookie)
-            activeGestor = referrerData.nombre;
-            activeGestorTel = referrerData.telefono;
-        }
+    // Recorremos el carrito para sumar todo correctamente
+    cart.forEach(item => {
+        const precioItem = parseFloat(item.precio_venta) || 0;
+        const envioItem = parseMensajeria(item.mensajeria) || 0;
+        const comisionItem = parseFloat(item.comision_actual) || 0;
+        const qty = item.qty;
 
-        // --- LÓGICA MULTI-PROVEEDOR ---
+        totalEquipo += (precioItem * qty);
+        totalMensajeria += (envioItem * qty);
+        totalComision += (comisionItem * qty);
         
-        // 1. Agrupar productos por proveedor
-        const gruposPedidos = {};
-        
-        cart.forEach(item => {
-            const prov = item.proveedor || 'General';
-            if (!gruposPedidos[prov]) {
-                gruposPedidos[prov] = { items: [], totalEquipo: 0, totalComision: 0, totalMensajeria: 0 };
-            }
-            gruposPedidos[prov].items.push(item);
-            gruposPedidos[prov].totalEquipo += (item.precio_venta * item.qty);
-            gruposPedidos[prov].totalComision += (item.comision_actual * item.qty);
-            gruposPedidos[prov].totalMensajeria += (parseMensajeria(item.mensajeria) * item.qty);
-        });
+        // Formato del producto: "Nevera 5.5 pies Royal"
+        listaProductos += `${qty > 1 ? qty + 'x ' : ''}${item.nombre} `;
+    });
 
-        // 2. Iterar sobre cada grupo y crear un pedido independiente
-        const promesasInsert = [];
-        let resumenWhatsApp = "";
+    const totalPagar = totalEquipo + totalMensajeria;
 
-        for (const [proveedor, datos] of Object.entries(gruposPedidos)) {
-            
-            const listaProductosStr = datos.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
-            const totalFinalGrupo = datos.totalEquipo + datos.totalMensajeria; // Total USD de este sub-pedido
+    // 4. CREAR EL MENSAJE DE WHATSAPP (ESTILO FOTO)
+    // Usamos %0A para saltos de línea y 💪 para los items
+    const mensajeFinal = 
+        `VALE DE VENTA%0A%0A` +
+        `💪 Nombre: ${nombreC}%0A%0A` +
+        `💪 CI: ${ciC}%0A%0A` +
+        `💪 Teléfono: ${telC}%0A%0A` +
+        `💪 Dirección: ${dirC}%0A%0A` +
+        `💪 Producto: ${encodeURIComponent(listaProductos.trim())}%0A%0A` +
+        `💪 Total a Pagar: ${totalPagar} USD%0A%0A` +
+        `-Precio equipo: ${totalEquipo} USD%0A` +
+        `-Mensajería: ${totalMensajeria} USD%0A%0A` +
+        `💪 Vuelto: ${vueltoC}%0A%0A` +
+        `💪 Comisión: ${totalComision} usd%0A%0A` +
+        `💪 Gestor: ${activeGestor}`;
 
-            // Insertar en Supabase
-            const insertProm = supabaseClient.from('pedidos').insert([{
-                gestor: activeGestor,
-                cliente: nombreC, 
-                ci: ciC, 
-                telefono: telC, 
-                direccion: dirC,
-                producto: `${listaProductosStr} [${monedaC}]`,
-                total: totalFinalGrupo,
-                comision_total: datos.totalComision,
-                estado: 'Pendiente', // Estado inicial
-                pago_gestor: 'Pendiente',
-                proveedor: proveedor, // <--- GUARDAMOS EL PROVEEDOR AQUÍ
-                costo_mensajeria: datos.totalMensajeria
-            }]);
-            promesasInsert.push(insertProm);
+    // 5. GUARDAR EN BASE DE DATOS (Supabase)
+    const gruposPedidos = {};
+    cart.forEach(item => {
+        const prov = item.proveedor || 'General';
+        if (!gruposPedidos[prov]) gruposPedidos[prov] = { items: [], tEquipo: 0, tComi: 0, tEnvio: 0 };
+        gruposPedidos[prov].items.push(item);
+        gruposPedidos[prov].tEquipo += (item.precio_venta * item.qty);
+        gruposPedidos[prov].tComi += (item.comision_actual * item.qty);
+        gruposPedidos[prov].tEnvio += (parseMensajeria(item.mensajeria) * item.qty);
+    });
 
-            // Construir parte del mensaje de WhatsApp
-            resumenWhatsApp += `📦 *Pedido (${proveedor}):*\n${listaProductosStr}\n💵 Subtotal: $${totalFinalGrupo}\n\n`;
-        }
+    const promesas = [];
+    for (const [prov, d] of Object.entries(gruposPedidos)) {
+        const strProd = d.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
+        const totalG = d.tEquipo + d.tEnvio;
 
-        // 3. Ejecutar inserciones
-        const resultados = await Promise.all(promesasInsert);
-        const hayError = resultados.some(r => r.error);
+        promesas.push(supabaseClient.from('pedidos').insert([{
+            gestor: activeGestor,
+            cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC,
+            producto: `${strProd} [${monedaC}]`,
+            total: totalG,
+            comision_total: d.tComi,
+            estado: 'Pendiente', pago_gestor: 'Pendiente',
+            proveedor: prov, costo_mensajeria: d.tEnvio
+        }]));
+    }
 
-        if (hayError) {
-            alert("Error al guardar algunos pedidos. Verifique su conexión.");
-            btn.disabled = false; btn.innerText = "Tramitar Pedido";
-            return;
-        }
+    const resultados = await Promise.all(promesas);
+    
+    if (resultados.some(r => r.error)) {
+        alert("Error de conexión guardando el pedido.");
+        btn.disabled = false; btn.innerText = "Tramitar Pedido";
+        return;
+    }
 
-        // --- ENLACE WHATSAPP GLOBAL ---
-        let msj = `*NUEVA ORDEN - PARA TU HOGAR*%0A%0A` +
-                  `👤 *Cliente:* ${nombreC}%0A` +
-                  `📞 *Teléfono:* ${telC}%0A` +
-                  `📍 *Dirección:* ${dirC}%0A%0A` +
-                  `------------------%0A` +
-                  encodeURIComponent(resumenWhatsApp) + 
-                  `💰 *Total Global:* *${document.getElementById('total-convertido').innerText}*%0A`;
-        
-        if (activeGestor !== "Venta Directa") msj += `👨‍💻 *Gestor:* ${activeGestor}`;
+    // 6. ENVIAR WHATSAPP Y LIMPIAR
+    // Aquí es donde se abre la app con el texto generado
+    window.open(`https://wa.me/5356071095?text=${mensajeFinal}`, '_blank');
 
-        window.open(`https://wa.me/5356071095?text=${msj}`, '_blank');
-        
-        setTimeout(() => {
-            cart = [];
-            clearAutoSave();
-            toggleCartModal(false);
-            location.reload();
-        }, 1000);
-    };
+    setTimeout(() => {
+        cart = [];
+        clearAutoSave();
+        toggleCartModal(false);
+        location.reload();
+    }, 1000);
+};
 
     // 6. FUNCIONES AUXILIARES
     function parseMensajeria(texto) {
@@ -2048,40 +2139,61 @@ function changeQty(index, delta) {
     }
 
     // DASHBOARD DE GESTOR (Simplificado para Supabase)
-    // DASHBOARD DE GESTOR (Corregido para Login)
-    async function loadFullDashboard() {
-        // Usamos window.gestorName que definimos en el Login
-        const currentGestor = window.gestorName || gestorName; 
+    // --- FUNCIÓN DASHBOARD BLINDADA ---
+async function loadFullDashboard() {
+    const currentGestor = window.gestorName || gestorName; 
+    if (!currentGestor) return;
 
-        if (!currentGestor) return;
+    // Consultamos pedidos
+    const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('gestor', currentGestor);
 
-        console.log("Cargando dashboard para:", currentGestor); // Para depurar
+    if (error) {
+        console.error("Error cargando dashboard:", error);
+        return;
+    }
+    
+    const entregados = data.filter(p => p.estado === 'Entregado');
+    const pendientes = data.filter(p => p.estado === 'Pendiente' || p.estado === 'Asignado Mensajero' || p.estado === 'Recogida Almacén');
+    
+    // Calculamos comisiones
+    const ganancia = entregados.reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
 
-        // Consultamos SOLO los pedidos de este gestor
-        const { data, error } = await supabaseClient
-            .from('pedidos')
-            .select('*')
-            .eq('gestor', currentGestor);
+    // --- AQUÍ ESTABA EL ERROR: VALIDAMOS QUE EXISTAN LOS ELEMENTOS ANTES DE ESCRIBIR ---
+    
+    const elMoney = document.getElementById('dash-money');
+    if (elMoney) elMoney.innerText = `$${ganancia.toFixed(2)}`;
 
-        if (error) {
-            console.error("Error cargando dashboard:", error);
-            return;
-        }
-        
-        const entregados = data.filter(p => p.estado === 'Entregado');
-        const pendientes = data.filter(p => p.estado === 'Pendiente' || p.estado === 'En Camino');
-        
-        // Calculamos comisiones (Asumiendo que 'comision_total' es numérico en la BD)
-        const ganancia = entregados.reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+    const elOk = document.getElementById('dash-ok');
+    if (elOk) elOk.innerText = entregados.length;
 
-        // Actualizamos el HTML
-        document.getElementById('dash-money').innerText = `$${ganancia.toFixed(2)}`;
-        document.getElementById('dash-ok').innerText = entregados.length;
-        document.getElementById('dash-pending').innerText = pendientes.length;
+    const elPending = document.getElementById('dash-pending');
+    if (elPending) elPending.innerText = pendientes.length;
 
-        // Ranking (Opcional: mostrar ranking global o solo tus ventas)
+    // Actualizamos también los contadores de la nueva sección "Mis Pedidos Financieros" si existen
+    const elMoneyPending = document.getElementById('dash-money-pending');
+    const elMoneyPaid = document.getElementById('dash-money-paid');
+    
+    if (elMoneyPending || elMoneyPaid) {
+        const porCobrar = entregados
+            .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
+            .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+
+        const cobrado = entregados
+            .filter(p => p.pago_gestor === 'Pagado')
+            .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+            
+        if(elMoneyPending) elMoneyPending.innerText = `$${porCobrar.toFixed(2)}`;
+        if(elMoneyPaid) elMoneyPaid.innerText = `$${cobrado.toFixed(2)}`;
+    }
+
+    // Ranking
+    if (typeof renderRankingGestor === "function") {
         renderRankingGestor(data); 
     }
+}
 
     function renderRankingGestor(misVentas) {
         // Esta función lista las últimas ventas del propio gestor en la lista de abajo
@@ -4212,23 +4324,7 @@ function generateFlashResponse() {
     });
 }
 
-// 1. FUNCIÓN PARA VERIFICAR NIVEL (Llamar al iniciar sesión)
-async function checkGamificationStatus() {
-    const gestor = window.gestorName;
-    if (!gestor) return;
 
-    // Consultamos cuántas ventas "Entregado" tiene
-    const { count, error } = await supabaseClient
-        .from('pedidos')
-        .select('*', { count: 'exact', head: true }) // 'head: true' solo cuenta, no baja datos (más rápido)
-        .eq('gestor', gestor)
-        .eq('estado', 'Entregado');
-
-    if (!error) {
-        gestorSalesCount = count || 0;
-        renderFlashButton(); // Dibujar el botón según el resultado
-    }
-}
 
 // 2. FUNCIÓN PARA DIBUJAR EL BOTÓN (Candado vs Rayo)
 function renderFlashButton() {
@@ -4255,6 +4351,77 @@ function renderFlashButton() {
     }
 }
 
+
+
+
+
+// Helper: Bloquear Botón (Mantiene el nombre y añade candado)
+function lockButton(btn, toolName, reqLevel, salesPitch) {
+    if (!btn) return;
+    
+    // Estilo visual gris
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
+    
+    // Muestra: Candado + Nombre Herramienta (Ya no dice solo "Nivel X")
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${toolName}</span>`;
+    
+    // Alerta de ventas
+    btn.onclick = (e) => {
+        e.preventDefault();
+        alert(`🔒 HERRAMIENTA BLOQUEADA: ${toolName}\n\n${salesPitch}`);
+    };
+    btn.removeAttribute("onclick"); 
+    btn.title = `Bloqueado - Requiere Nivel ${reqLevel}`;
+}
+
+// Helper: Desbloquear Botón
+function unlockButton(btn, icon, label, actionStr, colorClasses) {
+    if (!btn) return;
+    btn.className = `flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer ${colorClasses}`;
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">${icon}</span> <span class="hidden sm:inline">${label}</span>`;
+    btn.setAttribute("onclick", actionStr);
+    btn.onclick = null; 
+    btn.title = label;
+}
+
+// Helper: Bloquear Botón
+function lockButton(btn, label, reqLevel) {
+    if (!btn) return;
+    // Reseteamos clases para forzar el gris
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">Nivel ${reqLevel}</span>`;
+    btn.onclick = (e) => {
+        e.preventDefault();
+        alert(`🔒 HERRAMIENTA BLOQUEADA\n\nNecesitas Nivel ${reqLevel} para usar '${label}'.\n¡Sigue vendiendo para desbloquear!`);
+    };
+    btn.removeAttribute("onclick"); // Quitamos cualquier onclick inline antiguo
+}
+
+// Helper: Desbloquear Botón
+function unlockButton(btn, icon, label, actionStr, colorClasses) {
+    if (!btn) return;
+    // Aplicamos estilos "vivos"
+    btn.className = `flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer ${colorClasses}`;
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">${icon}</span> <span class="hidden sm:inline">${label}</span>`;
+    
+    // Asignamos la función
+    btn.setAttribute("onclick", actionStr);
+    btn.onclick = null; // Limpiamos el bloqueo manual para dejar que actúe el atributo onclick
+}
+
+// Helper para restaurar el estilo original
+function restoreButtonStyle(btn, icon, label, action, colorClasses) {
+    if (!btn) return;
+    // Restauramos las clases base + los colores específicos
+    btn.className = `flex-1 xl:flex-none py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-bold ${colorClasses}`;
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">${icon}</span> <span class="hidden sm:inline">${label}</span>`;
+    btn.setAttribute('onclick', action);
+    btn.onclick = null; // Limpiamos el evento bloqueado para que el atributo onclick funcione
+    btn.title = label;
+}
+
+
+
 // 3. MENSAJE MOTIVACIONAL (Cuando hacen clic en el candado)
 function alertLockedFeature(faltan) {
     alert(`🔒 ¡HERRAMIENTA BLOQUEADA! 🔒\n\nEl "Botón Flash" te permite responder a clientes en 3 segundos.\n\n🎯 OBJETIVO: Necesitas 3 ventas entregadas.\n📉 TE FALTAN: ${faltan} ventas.\n\n¡Sigue vendiendo para desbloquear esta ventaja injusta! 🚀`);
@@ -4263,20 +4430,39 @@ function alertLockedFeature(faltan) {
 // 🚀 NUEVAS FUNCIONES PRO: CRM Y PERSISTENCIA
 // ==========================================
 
-// 1. CARGA DE CLIENTES (CRM)
+
+
+// 1. CARGA DE CLIENTES (CRM) - VERSIÓN PRIVADA
 let crmClients = [];
 
 async function loadClientCRM() {
-    // Descargamos pedidos anteriores para sacar la base de datos de clientes
-    const { data, error } = await supabaseClient
+    // Obtenemos quién está conectado
+    const gestorActual = window.gestorName; 
+    const esAdmin = window.isAdmin;
+
+    // Si nadie ha iniciado sesión (es cliente público), no cargamos nada por seguridad
+    if (!gestorActual && !esAdmin) {
+        crmClients = [];
+        return;
+    }
+
+    // Preparamos la consulta
+    let query = supabaseClient
         .from('pedidos')
         .select('cliente, ci, telefono, direccion')
         .order('fecha', { ascending: false })
-        .limit(500); // Analiza los últimos 500 pedidos
+        .limit(1000); // Revisamos los últimos 1000
+
+    // FILTRO DE ORO: Si NO es admin, filtra solo sus ventas
+    if (!esAdmin && gestorActual) {
+        query = query.eq('gestor', gestorActual);
+    }
+
+    const { data, error } = await query;
 
     if (!data) return;
 
-    // Filtramos duplicados por Teléfono
+    // Filtramos duplicados por Teléfono (igual que antes)
     const uniqueMap = new Map();
     data.forEach(p => {
         if (p.telefono && !uniqueMap.has(p.telefono)) {
@@ -4293,6 +4479,8 @@ async function loadClientCRM() {
             `<option value="${c.cliente} | ${c.telefono}">${c.direccion ? c.direccion.substring(0,30) + '...' : ''}</option>`
         ).join('');
     }
+    
+    console.log(`CRM Cargado: ${crmClients.length} clientes encontrados para ${gestorActual || 'Admin'}.`);
 }
 
 // 2. AUTO-RELLENADO (Al seleccionar en el buscador)
@@ -4489,7 +4677,541 @@ function toTitleCase(str) {
         return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     });
 }
+
+/* ============================================== */
+/*    SISTEMA DE GAMIFICACIÓN "SOLO LEVELING"     */
+/*           LÓGICA DE VENTANA DESLIZANTE         */
+/* ============================================== */
+
+// Datos Maestros de Niveles
+function getLevelData(sales) {
+    if (sales >= 40) return { lvl: 4, name: "Monarca", next: 1000, color: "text-emerald-500", duration: 720 }; // 30 días
+    if (sales >= 20) return { lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", duration: 360 };   // 15 días
+    if (sales >= 10) return { lvl: 2, name: "Experto", next: 20, color: "text-blue-500", duration: 168 };    // 7 días
+    if (sales >= 3)  return { lvl: 1, name: "Novato", next: 10, color: "text-orange-500", duration: 72 };     // 3 días
+    return { lvl: 0, name: "Iniciado", next: 3, color: "text-red-500", duration: 24 };                       // 1 día
+}
+
+// --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
+function applyLockedFeatures() {
+    const level = window.currentGestorLevel || 0; // Si no hay nivel, asume 0
+
+    // 1. BLOQUEO DE LA BARRA DE MARKETING (DASHBOARD)
+    const btnCopy = document.getElementById('btn-copy-bulk');
+    const btnZip = document.getElementById('btn-zip-bulk');
+    const btnPdf = document.getElementById('btn-pdf-bulk');
+
+    // Nivel 2 Requerido para Masivos
+    if (level < 2) {
+        lockButtonVisual(btnCopy, "content_copy", "Texto", "🔒 Nivel 2");
+        lockButtonVisual(btnZip, "folder_zip", "Fotos", "🔒 Nivel 2");
+    } else {
+        unlockButtonVisual(btnCopy, "content_copy", "Texto", "copyCategoryOffers()");
+        unlockButtonVisual(btnZip, "folder_zip", "Fotos", "downloadCategoryPhotos()");
+    }
+
+    // Nivel 4 Requerido para PDF
+    if (level < 4) {
+        lockButtonVisual(btnPdf, "picture_as_pdf", "PDF", "🔒 Nivel 4");
+        // Quitar estilo rojo si está bloqueado para que se vea gris
+        if(btnPdf) btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold";
+    } else {
+        // Restaurar estilo rojo
+        if(btnPdf) {
+            btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-bold shadow-sm cursor-pointer";
+            btnPdf.setAttribute('onclick', 'downloadCatalogPDF()');
+            btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>`;
+        }
+    }
+}
+
+// Helpers visuales (Necesarios para que funcione lo de arriba)
+function lockButtonVisual(btn, icon, text, lockText) {
+    if(!btn) return;
+    btn.onclick = () => alert(`⚠️ HERRAMIENTA BLOQUEADA\n\nNecesitas subir de nivel para usar '${text}'.\nSigue vendiendo para desbloquear.`);
+    btn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-100');
+    btn.classList.remove('hover:border-indigo-500', 'hover:text-indigo-600', 'hover:bg-indigo-50');
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${lockText}</span>`;
+}
+
+/* ============================================== */
+/*    LÓGICA DE BLOQUEO DE HERRAMIENTAS (PRO)     */
+/* ============================================== */
+
+function applyLockedFeatures() {
+    // Si no hay nivel definido, asumimos 0
+    const level = window.currentGestorLevel || 0;
+    console.log("🔒 Gestionando permisos para Nivel:", level);
+
+    const btnCopy = document.getElementById('btn-copy-bulk');
+    const btnZip = document.getElementById('btn-zip-bulk');
+    const btnPdf = document.getElementById('btn-pdf-bulk');
+
+    // --- NIVEL 2: TEXTO Y FOTOS ---
+    if (level >= 2) {
+        // DESBLOQUEAR (Estilos originales)
+        unlockButton(btnCopy, "content_copy", "Texto", "copyCategoryOffers()", "border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600");
+        unlockButton(btnZip, "folder_zip", "Fotos", "downloadCategoryPhotos()", "border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600");
+    } else {
+        // BLOQUEAR (Con nombre y mensaje de venta)
+        lockButton(btnCopy, "Texto Masivo", 2, 
+            "🚀 **BENEFICIO:** Copia las ofertas de 50 productos de un solo golpe.\n\n💡 **EJEMPLO:** En lugar de copiar uno por uno, copias toda la categoría 'Ollas' y la pegas en 10 grupos de Facebook en 1 minuto.\n\n🎯 **META:** Alcanza el Nivel 2 (10 Ventas).");
+            
+        lockButton(btnZip, "Pack Fotos", 2, 
+            "📸 **BENEFICIO:** Descarga todas las fotos del catálogo en un archivo ZIP comprimido.\n\n💡 **EJEMPLO:** Ahorra los 30 minutos que tardarías en descargar foto por foto para armar tu catálogo personal.\n\n🎯 **META:** Alcanza el Nivel 2 (10 Ventas).");
+    }
+
+    // --- NIVEL 4: PDF ---
+    if (level >= 4) {
+        // DESBLOQUEAR
+        unlockButton(btnPdf, "picture_as_pdf", "PDF", "downloadCatalogPDF()", "bg-red-50 text-red-500 border-red-100 hover:bg-red-500 hover:text-white shadow-sm");
+    } else {
+        // BLOQUEAR
+        lockButton(btnPdf, "PDF Pro", 4, 
+            "📄 **BENEFICIO:** Genera un Catálogo PDF Oficial que incluye TU nombre y TU WhatsApp en cada página.\n\n💡 **EJEMPLO:** Ideal para enviárselo a clientes serios o mayores que no saben usar la web. Te da autoridad total.\n\n🎯 **META:** Alcanza el Nivel 4 (40 Ventas).");
+    }
+}
+
+// Helper: Bloquear Botón (Mantiene el nombre y añade candado)
+function lockButton(btn, toolName, reqLevel, salesPitch) {
+    if (!btn) return;
+    
+    // Forzamos el estilo GRIS y Cursor de bloqueo
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
+    
+    // Ponemos el nombre de la herramienta (NO "Nivel X")
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${toolName}</span>`;
+    
+    // Eliminamos onclick anterior y ponemos la alerta nueva
+    btn.removeAttribute("onclick");
+    btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        alert(`🔒 HERRAMIENTA BLOQUEADA: ${toolName}\n\n${salesPitch}`);
+    };
+    btn.title = `Bloqueado - Requiere Nivel ${reqLevel}`;
+}
+
+// Helper: Desbloquear Botón
+function unlockButton(btn, icon, label, actionStr, colorClasses) {
+    if (!btn) return;
+    // Restauramos estilo de color
+    btn.className = `flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer ${colorClasses}`;
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">${icon}</span> <span class="hidden sm:inline">${label}</span>`;
+    
+    // Restauramos la función original
+    btn.setAttribute("onclick", actionStr);
+    btn.onclick = null; 
+    btn.title = label;
+}
+
+// 1. CHEQUEO PRINCIPAL (Se llama al cargar el Dashboard)
+// 1. CHEQUEO PRINCIPAL (Se llama al cargar el Dashboard)
+// 1. CHEQUEO PRINCIPAL (Se llama al cargar el Dashboard)
+async function checkGamificationStatus() {
+    const gestor = window.gestorName;
+    if (!gestor) return;
+
+    // --- 👑 GOD MODE (SOLO PARA PRUEBAS) ---
+    if (gestor === "Marcel Montano") {
+        console.log("👑 MODO DIOS ACTIVADO: Simulando 100 ventas para Marcel.");
+        const fakeSales = 100; 
+        
+        updateGamificationUI(fakeSales);
+        window.currentGestorLevel = 4; 
+        renderFlashButton(); 
+        applyLockedFeatures(); // <--- IMPORTANTE: Aplicar desbloqueo al Rey
+        return; 
+    }
+    // ---------------------------------------
+
+    // A. Ventana Deslizante: Calcular fecha de hace 30 días
+    const today = new Date();
+    today.setDate(today.getDate() - 30);
+    const dateThreshold = today.toISOString();
+
+    // B. Consulta Supabase Filtrada por Fecha
+    const { count, error } = await supabaseClient
+        .from('pedidos')
+        .select('*', { count: 'exact', head: true }) 
+        .eq('gestor', gestor)
+        .eq('estado', 'Entregado')
+        .gte('created_at', dateThreshold); 
+
+    if (!error) {
+        const sales = count || 0;
+        updateGamificationUI(sales);
+        window.currentGestorLevel = getLevelData(sales).lvl; // Guardar nivel global
+        
+        renderFlashButton();     // Dibujar rayo/candado
+        applyLockedFeatures();   // <--- IMPORTANTE: Bloquear/Desbloquear botones barra
+    }
+}
+
+// 2. ACTUALIZACIÓN VISUAL (Tarjeta + Modal)
+function updateGamificationUI(sales) {
+    const data = getLevelData(sales);
+    
+    // --- A. Actualizar Tarjeta Dashboard ---
+    const badge = document.getElementById('lvl-badge');
+    if(badge) {
+        badge.innerText = `Nivel ${data.lvl}`;
+        document.getElementById('lvl-name').innerText = data.name;
+        document.getElementById('lvl-title').innerText = `AGENTE ${data.name.toUpperCase()}`;
+        
+        const durationText = data.duration >= 720 ? "30 DÍAS" : `${data.duration/24} DÍAS`;
+        const linkSpan = document.getElementById('lvl-link-duration');
+        linkSpan.innerText = data.duration === 24 ? "24 HORAS" : durationText;
+        
+        // Colores dinámicos
+        if (data.lvl === 0) linkSpan.className = "font-black text-red-300";
+        else if (data.lvl === 4) linkSpan.className = "font-black text-emerald-300";
+        else linkSpan.className = "font-black text-amber-300";
+
+        // Barra de Progreso
+        document.getElementById('lvl-counter').innerText = `${sales} / ${data.next} Ventas`;
+        const percent = Math.min(100, (sales / data.next) * 100);
+        document.getElementById('lvl-progress-bar').style.width = `${percent}%`;
+    }
+
+    // --- B. Actualizar Modal Maestro (Desbloquear Cartas) ---
+    for (let i = 0; i <= 4; i++) {
+        const card = document.getElementById(`card-lvl-${i}`);
+        if (!card) continue;
+
+        // Limpiar clases
+        card.classList.remove('active', 'current', 'locked');
+
+        if (i < data.lvl) {
+            // Nivel Superado (Desbloqueado pero no actual)
+            card.classList.add('active'); // Se ve claro
+            unlockButtonsInCard(card);
+        } else if (i === data.lvl) {
+            // Nivel Actual
+            card.classList.add('active', 'current');
+            unlockButtonsInCard(card);
+        } else {
+            // Nivel Futuro (Bloqueado)
+            card.classList.add('locked');
+            lockButtonsInCard(card);
+        }
+    }
+}
+
+// --- FUNCIÓN PARA DIBUJAR EL BOTÓN FLASH (CANDADO O RAYO) ---
+function renderFlashButton() {
+    const container = document.getElementById('container-flash-btn');
+    if (!container) return; // Si no encuentra el hueco, no hace nada
+
+    // Obtenemos el nivel actual guardado en la variable global (o 0 por defecto)
+    const currentLvl = window.currentGestorLevel || 0;
+    
+    // REGLA: El Flash se desbloquea a partir de NIVEL 1
+    const NIVEL_DESBLOQUEO = 1;
+
+    if (currentLvl >= NIVEL_DESBLOQUEO) {
+        // --- DESBLOQUEADO (AMARILLO/RAYO) ---
+        container.innerHTML = `
+            <button onclick="generateFlashResponse()" class="w-full h-full py-2.5 px-4 rounded-xl bg-amber-400 text-amber-900 border border-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-black shadow-md active:scale-95 animate-pulse" title="Generar respuesta rápida">
+                <span class="material-symbols-outlined text-lg">flash_on</span> 
+                <span class="hidden sm:inline">Flash</span>
+            </button>`;
+    } else {
+        // --- BLOQUEADO (GRIS/CANDADO) ---
+        container.innerHTML = `
+            <button onclick="alert('🔒 BLOQUEADO: Sube a NIVEL 1 (3 ventas) para desbloquear la Respuesta Flash.')" class="w-full h-full py-2.5 px-4 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold" title="Bloqueado - Nivel Insuficiente">
+                <span class="material-symbols-outlined text-lg">lock</span> 
+                <span class="hidden sm:inline">Flash</span>
+            </button>`;
+    }
+}
+
+// Helpers visuales para el modal
+function unlockButtonsInCard(card) {
+    const btns = card.querySelectorAll('button');
+    btns.forEach(btn => {
+        btn.classList.remove('btn-tool-locked');
+        btn.classList.add('text-xs', 'font-bold', 'text-gray-700', 'bg-white', 'border', 'border-gray-200', 'shadow-sm', 'px-3', 'py-2', 'rounded-lg', 'w-full', 'flex', 'items-center', 'gap-2', 'hover:bg-blue-50', 'hover:text-primary', 'transition-all');
+        // Quitamos la alerta de bloqueo
+        btn.onclick = null; 
+        // Aquí podrías poner la función real si existiera, ej: btn.onclick = functionRef;
+    });
+}
+
+function lockButtonsInCard(card) {
+    // Ya vienen con la clase btn-tool-locked del HTML
+}
+
+// Funciones del Modal
+function openGamificationModal() {
+    document.getElementById('modal-gamification').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeGamificationModal() {
+    document.getElementById('modal-gamification').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+function alertLockedInfo(title, desc) {
+    alert(`🔒 ¡HERRAMIENTA BLOQUEADA!\n\n${title}\n${desc}\n\nSube de nivel para desbloquear.`);
+}
+
+/* ============================================== */
+/*        LÓGICA DEL "ENLACE VITAL"               */
+/* ============================================== */
+
+// 1. Guardar Referido al entrar (INIT)
+async function initSmartReferral() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlGestor = urlParams.get('gestor');
+    const urlTel = urlParams.get('tel');
+
+    if (urlGestor) {
+        // Consultar nivel actual del gestor (últimos 30 días)
+        const today = new Date();
+        today.setDate(today.getDate() - 30);
+        
+        const { count, error } = await supabaseClient
+            .from('pedidos')
+            .select('*', { count: 'exact', head: true })
+            .eq('gestor', urlGestor)
+            .eq('estado', 'Entregado')
+            .gte('created_at', today.toISOString());
+        
+        const sales = count || 0;
+        const data = getLevelData(sales);
+        const hours = data.duration;
+
+        // Guardar Cookie Inteligente
+        const now = new Date().getTime();
+        const expirationTime = now + (hours * 60 * 60 * 1000);
+
+        const referrerData = {
+            nombre: urlGestor,
+            telefono: urlTel || "",
+            timestamp: now,
+            expiresAt: expirationTime
+        };
+
+        localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
+        console.log(`🔗 Enlace Vital Activado: ${urlGestor} (Nivel ${data.lvl}) | Expira en ${hours}h`);
+    }
+}
+
+// 2. Recuperar Referido al comprar (VALIDACIÓN SEVERA)
+async function getActiveReferrer() {
+    const stored = localStorage.getItem('pth_referrer_smart');
+    if (!stored) return null;
+
+    const data = JSON.parse(stored);
+    const now = new Date().getTime();
+
+    // A. ¿Caducó por fecha fija?
+    if (now > data.expiresAt) {
+        console.log("❌ Enlace caducado por tiempo.");
+        localStorage.removeItem('pth_referrer_smart');
+        return null;
+    }
+
+    // B. VALIDACIÓN DOBLE: ¿El gestor sigue manteniendo el nivel?
+    // Si bajó de nivel ayer, hoy su enlace antiguo podría ser inválido.
+    const today = new Date();
+    today.setDate(today.getDate() - 30);
+    
+    const { count } = await supabaseClient
+        .from('pedidos')
+        .select('*', { count: 'exact', head: true })
+        .eq('gestor', data.nombre)
+        .eq('estado', 'Entregado')
+        .gte('created_at', today.toISOString());
+    
+    const currentSales = count || 0;
+    const currentData = getLevelData(currentSales);
+    const allowedHours = currentData.duration;
+
+    // Calcular horas reales transcurridas desde el clic original
+    const hoursElapsed = (now - data.timestamp) / (1000 * 60 * 60);
+
+    if (hoursElapsed > allowedHours) {
+        console.log(`❌ PENALIZACIÓN: El gestor bajó de nivel. Enlace invalidado retroactivamente.`);
+        localStorage.removeItem('pth_referrer_smart');
+        return null;
+    }
+
+    return data;
+}
+
+// EJECUTAR AL CARGAR
+window.addEventListener('load', () => {
+    initSmartReferral(); // Revisar URL al entrar
+    // ... tus otros inits ...
+});
+
 </script>
 
+<!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
+<!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (VERSIÓN EDUCATIVA PRO) === -->
+<div id="modal-gamification" class="fixed inset-0 z-[250] hidden bg-[#0f172a]/95 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div class="min-h-screen px-4 py-12 flex items-center justify-center">
+        <div class="w-full max-w-6xl bg-[#f8fafc] dark:bg-[#1e293b] rounded-[40px] shadow-2xl overflow-hidden border border-white/10 relative">
+            
+            <button onclick="closeGamificationModal()" class="absolute top-6 right-6 z-20 h-10 w-10 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg hover:rotate-90 transition-transform">
+                <span class="material-symbols-outlined text-gray-600 dark:text-white">close</span>
+            </button>
+
+            <!-- Header -->
+            <div class="bg-[#1a4789] px-6 py-12 md:px-12 md:py-16 text-white text-center relative overflow-hidden">
+                <span class="material-symbols-outlined text-6xl mb-4 text-amber-400 drop-shadow-lg">workspace_premium</span>
+                <h2 class="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-4">Tu Carrera <span class="text-blue-300">Profesional</span></h2>
+                <p class="text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
+                    Asciende de rango para desbloquear herramientas que multiplicarán tus ventas y asegura tus comisiones por más tiempo.
+                </p>
+            </div>
+
+            <!-- Cuerpo -->
+            <div class="p-6 md:p-10 space-y-8">
+                
+                <!-- GRID DE NIVELES -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    
+                    <!-- Nivel 0 -->
+                    <div id="card-lvl-0" class="level-card active current group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-[#1a4789]">Nivel 0: Iniciado</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 0 - 2 Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">water_drop</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-red-500">24 HORAS</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-red-400" style="width: 10%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Herramientas Base:</p>
+                            <div class="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-100 p-2 rounded-lg">
+                                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Compartir Enlace
+                            </div>
+                            <div class="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-100 p-2 rounded-lg">
+                                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Descarga 1 Foto
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 1 -->
+                    <div id="card-lvl-1" class="level-card locked group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 1: Novato</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 3 - 9 Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">bolt</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-orange-500">3 DÍAS</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-orange-400" style="width: 25%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Respuesta Flash', 'Con un clic, el sistema escribe por ti un mensaje de WhatsApp perfecto para el cliente: Hola, tengo este equipo, cuesta tanto... ¡Ahorra escribir!')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">flash_on</span> Respuesta Flash
+                            </button>
+                            <button onclick="alertLockedInfo('Story Maker', 'Diseña automáticamente una imagen vertical para tus Estados de WhatsApp e Instagram, con el precio y la foto bien puestos.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">fit_screen</span> Story Maker
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 2 -->
+                    <div id="card-lvl-2" class="level-card locked group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 2: Experto</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 10 - 19 Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">bubble_chart</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-blue-500">7 DÍAS</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-blue-400" style="width: 40%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Pack Fotos ZIP', '¿Cansado de bajar fotos una por una? Este botón descarga 50 fotos de ollas o neveras en un solo archivo comprimido.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">folder_zip</span> Pack Fotos ZIP
+                            </button>
+                            <button onclick="alertLockedInfo('Copiado Masivo', 'Copia la descripción y precio de 20 productos a la vez. Perfecto para publicar en modo ráfaga en grupos de Facebook.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">content_copy</span> Copiado Masivo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 3 -->
+                    <div id="card-lvl-3" class="level-card locked group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 3: Élite</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 20 - 39 Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">military_tech</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-indigo-500">15 DÍAS</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-indigo-400" style="width: 65%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Radar Tendencias', 'Te muestra en tiempo real qué equipos se están vendiendo más hoy en la web, para que tú también los ofrezcas.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">radar</span> Radar Tendencias
+                            </button>
+                            <button onclick="alertLockedInfo('Anti-Spam Text', 'Facebook te bloquea si publicas lo mismo. Esta herramienta reescribe tus textos automáticamente con IA.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">autorenew</span> Anti-Spam Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 4 -->
+                    <div id="card-lvl-4" class="level-card locked group border-dashed border-2">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 4: Monarca</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 40+ Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">crown</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-emerald-500">30 DÍAS (MÁX)</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-emerald-500" style="width: 100%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Catálogo PDF Pro', 'Crea un archivo PDF oficial con las fotos y precios, pero incrustando TU NOMBRE y TU WHATSAPP en la portada.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">picture_as_pdf</span> Catálogo PDF Pro
+                            </button>
+                            <button onclick="alertLockedInfo('Reporte Contable', 'Descarga un documento formal con todas tus comisiones pagadas y pendientes para tu control.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">receipt_long</span> Reporte Contable
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
