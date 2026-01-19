@@ -497,37 +497,33 @@
     
     <!-- Fila 1: Herramientas de Marketing (Descargar y Copiar) -->
      <!-- Fila 1: Herramientas de Marketing -->
-    <div class="flex gap-2 overflow-x-auto pb-2"> <!-- Agregamos overflow por si son muchos botones -->
-        
-        <!-- NUEVO BOTÓN: COPIAR DESCRIPCIÓN (NIVEL 0) -->
-        <button onclick="copySimpleDesc(this)" class="min-w-[80px] flex-1 py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-500 transition-all text-gray-500 gap-1 shadow-sm">
-            <span class="material-symbols-outlined text-xl">description</span>
-            Copiar Info
-        </button>
+    <!-- Fila de Herramientas de Marketing (DISEÑO LIMPIO Y ÚNICO) -->
+<div class="flex gap-2 flex-wrap mb-4">
+    
+    <!-- Botón 1: Copiar Info (Nivel 0) -->
+    <button onclick="copySimpleDesc(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-500 transition-all text-gray-500 gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-xl">description</span>
+        Copiar Info
+    </button>
 
-        <!-- ... aquí siguen tus otros botones (Descargar Foto, Copiar Oferta, Story) ... -->
-        <button onclick="downloadProductImage()" ... > ... </button>
-        <button onclick="copySmartOffer()" ... > ... </button>
-        <button id="btn-story-maker" ... > ... </button>
-    </div>
-    <div class="flex gap-3">
-        <button onclick="downloadProductImage()" class="flex-1 py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1">
-            <span class="material-symbols-outlined text-xl">download</span>
-            Descargar Foto
-        </button>
-        
-        <button onclick="copySmartOffer()" class="flex-1 py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1">
-            <span class="material-symbols-outlined text-xl">content_copy</span>
-            Copiar Oferta
-        </button>
+    <!-- Botón 2: Descargar Foto (Nivel 0) -->
+    <button onclick="downloadProductImage(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-xl">download</span>
+        Foto
+    </button>
+    
+    <!-- Botón 3: Copiar Oferta (Nivel 0) -->
+    <button onclick="copySmartOffer(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-xl">content_copy</span>
+        Oferta
+    </button>
 
-        <!-- Botón Story -->
-        <!-- Botón Story (Asegúrate que tenga id="btn-story-maker") -->
-        <button id="btn-story-maker" onclick="generateStoryImage()" class="flex-1 py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
-            <span class="material-symbols-outlined text-xl">fit_screen</span>
-            Crear Story
-        </button>
-    </div>
+    <!-- Botón 4: STORY MAKER (Nivel 1 - Se controla por JS) -->
+    <button id="btn-story-maker" onclick="generateStoryImage()" class="flex-1 min-w-[80px] py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
+        <span class="material-symbols-outlined text-xl">fit_screen</span>
+        Crear Story
+    </button>
+</div>
 
     <!-- Fila 2: ACCIÓN PRINCIPAL (Hacer la Orden) -->
     <!-- Este botón mantiene la función addItemToCart() para seguir el flujo normal de venta -->
@@ -2296,24 +2292,36 @@ async function openAdminMaster() {
 let pedidosRawAdmin = []; // Añade esta línea antes de la función
 
 async function loadAdminData() {
+    // Cargamos los 3 pilares de datos
     const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
     const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
     const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
 
+    // 1. Procesar Pedidos
     if (pedidos) {
         pedidosRawAdmin = pedidos; 
-        renderAdminLogistica(); // Usará el filtro por defecto 'TODOS'
+        renderAdminLogistica(); 
         renderAdminCortes();
         updateAdminStats(pedidos);
+        
+        // --- ESTO ES LO QUE TE FALTABA ACTIVAR ---
         renderAnaliticaGestores(pedidos);
+        renderAnaliticaProveedores(pedidos);
+        renderAnaliticaCancelacion(pedidos);
     }
     
+    // 2. Procesar Productos
     if (productos) {
-        inventoryRawAdmin = productos; // <--- ESTO ES LO NUEVO IMPORTANTE
-        renderAdminInventario();
+        inventoryRawAdmin = productos;
+        renderAdminInventario(productos);
     }
     
-    if (vistas) renderAnaliticaVistas(vistas);
+    // 3. Procesar Cruce de datos (Zombies y Conversión)
+    // Solo si tenemos tanto pedidos como productos/vistas
+    if (pedidos && productos) {
+        renderAnaliticaZombies(pedidos, productos);
+        renderAnaliticaConversion(pedidos, vistas || []);
+    }
 }
 
 function updateAdminStats(pedidos) {
@@ -4801,36 +4809,84 @@ function getLevelData(sales) {
 }
 
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
+// --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---
 function applyLockedFeatures() {
-    const level = window.currentGestorLevel || 0; // Si no hay nivel, asume 0
-
-    // 1. BLOQUEO DE LA BARRA DE MARKETING (DASHBOARD)
+    const level = window.currentGestorLevel || 0;
+    
+    // Obtenemos los botones
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
     const btnPdf = document.getElementById('btn-pdf-bulk');
 
-    // Nivel 2 Requerido para Masivos
-    if (level < 2) {
-        lockButtonVisual(btnCopy, "content_copy", "Texto", "🔒 Nivel 2");
-        lockButtonVisual(btnZip, "folder_zip", "Fotos", "🔒 Nivel 2");
+    // === NIVEL 2: TEXTO Y FOTOS ===
+    if (level >= 2) {
+        // Desbloquear TEXTO
+        if(btnCopy) {
+            btnCopy.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold transition-all";
+            btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span class="hidden sm:inline">Texto</span>`;
+            // Asignación directa y limpia
+            btnCopy.onclick = function() { copyCategoryOffers(); };
+        }
+
+        // Desbloquear FOTOS
+        if(btnZip) {
+            btnZip.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold transition-all";
+            btnZip.innerHTML = `<span class="material-symbols-outlined text-lg">folder_zip</span> <span class="hidden sm:inline">Fotos</span>`;
+            // Asignación directa y limpia
+            btnZip.onclick = function() { downloadCategoryPhotos(); };
+        }
     } else {
-        unlockButtonVisual(btnCopy, "content_copy", "Texto", "copyCategoryOffers()");
-        unlockButtonVisual(btnZip, "folder_zip", "Fotos", "downloadCategoryPhotos()");
+        // Bloquear si es nivel bajo
+        if(btnCopy) lockButtonDirect(btnCopy, "Texto Masivo", 2);
+        if(btnZip) lockButtonDirect(btnZip, "Pack Fotos", 2);
     }
 
-    // Nivel 4 Requerido para PDF
-    if (level < 4) {
-        lockButtonVisual(btnPdf, "picture_as_pdf", "PDF", "🔒 Nivel 4");
-        // Quitar estilo rojo si está bloqueado para que se vea gris
-        if(btnPdf) btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold";
-    } else {
-        // Restaurar estilo rojo
+    // === NIVEL 4: PDF ===
+    if (level >= 4) {
+        // Desbloquear PDF
         if(btnPdf) {
             btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-bold shadow-sm cursor-pointer";
-            btnPdf.setAttribute('onclick', 'downloadCatalogPDF()');
-            btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>`;
+            btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span class="hidden sm:inline">PDF</span>`;
+            // Asignación directa y limpia
+            btnPdf.onclick = function() { downloadCatalogPDF(); };
         }
+    } else {
+        // Bloquear PDF
+        if(btnPdf) lockButtonDirect(btnPdf, "PDF Pro", 4);
     }
+}
+
+// Función auxiliar simple para bloquear
+function lockButtonDirect(btn, name, lvl) {
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold";
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${name}</span>`;
+    btn.onclick = function(e) { 
+        e.preventDefault(); 
+        alert(`🔒 Bloqueado: Sube a Nivel ${lvl} para usar ${name}.`); 
+    };
+}
+
+// Helper simple para bloquear
+function lockButtonDirect(btn, toolName, reqLevel) {
+    if (!btn) return;
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${toolName}</span>`;
+    btn.onclick = function(e) {
+        e.preventDefault();
+        alert(`🔒 HERRAMIENTA BLOQUEADA: ${toolName}\n\nNecesitas Nivel ${reqLevel} para usar esto.\n¡Sigue vendiendo!`);
+    };
+}
+
+// Helper simple solo para bloquear (el desbloqueo ya lo hicimos arriba manual)
+function lockButton(btn, toolName, reqLevel, salesPitch) {
+    if (!btn) return;
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${toolName}</span>`;
+    btn.onclick = (e) => {
+        e.preventDefault();
+        alert(`🔒 HERRAMIENTA BLOQUEADA: ${toolName}\n\n${salesPitch}\n\n🎯 Necesitas Nivel ${reqLevel}.`);
+    };
+    btn.title = `Bloqueado - Requiere Nivel ${reqLevel}`;
 }
 
 // Helpers visuales (Necesarios para que funcione lo de arriba)
@@ -4846,39 +4902,7 @@ function lockButtonVisual(btn, icon, text, lockText) {
 /*    LÓGICA DE BLOQUEO DE HERRAMIENTAS (PRO)     */
 /* ============================================== */
 
-function applyLockedFeatures() {
-    // Si no hay nivel definido, asumimos 0
-    const level = window.currentGestorLevel || 0;
-    console.log("🔒 Gestionando permisos para Nivel:", level);
 
-    const btnCopy = document.getElementById('btn-copy-bulk');
-    const btnZip = document.getElementById('btn-zip-bulk');
-    const btnPdf = document.getElementById('btn-pdf-bulk');
-
-    // --- NIVEL 2: TEXTO Y FOTOS ---
-    if (level >= 2) {
-        // DESBLOQUEAR (Estilos originales)
-        unlockButton(btnCopy, "content_copy", "Texto", "copyCategoryOffers()", "border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600");
-        unlockButton(btnZip, "folder_zip", "Fotos", "downloadCategoryPhotos()", "border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600");
-    } else {
-        // BLOQUEAR (Con nombre y mensaje de venta)
-        lockButton(btnCopy, "Texto Masivo", 2, 
-            "🚀 **BENEFICIO:** Copia las ofertas de 50 productos de un solo golpe.\n\n💡 **EJEMPLO:** En lugar de copiar uno por uno, copias toda la categoría 'Ollas' y la pegas en 10 grupos de Facebook en 1 minuto.\n\n🎯 **META:** Alcanza el Nivel 2 (10 Ventas).");
-            
-        lockButton(btnZip, "Pack Fotos", 2, 
-            "📸 **BENEFICIO:** Descarga todas las fotos del catálogo en un archivo ZIP comprimido.\n\n💡 **EJEMPLO:** Ahorra los 30 minutos que tardarías en descargar foto por foto para armar tu catálogo personal.\n\n🎯 **META:** Alcanza el Nivel 2 (10 Ventas).");
-    }
-
-    // --- NIVEL 4: PDF ---
-    if (level >= 4) {
-        // DESBLOQUEAR
-        unlockButton(btnPdf, "picture_as_pdf", "PDF", "downloadCatalogPDF()", "bg-red-50 text-red-500 border-red-100 hover:bg-red-500 hover:text-white shadow-sm");
-    } else {
-        // BLOQUEAR
-        lockButton(btnPdf, "PDF Pro", 4, 
-            "📄 **BENEFICIO:** Genera un Catálogo PDF Oficial que incluye TU nombre y TU WhatsApp en cada página.\n\n💡 **EJEMPLO:** Ideal para enviárselo a clientes serios o mayores que no saben usar la web. Te da autoridad total.\n\n🎯 **META:** Alcanza el Nivel 4 (40 Ventas).");
-    }
-}
 
 // Helper: Bloquear Botón (Mantiene el nombre y añade candado)
 function lockButton(btn, toolName, reqLevel, salesPitch) {
@@ -4916,32 +4940,29 @@ function unlockButton(btn, icon, label, actionStr, colorClasses) {
 // 1. CHEQUEO PRINCIPAL (Se llama al cargar el Dashboard)
 // 1. CHEQUEO PRINCIPAL (Se llama al cargar el Dashboard)
 // 1. CHEQUEO PRINCIPAL (Se llama al cargar el Dashboard)
+// --- CORRECCIÓN: FUNCIÓN PARA VERIFICAR NIVEL ---
 async function checkGamificationStatus() {
     const gestor = window.gestorName;
     if (!gestor) return;
 
-    // --- 👑 GOD MODE (SOLO PARA PRUEBAS) ---
+    // --- MODO DIOS (Marcel) ---
     if (gestor === "Marcel Montano") {
-        console.log("👑 MODO DIOS ACTIVADO: Simulando 100 ventas para Marcel.");
-        const fakeSales = 100; 
-        
-        updateGamificationUI(fakeSales);
+        console.log("👑 MODO DIOS: Nivel 4 forzado.");
+        updateGamificationUI(100);
         window.currentGestorLevel = 4; 
         renderFlashButton(); 
-        applyLockedFeatures(); // <--- IMPORTANTE: Aplicar desbloqueo al Rey
+        applyLockedFeatures(); 
         return; 
     }
-    // ---------------------------------------
 
-    // A. Ventana Deslizante: Calcular fecha de hace 30 días
     const today = new Date();
     today.setDate(today.getDate() - 30);
     const dateThreshold = today.toISOString();
 
-    // B. Consulta Supabase Filtrada por Fecha
+    // CORRECCIÓN: Quitamos 'head: true' para evitar el error 400
     const { count, error } = await supabaseClient
         .from('pedidos')
-        .select('*', { count: 'exact', head: true }) 
+        .select('id', { count: 'exact' }) 
         .eq('gestor', gestor)
         .eq('estado', 'Entregado')
         .gte('created_at', dateThreshold); 
@@ -4949,10 +4970,11 @@ async function checkGamificationStatus() {
     if (!error) {
         const sales = count || 0;
         updateGamificationUI(sales);
-        window.currentGestorLevel = getLevelData(sales).lvl; // Guardar nivel global
-        
-        renderFlashButton();     // Dibujar rayo/candado
-        applyLockedFeatures();   // <--- IMPORTANTE: Bloquear/Desbloquear botones barra
+        window.currentGestorLevel = getLevelData(sales).lvl; 
+        renderFlashButton();     
+        applyLockedFeatures();   
+    } else {
+        console.error("Error DB:", error);
     }
 }
 
@@ -5074,13 +5096,13 @@ async function initSmartReferral() {
     const urlTel = urlParams.get('tel');
 
     if (urlGestor) {
-        // Consultar nivel actual del gestor (últimos 30 días)
         const today = new Date();
         today.setDate(today.getDate() - 30);
         
+        // CORRECCIÓN: Quitamos 'head: true' aquí también
         const { count, error } = await supabaseClient
             .from('pedidos')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact' })
             .eq('gestor', urlGestor)
             .eq('estado', 'Entregado')
             .gte('created_at', today.toISOString());
@@ -5089,7 +5111,6 @@ async function initSmartReferral() {
         const data = getLevelData(sales);
         const hours = data.duration;
 
-        // Guardar Cookie Inteligente
         const now = new Date().getTime();
         const expirationTime = now + (hours * 60 * 60 * 1000);
 
@@ -5101,7 +5122,6 @@ async function initSmartReferral() {
         };
 
         localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
-        console.log(`🔗 Enlace Vital Activado: ${urlGestor} (Nivel ${data.lvl}) | Expira en ${hours}h`);
     }
 }
 
