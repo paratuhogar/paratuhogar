@@ -405,24 +405,24 @@
 <div class="space-y-6 mt-8">
     
     <!-- 1. ANALÍTICA DE VENTAS (Tus horas pico y tendencias) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
-            <h4 class="text-xs font-black uppercase text-gray-400 mb-4 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">schedule</span> Tu Mejor Horario
-            </h4>
-            <p id="ana-hora-pico" class="text-2xl font-black text-primary">--:--</p>
-            <p class="text-[10px] text-gray-400">Hora donde más cierras ventas.</p>
-        </div>
-        
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
-            <h4 class="text-xs font-black uppercase text-gray-400 mb-4 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">trending_up</span> Tendencia Global
-            </h4>
-            <div id="ana-tendencia-global" class="text-sm font-bold text-gray-600 dark:text-gray-300">
-                Cargando datos del mercado...
-            </div>
-        </div>
+   <!-- En tu sección de analítica -->
+<div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+    <h4 class="text-[10px] font-black uppercase text-gray-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">auto_graph</span> El Bloque de Oro
+    </h4>
+    <div id="ana-hora-pico" class="text-2xl font-black text-gray-200">--:--</div>
+    <p class="text-[9px] text-gray-400 mt-2 italic">La hora exacta donde tus clientes sacan la billetera.</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700">
+    <h4 class="text-[10px] font-black uppercase text-gray-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">monitoring</span> Radar de Oportunidades
+    </h4>
+    <div id="ana-tendencia-global" class="space-y-2">
+        <!-- Contenido bloqueado o data -->
     </div>
+    <p class="text-[9px] text-gray-400 mt-2 italic">No adivines qué publicar. Mira lo que ya tiene éxito.</p>
+</div>
 
     <!-- 2. BUZÓN DE INTELIGENCIA (Reportes) -->
     <div class="bg-indigo-50 dark:bg-gray-800/50 p-6 rounded-3xl border border-indigo-100 dark:border-gray-700">
@@ -1062,37 +1062,53 @@
     
 
     <!-- SECCIÓN DE FOTOS (4 espacios) -->
-    <div class="md:col-span-2 border-y py-4 my-2">
-        <p class="text-[10px] font-black text-gray-400 uppercase mb-3 italic">Galería de Imágenes (Máx 4)</p>
-        <div class="grid grid-cols-4 gap-2">
-            <!-- Espacio para 4 fotos -->
-            <div onclick="document.getElementById('file-0').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
-                <input type="file" id="file-0" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 0)">
-                <img id="prev-0" class="absolute inset-0 w-full h-full object-cover hidden">
-                <span id="icon-0" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-                <input type="hidden" id="img-path-0">
-            </div>
-            <div onclick="document.getElementById('file-1').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
-                <input type="file" id="file-1" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 1)">
-                <img id="prev-1" class="absolute inset-0 w-full h-full object-cover hidden">
-                <span id="icon-1" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-                <input type="hidden" id="img-path-1">
-            </div>
-            <!-- Repetir para 2 y 3 -->
-            <div onclick="document.getElementById('file-2').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
-                <input type="file" id="file-2" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 2)">
-                <img id="prev-2" class="absolute inset-0 w-full h-full object-cover hidden">
-                <span id="icon-2" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-                <input type="hidden" id="img-path-2">
-            </div>
-            <div onclick="document.getElementById('file-3').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden">
-                <input type="file" id="file-3" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 3)">
-                <img id="prev-3" class="absolute inset-0 w-full h-full object-cover hidden">
-                <span id="icon-3" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-                <input type="hidden" id="img-path-3">
-            </div>
+    <!-- SECCIÓN DE FOTOS (4 espacios con botón de borrar) -->
+<div class="md:col-span-2 border-y py-4 my-2">
+    <p class="text-[10px] font-black text-gray-400 uppercase mb-3 italic">Galería de Imágenes (Máx 4)</p>
+    <div class="grid grid-cols-4 gap-2">
+        <!-- Foto 0 -->
+        <div onclick="document.getElementById('file-0').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
+            <input type="file" id="file-0" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 0)">
+            <img id="prev-0" class="absolute inset-0 w-full h-full object-cover hidden">
+            <span id="icon-0" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+            <input type="hidden" id="img-path-0">
+            <!-- BOTÓN BORRAR -->
+            <button type="button" onclick="clearImageSlot(event, 0)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <span class="material-symbols-outlined text-xs">close</span>
+            </button>
+        </div>
+        <!-- Foto 1 -->
+        <div onclick="document.getElementById('file-1').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
+            <input type="file" id="file-1" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 1)">
+            <img id="prev-1" class="absolute inset-0 w-full h-full object-cover hidden">
+            <span id="icon-1" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+            <input type="hidden" id="img-path-1">
+            <button type="button" onclick="clearImageSlot(event, 1)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <span class="material-symbols-outlined text-xs">close</span>
+            </button>
+        </div>
+        <!-- Foto 2 -->
+        <div onclick="document.getElementById('file-2').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
+            <input type="file" id="file-2" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 2)">
+            <img id="prev-2" class="absolute inset-0 w-full h-full object-cover hidden">
+            <span id="icon-2" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+            <input type="hidden" id="img-path-2">
+            <button type="button" onclick="clearImageSlot(event, 2)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <span class="material-symbols-outlined text-xs">close</span>
+            </button>
+        </div>
+        <!-- Foto 3 -->
+        <div onclick="document.getElementById('file-3').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
+            <input type="file" id="file-3" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 3)">
+            <img id="prev-3" class="absolute inset-0 w-full h-full object-cover hidden">
+            <span id="icon-3" class="material-symbols-outlined text-gray-300">add_a_photo</span>
+            <input type="hidden" id="img-path-3">
+            <button type="button" onclick="clearImageSlot(event, 3)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <span class="material-symbols-outlined text-xs">close</span>
+            </button>
         </div>
     </div>
+</div>
 
     <!-- EDITOR TIPO WORD -->
     <div class="md:col-span-2 space-y-2">
@@ -2870,6 +2886,30 @@ async function handlePowerUpload(input, index) {
     }
 }
 
+// Función para borrar una foto específica
+function clearImageSlot(event, index) {
+    // IMPORTANTE: Evita que el clic se propague al div padre (que abriría el selector de archivos)
+    event.stopPropagation();
+
+    if (confirm("¿Quieres quitar esta foto?")) {
+        // 1. Limpiar el valor del input oculto (el que se guarda en la base de datos)
+        document.getElementById(`img-path-${index}`).value = "";
+
+        // 2. Ocultar la imagen de previsualización
+        const prev = document.getElementById(`prev-${index}`);
+        prev.src = "";
+        prev.classList.add('hidden');
+
+        // 3. Mostrar de nuevo el icono de "Añadir foto"
+        const icon = document.getElementById(`icon-${index}`);
+        icon.classList.remove('hidden');
+        icon.innerText = "add_a_photo";
+
+        // 4. Resetear el input file por si quieres subir la misma foto después
+        document.getElementById(`file-${index}`).value = "";
+    }
+}
+
 // 3. Función para EDITAR producto (Cargar datos en el modal)
 // 3. Función para EDITAR producto (CORREGIDA)
     function editProduct(id) {
@@ -3160,52 +3200,55 @@ function renderProductsCustom(lista) {
 // --- 2. LÓGICA DE ANALÍTICA (HORARIOS Y TENDENCIAS) ---
 
 async function loadAnalyticsPro(nombreGestor) {
-    console.log("📊 Iniciando carga de analíticas...");
-    
-    // 1. Obtener TODOS los pedidos (necesario para Tendencia Global y Mejor Horario)
-    // Usamos una consulta simple para evitar el Error 400
-    const { data: pedidos, error } = await supabaseClient
-        .from('pedidos')
-        .select('*');
-
-    if (error) {
-        console.error("❌ Error de Supabase:", error.message);
-        return;
-    }
-
-    if (!pedidos || pedidos.length === 0) {
-        console.warn("⚠️ No hay pedidos en la base de datos.");
-        return;
-    }
+    const { data: pedidos, error } = await supabaseClient.from('pedidos').select('*');
+    if (error || !pedidos) return;
 
     const level = window.currentGestorLevel || 0;
     const misPedidos = pedidos.filter(p => p.gestor === nombreGestor && p.estado !== 'Cancelado');
 
-    // --- PROCESAR "MEJOR HORARIO" (NIVEL 4) ---
+    // --- MEJOR HORARIO (EL ORÁCULO DE VENTAS) ---
     const elHorario = document.getElementById('ana-hora-pico');
     if (elHorario) {
         if (level >= 4) {
-            const peakTime = getPeakSalesTime(misPedidos);
-            elHorario.innerText = peakTime;
-            elHorario.className = "text-2xl font-black text-primary"; // Asegurar color
+            elHorario.innerText = getPeakSalesTime(misPedidos);
+            elHorario.className = "text-3xl font-black text-primary animate-pulse";
         } else {
-            elHorario.innerHTML = `<span class="text-xs text-gray-400 font-bold">BLOQUEADO (NIVEL 4)</span>`;
+            elHorario.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-2 opacity-40">
+                    <span class="material-symbols-outlined text-4xl mb-2">lock_clock</span>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-center">
+                        <span class="text-primary">El Oráculo</span> bloqueado<br>
+                        Sube a Nivel 4 para ver tus horas de cierre.
+                    </p>
+                </div>`;
         }
     }
 
-    // --- PROCESAR "RADAR DE TENDENCIAS" (NIVEL 3) ---
+    // --- TENDENCIA GLOBAL (EL RADAR DE DINERO) ---
     const elTendencia = document.getElementById('ana-tendencia-global');
     if (elTendencia) {
         if (level >= 3) {
             const tendencias = getGlobalTrendRadar(pedidos);
             elTendencia.innerHTML = tendencias.map((t, i) => `
-                <div class="flex justify-between items-center mb-1">
+                <div class="flex justify-between items-center mb-1 group">
                     <span class="text-[10px] font-black uppercase text-gray-500">#${i+1} ${t.name}</span>
-                    <span class="text-[10px] font-bold text-emerald-500">${t.count} ventas</span>
+                    <span class="bg-emerald-100 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        ${t.count} VENTAS HOY
+                    </span>
                 </div>
             `).join('');
         } else {
-            elTendencia.innerHTML = `<span class="text-xs text-gray-400 font-bold">BLOQUEADO (NIVEL 3)</span>`;
+            elTendencia.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-2">
+                    <div class="relative mb-2">
+                        <span class="material-symbols-outlined text-4xl text-slate-200">radar</span>
+                        <span class="material-symbols-outlined absolute top-0 right-0 text-sm text-red-500 animate-ping">lock</span>
+                    </div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-center text-slate-300">
+                        <span class="text-slate-400">Radar de Mercado</span> Bloqueado<br>
+                        Mira qué están vendiendo los Pro en Nivel 3.
+                    </p>
+                </div>`;
         }
     }
 }
