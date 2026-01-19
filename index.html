@@ -650,7 +650,7 @@
         <div class="flex items-center gap-1">
             <span class="text-xs text-gray-400">$1 =</span>
             <!-- ID cambiado a 'daily-rate' -->
-            <input type="number" id="daily-rate" value="450" onchange="updateGlobalRate(this.value)" class="w-12 bg-transparent border-none font-black text-primary p-0 focus:ring-0 text-xl text-right">
+            <input type="number" id="daily-rate" value="" onchange="updateGlobalRate(this.value)" class="w-12 bg-transparent border-none font-black text-primary p-0 focus:ring-0 text-xl text-right">
             <span class="text-xs font-bold text-gray-400">CUP</span>
         </div>
     </div>
@@ -957,6 +957,22 @@
         <button onclick="closeModalProd()" class="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
         
         <h3 class="text-2xl font-black mb-6 italic uppercase">Añadir Nuevo <span class="text-primary">Equipo</span></h3>
+
+        <!-- PEGAR ESTO DENTRO DE id="modal-producto", DEBAJO DEL TÍTULO -->
+        <div class="mb-4 bg-green-50 p-4 rounded-xl border border-green-100">
+            <label class="text-[10px] font-black uppercase text-green-600 mb-2 block">⚡ Carga Rápida desde WhatsApp</label>
+            <div class="flex gap-2">
+                <button type="button" onclick="magicPasteProduct()" class="flex-1 bg-green-500 text-white py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-lg">content_paste_go</span>
+                    Pegar Texto del Grupo
+                </button>
+                <button type="button" onclick="document.getElementById('file-0').click()" class="flex-1 bg-blue-500 text-white py-2 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-lg">add_a_photo</span>
+                    Subir Foto
+                </button>
+            </div>
+            <p class="text-[9px] text-gray-400 mt-2 text-center">Copia el mensaje entero de Ángel y presiona el botón verde.</p>
+        </div>
         
         <form id="form-nuevo-prod" class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- ID Oculto para cuando editemos -->
@@ -966,8 +982,6 @@
     <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 font-bold" required>
     <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 font-bold" required>
 
-    <!-- ...inputs de precio y comisión... -->
-    <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 font-bold" required>
     
     <!-- === NUEVOS CAMPOS PROVEEDOR Y FLEXIBILIDAD === -->
     <div class="md:col-span-2 grid grid-cols-2 gap-4">
@@ -1005,6 +1019,12 @@
         </datalist>
     </div>
     <input type="text" id="p-garantia" placeholder="Garantía" class="rounded-xl border-gray-100 font-bold">
+    <!-- CAMPO VISIBLE PARA MENSAJERÍA -->
+    <div class="md:col-span-2">
+        <label class="text-[10px] font-black uppercase text-gray-400 ml-1">🚚 Detalles de Mensajería</label>
+        <input type="text" id="p-mensajeria" placeholder="Ej: Gratis en La Habana, 5 USD periferia..." class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
+    </div>
+    
 
     <!-- SECCIÓN DE FOTOS (4 espacios) -->
     <div class="md:col-span-2 border-y py-4 my-2">
@@ -5046,6 +5066,118 @@ window.addEventListener('load', () => {
     // ... tus otros inits ...
 });
 
+async function magicPasteProduct() {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (!text) return alert("⚠️ El portapapeles está vacío.");
+
+        const cleanText = text.trim();
+        const lines = cleanText.split('\n').filter(line => line.trim() !== '');
+
+        // 1. NOMBRE (Primera línea limpia)
+        let nombre = lines[0].replace(/\*/g, '').trim();
+
+        // 2. PRECIO (Busca números grandes o 'usd')
+        const priceMatch = cleanText.match(/Precio\s*[:\s]*(\d+)|(\d+)\s*usd/i);
+        let precio = priceMatch ? (priceMatch[1] || priceMatch[2]) : "";
+
+        // 3. MENSAJERÍA (LÓGICA MEJORADA: Captura la frase completa)
+        let envio = "";
+        // Buscamos línea por línea alguna que hable de mensajería
+        for (let line of lines) {
+            const lower = line.toLowerCase();
+            if (lower.includes('mensajería') || lower.includes('envío') || lower.includes('transporte')) {
+                // Borramos la palabra "Mensajería:" del inicio y guardamos el resto
+                envio = line.replace(/^(mensajería|envío|transporte)\s*[:.-]*\s*/i, '').trim();
+                break; // Ya la encontramos, dejamos de buscar
+            }
+        }
+        // Si no encontró nada en las líneas, busca si dice "gratis" en algún lado
+        if (!envio && cleanText.toLowerCase().includes('gratis')) {
+            envio = "Gratis (Consultar zonas)";
+        }
+        if (!envio) envio = "Consultar"; // Valor por defecto
+
+        // 4. GARANTÍA
+        const warMatch = cleanText.match(/Garantía\s*[:\s]*(.+)/i);
+        let garantia = warMatch ? warMatch[1].trim() : "Sí";
+
+        // 5. CATEGORÍA AUTOMÁTICA
+        let cat = "VARIOS";
+        const lowerText = cleanText.toLowerCase();
+        if(lowerText.includes('lavadora') || lowerText.includes('secadora')) cat = "LAVADO";
+        else if(lowerText.includes('nevera') || lowerText.includes('freezer')) cat = "REFRIGERACIÓN";
+        else if(lowerText.includes('split') || lowerText.includes('aire')) cat = "CLIMATIZACIÓN";
+        else if(lowerText.includes('cocina') || lowerText.includes('horno')) cat = "COCINA";
+
+        // 6. RELLENAR EL FORMULARIO
+        document.getElementById('p-nombre').value = nombre;
+        document.getElementById('p-precio').value = precio;
+        document.getElementById('p-categoria').value = cat;
+        document.getElementById('p-garantia').value = garantia;
+        
+        // AQUI RELLENAMOS EL NUEVO CAMPO VISIBLE
+        document.getElementById('p-mensajeria').value = envio; 
+
+        // Comisión sugerida
+        document.getElementById('p-comision').value = (precio > 100) ? 15 : 5;
+
+        // Descripción en Editor
+        if (typeof quill !== 'undefined') {
+            quill.root.innerHTML = cleanText.replace(/\n/g, '<br>');
+        }
+
+    } catch (err) {
+        console.error(err);
+        alert("⚠️ Error al leer portapapeles.");
+    }
+}
+
+// --- SISTEMA DE PERSISTENCIA DE TASA ---
+
+// 1. Ejecutar al cargar la página
+window.addEventListener('load', () => {
+    initCurrencyPersistence();
+});
+
+function initCurrencyPersistence() {
+    // Intentar recuperar de la memoria
+    const savedRate = localStorage.getItem('pth_daily_rate');
+    
+    // Si existe, actualizamos la variable global y el input visual
+    if (savedRate) {
+        globalCUPRate = parseFloat(savedRate);
+        const inputRate = document.getElementById('daily-rate');
+        if (inputRate) inputRate.value = savedRate;
+        console.log("Tasa recuperada:", savedRate);
+    } else {
+        // Si no existe, usamos 450 por defecto
+        globalCUPRate = 450;
+        const inputRate = document.getElementById('daily-rate');
+        if (inputRate) inputRate.value = "450";
+    }
+}
+
+// 2. Modificar la función updateGlobalRate existente
+function updateGlobalRate(val) {
+    if(!val) return;
+    globalCUPRate = parseFloat(val);
+    
+    // GUARDAR EN MEMORIA PARA SIEMPRE (Hasta que borres caché)
+    localStorage.setItem('pth_daily_rate', val);
+    
+    // Refrescar vistas
+    if(!document.getElementById('sec-catalogo').classList.contains('hidden')) {
+        renderProducts();
+    }
+    if(!document.getElementById('sec-admin-master').classList.contains('hidden')) {
+        renderAdminCortes();
+    }
+    
+    // Feedback visual opcional
+    // alert("Tasa actualizada a: " + val); 
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
@@ -5213,5 +5345,7 @@ window.addEventListener('load', () => {
         </div>
     </div>
 </div>
+
+
 </body>
 </html>
