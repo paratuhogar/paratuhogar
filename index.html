@@ -5712,25 +5712,51 @@ async function loadPendingGestores() {
             <td class="p-4 font-bold text-primary">${g.nombre}</td>
             <td class="p-4 font-medium">${g.telefono}</td>
             <td class="p-4 text-right">
-                <button onclick="approveGestor('${g.id}', 'activo')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600 transition-all">Activar</button>
+                <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600 transition-all shadow-sm">Activar</button>
                 <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-100 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-red-500 hover:text-white transition-all ml-1">Rechazar</button>
             </td>
         </tr>
     `).join('');
 }
 
-// 2. Función para cambiar el estado en Supabase
-async function approveGestor(id, nuevoEstado) {
-    const { error } = await supabaseClient
+async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
+    // 1. Actualizar en Supabase
+    const { data, error } = await supabaseClient
         .from('gestores')
         .update({ estado: nuevoEstado })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
-    if (!error) {
-        alert(nuevoEstado === 'activo' ? "✅ Gestor activado correctamente" : "❌ Solicitud rechazada");
-        loadPendingGestores(); // Refrescar lista
-    } else {
-        alert("Error al procesar: " + error.message);
+    if (error) {
+        alert("Error: " + error.message);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        // 2. Si el estado es "activo", disparamos el WhatsApp
+        if (nuevoEstado === 'activo' && telefonoGestor) {
+            
+            // Limpiar el número (quitar espacios, símbolos o el + para la URL)
+            const numLimpio = telefonoGestor.replace(/\D/g, '');
+            
+            // Crear el mensaje personalizado
+            const mensaje = encodeURIComponent(
+                `👋 ¡Hola ${nombreGestor}! Tu cuenta en *paratuhogar* ha sido aprobada con éxito. \n\n` +
+                `🚀 Ya puedes iniciar sesión y empezar a generar tus enlaces de venta. \n\n` +
+                `¡Bienvenido al equipo! ✨`
+            );
+
+            // Abrir WhatsApp en una pestaña nueva
+            window.open(`https://wa.me/${numLimpio}?text=${mensaje}`, '_blank');
+            
+            alert(`✅ Gestor aprobado. Se ha abierto WhatsApp para notificar a ${nombreGestor}.`);
+        } else {
+            alert("❌ Solicitud rechazada.");
+        }
+
+        // 3. Refrescar la interfaz
+        loadPendingGestores();
+        if(typeof loadAdminData === 'function') loadAdminData();
     }
 }
 
