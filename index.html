@@ -1248,50 +1248,58 @@
     const isAdmin = urlParams.get('admin') === 'true';
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
-    window.addEventListener('load', () => {
+    // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN (CORREGIDA PARA CLIENTES) ---
+window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // 1. Si viene un link corto (?s=), procesarlo y no hacer nada más (él redireccionará)
+    if (urlParams.has('s')) {
         checkShortLinks();
-        // 1. Inicializar editor
-        if(document.getElementById('editor-container')) {
-            quill = new Quill('#editor-container', {
-                theme: 'snow',
-                placeholder: 'Descripción...',
-                modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
-            });
-        }
+        return; 
+    }
 
-        // 2. INTENTAR RECUPERAR SESIÓN GUARDADA (GESTOR)
-        const savedSession = localStorage.getItem('pth_session');
-        
-        if (savedSession) {
-            // SI HAY SESIÓN, SALTAMOS LOGIN Y CONFIGURAMOS TODO
-            const s = JSON.parse(savedSession);
-            document.getElementById('login-overlay').classList.add('hidden');
-            window.currentUserData = s.data || {}; 
-            setupSession(s.name, s.isAdmin);
-        } else {
-            // SI ES UN CLIENTE (NO LOGUEADO)
-            loadProducts();
-            // Nota: Aquí NO activamos las herramientas de marketing para mantener la web limpia para el cliente
-        }
+    // 2. Si la URL tiene 'search' o 'gestor', es un cliente: entrar directo
+    if (urlParams.has('search') || urlParams.has('gestor')) {
+        enterAsClient(); // Esta función oculta el login y carga los productos
+    }
 
-        // 1. Iniciar el sistema que guarda lo que escribes por si se va la luz
-        initAutoSaveSystem(); 
-
-        // 2. Cargar la base de datos de clientes para el buscador
-        loadClientCRM();      
-
-        // 3. Permitir enviar el formulario pulsando ENTER
-        const formInputs = document.querySelectorAll('#checkout-form input, #checkout-form textarea');
-        formInputs.forEach(input => {
-            input.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter' && !e.shiftKey) { 
-                    e.preventDefault();
-                    document.getElementById('final-submit-btn').click();
-                }
-            });
+    // 3. Inicializar editor
+    if(document.getElementById('editor-container')) {
+        quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: 'Descripción...',
+            modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
         });
-        // ===============================================
+    }
+
+    // 4. Intentar recuperar sesión de GESTOR
+    const savedSession = localStorage.getItem('pth_session');
+    if (savedSession) {
+        const s = JSON.parse(savedSession);
+        document.getElementById('login-overlay').classList.add('hidden');
+        window.currentUserData = s.data || {}; 
+        setupSession(s.name, s.isAdmin);
+    } else {
+        // Si no hay sesión y no entramos como cliente arriba, cargamos productos por si acaso
+        if (!urlParams.has('search') && !urlParams.has('gestor')) {
+            loadProducts();
+        }
+    }
+
+    initAutoSaveSystem(); 
+    loadClientCRM();      
+
+    // Manejo de ENTER en el formulario
+    const formInputs = document.querySelectorAll('#checkout-form input, #checkout-form textarea');
+    formInputs.forEach(input => {
+        input.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault();
+                document.getElementById('final-submit-btn').click();
+            }
+        });
     });
+});
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
     let referrerData = null;
@@ -1833,6 +1841,12 @@ function filterMyOrders() {
             </div>
         </div>`;
     }).join('');
+    const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('search') && filtered.length > 0) {
+    // Abrir el detalle del primer producto encontrado automáticamente si es una búsqueda específica
+    if (filtered.length === 1) {
+        openDetail(filtered[0].nombre);
+    }
 }
 
     // 3. DETALLE DE PRODUCTO
