@@ -1691,28 +1691,46 @@ function filterMyOrders() {
     // 2. CARGA DE PRODUCTOS
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
     async function loadProducts() {
-        try {
-            const { data, error } = await supabaseClient
-                .from('productos')
-                .select('*')
-                .order('nombre', { ascending: true });
+    try {
+        const { data, error } = await supabaseClient
+            .from('productos')
+            .select('*')
+            .order('nombre', { ascending: true });
 
-            if (error) throw error;
+        if (error) throw error;
 
-            productosRaw = data;
+        productosRaw = data;
+        
+        // A. Generar Categorías Automáticamente
+        renderCategories();
+        
+        // B. Renderizar Productos
+        renderProducts();
+
+        // === NUEVO: LÓGICA PARA ABRIR PRODUCTO AUTOMÁTICAMENTE ===
+        const urlParams = new URLSearchParams(window.location.search);
+        const productoEnEnlace = urlParams.get('search');
+
+        if (productoEnEnlace) {
+            // Buscamos si el producto del enlace existe en lo que bajamos de la base de datos
+            const existe = productosRaw.find(p => p.nombre === productoEnEnlace);
             
-            // A. Generar Categorías Automáticamente
-            renderCategories();
-            
-            // B. Renderizar Productos
-            renderProducts();
-
-        } catch (e) { 
-            console.error("Error cargando:", e);
-            document.getElementById('productos-container').innerHTML = 
-                `<div class="col-span-full py-10 text-center text-red-500">Error de conexión.</div>`; 
+            if (existe) {
+                // Usamos un pequeño retraso (500ms) para que la página cargue visualmente 
+                // antes de que salte la ventana del producto.
+                setTimeout(() => {
+                    openDetail(productoEnEnlace);
+                }, 500);
+            }
         }
+        // ========================================================
+
+    } catch (e) { 
+        console.error("Error cargando:", e);
+        document.getElementById('productos-container').innerHTML = 
+            `<div class="col-span-full py-10 text-center text-red-500">Error de conexión.</div>`; 
     }
+}
 
     // NUEVA FUNCIÓN: DIBUJAR PESTAÑAS DE CATEGORÍA
     function renderCategories() {
