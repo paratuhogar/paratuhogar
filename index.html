@@ -1252,15 +1252,21 @@
 window.addEventListener('load', () => {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // 1. Si viene un link corto (?s=), procesarlo y no hacer nada más (él redireccionará)
+    // 1. Procesar link corto
     if (urlParams.has('s')) {
         checkShortLinks();
         return; 
     }
 
-    // 2. Si la URL tiene 'search' o 'gestor', es un cliente: entrar directo
+    // 2. DETECTAR CLIENTE Y RELLENAR BUSCADOR
     if (urlParams.has('search') || urlParams.has('gestor')) {
-        enterAsClient(); // Esta función oculta el login y carga los productos
+        const busquedaUrl = urlParams.get('search');
+        if (busquedaUrl) {
+            // ESTA LÍNEA ES LA MÁS IMPORTANTE:
+            // Pone el nombre del producto en el cuadro de búsqueda
+            document.getElementById('search-bar').value = decodeURIComponent(busquedaUrl);
+        }
+        enterAsClient(); 
     }
 
     // 3. Inicializar editor
