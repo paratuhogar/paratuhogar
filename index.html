@@ -924,6 +924,30 @@
         </div>
     </div>
 </div>
+
+<!-- 1. En la lista de botones de pestañas, añade este: -->
+<button onclick="changeAdminTab('trafico')" id="tab-trafico" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Tráfico</button>
+
+<!-- 2. Al final de la sección sec-admin-master, justo ANTES del </section>, pega esto: -->
+<div id="cnt-trafico" class="tab-cnt hidden space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="material-symbols-outlined text-primary">analytics</span>
+                <h4 class="font-black uppercase text-xs text-gray-700 dark:text-white">Clics por Agente</h4>
+            </div>
+            <div id="list-trafico-gestores" class="space-y-4"></div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="material-symbols-outlined text-secondary">devices</span>
+                <h4 class="font-black uppercase text-xs text-gray-700 dark:text-white">Dispositivos</h4>
+            </div>
+            <div id="list-trafico-dispositivos" class="space-y-4"></div>
+        </div>
+    </div>
+</div>
+
 </section>
 
     <!-- Footer -->
@@ -1171,6 +1195,44 @@
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    async function checkShortLinks() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('s');
+
+    if (slug) {
+        const { data, error } = await supabaseClient
+            .from('short_links')
+            .select('*')
+            .eq('slug', slug)
+            .single();
+
+        if (data && !error) {
+            // 1. Registrar analítica para el Admin
+            const ua = navigator.userAgent;
+            await supabaseClient.from('link_analytics').insert([{
+                slug: slug,
+                device_type: /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio',
+                os: ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil",
+                browser: ua.includes("Chrome") ? "Chrome" : ua.includes("Firefox") ? "Firefox" : "Safari",
+                referrer: document.referrer || 'Directo'
+            }]);
+
+            // 2. Extraer datos del link original
+            const originalParams = new URLSearchParams(data.original_url.split('?')[1]);
+            const searchTag = originalParams.get('search');
+            
+            // 3. Guardar atribución del gestor en memoria (Last Click Wins)
+            localStorage.setItem('pth_referrer', JSON.stringify({
+                nombre: data.gestor,
+                telefono: originalParams.get('tel') || "",
+                timestamp: new Date().getTime()
+            }));
+
+            // 4. Redirigir a la búsqueda limpia
+            window.location.href = window.location.origin + window.location.pathname + "?search=" + encodeURIComponent(searchTag);
+        }
+    }
+}
 
     const MASTER_KEY = "HOGAR2025"; 
     const ADMIN_SECRET_KEY = "PRO_ADMIN_2025"; // Solo para el dueño
@@ -1187,6 +1249,7 @@
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
     window.addEventListener('load', () => {
+        checkShortLinks();
         // 1. Inicializar editor
         if(document.getElementById('editor-container')) {
             quill = new Quill('#editor-container', {
@@ -2546,6 +2609,38 @@ function renderAnaliticaGestores(pedidos) {
     `).join('');
 }
 
+async function loadTrafficAnalytics() {
+    const { data: analytics, error } = await supabaseClient
+        .from('link_analytics')
+        .select('*, short_links(gestor)');
+
+    if (error || !analytics) return;
+
+    const gClicks = {};
+    analytics.forEach(row => {
+        const name = row.short_links?.gestor || 'Directo/Eliminado';
+        gClicks[name] = (gClicks[name] || 0) + 1;
+    });
+
+    document.getElementById('list-trafico-gestores').innerHTML = Object.entries(gClicks)
+        .sort((a,b) => b[1] - a[1])
+        .map(([name, count]) => `
+            <div class="flex justify-between items-center text-[11px] border-b dark:border-gray-700 pb-2">
+                <span class="font-bold text-gray-600 dark:text-gray-300 uppercase">${name}</span>
+                <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-black">${count} CLICS</span>
+            </div>
+        `).join('');
+
+    const devices = {};
+    analytics.forEach(row => { devices[row.device_type] = (devices[row.device_type] || 0) + 1; });
+    document.getElementById('list-trafico-dispositivos').innerHTML = Object.entries(devices).map(([dev, count]) => `
+        <div class="flex justify-between items-center text-[11px]">
+            <span class="font-bold text-gray-500 uppercase">${dev}</span>
+            <span class="font-black text-primary">${count}</span>
+        </div>
+    `).join('');
+}
+
 function changeAdminTab(tab) {
         // 1. OCULTAR TODOS
         document.querySelectorAll('.tab-cnt').forEach(c => {
@@ -2575,6 +2670,9 @@ function changeAdminTab(tab) {
             btn.classList.add('active'); // Pone azul
             btn.classList.remove('text-gray-400'); // Quita gris
         }
+        if(tab === 'trafico') {
+        loadTrafficAnalytics();
+    }
     }
 
 // Registro de estadísticas
@@ -3086,36 +3184,33 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     }
 
     // Función para copiar texto de venta profesional con enlace de afiliado
-    function copySmartOffer() {
-        if(!selectedProduct) return;
-        
-        const gestor = window.gestorName || '';
-        const userData = window.currentUserData || {}; 
-        
-        // Creamos el enlace que lleva directo al producto y marca al gestor
-        let trackingLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}`;
-        if (gestor) trackingLink += `&gestor=${encodeURIComponent(gestor)}`;
-        if (userData.telefono) trackingLink += `&tel=${userData.telefono}`;
+    async function copySmartOffer(btnElement) {
+    if(!selectedProduct) return;
+    const gestor = window.gestorName || '';
+    const userData = window.currentUserData || {};
+    const level = window.currentGestorLevel || 0;
 
-        // Texto persuasivo para redes sociales
-        const textoVenta = 
-`🔥 *¡OFERTA ESPECIAL!* 🔥
-📦 Modelo: *${selectedProduct.nombre}*
+    let baseUrl = window.location.origin + window.location.pathname;
+    let fullUrl = `${baseUrl}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${userData.telefono || ''}`;
+    let finalLink = fullUrl;
 
-💰 Precio: *$${selectedProduct.precio} USD*
-🚚 Mensajería: ${selectedProduct.mensajeria || 'A consultar'}
-🛡️ Garantía: ${selectedProduct.garantia || 'Garantía Incluida'}
+    if (level >= 2 && gestor) {
+        let slug = Math.random().toString(36).substring(2, 8);
+        if (level >= 3) slug = (selectedProduct.nombre.substring(0,4) + "-" + gestor.substring(0,3)).toLowerCase().replace(/\s+/g, '');
 
-👇 *Ver fotos y detalles aquí:*
-${trackingLink}
-
-✅ *Pedir ahora por WhatsApp:*
-https://wa.me/${userData.telefono || '5356071095'}?text=${encodeURIComponent('Hola, me interesa el equipo: ' + selectedProduct.nombre)}`;
-
-        navigator.clipboard.writeText(textoVenta).then(() => {
-            alert("¡Oferta copiada! Pégala en WhatsApp o Facebook.");
-        });
+        const { error } = await supabaseClient.from('short_links').upsert([{
+            slug: slug, original_url: fullUrl, gestor: gestor, is_custom: level >= 3
+        }]);
+        if (!error) finalLink = `${window.location.origin}${window.location.pathname}?s=${slug}`;
     }
+
+    const texto = `🔥 *OFERTA* 🔥\n📦 *${selectedProduct.nombre}*\n💰 *$${selectedProduct.precio} USD*\n👇 Detalles:\n${finalLink}`;
+    navigator.clipboard.writeText(texto).then(() => {
+        const original = btnElement.innerHTML;
+        btnElement.innerHTML = "¡Copiado!";
+        setTimeout(() => btnElement.innerHTML = original, 2000);
+    });
+}
 
 // ==========================================
 // NUEVO: MÓDULO PRO PARA GESTORES 2.0
@@ -3280,6 +3375,7 @@ async function loadAnalyticsPro(nombreGestor) {
         }
     }
 }
+
 
 // --- 3. LÓGICA DE REPORTES (BUZÓN) ---
 
