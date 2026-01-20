@@ -726,6 +726,7 @@
         <button onclick="changeAdminTab('pagos')" id="tab-pagos" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Corte Sábado</button>
         <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
         <button onclick="changeAdminTab('analitica')" id="tab-analitica" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Análisis</button>
+        <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
     </div>
 
     <!-- Contenido: Logística (CON EL ID CORREGIDO) -->
@@ -932,6 +933,23 @@
             </h4>
             <div id="list-analitica-gestores" class="space-y-3"></div>
         </div>
+    </div>
+</div>
+
+<div id="cnt-aprobaciones" class="tab-cnt hidden space-y-4">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                <tr>
+                    <th class="p-4">Nombre</th>
+                    <th class="p-4">WhatsApp</th>
+                    <th class="p-4 text-right">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-aprobaciones" class="divide-y dark:divide-gray-700">
+                <!-- Se llena con JS -->
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -1245,7 +1263,9 @@
 }
 
     const MASTER_KEY = "HOGAR2025"; 
-    const ADMIN_SECRET_KEY = "PRO_ADMIN_2025"; // Solo para el dueño
+
+    const _0xaf21 = "NTIwMl9OSU1EQV9PUlA="; 
+    const getAccess = () => atob(_0xaf21).split('').reverse().join('');
 
     
     let productosRaw = [], cart = [], selectedProduct = null;
@@ -1386,51 +1406,7 @@ function openLoginModal() {
     }
 
     // INICIO DE SESIÓN
-    // 2. Proceso de Login (CORREGIDO PARA ADMIN)
-    // 2. Proceso de Login (CORREGIDO Y BLINDADO)
-    async function processLogin() {
-        const userInput = document.getElementById('log-user');
-        const passInput = document.getElementById('log-pass');
-        
-        const user = userInput ? userInput.value.trim() : "";
-        const pass = passInput ? passInput.value.trim() : "";
-
-        // CASO A: ADMINISTRADOR (Dueño) - Prioridad 1
-        // Verifica la contraseña maestra INCLUSO si el usuario está vacío
-        if (pass === ADMIN_SECRET_KEY) { 
-            closeLogin();
-            saveSessionToMemory("Administrador", true, {}); 
-            setupSession("Administrador", true);
-            return;
-        }
-
-        // CASO B: GESTOR - Validación
-        if (!user || !pass) {
-            return alert("Por favor ingresa usuario y contraseña.");
-        }
-
-        // CASO C: Verificar en Base de Datos
-        try {
-            const { data, error } = await supabaseClient
-                .from('gestores')
-                .select('*')
-                .eq('nombre', user)
-                .eq('password', pass)
-                .single();
-
-            if (error || !data) {
-                alert("❌ Usuario o contraseña incorrectos.");
-            } else {
-                closeLogin();
-                window.currentUserData = data; 
-                saveSessionToMemory(data.nombre, false, data);
-                setupSession(data.nombre, false);
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Error de conexión al intentar loguearse.");
-        }
-    }
+    
 
     // Función auxiliar para guardar en el navegador
     function saveSessionToMemory(name, isAdmin, data) {
@@ -2423,6 +2399,7 @@ async function loadAdminData() {
         renderAnaliticaZombies(pedidos, productos);
         renderAnaliticaConversion(pedidos, vistas || []);
     }
+    loadPendingGestores();
 }
 
 function updateAdminStats(pedidos) {
@@ -3971,42 +3948,62 @@ window.doLogout = function() {
     }
 
     // 2. Proceso de Login
-    async function processLogin() {
-        const user = document.getElementById('log-user').value.trim();
-        const pass = document.getElementById('log-pass').value.trim();
+    // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
+async function processLogin() {
+    const userInput = document.getElementById('log-user');
+    const passInput = document.getElementById('log-pass');
+    
+    const user = userInput ? userInput.value.trim() : "";
+    const pass = passInput ? passInput.value.trim() : "";
 
-        if (!user || !pass) return alert("Por favor ingresa usuario y contraseña");
-
-        // A. Verificar si es ADMIN (Dueño)
-        if (pass === ADMIN_SECRET_KEY) {
-            closeLogin();
-            saveSessionToMemory("Administrador", true, {}); 
-            setupSession("Administrador", true);
-            return;
-        }
-
-        // B. Verificar en Base de Datos (Gestores)
-        try {
-            const { data, error } = await supabaseClient
-                .from('gestores')
-                .select('*')
-                .eq('nombre', user)
-                .eq('password', pass)
-                .single();
-
-            if (error || !data) {
-                alert("❌ Usuario o contraseña incorrectos.");
-            } else {
-                closeLogin();
-                window.currentUserData = data; 
-                saveSessionToMemory(data.nombre, false, data);
-                setupSession(data.nombre, false);
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Error de conexión al intentar loguearse.");
-        }
+    // 1. CASO A: ADMINISTRADOR (Prioridad 1)
+    // Usamos getAccess() para que nadie vea la clave real en el código
+    if (pass === getAccess()) { 
+        closeLogin();
+        saveSessionToMemory("Administrador", true, {}); 
+        setupSession("Administrador", true);
+        return;
     }
+
+    // 2. CASO B: GESTOR - Validación de campos vacíos
+    if (!user || !pass) {
+        return alert("Por favor ingresa usuario y contraseña.");
+    }
+
+    // 3. CASO C: Verificar en Base de Datos
+    try {
+        const { data, error } = await supabaseClient
+            .from('gestores')
+            .select('*')
+            .eq('nombre', user)
+            .eq('password', pass)
+            .single();
+
+        if (error || !data) {
+            alert("❌ Usuario o contraseña incorrectos.");
+        } else {
+            
+            // --- NUEVO: VERIFICACIÓN DE ESTADO (PERMISOS) ---
+            if (data.estado === 'pendiente') {
+                alert("⏳ Tu cuenta aún está en revisión. El administrador te avisará cuando puedas entrar.");
+                return; // Bloqueamos el acceso hasta que tú lo apruebes
+            }
+            if (data.estado === 'bloqueado') {
+                alert("🚫 Tu cuenta ha sido suspendida. Contacta a soporte.");
+                return;
+            }
+
+            // Si el estado es 'activo', procedemos con el login
+            closeLogin();
+            window.currentUserData = data; 
+            saveSessionToMemory(data.nombre, false, data);
+            setupSession(data.nombre, false);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error de conexión al intentar loguearse.");
+    }
+}
 
     // 3. Proceso de Registro
     async function processRegister() {
@@ -5693,6 +5690,48 @@ function getGlobalTrendRadar(todosLosPedidos) {
         .sort(([, a], [, b]) => b - a)
         .slice(0, 3)
         .map(([name, count]) => ({ name, count }));
+}
+
+// 1. Cargar gestores pendientes (Llamar esto dentro de loadAdminData)
+async function loadPendingGestores() {
+    const { data, error } = await supabaseClient
+        .from('gestores')
+        .select('*')
+        .eq('estado', 'pendiente');
+
+    const container = document.getElementById('list-admin-aprobaciones');
+    if (!container) return;
+
+    if (!data || data.length === 0) {
+        container.innerHTML = `<tr><td colspan="3" class="p-10 text-center text-gray-400 text-xs font-bold uppercase">No hay solicitudes pendientes.</td></tr>`;
+        return;
+    }
+
+    container.innerHTML = data.map(g => `
+        <tr class="text-xs border-b dark:border-gray-700">
+            <td class="p-4 font-bold text-primary">${g.nombre}</td>
+            <td class="p-4 font-medium">${g.telefono}</td>
+            <td class="p-4 text-right">
+                <button onclick="approveGestor('${g.id}', 'activo')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600 transition-all">Activar</button>
+                <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-100 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-red-500 hover:text-white transition-all ml-1">Rechazar</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 2. Función para cambiar el estado en Supabase
+async function approveGestor(id, nuevoEstado) {
+    const { error } = await supabaseClient
+        .from('gestores')
+        .update({ estado: nuevoEstado })
+        .eq('id', id);
+
+    if (!error) {
+        alert(nuevoEstado === 'activo' ? "✅ Gestor activado correctamente" : "❌ Solicitud rechazada");
+        loadPendingGestores(); // Refrescar lista
+    } else {
+        alert("Error al procesar: " + error.message);
+    }
 }
 
 </script>
