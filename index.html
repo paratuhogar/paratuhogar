@@ -132,6 +132,11 @@
                 <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">0</span>
             </button>
 
+            <!-- BOTÓN DE LOGIN (LA PERSONITA) -->
+            <button onclick="openLoginModal()" id="btn-login-open" class="flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all" title="Entrar como Agente">
+                <span class="material-symbols-outlined">person</span>
+            </button>
+
             <!-- Configuración / Gestor -->
             <button id="btn-open-gen" onclick="openGestorGen()" class="hidden flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
                 <span class="material-symbols-outlined">settings</span>
@@ -514,35 +519,36 @@
                 <!-- ACCIONES DEL GESTOR -->
 <div class="mt-auto space-y-3 pt-4 border-t border-gray-100 dark:border-gray-700">
     
-    <!-- Fila 1: Herramientas de Marketing (Descargar y Copiar) -->
-     <!-- Fila 1: Herramientas de Marketing -->
     <!-- Fila de Herramientas de Marketing (DISEÑO LIMPIO Y ÚNICO) -->
-<div class="flex gap-2 flex-wrap mb-4">
-    
-    <!-- Botón 1: Copiar Info (Nivel 0) -->
-    <button onclick="copySimpleDesc(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-500 transition-all text-gray-500 gap-1 shadow-sm">
-        <span class="material-symbols-outlined text-xl">description</span>
-        Copiar Info
-    </button>
+     <div id="marketing-tools-container" class="hidden"> <!-- Añadimos este ID y clase hidden -->
 
-    <!-- Botón 2: Descargar Foto (Nivel 0) -->
-    <button onclick="downloadProductImage(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
-        <span class="material-symbols-outlined text-xl">download</span>
-        Foto
-    </button>
-    
-    <!-- Botón 3: Copiar Oferta (Nivel 0) -->
-    <button onclick="copySmartOffer(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
-        <span class="material-symbols-outlined text-xl">content_copy</span>
-        Oferta
-    </button>
+        <div class="flex gap-2 flex-wrap mb-4">
+            
+            <!-- Botón 1: Copiar Info (Nivel 0) -->
+            <button onclick="copySimpleDesc(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-blue-400 hover:text-blue-500 transition-all text-gray-500 gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-xl">description</span>
+                Copiar Info
+            </button>
 
-    <!-- Botón 4: STORY MAKER (Nivel 1 - Se controla por JS) -->
-    <button id="btn-story-maker" onclick="generateStoryImage()" class="flex-1 min-w-[80px] py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
-        <span class="material-symbols-outlined text-xl">fit_screen</span>
-        Crear Story
-    </button>
-</div>
+            <!-- Botón 2: Descargar Foto (Nivel 0) -->
+            <button onclick="downloadProductImage(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-xl">download</span>
+                Foto
+            </button>
+            
+            <!-- Botón 3: Copiar Oferta (Nivel 0) -->
+            <button onclick="copySmartOffer(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
+                <span class="material-symbols-outlined text-xl">content_copy</span>
+                Oferta
+            </button>
+
+            <!-- Botón 4: STORY MAKER (Nivel 1 - Se controla por JS) -->
+            <button id="btn-story-maker" onclick="generateStoryImage()" class="flex-1 min-w-[80px] py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
+                <span class="material-symbols-outlined text-xl">fit_screen</span>
+                Crear Story
+            </button>
+        </div>
+    </div>
 
     <!-- Fila 2: ACCIÓN PRINCIPAL (Hacer la Orden) -->
     <!-- Este botón mantiene la función addItemToCart() para seguir el flujo normal de venta -->
@@ -577,6 +583,8 @@
 
                 <form id="checkout-form" class="space-y-4">
 
+        <div id="gestor-checkout-tools" class="hidden space-y-4 mb-4"> <!-- Añadimos este ID y clase hidden -->
+
                 <!-- 1. BOTÓN DE VELOCIDAD (PEGAR WHATSAPP) -->
                 <div class="flex gap-2 mb-2">
                     <button type="button" onclick="magicPaste()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-md flex items-center justify-center gap-2 hover:scale-105 transition-transform">
@@ -598,6 +606,8 @@
                         <!-- Se llena con JS -->
                     </datalist>
                 </div>
+
+            </div>
 
                 <!-- 3. CAMPOS DE TEXTO (SOLO UNA VEZ) -->
                 <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold" required>
@@ -1146,7 +1156,7 @@
 </div>
 
 <!-- === PANTALLA DE ACCESO (LOGIN / REGISTRO) === -->
-<div id="login-overlay" class="fixed inset-0 z-[9999] bg-background-light dark:bg-background-dark flex flex-col items-center justify-center p-6 transition-all duration-500 overflow-y-auto">
+<div id="login-overlay" class="fixed inset-0 z-[9999] bg-background-light dark:bg-background-dark flex flex-col items-center justify-center p-6 transition-all duration-500 overflow-y-auto hidden">
     <div class="w-full max-w-sm text-center space-y-6 my-auto">
         
         <!-- Logo -->
@@ -1248,64 +1258,45 @@
     const isAdmin = urlParams.get('admin') === 'true';
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
-    // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN (CORREGIDA PARA CLIENTES) ---
-window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    // 1. Procesar link corto
-    if (urlParams.has('s')) {
-        checkShortLinks();
-        return; 
-    }
-
-    // 2. DETECTAR CLIENTE Y RELLENAR BUSCADOR
-    if (urlParams.has('search') || urlParams.has('gestor')) {
-        const busquedaUrl = urlParams.get('search');
-        if (busquedaUrl) {
-            // ESTA LÍNEA ES LA MÁS IMPORTANTE:
-            // Pone el nombre del producto en el cuadro de búsqueda
-            document.getElementById('search-bar').value = decodeURIComponent(busquedaUrl);
+    window.addEventListener('load', () => {
+        // 1. Inicializar editor Quill
+        if(document.getElementById('editor-container')) {
+            quill = new Quill('#editor-container', {
+                theme: 'snow',
+                placeholder: 'Descripción...',
+                modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
+            });
         }
-        enterAsClient(); 
-    }
 
-    // 3. Inicializar editor
-    if(document.getElementById('editor-container')) {
-        quill = new Quill('#editor-container', {
-            theme: 'snow',
-            placeholder: 'Descripción...',
-            modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
-        });
-    }
+        // 2. Intentar recuperar sesión
+        const savedSession = localStorage.getItem('pth_session');
+        
+        if (savedSession) {
+            const s = JSON.parse(savedSession);
+            setupSession(s.name, s.isAdmin);
+        } else {
+    // 1. Ocultamos la ventana de login por si acaso
+    const overlay = document.getElementById('login-overlay');
+    if (overlay) overlay.classList.add('hidden'); 
+    
+    // 2. Limpiamos estados
+    window.gestorName = null;
+    window.isAdmin = false;
+    
+    // 3. MOSTRAR EL BOTÓN DE LA PERSONITA (Este es el paso clave)
+    const btnLogin = document.getElementById('btn-login-open');
+    if (btnLogin) btnLogin.classList.remove('hidden'); 
+    
+    // 4. Ocultamos cosas de gestor/admin que no deben verse
+    if (document.getElementById('admin-nav')) document.getElementById('admin-nav').classList.add('hidden');
+    if (document.getElementById('btn-logout')) document.getElementById('btn-logout').classList.add('hidden');
+    
+    loadProducts();
+}
 
-    // 4. Intentar recuperar sesión de GESTOR
-    const savedSession = localStorage.getItem('pth_session');
-    if (savedSession) {
-        const s = JSON.parse(savedSession);
-        document.getElementById('login-overlay').classList.add('hidden');
-        window.currentUserData = s.data || {}; 
-        setupSession(s.name, s.isAdmin);
-    } else {
-        // Si no hay sesión y no entramos como cliente arriba, cargamos productos por si acaso
-        if (!urlParams.has('search') && !urlParams.has('gestor')) {
-            loadProducts();
-        }
-    }
-
-    initAutoSaveSystem(); 
-    loadClientCRM();      
-
-    // Manejo de ENTER en el formulario
-    const formInputs = document.querySelectorAll('#checkout-form input, #checkout-form textarea');
-    formInputs.forEach(input => {
-        input.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault();
-                document.getElementById('final-submit-btn').click();
-            }
-        });
+        initAutoSaveSystem(); 
+        loadClientCRM();      
     });
-});
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
     let referrerData = null;
@@ -1335,6 +1326,18 @@ window.addEventListener('load', () => {
             }
         }
     }
+// Función para abrir la ventana de inicio de sesión manualmente
+function openLoginModal() {
+    const loginOverlay = document.getElementById('login-overlay');
+    if (loginOverlay) {
+        loginOverlay.classList.remove('hidden');
+        // Asegurarnos de que inicie en la pestaña de "Entrar" y no "Registrarme"
+        if(typeof toggleLoginMode === 'function') toggleLoginMode('login');
+    } else {
+        console.error("Error: No se encontró el elemento login-overlay en el HTML");
+    }
+}
+
 
     // Ejecutar inmediatamente al cargar el script
     initReferralSystem();
@@ -1343,10 +1346,10 @@ window.addEventListener('load', () => {
 
     // Función para Clientes (Botón "Entrar como Cliente")
     function enterAsClient() {
-        document.getElementById('login-overlay').classList.add('hidden');
-        // Solo cargamos catálogo, sin sesión
-        loadProducts();
-    }
+    document.getElementById('login-overlay').classList.add('hidden');
+    // Si no se habían cargado los productos, los cargamos
+    if (productosRaw.length === 0) loadProducts();
+}
 
     // --- 1. LÓGICA DE ACCESO (LOGIN/REGISTRO) ---
     
@@ -1847,25 +1850,17 @@ function filterMyOrders() {
             </div>
         </div>`;
     }).join('');
-    const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('search') && filtered.length > 0) {
-    // Abrir el detalle del primer producto encontrado automáticamente si es una búsqueda específica
-    if (filtered.length === 1) {
-        openDetail(filtered[0].nombre);
-    }
-}}
+}
 
     // 3. DETALLE DE PRODUCTO
-    function openDetail(name) {
+    // 3. DETALLE DE PRODUCTO
+ function openDetail(name) {
     // Esto convierte el &quot; de nuevo en " para poder buscarlo en la lista de productos
     const nombreReal = name.replace(/&quot;/g, '"');
     selectedProduct = productosRaw.find(p => p.nombre === nombreReal);
     
-    if(!selectedProduct) return; // Si no lo encuentra, no hace nada
-    // 1. Buscar producto
-    selectedProduct = productosRaw.find(p => p.nombre === name);
+    if(!selectedProduct) return; 
     const p = selectedProduct;
-    if(!p) return;
 
     // 2. Registrar vista para analítica
     if (typeof registrarVistaAnalitica === "function") {
@@ -1874,8 +1869,6 @@ if (urlParams.has('search') && filtered.length > 0) {
 
     // 3. Llenar textos básicos
     document.getElementById('detail-name').innerText = p.nombre;
-    
-    // Usar innerHTML para descripción (HTML enriquecido)
     document.getElementById('detail-desc').innerHTML = p.descripcion || ''; 
 
     // 4. Badge de Ganancia (Solo Admin)
@@ -1919,25 +1912,33 @@ if (urlParams.has('search') && filtered.length > 0) {
         <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
     `).join('');
 
-    // --- 8. LÓGICA DE BLOQUEO DE STORY MAKER (NIVEL 1 REQUERIDO) ---
+    // --- 8. LÓGICA DE BLOQUEO DE STORY MAKER ---
     const btnStory = document.getElementById('btn-story-maker');
-    
-    // Obtenemos nivel global (si no existe, es 0)
     const currentLevel = window.currentGestorLevel || 0;
 
     if (btnStory) {
         if (currentLevel < 1) {
-            // BLOQUEAR (Gris y Candado)
             btnStory.onclick = () => alert("🔒 BLOQUEADO: Story Maker\n\nNecesitas Nivel 1 (3 ventas) para crear diseños automáticos.");
             btnStory.className = "flex-1 py-3 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center cursor-not-allowed gap-1";
             btnStory.innerHTML = `<span class="material-symbols-outlined text-xl">lock</span>Story Bloqueado`;
         } else {
-            // DESBLOQUEAR (Color y Función Original)
             btnStory.onclick = generateStoryImage;
             btnStory.className = "flex-1 py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20 cursor-pointer";
             btnStory.innerHTML = `<span class="material-symbols-outlined text-xl">fit_screen</span>Crear Story`;
         }
     }
+
+    // === NUEVA LÓGICA DE VISIBILIDAD (AÑADE ESTO) ===
+    const session = localStorage.getItem('pth_session');
+    const toolsContainer = document.getElementById('marketing-tools-container');
+    if (toolsContainer) {
+        if (session) {
+            toolsContainer.classList.remove('hidden'); // Marcel lo ve
+        } else {
+            toolsContainer.classList.add('hidden');    // El cliente no lo ve
+        }
+    }
+    // ===============================================
 
     // 9. Mostrar Modal
     document.getElementById('detail-modal').classList.remove('hidden');
@@ -2225,7 +2226,32 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
     }
 
-    function toggleCartModal(show) { document.getElementById('cart-modal').classList.toggle('hidden', !show); if(show) renderCart(); }
+    function toggleCartModal(show) {
+    const cartModal = document.getElementById('cart-modal');
+    if (!cartModal) return;
+
+    // 1. Abre o cierra el modal
+    cartModal.classList.toggle('hidden', !show);
+    
+    if(show) {
+        // 2. Dibuja los productos del carrito
+        renderCart();
+        
+        // 3. LÓGICA DE VISIBILIDAD DE HERRAMIENTAS GESTOR (Pegar y CRM)
+        const session = localStorage.getItem('pth_session');
+        const gestorTools = document.getElementById('gestor-checkout-tools');
+        
+        if (gestorTools) {
+            if (session) {
+                // Si Marcel está logueado, le mostramos el botón verde de "Pegar" y el buscador CRM
+                gestorTools.classList.remove('hidden');
+            } else {
+                // Si es un cliente, le escondemos esas herramientas profesionales
+                gestorTools.classList.add('hidden');
+            }
+        }
+    }
+}
     function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
     function toggleCurrency() { showInCUP = !showInCUP; document.getElementById('currency-label').innerText = showInCUP ? 'CUP' : 'USD'; renderProducts(); }
     
@@ -3304,9 +3330,9 @@ function renderProductsCustom(lista) {
         <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
             ${htmlComision}
             
-            // --- REEMPLAZA TU BLOQUE POR ESTE ---
+            
 
-            <!-- Imagen Clickable -->
+        
             <div onclick="openDetail('${nombreSeguro}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
                 <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
             </div>
