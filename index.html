@@ -2217,11 +2217,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     btn.disabled = true; 
     btn.innerText = "REGISTRANDO...";
 
-    // 1. Detectar si hay sesión iniciada (Gestor/Admin)
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session;
 
-    // 2. RECOGER DATOS DEL FORMULARIO
     const nombreC = document.getElementById('check-nombre').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
@@ -2230,7 +2228,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // 3. DETECTAR GESTOR (Para la Base de Datos, esto no cambia)
     let activeGestor = "Venta Directa";
     if (window.gestorName) {
         activeGestor = window.gestorName;
@@ -2239,7 +2236,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (referido) activeGestor = referido.nombre;
     }
 
-    // 4. CÁLCULOS MATEMÁTICOS
     let totalEquipo = 0;
     let totalMensajeria = 0;
     let totalComision = 0;
@@ -2259,27 +2255,30 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     const totalPagar = totalEquipo + totalMensajeria;
 
-    // 5. CONSTRUIR EL MENSAJE DE WHATSAPP (BLOQUE INTELIGENTE)
-    // Primero la parte que ven todos (Cliente y Gestor)
-    let mensajeFinal = 
-        `VALE DE VENTA%0A%0A` +
-        `💪 Nombre: ${nombreC}%0A%0A` +
-        `💪 CI: ${ciC}%0A%0A` +
-        `💪 Teléfono: ${telC}%0A%0A` +
-        `💪 Dirección: ${dirC}%0A%0A` +
-        `💪 Producto: ${encodeURIComponent(listaProductos.trim())}%0A%0A` +
-        `💪 Total a Pagar: ${totalPagar} USD%0A%0A` +
-        `-Precio equipo: ${totalEquipo} USD%0A` +
-        `-Mensajería: ${totalMensajeria} USD%0A%0A` +
-        `💪 Vuelto: ${vueltoC}%0A%0A`;
+    // --- CONSTRUCCIÓN DEL TEXTO (USAMOS \n PARA SALTOS DE LÍNEA) ---
+    // Construimos el mensaje como texto normal y lo codificamos AL FINAL
+    let mensajeRaw = 
+        `VALE DE VENTA\n\n` +
+        `💪 Nombre: ${nombreC}\n\n` +
+        `💪 CI: ${ciC}\n\n` +
+        `💪 Teléfono: ${telC}\n\n` +
+        `💪 Dirección: ${dirC}\n\n` +
+        `💪 Producto: ${listaProductos.trim()}\n\n` +
+        `💪 Total a Pagar: ${totalPagar} USD\n\n` +
+        `-Precio equipo: ${totalEquipo} USD\n` +
+        `-Mensajería: ${totalMensajeria} USD\n\n` +
+        `💪 Vuelto: ${vueltoC}\n\n`;
 
-    // SOLO si el usuario está LOGUEADO (es gestor), añadimos la comisión y el nombre
     if (isLogged) {
-        mensajeFinal += `💪 Comisión: ${totalComision} usd%0A%0A` +
-                        `💪 Gestor: ${activeGestor}`;
+        mensajeRaw += `💪 Comisión: ${totalComision} usd\n\n` +
+                      `💪 Gestor: ${activeGestor}`;
     }
 
-    // 6. GUARDAR EN BASE DE DATOS (Se guarda el gestor SIEMPRE, aunque el cliente no lo vea)
+    // --- PASO CRÍTICO: CODIFICAR TODO EL MENSAJE ---
+    // Esto convierte los #, espacios y emojis en códigos seguros para la URL
+    const mensajeCodificado = encodeURIComponent(mensajeRaw);
+
+    // GUARDAR EN BASE DE DATOS (Mismo proceso)
     const gruposPedidos = {};
     cart.forEach(item => {
         const prov = item.proveedor || 'General';
@@ -2314,8 +2313,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         return;
     }
 
-    // 7. ENVIAR WHATSAPP Y LIMPIAR
-    window.open(`https://wa.me/5356071095?text=${mensajeFinal}`, '_blank');
+    // AHORA ENVIAMOS EL MENSAJE CODIFICADO
+    window.open(`https://wa.me/5356071095?text=${mensajeCodificado}`, '_blank');
 
     setTimeout(() => {
         cart = [];
