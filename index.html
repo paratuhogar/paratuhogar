@@ -934,20 +934,49 @@
     </div>
 </div>
 
-<div id="cnt-aprobaciones" class="tab-cnt hidden space-y-4">
-    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                <tr>
-                    <th class="p-4">Nombre</th>
-                    <th class="p-4">WhatsApp</th>
-                    <th class="p-4 text-right">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="list-admin-aprobaciones" class="divide-y dark:divide-gray-700">
-                <!-- Se llena con JS -->
-            </tbody>
-        </table>
+<!-- Contenido: Gestión de Gestores -->
+<div id="cnt-aprobaciones" class="tab-cnt hidden space-y-8">
+    
+    <!-- BLOQUE 1: PENDIENTES -->
+    <div class="space-y-4">
+        <h4 class="text-xs font-black uppercase text-orange-500 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">hourglass_empty</span> Solicitudes Pendientes
+        </h4>
+        <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                    <tr>
+                        <th class="p-4">Nombre</th>
+                        <th class="p-4">WhatsApp</th>
+                        <th class="p-4 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="list-admin-aprobaciones" class="divide-y dark:divide-gray-700">
+                    <!-- JS inyecta aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- BLOQUE 2: ACTIVOS -->
+    <div class="space-y-4">
+        <h4 class="text-xs font-black uppercase text-emerald-500 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">verified_user</span> Gestores Activos (Equipo)
+        </h4>
+        <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                    <tr>
+                        <th class="p-4">Nombre</th>
+                        <th class="p-4">WhatsApp</th>
+                        <th class="p-4 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="list-admin-activos" class="divide-y dark:divide-gray-700">
+                    <!-- JS inyecta aquí -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -5794,29 +5823,56 @@ function getGlobalTrendRadar(todosLosPedidos) {
 
 // 1. Cargar gestores pendientes (Llamar esto dentro de loadAdminData)
 async function loadPendingGestores() {
+    // 1. Consultar todos los gestores (Pendientes y Activos)
     const { data, error } = await supabaseClient
         .from('gestores')
         .select('*')
-        .eq('estado', 'pendiente');
+        .in('estado', ['pendiente', 'activo'])
+        .order('nombre', { ascending: true });
 
-    const container = document.getElementById('list-admin-aprobaciones');
-    if (!container) return;
+    if (error) return console.error(error);
 
-    if (!data || data.length === 0) {
-        container.innerHTML = `<tr><td colspan="3" class="p-10 text-center text-gray-400 text-xs font-bold uppercase">No hay solicitudes pendientes.</td></tr>`;
-        return;
+    const containerPendientes = document.getElementById('list-admin-aprobaciones');
+    const containerActivos = document.getElementById('list-admin-activos');
+    
+    if (!containerPendientes || !containerActivos) return;
+
+    // 2. Filtrar en memoria para mayor rapidez
+    const pendientes = data.filter(g => g.estado === 'pendiente');
+    const activos = data.filter(g => g.estado === 'activo');
+
+    // 3. Renderizar Pendientes
+    if (pendientes.length === 0) {
+        containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
+    } else {
+        containerPendientes.innerHTML = pendientes.map(g => `
+            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+                <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
+                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+                <td class="p-4 text-right">
+                    <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
+                    <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
+                </td>
+            </tr>
+        `).join('');
     }
 
-    container.innerHTML = data.map(g => `
-        <tr class="text-xs border-b dark:border-gray-700">
-            <td class="p-4 font-bold text-primary">${g.nombre}</td>
-            <td class="p-4 font-medium">${g.telefono}</td>
-            <td class="p-4 text-right">
-                <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600 transition-all shadow-sm">Activar</button>
-                <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-100 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-red-500 hover:text-white transition-all ml-1">Rechazar</button>
-            </td>
-        </tr>
-    `).join('');
+    // 4. Renderizar Activos
+    if (activos.length === 0) {
+        containerActivos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">Aún no tienes equipo activo.</td></tr>`;
+    } else {
+        containerActivos.innerHTML = activos.map(g => `
+            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+                <td class="p-4 font-bold text-slate-700 dark:text-white uppercase">${g.nombre}</td>
+                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+                <td class="p-4 text-right">
+                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-red-400 hover:text-red-600 p-2 transition-colors">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
 }
 
 async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
@@ -5899,6 +5955,24 @@ async function getOrGenerateShortLink(nombreGestor, longUrl) {
     } catch (e) {
         console.error("Error con ShortLinks:", e);
         return longUrl; // Fallback: si algo falla, damos el link largo para no perder ventas
+    }
+}
+
+async function removeGestor(id, nombre) {
+    const confirmar = confirm(`¿Estás seguro de eliminar a "${nombre}" del equipo?\n\nYa no podrá iniciar sesión ni generar enlaces.`);
+    
+    if (confirmar) {
+        const { error } = await supabaseClient
+            .from('gestores')
+            .update({ estado: 'bloqueado' })
+            .eq('id', id);
+
+        if (!error) {
+            alert(`✅ ${nombre} ha sido eliminado.`);
+            loadPendingGestores(); // Recarga las listas
+        } else {
+            alert("Error al eliminar: " + error.message);
+        }
     }
 }
 
