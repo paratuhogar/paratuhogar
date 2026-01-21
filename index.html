@@ -1138,6 +1138,15 @@
         <label class="text-[10px] font-black uppercase text-gray-400 ml-1">🚚 Detalles de Mensajería</label>
         <input type="text" id="p-mensajeria" placeholder="Ej: Gratis en La Habana, 5 USD periferia..." class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
     </div>
+
+<!-- CAMPO DISPONIBILIDAD -->
+<div class="md:col-span-2">
+    <label class="text-[10px] font-black uppercase text-gray-400 ml-1">📦 Disponibilidad del Producto</label>
+    <select id="p-disponible" class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
+        <option value="SI">✅ EN STOCK (Visible en la web)</option>
+        <option value="NO">❌ AGOTADO (Oculto para clientes)</option>
+    </select>
+</div>
     
 
     <!-- SECCIÓN DE FOTOS (4 espacios) -->
@@ -3020,134 +3029,7 @@ function getAgentPhone() {
 
 // --- GUARDAR EL PRODUCTO COMPLETO EN LA TABLA ---
 // --- GUARDAR PRODUCTO CON VERIFICACIÓN INTELIGENTE (FUZZY MATCH) ---
-document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const btn = document.getElementById('btn-save-prod');
-    const nombreInput = document.getElementById('p-nombre').value.trim();
-    const categoriaInput = document.getElementById('p-categoria').value;
-    const editId = document.getElementById('p-id-edit').value;
-    
-    // ============================================================
-    // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
-    // ============================================================
-    if (!editId) { 
-        // A. Limpiamos el nombre para sacar palabras clave importantes
-        // Quitamos palabras comunes que la IA pone siempre (Smart, TV, de, el, con...)
-        const palabrasIgnoradas = ['de', 'el', 'la', 'con', 'para', 'en', 'y', 'un', 'una', 'smart', 'nuevo', 'oferta'];
-        
-        // Separamos el nombre en palabras, filtramos las cortas (<3 letras) y las ignoradas
-        const palabrasClave = nombreInput.toLowerCase()
-            .split(/[\s\-\/\(\)]+/) // Separar por espacios o guiones
-            .filter(w => w.length > 2 && !palabrasIgnoradas.includes(w));
 
-        // Tomamos las 3 palabras más "raras" o largas (generalmente Marca y Modelo)
-        // Ejemplo: De "Smart TV Challenger 75 4K" -> busca "Challenger" y "75"
-        const keywords = palabrasClave.slice(0, 3).join(' & '); 
-
-        if (keywords.length > 0) {
-            // B. Preguntamos a Supabase usando Búsqueda de Texto Completo
-            // Busca productos que tengan ESAS palabras en CUALQUIER orden
-            const { data: similares, error: errCheck } = await supabaseClient
-                .from('productos')
-                .select('nombre, precio, categoria')
-                .textSearch('nombre', keywords) 
-                .limit(3);
-
-            // C. Si encuentra coincidencias, ALERTA al administrador
-            if (similares && similares.length > 0) {
-                // Filtramos para asegurar que sean de la misma categoría (para evitar falsos positivos)
-                const duplicadoReal = similares.find(p => p.categoria === categoriaInput);
-
-                if (duplicadoReal) {
-                    const confirmar = confirm(
-                        `⛔ POSIBLE DUPLICADO DETECTADO\n\n` +
-                        `Tú intentas subir: "${nombreInput}"\n\n` +
-                        `Pero ya existe en base de datos:\n` +
-                        `👉 "${duplicadoReal.nombre}" ($${duplicadoReal.precio})\n\n` +
-                        `¿Es el mismo equipo que subió otro admin?\n` +
-                        `[Aceptar] = Cancelar subida (No duplicar)\n` +
-                        `[Cancelar] = Subir de todas formas (Es diferente)`
-                    );
-
-                    if (confirmar) {
-                        return; // Detiene el proceso, no guarda nada.
-                    }
-                }
-            }
-        }
-    }
-    // ============================================================
-
-    // 2. Validación de Foto
-    const imgName = document.getElementById('p-img-name') ? document.getElementById('p-img-name').value : '';
-    // Revisamos las 4 casillas por si acaso
-    let tieneFoto = false;
-    for(let i=0; i<4; i++) {
-        if(document.getElementById(`img-path-${i}`).value) tieneFoto = true;
-    }
-    
-    if (!editId && !tieneFoto && !imgName) {
-         alert("❌ Error: Debes subir al menos una foto.");
-         return;
-    }
-
-    btn.disabled = true; 
-    btn.innerText = "GUARDANDO...";
-
-    // 3. Recopilar Datos
-    const datos = {
-        nombre: nombreInput,
-        precio: parseFloat(document.getElementById('p-precio').value),
-        comision: parseFloat(document.getElementById('p-comision').value) || 0,
-        categoria: categoriaInput,
-        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
-        
-        thumbnail: document.getElementById('img-path-0').value || imgName,
-        image1: document.getElementById('img-path-1').value,
-        image2: document.getElementById('img-path-2').value,
-        image3: document.getElementById('img-path-3').value,
-        
-        mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
-        disponible: 'SI',
-        proveedor: document.getElementById('p-proveedor').value || 'General',
-        precio_flexible: document.getElementById('p-flexible').value || 'NO',
-        garantia: document.getElementById('p-garantia').value,
-        pagos: 'USD, CUP, Zelle' 
-    };
-
-    let error;
-    if (editId) {
-        // ACTUALIZAR
-        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
-        error = err;
-    } else {
-        // INSERTAR NUEVO
-        const { error: err } = await supabaseClient.from('productos').insert([datos]);
-        error = err;
-    }
-
-    if (!error) {
-        alert("✅ ¡Guardado correctamente!");
-        
-        // 1. Cerramos el modal
-        closeModalProd();
-        
-        // 2. Refrescamos los datos del administrador sin recargar la página
-        if (typeof loadAdminData === 'function') {
-            await loadAdminData(); 
-        }
-
-        // 3. Reactivamos el botón por si se quiere usar de nuevo
-        btn.disabled = false;
-        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
-        
-    } else {
-        alert("Error: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Guardar Cambios";
-    }
-});
 
 
 // Función mágica de compresión
@@ -3309,59 +3191,76 @@ function clearImageSlot(event, index) {
 
         // 6. Mostrar Modal
         document.getElementById('modal-producto').classList.remove('hidden');
+        document.getElementById('p-disponible').value = p.disponible || 'SI';
     }
 
-// 4. Guardar (Funciona para NUEVO y para EDITAR)
+// FUNCIÓN ÚNICA DE GUARDADO (INVENTARIO + IA + DUPLICADOS + ESTADOS)
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
     const btn = document.getElementById('btn-save-prod');
+    const nombreInput = document.getElementById('p-nombre').value.trim();
+    const categoriaInput = document.getElementById('p-categoria').value;
     const editId = document.getElementById('p-id-edit').value;
     
+    // 1. DETECTOR DE DUPLICADOS (Solo para productos nuevos)
+    if (!editId) { 
+        const palabrasClave = nombreInput.toLowerCase().split(' ').filter(w => w.length > 3).slice(0, 2).join(' & ');
+        if (palabrasClave) {
+            const { data: similares } = await supabaseClient.from('productos').select('nombre').textSearch('nombre', palabrasClave).limit(1);
+            if (similares && similares.length > 0) {
+                if (!confirm(`⚠️ Posible duplicado: "${similares[0].nombre}" ya existe. ¿Deseas subir este de todas formas?`)) return;
+            }
+        }
+    }
+
+    // 2. Validación de Foto
+    let tieneFoto = false;
+    for(let i=0; i<4; i++) { if(document.getElementById(`img-path-${i}`).value) tieneFoto = true; }
+    if (!editId && !tieneFoto) return alert("❌ Error: Debes subir al menos una foto.");
+
     btn.disabled = true; 
     btn.innerText = "GUARDANDO...";
 
+    // 3. Recopilar Datos (Incluyendo DISPONIBILIDAD)
     const datos = {
-        nombre: document.getElementById('p-nombre').value,
+        nombre: nombreInput,
         precio: parseFloat(document.getElementById('p-precio').value),
-        comision: parseFloat(document.getElementById('p-comision').value),
-        categoria: document.getElementById('p-categoria').value,
-        garantia: document.getElementById('p-garantia').value,
+        comision: parseFloat(document.getElementById('p-comision').value) || 0,
+        categoria: categoriaInput,
         descripcion: quill.root.innerHTML, 
         thumbnail: document.getElementById('img-path-0').value,
         image1: document.getElementById('img-path-1').value,
         image2: document.getElementById('img-path-2').value,
         image3: document.getElementById('img-path-3').value,
-        disponible: 'SI'
+        mensajeria: document.getElementById('p-mensajeria').value,
+        disponible: document.getElementById('p-disponible').value, // <--- AQUÍ ESTABA EL ERROR
+        proveedor: document.getElementById('p-proveedor').value || 'General',
+        precio_flexible: document.getElementById('p-flexible').value || 'NO',
+        garantia: document.getElementById('p-garantia').value,
+        pagos: 'USD, CUP, Zelle' 
     };
 
     let error;
     if (editId) {
-        // SI TIENE ID, ACTUALIZAMOS
         const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
         error = err;
     } else {
-        // SI NO TIENE ID, INSERTAMOS NUEVO
         const { error: err } = await supabaseClient.from('productos').insert([datos]);
         error = err;
     }
 
     if (!error) {
-        // --- ESTO ES LO QUE CAMBIA ---
-        closeModalProd(); // 1. Cierra el modal automáticamente
+        // --- ÉXITO: LIMPIEZA SIN RECARGAR ---
+        closeModalProd();
+        if (typeof loadAdminData === 'function') await loadAdminData();
         
-        if (typeof loadAdminData === 'function') {
-            await loadAdminData(); // 2. Refresca la lista de equipos sin recargar la web
-        }
-
-        // 3. Forzamos a que se quede en la pestaña de inventario
-        changeAdminTab('inventario'); 
+        // Forzar quedarse en la pestaña inventario
+        if (typeof changeAdminTab === 'function') changeAdminTab('inventario'); 
 
         alert("✅ ¡Guardado correctamente!");
-
-        // 4. Restauramos el botón
         btn.disabled = false;
-        btn.innerText = "Guardar Cambios";
-        
+        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
     } else {
         alert("Error: " + error.message);
         btn.disabled = false;
