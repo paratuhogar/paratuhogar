@@ -1271,6 +1271,7 @@
     let productosRaw = [], cart = [], selectedProduct = null;
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
     
+    
 
     const urlParams = new URLSearchParams(window.location.search);
     const gestorName = urlParams.get('gestor');
@@ -1278,7 +1279,7 @@
     const isAdmin = urlParams.get('admin') === 'true';
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
-    window.addEventListener('load', () => {
+   window.addEventListener('load', () => {
         // 1. Inicializar editor Quill
         if(document.getElementById('editor-container')) {
             quill = new Quill('#editor-container', {
@@ -1293,26 +1294,32 @@
         
         if (savedSession) {
             const s = JSON.parse(savedSession);
+            
+            // --- ESTA LÍNEA ES EL ARREGLO PARA EL TELÉFONO ---
+            window.currentUserData = s.data || {}; 
+            // -------------------------------------------------
+
             setupSession(s.name, s.isAdmin);
         } else {
-    // 1. Ocultamos la ventana de login por si acaso
-    const overlay = document.getElementById('login-overlay');
-    if (overlay) overlay.classList.add('hidden'); 
-    
-    // 2. Limpiamos estados
-    window.gestorName = null;
-    window.isAdmin = false;
-    
-    // 3. MOSTRAR EL BOTÓN DE LA PERSONITA (Este es el paso clave)
-    const btnLogin = document.getElementById('btn-login-open');
-    if (btnLogin) btnLogin.classList.remove('hidden'); 
-    
-    // 4. Ocultamos cosas de gestor/admin que no deben verse
-    if (document.getElementById('admin-nav')) document.getElementById('admin-nav').classList.add('hidden');
-    if (document.getElementById('btn-logout')) document.getElementById('btn-logout').classList.add('hidden');
-    
-    loadProducts();
-}
+            // 1. Ocultamos la ventana de login por si acaso
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) overlay.classList.add('hidden'); 
+            
+            // 2. Limpiamos estados
+            window.gestorName = null;
+            window.isAdmin = false;
+            window.currentUserData = null; // Limpiar datos también
+            
+            // 3. MOSTRAR EL BOTÓN DE LA PERSONITA
+            const btnLogin = document.getElementById('btn-login-open');
+            if (btnLogin) btnLogin.classList.remove('hidden'); 
+            
+            // 4. Ocultamos cosas de gestor/admin que no deben verse
+            if (document.getElementById('admin-nav')) document.getElementById('admin-nav').classList.add('hidden');
+            if (document.getElementById('btn-logout')) document.getElementById('btn-logout').classList.add('hidden');
+            
+            loadProducts();
+        }
 
         initAutoSaveSystem(); 
         loadClientCRM();      
@@ -1486,11 +1493,10 @@ let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
     // 1. Consultar TODOS los datos necesarios de los pedidos
-    // Nota: Agregamos 'fecha', 'cliente', 'producto', 'total', 'proveedor' a la consulta
     const { data: allPedidos, error } = await supabaseClient
         .from('pedidos')
-        .select('*') // Traemos todo para poder mostrar detalles
-        .order('fecha', { ascending: false }); // Ordenar del más reciente al más antiguo
+        .select('*')
+        .order('fecha', { ascending: false });
 
     if(error) { console.error(error); return; }
     
@@ -1498,7 +1504,7 @@ async function loadProDashboard(nombreGestor) {
     const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
     myOrdersData = misVentas; // Guardamos para el buscador
 
-    // 3. Cálculos Financieros (Igual que tenías)
+    // 3. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
     const misPendientes = misVentas.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
 
@@ -1516,14 +1522,15 @@ async function loadProDashboard(nombreGestor) {
     if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
     if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
 
-    // 4. RANKING (Igual que tenías)
+    // 4. RANKING
     renderRankingAnonimo(allPedidos, nombreGestor);
 
-    // 5. NUEVO: RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
+    // 5. RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
     renderMyOrdersList(misVentas);
 
-    // 6. Inyectar enlaces
-    injectLinksSection(nombreGestor);
+    // 6. INYECTAR ENLACES (Corregido: Solo una vez y con await)
+    // Esto es lo que genera el link corto automáticamente si eres Nivel 3+
+    await injectLinksSection(nombreGestor);
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
@@ -1653,44 +1660,110 @@ function filterMyOrders() {
     renderMyOrdersList(filteredByText);
 }
 
-    function injectLinksSection(nombre) {
-        // Verificar si ya existe para no duplicar
-        if(document.getElementById('sec-links-gestor')) return;
+    async function injectLinksSection(nombre) {
+    if(document.getElementById('sec-links-gestor')) document.getElementById('sec-links-gestor').remove();
 
-        const container = document.getElementById('sec-dashboard');
-        const userData = window.currentUserData || {};
-        
-        // Crear Enlace Base
-        const baseUrl = window.location.origin + window.location.pathname;
-        const myLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
-
-        const html = `
-        <div id="sec-links-gestor" class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm mt-6">
-            <h3 class="text-sm font-black uppercase text-primary mb-4 italic">🔗 Mi Enlace Inteligente</h3>
-            <p class="text-xs text-gray-400 mb-2">Comparte este enlace. Cuando un cliente entre, la web sabrá que viene de tu parte.</p>
-            
-            <div class="flex gap-2 mb-4">
-                <input type="text" value="${myLink}" readonly class="w-full bg-gray-50 text-xs p-3 rounded-xl border-none font-bold text-gray-500">
-                <button onclick="navigator.clipboard.writeText('${myLink}').then(()=>alert('Enlace copiado'))" class="bg-primary text-white px-4 rounded-xl font-bold text-xs uppercase">Copiar</button>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('¡Mira este catálogo! Envíos a toda Cuba: ' + myLink)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                    <i class="fab fa-whatsapp text-lg"></i> Enviar por WhatsApp
-                </button>
-                <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(myLink)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                    <i class="fab fa-facebook text-lg"></i> Compartir Facebook
-                </button>
-            </div>
-        </div>`;
-        
-        // Insertar después de las tarjetas
-        document.getElementById('ranking-list').parentElement.insertAdjacentHTML('afterend', html);
+    const userData = window.currentUserData || {};
+    const baseUrl = window.location.origin + window.location.pathname;
+    
+    // --- BYPASS MODO DIOS CORREGIDO ---
+    let sales = 0;
+    if (nombre === "Marcel Montano") {
+        sales = 80; // Forzamos 80 ventas para que seas Nivel 5 (Emperador)
+    } else {
+        const today = new Date();
+        today.setDate(today.getDate() - 30);
+        const { count } = await supabaseClient
+            .from('pedidos')
+            .select('*', { count: 'exact', head: true })
+            .eq('gestor', nombre)
+            .eq('estado', 'Entregado')
+            .gte('created_at', today.toISOString());
+        sales = count || 0;
     }
+
+    window.gestorSalesCount = sales;
+    const lvlData = getLevelData(sales); // Aquí ya lvlData.lvl será 5 y duration 1080
+    const diasDuracion = lvlData.duration / 24; // Esto dará 45
+
+    const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
+    let displayLink = myLongLink;
+
+    // Lógica de acortamiento (Si es Nivel 3 o más)
+    if (lvlData.lvl >= 3) {
+        try {
+            const { data: linkExistente } = await supabaseClient
+                .from('short_links')
+                .select('slug')
+                .eq('gestor', nombre)
+                .eq('original_url', myLongLink)
+                .single();
+
+            if (linkExistente) {
+                displayLink = `${window.location.origin}${window.location.pathname}?s=${linkExistente.slug}`;
+            } else {
+                const newSlug = Math.random().toString(36).substring(2, 7);
+                await supabaseClient.from('short_links').insert([{
+                    slug: newSlug, original_url: myLongLink, gestor: nombre
+                }]);
+                displayLink = `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
+            }
+        } catch (e) { console.log("Usando link largo por error de red"); }
+    }
+
+    // --- RENDERIZADO DEL CUADRO CON DÍAS CORRECTOS ---
+    const html = `
+    <div id="sec-links-gestor" class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 shadow-sm mt-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-sm font-black uppercase text-primary italic">🔗 Mi Enlace Inteligente</h3>
+            <span class="text-[10px] font-bold ${lvlData.lvl >= 3 ? 'text-emerald-500' : 'text-gray-400'} uppercase">
+                ${lvlData.lvl >= 3 ? '⚡ Link Corto Pro Activo' : 'Link Estándar'}
+            </span>
+        </div>
+        <p class="text-xs text-gray-400 mb-4">
+            Este enlace guarda tu comisión por <span class="font-black text-primary">${diasDuracion} días</span> en el navegador del cliente.
+        </p>
+        
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="my-link-input" value="${displayLink}" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-none font-bold text-gray-500">
+            <button onclick="copy('my-link-input')" class="bg-primary text-white px-4 rounded-xl font-bold text-xs uppercase">Copiar</button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2">
+            <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('Catálogo: ' + displayLink)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(displayLink)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                <i class="fab fa-facebook"></i> Facebook
+            </button>
+        </div>
+    </div>`;
+    
+    const rankingDiv = document.getElementById('ranking-list').parentElement;
+    if(rankingDiv) rankingDiv.insertAdjacentHTML('afterend', html);
+}
+
+
 
     // 2. CARGA DE PRODUCTOS
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
     async function loadProducts() {
+    // --- NUEVO: DETECTOR DE LINKS CORTOS ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('s');
+
+    if (slug) {
+        const { data, error } = await supabaseClient
+            .from('short_links')
+            .select('original_url')
+            .eq('slug', slug)
+            .single();
+
+        if (data && data.original_url) {
+            window.location.href = data.original_url; // Redirige al link largo con tu gestor y tel
+            return; 
+        }
+    }
     try {
         const { data, error } = await supabaseClient
             .from('productos')
@@ -2832,6 +2905,32 @@ async function handleImageUpload(input) {
     }
 }
 
+function getAgentPhone() {
+    let rawNum = "";
+
+    // 1. Intentar sacar el teléfono de la sesión activa
+    if (window.currentUserData && window.currentUserData.telefono) {
+        rawNum = window.currentUserData.telefono;
+    } else {
+        // 2. Intentar sacar el teléfono de la URL si no hay sesión
+        rawNum = new URLSearchParams(window.location.search).get('tel') || "";
+    }
+
+    // Si no hay número en ningún lado, devolver el del dueño
+    if (!rawNum) return '5356071095';
+
+    // LIMPIEZA Y FORMATO CUBA
+    let limpio = rawNum.replace(/\D/g, ''); // Quita el + y espacios
+
+    // Si el número tiene 8 dígitos (ej: 58183649), le ponemos el 53 delante
+    if (limpio.length === 8) {
+        limpio = '53' + limpio;
+    }
+    
+    // Si el número tiene 10 dígitos y empieza con 53, está perfecto
+    return limpio;
+}
+
 // --- GUARDAR EL PRODUCTO COMPLETO EN LA TABLA ---
 // --- GUARDAR PRODUCTO CON VERIFICACIÓN INTELIGENTE (FUZZY MATCH) ---
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
@@ -3227,29 +3326,31 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     // Función para copiar texto de venta profesional con enlace de afiliado
     async function copySmartOffer(btnElement) {
     if(!selectedProduct) return;
-    const gestor = window.gestorName || '';
-    const userData = window.currentUserData || {};
-    const level = window.currentGestorLevel || 0;
+    
+    const gestor = window.gestorName || 'Ventas';
+    const miTelefono = getAgentPhone(); // <--- Aquí usamos el "Cerebro"
+    
+    let longLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    const finalLink = await getOrGenerateShortLink(gestor, longLink);
 
-    let baseUrl = window.location.origin + window.location.pathname;
-    let fullUrl = `${baseUrl}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${userData.telefono || ''}`;
-    let finalLink = fullUrl;
+    const textoVenta = 
+`🔥 *¡OFERTA ESPECIAL!* 🔥
+📦 Modelo: *${selectedProduct.nombre}*
 
-    if (level >= 2 && gestor) {
-        let slug = Math.random().toString(36).substring(2, 8);
-        if (level >= 3) slug = (selectedProduct.nombre.substring(0,4) + "-" + gestor.substring(0,3)).toLowerCase().replace(/\s+/g, '');
+💰 Precio: *$${selectedProduct.precio} USD*
+🚚 Mensajería: ${selectedProduct.mensajeria || 'A consultar'}
+🛡️ Garantía: ${selectedProduct.garantia || 'Garantía Oficial'}
 
-        const { error } = await supabaseClient.from('short_links').upsert([{
-            slug: slug, original_url: fullUrl, gestor: gestor, is_custom: level >= 3
-        }]);
-        if (!error) finalLink = `${window.location.origin}${window.location.pathname}?s=${slug}`;
-    }
+👇 *Ver fotos y detalles aquí:*
+${finalLink}
 
-    const texto = `🔥 *OFERTA* 🔥\n📦 *${selectedProduct.nombre}*\n💰 *$${selectedProduct.precio} USD*\n👇 Detalles:\n${finalLink}`;
-    navigator.clipboard.writeText(texto).then(() => {
-        const original = btnElement.innerHTML;
-        btnElement.innerHTML = "¡Copiado!";
-        setTimeout(() => btnElement.innerHTML = original, 2000);
+✅ *Pedir ahora por WhatsApp:*
+https://wa.me/${miTelefono}?text=${encodeURIComponent('Hola, me interesa el equipo: ' + selectedProduct.nombre)}`;
+
+    navigator.clipboard.writeText(textoVenta).then(() => {
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = `<span class="material-symbols-outlined text-xl text-green-500">check</span>Copiado`;
+        setTimeout(() => { btnElement.innerHTML = originalText; }, 2000);
     });
 }
 
@@ -3491,37 +3592,41 @@ window.doLogout = function() {
     // ==========================================
 
     // 1. COPIAR LISTA DE OFERTAS (AMETRALLADORA)
-    function copyCategoryOffers() {
-        const gestor = window.gestorName;
-        const userData = window.currentUserData || {};
-        
-        // Filtramos los productos que se están viendo actualmente (por categoría)
-        const visibleProducts = productosRaw.filter(p => {
-            return (activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory))) && p.disponible === "SI";
-        });
+    async function copyCategoryOffers() {
+    const gestor = window.gestorName || 'Ventas';
+    const miTelefono = getAgentPhone(); // <--- Aquí usamos el "Cerebro"
+    
+    const visibleProducts = productosRaw.filter(p => {
+        return (activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory))) && p.disponible === "SI";
+    });
 
-        if (visibleProducts.length === 0) return alert("No hay productos en esta categoría.");
+    if (visibleProducts.length === 0) return alert("No hay productos.");
 
-        let textoFinal = `🌟 *CATÁLOGO DISPONIBLE - ${activeCategory}* 🌟\n\n`;
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `⏳ Procesando links...`;
 
-        visibleProducts.forEach(p => {
-            // Generar enlace trackeado
-            let link = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}`;
-            if (gestor) link += `&gestor=${encodeURIComponent(gestor)}`;
-            if (userData.telefono) link += `&tel=${userData.telefono}`;
+    let textoFinal = `🌟 *CATÁLOGO DISPONIBLE - ${activeCategory}* 🌟\n\n`;
 
-            textoFinal += `📦 *${p.nombre}*\n`;
-            textoFinal += `💰 Precio: $${p.precio} USD\n`;
-            textoFinal += `🔗 Ver: ${link}\n`;
-            textoFinal += `--------------------------------\n`;
-        });
+    for (const p of visibleProducts) {
+        // Construimos link con TU teléfono
+        let rawLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+        let linkInteligente = await getOrGenerateShortLink(gestor, rawLink);
 
-        textoFinal += `\n✅ *Pedir aquí:* https://wa.me/${userData.telefono || '5356071095'}`;
-
-        navigator.clipboard.writeText(textoFinal).then(() => {
-            alert(`¡Copiadas ${visibleProducts.length} ofertas al portapapeles!`);
-        });
+        textoFinal += `📦 *${p.nombre}*\n`;
+        textoFinal += `💰 Precio: $${p.precio} USD\n`;
+        textoFinal += `🔗 Ver: ${linkInteligente}\n`;
+        textoFinal += `--------------------------------\n`;
     }
+
+    // El link de abajo ahora usará TU teléfono obligatoriamente
+    textoFinal += `\n✅ *Pedir aquí:* https://wa.me/${miTelefono}`;
+
+    navigator.clipboard.writeText(textoFinal).then(() => {
+        btn.innerHTML = `✅ ¡COPIADO!`;
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+    });
+}
 
     // 2. DESCARGAR PACK DE FOTOS (ZIP)
     async function downloadCategoryPhotos() {
@@ -3598,23 +3703,27 @@ window.doLogout = function() {
     */
 
     // 2. COMPARTIR REDES SOCIALES
-    function shareProductSocial(name, network) {
-        const p = productosRaw.find(prod => prod.nombre === name);
-        if(!p) return;
+    async function shareProductSocial(name, network) {
+    const p = productosRaw.find(prod => prod.nombre === name);
+    if(!p) return;
 
-        const gestor = window.gestorName || '';
-        const userData = window.currentUserData || {};
-        
-        let link = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}`;
-        if (gestor) link += `&gestor=${encodeURIComponent(gestor)}&tel=${userData.telefono || ''}`;
+    const gestor = window.gestorName || '';
+    const userData = window.currentUserData || {};
+    const miTelefono = userData.telefono || new URLSearchParams(window.location.search).get('tel') || '';
+    
+    let rawLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}`;
+    if (gestor) rawLink += `&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
 
-        if (network === 'wa') {
-            const text = `🔥 ¡Oferta Flash! ${p.nombre} a solo $${p.precio}. Ver aquí: ${link}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        } else if (network === 'fb') {
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
-        }
+    // Generar link corto antes de compartir
+    const finalLink = await getOrGenerateShortLink(gestor, rawLink);
+
+    if (network === 'wa') {
+        const text = `🔥 ¡Oferta Flash! *${p.nombre}* a solo *$${p.precio} USD*. \n\nVer detalles aquí: ${finalLink}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    } else if (network === 'fb') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(finalLink)}`, '_blank');
     }
+}
 
     // ==========================================
     // 4. GENERADOR DE INSTAGRAM STORY (DISEÑO PREMIUM)
@@ -3967,6 +4076,7 @@ window.doLogout = function() {
 
     // 2. Proceso de Login
     // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
+// PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
 async function processLogin() {
     const userInput = document.getElementById('log-user');
     const passInput = document.getElementById('log-pass');
@@ -3975,20 +4085,22 @@ async function processLogin() {
     const pass = passInput ? passInput.value.trim() : "";
 
     // 1. CASO A: ADMINISTRADOR (Prioridad 1)
-    // Usamos getAccess() para que nadie vea la clave real en el código
     if (pass === getAccess()) { 
         closeLogin();
-        saveSessionToMemory("Administrador", true, {}); 
+        // Para el admin, guardamos un perfil básico con el teléfono del dueño
+        const adminData = { nombre: "Administrador", telefono: "5356071095" };
+        window.currentUserData = adminData;
+        saveSessionToMemory("Administrador", true, adminData); 
         setupSession("Administrador", true);
         return;
     }
 
-    // 2. CASO B: GESTOR - Validación de campos vacíos
+    // 2. CASO B: GESTOR - Validación
     if (!user || !pass) {
         return alert("Por favor ingresa usuario y contraseña.");
     }
 
-    // 3. CASO C: Verificar en Base de Datos
+    // 3. CASO C: Verificar en Base de Datos (Gestores)
     try {
         const { data, error } = await supabaseClient
             .from('gestores')
@@ -4001,20 +4113,24 @@ async function processLogin() {
             alert("❌ Usuario o contraseña incorrectos.");
         } else {
             
-            // --- NUEVO: VERIFICACIÓN DE ESTADO (PERMISOS) ---
+            // VERIFICACIÓN DE ESTADO (PERMISOS)
             if (data.estado === 'pendiente') {
                 alert("⏳ Tu cuenta aún está en revisión. El administrador te avisará cuando puedas entrar.");
-                return; // Bloqueamos el acceso hasta que tú lo apruebes
+                return; 
             }
             if (data.estado === 'bloqueado') {
                 alert("🚫 Tu cuenta ha sido suspendida. Contacta a soporte.");
                 return;
             }
 
-            // Si el estado es 'activo', procedemos con el login
+            // --- LOGIN EXITOSO ---
             closeLogin();
+            
+            // GUARDADO CRÍTICO: Aquí nos aseguramos de que window.currentUserData 
+            // tenga el teléfono que viene de la tabla de Supabase.
             window.currentUserData = data; 
-            saveSessionToMemory(data.nombre, false, data);
+            saveSessionToMemory(data.nombre, false, data); 
+            
             setupSession(data.nombre, false);
         }
     } catch (e) {
@@ -5010,11 +5126,21 @@ function toTitleCase(str) {
 
 // Datos Maestros de Niveles
 function getLevelData(sales) {
-    if (sales >= 40) return { lvl: 4, name: "Monarca", next: 1000, color: "text-emerald-500", duration: 720 }; // 30 días
-    if (sales >= 20) return { lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", duration: 360 };   // 15 días
-    if (sales >= 10) return { lvl: 2, name: "Experto", next: 20, color: "text-blue-500", duration: 168 };    // 7 días
-    if (sales >= 3)  return { lvl: 1, name: "Novato", next: 10, color: "text-orange-500", duration: 72 };     // 3 días
-    return { lvl: 0, name: "Iniciado", next: 3, color: "text-red-500", duration: 24 };                       // 1 día
+    if (sales >= 70) return { 
+        lvl: 5, name: "Emperador", next: 1000, color: "text-purple-600", duration: 1080, // 45 días
+        hasShortLink: true 
+    };
+    if (sales >= 40) return { 
+        lvl: 4, name: "Monarca", next: 70, color: "text-emerald-500", duration: 720, // 30 días
+        hasShortLink: true 
+    };
+    if (sales >= 20) return { 
+        lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", duration: 360, // 15 días
+        hasShortLink: true 
+    };
+    if (sales >= 10) return { lvl: 2, name: "Experto", next: 20, color: "text-blue-500", duration: 168 };
+    if (sales >= 3)  return { lvl: 1, name: "Novato", next: 10, color: "text-orange-500", duration: 72 };
+    return { lvl: 0, name: "Iniciado", next: 3, color: "text-red-500", duration: 24 };
 }
 
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
@@ -5191,7 +5317,7 @@ async function checkGamificationStatus() {
     applyLockedFeatures();   
 }
 
-// 2. ACTUALIZACIÓN VISUAL (Tarjeta + Modal)
+// 2. ACTUALIZACIÓN VISUAL (Tarjeta Dashboard + Modal Carrera)
 function updateGamificationUI(sales) {
     const data = getLevelData(sales);
     
@@ -5202,41 +5328,58 @@ function updateGamificationUI(sales) {
         document.getElementById('lvl-name').innerText = data.name;
         document.getElementById('lvl-title').innerText = `AGENTE ${data.name.toUpperCase()}`;
         
-        const durationText = data.duration >= 720 ? "30 DÍAS" : `${data.duration/24} DÍAS`;
-        const linkSpan = document.getElementById('lvl-link-duration');
-        linkSpan.innerText = data.duration === 24 ? "24 HORAS" : durationText;
+        // CÁLCULO DINÁMICO DE DÍAS (Corregido para nivel 5)
+        const diasReales = data.duration / 24;
+        const durationText = data.lvl === 0 ? "24 HORAS" : `${diasReales} DÍAS`;
         
-        // Colores dinámicos
-        if (data.lvl === 0) linkSpan.className = "font-black text-red-300";
-        else if (data.lvl === 4) linkSpan.className = "font-black text-emerald-300";
-        else linkSpan.className = "font-black text-amber-300";
+        const linkSpan = document.getElementById('lvl-link-duration');
+        if (linkSpan) {
+            linkSpan.innerText = durationText;
+            
+            // Colores dinámicos según nivel
+            linkSpan.className = "font-black"; // Limpiamos clases previas
+            if (data.lvl === 0) linkSpan.classList.add("text-red-300");
+            else if (data.lvl === 5) linkSpan.classList.add("text-purple-300"); // Color Emperador
+            else if (data.lvl === 4) linkSpan.classList.add("text-emerald-300");
+            else linkSpan.classList.add("text-amber-300");
+        }
 
         // Barra de Progreso
-        document.getElementById('lvl-counter').innerText = `${sales} / ${data.next} Ventas`;
-        const percent = Math.min(100, (sales / data.next) * 100);
-        document.getElementById('lvl-progress-bar').style.width = `${percent}%`;
+        const counterEl = document.getElementById('lvl-counter');
+        if (counterEl) counterEl.innerText = `${sales} / ${data.next} Ventas`;
+        
+        const barEl = document.getElementById('lvl-progress-bar');
+        if (barEl) {
+            const percent = Math.min(100, (sales / data.next) * 100);
+            barEl.style.width = `${percent}%`;
+            
+            // Si es nivel 5, la barra brilla en purpura
+            if (data.lvl === 5) barEl.style.backgroundColor = "#a855f7"; 
+            else barEl.style.backgroundColor = "#fbbf24"; // Ámbar normal
+        }
     }
 
-    // --- B. Actualizar Modal Maestro (Desbloquear Cartas) ---
-    for (let i = 0; i <= 4; i++) {
+    // --- B. Actualizar Modal Maestro (Desbloquear Cartas del 0 al 5) ---
+    // Cambiamos el límite a 5 para incluir al Emperador
+    for (let i = 0; i <= 5; i++) {
         const card = document.getElementById(`card-lvl-${i}`);
         if (!card) continue;
 
-        // Limpiar clases
+        // Limpiar clases de estado
         card.classList.remove('active', 'current', 'locked');
 
         if (i < data.lvl) {
-            // Nivel Superado (Desbloqueado pero no actual)
-            card.classList.add('active'); // Se ve claro
-            unlockButtonsInCard(card);
+            // Niveles ya superados
+            card.classList.add('active');
+            if (typeof unlockButtonsInCard === 'function') unlockButtonsInCard(card);
         } else if (i === data.lvl) {
-            // Nivel Actual
+            // Nivel actual
             card.classList.add('active', 'current');
-            unlockButtonsInCard(card);
+            if (typeof unlockButtonsInCard === 'function') unlockButtonsInCard(card);
         } else {
-            // Nivel Futuro (Bloqueado)
+            // Niveles bloqueados
             card.classList.add('locked');
-            lockButtonsInCard(card);
+            if (typeof lockButtonsInCard === 'function') lockButtonsInCard(card);
         }
     }
 }
@@ -5778,6 +5921,48 @@ async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor 
     }
 }
 
+async function getOrGenerateShortLink(nombreGestor, longUrl) {
+    // Obtenemos los datos de nivel basados en la variable global gestorSalesCount
+    // (Asegúrate de que esta variable se actualiza en checkGamificationStatus)
+    const levelData = getLevelData(window.gestorSalesCount || 0);
+
+    // Si no es Nivel 3 o superior, devolvemos el link largo
+    if (levelData.lvl < 3) return longUrl;
+
+    try {
+        // 1. Ver si ya existe un slug para este gestor y este destino
+        const { data: existing } = await supabaseClient
+            .from('short_links')
+            .select('slug')
+            .eq('gestor', nombreGestor)
+            .eq('original_url', longUrl)
+            .single();
+
+        if (existing) {
+            return `${window.location.origin}${window.location.pathname}?s=${existing.slug}`;
+        }
+
+        // 2. Si no existe y es nivel 3+, crear uno nuevo aleatorio
+        const newSlug = Math.random().toString(36).substring(2, 7); // Ej: "3n8k2"
+        
+        const { error } = await supabaseClient
+            .from('short_links')
+            .insert([{
+                slug: newSlug,
+                original_url: longUrl,
+                gestor: nombreGestor,
+                is_custom: false
+            }]);
+
+        if (error) throw error;
+
+        return `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
+    } catch (e) {
+        console.error("Error con ShortLinks:", e);
+        return longUrl; // Fallback: si algo falla, damos el link largo para no perder ventas
+    }
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
@@ -5939,6 +6124,35 @@ async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor 
                             </button>
                         </div>
                     </div>
+
+                    <!-- Nivel 5: Emperador -->
+                <div id="card-lvl-5" class="level-card locked group border-double border-4 border-purple-400 bg-purple-50/10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-sm font-black uppercase text-purple-600">Nivel 5: Emperador</h4>
+                            <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 70+ Ventas</p>
+                        </div>
+                        <span class="material-symbols-outlined text-3xl text-purple-300">diamond</span>
+                    </div>
+                    <div class="mb-5">
+                        <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                            <span>Duración Enlace</span>
+                            <span class="text-purple-600">45 DÍAS (ULTRA)</span>
+                        </p>
+                        <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-purple-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-[9px] font-black uppercase text-gray-400">Poder Máximo:</p>
+                        <div class="flex items-center gap-2 text-xs font-bold text-purple-700 bg-purple-100 p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-sm">verified</span> Atribución de por vida (45d)
+                        </div>
+                        <div class="flex items-center gap-2 text-xs font-bold text-purple-700 bg-purple-100 p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-sm">link</span> Enlaces Cortos Automáticos
+                        </div>
+                    </div>
+                </div>
                 </div>
 
             </div>
