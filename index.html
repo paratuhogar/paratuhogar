@@ -720,14 +720,15 @@
         </div>
     </div>
 
-    <!-- Pestañas -->
-    <div class="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide whitespace-nowrap">
-        <button onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all">Logística</button>
-        <button onclick="changeAdminTab('pagos')" id="tab-pagos" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Corte Sábado</button>
-        <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
-        <button onclick="changeAdminTab('analitica')" id="tab-analitica" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Análisis</button>
-        <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
-    </div>
+    <!-- Pestañas del Master Control (LOGÍSTICA, PAGOS, INVENTARIO, ANÁLISIS, TRÁFICO, APROBACIONES) -->
+<div class="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide whitespace-nowrap">
+    <button onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all">Logística</button>
+    <button onclick="changeAdminTab('pagos')" id="tab-pagos" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Corte Sábado</button>
+    <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
+    <button onclick="changeAdminTab('analitica')" id="tab-analitica" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Análisis</button>
+    <button onclick="changeAdminTab('trafico')" id="tab-trafico" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Tráfico</button>
+    <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
+</div>
 
     <!-- Contenido: Logística (CON EL ID CORREGIDO) -->
     <div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
@@ -2802,38 +2803,32 @@ async function loadTrafficAnalytics() {
 }
 
 function changeAdminTab(tab) {
-        // 1. OCULTAR TODOS
-        document.querySelectorAll('.tab-cnt').forEach(c => {
-            c.classList.add('hidden'); // Añade la clase Tailwind
-            c.style.display = '';      // Limpia estilos manuales (reset)
-        });
-        
-        // 2. MOSTRAR EL SELECCIONADO
-        const target = document.getElementById('cnt-' + tab);
-        if(target) {
-            target.classList.remove('hidden'); // Quita la clase Tailwind
-            // No forzamos 'block' ni 'grid' aquí, dejamos que el HTML decida
-            // (así 'cnt-analitica' usará su clase 'grid' y 'cnt-logistica' usará 'block')
-        } else {
-            console.error("No encuentro el tab:", 'cnt-' + tab);
-        }
-        
-        // 3. GESTIONAR BOTONES (Visual)
-        document.querySelectorAll('.btn-tab-admin').forEach(b => {
-            b.classList.remove('active'); // Quita azul
-            b.classList.add('text-gray-400'); // Pone gris
-            b.classList.remove('text-white');
-        });
-        
-        const btn = document.getElementById('tab-' + tab);
-        if(btn) {
-            btn.classList.add('active'); // Pone azul
-            btn.classList.remove('text-gray-400'); // Quita gris
-        }
-        if(tab === 'trafico') {
-        loadTrafficAnalytics();
+    // 1. Ocultar todos los contenedores de pestañas admin
+    document.querySelectorAll('.tab-cnt').forEach(cnt => {
+        cnt.classList.add('hidden');
+    });
+
+    // 2. Mostrar el contenedor específico (ej: cnt-aprobaciones)
+    const target = document.getElementById('cnt-' + tab);
+    if (target) {
+        target.classList.remove('hidden');
+    } else {
+        console.error("No se encontró el contenedor: cnt-" + tab);
     }
+
+    // 3. Actualizar los estilos de los botones para que se vea cuál está activo
+    document.querySelectorAll('.btn-tab-admin').forEach(btn => {
+        btn.classList.remove('active', 'bg-primary', 'text-white');
+        btn.classList.add('text-gray-400');
+    });
+
+    // 4. Resaltar el botón presionado
+    const activeBtn = document.getElementById('tab-' + tab);
+    if (activeBtn) {
+        activeBtn.classList.add('active', 'bg-primary', 'text-white');
+        activeBtn.classList.remove('text-gray-400');
     }
+}
 
 // Registro de estadísticas
 async function registrarVistaAnalitica(p) {
