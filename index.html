@@ -1391,26 +1391,68 @@ function openLoginModal() {
 
     // REGISTRO DE NUEVO GESTOR
     async function processRegister() {
-        const nombre = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const tel = document.getElementById('reg-tel').value;
-        const pass = document.getElementById('reg-pass').value;
+    // 1. Capturar elementos y valores
+    const btn = document.querySelector('#form-register button');
+    const nombre = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const tel = document.getElementById('reg-tel').value.trim();
+    const pass = document.getElementById('reg-pass').value.trim();
 
-        if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
+    // 2. Validaciones básicas
+    if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
 
-        const { data, error } = await supabaseClient
+    // Bloquear botón para evitar múltiples clics
+    btn.disabled = true;
+    const originalText = btn.innerText;
+    btn.innerText = "PROCESANDO...";
+
+    try {
+        // 3. VERIFICAR SI YA EXISTE (Duplicados)
+        const { data: existe, error: errCheck } = await supabaseClient
             .from('gestores')
-            .insert([{ nombre: nombre, email: email, telefono: tel, password: pass }])
-            .select();
+            .select('id, estado')
+            .eq('telefono', tel)
+            .maybeSingle();
 
-        if (error) {
-            alert("Error al registrar: " + error.message);
-        } else {
-            alert("✅ Cuenta creada con éxito. Ahora inicia sesión.");
-            toggleLoginMode('login');
-            document.getElementById('log-user').value = nombre;
+        if (existe) {
+            if (existe.estado === 'pendiente') {
+                alert("⏳ Ya tenemos una solicitud con este número en revisión. ¡Ten paciencia, te avisaremos pronto!");
+            } else {
+                alert("✅ Este número ya tiene una cuenta activa. Ve a la pestaña de ENTRAR.");
+            }
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
         }
+
+        // 4. INSERTAR NUEVO REGISTRO
+        const { error } = await supabaseClient
+            .from('gestores')
+            .insert([{ 
+                nombre: nombre, 
+                email: email, 
+                telefono: tel, 
+                password: pass,
+                estado: 'pendiente' 
+            }]);
+
+        if (error) throw error;
+
+        // 5. ÉXITO
+        alert("✅ Solicitud enviada correctamente. El administrador debe aprobar tu cuenta antes de que puedas entrar. Te avisaremos por WhatsApp.");
+        
+        // Limpiar formulario y mandar al login
+        document.getElementById('form-register').querySelectorAll('input').forEach(i => i.value = "");
+        toggleLoginMode('login');
+
+    } catch (e) {
+        alert("Error al registrar: " + e.message);
+    } finally {
+        // Reactivar botón por si hubo error
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
+}
 
     // INICIO DE SESIÓN
     
@@ -4144,27 +4186,7 @@ async function processLogin() {
 }
 
     // 3. Proceso de Registro
-    async function processRegister() {
-        const nombre = document.getElementById('reg-name').value;
-        const email = document.getElementById('reg-email').value;
-        const tel = document.getElementById('reg-tel').value;
-        const pass = document.getElementById('reg-pass').value;
-
-        if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
-
-        const { data, error } = await supabaseClient
-            .from('gestores')
-            .insert([{ nombre: nombre, email: email, telefono: tel, password: pass }])
-            .select();
-
-        if (error) {
-            alert("Error al registrar: " + error.message);
-        } else {
-            alert("✅ Cuenta creada con éxito. Ahora inicia sesión.");
-            toggleLoginMode('login');
-            document.getElementById('log-user').value = nombre;
-        }
-    }
+    
 
     // 4. Funciones Auxiliares
     function saveSessionToMemory(name, isAdmin, data) {
