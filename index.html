@@ -730,89 +730,86 @@
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
 </div>
 
-    <!-- Contenido: Logística (CON EL ID CORREGIDO) -->
-    <div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-        
-       <!-- 1. SUB-NAVEGACIÓN DE ESTADOS (CORREGIDA) -->
-        <div id="filter-buttons-container" class="bg-white dark:bg-gray-800 p-2 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-2 items-center">
-            
-            <!-- Botón TODOS -->
-            <button onclick="filterLogisticaByStatus('TODOS', this)" class="btn-filter active px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all bg-primary text-white shadow-md">
-                Todos
-            </button>
-            
-            <!-- Botón PENDIENTE -->
-            <button onclick="filterLogisticaByStatus('Pendiente', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-yellow-50 hover:text-yellow-600 border border-transparent">
-                ⏳ Por Asignar
-            </button>
-            
-            <!-- Botón ALMACÉN -->
-            <button onclick="filterLogisticaByStatus('Recogida Almacén', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-orange-50 hover:text-orange-600 border border-transparent">
-                🏭 En Almacén
-            </button>
 
-            <!-- Botón MENSAJERO -->
-            <button onclick="filterLogisticaByStatus('Asignado Mensajero', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-blue-50 hover:text-blue-600 border border-transparent">
-                🏍️ Con Mensajero
-            </button>
-            
-            <!-- Botón HISTÓRICO (Agrupa Entregado y Cancelado) -->
-            <button onclick="filterLogisticaByStatus('FINALIZADOS', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent">
-                ✅ Histórico (Final)
-            </button>
+    <!-- === SECCIÓN DE LOGÍSTICA (RECONSTRUIDA) === -->
+<div id="cnt-logistica" class="tab-cnt bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+    
+    <!-- A. SUB-NAVEGACIÓN DE ESTADOS -->
+    <div id="filter-buttons-container" class="bg-white dark:bg-gray-800 p-2 border-b border-gray-100 dark:border-gray-700 flex flex-wrap gap-2 items-center">
+        <button onclick="filterLogisticaByStatus('TODOS', this)" class="btn-filter active px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all bg-primary text-white shadow-md">Todos</button>
+        <button onclick="filterLogisticaByStatus('Pendiente', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500">⏳ Por Asignar</button>
+        <button onclick="filterLogisticaByStatus('Recogida Almacén', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500">🏭 En Almacén</button>
+        <button onclick="filterLogisticaByStatus('Asignado Mensajero', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500">🏍️ Con Mensajero</button>
+        <button onclick="filterLogisticaByStatus('FINALIZADOS', this)" class="btn-filter px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all text-gray-500">✅ Histórico</button>
+    </div>
 
-            <!-- Etiqueta oculta para evitar el error de JS, o informativa si quieres dejarla -->
-            <span id="label-estado-actual" class="hidden"></span>
-        </div>
-
-        <!-- 2. HERRAMIENTAS (BUSCAR Y EXPORTAR) -->
-        <!-- PEGAR ESTO JUSTO DEBAJO DE LOS BOTONES DE FILTRO Y ANTES DE LA TABLA -->
-        <div class="p-4 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700">
+    <!-- B. BARRA DE FILTROS AVANZADOS -->
+    <div class="p-4 bg-gray-50/50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
             
-            <!-- Buscador -->
-            <div class="flex items-center gap-2 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 w-full md:w-96 shadow-sm">
-                <span class="material-symbols-outlined text-gray-400 text-sm">search</span>
-                <input type="text" id="search-logistica" oninput="renderAdminLogistica()" placeholder="Buscar cliente, gestor o producto..." class="bg-transparent border-none focus:ring-0 text-xs w-full font-bold text-slate-700 dark:text-white">
+            <div class="flex flex-col gap-1 lg:col-span-2">
+                <label class="text-[9px] font-black uppercase text-gray-400">Rango Fecha</label>
+                <div class="flex gap-1">
+                    <input type="date" id="f-desde" onchange="renderAdminLogistica()" class="w-full text-[10px] border-gray-200 rounded-lg p-2 dark:bg-gray-900">
+                    <input type="date" id="f-hasta" onchange="renderAdminLogistica()" class="w-full text-[10px] border-gray-200 rounded-lg p-2 dark:bg-gray-900">
+                </div>
             </div>
-            
-            <!-- Botón Excel -->
-            <div class="flex gap-2 items-center">
-                <span class="text-[10px] font-bold text-gray-400 uppercase hidden md:block mr-2">
-                    Acciones:
-                </span>
-                <button onclick="exportLogisticaExcel()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95">
+
+            <div class="flex flex-col gap-1">
+                <label class="text-[9px] font-black uppercase text-gray-400">Proveedor</label>
+                <select id="f-proveedor" onchange="renderAdminLogistica()" class="text-[10px] border-gray-200 rounded-lg p-2 font-bold dark:bg-gray-900 focus:ring-0">
+                    <option value="TODOS">Todos</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-[9px] font-black uppercase text-gray-400">Gestor</label>
+                <select id="f-gestor" onchange="renderAdminLogistica()" class="text-[10px] border-gray-200 rounded-lg p-2 font-bold dark:bg-gray-900 focus:ring-0">
+                    <option value="TODOS">Todos</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-[9px] font-black uppercase text-gray-400">Buscar</label>
+                <input type="text" id="search-logistica" oninput="renderAdminLogistica()" placeholder="Cliente..." class="w-full text-[10px] border-gray-200 rounded-lg p-2 font-bold dark:bg-gray-900">
+            </div>
+
+            <div class="flex items-end gap-1">
+                <button onclick="resetLogisticaFilters()" class="p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-400 rounded-lg hover:text-red-500 transition-colors">
+                    <span class="material-symbols-outlined text-sm">filter_alt_off</span>
+                </button>
+                <button onclick="exportLogisticaExcel()" class="flex-1 bg-emerald-500 text-white p-2 rounded-lg font-black text-[10px] uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
                     <span class="material-symbols-outlined text-sm">download</span> Excel
                 </button>
             </div>
         </div>
-        
-        <!-- 3. TABLA -->
-        <div class="overflow-x-auto">
-            <table id="admin-table-logistica" class="w-full text-left border-collapse">
-                <!-- 3. TABLA -->
-                <div class="overflow-x-auto">
-                    <table id="admin-table-logistica" class="w-full text-left border-collapse">
-                        
-                        <!-- === AQUÍ EMPIEZA EL CAMBIO === -->
-                        <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                            <tr>
-                                <th class="p-6">Fecha/Cliente</th>
-                                <th class="p-6">Proveedor</th> <!-- NUEVO -->
-                                <th class="p-6">Producto</th>
-                                <th class="p-6">Gestor</th>
-                                <!-- Nota: Hemos quitado 'Total' para hacer espacio, pero puedes volver a ponerlo si quieres -->
-                                <th class="p-6 text-right">Estado Logística</th>
-                            </tr>
-                        </thead>
-                        <!-- === AQUÍ TERMINA EL CAMBIO === -->
 
-                        <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700"></tbody>
-                    </table>
-                </div>
-                <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700"></tbody>
-            </table>
+        <!-- C. BARRA DE TOTALES -->
+        <div class="flex gap-6 border-t border-gray-100 dark:border-gray-700 pt-3">
+            <div class="flex flex-col"><span class="text-[8px] font-bold text-gray-400 uppercase">Pedidos</span><span id="sum-count" class="text-sm font-black text-primary dark:text-blue-400">0</span></div>
+            <div class="flex flex-col border-l pl-6 dark:border-gray-700"><span class="text-[8px] font-bold text-gray-400 uppercase">Venta Total</span><span id="sum-usd" class="text-sm font-black text-primary dark:text-blue-400">$0</span></div>
+            <div class="flex flex-col border-l pl-6 dark:border-gray-700"><span class="text-[8px] font-bold text-gray-400 uppercase">Comisiones</span><span id="sum-comi" class="text-sm font-black text-orange-500">$0</span></div>
         </div>
     </div>
+
+    <!-- D. LA TABLA DE DATOS -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
+                <tr>
+                    <th class="p-4">Fecha/Cliente</th>
+                    <th class="p-4">Proveedor</th>
+                    <th class="p-4">Producto</th>
+                    <th class="p-4">Gestor</th>
+                    <th class="p-4 text-right">Estado Logística</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700">
+                <!-- El JavaScript llenará esto automáticamente -->
+            </tbody>
+        </table>
+    </div>
+</div>
 
     <!-- Contenido: Corte Sábado (ACTUALIZADO CON EXCEL) -->
     <div id="cnt-pagos" class="tab-cnt hidden space-y-4">
@@ -2514,6 +2511,7 @@ async function loadAdminData() {
     // 1. Procesar Pedidos
     if (pedidos) {
         pedidosRawAdmin = pedidos; 
+        populateLogisticaFilters();
         renderAdminLogistica(); 
         renderAdminCortes();
         updateAdminStats(pedidos);
@@ -2552,98 +2550,118 @@ function updateAdminStats(pedidos) {
     document.getElementById('m-stat-gestores').innerText = new Set(pedidos.map(p => p.gestor)).size;
 }
 
-// --- NUEVA FUNCIÓN DE LOGÍSTICA CON FILTRO Y BLOQUEO ---
+// --- FUNCIÓN DE LOGÍSTICA MAESTRA CON FILTROS AVANZADOS ---
 function renderAdminLogistica() {
     const container = document.getElementById('list-admin-pedidos');
-    const searchInput = document.getElementById('search-logistica');
     if (!container || !pedidosRawAdmin) return;
 
-    const query = searchInput ? searchInput.value.toLowerCase() : "";
-    
-    // Filtro
+    // 1. Obtener valores de los filtros
+    const query = document.getElementById('search-logistica').value.toLowerCase();
+    const provFilter = document.getElementById('f-proveedor').value;
+    const gestFilter = document.getElementById('f-gestor').value;
+    const dateDesde = document.getElementById('f-desde').value;
+    const dateHasta = document.getElementById('f-hasta').value;
+
+    // 2. Aplicar Filtro Multi-Nivel
     const filtrados = pedidosRawAdmin.filter(p => {
-        const fecha = new Date(p.fecha).toLocaleDateString().toLowerCase();
-        const textoMatch = fecha.includes(query) || 
-                           (p.cliente || "").toLowerCase().includes(query) || 
-                           (p.proveedor || "").toLowerCase().includes(query) || 
-                           (p.gestor || "").toLowerCase().includes(query);
-        
-        // Lógica para agrupar 'Finalizados' (Entregado y Cancelado) si se filtra por historial
-        /* Opcional: Si quieres ver Cancelados dentro de entregados, descomenta esto. 
-           Si no, déjalo estricto como está abajo */
-        
-        const estadoMatch = currentStatusFilter === 'TODOS' || p.estado === currentStatusFilter;
-        return textoMatch && estadoMatch;
+        // A. Filtro por Pestaña (Status)
+        let matchStatus = false;
+        if (currentStatusFilter === 'TODOS') matchStatus = true;
+        else if (currentStatusFilter === 'FINALIZADOS') matchStatus = (p.estado === 'Entregado' || p.estado === 'Cancelado');
+        else matchStatus = (p.estado === currentStatusFilter);
+
+        // B. Filtro por Texto (Buscador)
+        const matchText = (p.cliente || "").toLowerCase().includes(query) || 
+                          (p.producto || "").toLowerCase().includes(query);
+
+        // C. Filtro por Proveedor
+        const matchProv = provFilter === 'TODOS' || p.proveedor === provFilter;
+
+        // D. Filtro por Gestor
+        const matchGest = gestFilter === 'TODOS' || p.gestor === gestFilter;
+
+        // E. Filtro por Rango de Fecha
+        let matchDate = true;
+        if (p.fecha) {
+            const pFecha = p.fecha.split('T')[0]; // Obtener YYYY-MM-DD
+            if (dateDesde && pFecha < dateDesde) matchDate = false;
+            if (dateHasta && pFecha > dateHasta) matchDate = false;
+        }
+
+        return matchStatus && matchText && matchProv && matchGest && matchDate;
     });
 
+    // 3. Actualizar Sumatorias (La sugerencia extra)
+    const totalUSD = filtrados.reduce((acc, p) => acc + Number(p.total || 0), 0);
+    const totalComi = filtrados.reduce((acc, p) => acc + Number(p.comision_total || 0), 0);
+    
+    document.getElementById('sum-count').innerText = filtrados.length;
+    document.getElementById('sum-usd').innerText = `$${totalUSD.toLocaleString()}`;
+    document.getElementById('sum-comi').innerText = `$${totalComi.toLocaleString()}`;
+
+    // 4. Renderizar Tabla
     if (filtrados.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400 font-bold uppercase text-xs">No hay pedidos en: ${currentStatusFilter}</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-400 font-bold uppercase text-xs">No hay pedidos que coincidan con estos filtros.</td></tr>`;
         return;
     }
 
     container.innerHTML = filtrados.map(p => {
-        // Colores según estado para identificación rápida visual
-        let colorClass = "bg-gray-100 text-gray-600"; // Default
-        let borderClass = "border-l-4 border-gray-200";
+        let colorClass = "bg-gray-100 text-gray-600";
+        if(p.estado === 'Pendiente') colorClass = "bg-yellow-100 text-yellow-700";
+        if(p.estado === 'Recogida Almacén') colorClass = "bg-orange-100 text-orange-700";
+        if(p.estado === 'Asignado Mensajero') colorClass = "bg-blue-100 text-blue-700";
+        if(p.estado === 'Entregado') colorClass = "bg-emerald-100 text-emerald-700";
+        if(p.estado === 'Cancelado') colorClass = "bg-red-100 text-red-700";
 
-        if(p.estado === 'Pendiente') {
-            colorClass = "bg-yellow-100 text-yellow-700";
-            borderClass = "border-l-4 border-yellow-400";
-        }
-        else if(p.estado === 'Recogida Almacén') {
-            colorClass = "bg-orange-100 text-orange-700";
-            borderClass = "border-l-4 border-orange-400";
-        }
-        else if(p.estado === 'Asignado Mensajero') {
-            colorClass = "bg-blue-100 text-blue-700";
-            borderClass = "border-l-4 border-blue-400";
-        }
-        else if(p.estado === 'Entregado') {
-            colorClass = "bg-emerald-100 text-emerald-700";
-            borderClass = "border-l-4 border-emerald-400";
-        }
-        else if(p.estado === 'Cancelado') {
-            colorClass = "bg-red-100 text-red-700";
-            borderClass = "border-l-4 border-red-400";
-        }
-
-        // Bloquear edición si ya es final
         const esFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
 
         return `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 ${borderClass}">
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700">
             <td class="p-4 font-bold uppercase text-[10px]">
                 <p class="text-gray-400 mb-1">${new Date(p.fecha).toLocaleDateString()}</p>
                 <span class="text-primary">${p.cliente}</span>
             </td>
-            <td class="p-4">
-                <span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 font-bold text-[9px] uppercase">
-                    ${p.proveedor || 'General'}
-                </span>
-            </td>
-            <td class="p-4 text-gray-500 max-w-xs truncate" title="${p.producto}">${p.producto}</td>
+            <td class="p-4"><span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold text-[9px] uppercase">${p.proveedor || 'General'}</span></td>
+            <td class="p-4 text-gray-500 truncate max-w-xs" title="${p.producto}">${p.producto}</td>
             <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold">${p.gestor}</span></td>
-            
-            <!-- SELECTOR DE ESTADOS (LÓGICA ADMINISTRADOR) -->
             <td class="p-4 text-right">
                 ${esFinal ? 
-                    `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass}">
-                        ${p.estado === 'Entregado' ? '✅ ENTREGADO' : '❌ CANCELADO'}
-                    </span>` 
-                    :
-                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-2 cursor-pointer focus:ring-0 w-40 text-center">
-                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Por Asignar</option>
-                        <option disabled>──────────</option>
-                        <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén (Cliente Recoge)</option>
-                        <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Asignar Mensajero</option>
-                        <option disabled>──────────</option>
-                        <option value="Entregado">✅ Marcar Entregado</option>
-                        <option value="Cancelado">❌ Cancelar Pedido</option>
+                    `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass}">${p.estado}</span>` :
+                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-2 cursor-pointer focus:ring-0 text-center w-full max-w-[150px]">
+                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                        <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén</option>
+                        <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Mensajero</option>
+                        <option value="Entregado">✅ Entregado</option>
+                        <option value="Cancelado">❌ Cancelado</option>
                     </select>`
                 }
             </td>
-        </tr>
-    `; }).join('');
+        </tr>`;
+    }).join('');
+}
+
+// FUNCION PARA LLENAR LOS SELECTS CON DATA REAL
+function populateLogisticaFilters() {
+    const proveedores = [...new Set(pedidosRawAdmin.map(p => p.proveedor || 'General'))].sort();
+    const gestores = [...new Set(pedidosRawAdmin.map(p => p.gestor))].sort();
+
+    const selectProv = document.getElementById('f-proveedor');
+    const selectGest = document.getElementById('f-gestor');
+
+    selectProv.innerHTML = '<option value="TODOS">Todos los Proveedores</option>' + 
+                          proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
+    
+    selectGest.innerHTML = '<option value="TODOS">Todos los Gestores</option>' + 
+                          gestores.map(g => `<option value="${g}">${g}</option>`).join('');
+}
+
+function resetLogisticaFilters() {
+    document.getElementById('f-desde').value = "";
+    document.getElementById('f-hasta').value = "";
+    document.getElementById('f-proveedor').value = "TODOS";
+    document.getElementById('f-gestor').value = "TODOS";
+    document.getElementById('search-logistica').value = "";
+    renderAdminLogistica();
 }
 
 function renderAdminCortes() {
@@ -4226,97 +4244,7 @@ function filterLogisticaByStatus(status, btnElement) {
     renderAdminLogistica();
 }
 
-function renderAdminLogistica() {
-    const container = document.getElementById('list-admin-pedidos');
-    const searchInput = document.getElementById('search-logistica');
-    
-    // Validación de seguridad
-    if (!container || !pedidosRawAdmin) return;
 
-    const query = searchInput ? searchInput.value.toLowerCase() : "";
-    
-    // --- LÓGICA DE FILTRADO CORREGIDA ---
-    const filtrados = pedidosRawAdmin.filter(p => {
-        // 1. Filtro de Texto (Buscador)
-        const fecha = new Date(p.fecha).toLocaleDateString().toLowerCase();
-        const textoMatch = fecha.includes(query) || 
-                           (p.cliente || "").toLowerCase().includes(query) || 
-                           (p.proveedor || "").toLowerCase().includes(query) || 
-                           (p.gestor || "").toLowerCase().includes(query);
-        
-        // 2. Filtro de Estado (Botones)
-        let estadoMatch = false;
-
-        if (currentStatusFilter === 'TODOS') {
-            estadoMatch = true;
-        } 
-        else if (currentStatusFilter === 'FINALIZADOS') {
-            // AQUÍ AGRUPAMOS: Si el botón es Histórico, mostramos Entregado Y Cancelado
-            estadoMatch = (p.estado === 'Entregado' || p.estado === 'Cancelado');
-        } 
-        else {
-            // Comparación exacta para Pendiente, Recogida Almacén, Asignado Mensajero
-            estadoMatch = (p.estado === currentStatusFilter);
-        }
-
-        return textoMatch && estadoMatch;
-    });
-
-    // Estado Vacío
-    if (filtrados.length === 0) {
-        container.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-400 font-bold uppercase text-xs">No hay pedidos en esta sección.</td></tr>`;
-        return;
-    }
-
-    // Renderizado de Filas
-    container.innerHTML = filtrados.map(p => {
-        // Definir colores para el SELECT (Visual individual)
-        let colorClass = "bg-gray-100 text-gray-600";
-        if(p.estado === 'Pendiente') colorClass = "bg-yellow-100 text-yellow-700";
-        if(p.estado === 'Recogida Almacén') colorClass = "bg-orange-100 text-orange-700";
-        if(p.estado === 'Asignado Mensajero') colorClass = "bg-blue-100 text-blue-700";
-        if(p.estado === 'Entregado') colorClass = "bg-emerald-100 text-emerald-700";
-        if(p.estado === 'Cancelado') colorClass = "bg-red-100 text-red-700";
-
-        // Determinar si es un estado final (Bloqueado)
-        const esFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
-
-        return `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-            <td class="p-4 font-bold uppercase text-[10px]">
-                <p class="text-gray-400 mb-1">${new Date(p.fecha).toLocaleDateString()}</p>
-                <span class="text-primary">${p.cliente}</span>
-            </td>
-            <td class="p-4">
-                <span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 font-bold text-[9px] uppercase">
-                    ${p.proveedor || 'General'}
-                </span>
-            </td>
-            <td class="p-4 text-gray-500 max-w-xs truncate" title="${p.producto}">${p.producto}</td>
-            <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold">${p.gestor}</span></td>
-            
-            <td class="p-4 text-right">
-                ${esFinal ? 
-                    // Si está finalizado, mostramos solo una etiqueta (no editable)
-                    `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass}">
-                        ${p.estado === 'Entregado' ? '✅ ENTREGADO' : '❌ CANCELADO'}
-                    </span>` 
-                    :
-                    // Si está activo, mostramos el SELECT completo
-                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-2 cursor-pointer focus:ring-0 text-center w-full max-w-[160px]">
-                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Por Asignar</option>
-                        <option disabled>──────────</option>
-                        <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén</option>
-                        <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Con Mensajero</option>
-                        <option disabled>──────────</option>
-                        <option value="Entregado">✅ Marcar Entregado</option>
-                        <option value="Cancelado">❌ Cancelar Pedido</option>
-                    </select>`
-                }
-            </td>
-        </tr>
-    `; }).join('');
-}
 
 // Exportar SOLO lo que se ve en pantalla (Filtrado)
 function exportLogisticaCurrentView() {
