@@ -5166,48 +5166,38 @@ function getLevelData(sales) {
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
 // --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---
 function applyLockedFeatures() {
-    const level = window.currentGestorLevel || 0;
+    const level = window.currentGestorLevel || 0; // Usar la variable global
     
-    // Obtenemos los botones
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
     const btnPdf = document.getElementById('btn-pdf-bulk');
 
-    // === NIVEL 2: TEXTO Y FOTOS ===
+    // NIVEL 2+: Texto y Fotos
     if (level >= 2) {
-        // Desbloquear TEXTO
         if(btnCopy) {
-            btnCopy.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold transition-all";
-            btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span class="hidden sm:inline">Texto</span>`;
-            // Asignación directa y limpia
-            btnCopy.onclick = function() { copyCategoryOffers(); };
+            btnCopy.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-indigo-200 bg-white text-indigo-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold hover:bg-indigo-50";
+            btnCopy.innerHTML = `<span class="material-symbols-outlined">content_copy</span> Texto`;
+            btnCopy.onclick = copyCategoryOffers;
         }
-
-        // Desbloquear FOTOS
         if(btnZip) {
-            btnZip.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 text-slate-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold transition-all";
-            btnZip.innerHTML = `<span class="material-symbols-outlined text-lg">folder_zip</span> <span class="hidden sm:inline">Fotos</span>`;
-            // Asignación directa y limpia
-            btnZip.onclick = function() { downloadCategoryPhotos(); };
+            btnZip.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-indigo-200 bg-white text-indigo-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold hover:bg-indigo-50";
+            btnZip.innerHTML = `<span class="material-symbols-outlined">folder_zip</span> Fotos`;
+            btnZip.onclick = downloadCategoryPhotos;
         }
     } else {
-        // Bloquear si es nivel bajo
         if(btnCopy) lockButtonDirect(btnCopy, "Texto Masivo", 2);
         if(btnZip) lockButtonDirect(btnZip, "Pack Fotos", 2);
     }
 
-    // === NIVEL 4: PDF ===
+    // NIVEL 4+: PDF
     if (level >= 4) {
-        // Desbloquear PDF
         if(btnPdf) {
-            btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-red-50 text-red-500 border border-red-100 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-bold shadow-sm cursor-pointer";
-            btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span class="hidden sm:inline">PDF</span>`;
-            // Asignación directa y limpia
-            btnPdf.onclick = function() { downloadCatalogPDF(); };
+            btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-red-50 text-red-600 border border-red-100 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold hover:bg-red-500 hover:text-white";
+            btnPdf.innerHTML = `<span class="material-symbols-outlined">picture_as_pdf</span> PDF`;
+            btnPdf.onclick = downloadCatalogPDF;
         }
     } else {
-        // Bloquear PDF
-        if(btnPdf) lockButtonDirect(btnPdf, "PDF Pro", 4);
+        if(btnPdf) lockButtonDirect(btnPdf, "Catálogo PDF", 4);
     }
 }
 
@@ -5300,41 +5290,42 @@ async function checkGamificationStatus() {
     const gestor = window.gestorName;
     if (!gestor) return;
 
-    // --- MODO DIOS (Marcel) ---
+    // --- MODO DIOS (Para ti) ---
     if (gestor === "Marcel Montano") {
-        console.log("👑 MODO DIOS: Nivel 4 forzado.");
-        updateGamificationUI(100);
-        window.currentGestorLevel = 4; 
-        renderFlashButton(); 
-        applyLockedFeatures(); 
-        return; 
+        window.currentGestorLevel = 5;
+        updateGamificationUI(80);
+        renderFlashButton();
+        applyLockedFeatures();
+        return;
     }
 
-    const today = new Date();
-    today.setDate(today.getDate() - 30);
-    const dateThreshold = today.toISOString();
-
-    // --- SOLUCIÓN AL ERROR 400 ---
-    // 1. Usamos '*' en el select.
-    // 2. Mantenemos { count: 'exact', head: true } para que sea rápido y no de error.
-    const { count, error } = await supabaseClient
+    // Consulta de ventas (Sin filtros de fecha agresivos para evitar errores de zona horaria en pruebas)
+    const { data, count, error } = await supabaseClient
         .from('pedidos')
-        .select('*', { count: 'exact', head: true }) 
+        .select('id', { count: 'exact' }) 
         .eq('gestor', gestor)
-        .eq('estado', 'Entregado')
-        .gte('created_at', dateThreshold); 
+        .eq('estado', 'Entregado');
 
     if (error) {
-        console.error("Error DB Gamificación:", error.message);
+        console.error("Error obteniendo nivel:", error);
         return;
     }
 
     const sales = count || 0;
+    
+    // 1. Guardar el nivel en una variable global para que todos la vean
+    const levelData = getLevelData(sales);
+    window.currentGestorLevel = levelData.lvl;
+    window.gestorSalesCount = sales;
+
+    // 2. Actualizar la tarjeta azul de arriba
     updateGamificationUI(sales);
-    window.currentGestorLevel = getLevelData(sales).lvl; 
-    loadAnalyticsPro(window.gestorName); 
-    renderFlashButton();     
-    applyLockedFeatures();   
+
+    // 3. ¡IMPORTANTE! Forzar el desbloqueo de los botones
+    renderFlashButton();     // Desbloquea el rayito amarillo
+    applyLockedFeatures();   // Desbloquea Texto, Fotos y PDF
+    
+    console.log(`Nivel detectado: ${window.currentGestorLevel} con ${sales} ventas.`);
 }
 
 // 2. ACTUALIZACIÓN VISUAL (Tarjeta Dashboard + Modal Carrera)
