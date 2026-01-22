@@ -1737,10 +1737,10 @@ function filterMyOrders() {
     const userData = window.currentUserData || {};
     const baseUrl = window.location.origin + window.location.pathname;
     
-    // --- BYPASS MODO DIOS CORREGIDO ---
+    // --- BYPASS MODO DIOS (Marcel siempre Nivel 5) ---
     let sales = 0;
     if (nombre === "Marcel Montano") {
-        sales = 80; // Forzamos 80 ventas para que seas Nivel 5 (Emperador)
+        sales = 80; 
     } else {
         const today = new Date();
         today.setDate(today.getDate() - 30);
@@ -1754,41 +1754,50 @@ function filterMyOrders() {
     }
 
     window.gestorSalesCount = sales;
-    const lvlData = getLevelData(sales); // Aquí ya lvlData.lvl será 5 y duration 1080
-    const diasDuracion = lvlData.duration / 24; // Esto dará 45
+    const lvlData = getLevelData(sales);
+    const diasDuracion = lvlData.duration / 24;
 
     const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
-    let displayLink = myLongLink;
+    
+    // ESTA ES LA VARIABLE QUE VAMOS A MOSTRAR
+    let linkParaMostrar = myLongLink; 
 
-    // Lógica de acortamiento (Si es Nivel 3 o más)
-    if (lvlData.lvl >= 3) {
-        try {
-            const { data: linkExistente } = await supabaseClient
-                .from('short_links')
-                .select('slug')
-                .eq('gestor', nombre)
-                .eq('original_url', myLongLink)
-                .single();
+    // --- GENERACIÓN DEL LINK CORTO ---
+    try {
+        // Buscamos si ya existe
+        const { data: linkData } = await supabaseClient
+            .from('short_links')
+            .select('slug')
+            .eq('gestor', nombre)
+            .eq('original_url', myLongLink)
+            .maybeSingle();
 
-            if (linkExistente) {
-                displayLink = `${window.location.origin}${window.location.pathname}?s=${linkExistente.slug}`;
-            } else {
-                const newSlug = Math.random().toString(36).substring(2, 7);
-                await supabaseClient.from('short_links').insert([{
-                    slug: newSlug, original_url: myLongLink, gestor: nombre
-                }]);
-                displayLink = `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
+        if (linkData) {
+            // SI EXISTE: Actualizamos la variable con el link corto
+            linkParaMostrar = `${window.location.origin}${window.location.pathname}?s=${linkData.slug}`;
+        } else {
+            // SI NO EXISTE: Creamos uno nuevo
+            const newSlug = Math.random().toString(36).substring(2, 7);
+            const { error: insError } = await supabaseClient.from('short_links').insert([{
+                slug: newSlug,
+                original_url: myLongLink,
+                gestor: nombre
+            }]);
+            
+            if (!insError) {
+                linkParaMostrar = `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
             }
-        } catch (e) { console.log("Usando link largo por error de red"); }
+        }
+    } catch (e) {
+        console.error("Error obteniendo link corto:", e);
     }
 
-    // --- RENDERIZADO DEL CUADRO CON DÍAS CORRECTOS ---
     const html = `
     <div id="sec-links-gestor" class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 shadow-sm mt-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-sm font-black uppercase text-primary italic">🔗 Mi Enlace Inteligente</h3>
-            <span class="text-[10px] font-bold ${lvlData.lvl >= 3 ? 'text-emerald-500' : 'text-gray-400'} uppercase">
-                ${lvlData.lvl >= 3 ? '⚡ Link Corto Pro Activo' : 'Link Estándar'}
+            <span class="text-[10px] font-bold text-emerald-500 uppercase">
+                ⚡ LINK CORTO PRO ACTIVO
             </span>
         </div>
         <p class="text-xs text-gray-400 mb-4">
@@ -1796,15 +1805,16 @@ function filterMyOrders() {
         </p>
         
         <div class="flex gap-2 mb-4">
-            <input type="text" id="my-link-input" value="${displayLink}" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-none font-bold text-gray-500">
+            <!-- AQUÍ USAMOS LA VARIABLE linkParaMostrar -->
+            <input type="text" id="my-link-input" value="${linkParaMostrar}" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-none font-bold text-gray-500">
             <button onclick="copy('my-link-input')" class="bg-primary text-white px-4 rounded-xl font-bold text-xs uppercase">Copiar</button>
         </div>
         
         <div class="grid grid-cols-2 gap-2">
-            <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('Catálogo: ' + displayLink)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+            <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('Catálogo: ' + linkParaMostrar)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
                 <i class="fab fa-whatsapp"></i> WhatsApp
             </button>
-            <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(displayLink)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+            <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkParaMostrar)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
                 <i class="fab fa-facebook"></i> Facebook
             </button>
         </div>
@@ -1819,22 +1829,52 @@ function filterMyOrders() {
     // 2. CARGA DE PRODUCTOS
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
     async function loadProducts() {
-    // --- NUEVO: DETECTOR DE LINKS CORTOS ---
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
+    const gestorUrl = urlParams.get('gestor');
 
+    // --- 1. DETECCIÓN POR LINK CORTO (?s=) ---
+    // Prioridad absoluta: Si el cliente toca un link, este gestor gana (Last Click Wins)
     if (slug) {
-        const { data, error } = await supabaseClient
+        const { data } = await supabaseClient
             .from('short_links')
-            .select('original_url')
+            .select('original_url, gestor')
             .eq('slug', slug)
             .single();
 
-        if (data && data.original_url) {
-            window.location.href = data.original_url; // Redirige al link largo con tu gestor y tel
-            return; 
+        if (data) {
+            await registrarRastroIP(data.gestor); // Guardamos rastro antes de redirigir
+            window.location.href = data.original_url;
+            return;
         }
     }
+
+    // --- 2. SI VIENE POR LINK LARGO (?gestor=) ---
+    if (gestorUrl) {
+        await registrarRastroIP(gestorUrl);
+        // initSmartReferral() se encargará de guardarlo en localStorage automáticamente
+    }
+
+    // --- 3. RESCATE POR IP (Solo si no hay rastro en URL ni en Memoria) ---
+    const sessionActual = localStorage.getItem('pth_referrer_smart');
+    if (!sessionActual && !gestorUrl && !slug) {
+        const duenoRecuperado = await buscarDuenoPorIP();
+        if (duenoRecuperado) {
+            console.log("📡 Rescate exitoso. Cliente recuperado por IP:", duenoRecuperado);
+            // Creamos sesión de rescate por 24h
+            const dataRescate = {
+                nombre: duenoRecuperado,
+                telefono: "", 
+                timestamp: new Date().getTime(),
+                expiresAt: new Date().getTime() + (24 * 60 * 60 * 1000)
+            };
+            localStorage.setItem('pth_referrer_smart', JSON.stringify(dataRescate));
+            window.location.reload(); // Recargamos para que el Header muestre al gestor
+            return;
+        }
+    }
+
+    // --- 4. CARGA NORMAL DE PRODUCTOS ---
     try {
         const { data, error } = await supabaseClient
             .from('productos')
@@ -1842,38 +1882,58 @@ function filterMyOrders() {
             .order('nombre', { ascending: true });
 
         if (error) throw error;
-
         productosRaw = data;
         
-        // A. Generar Categorías Automáticamente
         renderCategories();
-        
-        // B. Renderizar Productos
         renderProducts();
 
-        // === NUEVO: LÓGICA PARA ABRIR PRODUCTO AUTOMÁTICAMENTE ===
-        const urlParams = new URLSearchParams(window.location.search);
-        const productoEnEnlace = urlParams.get('search');
-
-        if (productoEnEnlace) {
-            // Buscamos si el producto del enlace existe en lo que bajamos de la base de datos
-            const existe = productosRaw.find(p => p.nombre === productoEnEnlace);
-            
-            if (existe) {
-                // Usamos un pequeño retraso (500ms) para que la página cargue visualmente 
-                // antes de que salte la ventana del producto.
-                setTimeout(() => {
-                    openDetail(productoEnEnlace);
-                }, 500);
-            }
+        // Lógica de abrir producto automáticamente (?search=...)
+        const searchParam = urlParams.get('search');
+        if (searchParam) {
+            const existe = productosRaw.find(p => p.nombre === searchParam);
+            if (existe) setTimeout(() => { openDetail(searchParam); }, 500);
         }
-        // ========================================================
-
     } catch (e) { 
-        console.error("Error cargando:", e);
-        document.getElementById('productos-container').innerHTML = 
-            `<div class="col-span-full py-10 text-center text-red-500">Error de conexión.</div>`; 
+        console.error("Error cargando catálogo:", e);
+        document.getElementById('productos-container').innerHTML = `<div class="col-span-full py-10 text-center text-gray-400">Error de conexión.</div>`;
     }
+}
+
+// --- FUNCIONES DE APOYO PARA EL RASTREO IP ---
+
+async function registrarRastroIP(nombreGestor) {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const { ip } = await res.json();
+        
+        // Guardamos o actualizamos el rastro de esta IP para este gestor
+        // Usamos .insert porque queremos tener un historial de quién trajo a quién
+        await supabaseClient.from('link_analytics').insert([{
+            agent_name: nombreGestor,
+            ip_address: ip
+        }]);
+    } catch (e) { /* Fallo silencioso de IP */ }
+}
+
+async function buscarDuenoPorIP() {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const { ip } = await res.json();
+        
+        // Buscamos el último rastro dejado por esta IP en las últimas 48 horas
+        const hace48Horas = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+        const { data } = await supabaseClient
+            .from('link_analytics')
+            .select('agent_name')
+            .eq('ip_address', ip)
+            .gte('timestamp', hace48Horas)
+            .order('timestamp', { ascending: false })
+            .limit(1)
+            .single();
+            
+        return data ? data.agent_name : null;
+    } catch (e) { return null; }
 }
 
 function prepararPDFDesdeHistorial(pedidoId, accion) {
@@ -2289,15 +2349,50 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const monedaC = document.getElementById('check-moneda').value;
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
+    
 
+    // 1. DETERMINAR QUIÉN ES EL GESTOR (CON PRIORIDAD DE AMARRE)
     let activeGestor = "Venta Directa";
+
     if (window.gestorName) {
+        // CASO A: El que navega es un GESTOR (él mismo hace la orden para su cliente)
         activeGestor = window.gestorName;
     } else {
-        const referido = await getActiveReferrer();
-        if (referido) activeGestor = referido.nombre;
+        // CASO B: El que navega es un CLIENTE
+        
+        // Prioridad 1: ¿El teléfono del cliente ya está amarrado a un gestor Nivel 5 en la DB?
+        const duenoEterno = await checkCustomerOwnership(telC);
+        
+        if (duenoEterno) {
+            activeGestor = duenoEterno;
+            console.log("🚀 Atribución por Amarre (Nivel 5) recuperada de la DB.");
+        } else {
+            // Prioridad 2: Si no tiene dueño en la DB, ¿viene de un link de referido (?s= o ?gestor=)?
+            const referido = await getActiveReferrer();
+            if (referido) {
+                activeGestor = referido.nombre;
+                console.log("🔗 Atribución por Enlace detectada.");
+            }
+        }
     }
 
+    // 2. LOGICA DE BINDEO (ASEGURAR EL CLIENTE PARA EL FUTURO)
+    // Obtenemos los datos de nivel del gestor que resultó asignado
+    // Usamos window.gestorSalesCount si es el propio gestor, o el nivel que tenga el gestor asignado
+    const levelData = getLevelData(window.gestorSalesCount || 0);
+
+    // Si el gestor es Nivel 5, guardamos/actualizamos el amarre en la DB
+    if (levelData.lvl >= 5 && activeGestor !== "Venta Directa") {
+        try {
+            await supabaseClient.from('customer_bindings').upsert({
+                phone: telC.replace(/\D/g, ''), 
+                agent_name: activeGestor
+            });
+            console.log("💎 Sistema Emperador: Cliente vinculado/actualizado a:", activeGestor);
+        } catch (err) {
+            console.error("Error en bindeo:", err);
+        }
+    }
     let totalEquipo = 0;
     let totalMensajeria = 0;
     let totalComision = 0;
@@ -5154,20 +5249,36 @@ function toTitleCase(str) {
 // Datos Maestros de Niveles
 function getLevelData(sales) {
     if (sales >= 70) return { 
-        lvl: 5, name: "Emperador", next: 1000, color: "text-purple-600", duration: 1080, // 45 días
-        hasShortLink: true 
+        lvl: 5, name: "Emperador", next: 1000, color: "text-purple-600", 
+        duration: 8760, // 1 AÑO (365 días)
+        hasShortLink: true,
+        power: "Bindeo de Cliente" // "Amarrar" el teléfono del cliente
     };
     if (sales >= 40) return { 
-        lvl: 4, name: "Monarca", next: 70, color: "text-emerald-500", duration: 720, // 30 días
+        lvl: 4, name: "Monarca", next: 70, color: "text-emerald-500", 
+        duration: 4320, // 6 MESES (180 días)
         hasShortLink: true 
     };
     if (sales >= 20) return { 
-        lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", duration: 360, // 15 días
+        lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", 
+        duration: 2160, // 3 MESES (90 días)
         hasShortLink: true 
     };
-    if (sales >= 10) return { lvl: 2, name: "Experto", next: 20, color: "text-blue-500", duration: 168 };
-    if (sales >= 3)  return { lvl: 1, name: "Novato", next: 10, color: "text-orange-500", duration: 72 };
-    return { lvl: 0, name: "Iniciado", next: 3, color: "text-red-500", duration: 24 };
+    if (sales >= 10) return { 
+        lvl: 2, name: "Experto", next: 20, color: "text-blue-500", 
+        duration: 720, // 1 MES (30 días)
+        hasShortLink: true 
+    };
+    if (sales >= 3)  return { 
+        lvl: 1, name: "Novato", next: 10, color: "text-orange-500", 
+        duration: 720, // 1 MES (30 días)
+        hasShortLink: true 
+    };
+    return { 
+        lvl: 0, name: "Iniciado", next: 3, color: "text-red-500", 
+        duration: 168, // 1 SEMANA (7 días)
+        hasShortLink: true // Todos tienen link corto ahora
+    };
 }
 
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
@@ -6081,6 +6192,62 @@ async function generarComprobanteVenta(datosPedido, accion) {
     }
 }
 
+// Función para verificar si un teléfono ya pertenece a un Gestor Nivel 5
+async function checkCustomerOwnership(phone) {
+    if (!phone) return null;
+    try {
+        const { data, error } = await supabaseClient
+            .from('customer_bindings')
+            .select('agent_name')
+            .eq('phone', phone.replace(/\D/g, ''))
+            .single();
+        
+        if (data && data.agent_name) {
+            console.log("💎 Cliente vinculado permanentemente a:", data.agent_name);
+            return data.agent_name;
+        }
+    } catch (e) {
+        // console.log("Cliente sin dueño previo");
+    }
+    return null;
+}
+
+// Función para dejar rastro de IP al usar un link
+async function registrarRastroIP(nombreGestor) {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const { ip } = await res.json();
+        
+        // Guardamos en la tabla de analítica
+        await supabaseClient.from('link_analytics').insert([{
+            agent_name: nombreGestor,
+            ip_address: ip
+        }]);
+    } catch (e) { console.error("Rastro IP fallido (VPN o Bloqueo)"); }
+}
+
+// Función para buscar si una IP tiene dueño en las últimas 48 horas
+async function buscarDuenoPorIP() {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const { ip } = await res.json();
+        
+        // Buscamos el rastro más reciente de esta IP (máximo 48h de antigüedad)
+        const limiteTiempo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+        const { data, error } = await supabaseClient
+            .from('link_analytics')
+            .select('agent_name')
+            .eq('ip_address', ip)
+            .gte('timestamp', limiteTiempo) // Filtro de 48 horas
+            .order('timestamp', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+        return data ? data.agent_name : null;
+    } catch (e) { return null; }
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
@@ -6120,7 +6287,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
                         <div class="mb-5">
                             <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
                                 <span>Duración Enlace</span>
-                                <span class="text-red-500">24 HORAS</span>
+                                <span class="text-red-500">1 SEMANA</span>
                             </p>
                             <div class="vital-link-bar"><div class="vital-link-fill bg-red-400" style="width: 10%"></div></div>
                         </div>
@@ -6147,7 +6314,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
                         <div class="mb-5">
                             <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
                                 <span>Duración Enlace</span>
-                                <span class="text-orange-500">3 DÍAS</span>
+                                <span class="text-orange-500">1 MES</span>
                             </p>
                             <div class="vital-link-bar"><div class="vital-link-fill bg-orange-400" style="width: 25%"></div></div>
                         </div>
@@ -6174,7 +6341,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
                         <div class="mb-5">
                             <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
                                 <span>Duración Enlace</span>
-                                <span class="text-blue-500">7 DÍAS</span>
+                                <span class="text-blue-500">1 MES</span>
                             </p>
                             <div class="vital-link-bar"><div class="vital-link-fill bg-blue-400" style="width: 40%"></div></div>
                         </div>
@@ -6201,7 +6368,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
                         <div class="mb-5">
                             <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
                                 <span>Duración Enlace</span>
-                                <span class="text-indigo-500">15 DÍAS</span>
+                                <span class="text-indigo-500">3 MESES</span>
                             </p>
                             <div class="vital-link-bar"><div class="vital-link-fill bg-indigo-400" style="width: 65%"></div></div>
                         </div>
@@ -6228,7 +6395,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
                         <div class="mb-5">
                             <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
                                 <span>Duración Enlace</span>
-                                <span class="text-emerald-500">30 DÍAS (MÁX)</span>
+                                <span class="text-emerald-500">6 MESES</span>
                             </p>
                             <div class="vital-link-bar"><div class="vital-link-fill bg-emerald-500" style="width: 100%"></div></div>
                         </div>
@@ -6255,7 +6422,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
                     <div class="mb-5">
                         <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
                             <span>Duración Enlace</span>
-                            <span class="text-purple-600">45 DÍAS (ULTRA)</span>
+                            <span class="text-purple-600">1 AÑO (ULTRA)</span>
                         </p>
                         <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                             <div class="h-full bg-purple-500" style="width: 100%"></div>
