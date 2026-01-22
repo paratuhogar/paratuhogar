@@ -6085,6 +6085,45 @@ async function removeGestor(id, nombre) {
     }
 }
 
+async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
+    // 1. Intentar actualizar en Supabase
+    const { data, error } = await supabaseClient
+        .from('gestores')
+        .update({ estado: nuevoEstado })
+        .eq('id', id)
+        .select();
+
+    if (error) {
+        alert("Error al procesar la solicitud: " + error.message);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        // 2. Si lo activamos, abrimos WhatsApp para notificar
+        if (nuevoEstado === 'activo' && telefonoGestor) {
+            
+            // Limpiamos el número para la URL (formato 53...)
+            const numLimpio = telefonoGestor.replace(/\D/g, '');
+            const finalNum = numLimpio.length === 8 ? '53' + numLimpio : numLimpio;
+            
+            const mensaje = encodeURIComponent(
+                `👋 ¡Hola ${nombreGestor}! Tu cuenta en *paratuhogar* ha sido aprobada con éxito. \n\n` +
+                `🚀 Ya puedes iniciar sesión y empezar a trabajar con nosotros.\n\n` +
+                `¡Bienvenido al equipo! ✨`
+            );
+
+            window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
+            alert(`✅ Gestor activado. Se ha abierto WhatsApp para notificar a ${nombreGestor}.`);
+        } else {
+            alert("❌ Solicitud rechazada correctamente.");
+        }
+
+        // 3. Refrescar las listas de gestores en el panel
+        if (typeof loadPendingGestores === 'function') loadPendingGestores();
+        if (typeof loadAdminData === 'function') loadAdminData();
+    }
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
