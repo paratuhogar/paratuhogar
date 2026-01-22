@@ -46,78 +46,49 @@
     </script>
 
     <style type="text/tailwindcss">
-    @layer utilities {
-        /* --- ESTILOS DEL HEADER (LO QUE SE PERDIÓ) --- */
-        .wave-bg {
-            background-color: #1a4789;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3%3Cpath fill='%232c6fb5' fill-opacity='0.4' d='M0,192L48,176C96,160,192,128,288,112C384,96,480,96,576,122.7C672,149,768,203,864,202.7C960,203,1056,149,1152,117.3C1248,85,1344,75,1392,69.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,106.7C672,117,768,171,864,170.7C960,171,1056,117,1152,106.7C1248,96,1344,128,1392,144L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-            background-size: cover;
-            background-position: top;
+        @layer utilities {
+            .wave-bg {
+                background-color: #1a4789;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3%3Cpath fill='%232c6fb5' fill-opacity='0.4' d='M0,192L48,176C96,160,192,128,288,112C384,96,480,96,576,122.7C672,149,768,203,864,202.7C960,203,1056,149,1152,117.3C1248,85,1344,75,1392,69.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,106.7C672,117,768,171,864,170.7C960,171,1056,117,1152,106.7C1248,96,1344,128,1392,144L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+                background-size: cover;
+                background-position: top;
+            }
+            .wave-divider {
+                height: 40px;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3%3Cpath fill='%231a4789' d='M0,32L60,42.7C120,53,240,75,360,74.7C480,75,600,53,720,48C840,43,960,53,1080,58.7C1200,64,1320,64,1380,64L1440,64L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+                background-size: 100% 100%;
+            }
         }
-        .wave-divider {
-            height: 40px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100' preserveAspectRatio='none'%3%3Cpath fill='%231a4789' d='M0,32L60,42.7C120,53,240,75,360,74.7C480,75,600,53,720,48C840,43,960,53,1080,58.7C1200,64,1320,64,1380,64L1440,64L1440,0L1380,0C1320,0,1200,0,1080,0C960,0,840,0,720,0C600,0,480,0,360,0C240,0,120,0,60,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-            background-size: 100% 100%;
+        body { font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; display: inline-block; vertical-align: middle; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .category-tab.active { border-bottom: 3px solid #1a4789; color: #1a4789; }
+        .loader { width: 40px; height: 40px; border: 4px solid #1a4789; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* ESTILOS DEL EDITOR WORD */
+        .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+        .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
+        
+        /* CORRECCIONES MÓVIL */
+        @media (max-width: 768px) {
+            #sec-admin-master .grid-cols-1, #sec-admin-master .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+            .overflow-x-auto { margin: 0 -15px; padding: 0 15px; }
+            table { min-width: 500px !important; }
+            #list-admin-inventario { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+            #list-admin-inventario img { height: 100px !important; }
         }
 
-        /* --- ESTILOS DE TARJETAS Y GAMIFICACIÓN --- */
-        .card-premium {
-            @apply bg-white rounded-[30px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 transition-all duration-300;
+        /* Estilos recuperados para el Panel Admin */
+        .btn-tab-admin.active { 
+            background-color: #1a4789; 
+            color: white !important; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
         }
-        .level-unlocked {
-            @apply border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)] bg-emerald-50/50;
+        .btn-tab-admin {
+            color: #94a3b8; /* Gris suave inactivo */
         }
-        .level-current {
-            @apply border-primary shadow-[0_0_30px_rgba(26,71,137,0.3)] ring-2 ring-primary ring-offset-2;
-        }
-        .level-locked {
-            @apply opacity-60 grayscale bg-slate-50;
-        }
-        .feature-badge {
-            @apply flex flex-col gap-1 p-3 rounded-2xl transition-all hover:scale-[1.02] cursor-help;
-        }
-        .text-glow-purple {
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
-        }
-    }
-
-    /* Animaciones */
-    @keyframes pulse-soft {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.02); opacity: 0.8; }
-    }
-    .animate-current {
-        animation: pulse-soft 3s infinite ease-in-out;
-    }
-
-    :root {
-        --pt-blue: #1a4789;
-        --pt-orange: #f97316;
-        --pt-green: #10b981;
-    }
-    @layer utilities {
-    /* Efecto de resplandor para el rango máximo */
-    .glow-emperador {
-        box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(168, 85, 247, 0.2);
-    }
-    /* Tarjeta estilo Neumorfismo Moderno */
-    .card-stat-premium {
-        @apply bg-white dark:bg-slate-800 rounded-[35px] border border-slate-100 dark:border-slate-700 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] dark:shadow-none transition-all duration-300 hover:scale-[1.01];
-    }
-    /* Texto con degradado de metal */
-    .text-gradient-gold {
-        @apply bg-clip-text text-transparent bg-gradient-to-b from-amber-200 via-amber-500 to-amber-700 font-black;
-    }
-    /* Barra de progreso estilo "Láser" */
-    .laser-bar {
-        @apply relative overflow-hidden bg-slate-200 dark:bg-slate-700 h-3 rounded-full;
-    }
-    .laser-fill {
-        @apply h-full rounded-full transition-all duration-1000 ease-out;
-        box-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
-    }
-}
-</style>
+    </style>
 </head>
 
 <body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
@@ -380,28 +351,9 @@
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <!-- CABECERA DEL RANKING CON FILTRO DE TIEMPO -->
-<div class="p-6 border-b border-gray-50 dark:border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50/50 dark:bg-gray-900/20">
-    <div>
-        <h3 class="text-xs font-black uppercase tracking-widest text-primary italic flex items-center gap-2">
-            <span class="material-symbols-outlined text-sm">emoji_events</span> Arena de Agentes
-        </h3>
-        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Ranking por cantidad de ventas</p>
-    </div>
-    
-    <!-- Este es el selector que hace la magia -->
-    <select id="rank-time" onchange="re_renderRanking()" class="text-[10px] font-black uppercase border-none rounded-xl bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-primary py-2 px-4 cursor-pointer">
-        <option value="hoy">Hoy</option>
-        <option value="semana">Esta Semana</option>
-        <option value="mes" selected>Este Mes</option>
-        <option value="siempre">Histórico</option>
-    </select>
-</div>
-
-<!-- LA LISTA (Asegúrate de que este div esté debajo) -->
-<div id="ranking-list" class="divide-y divide-gray-50 dark:divide-gray-700">
-    <!-- Se llena con JS -->
-</div>
+                <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">Ranking de Agentes</h3>
+                </div>
                 <div id="ranking-list" class="divide-y divide-gray-50 dark:divide-gray-700"></div>
                 <!-- SECCIÓN DE MIS PEDIDOS CON FILTROS -->
                 <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm mt-6 overflow-hidden">
@@ -1650,75 +1602,38 @@ async function loadProDashboard(nombreGestor) {
     await injectLinksSection(nombreGestor);
 }
 
-let lastRankingData = []; // Guardamos una copia global para los filtros
-
+// Función auxiliar para el Ranking (para mantener el código limpio)
 function renderRankingAnonimo(allPedidos, nombreGestor) {
-    lastRankingData = allPedidos; 
-    const timeFilter = document.getElementById('rank-time').value;
-    const now = new Date();
-
-    // 1. Filtrar pedidos por tiempo y estado "Entregado"
-    const filtered = allPedidos.filter(p => {
-        if (p.estado !== 'Entregado' || p.gestor === 'Venta Directa') return false;
-        
-        const pFecha = new Date(p.fecha);
-        if (timeFilter === 'hoy') {
-            return pFecha.toDateString() === now.toDateString();
-        } 
-        else if (timeFilter === 'semana') {
-            const inicioSemana = new Date(now.setDate(now.getDate() - now.getDay()));
-            return pFecha >= inicioSemana;
-        } 
-        else if (timeFilter === 'mes') {
-            return pFecha.getMonth() === new Date().getMonth() && pFecha.getFullYear() === new Date().getFullYear();
+    const rankingMap = {};
+    allPedidos.forEach(p => {
+        if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
+            rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + (Number(p.comision_total) || 0);
         }
-        return true; // Siempre (Histórico)
     });
 
-    // 2. Contar ventas por gestor (Ya no sumamos dinero)
-    const counts = {};
-    filtered.forEach(p => {
-        counts[p.gestor] = (counts[p.gestor] || 0) + 1;
-    });
-
-    // 3. Ordenar de mayor a menor ventas
-    const sorted = Object.entries(counts)
-        .map(([name, ventas]) => ({ name, ventas }))
-        .sort((a, b) => b.ventas - a.ventas)
+    const rankingArray = Object.entries(rankingMap)
+        .sort(([,a], [,b]) => b - a)
         .slice(0, 10);
 
-    // 4. Dibujar la lista
-    const container = document.getElementById('ranking-list');
-    if (sorted.length === 0) {
-        container.innerHTML = `<div class="p-10 text-center text-gray-400 text-[10px] font-bold uppercase italic">Sin ventas en este periodo</div>`;
-        return;
-    }
-
-    container.innerHTML = sorted.map((agente, index) => {
-        const isMe = agente.name === nombreGestor;
-        const maskedName = isMe ? `${agente.name} (Tú)` : agente.name.substring(0, 3) + '***';
-        const nivel = getLevelData(agente.ventas).name; // Aprovechamos tus niveles
+    const rankingHTML = rankingArray.map(([gName, gTotal], index) => {
+        const isMe = gName === nombreGestor;
+        const maskedName = isMe ? `${gName} (Tú)` : gName.substring(0, 3) + '***';
+        const icon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index+1}`));
         
-        let medal = `<span class="text-[10px] font-bold text-gray-300 w-6">#${index + 1}</span>`;
-        if (index === 0) medal = `<span class="text-xl w-6">🥇</span>`;
-        if (index === 1) medal = `<span class="text-xl w-6">🥈</span>`;
-        if (index === 2) medal = `<span class="text-xl w-6">🥉</span>`;
-
         return `
-        <div class="flex justify-between items-center p-4 ${isMe ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+        <div class="flex justify-between items-center p-3 ${isMe ? 'bg-primary/10 border border-primary/20 rounded-xl' : ''}">
             <div class="flex items-center gap-3">
-                ${medal}
-                <div>
-                    <p class="text-[11px] font-black uppercase ${isMe ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}">${maskedName}</p>
-                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">${nivel}</p>
-                </div>
+                <span class="text-lg">${icon}</span>
+                <span class="text-xs font-black uppercase ${isMe ? 'text-primary' : 'text-gray-500'}">${maskedName}</span>
             </div>
-            <div class="text-right">
-                <p class="text-sm font-black text-slate-800 dark:text-white">${agente.ventas} <span class="text-[9px] text-gray-400 uppercase">vtas</span></p>
-            </div>
+            <span class="text-xs font-bold text-gray-800">$${gTotal.toFixed(0)}</span>
         </div>`;
     }).join('');
+
+    const rankList = document.getElementById('ranking-list');
+    if(rankList) rankList.innerHTML = rankingHTML;
 }
+
 // --- NUEVA FUNCIÓN: RENDERIZAR LISTA DE MIS PEDIDOS ---
 // --- FUNCIÓN ACTUALIZADA: RENDERIZAR LISTA DE MIS PEDIDOS CON WHATSAPP ---
 let currentMyOrdersFilter = 'TODOS';
@@ -1843,8 +1758,6 @@ function filterMyOrders() {
     const diasDuracion = lvlData.duration / 24;
 
     const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
-    // LLAMAMOS AL GENERADOR SIN IMPORTAR EL NIVEL
-    const finalLink = await getOrGenerateShortLink(nombre, myLongLink);
     
     // ESTA ES LA VARIABLE QUE VAMOS A MOSTRAR
     let linkParaMostrar = myLongLink; 
@@ -3136,33 +3049,22 @@ function openAdminMasterFromGestor() {
 // --- FUNCIONES PARA EL FORMULARIO DE PRODUCTOS ---
 
 function openModalProd() { 
-    // 0. Actualizar categorías en el datalist
-    if (typeof updateFormCategories === 'function') updateFormCategories();
+        updateFormCategories(); // <--- AGREGAR ESTA LÍNEA AQUÍ
 
-    // 1. Limpiar el ID de edición (CRÍTICO: evita que un equipo nuevo sobrescriba a uno viejo)
+    // 1. Limpiar el ID de edición (para que sepa que es uno NUEVO)
     const idEdit = document.getElementById('p-id-edit');
     if(idEdit) idEdit.value = "";
     
-    // 2. Limpiar el campo oculto de imagen que usa la IA
-    const imgNameBackup = document.getElementById('p-img-name');
-    if(imgNameBackup) imgNameBackup.value = "";
-
-    // 3. Resetear el formulario completo (esto limpia nombres, precios, etc.)
+    // 2. Resetear todos los inputs del formulario (nombres, precios, etc)
     const form = document.getElementById('form-nuevo-prod');
     if(form) form.reset();
     
-    // 4. Limpiar explícitamente campos que a veces no se resetean bien
-    if(document.getElementById('p-mensajeria')) document.getElementById('p-mensajeria').value = "";
-    if(document.getElementById('p-disponible')) document.getElementById('p-disponible').value = "SI";
-    if(document.getElementById('p-proveedor')) document.getElementById('p-proveedor').value = "General";
-    if(document.getElementById('p-flexible')) document.getElementById('p-flexible').value = "NO";
-
-    // 5. Limpiar el editor de texto (Quill)
+    // 3. Limpiar el editor de texto (Quill)
     if (typeof quill !== 'undefined' && quill !== null) {
         quill.root.innerHTML = "";
     }
 
-    // 6. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
+    // 4. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
     for (let i = 0; i < 4; i++) {
         const pathInput = document.getElementById(`img-path-${i}`);
         const previewImg = document.getElementById(`prev-${i}`);
@@ -3179,14 +3081,11 @@ function openModalProd() {
         }
     }
 
-    // 7. Asegurar que el botón diga "Guardar Cambios" y restaurar estilo original
+    // 5. Asegurar que el botón diga "Guardar Cambios" y no "Actualizar"
     const btnSave = document.getElementById('btn-save-prod');
-    if(btnSave) {
-        btnSave.innerText = "Guardar Cambios";
-        btnSave.disabled = false;
-    }
+    if(btnSave) btnSave.innerText = "Guardar Cambios";
     
-    // 8. Mostrar el modal
+    // 6. Mostrar el modal
     const modal = document.getElementById('modal-producto');
     if(modal) modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -3264,102 +3163,134 @@ function getAgentPhone() {
     return limpio;
 }
 
-// --- FUNCIÓN MAESTRA DE GUARDADO (BORRA LAS ANTERIORES) ---
+// --- GUARDAR EL PRODUCTO COMPLETO EN LA TABLA ---
+// --- GUARDAR PRODUCTO CON VERIFICACIÓN INTELIGENTE (FUZZY MATCH) ---
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const btn = document.getElementById('btn-save-prod');
     const nombreInput = document.getElementById('p-nombre').value.trim();
     const categoriaInput = document.getElementById('p-categoria').value;
-    const editId = document.getElementById('p-id-edit').value; // ID único del equipo
+    const editId = document.getElementById('p-id-edit').value;
     
-    // 1. DETECTOR DE DUPLICADOS (Solo si el equipo es NUEVO)
+    // ============================================================
+    // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
+    // ============================================================
     if (!editId) { 
-        const palabrasClave = nombreInput.toLowerCase().split(' ').filter(w => w.length > 3).slice(0, 2).join(' & ');
-        if (palabrasClave) {
-            const { data: similares } = await supabaseClient
-                .from('productos')
-                .select('nombre')
-                .textSearch('nombre', palabrasClave)
-                .limit(1);
+        // A. Limpiamos el nombre para sacar palabras clave importantes
+        // Quitamos palabras comunes que la IA pone siempre (Smart, TV, de, el, con...)
+        const palabrasIgnoradas = ['de', 'el', 'la', 'con', 'para', 'en', 'y', 'un', 'una', 'smart', 'nuevo', 'oferta'];
+        
+        // Separamos el nombre en palabras, filtramos las cortas (<3 letras) y las ignoradas
+        const palabrasClave = nombreInput.toLowerCase()
+            .split(/[\s\-\/\(\)]+/) // Separar por espacios o guiones
+            .filter(w => w.length > 2 && !palabrasIgnoradas.includes(w));
 
+        // Tomamos las 3 palabras más "raras" o largas (generalmente Marca y Modelo)
+        // Ejemplo: De "Smart TV Challenger 75 4K" -> busca "Challenger" y "75"
+        const keywords = palabrasClave.slice(0, 3).join(' & '); 
+
+        if (keywords.length > 0) {
+            // B. Preguntamos a Supabase usando Búsqueda de Texto Completo
+            // Busca productos que tengan ESAS palabras en CUALQUIER orden
+            const { data: similares, error: errCheck } = await supabaseClient
+                .from('productos')
+                .select('nombre, precio, categoria')
+                .textSearch('nombre', keywords) 
+                .limit(3);
+
+            // C. Si encuentra coincidencias, ALERTA al administrador
             if (similares && similares.length > 0) {
-                if (!confirm(`⛔ POSIBLE DUPLICADO\n\nYa existe: "${similares[0].nombre}"\n\n¿Quieres subir este de todas formas?`)) return;
+                // Filtramos para asegurar que sean de la misma categoría (para evitar falsos positivos)
+                const duplicadoReal = similares.find(p => p.categoria === categoriaInput);
+
+                if (duplicadoReal) {
+                    const confirmar = confirm(
+                        `⛔ POSIBLE DUPLICADO DETECTADO\n\n` +
+                        `Tú intentas subir: "${nombreInput}"\n\n` +
+                        `Pero ya existe en base de datos:\n` +
+                        `👉 "${duplicadoReal.nombre}" ($${duplicadoReal.precio})\n\n` +
+                        `¿Es el mismo equipo que subió otro admin?\n` +
+                        `[Aceptar] = Cancelar subida (No duplicar)\n` +
+                        `[Cancelar] = Subir de todas formas (Es diferente)`
+                    );
+
+                    if (confirmar) {
+                        return; // Detiene el proceso, no guarda nada.
+                    }
+                }
             }
         }
     }
+    // ============================================================
 
-    // 2. VALIDACIÓN DE FOTOS
+    // 2. Validación de Foto
+    const imgName = document.getElementById('p-img-name') ? document.getElementById('p-img-name').value : '';
+    // Revisamos las 4 casillas por si acaso
     let tieneFoto = false;
     for(let i=0; i<4; i++) {
         if(document.getElementById(`img-path-${i}`).value) tieneFoto = true;
     }
-    const imgNameBackup = document.getElementById('p-img-name') ? document.getElementById('p-img-name').value : '';
-    if (!editId && !tieneFoto && !imgNameBackup) return alert("❌ Error: Sube al menos una foto.");
+    
+    if (!editId && !tieneFoto && !imgName) {
+         alert("❌ Error: Debes subir al menos una foto.");
+         return;
+    }
 
     btn.disabled = true; 
     btn.innerText = "GUARDANDO...";
 
-    // 3. RECOPILACIÓN DE DATOS (AQUÍ SE ARREGLA LA MENSAJERÍA INDIVIDUAL)
+    // 3. Recopilar Datos
     const datos = {
         nombre: nombreInput,
-        precio: parseFloat(document.getElementById('p-precio').value) || 0,
+        precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
         categoria: categoriaInput,
-        garantia: document.getElementById('p-garantia').value,
+        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
         
-        // CAPTURA INDIVIDUAL DE CADA CAMPO
-        mensajeria: document.getElementById('p-mensajeria').value, // <--- ESTO ES LO QUE TE FALLABA
-        disponible: document.getElementById('p-disponible').value, // 'SI' o 'NO' según el selector
-        
-        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : "", 
-        thumbnail: document.getElementById('img-path-0').value || imgNameBackup,
+        thumbnail: document.getElementById('img-path-0').value || imgName,
         image1: document.getElementById('img-path-1').value,
         image2: document.getElementById('img-path-2').value,
         image3: document.getElementById('img-path-3').value,
+        
+        mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
+        disponible: 'SI',
         proveedor: document.getElementById('p-proveedor').value || 'General',
         precio_flexible: document.getElementById('p-flexible').value || 'NO',
+        garantia: document.getElementById('p-garantia').value,
         pagos: 'USD, CUP, Zelle' 
     };
 
-    try {
-        let error;
-        if (editId && editId !== "") {
-            // ACTUALIZAR EQUIPO ESPECÍFICO (Filtro por ID para que no toque otros)
-            console.log("Actualizando equipo ID:", editId);
-            const { error: err } = await supabaseClient
-                .from('productos')
-                .update(datos)
-                .eq('id', editId); 
-            error = err;
-        } else {
-            // INSERTAR NUEVO
-            const { error: err } = await supabaseClient
-                .from('productos')
-                .insert([datos]);
-            error = err;
-        }
+    let error;
+    if (editId) {
+        // ACTUALIZAR
+        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
+        error = err;
+    } else {
+        // INSERTAR NUEVO
+        const { error: err } = await supabaseClient.from('productos').insert([datos]);
+        error = err;
+    }
 
-        if (error) throw error;
-
-        // --- ÉXITO: LIMPIEZA Y CIERRE ---
+    if (!error) {
+        alert("✅ ¡Guardado correctamente!");
+        
+        // 1. Cerramos el modal
         closeModalProd();
         
+        // 2. Refrescamos los datos del administrador sin recargar la página
         if (typeof loadAdminData === 'function') {
-            await loadAdminData(); // Recarga la lista de Supabase
+            await loadAdminData(); 
         }
 
-        // Forzamos a quedarnos en la pestaña de inventario
-        if (typeof changeAdminTab === 'function') changeAdminTab('inventario'); 
-
-        alert("✅ ¡Equipo guardado con éxito!");
-
-    } catch (err) {
-        console.error("Error al guardar:", err);
-        alert("❌ Hubo un error al guardar: " + err.message);
-    } finally {
+        // 3. Reactivamos el botón por si se quiere usar de nuevo
         btn.disabled = false;
         btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
+        
+    } else {
+        alert("Error: " + error.message);
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
     }
 });
 
@@ -3525,6 +3456,63 @@ function clearImageSlot(event, index) {
         document.getElementById('modal-producto').classList.remove('hidden');
     }
 
+// 4. Guardar (Funciona para NUEVO y para EDITAR)
+document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-prod');
+    const editId = document.getElementById('p-id-edit').value;
+    
+    btn.disabled = true; 
+    btn.innerText = "GUARDANDO...";
+
+    const datos = {
+        nombre: document.getElementById('p-nombre').value,
+        precio: parseFloat(document.getElementById('p-precio').value),
+        comision: parseFloat(document.getElementById('p-comision').value),
+        categoria: document.getElementById('p-categoria').value,
+        garantia: document.getElementById('p-garantia').value,
+        descripcion: quill.root.innerHTML, 
+        thumbnail: document.getElementById('img-path-0').value,
+        image1: document.getElementById('img-path-1').value,
+        image2: document.getElementById('img-path-2').value,
+        image3: document.getElementById('img-path-3').value,
+        disponible: 'SI'
+    };
+
+    let error;
+    if (editId) {
+        // SI TIENE ID, ACTUALIZAMOS
+        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
+        error = err;
+    } else {
+        // SI NO TIENE ID, INSERTAMOS NUEVO
+        const { error: err } = await supabaseClient.from('productos').insert([datos]);
+        error = err;
+    }
+
+    if (!error) {
+        // --- ESTO ES LO QUE CAMBIA ---
+        closeModalProd(); // 1. Cierra el modal automáticamente
+        
+        if (typeof loadAdminData === 'function') {
+            await loadAdminData(); // 2. Refresca la lista de equipos sin recargar la web
+        }
+
+        // 3. Forzamos a que se quede en la pestaña de inventario
+        changeAdminTab('inventario'); 
+
+        alert("✅ ¡Guardado correctamente!");
+
+        // 4. Restauramos el botón
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
+        
+    } else {
+        alert("Error: " + error.message);
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
+    }
+});
 
 // --- 3. HERRAMIENTAS DE MARKETING (DESCARGAR Y COPIAR) ---
 
@@ -5462,44 +5450,65 @@ async function checkGamificationStatus() {
 function updateGamificationUI(sales) {
     const data = getLevelData(sales);
     
-    // 1. Actualizar Tarjeta Principal del Dashboard
+    // --- A. Actualizar Tarjeta Dashboard ---
     const badge = document.getElementById('lvl-badge');
     if(badge) {
-        badge.innerText = `Rango ${data.lvl}`;
+        badge.innerText = `Nivel ${data.lvl}`;
         document.getElementById('lvl-name').innerText = data.name;
-        document.getElementById('lvl-title').innerText = `Agente ${data.name.toUpperCase()}`;
+        document.getElementById('lvl-title').innerText = `AGENTE ${data.name.toUpperCase()}`;
         
+        // CÁLCULO DINÁMICO DE DÍAS (Corregido para nivel 5)
         const diasReales = data.duration / 24;
-        document.getElementById('lvl-link-duration').innerText = data.lvl === 0 ? "7 DÍAS" : `${diasReales} DÍAS`;
+        const durationText = data.lvl === 0 ? "24 HORAS" : `${diasReales} DÍAS`;
         
-        const percent = Math.min(100, (sales / data.next) * 100);
-        document.getElementById('lvl-progress-bar').style.width = `${percent}%`;
-        document.getElementById('lvl-counter').innerText = `${sales} / ${data.next} Ventas`;
+        const linkSpan = document.getElementById('lvl-link-duration');
+        if (linkSpan) {
+            linkSpan.innerText = durationText;
+            
+            // Colores dinámicos según nivel
+            linkSpan.className = "font-black"; // Limpiamos clases previas
+            if (data.lvl === 0) linkSpan.classList.add("text-red-300");
+            else if (data.lvl === 5) linkSpan.classList.add("text-purple-300"); // Color Emperador
+            else if (data.lvl === 4) linkSpan.classList.add("text-emerald-300");
+            else linkSpan.classList.add("text-amber-300");
+        }
+
+        // Barra de Progreso
+        const counterEl = document.getElementById('lvl-counter');
+        if (counterEl) counterEl.innerText = `${sales} / ${data.next} Ventas`;
+        
+        const barEl = document.getElementById('lvl-progress-bar');
+        if (barEl) {
+            const percent = Math.min(100, (sales / data.next) * 100);
+            barEl.style.width = `${percent}%`;
+            
+            // Si es nivel 5, la barra brilla en purpura
+            if (data.lvl === 5) barEl.style.backgroundColor = "#a855f7"; 
+            else barEl.style.backgroundColor = "#fbbf24"; // Ámbar normal
+        }
     }
 
-    // 2. Actualizar el Gran Modal de Carrera (0 al 5)
+    // --- B. Actualizar Modal Maestro (Desbloquear Cartas del 0 al 5) ---
+    // Cambiamos el límite a 5 para incluir al Emperador
     for (let i = 0; i <= 5; i++) {
         const card = document.getElementById(`card-lvl-${i}`);
         if (!card) continue;
 
-        // Limpiar clases previas
-        card.classList.remove('level-unlocked', 'level-current', 'level-locked', 'animate-current');
+        // Limpiar clases de estado
+        card.classList.remove('active', 'current', 'locked');
 
         if (i < data.lvl) {
-            // NIVEL SUPERADO
-            card.classList.add('level-unlocked');
-            // Cambiar iconos de bloqueo a checkmarks si existen
-            const iconContainer = card.querySelector('.h-14');
-            if(iconContainer) {
-                iconContainer.innerHTML = '<span class="material-symbols-outlined text-3xl">verified</span>';
-                iconContainer.className = "h-14 w-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg";
-            }
+            // Niveles ya superados
+            card.classList.add('active');
+            if (typeof unlockButtonsInCard === 'function') unlockButtonsInCard(card);
         } else if (i === data.lvl) {
-            // NIVEL ACTUAL
-            card.classList.add('level-current', 'animate-current');
+            // Nivel actual
+            card.classList.add('active', 'current');
+            if (typeof unlockButtonsInCard === 'function') unlockButtonsInCard(card);
         } else {
-            // NIVEL BLOQUEADO
-            card.classList.add('level-locked');
+            // Niveles bloqueados
+            card.classList.add('locked');
+            if (typeof lockButtonsInCard === 'function') lockButtonsInCard(card);
         }
     }
 }
@@ -6239,396 +6248,193 @@ async function buscarDuenoPorIP() {
     } catch (e) { return null; }
 }
 
-function re_renderRanking() {
-    if (lastRankingData.length > 0) {
-        renderRankingAnonimo(lastRankingData, window.gestorName);
-    }
-}
-
-// ==========================================
-// SISTEMA DE GESTIÓN DE EQUIPO (ADMIN)
-// ==========================================
-
-// 1. Cargar las dos listas (Pendientes y Activos)
-async function loadPendingGestores() {
-    console.log("🔄 Cargando listas de gestores...");
-    const { data, error } = await supabaseClient
-        .from('gestores')
-        .select('*')
-        .in('estado', ['pendiente', 'activo'])
-        .order('nombre', { ascending: true });
-
-    if (error) {
-        console.error("Error Supabase:", error);
-        return;
-    }
-
-    const containerPendientes = document.getElementById('list-admin-aprobaciones');
-    const containerActivos = document.getElementById('list-admin-activos');
-    
-    if (!containerPendientes || !containerActivos) {
-        console.error("No se encontraron los contenedores HTML para las listas");
-        return;
-    }
-
-    const pendientes = data.filter(g => g.estado === 'pendiente');
-    const activos = data.filter(g => g.estado === 'activo');
-
-    // Dibujar Pendientes
-    if (pendientes.length === 0) {
-        containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
-    } else {
-        containerPendientes.innerHTML = pendientes.map(g => `
-            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-                <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
-                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-                <td class="p-4 text-right">
-                    <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600 transition-all shadow-sm">Activar</button>
-                    <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-red-500 hover:text-white transition-all ml-1 border border-red-100">Rechazar</button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    // Dibujar Activos
-    if (activos.length === 0) {
-        containerActivos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">Aún no tienes equipo activo.</td></tr>`;
-    } else {
-        containerActivos.innerHTML = activos.map(g => `
-            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-                <td class="p-4 font-bold text-slate-700 dark:text-white uppercase">${g.nombre}</td>
-                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-                <td class="p-4 text-right">
-                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-red-400 hover:text-red-600 p-2 transition-colors">
-                        <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    }
-}
-
-// 2. Función para Aprobar / Activar
-async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
-    console.log("Attempting to approve:", id, nuevoEstado);
-    const { data, error } = await supabaseClient
-        .from('gestores')
-        .update({ estado: nuevoEstado })
-        .eq('id', id)
-        .select();
-
-    if (error) {
-        alert("Error al procesar: " + error.message);
-        return;
-    }
-
-    if (data && data.length > 0) {
-        if (nuevoEstado === 'activo' && telefonoGestor) {
-            const numLimpio = telefonoGestor.replace(/\D/g, '');
-            const finalNum = numLimpio.startsWith('53') ? numLimpio : '53' + numLimpio;
-            
-            const mensaje = encodeURIComponent(
-                `👋 ¡Hola ${nombreGestor}! Tu cuenta en *paratuhogar* ha sido aprobada con éxito. \n\n` +
-                `🚀 Ya puedes iniciar sesión y empezar a generar tus enlaces de venta. \n\n` +
-                `¡Bienvenido al equipo! ✨`
-            );
-
-            window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
-            alert(`✅ Gestor aprobado y activado.`);
-        } else {
-            alert("❌ Solicitud rechazada.");
-        }
-
-        // Recargar las tablas inmediatamente
-        loadPendingGestores();
-    }
-}
-
-// 3. Función para Eliminar/Bloquear
-async function removeGestor(id, nombre) {
-    if (confirm(`¿Estás seguro de eliminar a "${nombre}" del equipo?`)) {
-        const { error } = await supabaseClient
-            .from('gestores')
-            .update({ estado: 'bloqueado' })
-            .eq('id', id);
-
-        if (!error) {
-            alert(`✅ ${nombre} eliminado.`);
-            loadPendingGestores();
-        }
-    }
-}
-
-// FUNCIÓN MAESTRA: GENERA LINK CORTO PARA TODOS LOS NIVELES
-async function getOrGenerateShortLink(nombreGestor, longUrl) {
-    // Ya no comprobamos el nivel (lvl < 3), todos entran aquí
-    try {
-        // 1. Ver si ya existe un link corto para este gestor y este destino
-        const { data: existing } = await supabaseClient
-            .from('short_links')
-            .select('slug')
-            .eq('gestor', nombreGestor)
-            .eq('original_url', longUrl)
-            .maybeSingle();
-
-        if (existing) {
-            return `${window.location.origin}${window.location.pathname}?s=${existing.slug}`;
-        }
-
-        // 2. Si no existe, crear uno nuevo aleatorio (5 letras)
-        const newSlug = Math.random().toString(36).substring(2, 7);
-        
-        const { error } = await supabaseClient
-            .from('short_links')
-            .insert([{
-                slug: newSlug,
-                original_url: longUrl,
-                gestor: nombreGestor,
-                is_custom: false
-            }]);
-
-        if (error) throw error;
-
-        return `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
-    } catch (e) {
-        console.error("Error con ShortLinks:", e);
-        // Si falla algo con la base de datos, devolvemos el largo para asegurar la venta
-        return longUrl; 
-    }
-}
-
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (VERSIÓN EDUCATIVA PRO) === -->
-<div id="modal-gamification" class="fixed inset-0 z-[250] hidden bg-slate-900/95 backdrop-blur-xl overflow-y-auto">
-    <div class="min-h-screen px-4 py-8 md:py-12">
-        <div class="max-w-7xl mx-auto bg-white rounded-[40px] shadow-2xl overflow-hidden relative">
+<div id="modal-gamification" class="fixed inset-0 z-[250] hidden bg-[#0f172a]/95 backdrop-blur-md overflow-y-auto animate-fade-in">
+    <div class="min-h-screen px-4 py-12 flex items-center justify-center">
+        <div class="w-full max-w-6xl bg-[#f8fafc] dark:bg-[#1e293b] rounded-[40px] shadow-2xl overflow-hidden border border-white/10 relative">
             
-            <!-- Botón Cerrar -->
-            <button onclick="closeGamificationModal()" class="absolute top-6 right-6 z-50 h-12 w-12 bg-slate-100 hover:bg-red-500 hover:text-white rounded-full flex items-center justify-center transition-all shadow-md">
-                <span class="material-symbols-outlined">close</span>
+            <button onclick="closeGamificationModal()" class="absolute top-6 right-6 z-20 h-10 w-10 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg hover:rotate-90 transition-transform">
+                <span class="material-symbols-outlined text-gray-600 dark:text-white">close</span>
             </button>
 
-            <!-- Header de Impacto -->
-            <div class="bg-[#1a4789] p-8 md:p-16 text-white text-center relative overflow-hidden">
-                <div class="absolute inset-0 opacity-10">
-                    <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white"></path>
-                    </svg>
-                </div>
-                <div class="relative z-10">
-                    <span class="inline-block px-4 py-1 rounded-full bg-blue-400/20 border border-blue-400/30 text-xs font-black tracking-[0.3em] mb-4 uppercase">Sistema de Rango paratuhogar</span>
-                    <h2 class="text-4xl md:text-7xl font-black italic tracking-tighter mb-4 leading-none">TU CARRERA <span class="text-blue-300">PROFESIONAL</span></h2>
-                    <p class="text-blue-100/80 max-w-2xl mx-auto font-medium text-sm md:text-base">
-                        No solo vendes equipos, construyes un imperio. Cada nivel desbloquea tecnologías exclusivas diseñadas para multiplicar tu productividad y blindar tus comisiones.
-                    </p>
-                </div>
+            <!-- Header -->
+            <div class="bg-[#1a4789] px-6 py-12 md:px-12 md:py-16 text-white text-center relative overflow-hidden">
+                <span class="material-symbols-outlined text-6xl mb-4 text-amber-400 drop-shadow-lg">workspace_premium</span>
+                <h2 class="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-4">Tu Carrera <span class="text-blue-300">Profesional</span></h2>
+                <p class="text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
+                    Asciende de rango para desbloquear herramientas que multiplicarán tus ventas y asegura tus comisiones por más tiempo.
+                </p>
             </div>
 
-            <!-- Grid de Niveles -->
-            <div class="p-4 md:p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                <!-- NIVEL 0 -->
-                <div id="card-lvl-0" class="level-card border-2 p-6 rounded-[32px] transition-all">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="h-14 w-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">
-                            <span class="material-symbols-outlined text-3xl">child_care</span>
+            <!-- Cuerpo -->
+            <div class="p-6 md:p-10 space-y-8">
+                
+                <!-- GRID DE NIVELES -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    
+                    <!-- Nivel 0 -->
+                    <div id="card-lvl-0" class="level-card active current group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-[#1a4789]">Nivel 0: Iniciado</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 0 - 2 Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">water_drop</span>
                         </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel 0</span>
-                            <span class="text-xl font-black italic text-slate-800 uppercase">Iniciado</span>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-red-500">1 SEMANA</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-red-400" style="width: 10%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Herramientas Base:</p>
+                            <div class="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-100 p-2 rounded-lg">
+                                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Compartir Enlace
+                            </div>
+                            <div class="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-100 p-2 rounded-lg">
+                                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Descarga 1 Foto
+                            </div>
                         </div>
                     </div>
-                    <div class="space-y-4">
-                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div class="flex justify-between text-[10px] font-black uppercase mb-1">
-                                <span class="text-slate-400">Atribución de Enlace</span>
-                                <span class="text-red-500">7 DÍAS</span>
+
+                    <!-- Nivel 1 -->
+                    <div id="card-lvl-1" class="level-card locked group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 1: Novato</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 3 - 9 Ventas</p>
                             </div>
-                            <div class="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                                <div class="h-full bg-red-400 w-1/6"></div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">bolt</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-orange-500">1 MES</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-orange-400" style="width: 25%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Respuesta Flash', 'Con un clic, el sistema escribe por ti un mensaje de WhatsApp perfecto para el cliente: Hola, tengo este equipo, cuesta tanto... ¡Ahorra escribir!')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">flash_on</span> Respuesta Flash
+                            </button>
+                            <button onclick="alertLockedInfo('Story Maker', 'Diseña automáticamente una imagen vertical para tus Estados de WhatsApp e Instagram, con el precio y la foto bien puestos.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">fit_screen</span> Story Maker
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 2 -->
+                    <div id="card-lvl-2" class="level-card locked group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 2: Experto</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 10 - 19 Ventas</p>
                             </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">bubble_chart</span>
                         </div>
-                        <div class="feature-badge bg-blue-50 text-blue-700">
-                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">link</span> <span class="font-black text-[11px] uppercase">Link Estándar</span></div>
-                            <p class="text-[10px] leading-snug opacity-80">Enlace básico que identifica tus ventas manualmente.</p>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-blue-500">1 MES</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-blue-400" style="width: 40%"></div></div>
                         </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Pack Fotos ZIP', '¿Cansado de bajar fotos una por una? Este botón descarga 50 fotos de ollas o neveras en un solo archivo comprimido.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">folder_zip</span> Pack Fotos ZIP
+                            </button>
+                            <button onclick="alertLockedInfo('Copiado Masivo', 'Copia la descripción y precio de 20 productos a la vez. Perfecto para publicar en modo ráfaga en grupos de Facebook.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">content_copy</span> Copiado Masivo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 3 -->
+                    <div id="card-lvl-3" class="level-card locked group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 3: Élite</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 20 - 39 Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">military_tech</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-indigo-500">3 MESES</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-indigo-400" style="width: 65%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Radar Tendencias', 'Te muestra en tiempo real qué equipos se están vendiendo más hoy en la web, para que tú también los ofrezcas.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">radar</span> Radar Tendencias
+                            </button>
+                            <button onclick="alertLockedInfo('Anti-Spam Text', 'Facebook te bloquea si publicas lo mismo. Esta herramienta reescribe tus textos automáticamente con IA.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">autorenew</span> Anti-Spam Text
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 4 -->
+                    <div id="card-lvl-4" class="level-card locked group border-dashed border-2">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 4: Monarca</h4>
+                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 40+ Ventas</p>
+                            </div>
+                            <span class="material-symbols-outlined text-3xl text-gray-300">crown</span>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                                <span>Duración Enlace</span>
+                                <span class="text-emerald-500">6 MESES</span>
+                            </p>
+                            <div class="vital-link-bar"><div class="vital-link-fill bg-emerald-500" style="width: 100%"></div></div>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
+                            <button onclick="alertLockedInfo('Catálogo PDF Pro', 'Crea un archivo PDF oficial con las fotos y precios, pero incrustando TU NOMBRE y TU WHATSAPP en la portada.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">picture_as_pdf</span> Catálogo PDF Pro
+                            </button>
+                            <button onclick="alertLockedInfo('Reporte Contable', 'Descarga un documento formal con todas tus comisiones pagadas y pendientes para tu control.')" class="btn-tool-locked">
+                                <span class="material-symbols-outlined text-gray-400 text-base">receipt_long</span> Reporte Contable
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Nivel 5: Emperador -->
+                <div id="card-lvl-5" class="level-card locked group border-double border-4 border-purple-400 bg-purple-50/10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="text-sm font-black uppercase text-purple-600">Nivel 5: Emperador</h4>
+                            <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 70+ Ventas</p>
+                        </div>
+                        <span class="material-symbols-outlined text-3xl text-purple-300">diamond</span>
+                    </div>
+                    <div class="mb-5">
+                        <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
+                            <span>Duración Enlace</span>
+                            <span class="text-purple-600">1 AÑO (ULTRA)</span>
+                        </p>
+                        <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-purple-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-[9px] font-black uppercase text-gray-400">Poder Máximo:</p>
+                        
                     </div>
                 </div>
-
-                <!-- NIVEL 1: NOVATO -->
-                <div id="card-lvl-1" class="level-card border-2 p-6 rounded-[32px] transition-all">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="h-14 w-14 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500">
-                            <span class="material-symbols-outlined text-3xl">bolt</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Req: 3 Ventas</span>
-                            <span class="text-xl font-black italic text-orange-600 uppercase">Novato</span>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="p-3 bg-orange-50 rounded-2xl border border-orange-100">
-                            <div class="flex justify-between text-[10px] font-black uppercase mb-1">
-                                <span class="text-orange-400">Atribución de Enlace</span>
-                                <span class="text-orange-600">30 DÍAS</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-orange-200 rounded-full">
-                                <div class="h-full bg-orange-500 w-1/3 shadow-[0_0_10px_rgba(249,115,22,0.4)]"></div>
-                            </div>
-                        </div>
-                        <div class="feature-badge bg-white border border-slate-100">
-                            <div class="flex items-center gap-2 text-slate-800"><span class="material-symbols-outlined text-sm text-orange-500">flash_on</span> <span class="font-black text-[11px] uppercase">Respuesta Flash</span></div>
-                            <p class="text-[10px] text-slate-500 leading-snug">Genera automáticamente textos persuasivos para responder a clientes en segundos.</p>
-                        </div>
-                        <div class="feature-badge bg-white border border-slate-100">
-                            <div class="flex items-center gap-2 text-slate-800"><span class="material-symbols-outlined text-sm text-pink-500">auto_awesome</span> <span class="font-black text-[11px] uppercase">Story Maker</span></div>
-                            <p class="text-[10px] text-slate-500 leading-snug">Crea plantillas visuales HD para tus estados de WhatsApp con un solo clic.</p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- NIVEL 2: EXPERTO -->
-                <div id="card-lvl-2" class="level-card border-2 p-6 rounded-[32px] transition-all">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="h-14 w-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-500">
-                            <span class="material-symbols-outlined text-3xl">rocket_launch</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Req: 10 Ventas</span>
-                            <span class="text-xl font-black italic text-blue-600 uppercase">Experto</span>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="p-3 bg-blue-50 rounded-2xl border border-blue-100">
-                            <div class="flex justify-between text-[10px] font-black uppercase mb-1">
-                                <span class="text-blue-400">Atribución de Enlace</span>
-                                <span class="text-blue-600">30 DÍAS</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-blue-200 rounded-full">
-                                <div class="h-full bg-blue-500 w-1/2"></div>
-                            </div>
-                        </div>
-                        <div class="feature-badge bg-white border border-slate-100">
-                            <div class="flex items-center gap-2 text-slate-800"><span class="material-symbols-outlined text-sm text-blue-500">folder_zip</span> <span class="font-black text-[11px] uppercase">Pack Fotos ZIP</span></div>
-                            <p class="text-[10px] text-slate-500 leading-snug">Descarga galerías completas de productos comprimidas para tus grupos masivos.</p>
-                        </div>
-                        <div class="feature-badge bg-white border border-slate-100">
-                            <div class="flex items-center gap-2 text-slate-800"><span class="material-symbols-outlined text-sm text-indigo-500">content_copy</span> <span class="font-black text-[11px] uppercase">Copiado Masivo</span></div>
-                            <p class="text-[10px] text-slate-500 leading-snug">Copia descripciones y precios de categorías completas en formato ráfaga.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NIVEL 3: ÉLITE -->
-                <div id="card-lvl-3" class="level-card border-2 p-6 rounded-[32px] transition-all">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="h-14 w-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
-                            <span class="material-symbols-outlined text-3xl">military_tech</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Req: 20 Ventas</span>
-                            <span class="text-xl font-black italic text-indigo-700 uppercase">Élite</span>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="p-3 bg-indigo-50 rounded-2xl border border-indigo-100">
-                            <div class="flex justify-between text-[10px] font-black uppercase mb-1">
-                                <span class="text-indigo-400">Atribución de Enlace</span>
-                                <span class="text-indigo-600">90 DÍAS</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-indigo-200 rounded-full">
-                                <div class="h-full bg-indigo-600 w-2/3 shadow-[0_0_15px_rgba(79,70,229,0.3)]"></div>
-                            </div>
-                        </div>
-                        <div class="feature-badge bg-white border border-slate-100">
-                            <div class="flex items-center gap-2 text-slate-800"><span class="material-symbols-outlined text-sm text-purple-500">radar</span> <span class="font-black text-[11px] uppercase">Radar de Tendencias</span></div>
-                            <p class="text-[10px] text-slate-500 leading-snug">Mira qué están vendiendo otros top gestores para adelantarte a la demanda.</p>
-                        </div>
-                        <div class="feature-badge bg-white border border-slate-100">
-                            <div class="flex items-center gap-2 text-slate-800"><span class="material-symbols-outlined text-sm text-red-500">security</span> <span class="font-black text-[11px] uppercase">Anti-Spam AI</span></div>
-                            <p class="text-[10px] text-slate-500 leading-snug">Sistema que reescribe tus ofertas automáticamente para evitar baneos de Facebook.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NIVEL 4: MONARCA -->
-                <div id="card-lvl-4" class="level-card border-2 p-6 rounded-[32px] transition-all bg-gradient-to-br from-white to-emerald-50/30">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="h-14 w-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
-                            <span class="material-symbols-outlined text-3xl">crown</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Req: 40 Ventas</span>
-                            <span class="text-xl font-black italic text-emerald-700 uppercase">Monarca</span>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="p-3 bg-emerald-100/50 rounded-2xl border border-emerald-200">
-                            <div class="flex justify-between text-[10px] font-black uppercase mb-1">
-                                <span class="text-emerald-500">Atribución de Enlace</span>
-                                <span class="text-emerald-700">180 DÍAS</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-emerald-200 rounded-full">
-                                <div class="h-full bg-emerald-600 w-5/6 shadow-[0_0_15px_rgba(16,185,129,0.3)]"></div>
-                            </div>
-                        </div>
-                        <div class="feature-badge bg-emerald-600 text-white shadow-lg shadow-emerald-200">
-                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">picture_as_pdf</span> <span class="font-black text-[11px] uppercase">Catálogo PDF Personal</span></div>
-                            <p class="text-[10px] leading-snug opacity-90">Genera un catálogo profesional con TU NOMBRE y TU WHATSAPP impresos en el PDF.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NIVEL 5: EMPERADOR -->
-                <div id="card-lvl-5" class="level-card border-2 p-6 rounded-[32px] transition-all bg-slate-900 text-white overflow-hidden relative group">
-                    <div class="absolute -right-10 -top-10 h-32 w-32 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/40 transition-all"></div>
-                    <div class="flex justify-between items-start mb-6 relative z-10">
-                        <div class="h-14 w-14 bg-purple-500 rounded-2xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.5)]">
-                            <span class="material-symbols-outlined text-3xl">diamond</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-black text-purple-400 uppercase tracking-widest">Req: 70 Ventas</span>
-                            <span class="text-xl font-black italic text-purple-300 uppercase tracking-tighter text-glow-purple">Emperador</span>
-                        </div>
-                    </div>
-                    <div class="space-y-4 relative z-10">
-                        <div class="p-3 bg-white/5 rounded-2xl border border-white/10">
-                            <div class="flex justify-between text-[10px] font-black uppercase mb-1">
-                                <span class="text-purple-400">Atribución Blindada</span>
-                                <span class="text-purple-300">1 AÑO</span>
-                            </div>
-                            <div class="h-1.5 w-full bg-white/10 rounded-full">
-                                <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 w-full shadow-[0_0_15px_rgba(168,85,247,0.6)]"></div>
-                            </div>
-                        </div>
-                        <div class="feature-badge bg-purple-500/20 border border-purple-500/30">
-                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm text-purple-400">link_off</span> <span class="font-black text-[11px] uppercase">Bindeo de Cliente (Amarre)</span></div>
-                            <p class="text-[10px] text-purple-100/70 leading-snug">El número del cliente queda amarrado a ti en la DB. No importa qué link toque después, la comisión es tuya.</p>
-                        </div>
-                        <div class="feature-badge bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl">
-                            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">vpn_key</span> <span class="font-black text-[11px] uppercase">Custom Links (Tu Nombre)</span></div>
-                            <p class="text-[10px] text-white/80 leading-snug">Crea links cortos con tu propia marca. Ej: paratuhogar.cu/s/tu-nombre</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Footer Informativo -->
-            <div class="p-8 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <span class="material-symbols-outlined">info</span>
-                    </div>
-                    <p class="text-xs text-slate-500 font-medium max-w-md">
-                        Los requisitos se calculan basados en tus ventas <b>entregadas</b> en los últimos 30 días. Si dejas de vender, puedes bajar de rango.
-                    </p>
-                </div>
-                <button onclick="closeGamificationModal()" class="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all shadow-lg">
-                    Entendido, ¡A subir de nivel!
-                </button>
             </div>
         </div>
     </div>
