@@ -1138,15 +1138,6 @@
         <label class="text-[10px] font-black uppercase text-gray-400 ml-1">🚚 Detalles de Mensajería</label>
         <input type="text" id="p-mensajeria" placeholder="Ej: Gratis en La Habana, 5 USD periferia..." class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
     </div>
-
-<!-- CAMPO DISPONIBILIDAD -->
-<div class="md:col-span-2">
-    <label class="text-[10px] font-black uppercase text-gray-400 ml-1">📦 Disponibilidad del Producto</label>
-    <select id="p-disponible" class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
-        <option value="SI">✅ EN STOCK (Visible en la web)</option>
-        <option value="NO">❌ AGOTADO (Oculto para clientes)</option>
-    </select>
-</div>
     
 
     <!-- SECCIÓN DE FOTOS (4 espacios) -->
@@ -1660,55 +1651,63 @@ function renderMyOrdersList(lista) {
     const container = document.getElementById('list-mis-pedidos');
     if(!container) return;
 
-    // 1. Filtrar por estado si no es "TODOS"
+    // 1. Filtrar por la pestaña seleccionada
     const filteredByStatus = currentMyOrdersFilter === 'TODOS' 
         ? lista 
         : lista.filter(p => p.estado === currentMyOrdersFilter);
 
     if (filteredByStatus.length === 0) {
-        container.innerHTML = `<div class="p-10 text-center text-gray-400 text-xs font-bold uppercase italic">No hay pedidos en esta pestaña.</div>`;
+        container.innerHTML = `<div class="p-10 text-center text-gray-400 text-xs font-bold uppercase italic">No hay pedidos en esta sección.</div>`;
         return;
     }
 
     container.innerHTML = filteredByStatus.map(p => {
-        const level = window.currentGestorLevel || 0; // Obtener nivel real
+        const level = window.currentGestorLevel || 0;
         
-        // Configuración de Estados (Colores)
+        // Colores de los estados
         let colorClass = 'bg-gray-100 text-gray-500';
         if(p.estado === 'Pendiente') colorClass = 'bg-yellow-100 text-yellow-700';
         if(p.estado === 'Asignado Mensajero') colorClass = 'bg-blue-100 text-blue-700';
         if(p.estado === 'Entregado') colorClass = 'bg-emerald-100 text-emerald-700';
         if(p.estado === 'Cancelado') colorClass = 'bg-red-100 text-red-700';
 
-        // --- LÓGICA DE WHATSAPP BLOQUEADO POR NIVEL ---
-        let waButton = '';
+        // --- CONSTRUCCIÓN DE BOTONES DE ACCIÓN ---
+        let actionButtons = `<div class="flex gap-2">`;
+
+        // 1. Botón de WhatsApp (Si tiene teléfono y nivel 1+)
         if (p.telefono) {
             if (level >= 1) {
-                // DESBLOQUEADO (Nivel 1+)
                 const clienteName = p.cliente.split(' ')[0];
                 let msj = `Hola ${clienteName}, tu pedido de *${p.producto.substring(0,20)}* está en estado: *${p.estado}* 📦.`;
                 const url = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msj)}`;
-                waButton = `
+                actionButtons += `
                     <a href="${url}" target="_blank" class="h-8 w-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
                         <i class="fab fa-whatsapp"></i>
                     </a>`;
             } else {
-                // BLOQUEADO (Nivel 0)
-                waButton = `
-                    <button onclick="alert('🔒 FUNCIÓN BLOQUEADA\\n\\nSube a NIVEL 1 (3 ventas) para poder notificar a tus clientes por WhatsApp automáticamente.')" class="h-8 w-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center cursor-not-allowed">
+                actionButtons += `
+                    <button onclick="alert('🔒 Función bloqueada. Sube a Nivel 1 para notificar vía WhatsApp.')" class="h-8 w-8 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center cursor-not-allowed">
                         <span class="material-symbols-outlined text-sm">lock</span>
                     </button>`;
             }
         }
 
+        // 2. Botón de PDF (Siempre visible para el gestor)
+        actionButtons += `
+            <button onclick="prepararPDFDesdeHistorial('${p.id}')" class="h-8 w-8 rounded-full bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm" title="Descargar Comprobante">
+                <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+            </button>
+        </div>`; // Cierre del div flex gap-2
+
+        // --- RETORNO DEL HTML DE LA FILA ---
         return `
-        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all">
+        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all border-b dark:border-gray-700">
             <div class="flex justify-between items-start mb-2">
                 <div>
                     <p class="text-[9px] font-bold text-gray-400">${new Date(p.fecha).toLocaleDateString()}</p>
                     <h4 class="text-xs font-black uppercase text-gray-800 dark:text-white">${p.cliente}</h4>
                 </div>
-                ${waButton}
+                ${actionButtons}
             </div>
             
             <p class="text-[10px] text-gray-500 mb-3">${p.producto}</p>
@@ -1881,6 +1880,30 @@ function filterMyOrders() {
         document.getElementById('productos-container').innerHTML = 
             `<div class="col-span-full py-10 text-center text-red-500">Error de conexión.</div>`; 
     }
+}
+
+function prepararPDFDesdeHistorial(pedidoId) {
+    const p = myOrdersData.find(item => item.id === pedidoId);
+    if (!p) return alert("No se pudo cargar la información.");
+
+    const nombreLimpio = p.producto.split('[')[0].replace(/^\d+x\s+/, '').trim();
+    const subtotal = Number(p.total) - Number(p.costo_mensajeria || 0);
+
+    const datosParaPDF = {
+        cliente: p.cliente,
+        ci: p.ci || "---",
+        direccion: p.direccion,
+        totalUSD: p.total,
+        mensajeria: p.costo_mensajeria || 0,
+        items: [{
+            nombre: nombreLimpio,
+            qty: 1,
+            price: subtotal,
+            total: subtotal
+        }]
+    };
+
+    generarComprobanteVenta(datosParaPDF, p.telefono);
 }
 
     // NUEVA FUNCIÓN: DIBUJAR PESTAÑAS DE CATEGORÍA
@@ -2350,6 +2373,20 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // AHORA ENVIAMOS EL MENSAJE CODIFICADO
     window.open(`https://wa.me/5356071095?text=${mensajeCodificado}`, '_blank');
+    // Preparamos los datos para el PDF
+    const datosParaPDF = {
+        cliente: nombreC,
+        ci: ciC,
+        direccion: dirC,
+        totalUSD: totalPagar,
+        mensajeria: totalMensajeria,
+        items: cart // Enviamos el carrito actual
+    };
+
+    // Lanzar la descarga del PDF
+    setTimeout(() => {
+        generarComprobanteVenta(datosParaPDF);
+    }, 1500); 
 
     setTimeout(() => {
         cart = [];
@@ -3029,7 +3066,134 @@ function getAgentPhone() {
 
 // --- GUARDAR EL PRODUCTO COMPLETO EN LA TABLA ---
 // --- GUARDAR PRODUCTO CON VERIFICACIÓN INTELIGENTE (FUZZY MATCH) ---
+document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btn-save-prod');
+    const nombreInput = document.getElementById('p-nombre').value.trim();
+    const categoriaInput = document.getElementById('p-categoria').value;
+    const editId = document.getElementById('p-id-edit').value;
+    
+    // ============================================================
+    // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
+    // ============================================================
+    if (!editId) { 
+        // A. Limpiamos el nombre para sacar palabras clave importantes
+        // Quitamos palabras comunes que la IA pone siempre (Smart, TV, de, el, con...)
+        const palabrasIgnoradas = ['de', 'el', 'la', 'con', 'para', 'en', 'y', 'un', 'una', 'smart', 'nuevo', 'oferta'];
+        
+        // Separamos el nombre en palabras, filtramos las cortas (<3 letras) y las ignoradas
+        const palabrasClave = nombreInput.toLowerCase()
+            .split(/[\s\-\/\(\)]+/) // Separar por espacios o guiones
+            .filter(w => w.length > 2 && !palabrasIgnoradas.includes(w));
 
+        // Tomamos las 3 palabras más "raras" o largas (generalmente Marca y Modelo)
+        // Ejemplo: De "Smart TV Challenger 75 4K" -> busca "Challenger" y "75"
+        const keywords = palabrasClave.slice(0, 3).join(' & '); 
+
+        if (keywords.length > 0) {
+            // B. Preguntamos a Supabase usando Búsqueda de Texto Completo
+            // Busca productos que tengan ESAS palabras en CUALQUIER orden
+            const { data: similares, error: errCheck } = await supabaseClient
+                .from('productos')
+                .select('nombre, precio, categoria')
+                .textSearch('nombre', keywords) 
+                .limit(3);
+
+            // C. Si encuentra coincidencias, ALERTA al administrador
+            if (similares && similares.length > 0) {
+                // Filtramos para asegurar que sean de la misma categoría (para evitar falsos positivos)
+                const duplicadoReal = similares.find(p => p.categoria === categoriaInput);
+
+                if (duplicadoReal) {
+                    const confirmar = confirm(
+                        `⛔ POSIBLE DUPLICADO DETECTADO\n\n` +
+                        `Tú intentas subir: "${nombreInput}"\n\n` +
+                        `Pero ya existe en base de datos:\n` +
+                        `👉 "${duplicadoReal.nombre}" ($${duplicadoReal.precio})\n\n` +
+                        `¿Es el mismo equipo que subió otro admin?\n` +
+                        `[Aceptar] = Cancelar subida (No duplicar)\n` +
+                        `[Cancelar] = Subir de todas formas (Es diferente)`
+                    );
+
+                    if (confirmar) {
+                        return; // Detiene el proceso, no guarda nada.
+                    }
+                }
+            }
+        }
+    }
+    // ============================================================
+
+    // 2. Validación de Foto
+    const imgName = document.getElementById('p-img-name') ? document.getElementById('p-img-name').value : '';
+    // Revisamos las 4 casillas por si acaso
+    let tieneFoto = false;
+    for(let i=0; i<4; i++) {
+        if(document.getElementById(`img-path-${i}`).value) tieneFoto = true;
+    }
+    
+    if (!editId && !tieneFoto && !imgName) {
+         alert("❌ Error: Debes subir al menos una foto.");
+         return;
+    }
+
+    btn.disabled = true; 
+    btn.innerText = "GUARDANDO...";
+
+    // 3. Recopilar Datos
+    const datos = {
+        nombre: nombreInput,
+        precio: parseFloat(document.getElementById('p-precio').value),
+        comision: parseFloat(document.getElementById('p-comision').value) || 0,
+        categoria: categoriaInput,
+        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
+        
+        thumbnail: document.getElementById('img-path-0').value || imgName,
+        image1: document.getElementById('img-path-1').value,
+        image2: document.getElementById('img-path-2').value,
+        image3: document.getElementById('img-path-3').value,
+        
+        mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
+        disponible: 'SI',
+        proveedor: document.getElementById('p-proveedor').value || 'General',
+        precio_flexible: document.getElementById('p-flexible').value || 'NO',
+        garantia: document.getElementById('p-garantia').value,
+        pagos: 'USD, CUP, Zelle' 
+    };
+
+    let error;
+    if (editId) {
+        // ACTUALIZAR
+        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
+        error = err;
+    } else {
+        // INSERTAR NUEVO
+        const { error: err } = await supabaseClient.from('productos').insert([datos]);
+        error = err;
+    }
+
+    if (!error) {
+        alert("✅ ¡Guardado correctamente!");
+        
+        // 1. Cerramos el modal
+        closeModalProd();
+        
+        // 2. Refrescamos los datos del administrador sin recargar la página
+        if (typeof loadAdminData === 'function') {
+            await loadAdminData(); 
+        }
+
+        // 3. Reactivamos el botón por si se quiere usar de nuevo
+        btn.disabled = false;
+        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
+        
+    } else {
+        alert("Error: " + error.message);
+        btn.disabled = false;
+        btn.innerText = "Guardar Cambios";
+    }
+});
 
 
 // Función mágica de compresión
@@ -3191,76 +3355,59 @@ function clearImageSlot(event, index) {
 
         // 6. Mostrar Modal
         document.getElementById('modal-producto').classList.remove('hidden');
-        document.getElementById('p-disponible').value = p.disponible || 'SI';
     }
 
-// FUNCIÓN ÚNICA DE GUARDADO (INVENTARIO + IA + DUPLICADOS + ESTADOS)
+// 4. Guardar (Funciona para NUEVO y para EDITAR)
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
     const btn = document.getElementById('btn-save-prod');
-    const nombreInput = document.getElementById('p-nombre').value.trim();
-    const categoriaInput = document.getElementById('p-categoria').value;
     const editId = document.getElementById('p-id-edit').value;
     
-    // 1. DETECTOR DE DUPLICADOS (Solo para productos nuevos)
-    if (!editId) { 
-        const palabrasClave = nombreInput.toLowerCase().split(' ').filter(w => w.length > 3).slice(0, 2).join(' & ');
-        if (palabrasClave) {
-            const { data: similares } = await supabaseClient.from('productos').select('nombre').textSearch('nombre', palabrasClave).limit(1);
-            if (similares && similares.length > 0) {
-                if (!confirm(`⚠️ Posible duplicado: "${similares[0].nombre}" ya existe. ¿Deseas subir este de todas formas?`)) return;
-            }
-        }
-    }
-
-    // 2. Validación de Foto
-    let tieneFoto = false;
-    for(let i=0; i<4; i++) { if(document.getElementById(`img-path-${i}`).value) tieneFoto = true; }
-    if (!editId && !tieneFoto) return alert("❌ Error: Debes subir al menos una foto.");
-
     btn.disabled = true; 
     btn.innerText = "GUARDANDO...";
 
-    // 3. Recopilar Datos (Incluyendo DISPONIBILIDAD)
     const datos = {
-        nombre: nombreInput,
+        nombre: document.getElementById('p-nombre').value,
         precio: parseFloat(document.getElementById('p-precio').value),
-        comision: parseFloat(document.getElementById('p-comision').value) || 0,
-        categoria: categoriaInput,
+        comision: parseFloat(document.getElementById('p-comision').value),
+        categoria: document.getElementById('p-categoria').value,
+        garantia: document.getElementById('p-garantia').value,
         descripcion: quill.root.innerHTML, 
         thumbnail: document.getElementById('img-path-0').value,
         image1: document.getElementById('img-path-1').value,
         image2: document.getElementById('img-path-2').value,
         image3: document.getElementById('img-path-3').value,
-        mensajeria: document.getElementById('p-mensajeria').value,
-        disponible: document.getElementById('p-disponible').value, // <--- AQUÍ ESTABA EL ERROR
-        proveedor: document.getElementById('p-proveedor').value || 'General',
-        precio_flexible: document.getElementById('p-flexible').value || 'NO',
-        garantia: document.getElementById('p-garantia').value,
-        pagos: 'USD, CUP, Zelle' 
+        disponible: 'SI'
     };
 
     let error;
     if (editId) {
+        // SI TIENE ID, ACTUALIZAMOS
         const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
         error = err;
     } else {
+        // SI NO TIENE ID, INSERTAMOS NUEVO
         const { error: err } = await supabaseClient.from('productos').insert([datos]);
         error = err;
     }
 
     if (!error) {
-        // --- ÉXITO: LIMPIEZA SIN RECARGAR ---
-        closeModalProd();
-        if (typeof loadAdminData === 'function') await loadAdminData();
+        // --- ESTO ES LO QUE CAMBIA ---
+        closeModalProd(); // 1. Cierra el modal automáticamente
         
-        // Forzar quedarse en la pestaña inventario
-        if (typeof changeAdminTab === 'function') changeAdminTab('inventario'); 
+        if (typeof loadAdminData === 'function') {
+            await loadAdminData(); // 2. Refresca la lista de equipos sin recargar la web
+        }
+
+        // 3. Forzamos a que se quede en la pestaña de inventario
+        changeAdminTab('inventario'); 
 
         alert("✅ ¡Guardado correctamente!");
+
+        // 4. Restauramos el botón
         btn.disabled = false;
-        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
+        btn.innerText = "Guardar Cambios";
+        
     } else {
         alert("Error: " + error.message);
         btn.disabled = false;
@@ -5774,44 +5921,107 @@ async function loadPendingGestores() {
     }
 }
 
-async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
-    // 1. Actualizar en Supabase
-    const { data, error } = await supabaseClient
-        .from('gestores')
-        .update({ estado: nuevoEstado })
-        .eq('id', id)
-        .select();
+async function generarComprobanteVenta(datosPedido, telefonoCliente = '') {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // CONFIGURACIÓN DE COLORES
+    const azulEmpresa = [26, 71, 137]; // #1a4789
+    const azulLink = [44, 111, 181];    // #2c6fb5
+    
+    // DATOS DEL GESTOR
+    const nombreGestor = window.gestorName || "Equipo de Ventas";
+    const telfGestor = getAgentPhone(); // Tu función que ya pone el 53
+    const slug = window.location.search.includes('s=') ? new URLSearchParams(window.location.search).get('s') : 'inicio';
+    const linkPersonal = `${window.location.origin}${window.location.pathname}?s=${slug}`;
 
-    if (error) {
-        alert("Error: " + error.message);
-        return;
-    }
+    // --- 1. HEADER AZUL ---
+    doc.setFillColor(...azulEmpresa);
+    doc.rect(0, 0, 210, 40, 'F');
 
-    if (data && data.length > 0) {
-        // 2. Si el estado es "activo", disparamos el WhatsApp
-        if (nuevoEstado === 'activo' && telefonoGestor) {
-            
-            // Limpiar el número (quitar espacios, símbolos o el + para la URL)
-            const numLimpio = telefonoGestor.replace(/\D/g, '');
-            
-            // Crear el mensaje personalizado
-            const mensaje = encodeURIComponent(
-                `👋 ¡Hola ${nombreGestor}! Tu cuenta en *paratuhogar* ha sido aprobada con éxito. \n\n` +
-                `🚀 Ya puedes iniciar sesión y empezar a generar tus enlaces de venta. \n\n` +
-                `¡Bienvenido al equipo! ✨`
-            );
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.text("COMPROBANTE", 15, 25);
+    
+    doc.setFontSize(10);
+    const nroOrden = "ORDEN #" + Math.floor(100000 + Math.random() * 900000);
+    doc.text(nroOrden, 195, 25, { align: "right" });
 
-            // Abrir WhatsApp en una pestaña nueva
-            window.open(`https://wa.me/${numLimpio}?text=${mensaje}`, '_blank');
-            
-            alert(`✅ Gestor aprobado. Se ha abierto WhatsApp para notificar a ${nombreGestor}.`);
-        } else {
-            alert("❌ Solicitud rechazada.");
+    // --- 2. INFORMACIÓN CLIENTE Y GESTOR ---
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.text("Facturado a:", 15, 55);
+    doc.text("Atendido por:", 130, 55);
+
+    doc.setTextColor(100, 100, 100);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    
+    // Datos Cliente (Izquierda)
+    doc.text(datosPedido.cliente || "Cliente", 15, 62);
+    doc.text("CI: " + (datosPedido.ci || "---"), 15, 67);
+    doc.text(datosPedido.direccion || "Entrega a domicilio", 15, 72, { maxWidth: 80 });
+
+    // Datos Gestor (Derecha)
+    doc.text(nombreGestor, 130, 62);
+    doc.text("WhatsApp: +" + telfGestor, 130, 67);
+    
+    // LINK CLIQUEABLE (Azul y con subrayado)
+    doc.setTextColor(...azulLink);
+    doc.text("Ver Catálogo Online", 130, 72);
+    doc.link(130, 69, 40, 5, { url: linkPersonal }); 
+
+    // FECHA DE EMISIÓN
+    doc.setTextColor(0, 0, 0);
+    doc.text("Fecha de emisión: " + new Date().toLocaleDateString(), 15, 90);
+
+    // --- 3. TABLA DE PRODUCTOS ---
+    doc.autoTable({
+        startY: 100,
+        head: [['Producto / Descripción', 'Cant.', 'Precio', 'Total']],
+        body: datosPedido.items.map(i => [i.nombre, i.qty, `$${i.price}.00`, `$${i.total}.00`]),
+        theme: 'grid',
+        headStyles: { fillColor: azulLink, textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 4 },
+        columnStyles: {
+            0: { cellWidth: 'auto' },
+            1: { halign: 'center', cellWidth: 20 },
+            2: { halign: 'right', cellWidth: 30 },
+            3: { halign: 'right', cellWidth: 30 }
         }
+    });
 
-        // 3. Refrescar la interfaz
-        loadPendingGestores();
-        if(typeof loadAdminData === 'function') loadAdminData();
+    // TOTAL AZUL
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFillColor(...azulEmpresa);
+    doc.rect(130, finalY - 5, 65, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL A PAGAR", 135, finalY + 1.5);
+    doc.text(`$${datosPedido.totalUSD}.00`, 190, finalY + 1.5, { align: "right" });
+
+    // --- 4. PIE DE PÁGINA ---
+    doc.setTextColor(100, 100, 100);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Condiciones:", 15, finalY + 25);
+    doc.text("• El pago se realiza al recibir el equipo.", 15, finalY + 31);
+    doc.text("• Garantía válida presentando este comprobante.", 15, finalY + 36);
+
+    doc.setFontSize(24);
+    doc.setTextColor(...azulEmpresa);
+    doc.text("¡Gracias por su compra!", 195, finalY + 35, { align: "right" });
+
+    // DESCARGAR / COMPARTIR
+    const nombreArchivo = `Recibo_${(datosPedido.cliente || "venta").replace(/\s+/g, '_')}.pdf`;
+    doc.save(nombreArchivo);
+
+    // Abrir WhatsApp si se pasó el teléfono
+    if (telefonoCliente) {
+        const num = telefonoCliente.replace(/\D/g, '');
+        const msj = encodeURIComponent(`👋 Hola ${datosPedido.cliente}, le adjunto su comprobante oficial. ¡Muchas gracias por su preferencia!`);
+        setTimeout(() => { window.open(`https://wa.me/${num}?text=${msj}`, '_blank'); }, 1000);
     }
 }
 
