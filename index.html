@@ -3483,14 +3483,13 @@ function clearImageSlot(event, index) {
 // 3. Función para EDITAR producto (CORREGIDA)
     function editProduct(id) {
         // 1. Buscar el producto en la lista de Inventario (Admin) O en la de Catálogo
-        // Esto asegura que funcione donde sea que estés
         const p = (typeof inventoryRawAdmin !== 'undefined' ? inventoryRawAdmin.find(prod => prod.id === id) : null) 
                   || productosRaw.find(prod => prod.id === id);
         
         if (!p) return alert("Error: No se encuentra la información del producto.");
 
         // 2. Llenar campos del formulario
-        // Asegúrate de que los IDs del HTML coincidan (p-id-edit, p-nombre, etc.)
+        // HEMOS AÑADIDO: 'p-mensajeria' y 'p-disponible' a la lista
         const inputs = {
             'p-id-edit': p.id,
             'p-nombre': p.nombre,
@@ -3499,12 +3498,15 @@ function clearImageSlot(event, index) {
             'p-categoria': p.categoria,
             'p-garantia': p.garantia,
             'p-proveedor': p.proveedor,
-            'p-flexible': p.precio_flexible || 'NO'
+            'p-flexible': p.precio_flexible || 'NO',
+            'p-mensajeria': p.mensajeria || "",    // <--- ESTA LÍNEA FALTABA
+            'p-disponible': p.disponible || "SI"   // <--- ESTA LÍNEA FALTABA
         };
 
+        // Este bucle ahora sí encontrará los campos en el HTML y les pondrá el valor
         for (const [key, value] of Object.entries(inputs)) {
             const el = document.getElementById(key);
-            if(el) el.value = value || "";
+            if(el) el.value = value;
         }
         
         // 3. Cambiar texto del botón
@@ -3514,11 +3516,6 @@ function clearImageSlot(event, index) {
         // 4. Cargar Descripción en el Editor Quill
         if (typeof quill !== 'undefined' && quill) {
             quill.root.innerHTML = p.descripcion || "";
-        } else {
-            console.warn("Editor Quill no activo o no definido.");
-            // Intento de recuperación si no existe:
-            const editorDiv = document.getElementById('editor-container');
-            if(editorDiv) editorDiv.innerHTML = p.descripcion || ""; 
         }
 
         // 5. Cargar Fotos (Previsualización)
