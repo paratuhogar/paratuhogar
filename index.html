@@ -6318,6 +6318,120 @@ function re_renderRanking() {
     }
 }
 
+// ==========================================
+// SISTEMA DE GESTIÓN DE EQUIPO (ADMIN)
+// ==========================================
+
+// 1. Cargar las dos listas (Pendientes y Activos)
+async function loadPendingGestores() {
+    console.log("🔄 Cargando listas de gestores...");
+    const { data, error } = await supabaseClient
+        .from('gestores')
+        .select('*')
+        .in('estado', ['pendiente', 'activo'])
+        .order('nombre', { ascending: true });
+
+    if (error) {
+        console.error("Error Supabase:", error);
+        return;
+    }
+
+    const containerPendientes = document.getElementById('list-admin-aprobaciones');
+    const containerActivos = document.getElementById('list-admin-activos');
+    
+    if (!containerPendientes || !containerActivos) {
+        console.error("No se encontraron los contenedores HTML para las listas");
+        return;
+    }
+
+    const pendientes = data.filter(g => g.estado === 'pendiente');
+    const activos = data.filter(g => g.estado === 'activo');
+
+    // Dibujar Pendientes
+    if (pendientes.length === 0) {
+        containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
+    } else {
+        containerPendientes.innerHTML = pendientes.map(g => `
+            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+                <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
+                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+                <td class="p-4 text-right">
+                    <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600 transition-all shadow-sm">Activar</button>
+                    <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-red-500 hover:text-white transition-all ml-1 border border-red-100">Rechazar</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Dibujar Activos
+    if (activos.length === 0) {
+        containerActivos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">Aún no tienes equipo activo.</td></tr>`;
+    } else {
+        containerActivos.innerHTML = activos.map(g => `
+            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+                <td class="p-4 font-bold text-slate-700 dark:text-white uppercase">${g.nombre}</td>
+                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+                <td class="p-4 text-right">
+                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-red-400 hover:text-red-600 p-2 transition-colors">
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+}
+
+// 2. Función para Aprobar / Activar
+async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
+    console.log("Attempting to approve:", id, nuevoEstado);
+    const { data, error } = await supabaseClient
+        .from('gestores')
+        .update({ estado: nuevoEstado })
+        .eq('id', id)
+        .select();
+
+    if (error) {
+        alert("Error al procesar: " + error.message);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        if (nuevoEstado === 'activo' && telefonoGestor) {
+            const numLimpio = telefonoGestor.replace(/\D/g, '');
+            const finalNum = numLimpio.startsWith('53') ? numLimpio : '53' + numLimpio;
+            
+            const mensaje = encodeURIComponent(
+                `👋 ¡Hola ${nombreGestor}! Tu cuenta en *paratuhogar* ha sido aprobada con éxito. \n\n` +
+                `🚀 Ya puedes iniciar sesión y empezar a generar tus enlaces de venta. \n\n` +
+                `¡Bienvenido al equipo! ✨`
+            );
+
+            window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
+            alert(`✅ Gestor aprobado y activado.`);
+        } else {
+            alert("❌ Solicitud rechazada.");
+        }
+
+        // Recargar las tablas inmediatamente
+        loadPendingGestores();
+    }
+}
+
+// 3. Función para Eliminar/Bloquear
+async function removeGestor(id, nombre) {
+    if (confirm(`¿Estás seguro de eliminar a "${nombre}" del equipo?`)) {
+        const { error } = await supabaseClient
+            .from('gestores')
+            .update({ estado: 'bloqueado' })
+            .eq('id', id);
+
+        if (!error) {
+            alert(`✅ ${nombre} eliminado.`);
+            loadPendingGestores();
+        }
+    }
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
