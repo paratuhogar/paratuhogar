@@ -1091,6 +1091,8 @@
         <form id="form-nuevo-prod" class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- ID Oculto para cuando editemos -->
     <input type="hidden" id="p-id-edit">
+    <input type="hidden" id="p-disponible" value="SI">
+
 
     <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 font-bold" required>
     <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 font-bold" required>
@@ -3054,6 +3056,7 @@ function openModalProd() {
     // 1. Limpiar el ID de edición (para que sepa que es uno NUEVO)
     const idEdit = document.getElementById('p-id-edit');
     if(idEdit) idEdit.value = "";
+    document.getElementById('p-disponible').value = "SI";
     
     // 2. Resetear todos los inputs del formulario (nombres, precios, etc)
     const form = document.getElementById('form-nuevo-prod');
@@ -3080,6 +3083,10 @@ function openModalProd() {
             iconSpan.innerText = "add_a_photo";
         }
     }
+
+    // LIMPIEZA EXPRESA DE MENSAJERÍA
+    const inputMensajeria = document.getElementById('p-mensajeria');
+    if (inputMensajeria) inputMensajeria.value = "";
 
     // 5. Asegurar que el botón diga "Guardar Cambios" y no "Actualizar"
     const btnSave = document.getElementById('btn-save-prod');
@@ -3254,7 +3261,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         image3: document.getElementById('img-path-3').value,
         
         mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
-        disponible: 'SI',
+        disponible: document.getElementById('p-disponible').value || 'SI',
         proveedor: document.getElementById('p-proveedor').value || 'General',
         precio_flexible: document.getElementById('p-flexible').value || 'NO',
         garantia: document.getElementById('p-garantia').value,
@@ -3402,23 +3409,25 @@ function clearImageSlot(event, index) {
         
         if (!p) return alert("Error: No se encuentra la información del producto.");
 
-        // 2. Llenar campos del formulario
-        // Asegúrate de que los IDs del HTML coincidan (p-id-edit, p-nombre, etc.)
-        const inputs = {
-            'p-id-edit': p.id,
-            'p-nombre': p.nombre,
-            'p-precio': p.precio,
-            'p-comision': p.comision,
-            'p-categoria': p.categoria,
-            'p-garantia': p.garantia,
-            'p-proveedor': p.proveedor,
-            'p-flexible': p.precio_flexible || 'NO'
-        };
+        // Llenamos los campos. 
+    // USAR || "" es vital para que si en la DB está vacío, el formulario se limpie
+    const inputs = {
+        'p-id-edit': p.id,
+        'p-nombre': p.nombre,
+        'p-precio': p.precio,
+        'p-comision': p.comision,
+        'p-categoria': p.categoria,
+        'p-garantia': p.garantia,
+        'p-proveedor': p.proveedor,
+        'p-flexible': p.precio_flexible || 'NO',
+        'p-mensajeria': p.mensajeria || "", // <--- ESTO LIMPIA EL RASTRO DEL EQUIPO ANTERIOR
+        'p-disponible': p.disponible || "SI"
+    };
 
-        for (const [key, value] of Object.entries(inputs)) {
-            const el = document.getElementById(key);
-            if(el) el.value = value || "";
-        }
+    for (const [key, value] of Object.entries(inputs)) {
+        const el = document.getElementById(key);
+        if(el) el.value = value;
+    }
         
         // 3. Cambiar texto del botón
         const btnSave = document.getElementById('btn-save-prod');
@@ -3456,63 +3465,7 @@ function clearImageSlot(event, index) {
         document.getElementById('modal-producto').classList.remove('hidden');
     }
 
-// 4. Guardar (Funciona para NUEVO y para EDITAR)
-document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btn-save-prod');
-    const editId = document.getElementById('p-id-edit').value;
-    
-    btn.disabled = true; 
-    btn.innerText = "GUARDANDO...";
 
-    const datos = {
-        nombre: document.getElementById('p-nombre').value,
-        precio: parseFloat(document.getElementById('p-precio').value),
-        comision: parseFloat(document.getElementById('p-comision').value),
-        categoria: document.getElementById('p-categoria').value,
-        garantia: document.getElementById('p-garantia').value,
-        descripcion: quill.root.innerHTML, 
-        thumbnail: document.getElementById('img-path-0').value,
-        image1: document.getElementById('img-path-1').value,
-        image2: document.getElementById('img-path-2').value,
-        image3: document.getElementById('img-path-3').value,
-        disponible: 'SI'
-    };
-
-    let error;
-    if (editId) {
-        // SI TIENE ID, ACTUALIZAMOS
-        const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
-        error = err;
-    } else {
-        // SI NO TIENE ID, INSERTAMOS NUEVO
-        const { error: err } = await supabaseClient.from('productos').insert([datos]);
-        error = err;
-    }
-
-    if (!error) {
-        // --- ESTO ES LO QUE CAMBIA ---
-        closeModalProd(); // 1. Cierra el modal automáticamente
-        
-        if (typeof loadAdminData === 'function') {
-            await loadAdminData(); // 2. Refresca la lista de equipos sin recargar la web
-        }
-
-        // 3. Forzamos a que se quede en la pestaña de inventario
-        changeAdminTab('inventario'); 
-
-        alert("✅ ¡Guardado correctamente!");
-
-        // 4. Restauramos el botón
-        btn.disabled = false;
-        btn.innerText = "Guardar Cambios";
-        
-    } else {
-        alert("Error: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Guardar Cambios";
-    }
-});
 
 // --- 3. HERRAMIENTAS DE MARKETING (DESCARGAR Y COPIAR) ---
 
