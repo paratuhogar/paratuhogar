@@ -1649,7 +1649,7 @@ function setMyOrdersFilter(status, btn) {
 
 function renderMyOrdersList(lista) {
     const container = document.getElementById('list-mis-pedidos');
-    if(!container) return;
+    if (!container) return;
 
     // 1. Filtrar por la pestaña seleccionada
     const filteredByStatus = currentMyOrdersFilter === 'TODOS' 
@@ -1664,42 +1664,41 @@ function renderMyOrdersList(lista) {
     container.innerHTML = filteredByStatus.map(p => {
         const level = window.currentGestorLevel || 0;
         
-        // Colores de los estados
         let colorClass = 'bg-gray-100 text-gray-500';
         if(p.estado === 'Pendiente') colorClass = 'bg-yellow-100 text-yellow-700';
         if(p.estado === 'Asignado Mensajero') colorClass = 'bg-blue-100 text-blue-700';
         if(p.estado === 'Entregado') colorClass = 'bg-emerald-100 text-emerald-700';
         if(p.estado === 'Cancelado') colorClass = 'bg-red-100 text-red-700';
 
-        // --- CONSTRUCCIÓN DE BOTONES DE ACCIÓN ---
+        // --- BOTONES DE ACCIÓN ---
         let actionButtons = `<div class="flex gap-2">`;
 
-        // 1. Botón de WhatsApp (Si tiene teléfono y nivel 1+)
         if (p.telefono) {
             if (level >= 1) {
                 const clienteName = p.cliente.split(' ')[0];
-                let msj = `Hola ${clienteName}, tu pedido de *${p.producto.substring(0,20)}* está en estado: *${p.estado}* 📦.`;
+                let msj = `Hola ${clienteName}, le escribo por su pedido de *${p.producto.substring(0,20)}*...`;
                 const url = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msj)}`;
                 actionButtons += `
-                    <a href="${url}" target="_blank" class="h-8 w-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
+                    <a href="${url}" target="_blank" class="h-8 w-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 shadow-sm">
                         <i class="fab fa-whatsapp"></i>
                     </a>`;
             } else {
                 actionButtons += `
-                    <button onclick="alert('🔒 Función bloqueada. Sube a Nivel 1 para notificar vía WhatsApp.')" class="h-8 w-8 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center cursor-not-allowed">
+                    <button onclick="alert('🔒 Sube a Nivel 1 para usar WhatsApp')" class="h-8 w-8 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center">
                         <span class="material-symbols-outlined text-sm">lock</span>
                     </button>`;
             }
         }
 
-        // 2. Botón de PDF (Siempre visible para el gestor)
         actionButtons += `
-            <button onclick="prepararPDFDesdeHistorial('${p.id}')" class="h-8 w-8 rounded-full bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm" title="Descargar Comprobante">
-                <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
+            <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" class="h-8 w-8 rounded-full bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Descargar">
+                <span class="material-symbols-outlined text-sm">download</span>
             </button>
-        </div>`; // Cierre del div flex gap-2
+            <button onclick="prepararPDFDesdeHistorial('${p.id}', 'compartir')" class="h-8 w-8 rounded-full bg-blue-50 text-blue-500 border border-blue-100 flex items-center justify-center hover:bg-blue-500 hover:text-white" title="Compartir">
+                <span class="material-symbols-outlined text-sm">share</span>
+            </button>
+        </div>`;
 
-        // --- RETORNO DEL HTML DE LA FILA ---
         return `
         <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all border-b dark:border-gray-700">
             <div class="flex justify-between items-start mb-2">
@@ -1709,13 +1708,9 @@ function renderMyOrdersList(lista) {
                 </div>
                 ${actionButtons}
             </div>
-            
             <p class="text-[10px] text-gray-500 mb-3">${p.producto}</p>
-            
             <div class="flex justify-between items-center">
-                <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase ${colorClass}">
-                    ${p.estado}
-                </span>
+                <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase ${colorClass}">${p.estado}</span>
                 <div class="text-right">
                     <p class="text-xs font-black text-primary">$${p.total}</p>
                     <p class="text-[9px] font-bold text-emerald-500">+$${p.comision_total} Com.</p>
@@ -1724,7 +1719,6 @@ function renderMyOrdersList(lista) {
         </div>`;
     }).join('');
 }
-
 // Función para buscar dentro de mis pedidos
 function filterMyOrders() {
     const query = document.getElementById('search-mi-historial').value.toLowerCase();
@@ -1882,28 +1876,38 @@ function filterMyOrders() {
     }
 }
 
-function prepararPDFDesdeHistorial(pedidoId) {
+function prepararPDFDesdeHistorial(pedidoId, accion) {
     const p = myOrdersData.find(item => item.id === pedidoId);
-    if (!p) return alert("No se pudo cargar la información.");
+    if (!p) return alert("Error: No se encontró el registro del pedido.");
 
-    const nombreLimpio = p.producto.split('[')[0].replace(/^\d+x\s+/, '').trim();
-    const subtotal = Number(p.total) - Number(p.costo_mensajeria || 0);
+    // 1. Extraer el nombre limpio del producto
+    let nombreLimpio = p.producto.split('[')[0].replace(/^\d+x\s+/, '').trim();
+    
+    // 2. Extraer cantidades si existen (ej: "2x Arrocera")
+    let cantidad = 1;
+    const qtyMatch = p.producto.match(/^(\d+)x/);
+    if(qtyMatch) cantidad = parseInt(qtyMatch[1]);
+
+    // 3. Cálculo de precios para el desglose
+    const totalVenta = Number(p.total);
+    const mensajeria = Number(p.costo_mensajeria || 0);
+    const precioUnitario = (totalVenta - mensajeria) / cantidad;
 
     const datosParaPDF = {
         cliente: p.cliente,
         ci: p.ci || "---",
         direccion: p.direccion,
-        totalUSD: p.total,
-        mensajeria: p.costo_mensajeria || 0,
+        totalUSD: totalVenta,
+        mensajeria: mensajeria,
         items: [{
             nombre: nombreLimpio,
-            qty: 1,
-            price: subtotal,
-            total: subtotal
+            qty: cantidad,
+            price: precioUnitario,
+            total: totalVenta - mensajeria
         }]
     };
 
-    generarComprobanteVenta(datosParaPDF, p.telefono);
+    generarComprobanteVenta(datosParaPDF, accion);
 }
 
     // NUEVA FUNCIÓN: DIBUJAR PESTAÑAS DE CATEGORÍA
@@ -5921,206 +5925,159 @@ async function loadPendingGestores() {
     }
 }
 
-async function generarComprobanteVenta(datosPedido, telefonoCliente = '') {
+async function generarComprobanteVenta(datosPedido, accion) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // CONFIGURACIÓN DE COLORES
-    const azulEmpresa = [26, 71, 137]; // #1a4789
-    const azulLink = [44, 111, 181];    // #2c6fb5
-    
-    // DATOS DEL GESTOR
-    const nombreGestor = window.gestorName || "Equipo de Ventas";
-    const telfGestor = getAgentPhone(); // Tu función que ya pone el 53
-    const slug = window.location.search.includes('s=') ? new URLSearchParams(window.location.search).get('s') : 'inicio';
+    // PALETA DE COLORES PREMIUM
+    const cPrimary = [26, 71, 137];   // Azul Profundo
+    const cSecondary = [44, 111, 181]; // Azul Accento
+    const cSlate = [30, 41, 59];      // Gris Oscuro para textos
+    const cLight = [100, 116, 139];   // Gris suave para etiquetas
+
+    const nombreGestor = window.gestorName || "Asesor de Ventas";
+    const telfGestor = getAgentPhone();
+    const slug = window.location.search.includes('s=') ? new URLSearchParams(window.location.search).get('s') : 'oficial';
     const linkPersonal = `${window.location.origin}${window.location.pathname}?s=${slug}`;
 
-    // --- 1. HEADER AZUL ---
-    doc.setFillColor(...azulEmpresa);
-    doc.rect(0, 0, 210, 40, 'F');
+    // --- 1. CABECERA (HEADER PREMIUM) ---
+    doc.setFillColor(...cPrimary);
+    doc.rect(0, 0, 210, 50, 'F'); 
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.text("COMPROBANTE", 15, 25);
-    
+    doc.setFontSize(40);
+    doc.text("PREFACTURA", 15, 35);
+
     doc.setFontSize(10);
-    const nroOrden = "ORDEN #" + Math.floor(100000 + Math.random() * 900000);
-    doc.text(nroOrden, 195, 25, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    const fechaActual = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    doc.text(`EMITIDA EL: ${fechaActual.toUpperCase()}`, 195, 33, { align: "right" });
 
-    // --- 2. INFORMACIÓN CLIENTE Y GESTOR ---
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(12);
-    doc.text("Facturado a:", 15, 55);
-    doc.text("Atendido por:", 130, 55);
+    // --- 2. BLOQUES DE DATOS (CLIENTE VS GESTOR) ---
+    // Etiquetas
+    doc.setTextColor(...cLight);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("DATOS DEL CLIENTE (FACTURADO A)", 15, 65);
+    doc.text("DATOS DEL ASESOR (ATENDIDO POR)", 120, 65);
 
-    doc.setTextColor(100, 100, 100);
+    // Separador visual fino
+    doc.setDrawColor(226, 232, 240);
+    doc.line(15, 67, 195, 67);
+
+    // Información del Cliente
+    doc.setTextColor(...cSlate);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(datosPedido.cliente.toUpperCase(), 15, 75);
+    
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
+    doc.text(`Carnet ID: ${datosPedido.ci || 'No especificado'}`, 15, 81);
+    doc.setTextColor(...cLight);
+    doc.text("Dirección de Entrega:", 15, 87);
+    doc.setTextColor(...cSlate);
+    doc.text(datosPedido.direccion, 15, 92, { maxWidth: 85 });
+
+    // Información del Gestor
+    doc.setFont("helvetica", "bold");
+    doc.text(nombreGestor.toUpperCase(), 120, 75);
     
-    // Datos Cliente (Izquierda)
-    doc.text(datosPedido.cliente || "Cliente", 15, 62);
-    doc.text("CI: " + (datosPedido.ci || "---"), 15, 67);
-    doc.text(datosPedido.direccion || "Entrega a domicilio", 15, 72, { maxWidth: 80 });
-
-    // Datos Gestor (Derecha)
-    doc.text(nombreGestor, 130, 62);
-    doc.text("WhatsApp: +" + telfGestor, 130, 67);
+    doc.setFont("helvetica", "normal");
+    doc.text(`WhatsApp: +${telfGestor}`, 120, 81);
+    doc.text(`Correo: ${window.currentUserData?.email || 'ventas@paratuhogar.cu'}`, 120, 86);
     
-    // LINK CLIQUEABLE (Azul y con subrayado)
-    doc.setTextColor(...azulLink);
-    doc.text("Ver Catálogo Online", 130, 72);
-    doc.link(130, 69, 40, 5, { url: linkPersonal }); 
+    // Botón / Link Interactivo
+    doc.setTextColor(...cSecondary);
+    doc.setFont("helvetica", "bold");
+    doc.text("VISITAR MI TIENDA ONLINE", 120, 95);
+    doc.setDrawColor(...cSecondary);
+    doc.line(120, 96, 172, 96); // Subrayado estético
+    doc.link(120, 92, 60, 6, { url: linkPersonal });
 
-    // FECHA DE EMISIÓN
-    doc.setTextColor(0, 0, 0);
-    doc.text("Fecha de emisión: " + new Date().toLocaleDateString(), 15, 90);
+    // --- 3. TABLA DE PRODUCTOS (ESTILO LIMPIO) ---
+    const filasTabla = datosPedido.items.map(i => [
+        i.nombre.toUpperCase(), 
+        i.qty, 
+        `$${i.price.toLocaleString()}.00`, 
+        `$${(i.price * i.qty).toLocaleString()}.00`
+    ]);
 
-    // --- 3. TABLA DE PRODUCTOS ---
+    if (Number(datosPedido.mensajeria) > 0) {
+        filasTabla.push([
+            'SERVICIO DE ENTREGA Y LOGÍSTICA A DOMICILIO', 
+            '1', 
+            `$${datosPedido.mensajeria.toLocaleString()}.00`, 
+            `$${datosPedido.mensajeria.toLocaleString()}.00`
+        ]);
+    }
+
     doc.autoTable({
-        startY: 100,
-        head: [['Producto / Descripción', 'Cant.', 'Precio', 'Total']],
-        body: datosPedido.items.map(i => [i.nombre, i.qty, `$${i.price}.00`, `$${i.total}.00`]),
-        theme: 'grid',
-        headStyles: { fillColor: azulLink, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 10, cellPadding: 4 },
+        startY: 110,
+        head: [['DESCRIPCIÓN DEL EQUIPO / SERVICIO', 'CANT', 'PRECIO UNIT.', 'SUBTOTAL']],
+        body: filasTabla,
+        theme: 'striped',
+        headStyles: { fillColor: cPrimary, textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        bodyStyles: { textColor: cSlate, fontSize: 10 },
         columnStyles: {
             0: { cellWidth: 'auto' },
-            1: { halign: 'center', cellWidth: 20 },
-            2: { halign: 'right', cellWidth: 30 },
-            3: { halign: 'right', cellWidth: 30 }
-        }
+            1: { halign: 'center', cellWidth: 15 },
+            2: { halign: 'right', cellWidth: 35 },
+            3: { halign: 'right', cellWidth: 35, fontStyle: 'bold' }
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
     });
 
-    // TOTAL AZUL
+    // --- 4. RESUMEN FINANCIERO ---
     const finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFillColor(...azulEmpresa);
-    doc.rect(130, finalY - 5, 65, 10, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.text("TOTAL A PAGAR", 135, finalY + 1.5);
-    doc.text(`$${datosPedido.totalUSD}.00`, 190, finalY + 1.5, { align: "right" });
-
-    // --- 4. PIE DE PÁGINA ---
-    doc.setTextColor(100, 100, 100);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text("Condiciones:", 15, finalY + 25);
-    doc.text("• El pago se realiza al recibir el equipo.", 15, finalY + 31);
-    doc.text("• Garantía válida presentando este comprobante.", 15, finalY + 36);
-
-    doc.setFontSize(24);
-    doc.setTextColor(...azulEmpresa);
-    doc.text("¡Gracias por su compra!", 195, finalY + 35, { align: "right" });
-
-    // DESCARGAR / COMPARTIR
-    const nombreArchivo = `Recibo_${(datosPedido.cliente || "venta").replace(/\s+/g, '_')}.pdf`;
-    doc.save(nombreArchivo);
-
-    // Abrir WhatsApp si se pasó el teléfono
-    if (telefonoCliente) {
-        const num = telefonoCliente.replace(/\D/g, '');
-        const msj = encodeURIComponent(`👋 Hola ${datosPedido.cliente}, le adjunto su comprobante oficial. ¡Muchas gracias por su preferencia!`);
-        setTimeout(() => { window.open(`https://wa.me/${num}?text=${msj}`, '_blank'); }, 1000);
-    }
-}
-
-async function getOrGenerateShortLink(nombreGestor, longUrl) {
-    // Obtenemos los datos de nivel basados en la variable global gestorSalesCount
-    // (Asegúrate de que esta variable se actualiza en checkGamificationStatus)
-    const levelData = getLevelData(window.gestorSalesCount || 0);
-
-    // Si no es Nivel 3 o superior, devolvemos el link largo
-    if (levelData.lvl < 3) return longUrl;
-
-    try {
-        // 1. Ver si ya existe un slug para este gestor y este destino
-        const { data: existing } = await supabaseClient
-            .from('short_links')
-            .select('slug')
-            .eq('gestor', nombreGestor)
-            .eq('original_url', longUrl)
-            .single();
-
-        if (existing) {
-            return `${window.location.origin}${window.location.pathname}?s=${existing.slug}`;
-        }
-
-        // 2. Si no existe y es nivel 3+, crear uno nuevo aleatorio
-        const newSlug = Math.random().toString(36).substring(2, 7); // Ej: "3n8k2"
-        
-        const { error } = await supabaseClient
-            .from('short_links')
-            .insert([{
-                slug: newSlug,
-                original_url: longUrl,
-                gestor: nombreGestor,
-                is_custom: false
-            }]);
-
-        if (error) throw error;
-
-        return `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
-    } catch (e) {
-        console.error("Error con ShortLinks:", e);
-        return longUrl; // Fallback: si algo falla, damos el link largo para no perder ventas
-    }
-}
-
-async function removeGestor(id, nombre) {
-    const confirmar = confirm(`¿Estás seguro de eliminar a "${nombre}" del equipo?\n\nYa no podrá iniciar sesión ni generar enlaces.`);
     
-    if (confirmar) {
-        const { error } = await supabaseClient
-            .from('gestores')
-            .update({ estado: 'bloqueado' })
-            .eq('id', id);
+    // Caja de Total
+    doc.setFillColor(...cPrimary);
+    doc.rect(125, finalY, 70, 15, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text("TOTAL A PAGAR:", 130, finalY + 9.5);
+    doc.setFontSize(14);
+    doc.text(`$${datosPedido.totalUSD.toLocaleString()}.00`, 190, finalY + 9.5, { align: "right" });
 
-        if (!error) {
-            alert(`✅ ${nombre} ha sido eliminado.`);
-            loadPendingGestores(); // Recarga las listas
-        } else {
-            alert("Error al eliminar: " + error.message);
-        }
-    }
-}
+    // --- 5. NOTAS Y PIE DE PÁGINA ---
+    doc.setTextColor(...cLight);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("NOTAS E INSTRUCCIONES DE PAGO:", 15, finalY + 10);
+    
+    doc.setFont("helvetica", "normal");
+    const notas = [
+        "• El pago se realiza en efectivo o transferencia al momento de recibir el equipo.",
+        "• Verifique el estado del producto antes de que el mensajero se retire.",
+        "• Monedas aceptadas: USD, CUP, Zelle o MLC.",
+        "• Esta prefactura reserva el producto por un periodo de 24 horas."
+    ];
+    doc.text(notas, 15, finalY + 16);
 
-async function approveGestor(id, nuevoEstado, nombreGestor = '', telefonoGestor = '') {
-    // 1. Intentar actualizar en Supabase
-    const { data, error } = await supabaseClient
-        .from('gestores')
-        .update({ estado: nuevoEstado })
-        .eq('id', id)
-        .select();
+    // Firma de Calidad
+    doc.setFontSize(22);
+    doc.setTextColor(...cPrimary);
+    doc.setFont("helvetica", "bold");
+    doc.text("¡Gracias por elegirnos!", 195, finalY + 45, { align: "right" });
+    
+    doc.setFontSize(8);
+    doc.setTextColor(...cLight);
+    doc.text("Generado automáticamente por el Sistema de Gestión paratuhogar.cu", 105, 285, { align: "center" });
 
-    if (error) {
-        alert("Error al procesar la solicitud: " + error.message);
-        return;
-    }
+    // --- 6. SALIDA ---
+    const nombreArchivo = `Prefactura_${datosPedido.cliente.replace(/\s+/g, '_')}.pdf`;
 
-    if (data && data.length > 0) {
-        // 2. Si lo activamos, abrimos WhatsApp para notificar
-        if (nuevoEstado === 'activo' && telefonoGestor) {
-            
-            // Limpiamos el número para la URL (formato 53...)
-            const numLimpio = telefonoGestor.replace(/\D/g, '');
-            const finalNum = numLimpio.length === 8 ? '53' + numLimpio : numLimpio;
-            
-            const mensaje = encodeURIComponent(
-                `👋 ¡Hola ${nombreGestor}! Tu cuenta en *paratuhogar* ha sido aprobada con éxito. \n\n` +
-                `🚀 Ya puedes iniciar sesión y empezar a trabajar con nosotros.\n\n` +
-                `¡Bienvenido al equipo! ✨`
-            );
-
-            window.open(`https://wa.me/${finalNum}?text=${mensaje}`, '_blank');
-            alert(`✅ Gestor activado. Se ha abierto WhatsApp para notificar a ${nombreGestor}.`);
-        } else {
-            alert("❌ Solicitud rechazada correctamente.");
-        }
-
-        // 3. Refrescar las listas de gestores en el panel
-        if (typeof loadPendingGestores === 'function') loadPendingGestores();
-        if (typeof loadAdminData === 'function') loadAdminData();
+    if (accion === 'compartir' && navigator.share) {
+        const pdfBlob = doc.output('blob');
+        const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
+        try {
+            await navigator.share({ files: [file], title: 'Su Prefactura - paratuhogar' });
+        } catch (err) { doc.save(nombreArchivo); }
+    } else {
+        doc.save(nombreArchivo);
     }
 }
 
