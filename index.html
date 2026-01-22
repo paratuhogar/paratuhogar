@@ -1843,6 +1843,8 @@ function filterMyOrders() {
     const diasDuracion = lvlData.duration / 24;
 
     const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
+    // LLAMAMOS AL GENERADOR SIN IMPORTAR EL NIVEL
+    const finalLink = await getOrGenerateShortLink(nombre, myLongLink);
     
     // ESTA ES LA VARIABLE QUE VAMOS A MOSTRAR
     let linkParaMostrar = myLongLink; 
@@ -6429,6 +6431,44 @@ async function removeGestor(id, nombre) {
             alert(`✅ ${nombre} eliminado.`);
             loadPendingGestores();
         }
+    }
+}
+
+// FUNCIÓN MAESTRA: GENERA LINK CORTO PARA TODOS LOS NIVELES
+async function getOrGenerateShortLink(nombreGestor, longUrl) {
+    // Ya no comprobamos el nivel (lvl < 3), todos entran aquí
+    try {
+        // 1. Ver si ya existe un link corto para este gestor y este destino
+        const { data: existing } = await supabaseClient
+            .from('short_links')
+            .select('slug')
+            .eq('gestor', nombreGestor)
+            .eq('original_url', longUrl)
+            .maybeSingle();
+
+        if (existing) {
+            return `${window.location.origin}${window.location.pathname}?s=${existing.slug}`;
+        }
+
+        // 2. Si no existe, crear uno nuevo aleatorio (5 letras)
+        const newSlug = Math.random().toString(36).substring(2, 7);
+        
+        const { error } = await supabaseClient
+            .from('short_links')
+            .insert([{
+                slug: newSlug,
+                original_url: longUrl,
+                gestor: nombreGestor,
+                is_custom: false
+            }]);
+
+        if (error) throw error;
+
+        return `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
+    } catch (e) {
+        console.error("Error con ShortLinks:", e);
+        // Si falla algo con la base de datos, devolvemos el largo para asegurar la venta
+        return longUrl; 
     }
 }
 
