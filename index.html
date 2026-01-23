@@ -2467,17 +2467,20 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // Iteramos por cada proveedor para sacar su turno del día
     for (const [prov, d] of Object.entries(gruposPedidos)) {
         // A. Consultar cuántos pedidos van de este proveedor hoy
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+        const ahora = new Date();
+        // Creamos el inicio del día (00:00:00) en hora local
+        const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString();
         
-        const { count } = await supabaseClient
+        // CAMBIO: Usamos 'fecha' en lugar de 'created_at'
+        const { count, error: errCount } = await supabaseClient
             .from('pedidos')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('proveedor', prov)
-            .gte('created_at', hoy.toISOString());
+            .gte('fecha', inicioHoy); 
 
-        const consecutivo = (count || 0) + 1;
-        const codPedido = `${prov}-${consecutivo}`; // Ejemplo: "Importadora A-1"
+        // Si hay error en la consulta, nroConsecutivo será 1, si no, el conteo + 1
+        const nroConsecutivo = (errCount ? 0 : (count || 0)) + 1;
+        const codPedido = `${prov}-${nroConsecutivo}`; 
 
         const strProd = d.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
         const totalVenta = d.tEquipo + d.tEnvio;
