@@ -2713,6 +2713,49 @@ async function loadAdminData() {
     loadPendingGestores();
 }
 
+// --- FUNCIÓN PARA APROBAR O RECHAZAR GESTORES ---
+async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
+    const confirmacion = confirm(`¿Estás seguro de que quieres cambiar el estado de ${nombre} a ${nuevoEstado}?`);
+    if (!confirmacion) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('gestores')
+            .update({ estado: nuevoEstado })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        alert(`✅ Gestor ${nombre} ha sido marcado como ${nuevoEstado}.`);
+        
+        // Recargar las listas del panel de administración
+        loadPendingGestores(); 
+    } catch (e) {
+        console.error("Error al actualizar gestor:", e);
+        alert("Error al procesar la solicitud.");
+    }
+}
+
+// --- FUNCIÓN PARA ELIMINAR GESTORES ---
+async function removeGestor(id, nombre) {
+    if (!confirm(`¿Eliminar permanentemente a ${nombre}? Esta acción no se puede deshacer.`)) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('gestores')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        alert("✅ Gestor eliminado correctamente.");
+        loadPendingGestores();
+    } catch (e) {
+        console.error("Error al eliminar gestor:", e);
+        alert("No se pudo eliminar al gestor.");
+    }
+}
+
 function updateAdminStats(pedidos) {
     const entregados = pedidos.filter(p => p.estado === 'Entregado');
     const totalUSD = entregados.reduce((acc, p) => acc + Number(p.total || 0), 0);
@@ -6233,6 +6276,8 @@ async function buscarDuenoPorIP() {
         return data ? data.agent_name : null;
     } catch (e) { return null; }
 }
+
+
 
 </script>
 
