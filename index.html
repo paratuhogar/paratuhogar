@@ -1557,7 +1557,9 @@ function openLoginModal() {
     }
     loadClientCRM(); 
 
-    
+    // Ocultar botón de whatsapp si existe al entrar a modo gestor
+    const waBtn = document.getElementById('floating-agent-contact');
+    if (waBtn) waBtn.classList.add('hidden');
 }
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
@@ -2557,7 +2559,7 @@ function renderFloatingWA(nombre, telefono) {
             </div>
 
             <div class="flex flex-col">
-                <span class="text-[9px] font-black uppercase opacity-80 tracking-tighter leading-none mb-1">Asesor en línea</span>
+                <span class="text-[9px] font-black uppercase opacity-80 tracking-tighter leading-none mb-1">Comercial en línea</span>
                 <span class="text-sm font-black leading-none">${nombre.toUpperCase()}</span>
             </div>
 
@@ -6158,7 +6160,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.text("DATOS DEL CLIENTE (FACTURADO A)", 15, 65);
-    doc.text("DATOS DEL ASESOR (ATENDIDO POR)", 120, 65);
+    doc.text("DATOS DEL COMERCIAL (ATENDIDO POR)", 120, 65);
 
     // Separador visual fino
     doc.setDrawColor(226, 232, 240);
