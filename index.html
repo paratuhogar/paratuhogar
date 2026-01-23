@@ -2741,7 +2741,6 @@ async function removeGestor(id, nombre) {
     if (!confirm(`¿Eliminar permanentemente a ${nombre}? Esta acción no se puede deshacer.`)) return;
 
     try {
-        // 1. Ejecutar la eliminación en Supabase
         const { error } = await supabaseClient
             .from('gestores')
             .delete()
@@ -2749,15 +2748,11 @@ async function removeGestor(id, nombre) {
 
         if (error) throw error;
 
-        // 2. Notificar al usuario
         alert("✅ Gestor eliminado correctamente.");
-        
-        // 3. FORZAR el refresco de la lista (Importante usar await aquí)
-        await loadPendingGestores(); 
-        
+        loadPendingGestores();
     } catch (e) {
         console.error("Error al eliminar gestor:", e);
-        alert("No se pudo eliminar al gestor. Revisa la conexión.");
+        alert("No se pudo eliminar al gestor.");
     }
 }
 
@@ -6018,28 +6013,25 @@ function getGlobalTrendRadar(todosLosPedidos) {
 
 // 1. Cargar gestores pendientes (Llamar esto dentro de loadAdminData)
 async function loadPendingGestores() {
-    // 1. Obtener datos frescos de Supabase
+    // 1. Consultar todos los gestores (Pendientes y Activos)
     const { data, error } = await supabaseClient
         .from('gestores')
         .select('*')
         .in('estado', ['pendiente', 'activo'])
         .order('nombre', { ascending: true });
 
-    if (error) return console.error("Error cargando gestores:", error);
+    if (error) return console.error(error);
 
     const containerPendientes = document.getElementById('list-admin-aprobaciones');
     const containerActivos = document.getElementById('list-admin-activos');
     
     if (!containerPendientes || !containerActivos) return;
 
-    // 2. LIMPIAR los contenedores antes de re-rellenar (ESTO ES LO QUE TE FALTA)
-    containerPendientes.innerHTML = "";
-    containerActivos.innerHTML = "";
-
+    // 2. Filtrar en memoria para mayor rapidez
     const pendientes = data.filter(g => g.estado === 'pendiente');
     const activos = data.filter(g => g.estado === 'activo');
 
-    // 3. Pintar Pendientes
+    // 3. Renderizar Pendientes
     if (pendientes.length === 0) {
         containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
     } else {
@@ -6049,13 +6041,13 @@ async function loadPendingGestores() {
                 <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
                 <td class="p-4 text-right">
                     <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
-                    <button onclick="approveGestor('${g.id}', 'bloqueado', '${g.nombre}')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
+                    <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
                 </td>
             </tr>
         `).join('');
     }
 
-    // 4. Pintar Activos
+    // 4. Renderizar Activos
     if (activos.length === 0) {
         containerActivos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">Aún no tienes equipo activo.</td></tr>`;
     } else {
