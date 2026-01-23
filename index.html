@@ -616,6 +616,25 @@
                     <input type="text" id="check-ci" placeholder="Carnet (CI)" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold">
                     <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold" required>
                 </div>
+
+                <select id="check-municipio" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold text-sm" required>
+    <option value="" disabled selected>Selecciona Municipio</option>
+    <option value="Playa">Playa</option>
+    <option value="Plaza de la Revolución">Plaza de la Revolución</option>
+    <option value="Centro Habana">Centro Habana</option>
+    <option value="Habana Vieja">Habana Vieja</option>
+    <option value="Regla">Regla</option>
+    <option value="Diez de Octubre">Diez de Octubre</option>
+    <option value="Cerro">Cerro</option>
+    <option value="Marianao">Marianao</option>
+    <option value="La Lisa">La Lisa</option>
+    <option value="Boyeros">Boyeros</option>
+    <option value="Arroyo Naranjo">Arroyo Naranjo</option>
+    <option value="Cotorro">Cotorro</option>
+    <option value="Guanabacoa">Guanabacoa</option>
+    <option value="San Miguel del Padrón">San Miguel del Padrón</option>
+    <option value="Habana del Este">Habana del Este</option>
+</select>
                 
                 <textarea id="check-dir" placeholder="Dirección de entrega" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-20 font-bold" required></textarea>
                 
@@ -746,6 +765,28 @@
     <!-- B. BARRA DE FILTROS AVANZADOS -->
     <div class="p-4 bg-gray-50/50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+
+            <div class="flex flex-col gap-1">
+                <label class="text-[9px] font-black uppercase text-gray-400">Municipio</label>
+                <select id="f-municipio" onchange="renderAdminLogistica()" class="text-[10px] border-gray-200 rounded-lg p-2 font-bold dark:bg-gray-900 focus:ring-0">
+                    <option value="TODOS">Todos</option>
+                    <option value="Playa">Playa</option>
+                    <option value="Plaza de la Revolución">Plaza de la Revolución</option>
+                    <option value="Centro Habana">Centro Habana</option>
+                    <option value="Habana Vieja">Habana Vieja</option>
+                    <option value="Regla">Regla</option>
+                    <option value="Diez de Octubre">Diez de Octubre</option>
+                    <option value="Cerro">Cerro</option>
+                    <option value="Marianao">Marianao</option>
+                    <option value="La Lisa">La Lisa</option>
+                    <option value="Boyeros">Boyeros</option>
+                    <option value="Arroyo Naranjo">Arroyo Naranjo</option>
+                    <option value="Cotorro">Cotorro</option>
+                    <option value="Guanabacoa">Guanabacoa</option>
+                    <option value="San Miguel del Padrón">San Miguel del Padrón</option>
+                    <option value="Habana del Este">Habana del Este</option>
+                </select>
+            </div>
             
             <div class="flex flex-col gap-1 lg:col-span-2">
                 <label class="text-[9px] font-black uppercase text-gray-400">Rango Fecha</label>
@@ -2369,105 +2410,46 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
-    btn.innerText = "REGISTRANDO...";
+    btn.innerText = "PROCESANDO PEDIDO..."; // Cambio de texto para feedback
 
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session;
 
     const nombreC = document.getElementById('check-nombre').value;
+    const municipioC = document.getElementById('check-municipio').value; // NUEVO
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
     const monedaC = document.getElementById('check-moneda').value;
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
-    
 
-    // 1. DETERMINAR QUIÉN ES EL GESTOR (CON PRIORIDAD DE AMARRE)
+    // 1. DETERMINAR QUIÉN ES EL GESTOR (Tu lógica original)
     let activeGestor = "Venta Directa";
-
     if (window.gestorName) {
-        // CASO A: El que navega es un GESTOR (él mismo hace la orden para su cliente)
         activeGestor = window.gestorName;
     } else {
-        // CASO B: El que navega es un CLIENTE
-        
-        // Prioridad 1: ¿El teléfono del cliente ya está amarrado a un gestor Nivel 5 en la DB?
         const duenoEterno = await checkCustomerOwnership(telC);
-        
         if (duenoEterno) {
             activeGestor = duenoEterno;
-            console.log("🚀 Atribución por Amarre (Nivel 5) recuperada de la DB.");
         } else {
-            // Prioridad 2: Si no tiene dueño en la DB, ¿viene de un link de referido (?s= o ?gestor=)?
             const referido = await getActiveReferrer();
-            if (referido) {
-                activeGestor = referido.nombre;
-                console.log("🔗 Atribución por Enlace detectada.");
-            }
+            if (referido) activeGestor = referido.nombre;
         }
     }
 
-    // 2. LOGICA DE BINDEO (ASEGURAR EL CLIENTE PARA EL FUTURO)
-    // Obtenemos los datos de nivel del gestor que resultó asignado
-    // Usamos window.gestorSalesCount si es el propio gestor, o el nivel que tenga el gestor asignado
+    // 2. LOGICA DE BINDEO (Tu lógica original)
     const levelData = getLevelData(window.gestorSalesCount || 0);
-
-    // Si el gestor es Nivel 5, guardamos/actualizamos el amarre en la DB
     if (levelData.lvl >= 5 && activeGestor !== "Venta Directa") {
         try {
             await supabaseClient.from('customer_bindings').upsert({
                 phone: telC.replace(/\D/g, ''), 
                 agent_name: activeGestor
             });
-            console.log("💎 Sistema Emperador: Cliente vinculado/actualizado a:", activeGestor);
-        } catch (err) {
-            console.error("Error en bindeo:", err);
-        }
-    }
-    let totalEquipo = 0;
-    let totalMensajeria = 0;
-    let totalComision = 0;
-    let listaProductos = "";
-
-    cart.forEach(item => {
-        const precioItem = parseFloat(item.precio_venta) || 0;
-        const envioItem = parseMensajeria(item.mensajeria) || 0;
-        const comisionItem = parseFloat(item.comision_actual) || 0;
-        const qty = item.qty;
-
-        totalEquipo += (precioItem * qty);
-        totalMensajeria += (envioItem * qty);
-        totalComision += (comisionItem * qty);
-        listaProductos += `${qty > 1 ? qty + 'x ' : ''}${item.nombre} `;
-    });
-
-    const totalPagar = totalEquipo + totalMensajeria;
-
-    // --- CONSTRUCCIÓN DEL TEXTO (USAMOS \n PARA SALTOS DE LÍNEA) ---
-    // Construimos el mensaje como texto normal y lo codificamos AL FINAL
-    let mensajeRaw = 
-        `VALE DE VENTA\n\n` +
-        `💪 Nombre: ${nombreC}\n\n` +
-        `💪 CI: ${ciC}\n\n` +
-        `💪 Teléfono: ${telC}\n\n` +
-        `💪 Dirección: ${dirC}\n\n` +
-        `💪 Producto: ${listaProductos.trim()}\n\n` +
-        `💪 Total a Pagar: ${totalPagar} USD\n\n` +
-        `-Precio equipo: ${totalEquipo} USD\n` +
-        `-Mensajería: ${totalMensajeria} USD\n\n` +
-        `💪 Vuelto: ${vueltoC}\n\n`;
-
-    if (isLogged) {
-        mensajeRaw += `💪 Comisión: ${totalComision} usd\n\n` +
-                      `💪 Gestor: ${activeGestor}`;
+        } catch (err) { console.error("Error en bindeo:", err); }
     }
 
-    // --- PASO CRÍTICO: CODIFICAR TODO EL MENSAJE ---
-    // Esto convierte los #, espacios y emojis en códigos seguros para la URL
-    const mensajeCodificado = encodeURIComponent(mensajeRaw);
-
-    // GUARDAR EN BASE DE DATOS (Mismo proceso)
+    // 3. AGRUPAR POR PROVEEDOR (Tu lógica original)
     const gruposPedidos = {};
     cart.forEach(item => {
         const prov = item.proveedor || 'General';
@@ -2478,46 +2460,85 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         gruposPedidos[prov].tEnvio += (parseMensajeria(item.mensajeria) * item.qty);
     });
 
+    // --- NUEVA LÓGICA DE CONSECUTIVO Y MENSAJE ---
+    let mensajeRaw = `VALE DE VENTA\n\n`;
     const promesas = [];
-    for (const [prov, d] of Object.entries(gruposPedidos)) {
-        const strProd = d.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
-        const totalG = d.tEquipo + d.tEnvio;
 
+    // Iteramos por cada proveedor para sacar su turno del día
+    for (const [prov, d] of Object.entries(gruposPedidos)) {
+        // A. Consultar cuántos pedidos van de este proveedor hoy
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        const { count } = await supabaseClient
+            .from('pedidos')
+            .select('*', { count: 'exact', head: true })
+            .eq('proveedor', prov)
+            .gte('created_at', hoy.toISOString());
+
+        const consecutivo = (count || 0) + 1;
+        const codPedido = `${prov}-${consecutivo}`; // Ejemplo: "Importadora A-1"
+
+        const strProd = d.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
+        const totalVenta = d.tEquipo + d.tEnvio;
+
+        // B. Construir parte del mensaje para WhatsApp
+        mensajeRaw += `💪 Pedido: ${codPedido}\n`; // "Importadora A-1" (sin la palabra proveedor)
+        mensajeRaw += `💪 Nombre: ${nombreC}\n`;
+        mensajeRaw += `💪 Municipio: ${municipioC}\n`;
+        mensajeRaw += `💪 Teléfono: ${telC}\n`;
+        mensajeRaw += `💪 Dirección: ${dirC}\n`;
+        mensajeRaw += `💪 Producto: ${strProd}\n`;
+        mensajeRaw += `💪 Total: ${totalVenta} USD\n`;
+        mensajeRaw += `💪 Vuelto: ${vueltoC}\n`;
+        
+        if (isLogged) {
+            mensajeRaw += `💪 Comisión: ${d.tComi} usd\n`;
+            mensajeRaw += `💪 Gestor: ${activeGestor}\n`;
+        }
+        mensajeRaw += `--------------------------\n\n`;
+
+        // C. Guardar en Base de Datos con las nuevas columnas
         promesas.push(supabaseClient.from('pedidos').insert([{
             gestor: activeGestor,
-            cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC,
+            cliente: nombreC,
+            ci: ciC,
+            telefono: telC,
+            direccion: dirC,
+            municipio: municipioC, // NUEVA COLUMNA
             producto: `${strProd} [${monedaC}]`,
-            total: totalG,
+            total: totalVenta,
             comision_total: d.tComi,
-            estado: 'Pendiente', pago_gestor: 'Pendiente',
-            proveedor: prov, costo_mensajeria: d.tEnvio
+            estado: 'Pendiente',
+            pago_gestor: 'Pendiente',
+            proveedor: prov,
+            costo_mensajeria: d.tEnvio,
+            orden_dia: codPedido // NUEVA COLUMNA
         }]));
     }
 
     const resultados = await Promise.all(promesas);
-    
     if (resultados.some(r => r.error)) {
         alert("Error de conexión guardando el pedido.");
         btn.disabled = false; btn.innerText = "Tramitar Pedido";
         return;
     }
 
-    // AHORA ENVIAMOS EL MENSAJE CODIFICADO
+    // ENVIAR WHATSAPP
+    const mensajeCodificado = encodeURIComponent(mensajeRaw);
     window.open(`https://wa.me/5356071095?text=${mensajeCodificado}`, '_blank');
-    // Preparamos los datos para el PDF
+
+    // PREPARAR PDF (Tu lógica original con municipio añadido)
     const datosParaPDF = {
         cliente: nombreC,
         ci: ciC,
-        direccion: dirC,
-        totalUSD: totalPagar,
-        mensajeria: totalMensajeria,
-        items: cart // Enviamos el carrito actual
+        direccion: `${dirC} (${municipioC})`, // Añadimos municipio a la dirección del PDF
+        totalUSD: cart.reduce((acc, i) => acc + (i.precio_venta * i.qty) + (parseMensajeria(i.mensajeria) * i.qty), 0),
+        mensajeria: cart.reduce((acc, i) => acc + (parseMensajeria(i.mensajeria) * i.qty), 0),
+        items: cart
     };
 
-    // Lanzar la descarga del PDF
-    setTimeout(() => {
-        generarComprobanteVenta(datosParaPDF);
-    }, 1500); 
+    setTimeout(() => { generarComprobanteVenta(datosParaPDF); }, 1500); 
 
     setTimeout(() => {
         cart = [];
@@ -2855,6 +2876,7 @@ function updateAdminStats(pedidos) {
 }
 
 // --- FUNCIÓN DE LOGÍSTICA MAESTRA CON FILTROS AVANZADOS ---
+// --- FUNCIÓN DE LOGÍSTICA MAESTRA CORREGIDA ---
 function renderAdminLogistica() {
     const container = document.getElementById('list-admin-pedidos');
     if (!container || !pedidosRawAdmin) return;
@@ -2865,8 +2887,10 @@ function renderAdminLogistica() {
     const gestFilter = document.getElementById('f-gestor').value;
     const dateDesde = document.getElementById('f-desde').value;
     const dateHasta = document.getElementById('f-hasta').value;
+    // Capturamos el municipio (con validación por si no existe el elemento)
+    const muniFilter = document.getElementById('f-municipio') ? document.getElementById('f-municipio').value : 'TODOS';
 
-    // 2. Aplicar Filtro Multi-Nivel
+    // 2. Aplicar Filtro Multi-Nivel (Un solo filtro para todo)
     const filtrados = pedidosRawAdmin.filter(p => {
         // A. Filtro por Pestaña (Status)
         let matchStatus = false;
@@ -2884,7 +2908,10 @@ function renderAdminLogistica() {
         // D. Filtro por Gestor
         const matchGest = gestFilter === 'TODOS' || p.gestor === gestFilter;
 
-        // E. Filtro por Rango de Fecha
+        // E. Filtro por Municipio
+        const matchMuni = muniFilter === 'TODOS' || p.municipio === muniFilter;
+
+        // F. Filtro por Rango de Fecha
         let matchDate = true;
         if (p.fecha) {
             const pFecha = p.fecha.split('T')[0]; // Obtener YYYY-MM-DD
@@ -2892,10 +2919,11 @@ function renderAdminLogistica() {
             if (dateHasta && pFecha > dateHasta) matchDate = false;
         }
 
-        return matchStatus && matchText && matchProv && matchGest && matchDate;
+        // Combinamos todas las condiciones
+        return matchStatus && matchText && matchProv && matchGest && matchMuni && matchDate;
     });
 
-    // 3. Actualizar Sumatorias (La sugerencia extra)
+    // 3. Actualizar Sumatorias
     const totalUSD = filtrados.reduce((acc, p) => acc + Number(p.total || 0), 0);
     const totalComi = filtrados.reduce((acc, p) => acc + Number(p.comision_total || 0), 0);
     
