@@ -3508,6 +3508,38 @@ function clearImageSlot(event, index) {
         }
     }
 
+    // --- FUNCIÓN REUTILIZABLE PARA LINKS CORTOS ---
+async function getOrGenerateShortLink(gestor, longLink) {
+    try {
+        // 1. Buscar si ya existe ese link para ese gestor
+        const { data: linkData, error: fetchError } = await supabaseClient
+            .from('short_links')
+            .select('slug')
+            .eq('gestor', gestor)
+            .eq('original_url', longLink)
+            .maybeSingle();
+
+        if (linkData && linkData.slug) {
+            return `${window.location.origin}${window.location.pathname}?s=${linkData.slug}`;
+        }
+
+        // 2. Si no existe, crear uno nuevo
+        const newSlug = Math.random().toString(36).substring(2, 7);
+        const { error: insError } = await supabaseClient.from('short_links').insert([{
+            slug: newSlug,
+            original_url: longLink,
+            gestor: gestor
+        }]);
+
+        if (insError) throw insError;
+        return `${window.location.origin}${window.location.pathname}?s=${newSlug}`;
+
+    } catch (e) {
+        console.error("Error en ShortLink:", e);
+        return longLink; // Respaldo: devuelve el link largo si falla
+    }
+}
+
     // Función para copiar texto de venta profesional con enlace de afiliado
     async function copySmartOffer(btnElement) {
     if(!selectedProduct) return;
@@ -3901,6 +3933,7 @@ window.doLogout = function() {
 
     // Generar link corto antes de compartir
     const finalLink = await getOrGenerateShortLink(gestor, rawLink);
+
 
     if (network === 'wa') {
         const text = `🔥 ¡Oferta Flash! *${p.nombre}* a solo *$${p.precio} USD*. \n\nVer detalles aquí: ${finalLink}`;
