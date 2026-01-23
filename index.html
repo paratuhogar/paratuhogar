@@ -1508,6 +1508,8 @@ function openLoginModal() {
     label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
     document.getElementById('admin-nav').classList.remove('hidden');
 
+    
+
     if (adminMode) {
         // MODO ADMINISTRADOR
         document.getElementById('sec-admin-master').classList.remove('hidden');
@@ -1546,6 +1548,7 @@ function openLoginModal() {
         // (Si el usuario tiene nivel, esta función desbloqueará los botones en unos milisegundos)
         if (typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
+            showAgentWelcomeModal(name);
         }
     }
 
@@ -1560,6 +1563,8 @@ function openLoginModal() {
     // Ocultar botón de whatsapp si existe al entrar a modo gestor
     const waBtn = document.getElementById('floating-agent-contact');
     if (waBtn) waBtn.classList.add('hidden');
+
+    
 }
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
@@ -5370,6 +5375,87 @@ function getLevelData(sales) {
     };
 }
 
+async function showAgentWelcomeModal(nombre) {
+    const modal = document.getElementById('modal-welcome-agent');
+    if(!modal) return;
+
+    try {
+        let salesCount = 0; // Declaramos la variable una sola vez
+
+        // 1. DETERMINAR LAS VENTAS (Modo Dios o Consulta Real)
+        if (nombre === "Marcel Montano") {
+            salesCount = 80; 
+        } else {
+            const { count, error } = await supabaseClient
+                .from('pedidos')
+                .select('id', { count: 'exact', head: true })
+                .eq('gestor', nombre)
+                .eq('estado', 'Entregado');
+            
+            if (error) throw error;
+            salesCount = count || 0;
+        }
+
+        const lvlData = getLevelData(salesCount);
+        const currentLvl = lvlData.lvl;
+
+        // Configuración de Boosts y Frases Motivacionales
+        const tiers = [
+            { lvl: 1, name: "Novato", tool: "Flash & Story Maker", boost: 1.5, phrase: "Cerrarás clientes en segundos con las respuestas automáticas." },
+            { lvl: 2, name: "Experto", tool: "Pack Fotos & Texto Masivo", boost: 2.2, phrase: "Inundarás los grupos de compra/venta con un solo clic." },
+            { lvl: 3, name: "Élite", tool: "Radar de Tendencias", boost: 2.8, phrase: "Publicarás exactamente lo que los clientes están buscando hoy." },
+            { lvl: 4, name: "Monarca", tool: "Catálogo PDF Pro", boost: 3.5, phrase: "Tu imagen profesional será irresistible para clientes de alto valor." },
+            { lvl: 5, name: "Emperador", tool: "Amarre Total", boost: 5.0, phrase: "Has alcanzado el poder máximo. Tu red de clientes es ahora un activo eterno." }
+        ];
+
+        // 2. DIBUJAR LISTA DE HABILIDADES
+        const listHTML = tiers.map(t => {
+            const isUnlocked = currentLvl >= t.lvl;
+            return `
+            <div class="flex items-center gap-4 py-1 ${isUnlocked ? 'opacity-100' : 'opacity-40'}">
+                <span class="material-symbols-outlined ${isUnlocked ? 'text-emerald-400' : 'text-slate-700'} text-xl">
+                    ${isUnlocked ? 'check_circle' : 'lock'}
+                </span>
+                <div class="flex-1 border-b border-white/5 pb-2">
+                    <div class="flex justify-between items-center">
+                        <p class="text-[11px] font-black uppercase tracking-wide text-white">${t.tool}</p>
+                        <span class="text-[10px] font-black ${isUnlocked ? 'text-emerald-400' : 'text-slate-500'}">LVL ${t.lvl}</span>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // 3. ALGORITMO DE PRONÓSTICO OPTIMISTA
+        const nextTier = tiers.find(t => t.lvl === currentLvl + 1) || tiers[4];
+        let baseline = salesCount === 0 ? 1.5 : salesCount;
+        let extraSales = Math.ceil(baseline * nextTier.boost);
+        let totalPotential = Math.ceil(salesCount + extraSales);
+
+        // 4. INYECTAR DATOS EN EL HTML
+        document.getElementById('welcome-features-list').innerHTML = listHTML;
+        document.getElementById('welcome-next-tier-name').innerText = nextTier.tool;
+        document.getElementById('welcome-extra-sales').innerText = extraSales;
+        document.getElementById('welcome-total-potential').innerText = totalPotential;
+        document.getElementById('welcome-motivational-phrase').innerText = `"${nextTier.phrase}"`;
+        document.getElementById('welcome-rank-tag').innerText = "RANGO: " + lvlData.name;
+
+        // Duración corregida
+        let durationText = lvlData.lvl === 5 ? "365 DÍAS" : (lvlData.lvl === 0 ? "7 DÍAS" : (lvlData.duration / 720) + " MESES");
+        document.getElementById('welcome-link-duration').innerText = durationText;
+        document.getElementById('welcome-next-power').innerText = "NIVEL " + (currentLvl < 5 ? currentLvl + 1 : 5);
+
+        // 5. MOSTRAR EL MODAL
+        setTimeout(() => { modal.classList.remove('hidden'); }, 800);
+
+    } catch (e) { console.error("Error en Bienvenida:", e); }
+}
+
+// Función para cerrar el cartel
+function closeWelcomeAgent() {
+    const modal = document.getElementById('modal-welcome-agent');
+    if(modal) modal.classList.add('hidden');
+}
+
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
 // --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---
 function applyLockedFeatures() {
@@ -6545,6 +6631,119 @@ async function buscarDuenoPorIP() {
         animation: pulse-green 2s infinite; 
         border: 2px solid white;
     }
+</style>
+
+<!-- MODAL DE BIENVENIDA GESTOR (CORREGIDO CON SCROLL) -->
+<div id="modal-welcome-agent" class="fixed inset-0 z-[300] hidden bg-[#0f172a]/95 backdrop-blur-md flex items-start justify-center p-4 overflow-y-auto">
+    
+    <!-- Contenedor Principal con margen arriba y abajo para que no se pegue -->
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(26,71,137,0.3)] relative my-8 animate-pop-in">
+        
+        <!-- BOTÓN X DE CIERRE RÁPIDO -->
+        <button onclick="closeWelcomeAgent()" class="absolute top-6 right-6 z-[310] h-10 w-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 transition-all">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <!-- Header con Gradiente -->
+        <div class="bg-gradient-to-br from-[#1a4789] to-[#2c6fb5] p-10 text-center relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-md border border-white/30 shadow-xl">
+                    <span class="material-symbols-outlined text-4xl text-white animate-bounce">rocket_launch</span>
+                </div>
+                <h2 class="text-white text-3xl font-black italic uppercase tracking-tighter">¡Sistema Actualizado!</h2>
+                <p class="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Rango de Agente Detectado</p>
+            </div>
+        </div>
+
+        <!-- Contenido -->
+        <div class="p-8 space-y-8">
+            
+            <!-- Botón WA Activo -->
+            <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-500/20">
+                <div class="h-12 w-12 bg-[#25D366] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-green-500/40">
+                    <span class="material-symbols-outlined">chat</span>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">Botón WhatsApp Activo</h4>
+                    <p class="text-[10px] text-emerald-600/70 font-bold">Tus clientes ya pueden contactarte directamente.</p>
+                </div>
+            </div>
+
+            <!-- Retención -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Tu Link Dura</p>
+                    <p id="welcome-link-duration" class="text-xl font-black text-[#1a4789] dark:text-blue-400">---</p>
+                </div>
+                <div class="p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Siguiente Nivel</p>
+                    <p id="welcome-next-power" class="text-xl font-black text-amber-500">---</p>
+                </div>
+            </div>
+
+            <!-- ÁRBOL DE HABILIDADES (Copiado de tu diseño anterior) -->
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden border border-white/5">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">Evolución de Carrera</p>
+                        <h3 class="text-xl font-black italic">ÁRBOL DE HABILIDADES</h3>
+                    </div>
+                    <div id="welcome-rank-tag" class="bg-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase">NIVEL 0</div>
+                </div>
+                <div id="welcome-features-list" class="space-y-4"></div>
+
+                <!-- PANEL DE PRONÓSTICO OPTIMISTA -->
+<div class="mt-10 p-6 bg-gradient-to-br from-emerald-600/20 to-blue-600/20 rounded-[2rem] border border-emerald-500/30 relative overflow-hidden">
+    <div class="relative z-10">
+        <div class="flex items-center gap-2 mb-4">
+            <div class="h-2 w-2 bg-emerald-400 rounded-full animate-ping"></div>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Análisis de Potencial de Ingresos</p>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <p class="text-[11px] text-slate-300 font-bold leading-tight">
+                    Al activar las herramientas de <span id="welcome-next-tier-name" class="text-white font-black">Siguiente Nivel</span>:
+                </p>
+            </div>
+
+            <div class="flex justify-between items-center bg-black/20 p-4 rounded-2xl border border-white/5">
+                <div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-emerald-400 font-black text-2xl">+</span>
+                        <span id="welcome-extra-sales" class="text-5xl font-black text-white">0</span>
+                    </div>
+                    <p class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Ventas Extra / Mes</p>
+                </div>
+                <div class="text-right border-l border-white/10 pl-4">
+                    <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Total Proyectado:</p>
+                    <span id="welcome-total-potential" class="text-2xl font-black text-white">0</span>
+                    <p class="text-[8px] text-slate-500 font-bold">Eq. Mensuales</p>
+                </div>
+            </div>
+        </div>
+
+        <p id="welcome-motivational-phrase" class="text-[10px] text-slate-400 mt-4 italic leading-tight">
+            "Con el Pack Masivo, tu alcance en Facebook se triplica automáticamente."
+        </p>
+    </div>
+</div>
+            </div>
+
+            <!-- BOTÓN DE CIERRE PRINCIPAL -->
+            <button onclick="closeWelcomeAgent()" class="w-full bg-[#1a4789] hover:bg-[#2c6fb5] text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+                ¡Entendido, a vender!
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pop-in {
+        0% { transform: scale(0.9); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-in { animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 </style>
 
 </body>
