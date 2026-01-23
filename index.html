@@ -1351,7 +1351,8 @@
         }
 
         initAutoSaveSystem(); 
-        loadClientCRM();      
+        loadClientCRM();
+        initAgentFloatingButton();      
     });
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
@@ -1555,6 +1556,8 @@ function openLoginModal() {
         btnLogout.style.display = 'inline-flex'; 
     }
     loadClientCRM(); 
+
+    
 }
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
@@ -2511,6 +2514,61 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (url.startsWith('http')) return url;
         return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
     }
+
+    // 1. Lógica para decidir si mostrar el botón del Gestor (Nivel 2+)
+async function initAgentFloatingButton() {
+    // 1. VALIDACIÓN CRÍTICA: Si el usuario está LOGUEADO (es un Gestor o Admin), no mostrar el botón
+    const session = localStorage.getItem('pth_session');
+    if (session) {
+        console.log("🛡️ Sesión activa detectada. Ocultando botón de contacto.");
+        const container = document.getElementById('floating-agent-contact');
+        if (container) container.classList.add('hidden');
+        return; // Salir de la función
+    }
+
+    // 2. Intentar obtener el gestor de la URL o de la memoria (para Clientes)
+    const referrer = await getActiveReferrer();
+    
+    // 3. Si hay un gestor detectado y es un cliente anónimo, mostrar botón
+    if (referrer && referrer.nombre && referrer.telefono) {
+        renderFloatingWA(referrer.nombre, referrer.telefono);
+    }
+}
+
+// 2. Función para pintar el botón con el teléfono del gestor
+function renderFloatingWA(nombre, telefono) {
+    const container = document.getElementById('floating-agent-contact');
+    if (!container || !telefono) return;
+
+    // Limpiar el teléfono (quitar espacios, +, etc)
+    const telLimpio = telefono.replace(/\D/g, '');
+    const primerNombre = nombre.split(' ')[0];
+
+    container.innerHTML = `
+        <a href="https://wa.me/${telLimpio}?text=${encodeURIComponent('Hola ' + primerNombre + ', estoy viendo el catálogo y me interesa un equipo.')}" 
+           target="_blank" 
+           class="fixed bottom-6 left-6 z-[60] flex items-center gap-3 bg-[#25D366] text-white p-2 pr-5 rounded-full shadow-2xl hover:scale-105 transition-all active:scale-95 group pulse-wa">
+            
+            <div class="relative">
+                <div class="h-12 w-12 bg-white rounded-full flex items-center justify-center text-[#25D366] border-2 border-white">
+                    <span class="material-symbols-outlined text-3xl">person</span>
+                </div>
+                <div class="absolute bottom-0 right-0 h-3.5 w-3.5 bg-emerald-400 border-2 border-white rounded-full"></div>
+            </div>
+
+            <div class="flex flex-col">
+                <span class="text-[9px] font-black uppercase opacity-80 tracking-tighter leading-none mb-1">Asesor en línea</span>
+                <span class="text-sm font-black leading-none">${nombre.toUpperCase()}</span>
+            </div>
+
+            <div class="absolute -top-12 left-0 bg-gray-900 text-white text-[10px] py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+                ¿Tienes dudas? Chatea conmigo 👋
+                <div class="absolute -bottom-1 left-4 w-2 h-2 bg-gray-900 rotate-45"></div>
+            </div>
+        </a>
+    `;
+    container.classList.remove('hidden');
+}
 
     function toggleCartModal(show) {
     const cartModal = document.getElementById('cart-modal');
@@ -6471,6 +6529,21 @@ async function buscarDuenoPorIP() {
     </div>
 </div>
 
+<!-- Botón Flotante de Contacto con Gestor -->
+<div id="floating-agent-contact" class="hidden"></div>
+
+<style>
+    /* Efecto de pulso para que el cliente lo vea sí o sí */
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+    .pulse-wa { 
+        animation: pulse-green 2s infinite; 
+        border: 2px solid white;
+    }
+</style>
 
 </body>
 </html>
