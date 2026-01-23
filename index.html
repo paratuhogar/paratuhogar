@@ -46,6 +46,79 @@
     </script>
 
     <style type="text/tailwindcss">
+
+       /* === EFECTOS HIGH-END === */
+
+/* Fondos Metálicos para el Podio */
+.bg-gold-gradient { background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #B45309 100%); }
+.bg-silver-gradient { background: linear-gradient(135deg, #E2E8F0 0%, #94A3B8 50%, #475569 100%); }
+.bg-bronze-gradient { background: linear-gradient(135deg, #FFEDD5 0%, #F97316 50%, #C2410C 100%); }
+
+/* Efecto Cristal (Glassmorphism) */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Sombras de Neón (Glow) */
+.glow-gold { box-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+.glow-silver { box-shadow: 0 0 20px rgba(148, 163, 184, 0.4); }
+.glow-bronze { box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+
+/* Animación de Pulso para "En Vivo" */
+@keyframes live-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.live-indicator {
+    animation: live-pulse 2s infinite;
+}
+
+/* Avatar Flotante */
+.avatar-floating {
+    transition: transform 0.3s ease;
+}
+.podium-card:hover .avatar-floating {
+    transform: translateY(-5px) scale(1.05);
+}
+
+/* Ticker Suave */
+@keyframes fade-slide-up {
+    0% { opacity: 0; transform: translateY(10px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+.ticker-anim { animation: fade-slide-up 5s infinite; }
+
+
+/* === ESTILOS PODIUM "PRICING STYLE" === */
+
+/* Gradientes basados en la imagen de referencia */
+.grad-rank-2 { background: linear-gradient(180deg, #FDB777 0%, #FD9346 100%); } /* Naranja (Izquierda) */
+.grad-rank-1 { background: linear-gradient(180deg, #E15656 0%, #753a46 100%); } /* Rojo Oscuro (Centro) */
+.grad-rank-3 { background: linear-gradient(180deg, #B8D662 0%, #68A778 100%); } /* Verde (Derecha) */
+
+/* Efecto de sombra para que floten */
+.pricing-shadow { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); }
+
+/* Triangulito del "Best Option" (Top 1) */
+.triangle-down {
+    width: 0; 
+    height: 0; 
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #2d2d2d; /* Mismo color que el header top */
+    position: absolute;
+    bottom: -10px;
+    left: 20px;
+}
+
+
         @layer utilities {
             .wave-bg {
                 background-color: #1a4789;
@@ -1656,36 +1729,347 @@ async function loadProDashboard(nombreGestor) {
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
-function renderRankingAnonimo(allPedidos, nombreGestor) {
+// --- FUNCIÓN ACTUALIZADA CON LAS 4 IDEAS ---
+// Función auxiliar para tiempo relativo (Ej: "Hace 5m")
+function timeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return "Hace un momento";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    return "Ayer";
+}
+
+// Función principal de Ranking PRO
+// Función principal de Ranking PRO (TEXTOS GRANDES Y LEGIBLES)
+// 1. FUNCIÓN AUXILIAR PARA EL TIEMPO (Pégala fuera de renderRankingAnonimo, al final de tu script)
+function timeAgo(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return "Hace un momento";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    return "Ayer";
+}
+
+// 2. FUNCIÓN PRINCIPAL CORREGIDA
+async function renderRankingAnonimo(allPedidos, nombreGestor) {
+    const container = document.getElementById('ranking-list');
+    if (!container) return;
+
+    // --- PROCESAMIENTO DE DATOS ---
     const rankingMap = {};
+    const salesFeed = []; 
+
     allPedidos.forEach(p => {
         if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
-            rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + (Number(p.comision_total) || 0);
+            const monto = Number(p.comision_total) || 0;
+            rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + monto;
+            salesFeed.push(p);
         }
     });
 
+    // Ordenar ventas por fecha (Lo más nuevo primero)
+    salesFeed.sort((a, b) => new Date(b.created_at || b.fecha) - new Date(a.created_at || a.fecha));
+
+    // Crear Array de Ranking
     const rankingArray = Object.entries(rankingMap)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 10);
+        .map(([name, total]) => ({ name, total }))
+        .sort((a, b) => b.total - a.total);
 
-    const rankingHTML = rankingArray.map(([gName, gTotal], index) => {
-        const isMe = gName === nombreGestor;
-        const maskedName = isMe ? `${gName} (Tú)` : gName.substring(0, 3) + '***';
-        const icon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index+1}`));
+    const myRankIndex = rankingArray.findIndex(r => r.name === nombreGestor);
+    const myData = rankingArray[myRankIndex] || { total: 0 };
+    const topData = rankingArray[0] || { total: 1 }; 
+
+    // --- CORRECCIÓN: DATO REAL DE GESTORES ACTIVOS ---
+    // Contamos cuánta gente hay en el ranking (gente que ha vendido algo)
+    const gestoresReales = rankingArray.length;
+    let liveViewText = `👥 ${gestoresReales} Gestores están compitiendo ahora.`;
+
+    // Intentamos buscar visualizaciones reales (Opcional)
+    try {
+        const { data: vistas } = await supabaseClient
+            .from('metricas_vistas')
+            .select('nombre_producto')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (vistas && vistas.length > 0) {
+            // Si hay datos, los mostramos
+            liveViewText = `👁️ Alguien está viendo <b>${vistas[0].nombre_producto.substring(0,20)}...</b>`;
+        }
+    } catch (e) { 
+        // Si falla, se queda con el texto de "Gestores compitiendo" calculado arriba
+    }
+
+    let html = '';
+
+    // --- A. TICKER CORREGIDO (CON TIEMPO) ---
+    const lastSale = salesFeed[0];
+    
+    let tickerContent = `💤 Esperando venta...`;
+    
+    if (lastSale) {
+        // Calculamos el tiempo
+        const tiempo = timeAgo(lastSale.created_at || lastSale.fecha);
         
-        return `
-        <div class="flex justify-between items-center p-3 ${isMe ? 'bg-primary/10 border border-primary/20 rounded-xl' : ''}">
-            <div class="flex items-center gap-3">
-                <span class="text-lg">${icon}</span>
-                <span class="text-xs font-black uppercase ${isMe ? 'text-primary' : 'text-gray-500'}">${maskedName}</span>
-            </div>
-            <span class="text-xs font-bold text-gray-800">$${gTotal.toFixed(0)}</span>
-        </div>`;
-    }).join('');
+        // Construimos el HTML
+        tickerContent = `
+            🚀 <span class="text-amber-400 font-bold text-xs md:text-sm">${lastSale.gestor.substring(0,3)}***</span> 
+            vendió <span class="text-cyan-300 font-bold text-xs md:text-sm">${lastSale.producto.substring(0,50)}${lastSale.producto.length > 50 ? '...' : ''}</span>
+            <span class="text-gray-400 text-[10px] ml-1 whitespace-nowrap">(${tiempo})</span>
+        `;
+    }
 
-    const rankList = document.getElementById('ranking-list');
-    if(rankList) rankList.innerHTML = rankingHTML;
+    html += `
+    <div class="mb-16 relative overflow-hidden rounded-xl bg-[#0f172a] shadow-lg border border-white/10 group z-0 mx-1">
+        <div class="relative z-10 p-3 flex flex-col items-center gap-2">
+            
+            <!-- Barra de Notificación -->
+            <div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 w-full border border-white/5">
+                <div class="h-2 w-2 rounded-full bg-green-500 live-indicator flex-shrink-0 self-start mt-1.5 md:mt-0"></div>
+                <div class="ticker-anim text-xs text-white tracking-wide w-full font-medium whitespace-normal leading-tight">
+                    ${tickerContent}
+                </div>
+            </div>
+            
+            <!-- Texto de Gestores Activos -->
+            <div class="text-[10px] text-blue-200 font-medium opacity-80 w-full text-center">
+                ${liveViewText}
+            </div>
+        </div>
+    </div>`;
+
+    // B. PODIO
+    html += `<div class="flex items-center justify-center gap-1 md:gap-4 mt-8 mb-12 px-0 perspective-1000 relative z-10">`;
+    const [p1, p2, p3] = [rankingArray[0], rankingArray[1], rankingArray[2]];
+    if (p2) html += renderHighEndPodium(p2, 2, nombreGestor);
+    if (p1) html += renderHighEndPodium(p1, 1, nombreGestor);
+    if (p3) html += renderHighEndPodium(p3, 3, nombreGestor);
+    html += `</div>`;
+
+    // C. BARRA RENDIMIENTO
+    if (myRankIndex > 0) {
+        const percentage = Math.min(100, (myData.total / topData.total) * 100);
+        html += `
+        <div class="glass-panel p-4 md:p-6 rounded-2xl mb-8 border border-slate-200 shadow-sm mx-1">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <span class="text-[10px] font-bold uppercase text-slate-400 block">Distancia al Líder</span>
+                    <h4 class="text-lg font-black text-slate-800 dark:text-white">Tu Rendimiento</h4>
+                </div>
+                <span class="text-xl font-black text-primary">${percentage.toFixed(0)}%</span>
+            </div>
+            <div class="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative" style="width: ${percentage}%"></div>
+            </div>
+             <p class="text-[10px] text-slate-400 mt-2 text-center italic">
+                "El líder factura <b>${(topData.total / (myData.total || 1)).toFixed(1)}x</b> más que tú."
+            </p>
+        </div>`;
+    }
+
+    // D. LISTA
+    html += `<div class="space-y-3 px-1">`;
+    rankingArray.forEach((user, index) => {
+        const rank = index + 1;
+        if (rank > 3) {
+            const isMe = user.name === nombreGestor;
+            const displayMoney = isMe ? `$${user.total.toFixed(0)}` : '🔒';
+            const displayName = isMe ? `${user.name}` : user.name.substring(0, 3) + '***';
+            
+            let carrotMsg = "";
+            if (isMe) {
+                const prevUser = rankingArray[index - 1];
+                const diff = prevUser.total - user.total;
+                carrotMsg = `<span class="text-xs text-orange-500 font-bold ml-2 animate-pulse">(-$${diff} para subir)</span>`;
+            }
+
+            html += `
+            <div class="flex items-center justify-between p-3 rounded-xl ${isMe ? 'bg-white shadow-md border-l-4 border-blue-500' : 'bg-transparent border border-gray-100'}">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-black text-slate-300 w-6">#${rank}</span>
+                    <span class="text-xs font-black text-slate-700 dark:text-gray-200 uppercase">${displayName} ${isMe ? '(Tú)' : ''}</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-black text-slate-800 dark:text-gray-300 bg-slate-100 px-2 py-1 rounded">
+                        ${displayMoney}
+                    </span>
+                    ${carrotMsg}
+                </div>
+            </div>`;
+        }
+    });
+    html += `</div>`;
+
+    container.innerHTML = html;
 }
+
+// --- FUNCIÓN UTILITARIA DE TIEMPO ---
+function timeAgo(dateString) {
+    if (!dateString) return "";
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000); // Diferencia en segundos
+    
+    // Lógica de tiempo relativo
+    if (seconds < 60) return "Hace un momento";
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Hace ${minutes} min`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+    
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "Ayer";
+    if (days < 7) return `Hace ${days} días`;
+    
+    // Si es muy antiguo, mostramos la fecha
+    return date.toLocaleDateString();
+}
+
+// Renderizador del Podio High-End
+// Renderizador del Podio "Pricing Style"
+function renderHighEndPodium(user, rank, meName) {
+    const isMe = user.name === meName;
+    const nameDisplay = isMe ? 'TÚ' : user.name.split(' ')[0].substring(0, 8).toUpperCase();
+    const moneyDisplay = isMe ? `$${user.total.toFixed(0)}` : '???';
+    
+    const config = {
+        1: { 
+            grad: 'grad-rank-1', 
+            icon: 'military_tech', 
+            title: 'LÍDER',
+            height: 'h-64 md:h-96', // Menos altura en móvil
+            scale: 'scale-105 z-20', 
+            barColor: 'bg-[#2d2d2d]',
+            msg: 'DOMINANDO'
+        },
+        2: { 
+            grad: 'grad-rank-2', 
+            icon: 'lightbulb', 
+            title: 'RETADOR',
+            height: 'h-56 md:h-80', 
+            scale: 'scale-100 z-10',
+            barColor: 'bg-[#333333]', 
+            msg: 'MUY CERCA'
+        },
+        3: { 
+            grad: 'grad-rank-3', 
+            icon: 'favorite', 
+            title: 'ÉLITE',
+            height: 'h-56 md:h-80', 
+            scale: 'scale-100 z-10',
+            barColor: 'bg-[#333333]',
+            msg: 'EN EL TOP'
+        }
+    };
+    
+    const c = config[rank];
+    const borderMe = isMe ? 'border-2 md:border-4 border-blue-500 transform translate-y-[-5px]' : '';
+
+    // ETIQUETA CORREGIDA: Texto en una línea y más pequeña
+    const topTag = rank === 1 
+        ? `<div class="absolute -top-6 left-0 right-0 bg-[#2d2d2d] text-white text-center py-1 text-[8px] md:text-xs font-bold uppercase tracking-widest rounded-t-lg shadow-lg whitespace-nowrap z-30">
+             👑 LÍDER ACTUAL
+             <div class="triangle-down"></div>
+           </div>` 
+        : '';
+
+    return `
+    <div class="relative flex flex-col ${c.height} flex-1 min-w-[90px] max-w-[180px] pricing-shadow rounded-lg transition-all duration-300 ${c.scale} ${borderMe} bg-white">
+        
+        ${topTag}
+
+        <!-- 1. CABECERA -->
+        <div class="flex-1 ${c.grad} flex flex-col items-center justify-center p-1 text-white rounded-t-lg relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-white/10" style="clip-path: polygon(0 0, 100% 0, 100% 20%, 0 80%);"></div>
+            
+            <span class="material-symbols-outlined text-4xl md:text-7xl mb-1 drop-shadow-md">${c.icon}</span>
+            <h3 class="text-sm md:text-2xl font-black uppercase tracking-tighter leading-none text-center drop-shadow-sm">
+                ${c.title}
+            </h3>
+        </div>
+
+        <!-- 2. BARRA PRECIO -->
+        <div class="${c.barColor} py-2 md:py-4 text-center relative z-10">
+            <p class="text-xl md:text-4xl font-black text-white tracking-tight leading-none">
+                ${moneyDisplay}
+            </p>
+            <p class="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">Ventas</p>
+        </div>
+
+        <!-- 3. CUERPO -->
+        <div class="bg-white flex flex-col items-center justify-center py-2 md:py-4 rounded-b-lg gap-1 md:gap-2">
+            
+            <p class="text-sm md:text-xl font-black text-slate-800 uppercase text-center w-full px-1 leading-tight truncate">
+                ${nameDisplay}
+            </p>
+
+            <div class="space-y-0.5 md:space-y-1 w-full px-1 opacity-70 flex flex-col items-center">
+                <div class="flex items-center gap-1 justify-center">
+                    <span class="material-symbols-outlined text-green-500 text-[10px] md:text-sm font-bold">check</span>
+                    <span class="text-[8px] md:text-[10px] font-bold text-gray-500 uppercase whitespace-nowrap">Activo Hoy</span>
+                </div>
+                <div class="flex items-center gap-1 justify-center">
+                    <span class="material-symbols-outlined text-green-500 text-[10px] md:text-sm font-bold">check</span>
+                    <span class="text-[8px] md:text-[10px] font-bold text-gray-500 uppercase whitespace-nowrap">${c.msg}</span>
+                </div>
+            </div>
+
+            <!-- Botón falso -->
+            <div class="mt-1 md:mt-2 w-4/5 h-6 md:h-8 ${c.grad} rounded flex items-center justify-center opacity-80 shadow-sm">
+                 <span class="text-white text-[8px] md:text-[10px] font-black uppercase tracking-widest">#${rank} Ranking</span>
+            </div>
+        </div>
+    </div>`;
+}
+
+// Función auxiliar para renderizar el Podio
+function renderPodiumItem(user, rank, meName) {
+    const isMe = user.name === meName;
+    const nameDisplay = isMe ? 'TÚ' : user.name.substring(0, 3);
+    const moneyDisplay = isMe ? `$${user.total.toFixed(0)}` : '🏆'; // Ocultamos dinero ajeno
+    
+    // Colores y Alturas
+    const styles = {
+        1: { class: 'rank-1 order-2 w-1/3 z-20', color: 'bg-yellow-400', icon: '🥇' },
+        2: { class: 'rank-2 order-1 w-1/4 z-10 opacity-90', color: 'bg-gray-400', icon: '🥈' },
+        3: { class: 'rank-3 order-3 w-1/4 z-10 opacity-90', color: 'bg-orange-400', icon: '🥉' }
+    };
+    
+    const s = styles[rank];
+    const borderClass = isMe ? 'ring-2 ring-blue-500 ring-offset-2' : '';
+
+    return `
+    <div class="podium-card ${s.class} ${borderClass}">
+        <div class="absolute -top-6 flex flex-col items-center">
+            <div class="avatar-circle ${s.color}">${nameDisplay.substring(0,1)}</div>
+            <span class="text-lg drop-shadow-md">${s.icon}</span>
+        </div>
+        
+        <div class="text-center mt-auto pb-2">
+            <p class="text-[10px] font-black uppercase text-gray-600 mb-1">${nameDisplay}</p>
+            <p class="text-xs font-black text-[#1a4789] bg-white/50 px-2 rounded-full backdrop-blur-sm">
+                ${moneyDisplay}
+            </p>
+        </div>
+    </div>`;
+}
+
+// Inicializar el Ticker (opcional si quieres que rote automáticamente cada X tiempo sin recargar)
+// Nota: La animación CSS ya hace el trabajo visual.
 
 // --- NUEVA FUNCIÓN: RENDERIZAR LISTA DE MIS PEDIDOS ---
 // --- FUNCIÓN ACTUALIZADA: RENDERIZAR LISTA DE MIS PEDIDOS CON WHATSAPP ---
