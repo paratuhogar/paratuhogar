@@ -3006,96 +3006,88 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
     // =====================================
 
-    // 3. AGRUPAR POR PROVEEDOR
-    const gruposPedidos = {};
+    // 3. PROCESAMIENTO INDIVIDUAL (SEPARAR PEDIDOS POR EQUIPO)
+    let mensajeRaw = `VALE DE VENTA (DESGLOSADO)\n\n`;
     
-    // Obtenemos el envío total que puso el usuario/gestor
+    // Obtenemos el envío total manual y lo dividimos equitativamente entre los productos
+    // para que la suma final cuadre, pero cada pedido tenga su parte de logística.
     const envioTotalInput = parseFloat(document.getElementById('cart-shipping-cost')?.value || 0);
-    
-    cart.forEach(item => {
+    const totalItemsCount = cart.length; // Cantidad de lineas en el carrito
+    const envioPorPedido = totalItemsCount > 0 ? (envioTotalInput / totalItemsCount) : 0;
+
+    let erroresInsert = false;
+
+    // Iteramos directamente sobre el carrito item por item
+    for (const item of cart) {
         const prov = item.proveedor || 'General';
-        if (!gruposPedidos[prov]) gruposPedidos[prov] = { items: [], tEquipo: 0, tComi: 0, tEnvio: 0 };
         
-        gruposPedidos[prov].items.push(item);
-        gruposPedidos[prov].tEquipo += (item.precio_venta * item.qty);
-        gruposPedidos[prov].tComi += (item.comision_actual * item.qty);
-        // NOTA: El envío se prorratea o se asigna al primer grupo si hay varios proveedores.
-        // Para simplificar y evitar errores, asignaremos el envío total al primer proveedor o 'General'.
-    });
-
-    // Asignamos el costo de envío del input al primer grupo encontrado (para que cuadre el total)
-    const primerProveedor = Object.keys(gruposPedidos)[0];
-    if(primerProveedor) {
-        gruposPedidos[primerProveedor].tEnvio = envioTotalInput;
-    }
-
-    // --- NUEVA LÓGICA DE CONSECUTIVO Y MENSAJE ---
-    let mensajeRaw = `VALE DE VENTA\n\n`;
-    const promesas = [];
-
-    // Iteramos por cada proveedor para sacar su turno del día
-    for (const [prov, d] of Object.entries(gruposPedidos)) {
-        // A. Consultar cuántos pedidos van de este proveedor hoy
+        // A. Consultar Consecutivo para ESTE proveedor específico
         const ahora = new Date();
-        // Creamos el inicio del día (00:00:00) en hora local
         const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString();
         
-        // CAMBIO: Usamos 'fecha' en lugar de 'created_at'
         const { count, error: errCount } = await supabaseClient
             .from('pedidos')
             .select('id', { count: 'exact', head: true })
             .eq('proveedor', prov)
             .gte('fecha', inicioHoy); 
 
-        // Si hay error en la consulta, nroConsecutivo será 1, si no, el conteo + 1
+        // Generamos código único: Ej: ImportadoraA-1, luego ImportadoraA-2
         const nroConsecutivo = (errCount ? 0 : (count || 0)) + 1;
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
-        const strProd = d.items.map(i => `${i.qty}x ${i.nombre}`).join(', ');
-        const totalVenta = d.tEquipo + d.tEnvio;
+        // Datos del ítem individual
+        const strProd = `${item.qty}x ${item.nombre}`;
+        const precioEquipoTotal = (item.precio_venta * item.qty);
+        const totalVentaLinea = precioEquipoTotal + envioPorPedido;
+        const comisionItem = (item.comision_actual * item.qty);
 
-        // B. Construir parte del mensaje para WhatsApp
-        mensajeRaw += `💪 Pedido: ${codPedido}\n`; // "Importadora A-1" (sin la palabra proveedor)
-        mensajeRaw += `💪 Nombre: ${nombreC}\n`;
-        mensajeRaw += `💪 Municipio: ${municipioC}\n`;
-        mensajeRaw += `💪 Teléfono: ${telC}\n`;
-        mensajeRaw += `💪 Dirección: ${dirC}\n`;
-        mensajeRaw += `💪 Producto: ${strProd}\n`;
-        mensajeRaw += `💪 Total: ${totalVenta} USD\n`;
-        mensajeRaw += `💪 Vuelto: ${vueltoC}\n`;
-
-        // --- AQUÍ ESTÁN LAS LÍNEAS QUE FALTABAN ---
-        mensajeRaw += `-Precio equipo: ${d.tEquipo} USD\n`;
-        mensajeRaw += `-Mensajería: ${d.tEnvio} USD\n\n`;
-        // ---
+        // B. Construir bloque de WhatsApp para este equipo
+        mensajeRaw += `📦 ORDEN INDIVIDUAL: ${codPedido}\n`;
+        mensajeRaw += `👤 Cliente: ${nombreC}\n`;
+        mensajeRaw += `📍 Municipio: ${municipioC}\n`;
+        mensajeRaw += `📱 Tel: ${telC}\n`;
+        mensajeRaw += `🏠 Dir: ${dirC}\n`;
+        mensajeRaw += `🛒 Equipo: ${strProd}\n`;
+        mensajeRaw += `💰 A Pagar: ${totalVentaLinea.toFixed(2)} USD\n`;
+        mensajeRaw += `💵 Vuelto: ${vueltoC}\n`;
         
+        // Desglose interno
+        mensajeRaw += `   - Equipo: ${precioEquipoTotal.toFixed(2)} USD\n`;
+        mensajeRaw += `   - Envío (Parte): ${envioPorPedido.toFixed(2)} USD\n`;
+
         if (isLogged) {
-            mensajeRaw += `💪 Comisión: ${d.tComi} usd\n`;
-            mensajeRaw += `💪 Gestor: ${activeGestor}\n`;
+            mensajeRaw += `💎 Comisión: ${comisionItem.toFixed(2)} USD\n`;
+            mensajeRaw += `🕵️ Gestor: ${activeGestor}\n`;
         }
         mensajeRaw += `--------------------------\n\n`;
 
-        // C. Guardar en Base de Datos
-        promesas.push(supabaseClient.from('pedidos').insert([{
+        // C. Insertar en Base de Datos (Esperamos a que termine para garantizar el consecutivo del siguiente)
+        const { error: insertError } = await supabaseClient.from('pedidos').insert([{
             gestor: activeGestor,
             cliente: nombreC,
             ci: ciC,
             telefono: telC,
             direccion: dirC,
             municipio: municipioC,
-            producto: `${strProd} [${monedaC}]`,
-            total: totalVenta,
-            comision_total: d.tComi,
+            producto: `${strProd} [${monedaC}]`, // Se guarda solo este equipo
+            total: totalVentaLinea, // Total parcial de esta línea
+            comision_total: comisionItem,
             estado: 'Pendiente',
             pago_gestor: 'Pendiente',
             proveedor: prov,
-            costo_mensajeria: d.tEnvio,
+            costo_mensajeria: envioPorPedido,
             orden_dia: codPedido,
-            origen: origenPedido // <--- Esta es la clave. Asegúrate que esté aquí.
-        }]));
+            origen: origenPedido
+        }]);
+
+        if (insertError) {
+            console.error("Error guardando item:", item.nombre, insertError);
+            erroresInsert = true;
+        }
     }
 
-    const resultados = await Promise.all(promesas);
+    // Verificación final simulando la estructura anterior para que el código siguiente funcione
+    const resultados = erroresInsert ? [{error: true}] : [];
     if (resultados.some(r => r.error)) {
         alert("Error de conexión guardando el pedido.");
         btn.disabled = false; btn.innerText = "Tramitar Pedido";
