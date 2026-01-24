@@ -354,63 +354,71 @@
         <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
             <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
-<div class="bg-gradient-to-r from-[#1a4789] to-[#2c6fb5] rounded-[2rem] p-6 md:p-8 text-white shadow-xl shadow-primary/20 relative overflow-hidden mb-8">
-    <!-- Decoración de fondo -->
-    <div class="absolute right-0 top-0 h-full w-1/2 bg-white/5 skew-x-12 transform origin-bottom-right"></div>
-    
-    <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <!-- Izquierda: Info Nivel -->
-        <div>
-            <div class="flex items-center gap-3 mb-2">
-                <span id="lvl-badge" class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-white/30 shadow-sm">
-                    Nivel 0
-                </span>
-                <span id="lvl-name" class="text-sm font-bold text-blue-100">El Despertar</span>
-            </div>
-            <h2 id="lvl-title" class="text-3xl md:text-4xl font-black italic uppercase tracking-tighter mb-2">AGENTE INICIADO</h2>
-            <p class="text-xs md:text-sm text-blue-100 max-w-lg leading-relaxed">
-                Tu enlace de venta expira en <span id="lvl-link-duration" class="font-black text-amber-300">24 HORAS</span>. 
-                Sube de nivel para aumentar tu retención y desbloquear herramientas.
-            </p>
-        </div>
-
-        <!-- Derecha: Barra y Botón -->
-        <div class="w-full lg:w-auto flex flex-col items-end gap-3">
-            <div class="w-full lg:w-64">
-                <div class="flex justify-between text-[10px] font-bold uppercase mb-2 text-blue-100">
-                    <span>Meta Siguiente Nivel</span>
-                    <span id="lvl-counter">0 / 3 Ventas</span>
+<!-- TARJETA NIVEL ESTÁNDAR -->
+        <div class="bg-gradient-to-r from-[#1a4789] to-[#2c6fb5] rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden mb-8">
+            
+            <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <!-- Info Izquierda -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span id="lvl-badge" class="bg-white/20 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-white/30">
+                            Nivel 0
+                        </span>
+                        <span id="lvl-name" class="text-sm font-semibold text-blue-100 opacity-90">Iniciado</span>
+                    </div>
+                    
+                    <h2 id="lvl-title" class="text-2xl md:text-4xl font-black italic uppercase tracking-tight">
+                        AGENTE INICIADO
+                    </h2>
+                    
+                    <p class="text-sm text-blue-100 max-w-lg leading-relaxed opacity-90">
+                        Tu enlace expira en <span id="lvl-link-duration" class="font-bold text-white">24 HORAS</span>. 
+                        Sube de nivel para desbloquear herramientas.
+                    </p>
                 </div>
-                <!-- Barra de fondo -->
-                <div class="h-2 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
-                    <!-- Barra de progreso (Dinámica) -->
-                    <div id="lvl-progress-bar" class="h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] transition-all duration-1000" style="width: 0%"></div>
+
+                <!-- Barra Derecha -->
+                <div class="w-full lg:w-72 bg-black/20 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                    <div class="flex justify-between text-xs font-bold uppercase mb-2 text-white/90">
+                        <span>Meta Siguiente Nivel</span>
+                        <span id="lvl-counter">0 / 3 Ventas</span>
+                    </div>
+                    
+                    <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                        <div id="lvl-progress-bar" class="h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    
+                    <button onclick="openGamificationModal()" class="mt-4 w-full bg-white text-[#1a4789] py-2.5 rounded-xl text-xs font-black uppercase hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-base">upgrade</span> Ver Ascenso
+                    </button>
                 </div>
             </div>
-
-            <button onclick="openGamificationModal()" class="w-full lg:w-auto bg-white text-[#1a4789] px-6 py-3 rounded-xl font-black text-xs uppercase shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-lg">upgrade</span>
-                Ver Sistema de Ascenso
-            </button>
         </div>
-    </div>
-</div>
-            <!-- BLOQUE FINANCIERO DESGLOSADO -->
+            <!-- BLOQUE FINANCIERO HOMOGENEIZADO -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- 1. Por Cobrar (Pendiente) -->
-                <div class="bg-orange-500 p-8 rounded-3xl text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
-                    <p class="text-[10px] font-black uppercase opacity-80 mb-1 italic">Por Cobrar (Acumulado)</p>
-                    <h2 id="dash-money-pending" class="text-4xl font-black italic">$0.00</h2>
-                    <p class="text-[9px] font-bold mt-2 opacity-70">Esperando liquidación del Admin</p>
-                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl opacity-10">pending_actions</span>
+                <!-- 1. Por Cobrar -->
+                <div class="bg-orange-500 p-6 rounded-3xl text-white shadow-xl shadow-orange-500/20 relative overflow-hidden flex flex-col justify-center min-h-[140px]">
+                    <div class="relative z-10">
+                        <p class="text-xs font-bold uppercase tracking-widest opacity-90 mb-1">Por Cobrar (Acumulado)</p>
+                        <h2 id="dash-money-pending" class="text-4xl md:text-5xl font-black tracking-tight">$0.00</h2>
+                        <p class="text-xs font-medium mt-2 opacity-80 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">pending</span> Esperando liquidación
+                        </p>
+                    </div>
+                    <!-- Icono de fondo decorativo -->
+                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl opacity-10 pointer-events-none">pending_actions</span>
                 </div>
 
-                <!-- 2. Cobrado (Liquidado) -->
-                <div class="bg-emerald-500 p-8 rounded-3xl text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
-                    <p class="text-[10px] font-black uppercase opacity-80 mb-1 italic">Dinero Cobrado (Histórico)</p>
-                    <h2 id="dash-money-paid" class="text-4xl font-black italic">$0.00</h2>
-                    <p class="text-[9px] font-bold mt-2 opacity-70">Pagos recibidos exitosamente</p>
-                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl opacity-10">savings</span>
+                <!-- 2. Cobrado -->
+                <div class="bg-emerald-500 p-6 rounded-3xl text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden flex flex-col justify-center min-h-[140px]">
+                    <div class="relative z-10">
+                        <p class="text-xs font-bold uppercase tracking-widest opacity-90 mb-1">Dinero Cobrado</p>
+                        <h2 id="dash-money-paid" class="text-4xl md:text-5xl font-black tracking-tight">$0.00</h2>
+                        <p class="text-xs font-medium mt-2 opacity-80 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">check_circle</span> Pagos recibidos
+                        </p>
+                    </div>
+                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl opacity-10 pointer-events-none">savings</span>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
@@ -432,10 +440,16 @@
                 <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm mt-6 overflow-hidden">
                     <div class="p-6 border-b border-gray-50 dark:border-gray-700">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <div class="flex items-center gap-4">
                             <div>
-                                <h3 class="text-sm font-black uppercase text-primary italic">📋 Mis Pedidos</h3>
-                                <p class="text-[10px] text-gray-400">Gestiona y notifica a tus clientes según el estado.</p>
+                                <h3 class="text-sm font-black uppercase text-primary italic">📦 Seguimiento de Ventas</h3>
+                                <p class="text-[10px] text-gray-400 font-bold">Pedidos vía tus enlaces o manuales.</p>
                             </div>
+                            <!-- Alerta de Ventas Nuevas -->
+                            <div id="new-orders-badge" class="hidden bg-red-500 text-white text-[9px] font-black px-3 py-1 rounded-full animate-bounce">
+                                ¡TIENES VENTAS NUEVAS!
+                            </div>
+                        </div>
                             <!-- Buscador -->
                             <div class="w-full md:w-auto relative">
                                 <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
@@ -654,78 +668,106 @@
                     </div>
                 </div>
 
-                <form id="checkout-form" class="space-y-4">
+                <!-- Reemplaza todo el <form id="checkout-form"> ... </form> con esto: -->
 
-        <div id="gestor-checkout-tools" class="hidden space-y-4 mb-4"> <!-- Añadimos este ID y clase hidden -->
+<form id="checkout-form" class="flex flex-col h-full">
+    
+    <!-- 1. HERRAMIENTAS GESTOR (Buscador grande) -->
+    <div id="gestor-checkout-tools" class="hidden mb-6 space-y-4"> 
+        <button type="button" onclick="magicPaste()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-black text-sm uppercase shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+            <span class="material-symbols-outlined text-xl">content_paste_go</span>
+            Pegar Datos de WhatsApp (Automático)
+        </button>
 
-                <!-- 1. BOTÓN DE VELOCIDAD (PEGAR WHATSAPP) -->
-                <div class="flex gap-2 mb-2">
-                    <button type="button" onclick="magicPaste()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-md flex items-center justify-center gap-2 hover:scale-105 transition-transform">
-                        <span class="material-symbols-outlined text-lg">content_paste_go</span>
-                        Pegar Datos de WhatsApp
-                    </button>
-                </div>
-
-                <!-- 2. BUSCADOR INTELIGENTE (CRM) -->
-                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                    <label class="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase mb-1">
-                        <span class="material-symbols-outlined text-sm">person_search</span> 
-                        Buscar Cliente Recurrente
-                    </label>
-                    <input type="text" id="crm-search" list="crm-datalist" onchange="autofillClient(this.value)" 
-                        placeholder="Escribe nombre o teléfono..." 
-                        class="w-full bg-white dark:bg-gray-900 border-none rounded-lg text-xs font-bold shadow-sm focus:ring-2 focus:ring-indigo-500">
-                    <datalist id="crm-datalist">
-                        <!-- Se llena con JS -->
-                    </datalist>
-                </div>
-
+        <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+            <label class="block text-xs font-black text-indigo-500 uppercase mb-2 ml-1">Buscar Cliente Recurrente</label>
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-4 top-3.5 text-indigo-400 text-xl">person_search</span> 
+                <input type="text" id="crm-search" list="crm-datalist" onchange="autofillClient(this.value)" 
+                    placeholder="Escribe nombre..." 
+                    class="w-full pl-12 pr-4 py-3.5 bg-white border-0 rounded-xl text-base font-bold text-indigo-900 shadow-sm ring-1 ring-indigo-200 focus:ring-2 focus:ring-indigo-500 placeholder:text-indigo-300">
             </div>
+            <datalist id="crm-datalist"></datalist>
+        </div>
+    </div>
 
-                <!-- 3. CAMPOS DE TEXTO (SOLO UNA VEZ) -->
-                <input type="text" id="check-nombre" placeholder="Nombre completo" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold" required>
-                
-                <div class="flex gap-2">
-                    <input type="text" id="check-ci" placeholder="Carnet (CI)" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold">
-                    <input type="tel" id="check-tel" placeholder="Teléfono" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold" required>
+    <!-- 2. CAMPOS DE TEXTO (Estilo Gigante - Imágenes 2, 3, 4) -->
+    <div class="space-y-5 flex-1 overflow-y-auto pb-4 px-1">
+        
+        <div>
+            <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Nombre del Cliente</label>
+            <input type="text" id="check-nombre" placeholder="Ej: Juan Pérez" 
+                class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Carnet (CI)</label>
+                <input type="text" id="check-ci" placeholder="Opcional" 
+                    class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Teléfono</label>
+                <input type="tel" id="check-tel" placeholder="5xxx-xxxx" 
+                    class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Municipio de Entrega</label>
+            <div class="relative">
+                <select id="check-municipio" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 appearance-none focus:bg-white focus:border-primary focus:ring-0 transition-all" required>
+                    <option value="" disabled selected>Seleccionar...</option>
+                    <option value="Playa">Playa</option>
+                    <option value="Plaza de la Revolución">Plaza de la Revolución</option>
+                    <option value="Centro Habana">Centro Habana</option>
+                    <option value="Habana Vieja">Habana Vieja</option>
+                    <option value="Regla">Regla</option>
+                    <option value="Diez de Octubre">Diez de Octubre</option>
+                    <option value="Cerro">Cerro</option>
+                    <option value="Marianao">Marianao</option>
+                    <option value="La Lisa">La Lisa</option>
+                    <option value="Boyeros">Boyeros</option>
+                    <option value="Arroyo Naranjo">Arroyo Naranjo</option>
+                    <option value="Cotorro">Cotorro</option>
+                    <option value="Guanabacoa">Guanabacoa</option>
+                    <option value="San Miguel del Padrón">San Miguel del Padrón</option>
+                    <option value="Habana del Este">Habana del Este</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                    <span class="material-symbols-outlined">expand_more</span>
                 </div>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Dirección Exacta</label>
+            <textarea id="check-dir" placeholder="Calle, Número, Entre Calles..." 
+                class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 h-32 resize-none focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required></textarea>
+        </div>
 
-                <select id="check-municipio" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-bold text-sm" required>
-    <option value="" disabled selected>Selecciona Municipio</option>
-    <option value="Playa">Playa</option>
-    <option value="Plaza de la Revolución">Plaza de la Revolución</option>
-    <option value="Centro Habana">Centro Habana</option>
-    <option value="Habana Vieja">Habana Vieja</option>
-    <option value="Regla">Regla</option>
-    <option value="Diez de Octubre">Diez de Octubre</option>
-    <option value="Cerro">Cerro</option>
-    <option value="Marianao">Marianao</option>
-    <option value="La Lisa">La Lisa</option>
-    <option value="Boyeros">Boyeros</option>
-    <option value="Arroyo Naranjo">Arroyo Naranjo</option>
-    <option value="Cotorro">Cotorro</option>
-    <option value="Guanabacoa">Guanabacoa</option>
-    <option value="San Miguel del Padrón">San Miguel del Padrón</option>
-    <option value="Habana del Este">Habana del Este</option>
-</select>
-                
-                <textarea id="check-dir" placeholder="Dirección de entrega" class="w-full rounded-xl border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-20 font-bold" required></textarea>
-                
-                <!-- 4. PAGO Y VUELTO -->
-                <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-gray-400">Método de Pago</label>
-                        <select id="check-moneda" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0"></select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-gray-400">Vuelto (Monto exacto)</label>
-                        <input type="number" id="check-vuelto" placeholder="Ej: 50" class="w-full bg-transparent border-none font-bold text-sm p-0 focus:ring-0">
-                    </div>
-                </div>
+        <!-- PAGO Y VUELTO (Estilo Tarjeta) -->
+        <div class="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4">
+            <div>
+                <label class="block text-xs font-black uppercase text-blue-400 mb-1">Método de Pago</label>
+                <select id="check-moneda" class="w-full bg-transparent border-b border-blue-200 text-xl font-black text-blue-900 py-2 focus:ring-0 focus:border-blue-500 px-0"></select>
+            </div>
+            <div>
+                <label class="block text-xs font-black uppercase text-blue-400 mb-1">¿Necesita Vuelto? (Escribir Billete)</label>
+                <input type="number" id="check-vuelto" placeholder="No, tengo el importe exacto" class="w-full bg-transparent border-b border-blue-200 text-lg font-bold text-blue-900 py-2 focus:ring-0 focus:border-blue-500 px-0 placeholder:text-blue-300/70">
+            </div>
+        </div>
 
-                <!-- 5. BOTÓN FINAL -->
-                <button type="submit" id="final-submit-btn" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all active:scale-95">Tramitar Pedido</button>
-            </form>
+    </div>
+
+    <!-- BOTÓN FINAL GIGANTE -->
+    <div class="pt-4 mt-auto">
+        <button type="submit" id="final-submit-btn" class="w-full bg-[#1a4789] text-white py-5 rounded-2xl font-black text-lg uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-[#2c6fb5] transition-all active:scale-95 flex items-center justify-center gap-3">
+            <span>Confirmar Pedido</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+    </div>
+</form>
             </div>
         </div>
     </div>
@@ -1378,32 +1420,43 @@
             .single();
 
         if (data && !error) {
-            // 1. Registrar analítica para el Admin
+            // 1. Registrar analítica (Opcional, lo mantenemos)
             const ua = navigator.userAgent;
-            await supabaseClient.from('link_analytics').insert([{
+            supabaseClient.from('link_analytics').insert([{
                 slug: slug,
                 device_type: /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio',
-                os: ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil",
-                browser: ua.includes("Chrome") ? "Chrome" : ua.includes("Firefox") ? "Firefox" : "Safari",
-                referrer: document.referrer || 'Directo'
+                agent_name: data.gestor // Guardamos el nombre para el rastro
             }]);
 
             // 2. Extraer datos del link original
-            const originalParams = new URLSearchParams(data.original_url.split('?')[1]);
-            const searchTag = originalParams.get('search');
-            
-            // 3. Guardar atribución del gestor en memoria (Last Click Wins)
-            localStorage.setItem('pth_referrer', JSON.stringify({
-                nombre: data.gestor,
-                telefono: originalParams.get('tel') || "",
-                timestamp: new Date().getTime()
-            }));
+            // Intentamos sacar el teléfono si existe en la URL original
+            let telOriginal = "";
+            try {
+                const urlObj = new URL(data.original_url);
+                telOriginal = urlObj.searchParams.get('tel') || "";
+            } catch(e) {}
 
-            // 4. Redirigir a la búsqueda limpia
-            window.location.href = window.location.origin + window.location.pathname + "?search=" + encodeURIComponent(searchTag);
+            // 3. GUARDADO CRÍTICO: Guardar en LocalStorage ANTES de redirigir
+            // Esto es lo que faltaba. Sin esto, el dato se pierde al recargar.
+            const referrerData = {
+                nombre: data.gestor,
+                telefono: telOriginal,
+                timestamp: new Date().getTime(),
+                expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000) // Validez de 30 días
+            };
+            
+            // Guardamos en ambas variables por seguridad
+            localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
+            localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
+
+            // 4. Redirigir a la URL original
+            window.location.href = data.original_url;
         }
     }
 }
+
+// IMPORTANTE: Ejecutar la función inmediatamente
+checkShortLinks();
 
     const MASTER_KEY = "HOGAR2025"; 
 
@@ -1722,10 +1775,25 @@ async function loadProDashboard(nombreGestor) {
 
     // 5. RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
     renderMyOrdersList(misVentas);
+    // ... dentro de loadProDashboard ...
+
+    // 5. RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
+    renderMyOrdersList(misVentas);
+
+    // 6. NUEVO: RENDERIZAR GRÁFICA DE ORIGEN
+    renderSourceChart(misVentas); // <--- PEGA ESTO AQUÍ
+    
+    // ... resto del código ...
 
     // 6. INYECTAR ENLACES (Corregido: Solo una vez y con await)
     // Esto es lo que genera el link corto automáticamente si eres Nivel 3+
     await injectLinksSection(nombreGestor);
+
+    // Al final, DESPUÉS de obtener los datos de pedidos:
+    renderMyOrdersList(misVentas); 
+    
+    // Y el ranking
+    renderRankingAnonimo(allPedidos, nombreGestor);
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
@@ -2075,97 +2143,113 @@ function renderPodiumItem(user, rank, meName) {
 // --- FUNCIÓN ACTUALIZADA: RENDERIZAR LISTA DE MIS PEDIDOS CON WHATSAPP ---
 let currentMyOrdersFilter = 'TODOS';
 
+
+
+// Variable global para almacenar tus pedidos (asegúrate que esta variable exista al inicio del script)
+// let myOrdersData = []; <--- Ya debería estar declarada arriba en tu código
+
+// 1. FUNCIÓN DE CAMBIO DE FILTRO (Corregida)
 function setMyOrdersFilter(status, btn) {
     currentMyOrdersFilter = status;
-    // Actualizar UI de botones
-    document.querySelectorAll('#my-orders-tabs button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // Re-renderizar
-    filterMyOrders(); 
+    
+    // Actualizar UI de botones (Tabs)
+    document.querySelectorAll('#my-orders-tabs button').forEach(b => {
+        b.classList.remove('active', 'bg-[#1a4789]', 'text-white', 'shadow-md');
+        b.classList.add('bg-gray-100', 'text-gray-500');
+    });
+    
+    // Activar botón actual
+    btn.classList.remove('bg-gray-100', 'text-gray-500');
+    btn.classList.add('active', 'bg-[#1a4789]', 'text-white', 'shadow-md');
+
+    // Re-renderizar usando la variable global 'myOrdersData'
+    renderMyOrdersList(myOrdersData); 
 }
 
+// 2. FUNCIÓN DE RENDERIZADO (Con letra GRANDE estilo App)
 function renderMyOrdersList(lista) {
     const container = document.getElementById('list-mis-pedidos');
+    const badgeNuevos = document.getElementById('new-orders-badge');
+    
     if (!container) return;
+    if (!lista) lista = [];
 
-    // 1. Filtrar por la pestaña seleccionada
+    // LÓGICA DE FILTRADO
     const filteredByStatus = currentMyOrdersFilter === 'TODOS' 
         ? lista 
         : lista.filter(p => p.estado === currentMyOrdersFilter);
 
+    // Estado Vacío
     if (filteredByStatus.length === 0) {
-        container.innerHTML = `<div class="p-10 text-center text-gray-400 text-xs font-bold uppercase italic">No hay pedidos en esta sección.</div>`;
+        container.innerHTML = `
+            <div class="p-8 text-center flex flex-col items-center opacity-50">
+                <span class="material-symbols-outlined text-4xl text-gray-300 mb-2">inbox</span>
+                <p class="text-sm font-bold text-gray-400">No hay pedidos en esta sección.</p>
+            </div>`;
         return;
     }
 
+    // Renderizado de Tarjetas COMPACTAS + BOTONES ACCIÓN
     container.innerHTML = filteredByStatus.map(p => {
-        const level = window.currentGestorLevel || 0;
+        // Colores de estado
+        let estadoStyle = 'bg-gray-100 text-gray-600';
+        if(p.estado === 'Pendiente') estadoStyle = 'bg-amber-50 text-amber-600 border border-amber-100';
+        if(p.estado === 'Asignado Mensajero') estadoStyle = 'bg-blue-50 text-blue-600 border border-blue-100';
+        if(p.estado === 'Entregado') estadoStyle = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
         
-        let colorClass = 'bg-gray-100 text-gray-500';
-        if(p.estado === 'Pendiente') colorClass = 'bg-yellow-100 text-yellow-700';
-        if(p.estado === 'Asignado Mensajero') colorClass = 'bg-blue-100 text-blue-700';
-        if(p.estado === 'Entregado') colorClass = 'bg-emerald-100 text-emerald-700';
-        if(p.estado === 'Cancelado') colorClass = 'bg-red-100 text-red-700';
-
-        // --- BOTONES DE ACCIÓN ---
-        let actionButtons = `<div class="flex gap-2">`;
-
-        if (p.telefono) {
-            if (level >= 1) {
-                const clienteName = p.cliente.split(' ')[0];
-                let msj = `Hola ${clienteName}, le escribo por su pedido de *${p.producto.substring(0,20)}*...`;
-                const url = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msj)}`;
-                actionButtons += `
-                    <a href="${url}" target="_blank" class="h-8 w-8 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:scale-110 shadow-sm">
-                        <i class="fab fa-whatsapp"></i>
-                    </a>`;
-            } else {
-                actionButtons += `
-                    <button onclick="alert('🔒 Sube a Nivel 1 para usar WhatsApp')" class="h-8 w-8 rounded-full bg-gray-100 text-gray-300 flex items-center justify-center">
-                        <span class="material-symbols-outlined text-sm">lock</span>
-                    </button>`;
-            }
-        }
-
-        actionButtons += `
-            <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" class="h-8 w-8 rounded-full bg-red-50 text-red-500 border border-red-100 flex items-center justify-center hover:bg-red-500 hover:text-white" title="Descargar">
-                <span class="material-symbols-outlined text-sm">download</span>
-            </button>
-            <button onclick="prepararPDFDesdeHistorial('${p.id}', 'compartir')" class="h-8 w-8 rounded-full bg-blue-50 text-blue-500 border border-blue-100 flex items-center justify-center hover:bg-blue-500 hover:text-white" title="Compartir">
-                <span class="material-symbols-outlined text-sm">share</span>
-            </button>
-        </div>`;
+        const fechaDoc = new Date(p.fecha).toLocaleDateString();
+        const primerNombre = p.cliente.split(' ')[0];
+        const msjWA = `Hola ${primerNombre}, le escribo de paratuhogar por su pedido...`;
+        const urlWA = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msjWA)}`;
 
         return `
-        <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all border-b dark:border-gray-700">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <p class="text-[9px] font-bold text-gray-400">${new Date(p.fecha).toLocaleDateString()}</p>
-                    <h4 class="text-xs font-black uppercase text-gray-800 dark:text-white">${p.cliente}</h4>
+        <div class="p-3 bg-white border border-gray-200 shadow-sm rounded-xl mb-3 relative transition-all hover:shadow-md group">
+            
+            <!-- CABECERA: Fecha pequeña a la izquierda -->
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-[10px] font-bold text-gray-400">${fechaDoc}</span>
+                
+                <!-- FILA DE BOTONES DE ACCIÓN (Restaurada) -->
+                <div class="flex items-center gap-2">
+                    <!-- 1. WhatsApp -->
+                    <a href="${urlWA}" target="_blank" title="Chat Cliente"
+                       class="h-7 w-7 bg-[#25D366] text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
+                        <i class="fab fa-whatsapp text-sm"></i>
+                    </a>
+                    
+                    <!-- 2. Descargar PDF (Rojo suave) -->
+                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" title="Descargar Comprobante"
+                        class="h-7 w-7 bg-red-50 text-red-500 border border-red-100 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-sm">download</span>
+                    </button>
+
+                    <!-- 3. Compartir (Azul suave) -->
+                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'compartir')" title="Compartir PDF"
+                        class="h-7 w-7 bg-blue-50 text-blue-500 border border-blue-100 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-sm">share</span>
+                    </button>
                 </div>
-                ${actionButtons}
             </div>
-            <p class="text-[10px] text-gray-500 mb-3">${p.producto}</p>
-            <div class="flex justify-between items-center">
-                <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase ${colorClass}">${p.estado}</span>
-                <div class="text-right">
-                    <p class="text-xs font-black text-primary">$${p.total}</p>
-                    <p class="text-[9px] font-bold text-emerald-500">+$${p.comision_total} Com.</p>
+
+            <!-- CUERPO COMPACTO -->
+            <div class="flex justify-between items-end gap-2">
+                <div class="flex-1 min-w-0"> <!-- min-w-0 ayuda a truncar texto -->
+                    <h4 class="text-sm font-black text-slate-700 uppercase truncate leading-tight mb-0.5" title="${p.cliente}">${p.cliente}</h4>
+                    <p class="text-[10px] text-gray-400 truncate mb-2">${p.producto}</p>
+                    
+                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide ${estadoStyle}">
+                        ${p.estado}
+                    </span>
+                </div>
+
+                <!-- PRECIO A LA DERECHA -->
+                <div class="text-right flex-shrink-0">
+                    <p class="text-[10px] font-bold text-slate-400 mb-0.5">$${Number(p.total || 0).toFixed(0)}</p>
+                    <p class="text-sm font-black text-emerald-600 whitespace-nowrap">+$${Number(p.comision_total).toFixed(2)}</p>
                 </div>
             </div>
         </div>`;
     }).join('');
-}
-// Función para buscar dentro de mis pedidos
-function filterMyOrders() {
-    const query = document.getElementById('search-mi-historial').value.toLowerCase();
-    // Filtramos la data original por el texto
-    const filteredByText = myOrdersData.filter(p => 
-        p.cliente.toLowerCase().includes(query) || 
-        p.producto.toLowerCase().includes(query)
-    );
-    // Renderizamos (la función renderMyOrdersList se encargará de aplicar el filtro de pestaña)
-    renderMyOrdersList(filteredByText);
 }
 
     async function injectLinksSection(nombre) {
@@ -2832,6 +2916,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             });
         } catch (err) { console.error("Error en bindeo:", err); }
     }
+    // === LÓGICA DE DETECCIÓN DE ORIGEN ===
+    let origenPedido = "Directo/Web"; // Valor por defecto si falla todo
+
+    if (isLogged) {
+        origenPedido = "Manual (Panel)";
+    } else {
+        // Buscamos en la memoria lo que guardamos en el Paso 1
+        const referrerSmart = localStorage.getItem('pth_referrer_smart');
+        const referrerSimple = localStorage.getItem('pth_referrer');
+        
+        if (referrerSmart || referrerSimple) {
+            origenPedido = "Enlace Compartido";
+        }
+    }
+    // =====================================
 
     // 3. AGRUPAR POR PROVEEDOR (Tu lógica original)
     const gruposPedidos = {};
@@ -2878,6 +2977,11 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         mensajeRaw += `💪 Producto: ${strProd}\n`;
         mensajeRaw += `💪 Total: ${totalVenta} USD\n`;
         mensajeRaw += `💪 Vuelto: ${vueltoC}\n`;
+
+        // --- AQUÍ ESTÁN LAS LÍNEAS QUE FALTABAN ---
+        mensajeRaw += `-Precio equipo: ${d.tEquipo} USD\n`;
+        mensajeRaw += `-Mensajería: ${d.tEnvio} USD\n\n`;
+        // ---
         
         if (isLogged) {
             mensajeRaw += `💪 Comisión: ${d.tComi} usd\n`;
@@ -2885,14 +2989,14 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
         mensajeRaw += `--------------------------\n\n`;
 
-        // C. Guardar en Base de Datos con las nuevas columnas
+        // C. Guardar en Base de Datos
         promesas.push(supabaseClient.from('pedidos').insert([{
             gestor: activeGestor,
             cliente: nombreC,
             ci: ciC,
             telefono: telC,
             direccion: dirC,
-            municipio: municipioC, // NUEVA COLUMNA
+            municipio: municipioC,
             producto: `${strProd} [${monedaC}]`,
             total: totalVenta,
             comision_total: d.tComi,
@@ -2900,7 +3004,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             pago_gestor: 'Pendiente',
             proveedor: prov,
             costo_mensajeria: d.tEnvio,
-            orden_dia: codPedido // NUEVA COLUMNA
+            orden_dia: codPedido,
+            origen: origenPedido // <--- Esta es la clave. Asegúrate que esté aquí.
         }]));
     }
 
@@ -3231,21 +3336,43 @@ async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
 
 // --- FUNCIÓN PARA ELIMINAR GESTORES ---
 async function removeGestor(id, nombre) {
-    if (!confirm(`¿Eliminar permanentemente a ${nombre}? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(`¿Vas a dar de baja a ${nombre}?\n\nSi el gestor tiene ventas, no se borrará para proteger los datos, pero pasará a estado BLOQUEADO y desaparecerá de esta lista.`)) return;
 
     try {
-        const { error } = await supabaseClient
+        // --- INTENTO 1: BORRADO FÍSICO ---
+        // Agregamos .select() al final para verificar si realmente se borró algo
+        const { data, error } = await supabaseClient
             .from('gestores')
             .delete()
+            .eq('id', id)
+            .select(); 
+
+        // Verificamos si 'data' tiene contenido. Si data.length > 0, es que SÍ se borró.
+        if (data && data.length > 0) {
+            alert("✅ Gestor eliminado permanentemente (Cuenta limpia sin ventas).");
+            loadPendingGestores(); // Recargamos la tabla
+            return;
+        }
+
+        // Si llegamos aquí, es porque NO se borró (aunque no diera error), 
+        // probablemente porque tiene ventas asociadas (Foreign Key) o RLS.
+        console.warn("El borrado físico falló (protección de datos). Aplicando bloqueo...");
+
+        // --- INTENTO 2: BLOQUEO LÓGICO (PLAN B) ---
+        const { error: updateError } = await supabaseClient
+            .from('gestores')
+            .update({ estado: 'bloqueado' }) // Lo marcamos como bloqueado
             .eq('id', id);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
 
-        alert("✅ Gestor eliminado correctamente.");
-        loadPendingGestores();
+        alert(`⚠️ Este gestor tiene historial de ventas y no se puede borrar.\n✅ ACCIÓN ALTERNATIVA: Se ha cambiado su estado a 'BLOQUEADO' y ya no tendrá acceso ni aparecerá aquí.`);
+        
+        loadPendingGestores(); // Recargamos la tabla
+
     } catch (e) {
-        console.error("Error al eliminar gestor:", e);
-        alert("No se pudo eliminar al gestor.");
+        console.error("Error al gestionar la baja:", e);
+        alert("Ocurrió un error inesperado: " + e.message);
     }
 }
 
@@ -5357,18 +5484,17 @@ function renderAnaliticaConversion(pedidos, vistasRaw) {
 // Variable global para guardar el conteo
 let gestorSalesCount = 0;
 
-function generateFlashResponse() {
+async function generateFlashResponse() {
     // 1. Obtener lo que el gestor escribió en el buscador
     const searchInput = document.getElementById('search-bar');
     const query = searchInput ? searchInput.value.trim() : "";
     
-    // 2. Obtener los productos que están visibles actualmente (Filtrados)
-    // Usamos la misma lógica de filtrado que ya tienes
+    // 2. Filtros para saber qué productos mostrar
     const isGestor = window.gestorName ? true : false;
     const filterCheckbox = document.getElementById('filter-high-comm');
     const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
 
-    // Filtramos sobre la data cruda (productosRaw)
+    // Filtramos sobre la data cruda
     const visibleProducts = productosRaw.filter(p => {
         const matchSearch = p.nombre.toLowerCase().includes(query.toLowerCase());
         const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
@@ -5378,42 +5504,64 @@ function generateFlashResponse() {
 
     if (visibleProducts.length === 0) return alert("❌ No hay productos en pantalla para generar respuesta.");
 
-    // 3. Construir el Enlace Directo para el Cliente
-    // Este enlace llevará al cliente a la web YA filtrada con lo que buscaste
-    const gestorParam = window.gestorName ? `&gestor=${encodeURIComponent(window.gestorName)}` : '';
-    const telParam = window.currentUserData?.telefono ? `&tel=${window.currentUserData.telefono}` : '';
-    // El truco: pasamos el parámetro ?search=lo_que_buscaste
-    const directLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(query)}${gestorParam}${telParam}`;
+    // --- EFECTO VISUAL DE CARGA EN EL BOTÓN ---
+    const btn = event.currentTarget;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = `<span class="loader w-4 h-4 border-amber-800"></span>`; 
+    btn.disabled = true;
 
-    // 4. Construir el Mensaje de WhatsApp
-    let mensaje = `👋 Hola! Sí, para *"${query || activeCategory}"* tengo estas opciones disponibles ahora mismo:\n\n`;
+    try {
+        // 3. DEFINIR LA URL BASE CORRECTA
+        // Si estás abriendo el archivo local (file://), usamos tu web real. Si no, usamos la actual.
+        let baseUrl = window.location.origin + window.location.pathname;
+        if (window.location.protocol === 'file:') {
+            baseUrl = "https://paratuhogar.github.io/paratuhogar/"; // TU URL REAL AQUÍ
+        }
 
-    // Listar máximo 5 productos para no saturar el chat (los más relevantes)
-    visibleProducts.slice(0, 5).forEach(p => {
-        const precio = showInCUP ? `CUP ${calculateProductCUP(p.precio, p.pagos).toLocaleString()}` : `$${p.precio} USD`;
-        mensaje += `▫️ *${p.nombre}* ➝ *${precio}*\n`;
-    });
+        // 4. CONSTRUIR EL LINK LARGO
+        const gestor = window.gestorName || '';
+        const tel = window.currentUserData?.telefono || '';
+        const longLink = `${baseUrl}?search=${encodeURIComponent(query)}&gestor=${encodeURIComponent(gestor)}&tel=${tel}`;
 
-    if (visibleProducts.length > 5) {
-        mensaje += `... y ${visibleProducts.length - 5} opciones más.\n`;
-    }
+        // 5. ¡MAGIA! GENERAR EL LINK CORTO (Esperamos a Supabase)
+        const shortLink = await getOrGenerateShortLink(gestor, longLink);
 
-    mensaje += `\n👀 *MIRA LAS FOTOS Y DETALLES AQUÍ:* 👇\n${directLink}\n\n`;
-    mensaje += `Me avisas cuál te gusta y te lo separo. 😉`;
+        // 6. CONSTRUIR EL MENSAJE
+        let mensaje = `👋 Hola! Sí, para *"${query || activeCategory}"* tengo estas opciones disponibles ahora mismo:\n\n`;
 
-    // 5. Copiar al portapapeles
-    navigator.clipboard.writeText(mensaje).then(() => {
-        // Feedback visual rápido (Toast o Alerta)
-        const btn = event.currentTarget; // El botón que presionaste
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = "✅ ¡COPIADO!";
-        btn.classList.add("bg-green-500", "text-white", "border-green-600");
-        
+        // Listar máximo 5 productos
+        visibleProducts.slice(0, 5).forEach(p => {
+            const precio = showInCUP ? `CUP ${calculateProductCUP(p.precio, p.pagos).toLocaleString()}` : `$${p.precio} USD`;
+            mensaje += `▫️ *${p.nombre}* ➝ *${precio}*\n`;
+        });
+
+        if (visibleProducts.length > 5) {
+            mensaje += `... y ${visibleProducts.length - 5} opciones más.\n`;
+        }
+
+        mensaje += `\n👀 *MIRA LAS FOTOS Y DETALLES AQUÍ:* 👇\n${shortLink}\n\n`;
+        mensaje += `Me avisas cuál te gusta y te lo separo. 😉`;
+
+        // 7. COPIAR AL PORTAPAPELES
+        await navigator.clipboard.writeText(mensaje);
+
+        // Feedback de éxito
+        btn.innerHTML = "✅ ¡LISTO!";
+        btn.classList.remove("bg-amber-400", "text-amber-900");
+        btn.classList.add("bg-green-500", "text-white");
+
+    } catch (e) {
+        console.error(e);
+        alert("Error generando el link corto. Se copiará el largo.");
+    } finally {
+        // Restaurar botón después de 2 segundos
         setTimeout(() => {
             btn.innerHTML = originalHTML;
-            btn.classList.remove("bg-green-500", "text-white", "border-green-600");
+            btn.classList.add("bg-amber-400", "text-amber-900");
+            btn.classList.remove("bg-green-500", "text-white");
+            btn.disabled = false;
         }, 2000);
-    });
+    }
 }
 
 
@@ -6858,7 +7006,78 @@ async function buscarDuenoPorIP() {
     } catch (e) { return null; }
 }
 
+// --- NUEVA FUNCIÓN: GRÁFICA DE ORIGEN DE VENTAS ---
+function renderSourceChart(ventas) {
+    // 1. Calcular Datos
+    const total = ventas.length;
+    if (total === 0) return;
 
+    const manuales = ventas.filter(v => v.origen === 'Manual (Panel)').length;
+    const enlaces = ventas.filter(v => v.origen === 'Enlace Compartido').length;
+    const otros = total - manuales - enlaces;
+
+    // Porcentajes para las barras
+    const pEnlace = Math.round((enlaces / total) * 100);
+    const pManual = Math.round((manuales / total) * 100);
+    const pOtros = 100 - pEnlace - pManual;
+
+    // 2. Insertar HTML antes de la lista
+    const listContainer = document.getElementById('list-mis-pedidos');
+    const existingChart = document.getElementById('chart-sources-container');
+    if (existingChart) existingChart.remove(); // Evitar duplicados
+
+    const advice = pEnlace > pManual 
+        ? "¡Tus enlaces funcionan genial! Sigue compartiendo." 
+        : "Eres fuerte en venta manual. Intenta mover más tu enlace para ingresos pasivos.";
+
+    const html = `
+    <div id="chart-sources-container" class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6 mb-8 shadow-sm">
+        <!-- Título más grande y oscuro -->
+        <h3 class="text-sm md:text-base font-black uppercase text-slate-700 dark:text-white mb-5 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-2xl">pie_chart</span> Fuentes de Tráfico
+        </h3>
+        
+        <!-- Barra Visual más gruesa (h-6 en vez de h-4) -->
+        <div class="flex h-6 w-full rounded-full overflow-hidden mb-6 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+            <div style="width: ${pEnlace}%" class="bg-blue-600 h-full shadow-inner" title="Enlaces"></div>
+            <div style="width: ${pManual}%" class="bg-orange-500 h-full shadow-inner" title="Manual"></div>
+            <div style="width: ${pOtros}%" class="bg-gray-400 h-full shadow-inner" title="Otros"></div>
+        </div>
+
+        <!-- Leyenda con Letras Grandes y Alto Contraste -->
+        <div class="flex flex-col sm:flex-row justify-between text-center gap-4">
+            
+            <!-- Caja Enlaces -->
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex-1 border border-blue-100 dark:border-blue-800/50">
+                <p class="text-xs font-black uppercase text-blue-700 dark:text-blue-300 mb-1 tracking-wider">🔗 Enlaces</p>
+                <div class="flex items-baseline justify-center gap-2">
+                    <p class="text-4xl font-black text-blue-900 dark:text-blue-100">${enlaces}</p> 
+                    <span class="text-sm font-bold text-blue-600 dark:text-blue-400">(${pEnlace}%)</span>
+                </div>
+            </div>
+
+            <!-- Caja Manual -->
+            <div class="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex-1 border border-orange-100 dark:border-orange-800/50">
+                <p class="text-xs font-black uppercase text-orange-700 dark:text-orange-300 mb-1 tracking-wider">✍️ Manual</p>
+                <div class="flex items-baseline justify-center gap-2">
+                    <p class="text-4xl font-black text-orange-800 dark:text-orange-100">${manuales}</p> 
+                    <span class="text-sm font-bold text-orange-600 dark:text-orange-400">(${pManual}%)</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Consejo IA más legible -->
+        <div class="mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <p class="text-xs md:text-sm font-medium text-slate-600 dark:text-gray-300 text-center flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-amber-500 text-lg">lightbulb</span>
+                ${advice}
+            </p>
+        </div>
+    </div>`;
+    
+    // Insertamos la gráfica ANTES de la lista de pedidos
+    listContainer.insertAdjacentHTML('beforebegin', html);
+}
 
 </script>
 
