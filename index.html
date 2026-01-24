@@ -353,6 +353,33 @@
 
         <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
+            <!-- === NAVEGACIÓN DASHBOARD GESTOR === -->
+            <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
+                <button onclick="showDashSection('resumen')" id="btn-dash-resumen" class="px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all">📊 Resumen</button>
+                <button onclick="showDashSection('precios')" id="btn-dash-precios" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🏷️ Mis Precios (Config)</button>
+            </div>
+
+            <!-- 1. SECCIÓN RESUMEN (Aquí envolvemos lo que ya tenías) -->
+            <div id="sub-dash-resumen">
+            <!-- AQUÍ DENTRO DEBE QUEDAR TODO LO QUE YA TENÍAS EN TU DASHBOARD (Tarjetas, Ranking, etc.) -->
+            <!-- No borres nada de tu código anterior, solo asegúrate de que el contenido viejo del dashboard quede visualmente bajo esta lógica o simplemente déjalo como está y el JS se encargará de ocultarlo/mostrarlo si lo envuelves en un div -->
+            </div>
+
+            <!-- 2. SECCIÓN CONFIGURADOR DE PRECIOS (NUEVO) -->
+            <div id="sub-dash-precios" class="hidden animate-fade-in">
+                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl mb-6">
+                    <h3 class="text-lg font-black text-indigo-900 uppercase italic mb-2">Configurador de Precios</h3>
+                    <p class="text-xs text-indigo-700 mb-4">
+                        Aquí puedes subir el precio de los productos marcados como "Flexibles". 
+                        <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
+                    </p>
+                    <div id="list-gestor-precios" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Se llena con JS -->
+                    </div>
+                </div>
+            </div>
+
+
             <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
 <!-- TARJETA NIVEL ESTÁNDAR -->
         <div class="bg-gradient-to-r from-[#1a4789] to-[#2c6fb5] rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden mb-8">
@@ -2383,71 +2410,90 @@ function renderMyOrdersList(lista) {
 
     // 2. CARGA DE PRODUCTOS
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
-    async function loadProducts() {
+// --- FUNCIÓN MAESTRA DE CARGA Y FUSIÓN DE PRECIOS ---
+async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
-    const gestorUrl = urlParams.get('gestor');
+    let urlGestor = urlParams.get('gestor'); // Gestor en URL (Cliente)
+    const sessionGestor = window.gestorName; // Gestor Logueado (Tú)
 
-    // --- 1. DETECCIÓN POR LINK CORTO (?s=) ---
-    // Prioridad absoluta: Si el cliente toca un link, este gestor gana (Last Click Wins)
+    // 1. Prioridad de Gestor: Si estoy logueado soy yo, si no, es el de la URL
+    const activeGestor = sessionGestor || urlGestor;
+
+    // --- LOGICA LINK CORTO (Mantenida) ---
     if (slug) {
-        const { data } = await supabaseClient
-            .from('short_links')
-            .select('original_url, gestor')
-            .eq('slug', slug)
-            .single();
-
+        const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
         if (data) {
-            await registrarRastroIP(data.gestor); // Guardamos rastro antes de redirigir
+            await registrarRastroIP(data.gestor);
             window.location.href = data.original_url;
             return;
         }
     }
+    if (urlGestor) await registrarRastroIP(urlGestor);
 
-    // --- 2. SI VIENE POR LINK LARGO (?gestor=) ---
-    if (gestorUrl) {
-        await registrarRastroIP(gestorUrl);
-        // initSmartReferral() se encargará de guardarlo en localStorage automáticamente
-    }
-
-    // --- 3. RESCATE POR IP (Solo si no hay rastro en URL ni en Memoria) ---
-    const sessionActual = localStorage.getItem('pth_referrer_smart');
-    if (!sessionActual && !gestorUrl && !slug) {
-        const duenoRecuperado = await buscarDuenoPorIP();
-        if (duenoRecuperado) {
-            console.log("📡 Rescate exitoso. Cliente recuperado por IP:", duenoRecuperado);
-            // Creamos sesión de rescate por 24h
-            const dataRescate = {
-                nombre: duenoRecuperado,
-                telefono: "", 
-                timestamp: new Date().getTime(),
-                expiresAt: new Date().getTime() + (24 * 60 * 60 * 1000)
-            };
-            localStorage.setItem('pth_referrer_smart', JSON.stringify(dataRescate));
-            window.location.reload(); // Recargamos para que el Header muestre al gestor
-            return;
-        }
-    }
-
-    // --- 4. CARGA NORMAL DE PRODUCTOS ---
+    // --- CARGA DE DATOS ---
     try {
-        const { data, error } = await supabaseClient
+        // A. Cargar Productos Base
+        const { data: productos, error } = await supabaseClient
             .from('productos')
             .select('*')
             .order('nombre', { ascending: true });
 
         if (error) throw error;
-        productosRaw = data;
-        
+        productosRaw = productos; // Guardamos copia original cruda
+
+        // B. FUSIÓN DE PRECIOS (LA MAGIA)
+        if (activeGestor) {
+            // Buscamos si este gestor tiene precios personalizados
+            const { data: preciosCustom } = await supabaseClient
+                .from('precios_personalizados')
+                .select('producto_id, nuevo_precio')
+                .eq('gestor', activeGestor);
+
+            if (preciosCustom && preciosCustom.length > 0) {
+                // Recorremos los productos y aplicamos la máscara
+                productosRaw.forEach(p => {
+                    const custom = preciosCustom.find(c => c.producto_id === p.id);
+                    if (custom) {
+                        const precioBase = parseFloat(p.precio);
+                        const precioNuevo = parseFloat(custom.nuevo_precio);
+                        
+                        // Solo aplicamos si el nuevo es mayor (seguridad)
+                        if (precioNuevo >= precioBase) {
+                            // 1. Calculamos la ganancia extra
+                            const extra = precioNuevo - precioBase;
+                            
+                            // 2. SOBRESCRIBIMOS EN MEMORIA (El cliente ve esto)
+                            p.precio = precioNuevo; 
+                            
+                            // 3. SUMAMOS A LA COMISIÓN (El sistema sabe cuánto pagarte)
+                            p.comision = (parseFloat(p.comision) + extra).toFixed(2);
+                            
+                            // Marca interna para saber que está modificado
+                            p.is_custom = true; 
+                        }
+                    }
+                });
+                console.log("✅ Precios personalizados aplicados para: " + activeGestor);
+            }
+        }
+
+        // --- RENDERIZADO FINAL ---
         renderCategories();
         renderProducts();
+        
+        // Si estoy logueado, cargo mi configurador de precios
+        if (sessionGestor) {
+            renderGestorPricing(); // Función nueva (ver abajo)
+        }
 
-        // Lógica de abrir producto automáticamente (?search=...)
+        // Abrir producto si viene en URL
         const searchParam = urlParams.get('search');
         if (searchParam) {
             const existe = productosRaw.find(p => p.nombre === searchParam);
             if (existe) setTimeout(() => { openDetail(searchParam); }, 500);
         }
+
     } catch (e) { 
         console.error("Error cargando catálogo:", e);
         document.getElementById('productos-container').innerHTML = `<div class="col-span-full py-10 text-center text-gray-400">Error de conexión.</div>`;
@@ -7187,6 +7233,167 @@ function esMensajeriaAmbigua(texto) {
     return t.includes('consultar') || t.includes('adicional') || t.includes('periferia') || t.includes('depende') || t.includes('variable');
 }
 
+// --- LÓGICA DE PESTAÑAS DEL DASHBOARD ---
+function showDashSection(section) {
+    // Ocultar todo
+    document.getElementById('sub-dash-resumen').classList.add('hidden');
+    document.getElementById('sub-dash-precios').classList.add('hidden');
+    
+    // Desactivar botones
+    document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
+    document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
+
+    // Activar selección
+    if(section === 'resumen') {
+        document.getElementById('sub-dash-resumen').classList.remove('hidden');
+        document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
+    } else {
+        document.getElementById('sub-dash-precios').classList.remove('hidden');
+        document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
+        renderGestorPricing(); // Refrescar lista
+    }
+}
+
+// --- RENDERIZAR LISTA DE EDICIÓN DE PRECIOS ---
+async function renderGestorPricing() {
+    const container = document.getElementById('list-gestor-precios');
+    if(!container) return;
+
+    // 1. Filtrar solo productos flexibles
+    // NOTA: Para obtener el precio BASE REAL, necesitamos consultar la DB o revertir el cambio en memoria.
+    // Para simplificar, haremos una consulta limpia a la DB de productos originales aquí.
+    const { data: productosBase } = await supabaseClient
+        .from('productos')
+        .select('*')
+        .eq('precio_flexible', 'SI')
+        .order('nombre');
+
+    if(!productosBase || productosBase.length === 0) {
+        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos flexibles disponibles.</p>`;
+        return;
+    }
+
+    // 2. Obtener mis precios actuales
+    const { data: misPrecios } = await supabaseClient
+        .from('precios_personalizados')
+        .select('*')
+        .eq('gestor', window.gestorName);
+
+    container.innerHTML = productosBase.map(p => {
+        // Ver si ya tengo un precio guardado
+        const saved = misPrecios.find(c => c.producto_id === p.id);
+        const precioActual = saved ? parseFloat(saved.nuevo_precio) : parseFloat(p.precio);
+        const gananciaBase = parseFloat(p.comision);
+        const gananciaExtra = precioActual - parseFloat(p.precio);
+        const gananciaTotal = gananciaBase + gananciaExtra;
+
+        return `
+        <div class="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm flex flex-col gap-3">
+            <div class="flex gap-3">
+                <img src="${fixDriveUrl(p.thumbnail)}" class="w-12 h-12 rounded-lg object-contain bg-gray-50">
+                <div class="overflow-hidden">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${p.categoria}</p>
+                    <p class="text-xs font-black text-slate-700 leading-tight truncate">${p.nombre}</p>
+                    <p class="text-[10px] text-gray-500">Base: $${p.precio} | Comi: $${p.comision}</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-xl">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-[9px] font-black uppercase text-indigo-400">Tu Precio de Venta</label>
+                    <span id="gain-label-${p.id}" class="text-[9px] font-bold text-emerald-500">
+                        Ganancia: $${gananciaTotal.toFixed(0)}
+                    </span>
+                </div>
+                <div class="flex gap-2">
+                    <input type="number" id="input-price-${p.id}" value="${precioActual}" min="${p.precio}" 
+                        oninput="calcGainUI(${p.id}, ${p.precio}, ${p.comision})"
+                        class="w-full rounded-lg border-gray-200 text-sm font-black text-slate-700 px-3 py-2">
+                    
+                    <button onclick="saveMyPrice(${p.id}, ${p.precio})" 
+                        class="bg-indigo-600 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95">
+                        <span class="material-symbols-outlined text-lg">save</span>
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// --- CALCULO VISUAL INSTANTÁNEO ---
+function calcGainUI(id, basePrice, baseComm) {
+    const input = document.getElementById(`input-price-${id}`);
+    const label = document.getElementById(`gain-label-${id}`);
+    const newVal = parseFloat(input.value) || basePrice;
+    
+    if (newVal < basePrice) {
+        label.innerText = "⚠️ Menor al base";
+        label.classList.replace('text-emerald-500', 'text-red-500');
+    } else {
+        const total = baseComm + (newVal - basePrice);
+        label.innerText = `Ganancia: $${total.toFixed(0)}`;
+        label.classList.replace('text-red-500', 'text-emerald-500');
+    }
+}
+
+// --- GUARDAR PRECIO EN SUPABASE ---
+async function saveMyPrice(prodId, basePrice) {
+    const input = document.getElementById(`input-price-${prodId}`);
+    const newPrice = parseFloat(input.value);
+
+    if (newPrice < basePrice) return alert(`No puedes bajar del precio base ($${basePrice})`);
+
+    const btn = event.currentTarget;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = `⏳`;
+    btn.disabled = true;
+
+    try {
+        // 1. Buscar si ya existe para actualizar o insertar
+        const { data: existing } = await supabaseClient
+            .from('precios_personalizados')
+            .select('id')
+            .eq('gestor', window.gestorName)
+            .eq('producto_id', prodId)
+            .maybeSingle();
+
+        if (existing) {
+            // Update
+            await supabaseClient
+                .from('precios_personalizados')
+                .update({ nuevo_precio: newPrice })
+                .eq('id', existing.id);
+        } else {
+            // Insert
+            await supabaseClient
+                .from('precios_personalizados')
+                .insert([{ 
+                    gestor: window.gestorName, 
+                    producto_id: prodId, 
+                    nuevo_precio: newPrice 
+                }]);
+        }
+
+        // Feedback
+        btn.innerHTML = `✅`;
+        btn.classList.replace('bg-indigo-600', 'bg-emerald-500');
+        
+        // Recargar productos en segundo plano para que el catálogo del gestor se actualice también
+        loadProducts();
+
+        setTimeout(() => {
+            btn.innerHTML = `<span class="material-symbols-outlined text-lg">save</span>`;
+            btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
+            btn.disabled = false;
+        }, 2000);
+
+    } catch (e) {
+        console.error(e);
+        alert("Error guardando precio.");
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+}
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
