@@ -1703,8 +1703,6 @@ function openLoginModal() {
     label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
     document.getElementById('admin-nav').classList.remove('hidden');
 
-    
-
     if (adminMode) {
         // MODO ADMINISTRADOR
         document.getElementById('sec-admin-master').classList.remove('hidden');
@@ -1729,22 +1727,24 @@ function openLoginModal() {
         // === INICIO DE SISTEMA DE NIVELES ===
         
         // A. Aplicar CANDADOS inmediatamente (Bloqueo por defecto)
-        // Esto evita que los botones aparezcan activos mientras carga la base de datos
         if (typeof applyLockedFeatures === "function") {
             applyLockedFeatures();
         }
 
-        // B. Dibujar el botón Flash (Aparecerá gris/bloqueado inicialmente)
+        // B. Dibujar el botón Flash
         if (typeof renderFlashButton === "function") {
             renderFlashButton();
         }
         
-        // C. Consultar nivel real en la Base de Datos
-        // (Si el usuario tiene nivel, esta función desbloqueará los botones en unos milisegundos)
+        // C. Consultar nivel y Coordinar Carteles
+        // showAgentWelcomeModal se encargará de mostrar el cartel de Nivel si subió,
+        // o llamará a showPriceIntro si se mantiene en el mismo nivel.
         if (typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
             showAgentWelcomeModal(name);
         }
+        
+        // --- AQUÍ QUITAMOS LA LÍNEA DEL SETTIMEOUT PARA EVITAR DOBLE CARTEL ---
     }
 
     // FORZAR QUE SE VEA EL BOTÓN ROJO DE SALIR
@@ -1753,13 +1753,12 @@ function openLoginModal() {
         btnLogout.classList.remove('hidden');
         btnLogout.style.display = 'inline-flex'; 
     }
+    
     loadClientCRM(); 
 
     // Ocultar botón de whatsapp si existe al entrar a modo gestor
     const waBtn = document.getElementById('floating-agent-contact');
     if (waBtn) waBtn.classList.add('hidden');
-
-    
 }
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
@@ -6112,9 +6111,9 @@ async function showAgentWelcomeModal(nombre) {
     if(!modal) return;
 
     try {
-        let salesCount = 0; // Declaramos la variable una sola vez
+        let salesCount = 0; 
 
-        // 1. DETERMINAR LAS VENTAS (Modo Dios o Consulta Real)
+        // Lógica de conteo de ventas (Igual que tenías)
         if (nombre === "Marcel Montano") {
             salesCount = 80; 
         } else {
@@ -6123,15 +6122,32 @@ async function showAgentWelcomeModal(nombre) {
                 .select('id', { count: 'exact', head: true })
                 .eq('gestor', nombre)
                 .eq('estado', 'Entregado');
-            
             if (error) throw error;
             salesCount = count || 0;
         }
 
         const lvlData = getLevelData(salesCount);
         const currentLvl = lvlData.lvl;
+        
+        // Guardamos nivel global
+        window.currentGestorLevel = currentLvl; 
 
-        // Configuración de Boosts y Frases Motivacionales
+        // === AQUÍ ESTÁ LA CORRECCIÓN ===
+        const lastSeenLevel = localStorage.getItem('pth_last_seen_level');
+
+        // Si el nivel actual es IGUAL al último que vio...
+        if (lastSeenLevel && parseInt(lastSeenLevel) === currentLvl) {
+            console.log("El usuario sigue en el mismo nivel. Pasando al cartel de precios...");
+            
+            // ¡ESTA ES LA LÍNEA QUE TE FALTABA! 
+            // Si no muestra nivel, intenta mostrar precios.
+            showPriceIntro(); 
+            
+            return; // Salimos para que NO salga el cartel azul de nivel
+        }
+        // ==============================
+
+        // (El resto de tu código para dibujar el cartel azul sigue aquí igual...)
         const tiers = [
             { lvl: 1, name: "Novato", tool: "Flash & Story Maker", boost: 1.5, phrase: "Cerrarás clientes en segundos con las respuestas automáticas." },
             { lvl: 2, name: "Experto", tool: "Pack Fotos & Texto Masivo", boost: 2.2, phrase: "Inundarás los grupos de compra/venta con un solo clic." },
@@ -6140,7 +6156,7 @@ async function showAgentWelcomeModal(nombre) {
             { lvl: 5, name: "Emperador", tool: "Amarre Total", boost: 5.0, phrase: "Has alcanzado el poder máximo. Tu red de clientes es ahora un activo eterno." }
         ];
 
-        // 2. DIBUJAR LISTA DE HABILIDADES
+        // DIBUJAR LISTA (Copia esto tal cual tenías)
         const listHTML = tiers.map(t => {
             const isUnlocked = currentLvl >= t.lvl;
             return `
@@ -6157,35 +6173,43 @@ async function showAgentWelcomeModal(nombre) {
             </div>`;
         }).join('');
 
-        // 3. ALGORITMO DE PRONÓSTICO OPTIMISTA
         const nextTier = tiers.find(t => t.lvl === currentLvl + 1) || tiers[4];
         let baseline = salesCount === 0 ? 1.5 : salesCount;
         let extraSales = Math.ceil(baseline * nextTier.boost);
         let totalPotential = Math.ceil(salesCount + extraSales);
 
-        // 4. INYECTAR DATOS EN EL HTML
         document.getElementById('welcome-features-list').innerHTML = listHTML;
         document.getElementById('welcome-next-tier-name').innerText = nextTier.tool;
         document.getElementById('welcome-extra-sales').innerText = extraSales;
         document.getElementById('welcome-total-potential').innerText = totalPotential;
         document.getElementById('welcome-motivational-phrase').innerText = `"${nextTier.phrase}"`;
         document.getElementById('welcome-rank-tag').innerText = "RANGO: " + lvlData.name;
-
-        // Duración corregida
+        
         let durationText = lvlData.lvl === 5 ? "365 DÍAS" : (lvlData.lvl === 0 ? "7 DÍAS" : (lvlData.duration / 720) + " MESES");
         document.getElementById('welcome-link-duration').innerText = durationText;
         document.getElementById('welcome-next-power').innerText = "NIVEL " + (currentLvl < 5 ? currentLvl + 1 : 5);
 
-        // 5. MOSTRAR EL MODAL
+        // Mostrar Modal Azul
         setTimeout(() => { modal.classList.remove('hidden'); }, 800);
 
     } catch (e) { console.error("Error en Bienvenida:", e); }
 }
 
-// Función para cerrar el cartel
 function closeWelcomeAgent() {
+    // 1. Ocultar modal azul
     const modal = document.getElementById('modal-welcome-agent');
     if(modal) modal.classList.add('hidden');
+
+    // 2. Guardar nivel actual
+    if (window.currentGestorLevel !== undefined) {
+        localStorage.setItem('pth_last_seen_level', window.currentGestorLevel);
+    }
+
+    // 3. PUENTE: Llamar al siguiente cartel
+    console.log("Cerrando nivel. Intentando mostrar noticias...");
+    setTimeout(() => {
+        showPriceIntro();
+    }, 500);
 }
 
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
@@ -7445,6 +7469,37 @@ function calcGainUI(id, basePrice, baseComm) {
         label.classList.add('text-emerald-500');
     }
 }
+
+// --- CONFIGURACIÓN DE NOTICIAS ---
+// Cambia este texto cuando pongas una funcionalidad nueva para que le salga a todos de nuevo
+const CURRENT_CAMPAIGN = 'info_precios_v1'; 
+
+function showPriceIntro() {
+    // Verificamos si el usuario ya vio ESTA campaña específica
+    const yaVisto = localStorage.getItem(CURRENT_CAMPAIGN);
+    
+    if (!yaVisto) {
+        console.log("Mostrando cartel de información: " + CURRENT_CAMPAIGN);
+        const modal = document.getElementById('modal-intro-precios');
+        if (modal) {
+            modal.classList.remove('hidden');
+        } else {
+            console.error("No se encontró el modal-intro-precios en el HTML");
+        }
+    } else {
+        console.log("El usuario ya vio la campaña: " + CURRENT_CAMPAIGN);
+    }
+}
+
+function closePriceIntro() {
+    document.getElementById('modal-intro-precios').classList.add('hidden');
+    
+    // Guardamos que ya vio ESTA versión del cartel
+    localStorage.setItem(CURRENT_CAMPAIGN, 'true');
+    
+    // Opcional: Llevarlo a la sección correspondiente
+    showDashSection('precios'); 
+}
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
@@ -7766,5 +7821,78 @@ function calcGainUI(id, basePrice, baseComm) {
     .animate-pop-in { animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 </style>
 
+<!-- MODAL INTRODUCCIÓN PRECIOS FLEXIBLES -->
+<div id="modal-intro-precios" class="fixed inset-0 z-[400] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
+    
+    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2rem] overflow-hidden shadow-2xl relative animate-pop-in border border-white/10">
+        
+        <!-- Decoración de Fondo -->
+        <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-indigo-600 to-blue-500"></div>
+        <div class="absolute top-4 right-4 bg-white/20 p-2 rounded-full backdrop-blur-md">
+            <span class="material-symbols-outlined text-white text-2xl">monetization_on</span>
+        </div>
+
+        <!-- Contenido -->
+        <div class="relative pt-12 px-8 pb-8">
+            
+            <!-- Icono Principal Flotante -->
+            <div class="bg-white dark:bg-slate-800 w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center mx-auto mb-6 border-4 border-indigo-50 dark:border-slate-700">
+                <span class="material-symbols-outlined text-4xl text-indigo-600">tune</span>
+            </div>
+
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white uppercase italic tracking-tight mb-2">
+                    Configurador de <span class="text-indigo-600">Precios</span>
+                </h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                    Toma el control total de tus ganancias.
+                </p>
+            </div>
+
+            <!-- Lista de Beneficios -->
+            <div class="space-y-4 mb-8">
+                
+                <!-- Punto 1 -->
+                <div class="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <span class="material-symbols-outlined text-blue-500 bg-blue-100 dark:bg-blue-900/30 p-1 rounded-lg text-lg">edit</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-700 dark:text-slate-300">Sube el Precio</p>
+                        <p class="text-[11px] text-slate-500 leading-tight mt-0.5">
+                            Edita el precio de venta en los productos marcados como <span class="font-bold text-blue-500">"Flexibles"</span>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Punto 2 -->
+                <div class="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
+                    <span class="material-symbols-outlined text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 p-1 rounded-lg text-lg">savings</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400">100% Ganancia Extra</p>
+                        <p class="text-[11px] text-emerald-600/80 dark:text-emerald-500 leading-tight mt-0.5">
+                            Todo lo que subas por encima del precio base es <span class="font-bold underline">tuyo</span>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Punto 3 -->
+                <div class="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <span class="material-symbols-outlined text-purple-500 bg-purple-100 dark:bg-purple-900/30 p-1 rounded-lg text-lg">link</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-700 dark:text-slate-300">Visible en tu Link</p>
+                        <p class="text-[11px] text-slate-500 leading-tight mt-0.5">
+                            Tus clientes verán automáticamente el precio final que tú decidiste.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de Acción -->
+            <button onclick="closePriceIntro()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all active:scale-95">
+                ¡Entendido, a configurar!
+            </button>
+
+        </div>
+    </div>
+</div>
 </body>
 </html>
