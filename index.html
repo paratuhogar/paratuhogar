@@ -5043,6 +5043,7 @@ window.doLogout = function() {
     // 2. Proceso de Login
     // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
 // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
+// PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
 async function processLogin() {
     const userInput = document.getElementById('log-user');
     const passInput = document.getElementById('log-pass');
@@ -5050,23 +5051,42 @@ async function processLogin() {
     const user = userInput ? userInput.value.trim() : "";
     const pass = passInput ? passInput.value.trim() : "";
 
-    // 1. CASO A: ADMINISTRADOR (Prioridad 1)
-    if (pass === getAccess()) { 
+    // --- CLAVES MAESTRAS ---
+    // 1. Clave de Logística (Solo ve pedidos)
+    const KEY_LOGISTICA = "PRO_ADMIN_2025"; 
+    
+    // 2. Clave del DUEÑO (Ve el Dinero) - ¡CAMBIA ESTA SI QUIERES!
+    const KEY_DUENO = "ANGEL_ORO"; 
+
+    // --- CASO A: NIVEL DUEÑO (SUPERADMIN) ---
+    if (pass === KEY_DUENO) { 
         closeLogin();
-        // Para el admin, guardamos un perfil básico con el teléfono del dueño
-        const adminData = { nombre: "Administrador", telefono: "5356071095" };
-        window.currentUserData = adminData;
-        saveSessionToMemory("Administrador", true, adminData); 
-        setupSession("Administrador", true);
+        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin' }; // Rol clave
+        window.currentUserData = bossData;
+        
+        saveSessionToMemory("Administrador Supremo", true, bossData); 
+        setupSession("Administrador Supremo", true);
+        alert("🔓 BÓVEDA FINANCIERA DESBLOQUEADA");
         return;
     }
 
-    // 2. CASO B: GESTOR - Validación
+    // --- CASO B: NIVEL LOGÍSTICA (ADMIN SIMPLE) ---
+    if (pass === KEY_LOGISTICA) { 
+        closeLogin();
+        // Nota: El rol es 'logistica', NO 'superadmin'. Esto le prohíbe entrar al master.html
+        const adminData = { nombre: "Encargado Logística", telefono: "5356071095", rol: 'logistica' }; 
+        window.currentUserData = adminData;
+        
+        saveSessionToMemory("Logística", true, adminData); 
+        setupSession("Logística", true);
+        return;
+    }
+
+    // --- CASO C: GESTOR (Validación Normal) ---
     if (!user || !pass) {
         return alert("Por favor ingresa usuario y contraseña.");
     }
 
-    // 3. CASO C: Verificar en Base de Datos (Gestores)
     try {
         const { data, error } = await supabaseClient
             .from('gestores')
@@ -5078,30 +5098,17 @@ async function processLogin() {
         if (error || !data) {
             alert("❌ Usuario o contraseña incorrectos.");
         } else {
-            
-            // VERIFICACIÓN DE ESTADO (PERMISOS)
-            if (data.estado === 'pendiente') {
-                alert("⏳ Tu cuenta aún está en revisión. El administrador te avisará cuando puedas entrar.");
-                return; 
-            }
-            if (data.estado === 'bloqueado') {
-                alert("🚫 Tu cuenta ha sido suspendida. Contacta a soporte.");
-                return;
-            }
+            if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
+            if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
 
-            // --- LOGIN EXITOSO ---
             closeLogin();
-            
-            // GUARDADO CRÍTICO: Aquí nos aseguramos de que window.currentUserData 
-            // tenga el teléfono que viene de la tabla de Supabase.
             window.currentUserData = data; 
             saveSessionToMemory(data.nombre, false, data); 
-            
             setupSession(data.nombre, false);
         }
     } catch (e) {
         console.error(e);
-        alert("Error de conexión al intentar loguearse.");
+        alert("Error de conexión.");
     }
 }
 
