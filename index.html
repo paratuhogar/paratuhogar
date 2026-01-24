@@ -885,9 +885,7 @@
     <!-- Pestañas del Master Control (LOGÍSTICA, PAGOS, INVENTARIO, ANÁLISIS, TRÁFICO, APROBACIONES) -->
 <div class="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide whitespace-nowrap">
     <button onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all">Logística</button>
-    <button onclick="changeAdminTab('pagos')" id="tab-pagos" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Corte Sábado</button>
     <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
-    <button onclick="changeAdminTab('analitica')" id="tab-analitica" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Análisis</button>
     <button onclick="changeAdminTab('trafico')" id="tab-trafico" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Tráfico</button>
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
 </div>
@@ -995,38 +993,7 @@
     </div>
 </div>
 
-    <!-- Contenido: Corte Sábado (ACTUALIZADO CON EXCEL) -->
-    <div id="cnt-pagos" class="tab-cnt hidden space-y-4">
-        <!-- Contenedor del Buscador y Botón Excel -->
-        <div class="flex gap-2">
-            <div class="flex-1 bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex items-center gap-4">
-                <span class="material-symbols-outlined text-gray-400">search</span>
-                <input type="text" id="search-gestor-pago" oninput="renderAdminCortes()" placeholder="Buscar gestor..." class="w-full bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-700 dark:text-white">
-            </div>
-            <!-- Botón Excel en Logística -->
-            <button onclick="exportLogisticaExcel()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all">
-                <span class="material-symbols-outlined text-sm">download</span> Excel
-            </button>
-        </div>
-        
-        <!-- Tabla con ID para el Exportador -->
-        <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-            <table id="admin-table-pagos" class="w-full text-left border-collapse">
-                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                    <tr>
-                        <th class="p-4">Gestor</th>
-                        <th class="p-4">Ventas</th>
-                        <th class="p-4">Total USD</th>
-                        <th class="p-4 text-emerald-500">Total CUP</th>
-                        <th class="p-4 text-right">Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="list-admin-cortes" class="divide-y dark:divide-gray-700">
-                    <!-- JS inyecta aquí -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+    
 
     <!-- Contenido: Inventario -->
     <div id="cnt-inventario" class="tab-cnt hidden space-y-6">
@@ -1056,67 +1023,7 @@
     </div>
 
     <!-- Contenido: Análisis -->
-<div id="cnt-analitica" class="tab-cnt hidden space-y-6">
-    
-    <!-- BLOQUE 1: RENDIMIENTO DE NEGOCIO -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
-        <!-- Top Proveedores (Facturación) -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm h-full relative overflow-hidden">
-            <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl text-indigo-50 dark:text-gray-700 opacity-50">inventory_2</span>
-            <h4 class="font-black uppercase text-xs mb-4 text-indigo-600 flex items-center gap-2 relative z-10">
-                Top Proveedores (Volumen USD)
-            </h4>
-            <div id="list-analitica-proveedores" class="space-y-3 relative z-10"></div>
-        </div>
 
-        <!-- Tasa de Cancelación -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm h-full relative overflow-hidden">
-            <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl text-red-50 dark:text-gray-700 opacity-50">cancel</span>
-            <h4 class="font-black uppercase text-xs mb-2 text-red-500 flex items-center gap-2 relative z-10">
-                Salud de las Órdenes
-            </h4>
-            <div class="flex items-end gap-2 mb-4 relative z-10">
-                <span id="stat-cancel-rate" class="text-4xl font-black text-slate-800 dark:text-white">0%</span>
-                <span class="text-xs text-gray-400 font-bold mb-1">Canceladas</span>
-            </div>
-            <div class="w-full bg-gray-100 rounded-full h-2 mb-2 relative z-10">
-                <div id="bar-cancel-rate" class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
-            </div>
-            <p class="text-[9px] text-gray-400 italic relative z-10">Meta ideal: Menos del 10%</p>
-        </div>
-
-        <!-- Efectividad (Conversión) -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm h-full relative overflow-hidden">
-            <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-8xl text-emerald-50 dark:text-gray-700 opacity-50">trending_up</span>
-            <h4 class="font-black uppercase text-xs mb-4 text-emerald-600 flex items-center gap-2 relative z-10">
-                Productos Estrella (Efectividad)
-            </h4>
-            <div id="list-analitica-conversion" class="space-y-3 relative z-10"></div>
-        </div>
-    </div>
-
-    <!-- BLOQUE 2: LIMPIEZA Y GESTIÓN -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        <!-- Productos Zombie (Sin Ventas) -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm h-full">
-            <h4 class="font-black uppercase text-xs mb-4 text-gray-500 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">sentiment_very_dissatisfied</span> Productos Zombie (Sin Ventas)
-            </h4>
-            <p class="text-[9px] text-gray-400 mb-3">Estos productos ocupan espacio y no generan dinero. Considera eliminarlos.</p>
-            <div id="list-analitica-zombies" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
-        </div>
-
-        <!-- Ranking de Gestores -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm h-full">
-            <h4 class="font-black uppercase text-xs mb-4 text-orange-500 flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm">groups</span> Top Gestores Activos
-            </h4>
-            <div id="list-analitica-gestores" class="space-y-3"></div>
-        </div>
-    </div>
-</div>
 
 <!-- Contenido: Gestión de Gestores -->
 <div id="cnt-aprobaciones" class="tab-cnt hidden space-y-8">
@@ -1704,13 +1611,13 @@ function openLoginModal() {
     document.getElementById('admin-nav').classList.remove('hidden');
 
     if (adminMode) {
-        // MODO ADMINISTRADOR
+        // MODO ADMINISTRADOR (Logística)
         document.getElementById('sec-admin-master').classList.remove('hidden');
         document.getElementById('sec-catalogo').style.display = 'none';
         document.getElementById('admin-nav').classList.add('hidden');
         loadAdminData();
     } else {
-        // MODO GESTOR (Aquí está la magia)
+        // MODO GESTOR (Ventas)
         
         // 1. Mostrar Dashboard y Cargar Datos
         showSection('dashboard');
@@ -1726,7 +1633,7 @@ function openLoginModal() {
 
         // === INICIO DE SISTEMA DE NIVELES ===
         
-        // A. Aplicar CANDADOS inmediatamente (Bloqueo por defecto)
+        // A. Aplicar CANDADOS inmediatamente
         if (typeof applyLockedFeatures === "function") {
             applyLockedFeatures();
         }
@@ -1737,14 +1644,10 @@ function openLoginModal() {
         }
         
         // C. Consultar nivel y Coordinar Carteles
-        // showAgentWelcomeModal se encargará de mostrar el cartel de Nivel si subió,
-        // o llamará a showPriceIntro si se mantiene en el mismo nivel.
         if (typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
             showAgentWelcomeModal(name);
         }
-        
-        // --- AQUÍ QUITAMOS LA LÍNEA DEL SETTIMEOUT PARA EVITAR DOBLE CARTEL ---
     }
 
     // FORZAR QUE SE VEA EL BOTÓN ROJO DE SALIR
@@ -1756,9 +1659,44 @@ function openLoginModal() {
     
     loadClientCRM(); 
 
-    // Ocultar botón de whatsapp si existe al entrar a modo gestor
+    // Ocultar botón de whatsapp si existe al entrar a modo gestor/admin
     const waBtn = document.getElementById('floating-agent-contact');
     if (waBtn) waBtn.classList.add('hidden');
+
+    // ============================================================
+    // 🛡️ LÓGICA DE BOTÓN MAESTRO (FINANCIERO)
+    // ============================================================
+    
+    // 1. Recuperar datos del usuario logueado
+    const userData = window.currentUserData || {};
+    
+    // 2. Verificar Permisos: Rol 'superadmin' O Nombres específicos del Jefe/Tú
+    const esSuperAdmin = userData.rol === 'superadmin' || name === 'Administrador' || name === 'Marcel Montano'; 
+
+    if (esSuperAdmin) {
+        // Buscamos dónde poner el botón (en el header, junto al botón de salir)
+        // Usamos parentElement para mayor seguridad
+        const headerContainer = btnLogout ? btnLogout.parentElement : document.querySelector('header div.flex.items-center');
+
+        // 3. Crear e Inyectar el botón SOLO si no existe ya
+        if (headerContainer && !document.getElementById('btn-master-vault')) {
+            const btnMaster = document.createElement('button');
+            btnMaster.id = 'btn-master-vault'; // ID único para evitar duplicados
+            btnMaster.innerHTML = `<span class="material-symbols-outlined text-amber-900 font-bold">shield</span>`;
+            
+            // Estilos: Dorado, con sombra, pulso suave para destacar
+            btnMaster.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-amber-400 hover:bg-amber-300 text-amber-900 transition-all shadow-lg shadow-amber-500/50 border-2 border-amber-200 animate-pulse ml-2";
+            btnMaster.title = "ACCESO A BÓVEDA FINANCIERA";
+            
+            // Acción: Ir al archivo secreto
+            btnMaster.onclick = () => window.location.href = 'master.html';
+            
+            // Insertar ANTES del botón de Salir para que quede a su izquierda
+            headerContainer.insertBefore(btnMaster, btnLogout);
+            
+            console.log("✅ Acceso Financiero Habilitado");
+        }
+    }
 }
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
