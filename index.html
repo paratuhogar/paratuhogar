@@ -372,6 +372,7 @@
                     <p class="text-xs text-indigo-700 mb-4">
                         Aquí puedes subir el precio de los productos marcados como "Flexibles". 
                         <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
+                        Cuando los clientes entren por tu link, verán los precios que tu estableciste. 
                     </p>
                     <div id="list-gestor-precios" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Se llena con JS -->
@@ -7255,21 +7256,21 @@ function showDashSection(section) {
 }
 
 // --- RENDERIZAR LISTA DE EDICIÓN DE PRECIOS ---
+// --- RENDERIZAR LISTA DE EDICIÓN DE PRECIOS ---
 async function renderGestorPricing() {
     const container = document.getElementById('list-gestor-precios');
     if(!container) return;
 
-    // 1. Filtrar solo productos flexibles
-    // NOTA: Para obtener el precio BASE REAL, necesitamos consultar la DB o revertir el cambio en memoria.
-    // Para simplificar, haremos una consulta limpia a la DB de productos originales aquí.
+    // 1. Filtrar productos flexibles Y DISPONIBLES
     const { data: productosBase } = await supabaseClient
         .from('productos')
         .select('*')
         .eq('precio_flexible', 'SI')
+        .eq('disponible', 'SI')
         .order('nombre');
 
     if(!productosBase || productosBase.length === 0) {
-        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos flexibles disponibles.</p>`;
+        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos flexibles en stock.</p>`;
         return;
     }
 
@@ -7280,20 +7281,24 @@ async function renderGestorPricing() {
         .eq('gestor', window.gestorName);
 
     container.innerHTML = productosBase.map(p => {
-        // Ver si ya tengo un precio guardado
+        // Encontrar precio guardado (p.id es UUID string)
         const saved = misPrecios.find(c => c.producto_id === p.id);
         const precioActual = saved ? parseFloat(saved.nuevo_precio) : parseFloat(p.precio);
         const gananciaBase = parseFloat(p.comision);
-        const gananciaExtra = precioActual - parseFloat(p.precio);
-        const gananciaTotal = gananciaBase + gananciaExtra;
+        // Calculo inicial de ganancia
+        const gananciaTotal = gananciaBase + (precioActual - parseFloat(p.precio));
 
+        // Limpieza de nombre para evitar errores con comillas
+        const nombreSafe = p.nombre.replace(/"/g, '&quot;');
+
+        // OJO AQUÍ: He puesto comillas simples '${p.id}' dentro de las funciones onclick y oninput
         return `
         <div class="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm flex flex-col gap-3">
             <div class="flex gap-3">
                 <img src="${fixDriveUrl(p.thumbnail)}" class="w-12 h-12 rounded-lg object-contain bg-gray-50">
                 <div class="overflow-hidden">
                     <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${p.categoria}</p>
-                    <p class="text-xs font-black text-slate-700 leading-tight truncate">${p.nombre}</p>
+                    <p class="text-xs font-black text-slate-700 leading-tight truncate">${nombreSafe}</p>
                     <p class="text-[10px] text-gray-500">Base: $${p.precio} | Comi: $${p.comision}</p>
                 </div>
             </div>
@@ -7307,11 +7312,11 @@ async function renderGestorPricing() {
                 </div>
                 <div class="flex gap-2">
                     <input type="number" id="input-price-${p.id}" value="${precioActual}" min="${p.precio}" 
-                        oninput="calcGainUI(${p.id}, ${p.precio}, ${p.comision})"
+                        oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision})"
                         class="w-full rounded-lg border-gray-200 text-sm font-black text-slate-700 px-3 py-2">
                     
-                    <button onclick="saveMyPrice(${p.id}, ${p.precio})" 
-                        class="bg-indigo-600 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95">
+                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
+                        class="bg-indigo-600 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-colors">
                         <span class="material-symbols-outlined text-lg">save</span>
                     </button>
                 </div>
@@ -7320,66 +7325,89 @@ async function renderGestorPricing() {
     }).join('');
 }
 
-// --- CALCULO VISUAL INSTANTÁNEO ---
-function calcGainUI(id, basePrice, baseComm) {
+// Hacemos la función global asignándola a window explícitamente por si acaso
+window.calcGainUI = function(id, basePrice, baseComm) {
     const input = document.getElementById(`input-price-${id}`);
     const label = document.getElementById(`gain-label-${id}`);
-    const newVal = parseFloat(input.value) || basePrice;
     
-    if (newVal < basePrice) {
-        label.innerText = "⚠️ Menor al base";
-        label.classList.replace('text-emerald-500', 'text-red-500');
+    const val = parseFloat(input.value);
+    
+    // Si está vacío o no es número
+    if(isNaN(val)) {
+        label.innerText = "...";
+        return;
+    }
+
+    const diff = val - basePrice;
+    const totalGain = baseComm + diff;
+
+    if (val < basePrice) {
+        label.innerText = `⚠️ Pierdes $${Math.abs(diff).toFixed(0)}`;
+        label.classList.remove('text-emerald-500');
+        label.classList.add('text-red-500');
     } else {
-        const total = baseComm + (newVal - basePrice);
-        label.innerText = `Ganancia: $${total.toFixed(0)}`;
-        label.classList.replace('text-red-500', 'text-emerald-500');
+        label.innerText = `Ganancia: $${totalGain.toFixed(0)}`;
+        label.classList.remove('text-red-500');
+        label.classList.add('text-emerald-500');
     }
 }
 
-// --- GUARDAR PRECIO EN SUPABASE ---
-async function saveMyPrice(prodId, basePrice) {
+// Hacemos la función global asignándola a window
+window.saveMyPrice = async function(prodId, basePrice) {
     const input = document.getElementById(`input-price-${prodId}`);
     const newPrice = parseFloat(input.value);
+    const gestorActual = window.gestorName;
 
-    if (newPrice < basePrice) return alert(`No puedes bajar del precio base ($${basePrice})`);
+    // VALIDACIONES
+    if (!gestorActual) return alert("Error de sesión. Recarga la página.");
+    if (isNaN(newPrice)) return alert("El precio no es válido.");
+    if (newPrice < basePrice) return alert(`El precio mínimo es $${basePrice}`);
 
+    // UI DE CARGA
     const btn = event.currentTarget;
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = `⏳`;
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = `<span class="loader" style="width:15px;height:15px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span>`;
     btn.disabled = true;
 
     try {
-        // 1. Buscar si ya existe para actualizar o insertar
-        const { data: existing } = await supabaseClient
+        console.log("Guardando para:", prodId); // Debug
+
+        // 1. Buscar si existe (Usando UUID)
+        const { data: existing, error: searchError } = await supabaseClient
             .from('precios_personalizados')
             .select('id')
-            .eq('gestor', window.gestorName)
-            .eq('producto_id', prodId)
+            .eq('gestor', gestorActual)
+            .eq('producto_id', prodId) // prodId ya es string UUID
             .maybeSingle();
 
+        if (searchError) throw searchError;
+
+        let errorGuardado;
+
         if (existing) {
-            // Update
-            await supabaseClient
+            // UPDATE
+            const { error } = await supabaseClient
                 .from('precios_personalizados')
                 .update({ nuevo_precio: newPrice })
-                .eq('id', existing.id);
+                .eq('id', existing.id); // existing.id es UUID
+            errorGuardado = error;
         } else {
-            // Insert
-            await supabaseClient
+            // INSERT
+            const { error } = await supabaseClient
                 .from('precios_personalizados')
                 .insert([{ 
-                    gestor: window.gestorName, 
+                    gestor: gestorActual, 
                     producto_id: prodId, 
                     nuevo_precio: newPrice 
                 }]);
+            errorGuardado = error;
         }
 
-        // Feedback
-        btn.innerHTML = `✅`;
+        if (errorGuardado) throw errorGuardado;
+
+        // ÉXITO
+        btn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
         btn.classList.replace('bg-indigo-600', 'bg-emerald-500');
-        
-        // Recargar productos en segundo plano para que el catálogo del gestor se actualice también
-        loadProducts();
 
         setTimeout(() => {
             btn.innerHTML = `<span class="material-symbols-outlined text-lg">save</span>`;
@@ -7389,9 +7417,32 @@ async function saveMyPrice(prodId, basePrice) {
 
     } catch (e) {
         console.error(e);
-        alert("Error guardando precio.");
-        btn.innerHTML = originalHTML;
+        alert("Error al guardar: " + e.message);
+        btn.innerHTML = originalContent;
         btn.disabled = false;
+    }
+}
+
+// Función para actualizar la etiqueta de ganancia en tiempo real
+function calcGainUI(id, basePrice, baseComm) {
+    const input = document.getElementById(`input-price-${id}`);
+    const label = document.getElementById(`gain-label-${id}`);
+    
+    // Parseamos el nuevo precio. Si está vacío, asumimos el precio base.
+    const newVal = parseFloat(input.value) || basePrice;
+    
+    // Calculamos la ganancia total: Comisión Base + (Sobreprecio)
+    const extra = newVal - basePrice;
+    const total = baseComm + extra;
+
+    if (newVal < basePrice) {
+        label.innerText = `⚠️ Pierdes $${Math.abs(extra).toFixed(0)}`;
+        label.classList.remove('text-emerald-500');
+        label.classList.add('text-red-500');
+    } else {
+        label.innerText = `Ganancia: $${total.toFixed(0)}`;
+        label.classList.remove('text-red-500');
+        label.classList.add('text-emerald-500');
     }
 }
 </script>
