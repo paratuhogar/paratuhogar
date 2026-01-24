@@ -1343,6 +1343,7 @@
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     async function checkShortLinks() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -2738,143 +2739,116 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
 
     // 4. CARRITO Y PAGOS
     function addItemToCart() {
-    // 1. Lógica original: Buscar si existe o añadir nuevo
     const existing = cart.find(item => item.nombre === selectedProduct.nombre);
     
+    // Detectamos si el producto traía un costo de mensajería por defecto en la BD
+    // Si dice "Gratis" o texto, ponemos 0. Si tiene número, ponemos ese número.
+    let defaultShipping = 0;
+    if(selectedProduct.mensajeria && !isNaN(parseFloat(selectedProduct.mensajeria))) {
+        defaultShipping = parseFloat(selectedProduct.mensajeria);
+    }
+
     if(existing) {
         existing.qty++;
+        // Al aumentar cantidad, sumamos otro costo de envío base
+        existing.shipping_linea += defaultShipping; 
     } else {
         cart.push({
             ...selectedProduct, 
             qty: 1,
-            // Inicializamos el precio de venta igual al original
             precio_venta: Number(selectedProduct.precio),
-            // Guardamos comisión calculada inicial
-            comision_actual: Number(selectedProduct.comision || 0)
+            comision_actual: Number(selectedProduct.comision || 0),
+            shipping_linea: defaultShipping // NUEVO CAMPO: Envío específico para esta línea
         });
     }
     
-    // 2. Actualizar el contador rojo del carrito
-    const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
-    document.getElementById('cart-count').innerText = totalItems;
-    
-    // 3. Transición de ventanas
-    closeDetail();         // Cierra la ficha del producto
-    toggleCartModal(true); // Abre el carrito inmediatamente
+    document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
+    closeDetail();         
+    toggleCartModal(true); 
 
-    // 4. === NUEVO: FLUJO RÁPIDO ===
-    // Esperamos un instante (100ms) a que se abra el modal y ponemos el cursor
-    // automáticamente en el buscador de clientes.
     setTimeout(() => {
         const crmSearch = document.getElementById('crm-search');
         if(crmSearch) crmSearch.focus();
     }, 100);
 }
 
+// --- AÑADE ESTA FUNCIÓN NUEVA DEBAJO DE addItemToCart ---
+function updateLineShipping(index, value) {
+    const val = parseFloat(value);
+    if(isNaN(val) || val < 0) return;
+    cart[index].shipping_linea = val;
+    recalcularTotalFinal(); // Actualiza los totales visuales
+}
+
 function renderCart() {
     const container = document.getElementById('cart-items');
     const isGestor = window.gestorName ? true : false;
 
-    // 1. Obtención inteligente del teléfono del comercial
-    const referrerData = JSON.parse(localStorage.getItem('pth_referrer_smart') || localStorage.getItem('pth_referrer') || '{}');
-    let rawPhone = referrerData.telefono || new URLSearchParams(window.location.search).get('tel') || '5356071095';
-    const targetPhone = rawPhone.replace(/\D/g, ''); 
-
-    // 2. Cálculos base
-    let shippingBase = cart.reduce((acc, item) => acc + (parseMensajeria(item.mensajeria) * item.qty), 0);
-    const tieneEnvioComplejo = cart.some(item => esMensajeriaAmbigua(item.mensajeria));
-
-    // 3. Renderizar Productos
+    // 1. Renderizar Productos con INPUT DE MENSAJERÍA INDIVIDUAL
     let htmlItems = cart.map((item, index) => {
         const minPrice = Number(item.precio) - Number(item.comision);
         const maxPrice = (item.precio_flexible === 'SI') ? 100000 : Number(item.precio);
         
+        // Input de Precio del Equipo
         const precioInput = isGestor ? 
-            `<div class="flex flex-col items-end">
-                <label class="text-[8px] text-gray-400 font-bold uppercase">Venta</label>
-                <input type="number" value="${item.precio_venta}" min="${minPrice}" max="${maxPrice}" 
-                       onchange="updateCartItemPrice(${index}, this.value)"
-                       class="w-20 text-right font-black text-primary border-gray-200 rounded-lg py-0 px-1 text-xs h-7">
-             </div>` 
-            : `<p class="text-primary font-black text-sm">$${item.precio_venta}</p>`;
+            `<input type="number" value="${item.precio_venta}" min="${minPrice}" max="${maxPrice}" 
+                   onchange="updateCartItemPrice(${index}, this.value)"
+                   class="w-20 text-right font-black text-primary border-gray-200 rounded-lg py-0 px-1 text-xs h-6 mb-1">` 
+            : `<p class="text-primary font-black text-sm mb-1">$${item.precio_venta}</p>`;
+
+        // Input de Mensajería (AHORA EN CADA ÍTEM)
+        const shippingInput = `
+            <div class="flex items-center justify-end gap-1 mt-1">
+                <span class="text-[9px] font-bold text-gray-400 uppercase">🚚 Envío:</span>
+                <input type="number" value="${item.shipping_linea}" min="0" 
+                       onchange="updateLineShipping(${index}, this.value)"
+                       class="w-16 text-right font-bold text-slate-600 border-gray-200 bg-gray-50 rounded py-0 px-1 text-[10px] h-6 focus:bg-white focus:border-primary">
+            </div>
+        `;
 
         let colorGanancia = "text-emerald-500";
         if(item.comision_actual < item.comision) colorGanancia = "text-orange-500";
         if(item.comision_actual > item.comision) colorGanancia = "text-blue-600";
 
         const gananciaDisplay = isGestor ?
-            `<p class="text-[9px] font-bold ${colorGanancia} mt-1 text-right">
-                Ganancia: $${(item.comision_actual * item.qty).toFixed(2)}
+            `<p class="text-[9px] font-bold ${colorGanancia} text-right">
+                Gan: $${(item.comision_actual * item.qty).toFixed(0)}
              </p>` : '';
 
         return `
-        <div class="flex gap-3 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700 mb-3">
-            <img src="${fixDriveUrl(item.thumbnail)}" class="w-14 h-14 object-contain bg-white rounded border border-gray-200">
-            <div class="flex-1">
+        <div class="flex gap-2 bg-white dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700 mb-3 shadow-sm">
+            <img src="${fixDriveUrl(item.thumbnail)}" class="w-16 h-16 object-contain bg-gray-50 rounded border border-gray-200">
+            <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start">
-                    <h4 class="text-xs font-bold leading-tight pr-6 mb-1 line-clamp-2 w-3/4">${item.nombre}</h4>
-                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-1"><span class="material-symbols-outlined text-sm">close</span></button>
+                    <h4 class="text-xs font-bold leading-tight pr-6 mb-1 truncate w-full" title="${item.nombre}">${item.nombre}</h4>
+                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-0.5"><span class="material-symbols-outlined text-sm">close</span></button>
                 </div>
-                <div class="flex justify-between items-end mt-2">
-                    <div class="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 px-1 h-7">
-                        <button onclick="changeQty(${index}, -1)" class="w-5 flex items-center justify-center text-gray-500 font-bold">-</button>
+                
+                <div class="flex justify-between items-end mt-1">
+                    <!-- Control Cantidad -->
+                    <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 px-1 h-6">
+                        <button onclick="changeQty(${index}, -1)" class="w-5 flex items-center justify-center text-gray-500 font-bold text-xs">-</button>
                         <span class="text-xs font-black min-w-[15px] text-center">${item.qty}</span>
-                        <button onclick="changeQty(${index}, 1)" class="w-5 flex items-center justify-center text-gray-500 font-bold">+</button>
+                        <button onclick="changeQty(${index}, 1)" class="w-5 flex items-center justify-center text-gray-500 font-bold text-xs">+</button>
                     </div>
-                    <div class="text-right">${precioInput}${gananciaDisplay}</div>
+
+                    <!-- Columna Precios -->
+                    <div class="flex flex-col items-end">
+                        <div class="flex flex-col items-end">
+                           <label class="text-[8px] text-gray-400 font-bold uppercase">Precio Unit.</label>
+                           ${precioInput}
+                        </div>
+                        ${shippingInput}
+                        ${gananciaDisplay}
+                    </div>
                 </div>
             </div>
         </div>`;
     }).join('');
 
-    // 4. BARRA DE MENSAJERÍA (MODIFICADA)
-    let shippingHTML = '';
-    
-    if (isGestor) {
-        // GESTOR: Siempre puede editar
-        shippingHTML = `
-        <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
-            <span class="text-xs font-black text-gray-500 uppercase">🚚 Costo Envío (Editable)</span>
-            <input type="number" id="cart-shipping-cost" value="${shippingBase}" oninput="recalcularTotalFinal()" 
-                class="w-24 text-right font-black text-slate-700 border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:bg-white">
-        </div>`;
-    } else {
-        // CLIENTE
-        if (tieneEnvioComplejo) {
-            // CASO: CONSULTAR + EDITAR MANUALMENTE
-            // Aquí habilitamos el input para que el cliente escriba lo que acordó
-            shippingHTML = `
-            <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
-                <div class="flex flex-col items-start gap-1">
-                    <span class="text-xs font-black text-gray-500 uppercase">🚚 Costo Envío</span>
-                    <a href="https://wa.me/${targetPhone}?text=Hola,%20tengo%20una%20duda%20con%20el%20costo%20de%20envío%20de%20mi%20pedido." target="_blank"
-                       class="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-green-200 transition-colors shadow-sm">
-                       <i class="fab fa-whatsapp text-sm"></i> CONSULTAR
-                    </a>
-                </div>
-                
-                <div class="flex flex-col items-end">
-                    <label class="text-[8px] text-gray-400 font-bold uppercase mb-0.5">Ingresar Costo ($)</label>
-                    <input type="number" id="cart-shipping-cost" value="0" min="0" oninput="recalcularTotalFinal()" 
-                        class="w-20 text-right font-black text-slate-700 border border-gray-300 rounded-lg py-1 px-2 text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all placeholder:text-gray-300" placeholder="0">
-                </div>
-            </div>
-            <p class="text-[9px] text-slate-400 text-right mb-2 italic">
-                *Acuerda el precio con el comercial y escríbelo en la casilla.
-            </p>
-            `;
-        } else {
-            // CASO: PRECIO FIJO (No editable por el cliente)
-            shippingHTML = `
-            <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
-                <span class="text-xs font-black text-gray-500 uppercase">🚚 Costo Envío</span>
-                <span class="text-sm font-black text-slate-700">$${shippingBase}</span>
-                <input type="hidden" id="cart-shipping-cost" value="${shippingBase}">
-            </div>`;
-        }
-    }
-
-    container.innerHTML = htmlItems + shippingHTML;
+    // Ya no hay input global de envío al final
+    container.innerHTML = htmlItems;
+    recalcularTotalFinal(); // Importante llamar esto para actualizar el total abajo
     actualizarOpcionesMoneda(); 
 }
 
@@ -2902,32 +2876,25 @@ function changeQty(index, delta) {
     function recalcularTotalFinal() {
     const select = document.getElementById('check-moneda');
     
-    // 1. Total Productos
-    const totalProductos = cart.reduce((acc, item) => acc + (item.precio_venta * item.qty), 0);
-    
-    // 2. Total Envío (Leemos del input que acabamos de crear)
-    const shippingInput = document.getElementById('cart-shipping-cost');
-    const totalEnvio = shippingInput ? parseFloat(shippingInput.value || 0) : 0;
+    // Sumamos (Precio Venta * Cantidad) + (Envío de esa Línea)
+    // Nota: shipping_linea ya es el total para esa línea (ej: si son 2 TVs y envío es 20, shipping_linea es 20)
+    const totalUSD = cart.reduce((acc, item) => {
+        return acc + (item.precio_venta * item.qty) + (parseFloat(item.shipping_linea) || 0);
+    }, 0);
 
-    // 3. Gran Total
-    const totalUSD = totalProductos + totalEnvio;
-    
     const opcionElegida = select.value || "USD";
     let totalFinal = totalUSD;
     let simbolo = "$";
 
     if (opcionElegida.toUpperCase().includes("CUP")) {
-        let tasaFinal = globalCUPRate || 450; // Usamos la variable global de tasa
-        
-        // Lógica de tasa específica del producto (si existe) o plus +10
+        let tasaFinal = globalCUPRate || 450;
         if (opcionElegida.includes("+")) {
             const incremento = parseFloat(opcionElegida.match(/\d+/) || 0);
             tasaFinal = tasaFinal + incremento;
         } else {
-            const tasaFijaMatch = opcionElegida.match(/(\d{3,})/); // Buscar números grandes (ej 470)
+            const tasaFijaMatch = opcionElegida.match(/(\d{3,})/);
             if(tasaFijaMatch) tasaFinal = parseFloat(tasaFijaMatch[0]);
         }
-        
         totalFinal = totalUSD * tasaFinal;
         simbolo = "CUP";
     }
@@ -3006,117 +2973,125 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
     // =====================================
 
-    // 3. PROCESAMIENTO INDIVIDUAL (SEPARAR PEDIDOS POR EQUIPO)
-    let mensajeRaw = `VALE DE VENTA (DESGLOSADO)\n\n`;
-    
-    // Obtenemos el envío total manual y lo dividimos equitativamente entre los productos
-    // para que la suma final cuadre, pero cada pedido tenga su parte de logística.
-    const envioTotalInput = parseFloat(document.getElementById('cart-shipping-cost')?.value || 0);
-    const totalItemsCount = cart.length; // Cantidad de lineas en el carrito
-    const envioPorPedido = totalItemsCount > 0 ? (envioTotalInput / totalItemsCount) : 0;
-
+    // 1. INICIALIZAR MENSAJE WHATSAPP (Con Brazo Fuerte 💪)
+    let mensajeRaw = `💪 *NUEVO PEDIDO CONFIRMADO* 💪\n\n`;
     let erroresInsert = false;
+    
+    // Promesas para guardar en BD
+    const promesas = [];
 
-    // Iteramos directamente sobre el carrito item por item
+    // 2. ITERAR SOBRE EL CARRITO (UN PEDIDO POR TIPO DE PRODUCTO)
     for (const item of cart) {
         const prov = item.proveedor || 'General';
         
-        // A. Consultar Consecutivo para ESTE proveedor específico
+        // A. Consultar Consecutivo
         const ahora = new Date();
         const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString();
         
+        // Nota: Esto es asíncrono dentro de un loop, lo ideal es usar for..of con await
+        // Para simplificar y asegurar el orden, haremos el await aquí.
         const { count, error: errCount } = await supabaseClient
             .from('pedidos')
             .select('id', { count: 'exact', head: true })
             .eq('proveedor', prov)
             .gte('fecha', inicioHoy); 
 
-        // Generamos código único: Ej: ImportadoraA-1, luego ImportadoraA-2
         const nroConsecutivo = (errCount ? 0 : (count || 0)) + 1;
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
-        // Datos del ítem individual
-        const strProd = `${item.qty}x ${item.nombre}`;
-        const precioEquipoTotal = (item.precio_venta * item.qty);
-        const totalVentaLinea = precioEquipoTotal + envioPorPedido;
+        // Datos Financieros del Ítem
+        const costoEquipo = item.precio_venta * item.qty;
+        const costoEnvio = parseFloat(item.shipping_linea) || 0;
+        const totalItem = costoEquipo + costoEnvio;
         const comisionItem = (item.comision_actual * item.qty);
-
-        // B. Construir bloque de WhatsApp para este equipo
-        mensajeRaw += `📦 ORDEN INDIVIDUAL: ${codPedido}\n`;
-        mensajeRaw += `👤 Cliente: ${nombreC}\n`;
-        mensajeRaw += `📍 Municipio: ${municipioC}\n`;
-        mensajeRaw += `📱 Tel: ${telC}\n`;
-        mensajeRaw += `🏠 Dir: ${dirC}\n`;
-        mensajeRaw += `🛒 Equipo: ${strProd}\n`;
-        mensajeRaw += `💰 A Pagar: ${totalVentaLinea.toFixed(2)} USD\n`;
-        mensajeRaw += `💵 Vuelto: ${vueltoC}\n`;
         
-        // Desglose interno
-        mensajeRaw += `   - Equipo: ${precioEquipoTotal.toFixed(2)} USD\n`;
-        mensajeRaw += `   - Envío (Parte): ${envioPorPedido.toFixed(2)} USD\n`;
+        const strProd = `${item.qty}x ${item.nombre}`;
+
+        // B. CONSTRUIR BLOQUE WHATSAPP (CON EMOJIS 💪)
+        mensajeRaw += `💪 Pedido: ${codPedido}\n`;
+        mensajeRaw += `💪 Cliente: ${nombreC}\n`;
+        mensajeRaw += `💪 Municipio: ${municipioC}\n`;
+        mensajeRaw += `💪 Teléfono: ${telC}\n`;
+        mensajeRaw += `💪 Dirección: ${dirC}\n`;
+        mensajeRaw += `💪 Equipo: ${strProd}\n`;
+        // Aquí mostramos el total SUMADO (Equipo + Envío) como pediste
+        mensajeRaw += `💪 Total a Pagar: ${totalItem} USD\n`; 
+        mensajeRaw += `💪 Vuelto: ${vueltoC}\n`;
+        
+        // Desglose interno útil para el proveedor
+        mensajeRaw += `   (Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n`;
 
         if (isLogged) {
-            mensajeRaw += `💎 Comisión: ${comisionItem.toFixed(2)} USD\n`;
-            mensajeRaw += `🕵️ Gestor: ${activeGestor}\n`;
+            mensajeRaw += `💪 Comisión: ${comisionItem} USD\n`;
+            mensajeRaw += `💪 Gestor: ${activeGestor}\n`;
         }
-        mensajeRaw += `--------------------------\n\n`;
+        mensajeRaw += `--------------------------------\n\n`;
 
-        // C. Insertar en Base de Datos (Esperamos a que termine para garantizar el consecutivo del siguiente)
-        const { error: insertError } = await supabaseClient.from('pedidos').insert([{
+        // C. INSERTAR EN BD (PEDIDO INDIVIDUAL)
+        const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor,
             cliente: nombreC,
             ci: ciC,
             telefono: telC,
             direccion: dirC,
             municipio: municipioC,
-            producto: `${strProd} [${monedaC}]`, // Se guarda solo este equipo
-            total: totalVentaLinea, // Total parcial de esta línea
+            producto: `${strProd} [${monedaC}]`,
+            total: totalItem, // Total con envío incluido
             comision_total: comisionItem,
             estado: 'Pendiente',
             pago_gestor: 'Pendiente',
             proveedor: prov,
-            costo_mensajeria: envioPorPedido,
+            costo_mensajeria: costoEnvio, // Guardamos el envío específico
             orden_dia: codPedido,
             origen: origenPedido
         }]);
-
-        if (insertError) {
-            console.error("Error guardando item:", item.nombre, insertError);
-            erroresInsert = true;
-        }
+        
+        promesas.push(insertPromise);
     }
 
-    // Verificación final simulando la estructura anterior para que el código siguiente funcione
-    const resultados = erroresInsert ? [{error: true}] : [];
+    // Esperar a que todo se guarde
+    const resultados = await Promise.all(promesas);
     if (resultados.some(r => r.error)) {
-        alert("Error de conexión guardando el pedido.");
-        btn.disabled = false; btn.innerText = "Tramitar Pedido";
-        return;
+        alert("Hubo un error guardando algunos pedidos en la base de datos, pero el WhatsApp está listo.");
     }
 
-    // ENVIAR WHATSAPP
+    // 3. ENVIAR WHATSAPP
     const mensajeCodificado = encodeURIComponent(mensajeRaw);
     window.open(`https://wa.me/5356071095?text=${mensajeCodificado}`, '_blank');
 
-    // PREPARAR PDF (Tu lógica original con municipio añadido)
+    // 4. GENERAR PDF UNIFICADO (UNA SOLA HOJA CON TODO)
+    // Calculamos los totales globales para el PDF
+    const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
+    const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
+    const totalGlobal = totalGlobalProductos + totalGlobalEnvio;
+
+    // Preparamos el objeto unificado para el PDF
     const datosParaPDF = {
         cliente: nombreC,
         ci: ciC,
-        direccion: `${dirC} (${municipioC})`, // Añadimos municipio a la dirección del PDF
-        totalUSD: cart.reduce((acc, i) => acc + (i.precio_venta * i.qty) + (parseMensajeria(i.mensajeria) * i.qty), 0),
-        mensajeria: cart.reduce((acc, i) => acc + (parseMensajeria(i.mensajeria) * i.qty), 0),
-        items: cart
+        direccion: `${dirC} (${municipioC})`,
+        totalUSD: totalGlobal,
+        mensajeria: totalGlobalEnvio, // Suma de todos los envíos individuales
+        items: cart.map(item => ({
+            nombre: item.nombre,
+            qty: item.qty,
+            price: item.precio_venta,
+            // Truco: Pasamos el 'total' de la línea como (precio*qty) para que el PDF calcule bien, 
+            // la mensajería la mostramos abajo como un ítem separado o sumada al final.
+            // Para que el PDF desglose bien, pasamos los items tal cual.
+        }))
     };
 
     setTimeout(() => { generarComprobanteVenta(datosParaPDF); }, 1500); 
 
+    // Limpieza final
     setTimeout(() => {
         cart = [];
         clearAutoSave();
         toggleCartModal(false);
         location.reload();
     }, 1000);
-};
+}
 
     // 6. FUNCIONES AUXILIARES
     function parseMensajeria(texto) {
@@ -3354,13 +3329,19 @@ async function openAdminMaster() {
 
 let pedidosRawAdmin = []; // Añade esta línea antes de la función
 
+
+let inventoryRawAdmin = []; // Variable global vital para el inventario
+
 async function loadAdminData() {
-    // Cargamos los 3 pilares de datos
+    // 1. CARGA PRIORITARIA: GESTORES (Para que esto nunca falle)
+    loadPendingGestores();
+
+    // 2. Cargamos los datos masivos
     const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
     const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
     const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
 
-    // 1. Procesar Pedidos
+    // 3. Procesar Pedidos
     if (pedidos) {
         pedidosRawAdmin = pedidos; 
         populateLogisticaFilters();
@@ -3368,25 +3349,27 @@ async function loadAdminData() {
         renderAdminCortes();
         updateAdminStats(pedidos);
         
-        // --- ESTO ES LO QUE TE FALTABA ACTIVAR ---
-        renderAnaliticaGestores(pedidos);
-        renderAnaliticaProveedores(pedidos);
-        renderAnaliticaCancelacion(pedidos);
+        // Intentamos cargar analíticas (en try-catch para que si fallan no rompan nada más)
+        try {
+            renderAnaliticaGestores(pedidos);
+            renderAnaliticaProveedores(pedidos);
+            renderAnaliticaCancelacion(pedidos);
+        } catch(e) { console.log("Analítica parcial pendiente de datos"); }
     }
     
-    // 2. Procesar Productos
+    // 4. Procesar Inventario
     if (productos) {
-        inventoryRawAdmin = productos;
-        renderAdminInventario(productos);
+        inventoryRawAdmin = productos; // Guardamos en global
+        renderAdminInventario(productos); // Pasamos los datos
     }
     
-    // 3. Procesar Cruce de datos (Zombies y Conversión)
-    // Solo si tenemos tanto pedidos como productos/vistas
+    // 5. Procesar Cruce de datos
     if (pedidos && productos) {
-        renderAnaliticaZombies(pedidos, productos);
-        renderAnaliticaConversion(pedidos, vistas || []);
+        try {
+            renderAnaliticaZombies(pedidos, productos);
+            renderAnaliticaConversion(pedidos, vistas || []);
+        } catch(e) { console.log("Cruce de datos pendiente"); }
     }
-    loadPendingGestores();
 }
 
 // --- FUNCIÓN PARA APROBAR O RECHAZAR GESTORES ---
@@ -3649,39 +3632,60 @@ async function updatePedidoStatus(id, nuevoEstado) {
     loadAdminData();
 }
 
-function renderAdminInventario(productos) {
+// PEGA ESTA FUNCIÓN CORREGIDA
+function renderAdminInventario(productosArg) {
+    // 1. Lógica Híbrida: Usa el argumento si existe, sino usa la variable global, sino array vacío
+    const listaProductos = productosArg || inventoryRawAdmin || [];
+    
     const container = document.getElementById('list-admin-inventario');
     
-    if (!container) {
-        console.error("Error: No se encontró el contenedor 'list-admin-inventario' en el HTML.");
+    // Si no existe el buscador, asumimos vacío
+    const searchInput = document.getElementById('search-inventario');
+    const searchVal = searchInput ? searchInput.value.toLowerCase() : "";
+
+    if (!container) return;
+
+    // 2. Filtrar
+    const filtered = listaProductos.filter(p => {
+        // Generar SKU Virtual visual
+        const skuVirtual = (p.categoria ? p.categoria.substring(0,3).toUpperCase() : "GEN") + "-" + p.id.substring(0,4).toUpperCase();
+        
+        return p.nombre.toLowerCase().includes(searchVal) || 
+               (p.categoria || "").toLowerCase().includes(searchVal) ||
+               skuVirtual.toLowerCase().includes(searchVal);
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold uppercase text-xs italic">No hay productos cargados o no coinciden con la búsqueda.</div>`;
         return;
     }
 
-    if (!productos || productos.length === 0) {
-        container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold uppercase text-xs italic">No hay productos cargados en la base de datos.</div>`;
-        return;
-    }
+    container.innerHTML = filtered.map(p => {
+        const skuDisplay = (p.categoria ? p.categoria.substring(0,3).toUpperCase() : "GEN") + "-" + p.id.substring(0,4).toUpperCase();
 
-    container.innerHTML = productos.map(p => `
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex flex-col justify-between h-full text-left">
+        return `
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex flex-col justify-between h-full text-left group hover:border-primary/30 transition-all relative">
+            <span class="absolute top-4 right-4 text-[9px] font-mono text-gray-300">#${skuDisplay}</span>
             <div>
-                <img src="${fixDriveUrl(p.thumbnail)}" class="w-full h-32 object-contain mb-4 bg-gray-50 rounded-2xl p-2">
-                <h6 class="text-[10px] font-black leading-tight mb-1 uppercase text-gray-700 dark:text-gray-200">${p.nombre}</h6>
-                <p class="text-primary font-black text-sm mb-4">$${p.precio}</p>
+                <img src="${fixDriveUrl(p.thumbnail)}" class="w-full h-32 object-contain mb-4 bg-gray-50 dark:bg-gray-900 rounded-2xl p-2">
+                <h6 class="text-[10px] font-black leading-tight mb-1 uppercase text-gray-700 dark:text-gray-200 line-clamp-2 h-8">${p.nombre}</h6>
+                <div class="flex justify-between items-end mb-4">
+                    <p class="text-primary font-black text-sm">$${p.precio}</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase">${p.categoria || 'Varios'}</p>
+                </div>
             </div>
             
-            <!-- NUEVO BLOQUE DE BOTONES (STOCK + EDITAR) -->
             <div class="flex gap-2">
                 <button onclick="toggleStockAdmin('${p.id}', '${p.disponible}')" 
-                    class="flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.disponible === 'SI' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}">
-                    ${p.disponible === 'SI' ? '● En Stock' : '○ Agotado'}
+                    class="flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.disponible === 'SI' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
+                    ${p.disponible === 'SI' ? 'En Stock' : 'Agotado'}
                 </button>
                 <button onclick="editProduct('${p.id}')" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm">
                     <span class="material-symbols-outlined text-sm">edit</span>
                 </button>
             </div>
         </div>
-    `).join('');
+    `; }).join('');
 }
 
 async function toggleStockAdmin(id, actual) {
@@ -5173,7 +5177,7 @@ function exportLogisticaCurrentView() {
 // ==========================================
 
 // Variable global para inventario (necesaria para el buscador)
-let inventoryRawAdmin = []; 
+
 
 // Modificamos la carga de admin para llenar esta variable
 /* 
@@ -5184,57 +5188,7 @@ let inventoryRawAdmin = [];
    }
 */
 
-function renderAdminInventario() {
-    // Usamos la variable global si no se pasan argumentos
-    const productos = inventoryRawAdmin; 
-    const container = document.getElementById('list-admin-inventario');
-    const searchVal = document.getElementById('search-inventario')?.value.toLowerCase() || "";
 
-    if (!container) return;
-
-    // Filtrar
-    const filtered = productos.filter(p => {
-        // Generar SKU Virtual visual para búsqueda (ej: REF-1234)
-        const skuVirtual = (p.categoria ? p.categoria.substring(0,3).toUpperCase() : "GEN") + "-" + p.id.substring(0,4).toUpperCase();
-        
-        return p.nombre.toLowerCase().includes(searchVal) || 
-               (p.categoria || "").toLowerCase().includes(searchVal) ||
-               skuVirtual.toLowerCase().includes(searchVal);
-    });
-
-    if (filtered.length === 0) {
-        container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold uppercase text-xs italic">No se encontraron productos.</div>`;
-        return;
-    }
-
-    container.innerHTML = filtered.map(p => {
-        // SKU Virtual para mostrar
-        const skuDisplay = (p.categoria ? p.categoria.substring(0,3).toUpperCase() : "GEN") + "-" + p.id.substring(0,4).toUpperCase();
-
-        return `
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm flex flex-col justify-between h-full text-left group hover:border-primary/30 transition-all relative">
-            <span class="absolute top-4 right-4 text-[9px] font-mono text-gray-300">#${skuDisplay}</span>
-            <div>
-                <img src="${fixDriveUrl(p.thumbnail)}" class="w-full h-32 object-contain mb-4 bg-gray-50 dark:bg-gray-900 rounded-2xl p-2">
-                <h6 class="text-[10px] font-black leading-tight mb-1 uppercase text-gray-700 dark:text-gray-200 line-clamp-2 h-8">${p.nombre}</h6>
-                <div class="flex justify-between items-end mb-4">
-                    <p class="text-primary font-black text-sm">$${p.precio}</p>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase">${p.categoria || 'Varios'}</p>
-                </div>
-            </div>
-            
-            <div class="flex gap-2">
-                <button onclick="toggleStockAdmin('${p.id}', '${p.disponible}')" 
-                    class="flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${p.disponible === 'SI' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}">
-                    ${p.disponible === 'SI' ? 'En Stock' : 'Agotado'}
-                </button>
-                <button onclick="editProduct('${p.id}')" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm">
-                    <span class="material-symbols-outlined text-sm">edit</span>
-                </button>
-            </div>
-        </div>
-    `; }).join('');
-}
 
 // Exportar Inventario a Excel (Limpio)
 function exportInventoryExcel() {
@@ -6852,25 +6806,25 @@ function getGlobalTrendRadar(todosLosPedidos) {
 
 // 1. Cargar gestores pendientes (Llamar esto dentro de loadAdminData)
 async function loadPendingGestores() {
-    // 1. Consultar todos los gestores (Pendientes y Activos)
+    // Usamos supabaseClient
     const { data, error } = await supabaseClient
         .from('gestores')
         .select('*')
-        .in('estado', ['pendiente', 'activo'])
+        .in('estado', ['pendiente', 'activo', 'bloqueado'])
         .order('nombre', { ascending: true });
 
-    if (error) return console.error(error);
+    if (error) return console.error("Error cargando gestores:", error);
 
     const containerPendientes = document.getElementById('list-admin-aprobaciones');
     const containerActivos = document.getElementById('list-admin-activos');
     
     if (!containerPendientes || !containerActivos) return;
 
-    // 2. Filtrar en memoria para mayor rapidez
+    // Filtrar
     const pendientes = data.filter(g => g.estado === 'pendiente');
     const activos = data.filter(g => g.estado === 'activo');
 
-    // 3. Renderizar Pendientes
+    // --- RENDERIZAR PENDIENTES ---
     if (pendientes.length === 0) {
         containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
     } else {
@@ -6879,14 +6833,14 @@ async function loadPendingGestores() {
                 <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
                 <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
                 <td class="p-4 text-right">
-                    <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}', '${g.telefono}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
+                    <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
                     <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
                 </td>
             </tr>
         `).join('');
     }
 
-    // 4. Renderizar Activos
+    // --- RENDERIZAR ACTIVOS ---
     if (activos.length === 0) {
         containerActivos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">Aún no tienes equipo activo.</td></tr>`;
     } else {
