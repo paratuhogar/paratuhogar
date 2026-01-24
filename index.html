@@ -2169,7 +2169,6 @@ function setMyOrdersFilter(status, btn) {
 // 2. FUNCIÓN DE RENDERIZADO (Con letra GRANDE estilo App)
 function renderMyOrdersList(lista) {
     const container = document.getElementById('list-mis-pedidos');
-    const badgeNuevos = document.getElementById('new-orders-badge');
     
     if (!container) return;
     if (!lista) lista = [];
@@ -2178,6 +2177,9 @@ function renderMyOrdersList(lista) {
     const filteredByStatus = currentMyOrdersFilter === 'TODOS' 
         ? lista 
         : lista.filter(p => p.estado === currentMyOrdersFilter);
+
+    // 1. CALCULAR CUÁNTOS VIENEN POR ENLACE
+    const countLinks = filteredByStatus.filter(p => p.origen === 'Enlace Compartido').length;
 
     // Estado Vacío
     if (filteredByStatus.length === 0) {
@@ -2189,42 +2191,71 @@ function renderMyOrdersList(lista) {
         return;
     }
 
-    // Renderizado de Tarjetas COMPACTAS + BOTONES ACCIÓN
-    container.innerHTML = filteredByStatus.map(p => {
-        // Colores de estado
+    // 2. CREAR EL AVISO PULSÁTIL (Solo si hay pedidos por enlace)
+    let headerHTML = '';
+    if (countLinks > 0) {
+        headerHTML = `
+        <div class="mb-4 bg-red-500 text-white p-2 rounded-xl flex items-center justify-center gap-2 animate-pulse shadow-lg shadow-red-500/30">
+            <span class="material-symbols-outlined text-lg">link</span>
+            <span class="text-xs font-black uppercase tracking-widest">¡ATENCIÓN! ${countLinks} PEDIDOS POR ENLACE</span>
+        </div>`;
+    }
+
+    // 3. RENDERIZADO DE TARJETAS
+    const cardsHTML = filteredByStatus.map(p => {
+        // A. Detectar si es por Enlace para cambiar el color de fondo
+        const esPorEnlace = p.origen === 'Enlace Compartido';
+        
+        // Si es enlace: Fondo Rojo Suave + Borde Rojo. Si no: Blanco normal.
+        const cardStyle = esPorEnlace 
+            ? 'bg-red-50 border border-red-200 shadow-sm' 
+            : 'bg-white border border-gray-200 shadow-sm';
+
+        // B. Estilos de Estado del Pedido
         let estadoStyle = 'bg-gray-100 text-gray-600';
         if(p.estado === 'Pendiente') estadoStyle = 'bg-amber-50 text-amber-600 border border-amber-100';
         if(p.estado === 'Asignado Mensajero') estadoStyle = 'bg-blue-50 text-blue-600 border border-blue-100';
         if(p.estado === 'Entregado') estadoStyle = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
         
+        // C. Datos básicos
         const fechaDoc = new Date(p.fecha).toLocaleDateString();
         const primerNombre = p.cliente.split(' ')[0];
         const msjWA = `Hola ${primerNombre}, le escribo de paratuhogar por su pedido...`;
         const urlWA = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msjWA)}`;
 
+        // D. BADGE DE ORIGEN (El de enlace ahora es ROJO para combinar)
+        let sourceBadge = '';
+        if (esPorEnlace) {
+            sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-red-600 bg-white px-1.5 py-0.5 rounded border border-red-200 ml-2 shadow-sm" title="Venta Automática"><span class="material-symbols-outlined text-[10px]">link</span> Enlace</span>`;
+        } else if (p.origen === 'Manual (Panel)') {
+            sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 ml-2" title="Venta Manual"><span class="material-symbols-outlined text-[10px]">edit_note</span> Manual</span>`;
+        } else {
+            sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 ml-2"><span class="material-symbols-outlined text-[10px]">language</span> Web</span>`;
+        }
+
         return `
-        <div class="p-3 bg-white border border-gray-200 shadow-sm rounded-xl mb-3 relative transition-all hover:shadow-md group">
+        <div class="p-3 rounded-xl mb-3 relative transition-all hover:shadow-md group ${cardStyle}">
             
-            <!-- CABECERA: Fecha pequeña a la izquierda -->
+            <!-- CABECERA -->
             <div class="flex justify-between items-center mb-2">
-                <span class="text-[10px] font-bold text-gray-400">${fechaDoc}</span>
+                <div class="flex items-center">
+                    <span class="text-[10px] font-bold text-gray-400">${fechaDoc}</span>
+                    ${sourceBadge}
+                </div>
                 
-                <!-- FILA DE BOTONES DE ACCIÓN (Restaurada) -->
+                <!-- BOTONES -->
                 <div class="flex items-center gap-2">
-                    <!-- 1. WhatsApp -->
-                    <a href="${urlWA}" target="_blank" title="Chat Cliente"
+                    <a href="${urlWA}" target="_blank" title="WhatsApp"
                        class="h-7 w-7 bg-[#25D366] text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
                         <i class="fab fa-whatsapp text-sm"></i>
                     </a>
                     
-                    <!-- 2. Descargar PDF (Rojo suave) -->
-                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" title="Descargar Comprobante"
+                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" title="PDF"
                         class="h-7 w-7 bg-red-50 text-red-500 border border-red-100 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-sm">download</span>
                     </button>
 
-                    <!-- 3. Compartir (Azul suave) -->
-                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'compartir')" title="Compartir PDF"
+                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'compartir')" title="Compartir"
                         class="h-7 w-7 bg-blue-50 text-blue-500 border border-blue-100 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-sm">share</span>
                     </button>
@@ -2233,7 +2264,7 @@ function renderMyOrdersList(lista) {
 
             <!-- CUERPO COMPACTO -->
             <div class="flex justify-between items-end gap-2">
-                <div class="flex-1 min-w-0"> <!-- min-w-0 ayuda a truncar texto -->
+                <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-black text-slate-700 uppercase truncate leading-tight mb-0.5" title="${p.cliente}">${p.cliente}</h4>
                     <p class="text-[10px] text-gray-400 truncate mb-2">${p.producto}</p>
                     
@@ -2242,7 +2273,7 @@ function renderMyOrdersList(lista) {
                     </span>
                 </div>
 
-                <!-- PRECIO A LA DERECHA -->
+                <!-- PRECIO -->
                 <div class="text-right flex-shrink-0">
                     <p class="text-[10px] font-bold text-slate-400 mb-0.5">$${Number(p.total || 0).toFixed(0)}</p>
                     <p class="text-sm font-black text-emerald-600 whitespace-nowrap">+$${Number(p.comision_total).toFixed(2)}</p>
@@ -2250,6 +2281,9 @@ function renderMyOrdersList(lista) {
             </div>
         </div>`;
     }).join('');
+
+    // Insertar HEADER + TARJETAS
+    container.innerHTML = headerHTML + cardsHTML;
 }
 
     async function injectLinksSection(nombre) {
