@@ -220,36 +220,84 @@
 
 <!-- PEGAR AQUÍ LA SECCIÓN DASHBOARD -->
 <section id="sec-dashboard" class="tab-content hidden">
-    <!-- KPIs Principales -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="glass-panel p-4 rounded-xl border-l-4 border-emerald-500">
-            <p class="text-xs text-slate-400 uppercase font-bold">Ganancia Neta Real</p>
-            <h3 id="kpi-net-profit" class="text-2xl font-black text-white">Cargando...</h3>
-            <p class="text-[10px] text-emerald-400">Total histórico (Ventas - Costos - Comisiones)</p>
-        </div>
-        <div class="glass-panel p-4 rounded-xl border-l-4 border-blue-500">
-            <p class="text-xs text-slate-400 uppercase font-bold">Ventas Totales (Volumen)</p>
-            <h3 id="kpi-total-sales" class="text-2xl font-black text-white">Cargando...</h3>
-        </div>
-        <div class="glass-panel p-4 rounded-xl border-l-4 border-orange-500">
-            <p class="text-xs text-slate-400 uppercase font-bold">Pagado a Gestores</p>
-            <h3 id="kpi-commissions" class="text-2xl font-black text-white">Cargando...</h3>
-        </div>
-        <div class="glass-panel p-4 rounded-xl border-l-4 border-purple-500">
-            <p class="text-xs text-slate-400 uppercase font-bold">Margen Promedio</p>
-            <h3 id="kpi-margin" class="text-2xl font-black text-white">Cargando...</h3>
+    
+    <!-- 1. BARRA DE CONTROL (FILTROS DE TIEMPO) -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-slate-800 p-4 rounded-xl border border-slate-700">
+        <h3 class="text-white font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500">monitoring</span>
+            Tablero de Mando
+        </h3>
+        <div class="flex gap-2">
+            <button onclick="filterDash('semana')" id="btn-d-semana" class="dash-filter px-4 py-1 rounded-lg text-xs font-bold bg-slate-700 text-slate-300 hover:text-white transition-all">Esta Semana</button>
+            <button onclick="filterDash('mes')" id="btn-d-mes" class="dash-filter px-4 py-1 rounded-lg text-xs font-bold bg-slate-700 text-slate-300 hover:text-white transition-all">Este Mes</button>
+            <button onclick="filterDash('total')" id="btn-d-total" class="dash-filter px-4 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-lg">Histórico Total</button>
         </div>
     </div>
 
-    <!-- Gráficos -->
+    <!-- 2. KPIs FINANCIEROS (LO QUE LE IMPORTA: SU BOLSILLO) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Tarjeta 1: Utilidad Neta -->
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-emerald-500 relative overflow-hidden group">
+            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-all">
+                <span class="material-symbols-outlined text-6xl text-emerald-500">payments</span>
+            </div>
+            <p class="text-xs text-slate-400 uppercase font-black tracking-widest mb-1">Tu Ganancia Líquida</p>
+            <h3 id="kpi-net-profit" class="text-4xl font-black text-white mb-2">$0.00</h3>
+            <p class="text-[10px] text-emerald-400 font-bold bg-emerald-900/30 px-2 py-1 rounded inline-block">
+                Dinero libre (Post Pagos)
+            </p>
+        </div>
+
+        <!-- Tarjeta 2: Volumen Negocio -->
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-blue-500 relative overflow-hidden">
+            <p class="text-xs text-slate-400 uppercase font-black tracking-widest mb-1">Volumen Movido</p>
+            <h3 id="kpi-total-sales" class="text-4xl font-black text-white mb-2">$0.00</h3>
+            <div class="flex justify-between items-end">
+                <p class="text-[10px] text-slate-400">Total facturado a clientes</p>
+                <span id="kpi-orders-count" class="text-xl font-bold text-blue-400">0 Pedidos</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta 3: Eficiencia (Margen) -->
+        <div class="glass-panel p-6 rounded-2xl border-l-4 border-purple-500 relative overflow-hidden">
+            <p class="text-xs text-slate-400 uppercase font-black tracking-widest mb-1">Margen Promedio</p>
+            <h3 id="kpi-margin" class="text-4xl font-black text-white mb-2">0%</h3>
+            <p id="kpi-margin-text" class="text-[10px] text-purple-300">Calculando salud del negocio...</p>
+        </div>
+    </div>
+
+    <!-- 3. IA DE RECOMENDACIONES (EL CEREBRO) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Los Mejores (Invertir) -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-2xl border border-slate-700">
+            <h4 class="text-sm font-black text-emerald-400 uppercase mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined">trending_up</span> Productos Estrella (Invertir)
+            </h4>
+            <div id="list-top-products" class="space-y-3">
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+
+        <!-- Los Peores (Cortar) -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-2xl border border-slate-700">
+            <h4 class="text-sm font-black text-red-400 uppercase mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined">trending_down</span> Productos Lentos / Bajo Margen
+            </h4>
+            <div id="list-low-products" class="space-y-3">
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. GRÁFICOS -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-panel p-6 rounded-2xl">
-            <h4 class="font-bold text-slate-300 mb-4">Rentabilidad por Producto (Top 10)</h4>
-            <canvas id="chartProfitProduct"></canvas>
+            <h4 class="font-bold text-slate-300 mb-4 text-xs uppercase">Rendimiento de Gestores (Profit)</h4>
+            <canvas id="chartGestorPerformance"></canvas>
         </div>
         <div class="glass-panel p-6 rounded-2xl">
-            <h4 class="font-bold text-slate-300 mb-4">Gestores: Ventas vs. Ganancia Generada</h4>
-            <canvas id="chartGestorPerformance"></canvas>
+            <h4 class="font-bold text-slate-300 mb-4 text-xs uppercase">Tendencia de Ganancia (Diaria)</h4>
+            <canvas id="chartProfitTrend"></canvas>
         </div>
     </div>
 </section>
@@ -653,97 +701,272 @@ async function loadNomina() {
 
         // --- 4. LÓGICA BI (DASHBOARD) ---
 
-        async function loadDashboard() {
-            const { data: pedidos } = await supabaseClient.from('pedidos').select('*').eq('estado', 'Entregado');
-            const { data: productos } = await supabaseClient.from('productos').select('*');
-            
-            if(!pedidos || !productos) return;
+        // Variable global para almacenar todos los pedidos y poder filtrar
+let allOrdersCache = [];
 
-            const costoMap = {};
-            productos.forEach(p => costoMap[p.nombre] = Number(p.costo_proveedor || 0));
-
-            let netProfit = 0, totalSales = 0, totalComi = 0;
-            const prodProfit = {}, gestorStats = {};
-
-            pedidos.forEach(p => {
-                let pName = p.producto.split(' [')[0].replace(/^\d+x\s*/, '').trim(); 
-                // Intento simple de limpieza de nombre para coincidir con inventario
-                const costoUnit = costoMap[pName] || 0;
-                
-                let qty = 1;
-                const match = p.producto.match(/^(\d+)x/);
-                if(match) qty = parseInt(match[1]);
-
-                const costoTotal = costoUnit * qty;
-                const venta = Number(p.total || 0);
-                const comi = Number(p.comision_total || 0);
-                const envio = Number(p.costo_mensajeria || 0);
-
-                const ganancia = venta - costoTotal - comi - envio;
-
-                netProfit += ganancia;
-                totalSales += venta;
-                totalComi += comi;
-
-                if(!prodProfit[pName]) prodProfit[pName] = 0;
-                prodProfit[pName] += ganancia;
-
-                const g = p.gestor || 'Directo';
-                if(!gestorStats[g]) gestorStats[g] = { sales: 0, profit: 0 };
-                gestorStats[g].sales += venta;
-                gestorStats[g].profit += ganancia;
-            });
-
-            document.getElementById('kpi-net-profit').innerText = `$${netProfit.toLocaleString()}`;
-            document.getElementById('kpi-total-sales').innerText = `$${totalSales.toLocaleString()}`;
-            document.getElementById('kpi-commissions').innerText = `$${totalComi.toLocaleString()}`;
-            const margin = (totalSales > 0) ? ((netProfit / totalSales) * 100).toFixed(1) : 0;
-            document.getElementById('kpi-margin').innerText = `${margin}%`;
-
-            renderChartProduct(prodProfit);
-            renderChartGestor(gestorStats);
+async function loadDashboard() {
+    // 1. Cargar datos si no están cacheados
+    if(allOrdersCache.length === 0) {
+        const { data } = await supabaseClient
+            .from('pedidos')
+            .select('*')
+            .eq('estado', 'Entregado')
+            .order('fecha', { ascending: true }); // Ordenar por fecha para el gráfico
+        
+        if(data) allOrdersCache = data;
+        
+        // Cargar inventario si no existe (para saber costos)
+        if(typeof inventario === 'undefined' || inventario.length === 0) {
+            await loadCostos();
         }
+    }
 
-        function renderChartProduct(data) {
-            const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]).slice(0, 10);
-            const ctx = document.getElementById('chartProfitProduct').getContext('2d');
-            if(window.myChart1) window.myChart1.destroy();
+    // Por defecto cargar "Histórico Total"
+    filterDash('total');
+}
 
-            window.myChart1 = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(i => i[0].substring(0, 15) + '...'),
-                    datasets: [{
-                        label: 'Ganancia Neta ($)',
-                        data: sorted.map(i => i[1]),
-                        backgroundColor: '#10b981',
-                        borderRadius: 5
-                    }]
+// FUNCIÓN DE FILTRADO Y CÁLCULO
+function filterDash(periodo) {
+    // 1. Actualizar botones visualmente
+    document.querySelectorAll('.dash-filter').forEach(b => {
+        b.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg');
+        b.classList.add('bg-slate-700', 'text-slate-300');
+    });
+    document.getElementById(`btn-d-${periodo}`).classList.add('bg-emerald-600', 'text-white', 'shadow-lg');
+    document.getElementById(`btn-d-${periodo}`).classList.remove('bg-slate-700', 'text-slate-300');
+
+    // 2. Filtrar Datos por Fecha
+    const now = new Date();
+    let filteredOrders = allOrdersCache;
+
+    if (periodo === 'semana') {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(now.getDate() - 7);
+        filteredOrders = allOrdersCache.filter(p => new Date(p.fecha) >= oneWeekAgo);
+    } else if (periodo === 'mes') {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+        filteredOrders = allOrdersCache.filter(p => new Date(p.fecha) >= oneMonthAgo);
+    }
+
+    calculateMetrics(filteredOrders);
+}
+
+function calculateMetrics(orders) {
+    let netProfit = 0;
+    let totalSales = 0;
+    
+    const prodStats = {}; 
+    const gestorStats = {}; // Ahora guardará { sales: 0, profit: 0 }
+    const trendData = {}; 
+
+    orders.forEach(p => {
+        const nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
+        
+        const prodInv = inventario.find(i => p.producto.includes(i.nombre) || i.nombre === nombreLimpio) || { costo_proveedor: 0 };
+        const costoBase = Number(prodInv.costo_proveedor || 0);
+
+        let qty = 1;
+        const match = p.producto.match(/^(\d+)x/);
+        if(match) qty = parseInt(match[1]);
+
+        const venta = parseFloat(p.total || 0);
+        const comision = parseFloat(p.comision_total || 0);
+        const costoTotal = costoBase * qty;
+        const mensajeria = parseFloat(p.costo_mensajeria || 0);
+
+        const gananciaBoss = venta - costoTotal - comision - mensajeria;
+
+        // Sumatorias Generales
+        netProfit += gananciaBoss;
+        totalSales += venta;
+
+        // Estadísticas Producto
+        if(!prodStats[nombreLimpio]) prodStats[nombreLimpio] = { qty: 0, profit: 0 };
+        prodStats[nombreLimpio].qty += qty;
+        prodStats[nombreLimpio].profit += gananciaBoss;
+
+        // --- CORRECCIÓN AQUÍ (Para que el gráfico funcione) ---
+        const g = p.gestor || 'Directo';
+        if(!gestorStats[g]) gestorStats[g] = { sales: 0, profit: 0 };
+        
+        gestorStats[g].sales += venta;       // Barra Azul (Volumen)
+        gestorStats[g].profit += gananciaBoss; // Barra Verde (Tu Ganancia)
+        // -----------------------------------------------------
+
+        // Tendencia
+        const fechaKey = new Date(p.fecha).toLocaleDateString();
+        if(!trendData[fechaKey]) trendData[fechaKey] = 0;
+        trendData[fechaKey] += gananciaBoss;
+    });
+
+    // Actualizar KPIs en pantalla
+    document.getElementById('kpi-net-profit').innerText = `$${netProfit.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    document.getElementById('kpi-total-sales').innerText = `$${totalSales.toLocaleString()}`;
+    document.getElementById('kpi-orders-count').innerText = `${orders.length} Pedidos`;
+    
+    const margin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0;
+    document.getElementById('kpi-margin').innerText = `${margin.toFixed(1)}%`;
+    
+    // Rankings
+    const sortedProds = Object.entries(prodStats).sort(([,a], [,b]) => b.profit - a.profit);
+    
+    const topList = document.getElementById('list-top-products');
+    topList.innerHTML = sortedProds.slice(0, 3).map(([name, data], i) => `
+        <div class="flex justify-between items-center text-xs border-b border-slate-700/50 pb-2">
+            <div class="flex items-center gap-2">
+                <span class="font-black text-emerald-500">#${i+1}</span>
+                <span class="text-slate-300 font-bold">${name}</span>
+            </div>
+            <div class="text-right">
+                <span class="block font-black text-white">+$${data.profit.toFixed(0)}</span>
+                <span class="text-[9px] text-slate-500">${data.qty} vendidos</span>
+            </div>
+        </div>
+    `).join('') || '<p class="text-xs text-slate-500">Sin datos.</p>';
+
+    const lowList = document.getElementById('list-low-products');
+    const bottomProds = sortedProds.slice(-3).reverse();
+    
+    lowList.innerHTML = bottomProds.map(([name, data]) => `
+        <div class="flex justify-between items-center text-xs border-b border-slate-700/50 pb-2">
+            <span class="text-slate-400">${name}</span>
+            <div class="text-right">
+                <span class="block font-bold ${data.profit < 0 ? 'text-red-500' : 'text-amber-500'}">$${data.profit.toFixed(0)}</span>
+            </div>
+        </div>
+    `).join('') || '<p class="text-xs text-slate-500">Sin datos.</p>';
+
+    // Renderizar Gráficos
+    renderChartGestor(gestorStats);
+    renderChartTrend(trendData);
+}
+
+// GRÁFICO 1: GESTORES
+function renderChartGestor(data) {
+    const ctx = document.getElementById('chartGestorPerformance').getContext('2d');
+    if (window.myChart2) window.myChart2.destroy();
+
+    // Ordenar por ganancia
+    const sortedEntries = Object.entries(data).sort(([,a], [,b]) => b - a).slice(0,5);
+
+    window.myChart2 = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: sortedEntries.map(e => e[0]),
+            datasets: [{
+                data: sortedEntries.map(e => e[1]),
+                backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right', labels: { color: '#94a3b8', font: {size: 10} } }
+            }
+        }
+    });
+}
+
+// GRÁFICO 2: TENDENCIA DIARIA
+function renderChartTrend(data) {
+    const ctx = document.getElementById('chartProfitTrend').getContext('2d');
+    if (window.myChart3) window.myChart3.destroy();
+
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+
+    window.myChart3 = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ganancia Diaria ($)',
+                data: values,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#64748b', maxTicksLimit: 5 }, grid: { display: false } },
+                y: { ticks: { color: '#64748b' }, grid: { color: '#334155' } }
+            }
+        }
+    });
+}
+
+        // GRÁFICO 1: GESTORES (BARRAS COMPARATIVAS)
+// GRÁFICO 1: MATRIZ DE EFICIENCIA (SCATTER PLOT)
+function renderChartGestor(data) {
+    const ctx = document.getElementById('chartGestorPerformance').getContext('2d');
+    if (window.myChart2) window.myChart2.destroy();
+
+    // Convertir los datos al formato X, Y (Puntos)
+    // X = Ventas Totales, Y = Ganancia Real
+    const puntos = Object.entries(data).map(([nombre, stats]) => ({
+        x: stats.sales,
+        y: stats.profit,
+        gestor: nombre // Guardamos el nombre para el tooltip
+    }));
+
+    window.myChart2 = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Gestores',
+                data: puntos,
+                backgroundColor: 'rgba(16, 185, 129, 0.6)', // Verde translúcido
+                borderColor: '#10b981', // Verde sólido
+                borderWidth: 1,
+                pointRadius: 6, // Tamaño del punto
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const p = context.raw;
+                            return `${p.gestor}: Vendió $${p.x.toLocaleString()} | Ganó $${p.y.toLocaleString()}`;
+                        }
+                    },
+                    backgroundColor: '#0f172a',
+                    titleColor: '#10b981',
+                    bodyColor: '#ffffff',
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false
                 },
-                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#334155' } }, x: { grid: { display: false } } } }
-            });
-        }
-
-        function renderChartGestor(data) {
-            const labels = Object.keys(data);
-            const salesData = labels.map(l => data[l].sales);
-            const profitData = labels.map(l => data[l].profit);
-
-            const ctx = document.getElementById('chartGestorPerformance').getContext('2d');
-            if(window.myChart2) window.myChart2.destroy();
-
-            window.myChart2 = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Volumen Ventas', data: salesData, borderColor: '#3b82f6', tension: 0.4 },
-                        { label: 'Ganancia que Genera', data: profitData, borderColor: '#10b981', tension: 0.4 }
-                    ]
+                annotation: { // Opcional: Líneas promedio si quisieras agregarlas luego
+                    // ...
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: { display: true, text: 'Volumen de Ventas ($)', color: '#64748b', font: {weight: 'bold'} },
+                    grid: { color: '#334155' },
+                    ticks: { color: '#94a3b8' }
                 },
-                options: { responsive: true, scales: { y: { grid: { color: '#334155' } } } }
-            });
+                y: {
+                    title: { display: true, text: 'Tu Ganancia Real ($)', color: '#64748b', font: {weight: 'bold'} },
+                    grid: { color: '#334155' },
+                    ticks: { color: '#94a3b8' }
+                }
+            }
         }
+    });
+}
 
         // Arrancar
         
