@@ -2787,16 +2787,24 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     }, 100);
 }
 
-    function renderCart() {
+function renderCart() {
     const container = document.getElementById('cart-items');
     const isGestor = window.gestorName ? true : false;
 
-    container.innerHTML = cart.map((item, index) => {
-        // Precios Min/Max
+    // 1. Obtención inteligente del teléfono del comercial
+    const referrerData = JSON.parse(localStorage.getItem('pth_referrer_smart') || localStorage.getItem('pth_referrer') || '{}');
+    let rawPhone = referrerData.telefono || new URLSearchParams(window.location.search).get('tel') || '5356071095';
+    const targetPhone = rawPhone.replace(/\D/g, ''); 
+
+    // 2. Cálculos base
+    let shippingBase = cart.reduce((acc, item) => acc + (parseMensajeria(item.mensajeria) * item.qty), 0);
+    const tieneEnvioComplejo = cart.some(item => esMensajeriaAmbigua(item.mensajeria));
+
+    // 3. Renderizar Productos
+    let htmlItems = cart.map((item, index) => {
         const minPrice = Number(item.precio) - Number(item.comision);
         const maxPrice = (item.precio_flexible === 'SI') ? 100000 : Number(item.precio);
         
-        // Input de Precio (Gestor vs Cliente)
         const precioInput = isGestor ? 
             `<div class="flex flex-col items-end">
                 <label class="text-[8px] text-gray-400 font-bold uppercase">Venta</label>
@@ -2806,7 +2814,6 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
              </div>` 
             : `<p class="text-primary font-black text-sm">$${item.precio_venta}</p>`;
 
-        // Ganancia (Solo Gestor)
         let colorGanancia = "text-emerald-500";
         if(item.comision_actual < item.comision) colorGanancia = "text-orange-500";
         if(item.comision_actual > item.comision) colorGanancia = "text-blue-600";
@@ -2817,37 +2824,74 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
              </p>` : '';
 
         return `
-        <div class="flex gap-3 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700">
-            <!-- Imagen -->
+        <div class="flex gap-3 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700 mb-3">
             <img src="${fixDriveUrl(item.thumbnail)}" class="w-14 h-14 object-contain bg-white rounded border border-gray-200">
-            
             <div class="flex-1">
                 <div class="flex justify-between items-start">
                     <h4 class="text-xs font-bold leading-tight pr-6 mb-1 line-clamp-2 w-3/4">${item.nombre}</h4>
-                    <!-- Botón Eliminar -->
-                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-1">
-                        <span class="material-symbols-outlined text-sm">close</span>
-                    </button>
+                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-1"><span class="material-symbols-outlined text-sm">close</span></button>
                 </div>
-                
                 <div class="flex justify-between items-end mt-2">
-                    <!-- CONTROLES DE CANTIDAD (NUEVO) -->
                     <div class="flex items-center gap-2 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 px-1 h-7">
-                        <button onclick="changeQty(${index}, -1)" class="w-5 flex items-center justify-center text-gray-500 hover:text-primary font-bold text-sm">-</button>
+                        <button onclick="changeQty(${index}, -1)" class="w-5 flex items-center justify-center text-gray-500 font-bold">-</button>
                         <span class="text-xs font-black min-w-[15px] text-center">${item.qty}</span>
-                        <button onclick="changeQty(${index}, 1)" class="w-5 flex items-center justify-center text-gray-500 hover:text-primary font-bold text-sm">+</button>
+                        <button onclick="changeQty(${index}, 1)" class="w-5 flex items-center justify-center text-gray-500 font-bold">+</button>
                     </div>
-
-                    <div class="text-right">
-                        ${precioInput}
-                        ${gananciaDisplay}
-                    </div>
+                    <div class="text-right">${precioInput}${gananciaDisplay}</div>
                 </div>
             </div>
         </div>`;
     }).join('');
 
-    actualizarOpcionesMoneda();
+    // 4. BARRA DE MENSAJERÍA (MODIFICADA)
+    let shippingHTML = '';
+    
+    if (isGestor) {
+        // GESTOR: Siempre puede editar
+        shippingHTML = `
+        <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
+            <span class="text-xs font-black text-gray-500 uppercase">🚚 Costo Envío (Editable)</span>
+            <input type="number" id="cart-shipping-cost" value="${shippingBase}" oninput="recalcularTotalFinal()" 
+                class="w-24 text-right font-black text-slate-700 border-gray-200 rounded-lg py-1 px-2 text-sm bg-gray-50 focus:bg-white">
+        </div>`;
+    } else {
+        // CLIENTE
+        if (tieneEnvioComplejo) {
+            // CASO: CONSULTAR + EDITAR MANUALMENTE
+            // Aquí habilitamos el input para que el cliente escriba lo que acordó
+            shippingHTML = `
+            <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
+                <div class="flex flex-col items-start gap-1">
+                    <span class="text-xs font-black text-gray-500 uppercase">🚚 Costo Envío</span>
+                    <a href="https://wa.me/${targetPhone}?text=Hola,%20tengo%20una%20duda%20con%20el%20costo%20de%20envío%20de%20mi%20pedido." target="_blank"
+                       class="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-green-200 transition-colors shadow-sm">
+                       <i class="fab fa-whatsapp text-sm"></i> CONSULTAR
+                    </a>
+                </div>
+                
+                <div class="flex flex-col items-end">
+                    <label class="text-[8px] text-gray-400 font-bold uppercase mb-0.5">Ingresar Costo ($)</label>
+                    <input type="number" id="cart-shipping-cost" value="0" min="0" oninput="recalcularTotalFinal()" 
+                        class="w-20 text-right font-black text-slate-700 border border-gray-300 rounded-lg py-1 px-2 text-sm bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all placeholder:text-gray-300" placeholder="0">
+                </div>
+            </div>
+            <p class="text-[9px] text-slate-400 text-right mb-2 italic">
+                *Acuerda el precio con el comercial y escríbelo en la casilla.
+            </p>
+            `;
+        } else {
+            // CASO: PRECIO FIJO (No editable por el cliente)
+            shippingHTML = `
+            <div class="flex justify-between items-center py-3 border-t border-dashed border-gray-200 mt-2">
+                <span class="text-xs font-black text-gray-500 uppercase">🚚 Costo Envío</span>
+                <span class="text-sm font-black text-slate-700">$${shippingBase}</span>
+                <input type="hidden" id="cart-shipping-cost" value="${shippingBase}">
+            </div>`;
+        }
+    }
+
+    container.innerHTML = htmlItems + shippingHTML;
+    actualizarOpcionesMoneda(); 
 }
 
 // Función para sumar o restar cantidad
@@ -2872,29 +2916,41 @@ function changeQty(index, delta) {
 }
 
     function recalcularTotalFinal() {
-        const select = document.getElementById('check-moneda');
-        const totalUSD = cart.reduce((acc, item) => acc + (item.precio_venta * item.qty) + (parseMensajeria(item.mensajeria) * item.qty), 0);
+    const select = document.getElementById('check-moneda');
+    
+    // 1. Total Productos
+    const totalProductos = cart.reduce((acc, item) => acc + (item.precio_venta * item.qty), 0);
+    
+    // 2. Total Envío (Leemos del input que acabamos de crear)
+    const shippingInput = document.getElementById('cart-shipping-cost');
+    const totalEnvio = shippingInput ? parseFloat(shippingInput.value || 0) : 0;
+
+    // 3. Gran Total
+    const totalUSD = totalProductos + totalEnvio;
+    
+    const opcionElegida = select.value || "USD";
+    let totalFinal = totalUSD;
+    let simbolo = "$";
+
+    if (opcionElegida.toUpperCase().includes("CUP")) {
+        let tasaFinal = globalCUPRate || 450; // Usamos la variable global de tasa
         
-        const opcionElegida = select.value || "USD";
-        let totalFinal = totalUSD;
-        let simbolo = "$";
-
-        if (opcionElegida.toUpperCase().includes("CUP")) {
-            let tasaFinal = cupRate;
-            if (opcionElegida.includes("+")) {
-                const incremento = parseFloat(opcionElegida.match(/\d+/) || 0);
-                tasaFinal = cupRate + incremento;
-            } else {
-                const tasaFija = parseFloat(opcionElegida.match(/\d+/) || cupRate);
-                tasaFinal = (tasaFija > 100) ? tasaFija : cupRate;
-            }
-            totalFinal = totalUSD * tasaFinal;
-            simbolo = "CUP";
+        // Lógica de tasa específica del producto (si existe) o plus +10
+        if (opcionElegida.includes("+")) {
+            const incremento = parseFloat(opcionElegida.match(/\d+/) || 0);
+            tasaFinal = tasaFinal + incremento;
+        } else {
+            const tasaFijaMatch = opcionElegida.match(/(\d{3,})/); // Buscar números grandes (ej 470)
+            if(tasaFijaMatch) tasaFinal = parseFloat(tasaFijaMatch[0]);
         }
-
-        document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
-        document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        
+        totalFinal = totalUSD * tasaFinal;
+        simbolo = "CUP";
     }
+
+    document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
+    document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+}
 
     function actualizarOpcionesMoneda() {
         const select = document.getElementById('check-moneda');
@@ -2966,16 +3022,28 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
     // =====================================
 
-    // 3. AGRUPAR POR PROVEEDOR (Tu lógica original)
+    // 3. AGRUPAR POR PROVEEDOR
     const gruposPedidos = {};
+    
+    // Obtenemos el envío total que puso el usuario/gestor
+    const envioTotalInput = parseFloat(document.getElementById('cart-shipping-cost')?.value || 0);
+    
     cart.forEach(item => {
         const prov = item.proveedor || 'General';
         if (!gruposPedidos[prov]) gruposPedidos[prov] = { items: [], tEquipo: 0, tComi: 0, tEnvio: 0 };
+        
         gruposPedidos[prov].items.push(item);
         gruposPedidos[prov].tEquipo += (item.precio_venta * item.qty);
         gruposPedidos[prov].tComi += (item.comision_actual * item.qty);
-        gruposPedidos[prov].tEnvio += (parseMensajeria(item.mensajeria) * item.qty);
+        // NOTA: El envío se prorratea o se asigna al primer grupo si hay varios proveedores.
+        // Para simplificar y evitar errores, asignaremos el envío total al primer proveedor o 'General'.
     });
+
+    // Asignamos el costo de envío del input al primer grupo encontrado (para que cuadre el total)
+    const primerProveedor = Object.keys(gruposPedidos)[0];
+    if(primerProveedor) {
+        gruposPedidos[primerProveedor].tEnvio = envioTotalInput;
+    }
 
     // --- NUEVA LÓGICA DE CONSECUTIVO Y MENSAJE ---
     let mensajeRaw = `VALE DE VENTA\n\n`;
@@ -7111,6 +7179,12 @@ function renderSourceChart(ventas) {
     
     // Insertamos la gráfica ANTES de la lista de pedidos
     listContainer.insertAdjacentHTML('beforebegin', html);
+}
+function esMensajeriaAmbigua(texto) {
+    if (!texto) return false;
+    const t = texto.toLowerCase();
+    // Palabras clave que indican que no hay un precio fijo simple
+    return t.includes('consultar') || t.includes('adicional') || t.includes('periferia') || t.includes('depende') || t.includes('variable');
 }
 
 </script>
