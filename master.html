@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASTER CONTROL | Financiero</title>
+    
+    <!-- Estilos y Librerías (Mismas que el index) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS para Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- PEGAR AQUÍ LA LIBRERÍA DE GRÁFICOS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
+
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #0f172a; color: white; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .input-dark { background: #0f172a; border: 1px solid #334155; color: white; padding: 8px; border-radius: 8px; width: 100%; }
+    </style>
+
+    <script>
+        // --- 1. SEGURIDAD: CHECKPOINT ---
+        // Si alguien intenta entrar aquí escribiendo la URL sin ser SUPERADMIN, lo sacamos.
+        const session = JSON.parse(localStorage.getItem('pth_session') || '{}');
+        
+        // AQUÍ DEFINES QUIÉN PUEDE ENTRAR (Tu usuario y el del Jefe)
+        // Asegúrate de actualizar el rol en Supabase a 'superadmin' para estos usuarios
+        const isBoss = session.isAdmin === true || session.data?.rol === 'superadmin';
+
+        if (!isBoss) {
+            alert("⛔ ACCESO DENEGADO: Área Financiera Restringida.");
+            window.location.href = 'index.html'; // Patada de vuelta al inicio
+        }
+
+        // Configuración Supabase (Misma que index)
+        const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
+</head>
+<body class="pb-20">
+
+    <!-- Header Financiero -->
+    <header class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900 sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-amber-500 p-2 rounded-lg text-slate-900"><span class="material-symbols-outlined">lock</span></div>
+            <div>
+                <h1 class="text-xl font-black tracking-tight text-amber-500">BÓVEDA FINANCIERA</h1>
+                <p class="text-xs text-slate-400">Control de Costos y Utilidades</p>
+            </div>
+        </div>
+        <button onclick="window.location.href='index.html'" class="text-xs font-bold text-slate-400 hover:text-white uppercase">
+            Volver a Logística
+        </button>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-8">
+
+        <!-- NAVEGACIÓN INTERNA -->
+        <div class="flex gap-4 border-b border-slate-800 pb-4">
+            <button onclick="switchTab('costos')" id="btn-costos" class="tab-btn px-4 py-2 bg-slate-800 rounded-lg text-sm font-bold hover:bg-slate-700">1. Gestión Costos</button>
+            <button onclick="switchTab('conciliacion')" id="btn-conciliacion" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">2. Conciliación (Viernes)</button>
+            <button onclick="switchTab('nomina')" id="btn-nomina" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">3. Nómina Gestores (Sábado)</button>
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">4. Inteligencia (BI)</button>
+        </div>
+
+        <!-- 1. VISTA GESTIÓN DE COSTOS (Estilo Excel) -->
+        <section id="sec-costos" class="tab-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Establecer Costos de Proveedor</h2>
+                <div class="text-right">
+                    <p class="text-xs text-slate-400">Ganancia Neta Proyectada</p>
+                    <p id="total-profit-projected" class="text-2xl font-black text-emerald-400">$0.00</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-700">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-slate-800 text-xs uppercase font-black text-slate-200">
+                        <tr>
+                            <th class="p-4">Producto</th>
+                            <th class="p-4">Proveedor</th>
+                            <th class="p-4 text-right text-blue-400">Precio Venta</th>
+                            <th class="p-4 text-right text-red-400">Costo Real (Editable)</th>
+                            <th class="p-4 text-right text-orange-400">Comisión Gestor</th>
+                            <th class="p-4 text-right text-emerald-400">UTILIDAD BOSS</th>
+                            <th class="p-4 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-costos" class="divide-y divide-slate-700 bg-slate-900/50">
+                        <!-- JS Llenará esto -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. VISTA CONCILIACIÓN (Para los viernes) -->
+        <section id="sec-conciliacion" class="tab-content hidden">
+            <div class="bg-amber-900/20 border border-amber-500/30 p-4 rounded-xl mb-6">
+                <h3 class="font-bold text-amber-500 flex items-center gap-2"><span class="material-symbols-outlined">warning</span> ZONA DE CONCILIACIÓN CON PROVEEDORES</h3>
+                <p class="text-xs text-amber-200 mt-1">Aquí marcas los pedidos que <b>el proveedor ya te confirmó/pagó</b>. Solo lo que marques aquí pasará a la lista de pago de los gestores.</p>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="flex gap-4 mb-4">
+                    <select id="filter-prov-conc" class="input-dark w-64" onchange="loadConciliacion()">
+                        <option value="TODOS">Todos los Proveedores</option>
+                    </select>
+                    <button onclick="conciliarMasivo()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-500 transition-all">
+                        CONFIRMAR SELECCIONADOS
+                    </button>
+                </div>
+
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-800/50 text-xs uppercase">
+                        <tr>
+                            <th class="p-3"><input type="checkbox" id="check-all-conc" onchange="toggleAllConc(this)"></th>
+                            <th class="p-3">Pedido</th>
+                            <th class="p-3">Producto</th>
+                            <th class="p-3">Total Venta</th>
+                            <th class="p-3">Costo Prov.</th>
+                            <th class="p-3 text-emerald-400">A PAGARLE AL PROV.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list-conciliacion"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. VISTA NÓMINA (Para los sábados) -->
+        <!-- 3. VISTA NÓMINA (Para los sábados y Adelantos) -->
+<section id="sec-nomina" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- COLUMNA IZQUIERDA: GESTIÓN DE CAJA (Adelantos) -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Formulario de Adelantos -->
+            <div class="glass-panel p-6 rounded-2xl border-l-4 border-blue-500">
+                <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400">account_balance_wallet</span>
+                    Registrar Movimiento
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-slate-400 uppercase font-bold">Gestor</label>
+                        <select id="wallet-gestor" class="input-dark mt-1">
+                            <!-- Se llena con JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 uppercase font-bold">Tipo Movimiento</label>
+                        <select id="wallet-tipo" class="input-dark mt-1">
+                            <option value="Adelanto">💸 Adelanto (Resta)</option>
+                            <option value="Bono">🎁 Bono Extra (Suma)</option>
+                            <option value="Multa">⚠️ Penalización (Resta)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 uppercase font-bold">Monto ($)</label>
+                        <input type="number" id="wallet-monto" class="input-dark mt-1 font-black text-lg" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 uppercase font-bold">Nota / Motivo</label>
+                        <input type="text" id="wallet-nota" class="input-dark mt-1" placeholder="Ej: Adelanto gasolina...">
+                    </div>
+                    <button onclick="guardarMovimientoCaja()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold shadow-lg transition-all mt-2">
+                        REGISTRAR
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: TABLA DE PAGOS (Corte Sábado) -->
+        <div class="lg:col-span-2">
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-xl text-white">Nómina de Pago (Sábado)</h3>
+                    <button onclick="loadNomina()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-white flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">refresh</span> Actualizar
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-800 text-xs uppercase font-black">
+                            <tr>
+                                <th class="p-3">Gestor</th>
+                                <th class="p-3 text-right">Ventas Conciliadas</th>
+                                <th class="p-3 text-right text-emerald-400">(+) Comisiones</th>
+                                <th class="p-3 text-right text-red-400">(-) Adelantos</th>
+                                <th class="p-3 text-right text-white text-lg">A PAGAR</th>
+                                <th class="p-3 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-nomina" class="divide-y divide-slate-700">
+                            <!-- Se llena con JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 italic">* Solo aparecen comisiones de pedidos marcados como "Conciliados" el viernes.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ... fin de la tabla de nómina ... -->
+            </div>
+        </div>
+    </div>
+</section> <!-- Fin de section nomina -->
+
+<!-- PEGAR AQUÍ LA SECCIÓN DASHBOARD -->
+<section id="sec-dashboard" class="tab-content hidden">
+    <!-- KPIs Principales -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="glass-panel p-4 rounded-xl border-l-4 border-emerald-500">
+            <p class="text-xs text-slate-400 uppercase font-bold">Ganancia Neta Real</p>
+            <h3 id="kpi-net-profit" class="text-2xl font-black text-white">Cargando...</h3>
+            <p class="text-[10px] text-emerald-400">Total histórico (Ventas - Costos - Comisiones)</p>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border-l-4 border-blue-500">
+            <p class="text-xs text-slate-400 uppercase font-bold">Ventas Totales (Volumen)</p>
+            <h3 id="kpi-total-sales" class="text-2xl font-black text-white">Cargando...</h3>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border-l-4 border-orange-500">
+            <p class="text-xs text-slate-400 uppercase font-bold">Pagado a Gestores</p>
+            <h3 id="kpi-commissions" class="text-2xl font-black text-white">Cargando...</h3>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border-l-4 border-purple-500">
+            <p class="text-xs text-slate-400 uppercase font-bold">Margen Promedio</p>
+            <h3 id="kpi-margin" class="text-2xl font-black text-white">Cargando...</h3>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-panel p-6 rounded-2xl">
+            <h4 class="font-bold text-slate-300 mb-4">Rentabilidad por Producto (Top 10)</h4>
+            <canvas id="chartProfitProduct"></canvas>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl">
+            <h4 class="font-bold text-slate-300 mb-4">Gestores: Ventas vs. Ganancia Generada</h4>
+            <canvas id="chartGestorPerformance"></canvas>
+        </div>
+    </div>
+</section>
+
+</main>
+
+    </main>
+
+    <script>
+        // --- LOGICA DEL MASTER ---
+
+        let inventario = [];
+
+        async function initMaster() {
+            await loadCostos();
+        }
+
+        function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.replace('bg-slate-800', 'text-slate-400'));
+    
+    document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+    const btn = document.getElementById(`btn-${tabId}`);
+    btn.classList.remove('text-slate-400');
+    btn.classList.add('bg-slate-800', 'text-white');
+
+    if(tabId === 'costos') loadCostos();
+    if(tabId === 'conciliacion') loadConciliacion();
+    if(tabId === 'nomina') loadNomina(); // Asegúrate de tener esto
+    if(tabId === 'dashboard') loadDashboard(); // <--- AGREGAR ESTA LÍNEA NUEVA
+}
+
+        // 1. CARGA DE COSTOS (TABLA EXCEL)
+        // 1. CARGA DE COSTOS (TABLA EXCEL)
+// 1. CARGA DE COSTOS (MEJORADA: PASA EL ELEMENTO "THIS")
+async function loadCostos() {
+    const { data, error } = await supabaseClient.from('productos').select('*').order('nombre');
+    
+    if(error) {
+        console.error("Error cargando productos:", error);
+        return;
+    }
+    
+    inventario = data; // Guardamos en memoria
+    const tbody = document.getElementById('table-costos');
+    let totalProfit = 0;
+
+    tbody.innerHTML = data.map(p => {
+        const costo = p.costo_proveedor || 0;
+        const comision = p.comision || 0;
+        const profit = p.precio - costo - comision;
+        
+        if(p.disponible === 'SI') totalProfit += profit;
+
+        return `
+        <tr class="hover:bg-slate-800 transition-colors border-b border-slate-800">
+            <td class="p-4 font-bold text-white">${p.nombre}</td>
+            <td class="p-4 text-xs">${p.proveedor || 'General'}</td>
+            <td class="p-4 text-right font-mono text-slate-300">$${p.precio}</td>
+            <td class="p-4 text-right">
+                <!-- CAMBIO AQUÍ: Agregamos 'this' al final para controlar el color -->
+                <input type="number" value="${costo}" 
+                    onchange="updateCosto('${p.id}', this.value, this)"
+                    class="bg-slate-950 border border-slate-700 text-red-400 font-bold text-right w-24 rounded px-2 py-1 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all">
+            </td>
+            <td class="p-4 text-right text-orange-400 font-mono">-$${comision}</td>
+            <!-- Le ponemos un ID al profit para actualizarlo sin recargar -->
+            <td id="profit-${p.id}" class="p-4 text-right font-black text-emerald-400 text-lg">$${profit.toFixed(0)}</td>
+            <td class="p-4 text-center">
+                <span class="material-symbols-outlined text-slate-600 text-sm">edit</span>
+            </td>
+        </tr>
+        `;
+    }).join('');
+    
+    // Actualizar proyección total visual
+    const profitEl = document.getElementById('total-profit-projected');
+    if(profitEl) profitEl.innerText = `$${totalProfit.toLocaleString()}`;
+}
+
+// GUARDAR COSTO (SIN RECARGAR TABLA + FEEDBACK VISUAL)
+async function updateCosto(id, nuevoCosto, inputElement) {
+    // 1. Feedback visual: Opacidad bajita mientras guarda
+    inputElement.classList.add('opacity-50');
+
+    // 2. Guardar en Base de Datos
+    const { error } = await supabaseClient
+        .from('productos')
+        .update({ costo_proveedor: nuevoCosto })
+        .eq('id', id);
+
+    inputElement.classList.remove('opacity-50');
+
+    if(error) {
+        alert("Error: " + error.message);
+        inputElement.classList.add('border-red-500'); // Borde rojo si falla
+    } else {
+        // 3. ÉXITO: Poner borde verde y texto verde por 2 segundos
+        inputElement.classList.remove('border-slate-700', 'text-red-400');
+        inputElement.classList.add('border-emerald-500', 'text-emerald-400', 'bg-emerald-900/20');
+
+        setTimeout(() => {
+            inputElement.classList.remove('border-emerald-500', 'text-emerald-400', 'bg-emerald-900/20');
+            inputElement.classList.add('border-slate-700', 'text-red-400');
+        }, 2000);
+
+        // 4. ACTUALIZAR MEMORIA LOCAL (CRUCIAL PARA QUE NO SE BORRE AL CAMBIAR PESTAÑA)
+        const productoEnMemoria = inventario.find(p => p.id === id);
+        if (productoEnMemoria) {
+            productoEnMemoria.costo_proveedor = nuevoCosto;
+            
+            // Recalcular la utilidad en pantalla al instante
+            const nuevaUtilidad = productoEnMemoria.precio - nuevoCosto - productoEnMemoria.comision;
+            const celdaUtilidad = document.getElementById(`profit-${id}`);
+            if(celdaUtilidad) celdaUtilidad.innerText = `$${nuevaUtilidad.toFixed(0)}`;
+        }
+        
+        console.log("Costo guardado y memoria actualizada.");
+    }
+}
+
+        async function conciliarMasivo() {
+            const checks = document.querySelectorAll('.chk-conc:checked');
+            if(checks.length === 0) return alert("Selecciona pedidos");
+
+            const ids = Array.from(checks).map(c => c.value);
+            
+            if(!confirm(`¿Confirmas que el proveedor YA PAGÓ/COBRÓ estos ${ids.length} pedidos?\n\nAl aceptar, el dinero de la ganancia pasará a estar DISPONIBLE para pagarle a los gestores.`)) return;
+
+            const { error } = await supabaseClient
+                .from('pedidos')
+                .update({ estado_financiero: 'Conciliado_Prov' }) // Estado intermedio clave
+                .in('id', ids);
+
+            if(error) alert("Error: " + error.message);
+            else {
+                alert("✅ Pedidos conciliados. Ahora aparecerán en la Nómina de Pago.");
+                loadConciliacion();
+            }
+        }
+
+        // 2. CARGA DE CONCILIACIÓN (CORREGIDA Y BLINDADA)
+async function loadConciliacion() {
+    console.log("Cargando conciliación...");
+
+    // 1. SEGURIDAD: Si no hay inventario cargado, cárgalo primero
+    // (Esto evita que la tabla salga vacía o de error)
+    if (typeof inventario === 'undefined' || inventario.length === 0) {
+        console.log("Inventario vacío, cargando...");
+        await loadCostos(); 
+    }
+
+    // 2. Buscar pedidos ENTREGADOS que faltan por cobrar al proveedor
+    const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('estado', 'Entregado')
+        .neq('estado_financiero', 'Conciliado_Prov'); // Que no estén ya cerrados
+
+    if(error) return console.error(error);
+
+    // --- LOGICA DE FILTROS ---
+    const select = document.getElementById('filter-prov-conc');
+    const valorActual = select.value;
+
+    const proveedoresUnicos = [...new Set(data.map(p => p.proveedor || 'General'))].sort();
+    
+    // Rellenar el select si está vacío
+    if (select.options.length <= 1 || valorActual === 'TODOS') {
+        select.innerHTML = `<option value="TODOS">Todos los Proveedores</option>` +
+            proveedoresUnicos.map(prov => `<option value="${prov}">${prov}</option>`).join('');
+        select.value = valorActual;
+    }
+
+    // Filtrar datos
+    let pedidosFiltrados = data;
+    if (valorActual !== 'TODOS') {
+        pedidosFiltrados = data.filter(p => (p.proveedor || 'General') === valorActual);
+    }
+
+    // --- CAMBIO VISUAL DEL ENCABEZADO (Corrección de Texto) ---
+    // Buscamos la última columna y le cambiamos el nombre para que no te confundas
+    const headers = document.querySelectorAll('#sec-conciliacion th');
+    if(headers.length > 0) {
+        headers[headers.length - 1].innerHTML = `<span class="text-emerald-400">A RECIBIR DEL PROV.</span>`;
+    }
+
+    // --- RENDERIZAR TABLA ---
+    const list = document.getElementById('list-conciliacion');
+
+    if (pedidosFiltrados.length === 0) {
+        list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">
+            No hay pedidos 'Entregados' pendientes de cobro.<br>
+            <span class="text-xs">Revisa si tienes pedidos en 'Pendiente' o si ya los conciliaste todos.</span>
+        </td></tr>`;
+        return;
+    }
+
+    list.innerHTML = pedidosFiltrados.map(p => {
+        // Buscar el costo base en el inventario
+        // Limpiamos el nombre (quitamos "1x " y "[USD]") para encontrarlo mejor
+        const nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
+        
+        const prod = inventario.find(i => p.producto.includes(i.nombre) || i.nombre === nombreLimpio) || { costo_proveedor: 0 };
+        const costoBase = Number(prod.costo_proveedor || 0);
+        
+        let qty = 1;
+        const match = p.producto.match(/^(\d+)x/);
+        if(match) qty = parseInt(match[1]);
+
+        // MATEMÁTICA DEL NEGOCIO DE ÁNGEL:
+        // Total Venta (ej: 230) - Costo Proveedor (ej: 200) = 30 (A recibir)
+        const totalVenta = parseFloat(p.total);
+        const totalCosto = costoBase * qty;
+        const aRecibir = totalVenta - totalCosto;
+
+        return `
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+            <td class="p-3"><input type="checkbox" class="chk-conc" value="${p.id}"></td>
+            <td class="p-3 text-xs text-slate-400">${p.orden_dia || '---'}</td>
+            <td class="p-3 font-bold text-white">
+                ${p.producto}
+                <div class="text-[10px] text-amber-500 uppercase">${p.proveedor || 'General'}</div>
+            </td>
+            <td class="p-3 text-slate-300">$${totalVenta}</td>
+            <td class="p-3 text-red-300">$${totalCosto} (Base)</td>
+            <td class="p-3 font-black text-emerald-400 text-lg">+$${aRecibir.toFixed(2)}</td>
+        </tr>
+        `;
+    }).join('');
+}
+
+        function toggleAllConc(source) {
+            document.querySelectorAll('.chk-conc').forEach(c => c.checked = source.checked);
+        }
+
+        // --- 3. LÓGICA DE NÓMINA Y CAJA ---
+
+        // 3. CARGA DE NÓMINA (CON DETALLE DE PRODUCTOS)
+async function loadNomina() {
+    // A. Cargar Pedidos CONCILIADOS (Listos para pagar al gestor) pero NO LIQUIDADOS
+    const { data: pedidos, error: errP } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('estado_financiero', 'Conciliado_Prov') 
+        .neq('pago_gestor', 'Pagado'); 
+
+    // B. Cargar Movimientos de Caja
+    const { data: caja, error: errC } = await supabaseClient.from('caja_gestores').select('*');
+
+    if(errP || errC) return console.error("Error datos nómina");
+
+    // C. Agrupar por Gestor
+    const nomina = {};
+
+    // 1. Sumar Comisiones y Guardar Nombres de Productos
+    pedidos.forEach(p => {
+        const g = p.gestor || 'Sin Gestor';
+        
+        // Inicializamos el objeto si no existe
+        if(!nomina[g]) nomina[g] = { 
+            comision: 0, 
+            adelantos: 0, 
+            pedidosIds: [], 
+            ventasCount: 0,
+            listaProductos: [] // <--- NUEVO: Array para guardar nombres
+        };
+        
+        nomina[g].comision += Number(p.comision_total || 0);
+        nomina[g].ventasCount++;
+        nomina[g].pedidosIds.push(p.id);
+
+        // Limpieza del nombre del producto para que se vea bonito
+        // Ej: "1x Arrocera [USD]" -> "Arrocera"
+        let nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
+        nomina[g].listaProductos.push(nombreLimpio);
+    });
+
+    // 2. Restar Adelantos / Sumar Bonos
+    caja.forEach(c => {
+        const g = c.gestor;
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] }; 
+        
+        if(c.tipo === 'Adelanto' || c.tipo === 'Multa') {
+            nomina[g].adelantos += Number(c.monto);
+        } else if (c.tipo === 'Bono') {
+            nomina[g].comision += Number(c.monto); 
+        }
+    });
+
+    // D. Renderizar Tabla
+    const tbody = document.getElementById('list-nomina');
+    const selectGestor = document.getElementById('wallet-gestor');
+    
+    // Llenar select de gestores
+    const todosGestores = Object.keys(nomina).sort();
+    selectGestor.innerHTML = todosGestores.map(g => `<option value="${g}">${g}</option>`).join('');
+
+    tbody.innerHTML = Object.entries(nomina).map(([gestor, datos]) => {
+        const totalPagar = datos.comision - datos.adelantos;
+        const idsString = datos.pedidosIds.join(',');
+
+        if(totalPagar === 0 && datos.ventasCount === 0) return '';
+
+        // Generar HTML de la lista de productos
+        // Usamos .join('') para unir los items
+        const productosHTML = datos.listaProductos.map(prod => 
+            `<div class="text-[9px] text-slate-400 border-b border-slate-700/50 pb-0.5 mb-0.5 last:border-0">• ${prod}</div>`
+        ).join('');
+
+        return `
+        <tr class="hover:bg-slate-800 transition-all">
+            <td class="p-3 align-top font-bold text-white text-sm">${gestor}</td>
+            
+            <!-- COLUMNA MODIFICADA: Muestra Cantidad + Lista -->
+            <td class="p-3 align-top text-right">
+                <span class="font-black text-white text-lg block mb-1">${datos.ventasCount}</span>
+                <div class="flex flex-col items-end opacity-80">
+                    ${productosHTML}
+                </div>
+            </td>
+
+            <td class="p-3 align-top text-right text-emerald-400 font-mono text-sm">+$${datos.comision.toFixed(2)}</td>
+            <td class="p-3 align-top text-right text-red-400 font-mono text-sm">-$${datos.adelantos.toFixed(2)}</td>
+            <td class="p-3 align-top text-right font-black text-xl ${totalPagar < 0 ? 'text-red-500' : 'text-white'}">
+                $${totalPagar.toFixed(2)}
+            </td>
+            <td class="p-3 align-top text-center">
+                ${totalPagar > 0 ? 
+                    `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all">
+                        PAGAR
+                    </button>` : 
+                    `<span class="text-xs text-slate-500 font-bold">Sin Saldo</span>`
+                }
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+        // GUARDAR ADELANTO
+        async function guardarMovimientoCaja() {
+            const gestor = document.getElementById('wallet-gestor').value;
+            const tipo = document.getElementById('wallet-tipo').value;
+            const monto = document.getElementById('wallet-monto').value;
+            const nota = document.getElementById('wallet-nota').value;
+
+            if(!gestor || !monto) return alert("Faltan datos");
+
+            const { error } = await supabaseClient.from('caja_gestores').insert([{
+                gestor: gestor,
+                tipo: tipo,
+                monto: monto,
+                nota: nota
+            }]);
+
+            if(error) alert("Error: " + error.message);
+            else {
+                alert("Movimiento registrado");
+                document.getElementById('wallet-monto').value = "";
+                document.getElementById('wallet-nota').value = "";
+                loadNomina(); // Recargar tabla
+            }
+        }
+
+        // LIQUIDAR (PAGAR SÁBADO)
+        async function liquidarGestor(gestor, idsString, monto) {
+            if(!confirm(`¿Confirmas que vas a PAGAR $${monto} a ${gestor}?\n\nEsto marcará los pedidos como 'Pagados' y archivará los adelantos.`)) return;
+
+            // 1. Marcar pedidos como PAGADOS
+            if(idsString) {
+                const { error: err1 } = await supabaseClient
+                    .from('pedidos')
+                    .update({ 
+                        pago_gestor: 'Pagado', 
+                        estado_financiero: 'Liquidado_Gestor' 
+                    })
+                    .in('id', idsString.split(','));
+                
+                if(err1) return alert("Error actualizando pedidos");
+            }
+
+            // 2. Limpiar caja (Adelantos)
+            // OPCIÓN SIMPLE: Borramos los adelantos de este gestor porque ya se descontaron
+            const { error: err2 } = await supabaseClient
+                .from('caja_gestores')
+                .delete()
+                .eq('gestor', gestor);
+
+            if(err2) alert("Error limpiando caja, pero los pedidos se marcaron pagados.");
+            
+            alert("✅ Pago registrado correctamente. Cuenta en $0.");
+            loadNomina();
+        }
+
+        // Asegúrate de llamar a loadNomina si cambian de pestaña
+        // (Ya está en la función switchTab del código anterior)
+
+        // Arrancar
+
+        // --- 4. LÓGICA BI (DASHBOARD) ---
+
+        async function loadDashboard() {
+            const { data: pedidos } = await supabaseClient.from('pedidos').select('*').eq('estado', 'Entregado');
+            const { data: productos } = await supabaseClient.from('productos').select('*');
+            
+            if(!pedidos || !productos) return;
+
+            const costoMap = {};
+            productos.forEach(p => costoMap[p.nombre] = Number(p.costo_proveedor || 0));
+
+            let netProfit = 0, totalSales = 0, totalComi = 0;
+            const prodProfit = {}, gestorStats = {};
+
+            pedidos.forEach(p => {
+                let pName = p.producto.split(' [')[0].replace(/^\d+x\s*/, '').trim(); 
+                // Intento simple de limpieza de nombre para coincidir con inventario
+                const costoUnit = costoMap[pName] || 0;
+                
+                let qty = 1;
+                const match = p.producto.match(/^(\d+)x/);
+                if(match) qty = parseInt(match[1]);
+
+                const costoTotal = costoUnit * qty;
+                const venta = Number(p.total || 0);
+                const comi = Number(p.comision_total || 0);
+                const envio = Number(p.costo_mensajeria || 0);
+
+                const ganancia = venta - costoTotal - comi - envio;
+
+                netProfit += ganancia;
+                totalSales += venta;
+                totalComi += comi;
+
+                if(!prodProfit[pName]) prodProfit[pName] = 0;
+                prodProfit[pName] += ganancia;
+
+                const g = p.gestor || 'Directo';
+                if(!gestorStats[g]) gestorStats[g] = { sales: 0, profit: 0 };
+                gestorStats[g].sales += venta;
+                gestorStats[g].profit += ganancia;
+            });
+
+            document.getElementById('kpi-net-profit').innerText = `$${netProfit.toLocaleString()}`;
+            document.getElementById('kpi-total-sales').innerText = `$${totalSales.toLocaleString()}`;
+            document.getElementById('kpi-commissions').innerText = `$${totalComi.toLocaleString()}`;
+            const margin = (totalSales > 0) ? ((netProfit / totalSales) * 100).toFixed(1) : 0;
+            document.getElementById('kpi-margin').innerText = `${margin}%`;
+
+            renderChartProduct(prodProfit);
+            renderChartGestor(gestorStats);
+        }
+
+        function renderChartProduct(data) {
+            const sorted = Object.entries(data).sort((a,b) => b[1] - a[1]).slice(0, 10);
+            const ctx = document.getElementById('chartProfitProduct').getContext('2d');
+            if(window.myChart1) window.myChart1.destroy();
+
+            window.myChart1 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(i => i[0].substring(0, 15) + '...'),
+                    datasets: [{
+                        label: 'Ganancia Neta ($)',
+                        data: sorted.map(i => i[1]),
+                        backgroundColor: '#10b981',
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#334155' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        function renderChartGestor(data) {
+            const labels = Object.keys(data);
+            const salesData = labels.map(l => data[l].sales);
+            const profitData = labels.map(l => data[l].profit);
+
+            const ctx = document.getElementById('chartGestorPerformance').getContext('2d');
+            if(window.myChart2) window.myChart2.destroy();
+
+            window.myChart2 = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Volumen Ventas', data: salesData, borderColor: '#3b82f6', tension: 0.4 },
+                        { label: 'Ganancia que Genera', data: profitData, borderColor: '#10b981', tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, scales: { y: { grid: { color: '#334155' } } } }
+            });
+        }
+
+        // Arrancar
+        
+        initMaster();
+
+    </script>
+</body>
+</html>
