@@ -28,24 +28,24 @@
     </style>
 
     <script>
-        // --- 1. SEGURIDAD: CHECKPOINT ---
-        // Si alguien intenta entrar aquí escribiendo la URL sin ser SUPERADMIN, lo sacamos.
-        const session = JSON.parse(localStorage.getItem('pth_session') || '{}');
-        
-        // AQUÍ DEFINES QUIÉN PUEDE ENTRAR (Tu usuario y el del Jefe)
-        // Asegúrate de actualizar el rol en Supabase a 'superadmin' para estos usuarios
-        const isBoss = session.isAdmin === true || session.data?.rol === 'superadmin';
+    // --- 1. SEGURIDAD: CHECKPOINT SUPREMO ---
+    const session = JSON.parse(localStorage.getItem('pth_session') || '{}');
+    
+    // VERIFICACIÓN ESTRICTA:
+    // Solo entra si el rol es explícitamente 'superadmin' O si es el usuario Marcel/Ángel específico.
+    // Ya NO basta con ser "isAdmin: true".
+    const isSuperBoss = session.data?.rol === 'superadmin' || session.name === 'Marcel Montano';
 
-        if (!isBoss) {
-            alert("⛔ ACCESO DENEGADO: Área Financiera Restringida.");
-            window.location.href = 'index.html'; // Patada de vuelta al inicio
-        }
+    if (!isSuperBoss) {
+        alert("⛔ ACCESO DENEGADO: Área Financiera Restringida.\n\nTu nivel de administrador (Logística) no tiene permiso para ver el dinero.");
+        window.location.href = 'index.html'; // Patada de vuelta al inicio
+    }
 
-        // Configuración Supabase (Misma que index)
-        const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    </script>
+    // Configuración Supabase
+    const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
 </head>
 <body class="pb-20">
 
@@ -440,67 +440,47 @@ async function updateCosto(id, nuevoCosto, inputElement) {
         }
 
         // 2. CARGA DE CONCILIACIÓN (CORREGIDA Y BLINDADA)
+// 2. CARGA DE CONCILIACIÓN (CON TOTALIZADOR POR PROVEEDOR)
 async function loadConciliacion() {
-    console.log("Cargando conciliación...");
-
-    // 1. SEGURIDAD: Si no hay inventario cargado, cárgalo primero
-    // (Esto evita que la tabla salga vacía o de error)
+    
+    // 1. Cargar inventario si falta (Seguridad)
     if (typeof inventario === 'undefined' || inventario.length === 0) {
-        console.log("Inventario vacío, cargando...");
         await loadCostos(); 
     }
 
-    // 2. Buscar pedidos ENTREGADOS que faltan por cobrar al proveedor
+    // 2. Obtener datos
     const { data, error } = await supabaseClient
         .from('pedidos')
         .select('*')
         .eq('estado', 'Entregado')
-        .neq('estado_financiero', 'Conciliado_Prov'); // Que no estén ya cerrados
+        .neq('estado_financiero', 'Conciliado_Prov');
 
     if(error) return console.error(error);
 
-    // --- LOGICA DE FILTROS ---
+    // --- FILTROS ---
     const select = document.getElementById('filter-prov-conc');
     const valorActual = select.value;
 
     const proveedoresUnicos = [...new Set(data.map(p => p.proveedor || 'General'))].sort();
     
-    // Rellenar el select si está vacío
     if (select.options.length <= 1 || valorActual === 'TODOS') {
         select.innerHTML = `<option value="TODOS">Todos los Proveedores</option>` +
             proveedoresUnicos.map(prov => `<option value="${prov}">${prov}</option>`).join('');
         select.value = valorActual;
     }
 
-    // Filtrar datos
+    // Filtrar lista
     let pedidosFiltrados = data;
     if (valorActual !== 'TODOS') {
         pedidosFiltrados = data.filter(p => (p.proveedor || 'General') === valorActual);
     }
 
-    // --- CAMBIO VISUAL DEL ENCABEZADO (Corrección de Texto) ---
-    // Buscamos la última columna y le cambiamos el nombre para que no te confundas
-    const headers = document.querySelectorAll('#sec-conciliacion th');
-    if(headers.length > 0) {
-        headers[headers.length - 1].innerHTML = `<span class="text-emerald-400">A RECIBIR DEL PROV.</span>`;
-    }
-
-    // --- RENDERIZAR TABLA ---
-    const list = document.getElementById('list-conciliacion');
-
-    if (pedidosFiltrados.length === 0) {
-        list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">
-            No hay pedidos 'Entregados' pendientes de cobro.<br>
-            <span class="text-xs">Revisa si tienes pedidos en 'Pendiente' o si ya los conciliaste todos.</span>
-        </td></tr>`;
-        return;
-    }
-
-    list.innerHTML = pedidosFiltrados.map(p => {
-        // Buscar el costo base en el inventario
-        // Limpiamos el nombre (quitamos "1x " y "[USD]") para encontrarlo mejor
+    // --- CÁLCULO DEL TOTAL ACUMULADO (NUEVO) ---
+    let sumaTotalARecibir = 0;
+    
+    // Procesamos los datos para la tabla y sumamos al vuelo
+    const filasHTML = pedidosFiltrados.map(p => {
         const nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
-        
         const prod = inventario.find(i => p.producto.includes(i.nombre) || i.nombre === nombreLimpio) || { costo_proveedor: 0 };
         const costoBase = Number(prod.costo_proveedor || 0);
         
@@ -508,11 +488,15 @@ async function loadConciliacion() {
         const match = p.producto.match(/^(\d+)x/);
         if(match) qty = parseInt(match[1]);
 
-        // MATEMÁTICA DEL NEGOCIO DE ÁNGEL:
-        // Total Venta (ej: 230) - Costo Proveedor (ej: 200) = 30 (A recibir)
         const totalVenta = parseFloat(p.total);
         const totalCosto = costoBase * qty;
         const aRecibir = totalVenta - totalCosto;
+
+        // SUMAR AL TOTAL GENERAL
+        sumaTotalARecibir += aRecibir;
+
+        // Alerta visual si falta el costo
+        const esAlerta = costoBase === 0;
 
         return `
         <tr class="border-b border-slate-800 hover:bg-slate-800/50">
@@ -523,11 +507,61 @@ async function loadConciliacion() {
                 <div class="text-[10px] text-amber-500 uppercase">${p.proveedor || 'General'}</div>
             </td>
             <td class="p-3 text-slate-300">$${totalVenta}</td>
-            <td class="p-3 text-red-300">$${totalCosto} (Base)</td>
+            <td class="p-3 font-mono">
+                 ${esAlerta ? `<span class="text-red-500 font-bold">$0 (Alerta)</span>` : `<span class="text-red-300">$${totalCosto}</span>`}
+            </td>
             <td class="p-3 font-black text-emerald-400 text-lg">+$${aRecibir.toFixed(2)}</td>
         </tr>
         `;
     }).join('');
+
+    // --- INYECTAR EL PANEL DE TOTALES (NUEVO) ---
+    // Buscamos dónde poner el total (Antes de la tabla)
+    const container = document.getElementById('list-conciliacion').parentElement; // La tabla
+    let totalPanel = document.getElementById('panel-total-conciliacion');
+    
+    // Si no existe el panel, lo creamos dinámicamente
+    if (!totalPanel) {
+        totalPanel = document.createElement('div');
+        totalPanel.id = 'panel-total-conciliacion';
+        totalPanel.className = "bg-gradient-to-r from-slate-800 to-slate-900 p-4 rounded-xl mb-4 border border-slate-700 flex justify-between items-center shadow-lg";
+        // Lo insertamos antes de la tabla
+        container.parentElement.insertBefore(totalPanel, container);
+    }
+
+    // Actualizamos el contenido del panel
+    const nombreProveedor = valorActual === 'TODOS' ? 'TOTAL GLOBAL' : `PROVEEDOR: ${valorActual}`;
+    
+    totalPanel.innerHTML = `
+        <div class="flex items-center gap-3">
+            <div class="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
+                <span class="material-symbols-outlined text-2xl">payments</span>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">MONTO A RECOGER (${nombreProveedor})</p>
+                <p class="text-[10px] text-slate-500">Suma de ${pedidosFiltrados.length} pedidos seleccionados</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <span class="block text-3xl font-black text-white tracking-tight">$${sumaTotalARecibir.toFixed(2)}</span>
+            <span class="text-xs text-emerald-400 font-bold">Disponible para traer</span>
+        </div>
+    `;
+
+    // --- RENDERIZAR LA TABLA ---
+    const list = document.getElementById('list-conciliacion');
+    
+    // Arreglar encabezado si es necesario
+    const thFinal = document.querySelector('#sec-conciliacion thead th:last-child');
+    if(thFinal) thFinal.innerHTML = "A RECIBIR";
+
+    if (pedidosFiltrados.length === 0) {
+        list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">Nada pendiente.</td></tr>`;
+        // Si no hay datos, ocultamos el panel de totales o lo ponemos en 0
+        if(totalPanel) totalPanel.innerHTML = `<div class="text-center w-full text-slate-500 text-xs">Sin montos pendientes</div>`;
+    } else {
+        list.innerHTML = filasHTML;
+    }
 }
 
         function toggleAllConc(source) {
