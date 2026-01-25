@@ -3,18 +3,21 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MARKETING STUDIO | paratuhogar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MAGIC STUDIO | paratuhogar</title>
     
     <!-- Estilos y Fuentes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
     
-    <!-- Librerías GRATUITAS -->
+    <!-- LIBRERÍAS (AQUÍ ESTABA EL ERROR, FALTABA LA DE IA) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> <!-- Para el QR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- LA LIBRERÍA DE IA PARA BORRAR FONDOS -->
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
 
     <style>
         body { font-family: 'Manrope', sans-serif; background-color: #0f172a; color: white; overflow: hidden; }
@@ -24,152 +27,134 @@
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
         
-        .sidebar { width: 320px; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.1); }
         .canvas-preview { width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.2s; }
-        .canvas-preview:hover { transform: scale(1.02); border: 2px solid #3b82f6; }
         
-        /* Switches (Interruptores estilo iOS) */
+        /* Switches iOS */
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #3b82f6; }
         input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Animación del Drawer Móvil */
+        .sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar.closed { transform: translateX(-100%); }
+        /* En Desktop siempre visible */
+        @media (min-width: 768px) { .sidebar.closed { transform: translateX(0); } }
     </style>
 </head>
-<body class="flex h-screen">
+<body class="flex h-screen relative">
+
+    <!-- BOTÓN MENÚ MÓVIL (Solo visible en celular) -->
+    <button onclick="toggleSidebar()" class="md:hidden absolute top-4 left-4 z-50 bg-blue-600 p-2 rounded-full shadow-lg text-white flex items-center justify-center">
+        <span class="material-symbols-outlined">tune</span>
+    </button>
 
     <!-- 1. BARRA LATERAL (CONTROLES) -->
-    <!-- 1. BARRA LATERAL (CONTROLES) -->
-<aside class="sidebar h-full flex flex-col p-6 z-20 shadow-2xl overflow-y-auto bg-[#0f172a] text-white border-r border-white/10">
-    
-    <!-- Header -->
-    <div class="mb-8 flex items-center gap-3">
-        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
-            <span class="material-symbols-outlined text-white">auto_awesome</span>
-        </div>
-        <div>
-            <h1 class="font-black text-lg tracking-tight">MAGIC STUDIO</h1>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Generador v2.0</p>
-        </div>
-    </div>
-
-    <!-- Filtros de Selección -->
-    <div class="space-y-5 mb-8 border-b border-white/10 pb-8">
-        <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest">1. Producto</h3>
+    <!-- Agregamos clases para comportamiento móvil: absolute, w-80, z-40 -->
+    <aside id="sidebar" class="sidebar closed md:block absolute md:static top-0 left-0 h-full w-80 bg-[#0f172a] text-white border-r border-white/10 z-40 flex flex-col p-6 shadow-2xl overflow-y-auto">
         
-        <div class="relative group">
-            <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-500 text-sm group-focus-within:text-indigo-400 transition-colors">search</span>
+        <!-- Header -->
+        <div class="mb-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg">
+                    <span class="material-symbols-outlined text-white">auto_awesome</span>
+                </div>
+                <div>
+                    <h1 class="font-black text-base tracking-tight">MAGIC STUDIO</h1>
+                </div>
+            </div>
+            <!-- Botón cerrar en móvil -->
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400"><span class="material-symbols-outlined">close</span></button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="space-y-4 mb-6 border-b border-white/10 pb-6">
             <input type="text" id="ctrl-search" placeholder="Buscar equipo..." 
-                   class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2 pl-9 pr-3 text-sm font-medium focus:border-indigo-500 focus:outline-none transition-all placeholder:text-slate-600">
-        </div>
-
-        <select id="ctrl-category" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2 px-3 text-sm font-medium focus:border-indigo-500 focus:outline-none text-slate-300">
-            <option value="TODOS">Todas las Categorías</option>
-        </select>
-    </div>
-
-    <!-- Configuración de Diseño -->
-    <div class="space-y-5 mb-8 flex-1">
-        <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest">2. Estilo & Formato</h3>
-        
-        <!-- SELECTOR DE TEMA (NUEVO) -->
-        <div>
-            <label class="text-xs font-bold text-slate-300 block mb-2">Tema Visual</label>
-            <select id="ctrl-theme" class="w-full bg-indigo-600/10 border border-indigo-500/50 rounded-xl py-2.5 px-3 text-sm font-bold text-indigo-300 focus:outline-none mb-2">
-                <option value="classic">🔵 Clásico (Azul)</option>
-                <option value="minimal">⚪ Apple Style (Minimal)</option>
-                <option value="midnight">⚫ Midnight (Premium)</option>
-                <option value="impact">🔴 Oferta Flash (Impacto)</option>
+                   class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 px-3 text-sm focus:border-indigo-500 outline-none">
+            <select id="ctrl-category" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 px-3 text-sm outline-none text-slate-300">
+                <option value="TODOS">Todas las Categorías</option>
             </select>
         </div>
 
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300">Formato Story (9:16)</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-format" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300">Forzar Fondo Blanco</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-white-bg">
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest mt-6">3. Elementos</h3>
-
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300">Precio Visible</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-price" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300">Badge "Entrega 24h"</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-delivery" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300">Sello Garantía Real</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-warranty" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300">Datos Contacto</span>
-            <label class="switch">
-                <input type="checkbox" id="toggle-phone" checked>
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
-
-    <!-- Botón de Acción -->
-    <div class="mt-auto pt-6 border-t border-white/10">
-        <button onclick="downloadAllImages()" id="btn-download" class="w-full bg-white text-[#0f172a] hover:bg-slate-200 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-white/10 transition-all active:scale-95 flex items-center justify-center gap-2">
-            <span class="material-symbols-outlined">download</span>
-            Descargar Pack
-        </button>
-        <button onclick="window.location.href='index.html'" class="w-full text-center text-[10px] font-bold text-slate-500 mt-4 hover:text-white transition-colors uppercase tracking-wider">Volver al Catálogo</button>
-    </div>
-</aside>
-
-    <!-- 2. ÁREA DE VISUALIZACIÓN (PREVIEW GRID) -->
-    <main class="flex-1 h-full overflow-y-auto p-8 relative bg-slate-900">
-        <!-- Fondo Decorativo -->
-        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
-        
-        <header class="flex justify-between items-center mb-8 relative z-10">
-            <h2 class="text-2xl font-bold text-white"><span id="count-label">0</span> Diseños Listos</h2>
-            <div class="flex gap-2">
-                <button onclick="refreshPreviews()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold border border-slate-700 transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">refresh</span> Regenerar Vistas
-                </button>
+        <!-- Configuración -->
+        <div class="space-y-4 mb-6 flex-1">
+            
+            <!-- Selector Tema -->
+            <div>
+                <label class="text-xs font-bold text-slate-400 mb-1 block">Estilo Visual</label>
+                <select id="ctrl-theme" class="w-full bg-indigo-900/30 border border-indigo-500/50 rounded-lg py-2 px-3 text-sm font-bold text-indigo-300 outline-none">
+                    <option value="classic">🔵 Clásico</option>
+                    <option value="minimal">⚪ Minimal (Apple)</option>
+                    <option value="midnight">⚫ Midnight</option>
+                    <option value="impact">🔴 Impacto</option>
+                </select>
             </div>
+
+            <!-- IA TOGGLE (IMPORTANTE) -->
+            <div class="bg-indigo-600/10 p-3 rounded-xl border border-indigo-500/30">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-indigo-400 text-lg">auto_fix</span>
+                        <span class="text-sm font-bold text-white">IA: Quitar Fondo</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-ai-bg">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <p class="text-[9px] text-indigo-300 mt-1 leading-tight">
+                    ⚠️ Tarda 3-5 seg por foto. Activar solo si es necesario.
+                </p>
+            </div>
+
+            <div class="h-px bg-white/10 my-2"></div>
+
+            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Formato Story</span><label class="switch"><input type="checkbox" id="toggle-format" checked><span class="slider"></span></label></div>
+            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Mostrar Precio</span><label class="switch"><input type="checkbox" id="toggle-price" checked><span class="slider"></span></label></div>
+            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Entrega 24h</span><label class="switch"><input type="checkbox" id="toggle-delivery" checked><span class="slider"></span></label></div>
+            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Garantía Real</span><label class="switch"><input type="checkbox" id="toggle-warranty" checked><span class="slider"></span></label></div>
+            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Mis Datos</span><label class="switch"><input type="checkbox" id="toggle-phone" checked><span class="slider"></span></label></div>
+        </div>
+
+        <!-- Botón Acción -->
+        <div class="mt-auto pt-4 border-t border-white/10">
+            <button onclick="downloadAllImages()" id="btn-download" class="w-full bg-white text-[#0f172a] hover:bg-slate-200 py-3 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
+                <span class="material-symbols-outlined">download</span>
+                Descargar Pack
+            </button>
+            <button onclick="window.location.href='index.html'" class="w-full text-center text-[10px] font-bold text-slate-500 mt-3 uppercase">Volver</button>
+        </div>
+    </aside>
+
+    <!-- 2. ÁREA VISUALIZACIÓN -->
+    <main class="flex-1 h-full overflow-y-auto p-4 md:p-8 bg-slate-900 relative w-full" onclick="closeSidebarMobile()">
+        <header class="flex justify-between items-center mb-6 pl-10 md:pl-0">
+            <h2 class="text-xl md:text-2xl font-bold text-white"><span id="count-label">0</span> Diseños</h2>
+            <button onclick="refreshPreviews()" class="bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-700 flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">refresh</span> <span class="hidden md:inline">Regenerar</span>
+            </button>
         </header>
 
-        <!-- Aquí se inyectan los CANVAS generados -->
-        <div id="preview-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20 relative z-10">
-            <!-- JS llenará esto -->
-            <div class="col-span-full text-center py-20 text-slate-500">
-                <span class="loader block mx-auto mb-4"></span>
-                Cargando motor gráfico...
-            </div>
+        <div id="preview-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
+            <!-- JS llena esto -->
         </div>
     </main>
 
-    <!-- Logica del Motor -->
     <script src="js/studio-core.js"></script>
+    <script>
+        // Función simple para el menú móvil
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('closed');
+        }
+        function closeSidebarMobile() {
+            // Solo cierra si estamos en móvil y está abierto
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('closed');
+            }
+        }
+    </script>
 </body>
 </html>
