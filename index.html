@@ -1349,6 +1349,23 @@
 
     <!-- Scripts de Lógica -->
     <script>
+
+        // === CÓDIGO DE LIMPIEZA DE EMERGENCIA ===
+(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    // Si la URL tiene ?limpiar=true, borramos todo
+    if (urlParams.get('limpiar') === 'true') {
+        localStorage.removeItem('pth_referrer');
+        localStorage.removeItem('pth_referrer_smart');
+        localStorage.removeItem('pth_session');
+        alert("✅ MEMORIA RESETEADA: Se ha borrado el rastro del gestor anterior (Frank). Ahora la web está limpia.");
+        // Recargar la página limpia
+        window.location.href = window.location.origin + window.location.pathname;
+    }
+})();
+// =========================================
+
+
     // 1. CONFIGURACIÓN SUPABASE
     // Cambiamos el nombre de la constante a 'supabaseClient' para evitar errores
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
