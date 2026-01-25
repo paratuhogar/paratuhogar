@@ -301,39 +301,38 @@
                     </div>
 
                     <!-- 3. DERECHA: Botones de Acción (Iconos limpios) -->
-                    <div class="flex gap-2 w-full xl:w-auto">
+<!-- BARRA DE ACCIONES GAMIFICADA -->
+<div class="flex items-center gap-3 w-full xl:w-auto justify-end">
+    
+    <!-- 1. Botón Flash (Se inyecta por JS, este es el hueco) -->
+    <div id="container-flash-btn" class="h-10"></div>
 
-                        <!-- === ¡TE FALTA ESTA LÍNEA! === -->
-    <!-- Aquí es donde JS inyectará el botón (candado o rayo) -->
-    <div id="container-flash-btn" class="flex-1 xl:flex-none"></div>
-    <!-- ============================= -->
+    <!-- 2. Botón Texto (Nivel 2) -->
+    <button id="btn-copy-bulk" class="h-10 w-10 md:w-auto md:px-4 rounded-xl border border-indigo-100 bg-white text-indigo-600 flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95" title="Copiado Masivo">
+        <span class="material-symbols-outlined text-xl">content_copy</span>
+        <!-- Texto oculto en móvil, visible en PC -->
+        <span class="hidden md:inline text-xs font-bold">Texto</span>
+    </button>
 
-                        <!-- 1. AQUÍ INYECTAREMOS EL BOTÓN FLASH (Bloqueado o Desbloqueado) -->
-                        <div id="container-flash-btn"></div>
+    <!-- 3. MAGIC STUDIO (Nivel 5 - Botón Morado) -->
+    <button id="btn-magic-studio" class="h-10 w-10 md:w-auto md:px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:brightness-110 hover:scale-105 active:scale-95" title="Magic Studio AI">
+        <span class="material-symbols-outlined text-xl">auto_fix</span>
+        <span class="hidden md:inline text-xs font-black">Magic Studio</span>
+    </button>
 
-                        <!-- 1. Botón Texto (Masivo) -->
-                        <!-- 1. Botón Texto (Masivo) -->
-<button id="btn-copy-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
-    <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
-</button>
+    <!-- 4. Fotos (Nivel 2) -->
+    <button id="btn-zip-bulk" class="h-10 w-10 md:w-auto md:px-4 rounded-xl border border-blue-100 bg-white text-blue-600 flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95" title="Pack Fotos">
+        <span class="material-symbols-outlined text-xl">folder_zip</span>
+        <span class="hidden md:inline text-xs font-bold">Fotos</span>
+    </button>
 
-<!-- Botón para ir al Studio -->
-<button id="btn-magic-studio" onclick="goToStudio()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 text-xs font-black shadow-lg transition-all active:scale-95">
+    <!-- 5. PDF (Nivel 4) -->
+    <button id="btn-pdf-bulk" class="h-10 w-10 md:w-auto md:px-4 rounded-xl border border-red-100 bg-red-50 text-red-600 flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95" title="Catálogo PDF">
+        <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+        <span class="hidden md:inline text-xs font-bold">PDF</span>
+    </button>
 
-    <span class="material-symbols-outlined text-lg">auto_fix</span> 
-    <span class="hidden sm:inline">Magic Studio</span>
-</button>
-
-<!-- 2. Botón Fotos (Masivo) -->
-<button id="btn-zip-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
-    <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
-</button>
-
-<!-- 3. Botón PDF -->
-<button id="btn-pdf-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
-    <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
-</button>
-                    </div>
+</div>
 
                 </div>
             </div>
@@ -6118,39 +6117,81 @@ function closeWelcomeAgent() {
 // --- CORRECCIÓN: FUNCIÓN PARA GESTIONAR CANDADOS Y MENSAJES ---
 function applyLockedFeatures() {
     const level = window.currentGestorLevel || 0; 
-    const sales = window.gestorSalesCount || 0; // Tus ventas actuales
+    const sales = window.gestorSalesCount || 0;
 
-    // Referencias a los botones
+    // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
     const btnPdf = document.getElementById('btn-pdf-bulk');
-    const btnStudio = document.getElementById('btn-magic-studio'); // <--- NUEVO
+    const btnStudio = document.getElementById('btn-magic-studio');
 
-    // 1. NIVEL 2 (10 Ventas): Texto y Fotos
+    // Estilo base para botones desbloqueados (para no repetir código)
+    const baseStyle = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer hover:scale-105 active:scale-95 shadow-sm";
+
+    // ------------------------------------------------------
+    // NIVEL 2 (10 Ventas): TEXTO Y FOTOS
+    // ------------------------------------------------------
     const TARGET_LVL_2 = 10;
+    
     if (level >= 2) {
-        if(btnCopy) unlockButton(btnCopy, 'content_copy', 'Texto', 'copyCategoryOffers', 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50');
-        if(btnZip) unlockButton(btnZip, 'folder_zip', 'Fotos', 'downloadCategoryPhotos', 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50');
+        // === BOTÓN TEXTO (DESBLOQUEADO) ===
+        if (btnCopy) {
+            btnCopy.className = `${baseStyle} bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50`;
+            btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span>Texto</span>`;
+            btnCopy.title = "Copiado Masivo";
+            // ASIGNACIÓN DIRECTA (LA SOLUCIÓN):
+            btnCopy.onclick = function() { copyCategoryOffers(); };
+        }
+
+        // === BOTÓN FOTOS (DESBLOQUEADO) ===
+        if (btnZip) {
+            btnZip.className = `${baseStyle} bg-white text-blue-600 border-blue-100 hover:bg-blue-50`;
+            btnZip.innerHTML = `<span class="material-symbols-outlined text-lg">folder_zip</span> <span>Fotos</span>`;
+            btnZip.title = "Descargar Pack Fotos";
+            // ASIGNACIÓN DIRECTA (LA SOLUCIÓN):
+            btnZip.onclick = function() { downloadCategoryPhotos(); };
+        }
+
     } else {
-        if(btnCopy) lockButtonWithMath(btnCopy, "Texto Masivo", "Copia descripciones de 20 productos a la vez.", sales, TARGET_LVL_2, 2);
-        if(btnZip) lockButtonWithMath(btnZip, "Pack Fotos", "Descarga 50 fotos en un click.", sales, TARGET_LVL_2, 2);
+        // BLOQUEADOS (Usamos el helper antiguo que funciona bien para bloquear)
+        lockButtonWithMath(btnCopy, "Texto Masivo", "Copia descripciones de 20 productos a la vez.", sales, TARGET_LVL_2, 2);
+        lockButtonWithMath(btnZip, "Pack Fotos", "Descarga 50 fotos en un click.", sales, TARGET_LVL_2, 2);
     }
 
-    // 2. NIVEL 4 (40 Ventas): PDF
+    // ------------------------------------------------------
+    // NIVEL 4 (40 Ventas): PDF PRO
+    // ------------------------------------------------------
     const TARGET_LVL_4 = 40;
+    
     if (level >= 4) {
-        if(btnPdf) unlockButton(btnPdf, 'picture_as_pdf', 'PDF', 'downloadCatalogPDF', 'bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white');
+        // === BOTÓN PDF (DESBLOQUEADO) ===
+        if (btnPdf) {
+            btnPdf.className = `${baseStyle} bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white`;
+            btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>`;
+            btnPdf.title = "Generar Catálogo PDF";
+            // ASIGNACIÓN DIRECTA (LA SOLUCIÓN):
+            btnPdf.onclick = function() { downloadCatalogPDF(); };
+        }
     } else {
-        if(btnPdf) lockButtonWithMath(btnPdf, "Catálogo PDF", "Crea catálogos profesionales con tu nombre.", sales, TARGET_LVL_4, 4);
+        lockButtonWithMath(btnPdf, "Catálogo PDF", "Crea catálogos profesionales con tu nombre.", sales, TARGET_LVL_4, 4);
     }
 
-    // 3. NIVEL 5 (70 Ventas): MAGIC STUDIO
+    // ------------------------------------------------------
+    // NIVEL 5 (70 Ventas): MAGIC STUDIO
+    // ------------------------------------------------------
     const TARGET_LVL_5 = 70;
+    
     if (level >= 5) {
-        // Estilo especial degradado para el Studio
-        if(btnStudio) unlockButton(btnStudio, 'auto_fix', 'Magic Studio', 'goToStudio()', 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-400 hover:brightness-110 shadow-lg');
+        // === BOTÓN STUDIO (DESBLOQUEADO) ===
+        if(btnStudio) {
+            btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
+            btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
+            btnStudio.title = "Magic Studio AI - Activo";
+            // Este ya funcionaba, lo dejamos igual:
+            btnStudio.onclick = function() { goToStudio(); };
+        }
     } else {
-        if(btnStudio) lockButtonWithMath(btnStudio, "Magic Studio", "Genera imágenes de marketing profesionales con IA y tu nombre incrustado.", sales, TARGET_LVL_5, 5);
+        lockButtonWithMath(btnStudio, "Magic Studio", "Genera imágenes de marketing con IA.", sales, TARGET_LVL_5, 5);
     }
 }
 
@@ -6183,6 +6224,8 @@ function lockButtonWithMath(btn, toolName, description, currentSales, targetSale
     btn.removeAttribute("onclick");
     btn.title = `Bloqueado - Faltan ${missingText} ventas`;
 }
+
+
 
 // Función auxiliar simple para bloquear
 function lockButtonDirect(btn, name, lvl) {
@@ -6253,15 +6296,19 @@ function lockButton(btn, toolName, reqLevel, salesPitch) {
 }
 
 // Helper: Desbloquear Botón
+// Helper: Desbloquear Botón (CORREGIDO PARA VERSE EN MÓVIL)
 function unlockButton(btn, icon, label, actionStr, colorClasses) {
     if (!btn) return;
-    // Restauramos estilo de color
-    btn.className = `flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer ${colorClasses}`;
-    btn.innerHTML = `<span class="material-symbols-outlined text-lg">${icon}</span> <span class="hidden sm:inline">${label}</span>`;
     
-    // Restauramos la función original
+    // 1. Estilos: Añadimos 'shadow-sm' y aseguramos que se vea bien
+    btn.className = `flex-1 py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer hover:scale-105 active:scale-95 shadow-sm ${colorClasses}`;
+    
+    // 2. HTML: Quitamos 'hidden sm:inline' para que el texto SIEMPRE se vea
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">${icon}</span> <span>${label}</span>`;
+    
+    // 3. Acción: Asignamos el clic correctamente
     btn.setAttribute("onclick", actionStr);
-    btn.onclick = null; 
+    btn.onclick = null; // Limpiamos bloqueos anteriores
     btn.title = label;
 }
 
@@ -6315,30 +6362,17 @@ async function checkGamificationStatus() {
 function updateGamificationUI(sales) {
     const data = getLevelData(sales);
     
-    // --- A. Actualizar Tarjeta Dashboard ---
+    // --- A. ACTUALIZAR TARJETA DASHBOARD (LA DE ARRIBA) ---
     const badge = document.getElementById('lvl-badge');
     if(badge) {
         badge.innerText = `Nivel ${data.lvl}`;
         document.getElementById('lvl-name').innerText = data.name;
         document.getElementById('lvl-title').innerText = `AGENTE ${data.name.toUpperCase()}`;
         
-        // CÁLCULO DINÁMICO DE DÍAS (Corregido para nivel 5)
         const diasReales = data.duration / 24;
         const durationText = data.lvl === 0 ? "24 HORAS" : `${diasReales} DÍAS`;
-        
-        const linkSpan = document.getElementById('lvl-link-duration');
-        if (linkSpan) {
-            linkSpan.innerText = durationText;
-            
-            // Colores dinámicos según nivel
-            linkSpan.className = "font-black"; // Limpiamos clases previas
-            if (data.lvl === 0) linkSpan.classList.add("text-red-300");
-            else if (data.lvl === 5) linkSpan.classList.add("text-purple-300"); // Color Emperador
-            else if (data.lvl === 4) linkSpan.classList.add("text-emerald-300");
-            else linkSpan.classList.add("text-amber-300");
-        }
+        document.getElementById('lvl-link-duration').innerText = durationText;
 
-        // Barra de Progreso
         const counterEl = document.getElementById('lvl-counter');
         if (counterEl) counterEl.innerText = `${sales} / ${data.next} Ventas`;
         
@@ -6346,35 +6380,43 @@ function updateGamificationUI(sales) {
         if (barEl) {
             const percent = Math.min(100, (sales / data.next) * 100);
             barEl.style.width = `${percent}%`;
-            
-            // Si es nivel 5, la barra brilla en purpura
-            if (data.lvl === 5) barEl.style.backgroundColor = "#a855f7"; 
-            else barEl.style.backgroundColor = "#fbbf24"; // Ámbar normal
+            // Color de barra según nivel
+            if (data.lvl === 5) barEl.style.background = "linear-gradient(to right, #9333ea, #db2777)";
+            else if (data.lvl === 4) barEl.style.backgroundColor = "#10b981";
+            else barEl.style.backgroundColor = "#fbbf24";
         }
     }
 
-    // --- B. Actualizar Modal Maestro (Desbloquear Cartas del 0 al 5) ---
-    // Cambiamos el límite a 5 para incluir al Emperador
+    // --- B. ACTUALIZAR GRID DE TARJETAS (EL NUEVO DISEÑO) ---
     for (let i = 0; i <= 5; i++) {
         const card = document.getElementById(`card-lvl-${i}`);
         if (!card) continue;
 
-        // Limpiar clases de estado
-        card.classList.remove('active', 'current', 'locked');
+        // Limpieza de clases dinámicas
+        card.classList.remove('ring-4', 'ring-offset-4', 'scale-105', 'z-20', 'shadow-2xl', 'opacity-100', 'grayscale-0', 'filter-none');
+        card.classList.add('opacity-60', 'grayscale', 'filter'); // Por defecto bloqueado
 
         if (i < data.lvl) {
-            // Niveles ya superados
-            card.classList.add('active');
-            if (typeof unlockButtonsInCard === 'function') unlockButtonsInCard(card);
+            // NIVEL SUPERADO (Desbloqueado pero normal)
+            card.classList.remove('opacity-60', 'grayscale', 'filter');
+            card.classList.add('opacity-100', 'grayscale-0', 'filter-none');
+            
         } else if (i === data.lvl) {
-            // Nivel actual
-            card.classList.add('active', 'current');
-            if (typeof unlockButtonsInCard === 'function') unlockButtonsInCard(card);
-        } else {
-            // Niveles bloqueados
-            card.classList.add('locked');
-            if (typeof lockButtonsInCard === 'function') lockButtonsInCard(card);
-        }
+            // NIVEL ACTUAL (Resaltado y Brillante)
+            card.classList.remove('opacity-60', 'grayscale', 'filter');
+            card.classList.add('opacity-100', 'grayscale-0', 'filter-none', 'scale-105', 'z-20', 'shadow-2xl');
+            
+            // Color del anillo según el nivel
+            let ringColor = 'ring-gray-300';
+            if(i===1) ringColor = 'ring-orange-400';
+            if(i===2) ringColor = 'ring-blue-400';
+            if(i===3) ringColor = 'ring-indigo-400';
+            if(i===4) ringColor = 'ring-emerald-400';
+            if(i===5) ringColor = 'ring-purple-500';
+
+            card.classList.add('ring-4', 'ring-offset-2', ringColor);
+        } 
+        // Los niveles mayores a data.lvl se quedan con opacity-60 y grayscale
     }
 }
 
@@ -7475,6 +7517,181 @@ function goToStudio() {
     window.location.href = `studio.html?${params.toString()}`;
 }
 
+// CORRECCIÓN DE ERROR FATAL
+// Agrega esto al final de tu script para que la consola no bloquee el resto
+window.filterMyOrders = function() {
+    const input = document.getElementById('search-mi-historial');
+    if (!input) return;
+    const filter = input.value.toUpperCase();
+    const rows = document.getElementById("list-mis-pedidos").getElementsByTagName("div");
+    
+    // Lógica simple de filtrado visual si usas divs, o adáptalo a tu tabla
+    // Si tu función original loadProDashboard ya maneja esto, 
+    // asegúrate de que filterMyOrders esté definida en el ámbito global (window).
+    if(typeof renderMyOrdersList === 'function' && typeof myOrdersData !== 'undefined') {
+        const filtered = myOrdersData.filter(p => p.cliente.toUpperCase().includes(filter));
+        renderMyOrdersList(filtered);
+    }
+};
+
+// ==========================================
+// FUNCIONES DE LOS BOTONES (TEXTO, FOTOS, PDF)
+// ==========================================
+
+// 1. BOTÓN TEXTO: Copiado Masivo
+async function copyCategoryOffers() {
+    const btn = document.getElementById('btn-copy-bulk');
+    const originalContent = btn.innerHTML;
+    
+    // Feedback visual de carga
+    btn.innerHTML = `<span class="loader w-4 h-4 border-indigo-600"></span>`;
+    
+    try {
+        const gestor = window.gestorName || 'Ventas';
+        // Usamos la variable global productosRaw y activeCategory
+        const products = productosRaw.filter(p => {
+            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+            return matchCat && p.disponible === 'SI';
+        });
+
+        if (products.length === 0) throw new Error("No hay productos visibles en esta categoría.");
+
+        let texto = `🔥 *CATÁLOGO ${activeCategory}* 🔥\n\n`;
+        
+        // Generamos links para los primeros 20 productos para no saturar
+        const limit = products.slice(0, 20);
+        
+        for (let p of limit) {
+            // Construir link limpio
+            let cleanName = encodeURIComponent(p.nombre.trim());
+            let link = `${window.location.origin}${window.location.pathname}?search=${cleanName}&gestor=${encodeURIComponent(gestor)}`;
+            
+            // Si tienes la función de link corto, úsala, si no, usa el largo
+            if (typeof getOrGenerateShortLink === 'function') {
+                try { link = await getOrGenerateShortLink(gestor, link); } catch(e){}
+            }
+
+            texto += `▫️ *${p.nombre}*\n💰 $${p.precio} USD\n🔗 ${link}\n\n`;
+        }
+
+        texto += `📲 *Pide aquí:* https://wa.me/${window.currentUserData?.telefono || ''}`;
+
+        await navigator.clipboard.writeText(texto);
+        
+        btn.innerHTML = `<span class="material-symbols-outlined text-xl">check</span>`;
+        setTimeout(() => { btn.innerHTML = originalContent; }, 2000);
+        
+    } catch (e) {
+        alert(e.message);
+        btn.innerHTML = originalContent;
+    }
+}
+
+// 2. BOTÓN FOTOS: Descargar ZIP
+async function downloadCategoryPhotos() {
+    if (typeof JSZip === 'undefined') return alert("Error: Librería JSZip no cargada.");
+    
+    const btn = document.getElementById('btn-zip-bulk');
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = `<span class="loader w-4 h-4 border-blue-600"></span>`;
+    
+    try {
+        const zip = new JSZip();
+        const products = productosRaw.filter(p => {
+            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+            return matchCat && p.disponible === 'SI';
+        });
+
+        if (products.length === 0) throw new Error("No hay productos para descargar.");
+        if (products.length > 50) {
+            if(!confirm(`Se descargarán ${products.length} imágenes. ¿Continuar?`)) throw new Error("Cancelado por usuario.");
+        }
+
+        let count = 0;
+        const promises = products.map(async (p) => {
+            if (!p.thumbnail) return;
+            try {
+                // Usamos fixDriveUrl para asegurar la ruta correcta de Supabase
+                const url = fixDriveUrl(p.thumbnail);
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const filename = p.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 50) + ".jpg";
+                zip.file(filename, blob);
+                count++;
+            } catch (err) { console.log("Error img:", p.nombre); }
+        });
+
+        await Promise.all(promises);
+        
+        if(count === 0) throw new Error("No se pudieron descargar las imágenes (Bloqueo CORS o URLs rotas).");
+
+        const content = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(content);
+        link.download = `Fotos_${activeCategory || 'Catalogo'}.zip`;
+        link.click();
+        
+        btn.innerHTML = originalContent;
+
+    } catch (e) {
+        alert(e.message);
+        btn.innerHTML = originalContent;
+    }
+}
+
+// 3. BOTÓN PDF: Generar Catálogo
+async function downloadCatalogPDF() {
+    if (!window.jspdf) return alert("Error: Librería jsPDF no cargada.");
+    
+    const btn = document.getElementById('btn-pdf-bulk');
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = `<span class="loader w-4 h-4 border-red-600"></span>`;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const products = productosRaw.filter(p => {
+            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+            return matchCat && p.disponible === 'SI';
+        });
+
+        if (products.length === 0) throw new Error("No hay productos.");
+
+        // Encabezado
+        doc.setFillColor(26, 71, 137);
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.text("CATÁLOGO OFICIAL", 105, 20, null, null, "center");
+        doc.setFontSize(12);
+        doc.text(`Agente: ${window.gestorName || 'Ventas'} | +${window.currentUserData?.telefono || ''}`, 105, 30, null, null, "center");
+
+        // Preparar datos tabla
+        const bodyData = products.map(p => [
+            p.nombre,
+            `$${p.precio}`,
+            p.garantia || 'Si',
+            p.mensajeria || 'Consultar'
+        ]);
+
+        doc.autoTable({
+            startY: 50,
+            head: [['Producto', 'Precio USD', 'Garantía', 'Envío']],
+            body: bodyData,
+            theme: 'grid',
+            headStyles: { fillColor: [26, 71, 137] },
+            styles: { fontSize: 10 }
+        });
+
+        doc.save(`Catalogo_${activeCategory || 'General'}.pdf`);
+        btn.innerHTML = originalContent;
+
+    } catch (e) {
+        alert("Error generando PDF: " + e.message);
+        btn.innerHTML = originalContent;
+    }
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
@@ -7500,167 +7717,231 @@ function goToStudio() {
             <div class="p-6 md:p-10 space-y-8">
                 
                 <!-- GRID DE NIVELES -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    
-                    <!-- Nivel 0 -->
-                    <div id="card-lvl-0" class="level-card active current group">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="text-sm font-black uppercase text-[#1a4789]">Nivel 0: Iniciado</h4>
-                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 0 - 2 Ventas</p>
-                            </div>
-                            <span class="material-symbols-outlined text-3xl text-gray-300">water_drop</span>
-                        </div>
-                        <div class="mb-5">
-                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
-                                <span>Duración Enlace</span>
-                                <span class="text-red-500">1 SEMANA</span>
-                            </p>
-                            <div class="vital-link-bar"><div class="vital-link-fill bg-red-400" style="width: 10%"></div></div>
-                        </div>
-                        <div class="space-y-2">
-                            <p class="text-[9px] font-black uppercase text-gray-400">Herramientas Base:</p>
-                            <div class="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-100 p-2 rounded-lg">
-                                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Compartir Enlace
-                            </div>
-                            <div class="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-100 p-2 rounded-lg">
-                                <span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span> Descarga 1 Foto
-                            </div>
-                        </div>
-                    </div>
+                <!-- GRID DE NIVELES GAMIFICADO (DISEÑO PREMIUM) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
 
-                    <!-- Nivel 1 -->
-                    <div id="card-lvl-1" class="level-card locked group">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 1: Novato</h4>
-                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 3 - 9 Ventas</p>
-                            </div>
-                            <span class="material-symbols-outlined text-3xl text-gray-300">bolt</span>
-                        </div>
-                        <div class="mb-5">
-                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
-                                <span>Duración Enlace</span>
-                                <span class="text-orange-500">1 MES</span>
-                            </p>
-                            <div class="vital-link-bar"><div class="vital-link-fill bg-orange-400" style="width: 25%"></div></div>
-                        </div>
-                        <div class="space-y-2">
-                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
-                            <button onclick="alertLockedInfo('Respuesta Flash', 'Con un clic, el sistema escribe por ti un mensaje de WhatsApp perfecto para el cliente: Hola, tengo este equipo, cuesta tanto... ¡Ahorra escribir!')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">flash_on</span> Respuesta Flash
-                            </button>
-                            <button onclick="alertLockedInfo('Story Maker', 'Diseña automáticamente una imagen vertical para tus Estados de WhatsApp e Instagram, con el precio y la foto bien puestos.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">fit_screen</span> Story Maker
-                            </button>
-                        </div>
-                    </div>
+    <!-- NIVEL 0: INICIADO (Gris/Básico) -->
+    <div id="card-lvl-0" class="relative group rounded-3xl p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-8xl">water_drop</span>
+        </div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 0</span>
+                <span class="text-xs font-bold text-slate-400">0 - 2 Ventas</span>
+            </div>
+            <h3 class="text-2xl font-black text-slate-700 dark:text-white uppercase italic mb-1">Iniciado</h3>
+            <p class="text-xs text-slate-500 mb-6">Tu primer paso en el mundo de las ventas.</p>
 
-                    <!-- Nivel 2 -->
-                    <div id="card-lvl-2" class="level-card locked group">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 2: Experto</h4>
-                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 10 - 19 Ventas</p>
-                            </div>
-                            <span class="material-symbols-outlined text-3xl text-gray-300">bubble_chart</span>
-                        </div>
-                        <div class="mb-5">
-                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
-                                <span>Duración Enlace</span>
-                                <span class="text-blue-500">1 MES</span>
-                            </p>
-                            <div class="vital-link-bar"><div class="vital-link-fill bg-blue-400" style="width: 40%"></div></div>
-                        </div>
-                        <div class="space-y-2">
-                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
-                            <button onclick="alertLockedInfo('Pack Fotos ZIP', '¿Cansado de bajar fotos una por una? Este botón descarga 50 fotos de ollas o neveras en un solo archivo comprimido.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">folder_zip</span> Pack Fotos ZIP
-                            </button>
-                            <button onclick="alertLockedInfo('Copiado Masivo', 'Copia la descripción y precio de 20 productos a la vez. Perfecto para publicar en modo ráfaga en grupos de Facebook.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">content_copy</span> Copiado Masivo
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Nivel 3 -->
-                    <div id="card-lvl-3" class="level-card locked group">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 3: Élite</h4>
-                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 20 - 39 Ventas</p>
-                            </div>
-                            <span class="material-symbols-outlined text-3xl text-gray-300">military_tech</span>
-                        </div>
-                        <div class="mb-5">
-                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
-                                <span>Duración Enlace</span>
-                                <span class="text-indigo-500">3 MESES</span>
-                            </p>
-                            <div class="vital-link-bar"><div class="vital-link-fill bg-indigo-400" style="width: 65%"></div></div>
-                        </div>
-                        <div class="space-y-2">
-                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
-                            <button onclick="alertLockedInfo('Radar Tendencias', 'Te muestra en tiempo real qué equipos se están vendiendo más hoy en la web, para que tú también los ofrezcas.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">radar</span> Radar Tendencias
-                            </button>
-                            <button onclick="alertLockedInfo('Anti-Spam Text', 'Facebook te bloquea si publicas lo mismo. Esta herramienta reescribe tus textos automáticamente con IA.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">autorenew</span> Anti-Spam Text
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Nivel 4 -->
-                    <div id="card-lvl-4" class="level-card locked group border-dashed border-2">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 class="text-sm font-black uppercase text-gray-500">Nivel 4: Monarca</h4>
-                                <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 40+ Ventas</p>
-                            </div>
-                            <span class="material-symbols-outlined text-3xl text-gray-300">crown</span>
-                        </div>
-                        <div class="mb-5">
-                            <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
-                                <span>Duración Enlace</span>
-                                <span class="text-emerald-500">6 MESES</span>
-                            </p>
-                            <div class="vital-link-bar"><div class="vital-link-fill bg-emerald-500" style="width: 100%"></div></div>
-                        </div>
-                        <div class="space-y-2">
-                            <p class="text-[9px] font-black uppercase text-gray-400">Desbloqueas:</p>
-                            <button onclick="alertLockedInfo('Catálogo PDF Pro', 'Crea un archivo PDF oficial con las fotos y precios, pero incrustando TU NOMBRE y TU WHATSAPP en la portada.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">picture_as_pdf</span> Catálogo PDF Pro
-                            </button>
-                            <button onclick="alertLockedInfo('Reporte Contable', 'Descarga un documento formal con todas tus comisiones pagadas y pendientes para tu control.')" class="btn-tool-locked">
-                                <span class="material-symbols-outlined text-gray-400 text-base">receipt_long</span> Reporte Contable
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Nivel 5: Emperador -->
-                <div id="card-lvl-5" class="level-card locked group border-double border-4 border-purple-400 bg-purple-50/10">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h4 class="text-sm font-black uppercase text-purple-600">Nivel 5: Emperador</h4>
-                            <p class="text-[10px] font-bold text-gray-400 mt-1">Requisito: 70+ Ventas</p>
-                        </div>
-                        <span class="material-symbols-outlined text-3xl text-purple-300">diamond</span>
-                    </div>
-                    <div class="mb-5">
-                        <p class="text-[9px] font-black uppercase text-gray-400 mb-1 flex justify-between">
-                            <span>Duración Enlace</span>
-                            <span class="text-purple-600">1 AÑO (ULTRA)</span>
-                        </p>
-                        <div class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full bg-purple-500" style="width: 100%"></div>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <p class="text-[9px] font-black uppercase text-gray-400">Poder Máximo:</p>
-                        
-                    </div>
+            <!-- Barra Duración -->
+            <div class="bg-slate-50 rounded-xl p-3 mb-6 border border-slate-100">
+                <div class="flex justify-between text-[9px] font-black uppercase text-slate-400 mb-1">
+                    <span>Vida del Enlace</span>
+                    <span>1 Semana</span>
                 </div>
+                <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-slate-500 w-[15%]"></div>
                 </div>
+            </div>
+
+            <!-- Poderes -->
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-xs font-bold text-slate-600">
+                    <div class="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-sm">link</span></div>
+                    Enlace Básico
+                </li>
+                <li class="flex items-center gap-3 text-xs font-bold text-slate-600">
+                    <div class="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-sm">image</span></div>
+                    Descarga 1 Foto
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- NIVEL 1: NOVATO (Naranja/Energía) -->
+    <div id="card-lvl-1" class="relative group rounded-3xl p-6 border border-orange-100 bg-gradient-to-br from-orange-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-orange-500/20 overflow-hidden opacity-60 grayscale filter">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-8xl text-orange-500">bolt</span>
+        </div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 1</span>
+                <span class="text-xs font-bold text-orange-400">3 - 9 Ventas</span>
+            </div>
+            <h3 class="text-2xl font-black text-orange-600 uppercase italic mb-1">Novato</h3>
+            <p class="text-xs text-orange-400 mb-6">Desbloquea la velocidad de respuesta.</p>
+
+            <!-- Barra Duración -->
+            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-orange-100">
+                <div class="flex justify-between text-[9px] font-black uppercase text-orange-400 mb-1">
+                    <span>Vida del Enlace</span>
+                    <span>1 Mes</span>
+                </div>
+                <div class="h-2 w-full bg-orange-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-orange-500 w-[30%]"></div>
+                </div>
+            </div>
+
+            <!-- Poderes -->
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-xs font-bold text-orange-800">
+                    <div class="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm"><span class="material-symbols-outlined text-sm">flash_on</span></div>
+                    Respuesta Flash (Botón Rápido)
+                </li>
+                <li class="flex items-center gap-3 text-xs font-bold text-orange-800">
+                    <div class="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm"><span class="material-symbols-outlined text-sm">fit_screen</span></div>
+                    Story Maker
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- NIVEL 2: EXPERTO (Azul/Tecnología) -->
+    <div id="card-lvl-2" class="relative group rounded-3xl p-6 border border-blue-100 bg-gradient-to-br from-blue-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/20 overflow-hidden opacity-60 grayscale filter">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-8xl text-blue-500">bubble_chart</span>
+        </div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 2</span>
+                <span class="text-xs font-bold text-blue-400">10 - 19 Ventas</span>
+            </div>
+            <h3 class="text-2xl font-black text-blue-600 uppercase italic mb-1">Experto</h3>
+            <p class="text-xs text-blue-400 mb-6">Automatización y volumen masivo.</p>
+
+            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-blue-100">
+                <div class="flex justify-between text-[9px] font-black uppercase text-blue-400 mb-1">
+                    <span>Vida del Enlace</span>
+                    <span>1 Mes</span>
+                </div>
+                <div class="h-2 w-full bg-blue-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 w-[45%]"></div>
+                </div>
+            </div>
+
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-xs font-bold text-blue-800">
+                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm"><span class="material-symbols-outlined text-sm">folder_zip</span></div>
+                    Pack Fotos ZIP
+                </li>
+                <li class="flex items-center gap-3 text-xs font-bold text-blue-800">
+                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm"><span class="material-symbols-outlined text-sm">content_copy</span></div>
+                    Copiado Masivo
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- NIVEL 3: ÉLITE (Indigo/Inteligencia) -->
+    <div id="card-lvl-3" class="relative group rounded-3xl p-6 border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20 overflow-hidden opacity-60 grayscale filter">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-8xl text-indigo-500">military_tech</span>
+        </div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 3</span>
+                <span class="text-xs font-bold text-indigo-400">20 - 39 Ventas</span>
+            </div>
+            <h3 class="text-2xl font-black text-indigo-600 uppercase italic mb-1">Élite</h3>
+            <p class="text-xs text-indigo-400 mb-6">Información privilegiada del mercado.</p>
+
+            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-indigo-100">
+                <div class="flex justify-between text-[9px] font-black uppercase text-indigo-400 mb-1">
+                    <span>Vida del Enlace</span>
+                    <span>3 Meses</span>
+                </div>
+                <div class="h-2 w-full bg-indigo-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-indigo-500 w-[65%]"></div>
+                </div>
+            </div>
+
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-xs font-bold text-indigo-800">
+                    <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm"><span class="material-symbols-outlined text-sm">radar</span></div>
+                    Radar de Tendencias
+                </li>
+                <li class="flex items-center gap-3 text-xs font-bold text-indigo-800">
+                    <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm"><span class="material-symbols-outlined text-sm">autorenew</span></div>
+                    Anti-Spam Text IA
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- NIVEL 4: MONARCA (Esmeralda/Negocio) -->
+    <div id="card-lvl-4" class="relative group rounded-3xl p-6 border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/20 overflow-hidden opacity-60 grayscale filter">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <span class="material-symbols-outlined text-8xl text-emerald-500">crown</span>
+        </div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 4</span>
+                <span class="text-xs font-bold text-emerald-400">40 - 69 Ventas</span>
+            </div>
+            <h3 class="text-2xl font-black text-emerald-600 uppercase italic mb-1">Monarca</h3>
+            <p class="text-xs text-emerald-400 mb-6">Imagen corporativa y control total.</p>
+
+            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-emerald-100">
+                <div class="flex justify-between text-[9px] font-black uppercase text-emerald-400 mb-1">
+                    <span>Vida del Enlace</span>
+                    <span>6 Meses</span>
+                </div>
+                <div class="h-2 w-full bg-emerald-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 w-[85%]"></div>
+                </div>
+            </div>
+
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-xs font-bold text-emerald-800">
+                    <div class="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm"><span class="material-symbols-outlined text-sm">picture_as_pdf</span></div>
+                    Catálogo PDF Pro
+                </li>
+                <li class="flex items-center gap-3 text-xs font-bold text-emerald-800">
+                    <div class="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm"><span class="material-symbols-outlined text-sm">receipt_long</span></div>
+                    Reporte Contable
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- NIVEL 5: EMPERADOR (Morado/Ultimátum) -->
+    <div id="card-lvl-5" class="relative group rounded-3xl p-6 border-2 border-purple-200 bg-gradient-to-br from-purple-100 via-white to-purple-50 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-purple-500/30 overflow-hidden opacity-60 grayscale filter">
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diamond-upholstery.png')] opacity-20"></div>
+        <div class="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
+            <span class="material-symbols-outlined text-8xl text-purple-600">diamond</span>
+        </div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <span class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-purple-500/30">Nivel 5</span>
+                <span class="text-xs font-black text-purple-600">70+ Ventas</span>
+            </div>
+            <h3 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 uppercase italic mb-1">Emperador</h3>
+            <p class="text-xs text-purple-400 mb-6 font-bold">El rango máximo. Poder absoluto.</p>
+
+            <div class="bg-white/80 rounded-xl p-3 mb-6 border border-purple-200 shadow-sm">
+                <div class="flex justify-between text-[9px] font-black uppercase text-purple-500 mb-1">
+                    <span>Vida del Enlace</span>
+                    <span>1 AÑO (ULTRA)</span>
+                </div>
+                <div class="h-2 w-full bg-purple-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 w-[100%]"></div>
+                </div>
+            </div>
+
+            <ul class="space-y-3">
+                <li class="flex items-center gap-3 text-xs font-black text-purple-900">
+                    <div class="h-9 w-9 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20"><span class="material-symbols-outlined text-sm">auto_fix</span></div>
+                    Magic Studio AI (NUEVO)
+                </li>
+                <li class="flex items-center gap-3 text-xs font-black text-purple-900">
+                    <div class="h-9 w-9 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20"><span class="material-symbols-outlined text-sm">lock_person</span></div>
+                    Amarre de Cliente Total
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</div>
 
             </div>
         </div>
