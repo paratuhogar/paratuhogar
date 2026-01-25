@@ -318,7 +318,8 @@
 </button>
 
 <!-- Botón para ir al Studio -->
-<button onclick="goToStudio()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 text-xs font-black shadow-lg transition-all active:scale-95">
+<button id="btn-magic-studio" onclick="goToStudio()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 text-xs font-black shadow-lg transition-all active:scale-95">
+
     <span class="material-symbols-outlined text-lg">auto_fix</span> 
     <span class="hidden sm:inline">Magic Studio</span>
 </button>
@@ -589,8 +590,10 @@
     </main>
 
     <!-- MODAL DETALLE (ESTILO IMAGEN) -->
-    <div id="detail-modal" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm p-2 md:p-4 overflow-y-auto flex justify-center items-start md:items-center">
-        <div class="bg-white dark:bg-background-dark w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row relative">
+    <div id="detail-modal" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm p-2 md:p-4 overflow-y-auto flex justify-center items-start lg:items-center lg:p-8">
+
+        <div class="bg-white dark:bg-background-dark w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row relative lg:max-h-[90vh] lg:h-full">
+
             <button onclick="closeDetail()" class="absolute top-4 right-4 z-10 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-transform">
                 <span class="material-symbols-outlined">close</span>
             </button>
@@ -607,7 +610,8 @@
             </div>
 
             <!-- Info Derecha -->
-            <div class="lg:w-1/2 p-8 lg:p-12 flex flex-col">
+            <div class="lg:w-1/2 p-8 lg:p-12 flex flex-col lg:overflow-y-auto">
+
                 <div class="flex items-center gap-3 mb-2">
                     <span class="bg-primary/10 text-primary px-2.5 py-1 rounded-full text-[10px] font-black uppercase">En Stock</span>
                     <span id="detail-cat" class="text-[10px] text-gray-400 font-bold uppercase"></span>
@@ -6111,40 +6115,73 @@ function closeWelcomeAgent() {
 
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
 // --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---
+// --- CORRECCIÓN: FUNCIÓN PARA GESTIONAR CANDADOS Y MENSAJES ---
 function applyLockedFeatures() {
-    const level = window.currentGestorLevel || 0; // Usar la variable global
-    
+    const level = window.currentGestorLevel || 0; 
+    const sales = window.gestorSalesCount || 0; // Tus ventas actuales
+
+    // Referencias a los botones
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
     const btnPdf = document.getElementById('btn-pdf-bulk');
+    const btnStudio = document.getElementById('btn-magic-studio'); // <--- NUEVO
 
-    // NIVEL 2+: Texto y Fotos
+    // 1. NIVEL 2 (10 Ventas): Texto y Fotos
+    const TARGET_LVL_2 = 10;
     if (level >= 2) {
-        if(btnCopy) {
-            btnCopy.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-indigo-200 bg-white text-indigo-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold hover:bg-indigo-50";
-            btnCopy.innerHTML = `<span class="material-symbols-outlined">content_copy</span> Texto`;
-            btnCopy.onclick = copyCategoryOffers;
-        }
-        if(btnZip) {
-            btnZip.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-indigo-200 bg-white text-indigo-600 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold hover:bg-indigo-50";
-            btnZip.innerHTML = `<span class="material-symbols-outlined">folder_zip</span> Fotos`;
-            btnZip.onclick = downloadCategoryPhotos;
-        }
+        if(btnCopy) unlockButton(btnCopy, 'content_copy', 'Texto', 'copyCategoryOffers', 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50');
+        if(btnZip) unlockButton(btnZip, 'folder_zip', 'Fotos', 'downloadCategoryPhotos', 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50');
     } else {
-        if(btnCopy) lockButtonDirect(btnCopy, "Texto Masivo", 2);
-        if(btnZip) lockButtonDirect(btnZip, "Pack Fotos", 2);
+        if(btnCopy) lockButtonWithMath(btnCopy, "Texto Masivo", "Copia descripciones de 20 productos a la vez.", sales, TARGET_LVL_2, 2);
+        if(btnZip) lockButtonWithMath(btnZip, "Pack Fotos", "Descarga 50 fotos en un click.", sales, TARGET_LVL_2, 2);
     }
 
-    // NIVEL 4+: PDF
+    // 2. NIVEL 4 (40 Ventas): PDF
+    const TARGET_LVL_4 = 40;
     if (level >= 4) {
-        if(btnPdf) {
-            btnPdf.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-red-50 text-red-600 border border-red-100 cursor-pointer flex items-center justify-center gap-2 text-xs font-bold hover:bg-red-500 hover:text-white";
-            btnPdf.innerHTML = `<span class="material-symbols-outlined">picture_as_pdf</span> PDF`;
-            btnPdf.onclick = downloadCatalogPDF;
-        }
+        if(btnPdf) unlockButton(btnPdf, 'picture_as_pdf', 'PDF', 'downloadCatalogPDF', 'bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white');
     } else {
-        if(btnPdf) lockButtonDirect(btnPdf, "Catálogo PDF", 4);
+        if(btnPdf) lockButtonWithMath(btnPdf, "Catálogo PDF", "Crea catálogos profesionales con tu nombre.", sales, TARGET_LVL_4, 4);
     }
+
+    // 3. NIVEL 5 (70 Ventas): MAGIC STUDIO
+    const TARGET_LVL_5 = 70;
+    if (level >= 5) {
+        // Estilo especial degradado para el Studio
+        if(btnStudio) unlockButton(btnStudio, 'auto_fix', 'Magic Studio', 'goToStudio()', 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-400 hover:brightness-110 shadow-lg');
+    } else {
+        if(btnStudio) lockButtonWithMath(btnStudio, "Magic Studio", "Genera imágenes de marketing profesionales con IA y tu nombre incrustado.", sales, TARGET_LVL_5, 5);
+    }
+}
+
+// Helper: Bloquea el botón y calcula cuántas ventas faltan
+function lockButtonWithMath(btn, toolName, description, currentSales, targetSales, levelReq) {
+    if (!btn) return;
+    
+    // 1. Estilo Visual (Gris y Candado)
+    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
+    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${toolName}</span>`;
+    
+    // 2. Cálculo de Ventas Faltantes
+    const missing = targetSales - currentSales;
+    const missingText = missing > 0 ? missing : 0;
+
+    // 3. Mensaje de Alerta al hacer Click
+    btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        alert(
+            `🔒 HERRAMIENTA BLOQUEADA: ${toolName}\n\n` +
+            `ℹ️ ${description}\n\n` +
+            `🎯 META: Nivel ${levelReq} (${targetSales} ventas)\n` +
+            `📉 TE FALTAN: ${missingText} ventas para desbloquearla.\n\n` +
+            `¡Sigue vendiendo para acceder!`
+        );
+    };
+    
+    // Eliminamos el onclick original para que no ejecute la función real
+    btn.removeAttribute("onclick");
+    btn.title = `Bloqueado - Faltan ${missingText} ventas`;
 }
 
 // Función auxiliar simple para bloquear
@@ -6641,9 +6678,25 @@ ${descLimpia.trim()}
 }
 
 // --- SÚPER FUNCIÓN IA: MULTI-FOTO + CATEGORÍAS INTELIGENTES ---
+// --- SÚPER FUNCIÓN IA: MULTI-FOTO + CATEGORÍAS INTELIGENTES ---
 async function superMagicAI() {
     const btn = event.currentTarget;
     const originalContent = btn.innerHTML;
+
+    // --- 0. GESTIÓN DE API KEY SEGURA ---
+    // Intentamos recuperar la clave del navegador
+    let apiKey = localStorage.getItem('pth_gemini_api_key');
+
+    // Si no existe, la pedimos al usuario
+    if (!apiKey) {
+        apiKey = prompt("🔑 CONFIGURACIÓN INICIAL:\n\nPara usar la IA, introduce tu API KEY de Google Gemini.\n(Solo se te pedirá esta vez y se guardará en tu navegador).");
+        
+        if (!apiKey || apiKey.trim() === "") {
+            return alert("⚠️ Se requiere una API Key válida para continuar.");
+        }
+        // Guardamos la clave limpia
+        localStorage.setItem('pth_gemini_api_key', apiKey.trim());
+    }
 
     // --- 1. OBTENER CATEGORÍAS ---
     const listaOrigen = (typeof inventoryRawAdmin !== 'undefined' && inventoryRawAdmin.length > 0) ? inventoryRawAdmin : productosRaw;
@@ -6673,39 +6726,36 @@ async function superMagicAI() {
     }
 
     btn.disabled = true;
-    btn.innerHTML = `<div class="flex items-center gap-2"><span class="loader w-4 h-4 border-white"></span><span>Contactando Google...</span></div>`;
+    btn.innerHTML = `<div class="flex items-center gap-2"><span class="loader w-4 h-4 border-white"></span><span>Analizando...</span></div>`;
 
     try {
         // --- 3. PROMPT ---
         const parts = [];
-        let prompt = `Eres un asistente experto en inventario.
+        let prompt = `Eres un asistente experto en inventario de electrodomésticos.
         CATEGORÍAS EXISTENTES: [ ${categoriasTexto} ].
         INSTRUCCIONES:
-        1. Analiza Texto y Fotos.
-        2. Elige una categoría de la lista o crea una nueva si es muy diferente.
-        3. Si hay datos técnicos en las fotos, úsalos en la descripción.
+        1. Analiza el Texto y las Fotos.
+        2. Elige una categoría de la lista dada. Si no encaja, usa VARIOS.
+        3. Extrae Nombre, Precio (solo numero), Garantía y Mensajería.
+        4. Genera una descripción HTML vendedora usando emojis.
         
-        Responde SOLO con este JSON:
+        Responde SOLO con este JSON (sin markdown):
         {
-            "nombre": "Nombre producto", "precio": 0, "categoria": "CATEGORIA",
-            "garantia": "Garantía", "mensajeria": "Info envío",
-            "descripcion_html": "HTML con detalles"
+            "nombre": "Nombre producto", 
+            "precio": 0, 
+            "categoria": "CATEGORIA",
+            "garantia": "Garantía", 
+            "mensajeria": "Info envío",
+            "descripcion_html": "<p>Detalles...</p>"
         }`;
 
         parts.push({ text: prompt });
-        if (clipboardText) parts.push({ text: `TEXTO: ${clipboardText}` });
+        if (clipboardText) parts.push({ text: `TEXTO PORTAPAPELES: ${clipboardText}` });
         imageParts.forEach(imgPart => parts.push(imgPart));
 
-        // --- 4. PETICIÓN A GOOGLE (URL CORREGIDA) ---
-        // ¡¡¡ NO OLVIDES PONER TU CLAVE REAL AQUÍ !!!
-        const API_KEY = "AIzaSyDSZSF1Br9P1trG98UjF7fqq-0ucBpoYpc"; 
-        
-        if(API_KEY.includes("TU_CLAVE_REAL") || API_KEY.length < 10) {
-            throw new Error("¡Falta poner la API KEY en el código!");
-        }
-
-        // *** AQUÍ ESTÁ EL CAMBIO (AÑADIDO -latest) ***
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
+        // --- 4. PETICIÓN A GOOGLE (USANDO LA KEY DEL USUARIO) ---
+        // Usamos el modelo gemini-1.5-flash que es el estándar actual gratuito
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -6715,13 +6765,22 @@ async function superMagicAI() {
 
         if (!response.ok) {
             const errorData = await response.json();
+            
+            // Si el error es de permiso (Key invalida o bloqueada), borramos la key para pedirla de nuevo
+            if (response.status === 400 || response.status === 403) {
+                localStorage.removeItem('pth_gemini_api_key');
+                throw new Error("La API Key introducida no es válida o ha sido revocada. Por favor, inténtalo de nuevo para introducir una nueva.");
+            }
+            
             console.error("ERROR GOOGLE:", errorData);
-            throw new Error(`Google dice: ${errorData.error.message} (Código: ${response.status})`);
+            throw new Error(`Google dice: ${errorData.error.message}`);
         }
 
         const data = await response.json();
         
         // --- 5. PROCESAR ---
+        if(!data.candidates || data.candidates.length === 0) throw new Error("La IA no devolvió resultados.");
+
         const rawText = data.candidates[0].content.parts[0].text;
         const jsonString = rawText.replace(/```json|```/g, '').trim();
         const resultado = JSON.parse(jsonString);
@@ -6744,7 +6803,7 @@ async function superMagicAI() {
 
     } catch (error) {
         console.error(error);
-        alert("❌ FALLÓ LA IA:\n\n" + error.message);
+        alert("❌ ERROR IA:\n" + error.message);
         btn.innerHTML = originalContent;
         btn.disabled = false;
     }
@@ -6989,7 +7048,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
     
     doc.setFont("helvetica", "normal");
     const notas = [
-        "• El pago se realiza en efectivo al momento de recibir el equipo.",
+        "• El pago se realiza en efectivo o transferencia al momento de recibir el equipo.",
         "• Verifique el estado del producto antes de que el mensajero se retire.",
         "• Esta prefactura reserva el producto por un periodo de 24 horas."
     ];
