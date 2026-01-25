@@ -302,36 +302,38 @@
 
                     <!-- 3. DERECHA: Botones de Acción (Iconos limpios) -->
 <!-- BARRA DE ACCIONES GAMIFICADA -->
-<div class="flex items-center gap-3 w-full xl:w-auto justify-end">
-    
-    <!-- 1. Botón Flash (Se inyecta por JS, este es el hueco) -->
-    <div id="container-flash-btn" class="h-10"></div>
+<!-- Reemplaza el bloque de botones de acción en el gestor-command-center con esto -->
+<div class="w-full xl:w-auto overflow-x-auto pb-2 md:pb-0">
+    <div class="flex items-center gap-2 min-w-max"> <!-- min-w-max evita que se encojan -->
+        
+        <!-- 1. Botón Flash -->
+        <div id="container-flash-btn" class="h-10"></div>
 
-    <!-- 2. Botón Texto (Nivel 2) -->
-    <button id="btn-copy-bulk" class="h-10 w-10 md:w-auto md:px-4 rounded-xl border border-indigo-100 bg-white text-indigo-600 flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95" title="Copiado Masivo">
-        <span class="material-symbols-outlined text-xl">content_copy</span>
-        <!-- Texto oculto en móvil, visible en PC -->
-        <span class="hidden md:inline text-xs font-bold">Texto</span>
-    </button>
+        <!-- 2. Botón Texto -->
+        <button id="btn-copy-bulk" class="h-10 px-4 rounded-xl border border-indigo-100 bg-white text-indigo-600 flex items-center justify-center gap-2 shadow-sm whitespace-nowrap" title="Copiado Masivo">
+            <span class="material-symbols-outlined text-xl">content_copy</span>
+            <span class="text-xs font-bold">Texto</span>
+        </button>
 
-    <!-- 3. MAGIC STUDIO (Nivel 5 - Botón Morado) -->
-    <button id="btn-magic-studio" class="h-10 w-10 md:w-auto md:px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:brightness-110 hover:scale-105 active:scale-95" title="Magic Studio AI">
-        <span class="material-symbols-outlined text-xl">auto_fix</span>
-        <span class="hidden md:inline text-xs font-black">Magic Studio</span>
-    </button>
+        <!-- 3. MAGIC STUDIO -->
+        <button id="btn-magic-studio" class="h-10 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 whitespace-nowrap" title="Magic Studio AI">
+            <span class="material-symbols-outlined text-xl">auto_fix</span>
+            <span class="text-xs font-black">Studio</span>
+        </button>
 
-    <!-- 4. Fotos (Nivel 2) -->
-    <button id="btn-zip-bulk" class="h-10 w-10 md:w-auto md:px-4 rounded-xl border border-blue-100 bg-white text-blue-600 flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95" title="Pack Fotos">
-        <span class="material-symbols-outlined text-xl">folder_zip</span>
-        <span class="hidden md:inline text-xs font-bold">Fotos</span>
-    </button>
+        <!-- 4. Fotos -->
+        <button id="btn-zip-bulk" class="h-10 px-4 rounded-xl border border-blue-100 bg-white text-blue-600 flex items-center justify-center gap-2 shadow-sm whitespace-nowrap" title="Pack Fotos">
+            <span class="material-symbols-outlined text-xl">folder_zip</span>
+            <span class="text-xs font-bold">Fotos</span>
+        </button>
 
-    <!-- 5. PDF (Nivel 4) -->
-    <button id="btn-pdf-bulk" class="h-10 w-10 md:w-auto md:px-4 rounded-xl border border-red-100 bg-red-50 text-red-600 flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-105 active:scale-95" title="Catálogo PDF">
-        <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
-        <span class="hidden md:inline text-xs font-bold">PDF</span>
-    </button>
+        <!-- 5. PDF -->
+        <button id="btn-pdf-bulk" class="h-10 px-4 rounded-xl border border-red-100 bg-red-50 text-red-600 flex items-center justify-center gap-2 shadow-sm whitespace-nowrap" title="Catálogo PDF">
+            <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+            <span class="text-xs font-bold">PDF</span>
+        </button>
 
+    </div>
 </div>
 
                 </div>
@@ -4843,160 +4845,60 @@ window.doLogout = function() {
     }
 
     // ==========================================
-    // 3. GENERADOR DE PDF CON FOTOS (PROFESIONAL)
-    // ==========================================
-    // ==========================================
-    // 3. GENERADOR DE PDF CON FOTOS (CORREGIDO)
-    // ==========================================
-    async function downloadCatalogPDF() {
-        if (!window.jspdf) return alert("Cargando sistema PDF... Espera 5 segundos.");
-        
-        const { jsPDF } = window.jspdf;
-        const gestor = window.gestorName || "Equipo de Ventas";
-        const telefono = window.currentUserData?.telefono || "+53 5000 0000";
+    // --- NUEVA FUNCIÓN PUENTE: LLEVA AL ESTUDIO DE DISEÑO ---
+async function downloadCatalogPDF() {
+    // 1. Validar que hay categoría seleccionada
+    // Si es "TODOS", preguntamos si está seguro porque pueden ser muchos productos
+    if (activeCategory === 'TODOS' && productosRaw.length > 50) {
+        if(!confirm("Has seleccionado 'TODOS'. Son muchos productos. ¿Quieres ir al estudio de diseño de todas formas?")) return;
+    }
 
-        // 1. Filtrar productos visibles
-        const visibleProducts = productosRaw.filter(p => {
-            return (activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory))) && p.disponible === "SI";
+    const btn = document.getElementById('btn-pdf-bulk'); // Asegúrate que este ID coincida con tu botón
+    const originalText = btn ? btn.innerHTML : "";
+    if(btn) {
+        btn.innerHTML = `<span class="loader w-4 h-4 border-red-600"></span>`;
+        btn.disabled = true;
+    }
+
+    try {
+        // 2. Filtrar los productos que se ven actualmente (respetando filtros)
+        const productsToExport = productosRaw.filter(p => {
+            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+            return matchCat && p.disponible === 'SI';
         });
 
-        if(visibleProducts.length === 0) return alert("No hay productos visibles para el PDF.");
-        if(visibleProducts.length > 40) if(!confirm(`El catálogo tiene ${visibleProducts.length} productos. Generar las imágenes tomará unos segundos. ¿Continuar?`)) return;
+        if (productsToExport.length === 0) throw new Error("No hay productos disponibles en esta vista.");
 
-        const btn = event.currentTarget;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = "⏳ Procesando imágenes...";
-        btn.disabled = true;
+        // 3. Empaquetar la Información ("La Maleta")
+        const sessionPayload = {
+            timestamp: Date.now(),
+            agent: window.gestorName || "Asesor de Ventas",
+            phone: getAgentPhone(), // Tu función inteligente que obtiene el teléfono
+            categoryName: activeCategory,
+            products: productsToExport // Pasamos el array de objetos limpio
+        };
 
+        // 4. Guardar en la memoria del navegador (LocalStorage)
+        // Usamos try-catch por si el array es gigante y excede la memoria (raro en texto, pero posible)
         try {
-            const doc = new jsPDF();
-
-            // 2. Preparar datos y PRE-CARGAR IMÁGENES (Base64)
-            const tableData = [];
-            
-            for (let p of visibleProducts) {
-                let imgData = null;
-                try {
-                    imgData = await getImageDataUrl(fixDriveUrl(p.thumbnail));
-                } catch (err) {
-                    console.warn("No se pudo cargar imagen para PDF:", p.nombre);
-                }
-
-                tableData.push({
-                    image: imgData, 
-                    info: {
-                        name: p.nombre,
-                        price: `$${p.precio} USD`,
-                        shipping: p.mensajeria ? `Envío: ${p.mensajeria}` : "Mensajería: Consultar",
-                        warranty: p.garantia || "Garantía: Oficial"
-                    }
-                });
-            }
-
-            // 3. Diseño del PDF - Encabezado
-            doc.setFillColor(26, 71, 137); // #1a4789
-            doc.rect(0, 0, 210, 35, 'F');
-            
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22);
-            doc.setFont("helvetica", "bold");
-            doc.text("CATÁLOGO OFICIAL", 105, 15, null, null, "center");
-            
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Categoría: ${activeCategory}`, 105, 24, null, null, "center");
-            doc.setFontSize(10);
-            doc.text(`Agente Autorizado: ${gestor} | WhatsApp: ${telefono}`, 105, 30, null, null, "center");
-
-            // 4. Generar Tabla con Imágenes
-            doc.autoTable({
-                startY: 40,
-                head: [['FOTO', 'DETALLES DEL EQUIPO', 'PRECIO']],
-                body: tableData.map(row => ['', '', '']), // Celdas vacías para rellenar
-                theme: 'grid',
-                styles: { 
-                    fontSize: 12, 
-                    cellPadding: 4, 
-                    valign: 'middle',
-                    lineColor: [200, 200, 200],
-                    lineWidth: 0.1,
-                    minCellHeight: 40 // Altura mínima para que quepa la foto
-                },
-                headStyles: { 
-                    fillColor: [44, 111, 181], 
-                    textColor: 255, 
-                    fontStyle: 'bold',
-                    halign: 'center'
-                },
-                columnStyles: {
-                    0: { cellWidth: 40 }, 
-                    1: { cellWidth: 'auto' }, 
-                    2: { cellWidth: 40, fontStyle: 'bold', textColor: [26, 71, 137], halign: 'center', fontSize: 14 }
-                },
-                didDrawCell: function(data) {
-                    // Hook para dibujar contenido
-                    if (data.section === 'body') {
-                        const rowIndex = data.row.index;
-                        
-                        // --- LÍNEA DE SEGURIDAD (CORRECCIÓN) ---
-                        // Si por alguna razón el índice no existe, salimos para evitar el error
-                        if (!tableData[rowIndex]) return; 
-                        
-                        const rowData = tableData[rowIndex];
-
-                        // DIBUJAR IMAGEN (Columna 0)
-                        if (data.column.index === 0 && rowData.image) {
-                            try {
-                                doc.addImage(rowData.image, 'JPEG', data.cell.x + 2, data.cell.y + 2, 36, 36);
-                            } catch(e) { /* Ignorar error de imagen corrupta */ }
-                        }
-
-                        // DIBUJAR DETALLES (Columna 1)
-                        if (data.column.index === 1) {
-                            doc.setFontSize(12);
-                            doc.setTextColor(0, 0, 0);
-                            doc.setFont("helvetica", "bold");
-                            
-                            // Texto con ajuste automático de ancho
-                            var splitTitle = doc.splitTextToSize(rowData.info.name, data.cell.width - 4);
-                            doc.text(splitTitle, data.cell.x + 2, data.cell.y + 8);
-                            
-                            doc.setFontSize(10);
-                            doc.setTextColor(100, 100, 100);
-                            doc.setFont("helvetica", "normal");
-                            doc.text(rowData.info.shipping, data.cell.x + 2, data.cell.y + 28);
-                            doc.text(rowData.info.warranty, data.cell.x + 2, data.cell.y + 34);
-                        }
-
-                        // DIBUJAR PRECIO (Columna 2)
-                        if (data.column.index === 2) {
-                            doc.text(rowData.info.price, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center', baseline: 'middle' });
-                        }
-                    }
-                }
-            });
-
-            // Pie de página
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text(`Página ${i} de ${pageCount} - Generado por paratuhogar`, 105, 290, null, null, "center");
-            }
-
-            // Descargar
-            doc.save(`Catalogo_${activeCategory}_${gestor.replace(/\s+/g, '_')}.pdf`);
-            alert("✅ Catálogo PDF descargado correctamente.");
-
+            localStorage.setItem('pth_catalog_data', JSON.stringify(sessionPayload));
         } catch (e) {
-            console.error(e);
-            alert("Error generando PDF: " + e.message);
-        } finally {
+            throw new Error("Demasiados productos para procesar. Por favor filtra por una categoría específica.");
+        }
+
+        // 5. Abrir el Estudio en una nueva pestaña
+        // Asumiremos que el archivo se llamará 'catalog-maker.html'
+        window.open('catalog-maker.html', '_blank');
+
+    } catch (e) {
+        alert("⚠️ " + e.message);
+    } finally {
+        if(btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
     }
+}
 
     // Helper: Obtener imagen en Base64 para el PDF
     function getImageDataUrl(url) {
@@ -7639,56 +7541,56 @@ async function downloadCategoryPhotos() {
     }
 }
 
-// 3. BOTÓN PDF: Generar Catálogo
+// --- NUEVA FUNCIÓN PUENTE EN INDEX.HTML ---
+// Reemplaza a la antigua downloadCatalogPDF
 async function downloadCatalogPDF() {
-    if (!window.jspdf) return alert("Error: Librería jsPDF no cargada.");
-    
+    // 1. Validar que hay categoría seleccionada
+    if (activeCategory === 'TODOS' && productosRaw.length > 50) {
+        if(!confirm("Has seleccionado 'TODOS' con muchos productos. ¿Quieres ir al estudio de diseño?")) return;
+    }
+
     const btn = document.getElementById('btn-pdf-bulk');
-    const originalContent = btn.innerHTML;
-    btn.innerHTML = `<span class="loader w-4 h-4 border-red-600"></span>`;
+    const originalText = btn ? btn.innerHTML : "";
+    
+    // Feedback visual
+    if(btn) {
+        btn.innerHTML = `<span class="loader w-4 h-4 border-red-600"></span> Abriendo Estudio...`;
+        btn.disabled = true;
+    }
 
     try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const products = productosRaw.filter(p => {
+        // 2. Filtrar productos visibles (respetando tus filtros actuales)
+        const productsToExport = productosRaw.filter(p => {
             const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+            // Si tienes filtro de "Modo Tiburón" (comisión alta), aplicarlo también si quieres, o dejarlo general:
             return matchCat && p.disponible === 'SI';
         });
 
-        if (products.length === 0) throw new Error("No hay productos.");
+        if (productsToExport.length === 0) throw new Error("No hay productos visibles para el catálogo.");
 
-        // Encabezado
-        doc.setFillColor(26, 71, 137);
-        doc.rect(0, 0, 210, 40, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.text("CATÁLOGO OFICIAL", 105, 20, null, null, "center");
-        doc.setFontSize(12);
-        doc.text(`Agente: ${window.gestorName || 'Ventas'} | +${window.currentUserData?.telefono || ''}`, 105, 30, null, null, "center");
+        // 3. Preparar la "Maleta" de datos
+        const sessionPayload = {
+            timestamp: Date.now(),
+            agent: window.gestorName || "Asesor de Ventas",
+            phone: getAgentPhone(), // Tu función que obtiene el teléfono correcto
+            categoryName: activeCategory,
+            products: productsToExport // Enviamos los productos limpios
+        };
 
-        // Preparar datos tabla
-        const bodyData = products.map(p => [
-            p.nombre,
-            `$${p.precio}`,
-            p.garantia || 'Si',
-            p.mensajeria || 'Consultar'
-        ]);
+        // 4. Guardar en la memoria del navegador
+        localStorage.setItem('pth_catalog_data', JSON.stringify(sessionPayload));
 
-        doc.autoTable({
-            startY: 50,
-            head: [['Producto', 'Precio USD', 'Garantía', 'Envío']],
-            body: bodyData,
-            theme: 'grid',
-            headStyles: { fillColor: [26, 71, 137] },
-            styles: { fontSize: 10 }
-        });
-
-        doc.save(`Catalogo_${activeCategory || 'General'}.pdf`);
-        btn.innerHTML = originalContent;
+        // 5. ABRIR EL ARCHIVO NUEVO (Asegúrate de haber creado catalog-maker.html)
+        window.open('catalog-maker.html', '_blank');
 
     } catch (e) {
-        alert("Error generando PDF: " + e.message);
-        btn.innerHTML = originalContent;
+        alert("⚠️ " + e.message);
+    } finally {
+        // Restaurar botón
+        if(btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 }
 

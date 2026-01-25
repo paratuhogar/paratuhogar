@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudio de Catálogos | paratuhogar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    
+    <!-- LIBRERÍAS (Independientes para no cargar el sistema principal) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        body { font-family: 'Manrope', sans-serif; }
+        .preview-shadow { box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25); }
+        /* Animación de carga */
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 0; } }
+        .pulse-loader { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-[#1a4789] text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-lg"><span class="material-symbols-outlined text-2xl">design_services</span></div>
+                <div>
+                    <h1 class="font-black text-lg leading-none uppercase tracking-tight">Estudio de Diseño</h1>
+                    <p class="text-[10px] opacity-80 font-medium">Creación de Catálogos PDF</p>
+                </div>
+            </div>
+            <button onclick="window.close()" class="text-white/70 hover:text-white transition-colors flex items-center gap-1 text-xs font-bold bg-white/10 px-3 py-2 rounded-lg hover:bg-white/20">
+                <span class="material-symbols-outlined text-sm">close</span> Cerrar Estudio
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
+        
+        <!-- PANEL IZQUIERDO: CONFIGURACIÓN -->
+        <div class="w-full lg:w-1/3 space-y-6">
+            
+            <!-- 1. RESUMEN DE DATOS -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-1 rounded uppercase">Datos Cargados</span>
+                    <span id="date-tag" class="text-[10px] text-slate-400 font-bold">Hoy</span>
+                </div>
+                
+                <h2 id="cat-title" class="text-2xl font-black text-[#1a4789] mb-1 leading-tight">...</h2>
+                <p id="cat-count" class="text-xs font-bold text-slate-500 mb-4">Cargando productos...</p>
+                
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
+                    <div class="h-10 w-10 bg-white rounded-full flex items-center justify-center text-[#1a4789] shadow-sm border border-slate-100">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-slate-400">Agente Responsable</p>
+                        <p id="agent-name" class="text-sm font-bold text-slate-800">...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SELECTOR DE DISEÑO -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">ESTILO DEL CATÁLOGO</p>
+                
+                <!-- Opción Básica -->
+                <label class="group flex items-start gap-4 p-4 border rounded-xl cursor-pointer hover:bg-slate-50 transition-all mb-3 has-[:checked]:border-slate-400 has-[:checked]:ring-1 has-[:checked]:ring-slate-400">
+                    <input type="radio" name="style" value="basic" class="mt-1 w-4 h-4 text-slate-600 focus:ring-slate-500" onchange="toggleOptions()">
+                    <div>
+                        <h4 class="font-black text-sm text-slate-700 group-hover:text-[#1a4789] transition-colors">📄 Lista Compacta (Básico)</h4>
+                        <p class="text-[11px] text-slate-400 mt-1 leading-snug">Formato tabla. Ideal para imprimir, revendedores o inventario rápido. Sin fotos grandes.</p>
+                    </div>
+                </label>
+
+                <!-- Opción PRO (Default) -->
+                <label class="group flex items-start gap-4 p-4 border rounded-xl cursor-pointer hover:bg-purple-50/50 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 has-[:checked]:ring-1 has-[:checked]:ring-purple-500 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-purple-500 text-white text-[9px] font-black px-2 py-1 rounded-bl-lg">RECOMENDADO</div>
+                    <input type="radio" name="style" value="pro" checked class="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500" onchange="toggleOptions()">
+                    <div>
+                        <h4 class="font-black text-sm text-slate-800 group-hover:text-purple-700 transition-colors flex items-center gap-2">
+                            ✨ Revista Digital (PRO)
+                        </h4>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-snug">Diseño visual impactante. Fotos grandes, portada personalizada y <b>Códigos QR de compra</b>.</p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- 3. CONFIGURACIÓN PRO -->
+            <div id="pro-options" class="bg-gradient-to-b from-purple-50 to-white p-6 rounded-2xl shadow-sm border border-purple-100 transition-all duration-300">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-purple-500 text-sm">tune</span>
+                    <p class="text-[10px] font-black uppercase text-purple-400 tracking-widest">PERSONALIZACIÓN PRO</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                        <div class="relative">
+                            <input type="checkbox" id="opt-cover" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                        </div>
+                        <span class="text-xs font-bold text-slate-600">Portada de Impacto</span>
+                    </label>
+                    
+                    <label class="flex items-center gap-3 cursor-pointer select-none">
+                        <div class="relative">
+                            <input type="checkbox" id="opt-qr" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-600">Códigos QR de WhatsApp</span>
+                            <span class="text-[9px] text-slate-400">El cliente escanea y te pide el producto.</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- BOTÓN ACCIÓN -->
+            <div class="pt-2">
+                <button onclick="startGeneration()" id="btn-generate" class="group relative w-full py-4 bg-[#1a4789] hover:bg-[#2c6fb5] text-white rounded-xl font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 flex items-center justify-center gap-3 overflow-hidden">
+                    <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                    <span class="material-symbols-outlined">download_for_offline</span>
+                    <span>DESCARGAR PDF</span>
+                </button>
+                
+                <!-- Barra de Progreso -->
+                <div id="progress-container" class="hidden mt-4">
+                    <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                        <span id="status-text">Procesando imágenes...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-emerald-500 w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- PANEL DERECHO: PREVISUALIZACIÓN -->
+        <div class="flex-1 bg-slate-200 rounded-3xl border border-slate-300/50 flex flex-col items-center justify-center p-8 relative overflow-hidden min-h-[500px]">
+            <!-- Decoración fondo -->
+            <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#1a4789 2px, transparent 2px); background-size: 30px 30px;"></div>
+            
+            <!-- Hoja A4 -->
+            <div class="bg-white w-full max-w-[420px] aspect-[1/1.414] shadow-2xl preview-shadow rounded-sm p-8 relative flex flex-col items-center justify-center text-center z-10 transition-transform hover:scale-[1.02] duration-500">
+                
+                <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 text-blue-200">
+                    <span class="material-symbols-outlined text-6xl">picture_as_pdf</span>
+                </div>
+                
+                <h3 class="text-slate-800 font-black text-xl uppercase mb-2">Listo para Crear</h3>
+                <p class="text-slate-500 text-sm px-4 leading-relaxed">
+                    Nuestro motor inteligente optimizará tus imágenes para que el PDF se vea nítido en cualquier celular pero pese muy poco para enviar por WhatsApp.
+                </p>
+
+                <div class="mt-8 flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <span class="material-symbols-outlined text-emerald-500 text-2xl mb-1">compress</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Ultra Ligero</span>
+                    </div>
+                    <div class="w-px h-10 bg-slate-100"></div>
+                    <div class="flex flex-col items-center">
+                        <span class="material-symbols-outlined text-purple-500 text-2xl mb-1">qr_code_2</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Interactivo</span>
+                    </div>
+                    <div class="w-px h-10 bg-slate-100"></div>
+                    <div class="flex flex-col items-center">
+                        <span class="material-symbols-outlined text-blue-500 text-2xl mb-1">hd</span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase">Calidad HD</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- LOGICA JAVASCRIPT -->
+    <!-- PEGA ESTO DENTRO DE catalog-maker.html REEMPLAZANDO EL SCRIPT ACTUAL -->
+<script>
+    let payload = null;
+    const { jsPDF } = window.jspdf;
+
+    // 1. INICIALIZACIÓN Y CARGA DE DATOS
+    window.addEventListener('load', () => {
+        const dataStr = localStorage.getItem('pth_catalog_data');
+        if (!dataStr) {
+            alert("No hay datos cargados. Vuelve al catálogo principal.");
+            window.close();
+            return;
+        }
+        
+        try {
+            payload = JSON.parse(dataStr);
+            
+            // Llenar UI del panel izquierdo
+            document.getElementById('cat-title').innerText = payload.categoryName || "CATÁLOGO";
+            document.getElementById('cat-count').innerText = `${payload.products.length} productos`;
+            document.getElementById('agent-name').innerText = payload.agent.toUpperCase();
+            
+            const date = new Date(payload.timestamp);
+            document.getElementById('date-tag').innerText = date.toLocaleDateString();
+
+        } catch(e) {
+            console.error(e);
+        }
+    });
+
+    function toggleOptions() {
+        const isPro = document.querySelector('input[name="style"]:checked').value === 'pro';
+        const panel = document.getElementById('pro-options');
+        isPro ? panel.classList.remove('opacity-50', 'pointer-events-none') : panel.classList.add('opacity-50', 'pointer-events-none');
+    }
+
+    // 2. FUNCIÓN PRINCIPAL DE GENERACIÓN
+    async function startGeneration() {
+        const btn = document.getElementById('btn-generate');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-percent');
+        const statusText = document.getElementById('status-text');
+        const progressContainer = document.getElementById('progress-container');
+
+        btn.disabled = true;
+        btn.classList.add('opacity-80', 'cursor-wait');
+        progressContainer.classList.remove('hidden');
+
+        try {
+            const style = document.querySelector('input[name="style"]:checked').value;
+            // A4 en milímetros (210 x 297)
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            
+            const total = payload.products.length;
+            const processedProducts = [];
+
+            // --- FASE 1: PROCESAMIENTO DE IMÁGENES ---
+            for (let i = 0; i < total; i++) {
+                const p = payload.products[i];
+                
+                // Actualizar barra de progreso visual
+                const percent = Math.round(((i + 1) / total) * 100);
+                progressBar.style.width = `${percent}%`;
+                progressText.innerText = `${percent}%`;
+                statusText.innerText = `Procesando: ${p.nombre.substring(0,15)}...`;
+
+                let imgObj = null;
+                if (p.thumbnail) {
+                    let url = p.thumbnail;
+                    if (!url.startsWith('http')) {
+                        url = `https://ljqwaovevfatkiigirhf.supabase.co/storage/v1/object/public/productos/${url}`;
+                    }
+                    // Obtenemos la imagen con sus dimensiones reales para no deformarla
+                    imgObj = await getProImage(url);
+                }
+                
+                processedProducts.push({ ...p, imgObj });
+            }
+
+            statusText.innerText = "Diseñando PDF Premium...";
+            
+            if (style === 'basic') {
+                generateBasicPDF(doc, processedProducts);
+            } else {
+                await generatePremiumPDF(doc, processedProducts);
+            }
+
+            const safeName = (payload.categoryName || 'Catalogo').replace(/[^a-z0-9]/gi, '_');
+            doc.save(`Catalogo_${safeName}_${payload.agent.replace(/\s+/g,'_')}.pdf`);
+            
+            statusText.innerText = "¡Listo!";
+            setTimeout(() => {
+                const closeIt = confirm("✅ Catálogo descargado con éxito.\n¿Cerrar el estudio?");
+                if(closeIt) window.close();
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-wait');
+            }, 500);
+
+        } catch (e) {
+            console.error("Error PDF:", e);
+            alert("Ocurrió un error: " + e.message);
+            btn.disabled = false;
+        }
+    }
+
+    // 3. COMPRESOR DE IMÁGENES MEJORADO (Retorna Dimensiones)
+    function getProImage(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            // Anti-caché para evitar CORS
+            img.src = url + "?t=" + new Date().getTime();
+            
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Calidad alta pero tamaño manejable (600px ancho)
+                const maxWidth = 600; 
+                let w = img.width;
+                let h = img.height;
+                
+                // Calculamos aspecto para redimensionar el canvas, NO la imagen final en el PDF
+                if (w > maxWidth) {
+                    h = h * (maxWidth / w);
+                    w = maxWidth;
+                }
+
+                canvas.width = w;
+                canvas.height = h;
+                
+                // Fondo blanco por si es PNG transparente
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                
+                // Retornamos DataURL Y las proporciones (ratio)
+                resolve({
+                    data: canvas.toDataURL('image/jpeg', 0.85),
+                    ratio: w / h // Ancho dividido Alto
+                });
+            };
+            
+            img.onerror = () => {
+                console.warn("Error cargando imagen:", url);
+                resolve(null);
+            };
+        });
+    }
+
+    // 4. GENERADOR PREMIUM (NUEVO DISEÑO)
+    // 4. GENERADOR PREMIUM (NUEVO DISEÑO CORREGIDO)
+    async function generatePremiumPDF(doc, products) {
+        const blue = [26, 71, 137];   
+        const cyan = [44, 111, 181];  
+        const dark = [30, 41, 59];    
+        const grey = [80, 90, 100]; // Gris un poco más oscuro para leer mejor
+
+        // --- PÁGINA 1: PORTADA (IGUAL QUE ANTES) ---
+        if (document.getElementById('opt-cover').checked) {
+            doc.setFillColor(...blue);
+            doc.rect(0, 0, 210, 297, 'F');
+            doc.setFillColor(...cyan); 
+            doc.circle(105, 350, 200, 'F'); 
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(24);
+            doc.text("CATÁLOGO OFICIAL", 105, 60, { align: 'center' });
+            doc.setFontSize(50); // Reducir un poco si el nombre es muy largo
+            const title = payload.categoryName ? payload.categoryName.toUpperCase() : "GENERAL";
+            doc.text(title, 105, 85, { align: 'center' });
+            doc.setDrawColor(255, 255, 255);
+            doc.setLineWidth(1.5);
+            doc.line(60, 95, 150, 95);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(40, 180, 130, 60, 4, 4, 'F');
+            doc.setTextColor(...blue);
+            doc.setFontSize(10);
+            doc.text("ASESOR COMERCIAL", 105, 195, { align: 'center' });
+            doc.setFontSize(18);
+            doc.text(payload.agent.toUpperCase(), 105, 205, { align: 'center' });
+            doc.setFillColor(...blue);
+            doc.roundedRect(65, 215, 80, 12, 6, 6, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.text(`WhatsApp: +${payload.phone}`, 105, 222, { align: 'center' });
+            doc.addPage();
+        }
+
+        // --- PÁGINAS DE PRODUCTOS ---
+        let y = 35;
+        const marginX = 15;
+        const cardWidth = 85;  
+        const cardHeight = 130; // AUMENTADO para que quepa todo
+        const gap = 10;
+        let col = 0;
+
+        const drawHeader = () => {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(0, 0, 210, 20, 'F');
+            doc.setTextColor(150, 150, 150);
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            doc.text("PARATUHOGAR.CU", 15, 12);
+            doc.text(`Catálogo: ${payload.categoryName}`, 195, 12, { align: 'right' });
+        };
+        drawHeader();
+
+        for (let i = 0; i < products.length; i++) {
+            const p = products[i];
+
+            // Control de salto de página
+            if (y + cardHeight > 285) {
+                doc.addPage();
+                drawHeader();
+                y = 35;
+                col = 0;
+            }
+
+            const x = marginX + (col * (cardWidth + gap));
+
+            // 1. TARJETA
+            doc.setDrawColor(230, 230, 230);
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'FD');
+
+            // 2. IMAGEN
+            const imgAreaH = 55;
+            const imgAreaW = cardWidth - 10;
+            const imgYStart = y + 5;
+
+            if (p.imgObj) {
+                let drawW = imgAreaW;
+                let drawH = imgAreaW / p.imgObj.ratio;
+                if (drawH > imgAreaH) {
+                    drawH = imgAreaH;
+                    drawW = imgAreaH * p.imgObj.ratio;
+                }
+                const xOffset = (imgAreaW - drawW) / 2;
+                const yOffset = (imgAreaH - drawH) / 2;
+                try {
+                    doc.addImage(p.imgObj.data, 'JPEG', x + 5 + xOffset, imgYStart + yOffset, drawW, drawH);
+                } catch(err) {}
+            } else {
+                doc.setTextColor(200, 200, 200);
+                doc.setFontSize(8);
+                doc.text("Sin Foto", x + (cardWidth/2), y + 30, { align: 'center' });
+            }
+
+            // --- AQUI EMPIEZA LA CORRECCIÓN DE ESPACIADO ---
+            
+            // 3. NOMBRE (Bajamos un poco el inicio)
+            const textStartY = y + imgAreaH + 10; 
+            
+            doc.setTextColor(...dark);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            const nameLines = doc.splitTextToSize(p.nombre.toUpperCase(), cardWidth - 10);
+            const safeName = nameLines.length > 2 ? [nameLines[0], nameLines[1] + '...'] : nameLines;
+            
+            doc.text(safeName, x + 5, textStartY);
+
+            // Calculamos dónde terminó el nombre para poner el precio
+            // Cada línea de texto suele ocupar unos 4-5 unidades.
+            const nameHeight = safeName.length * 5; 
+            const priceY = textStartY + nameHeight + 4; // +4 de aire extra
+
+            // 4. PRECIO + USD (Separados)
+            doc.setTextColor(...blue);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            const priceStr = `$${p.precio}`;
+            doc.text(priceStr, x + 5, priceY);
+            
+            // Etiqueta USD (Calculamos ancho del precio para ponerlo al lado, no encima)
+            const priceWidth = doc.getTextWidth(priceStr);
+            doc.setFontSize(9);
+            doc.text("USD", x + 5 + priceWidth + 2, priceY);
+
+            // 5. DESCRIPCIÓN (Debajo del precio con buen margen)
+            doc.setTextColor(...grey);
+            doc.setFontSize(9); // Letra un pelín más grande para leer
+            doc.setFont("helvetica", "normal");
+            
+            let cleanDesc = (p.descripcion || "Garantía Oficial incluída.").replace(/<[^>]*>?/gm, '');
+            const descLines = doc.splitTextToSize(cleanDesc, cardWidth - 10);
+            // Permitimos 3 líneas
+            const safeDesc = descLines.slice(0, 3); 
+            
+            // Posición: Debajo del precio + 6 unidades
+            doc.text(safeDesc, x + 5, priceY + 7);
+
+            // 6. BOTÓN COMPRAR (Al final de la tarjeta)
+            const btnH = 14;
+            const btnY = y + cardHeight - btnH; // Pegado al borde inferior
+            
+            // Link Inteligente
+            const webLink = `${window.location.origin}${window.location.pathname.replace('catalog-maker.html','index.html')}?search=${encodeURIComponent(p.nombre)}&gestor=${encodeURIComponent(payload.agent)}&tel=${payload.phone}`;
+            
+            // Fondo Botón (Sin bordes redondeados abajo para que encaje)
+            doc.setFillColor(...blue);
+            // Dibuja rectángulo pero rellenando las esquinas inferiores del borde rounded de la tarjeta
+            // Truco: Dibujar un rect un poco más arriba y tapar. O usar roundedRect con esquinas superiores en 0.
+            // Para simplificar y que se vea limpio: Rectángulo centrado flotante
+            doc.roundedRect(x + 5, btnY - 5, cardWidth - 10, 12, 2, 2, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("COMPRAR AHORA ➜", x + (cardWidth / 2), btnY + 2, { align: 'center' });
+
+            // ENLACE GIGANTE (Cubre toda la tarjeta para asegurar el clic)
+            doc.link(x, y, cardWidth, cardHeight, { url: webLink });
+
+            // Siguiente columna
+            col++;
+            if (col > 1) { 
+                col = 0;
+                y += cardHeight + gap;
+            }
+        }
+
+        const pages = doc.internal.getNumberOfPages();
+        for(let k=1; k<=pages; k++) {
+            doc.setPage(k);
+            doc.setFontSize(8);
+            doc.setTextColor(200, 200, 200);
+            doc.text(`Pág ${k}/${pages}`, 105, 292, { align: 'center' });
+        }
+    }
+
+    // Generador Básico (Tabla) - Se mantiene igual para quien quiera imprimir lista simple
+    function generateBasicPDF(doc, products) {
+        doc.setFillColor(26, 71, 137);
+        doc.rect(0, 0, 210, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text("LISTA DE PRECIOS", 105, 15, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Agente: ${payload.agent} | +${payload.phone}`, 105, 22, { align: 'center' });
+
+        const bodyData = products.map(p => [
+            p.nombre,
+            `$${p.precio}`,
+            p.garantia || "-",
+            p.mensajeria || "Consultar"
+        ]);
+
+        doc.autoTable({
+            startY: 35,
+            head: [['Producto', 'USD', 'Garantía', 'Envío']],
+            body: bodyData,
+            theme: 'grid',
+            headStyles: { fillColor: [60, 60, 60] },
+            columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, fontStyle: 'bold' } }
+        });
+    }
+</script>
+</body>
+</html>
