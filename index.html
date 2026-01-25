@@ -317,6 +317,12 @@
     <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
 </button>
 
+<!-- Botón para ir al Studio -->
+<button onclick="goToStudio()" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 text-xs font-black shadow-lg transition-all active:scale-95">
+    <span class="material-symbols-outlined text-lg">auto_fix</span> 
+    <span class="hidden sm:inline">Magic Studio</span>
+</button>
+
 <!-- 2. Botón Fotos (Masivo) -->
 <button id="btn-zip-bulk" class="flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold">
     <span class="material-symbols-outlined text-lg">lock</span> <span>Cargando...</span>
@@ -6985,7 +6991,6 @@ async function generarComprobanteVenta(datosPedido, accion) {
     const notas = [
         "• El pago se realiza en efectivo o transferencia al momento de recibir el equipo.",
         "• Verifique el estado del producto antes de que el mensajero se retire.",
-        "• Monedas aceptadas: USD, CUP, Zelle o MLC.",
         "• Esta prefactura reserva el producto por un periodo de 24 horas."
     ];
     doc.text(notas, 15, finalY + 16);
@@ -7391,6 +7396,26 @@ function closePriceIntro() {
     // Opcional: Llevarlo a la sección correspondiente
     showDashSection('precios'); 
 }
+
+// Función para saltar al Studio con los filtros actuales
+function goToStudio() {
+    // 1. Capturar qué está viendo el gestor ahora mismo
+    const searchInput = document.getElementById('search-bar');
+    const query = searchInput ? searchInput.value.trim() : "";
+    
+    // 'activeCategory' es la variable global que ya usas en tu código actual
+    const category = activeCategory || "TODOS";
+
+    // 2. Construir la URL con parámetros
+    // Ejemplo: studio.html?q=refrigerador&cat=LINEA%20BLANCA
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (category && category !== 'TODOS') params.append('cat', category);
+
+    // 3. Viajar al Studio
+    window.location.href = `studio.html?${params.toString()}`;
+}
+
 </script>
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
