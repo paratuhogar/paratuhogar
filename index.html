@@ -1197,9 +1197,22 @@
 
 
     <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 font-bold" required>
-    <input type="number" id="p-precio" placeholder="Precio USD" class="rounded-xl border-gray-100 font-bold" required>
-    <input type="number" id="p-comision" placeholder="Comisión Gestor" class="rounded-xl border-gray-100 font-bold" required>
-
+    <!-- BLOQUE DE PRECIOS Y COMISIONES -->
+        <div class="md:col-span-2 grid grid-cols-3 gap-4">
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Precio (USD)</label>
+                <input type="number" id="p-precio" placeholder="0.00" class="w-full rounded-xl border-gray-100 font-bold" required>
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Comisión Gestor</label>
+                <input type="number" id="p-comision" placeholder="0.00" class="w-full rounded-xl border-gray-100 font-bold" required>
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-blue-500 ml-1">Extra CUP (+)</label>
+                <input type="number" id="p-cup-extra" placeholder="0" value="0" class="w-full rounded-xl border-blue-100 bg-blue-50 font-bold text-blue-700">
+                <p class="text-[8px] text-gray-400 mt-1">Ej: Pon 5 para Tasa+5</p>
+            </div>
+        </div>
     
     <!-- === NUEVOS CAMPOS PROVEEDOR Y FLEXIBILIDAD === -->
     <div class="md:col-span-2 grid grid-cols-2 gap-4">
@@ -2621,7 +2634,8 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
         if (showInCUP) {
             // Usamos la función inteligente que lee "p.pagos" y calcula según si es fijo, +10 o tasa día
             // Nota: Asegúrate de haber pegado la función calculateProductCUP() en tu código antes
-            const precioCUP = calculateProductCUP(precio, p.pagos);
+            const precioCUP = calculateProductCUP(precio, null, p.cup_extra);
+
             
             if (precioCUP) {
                 // Formateamos con comas (ej: 15,400)
@@ -2706,7 +2720,8 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     // 5. PRECIOS (Calculadora inteligente)
     document.getElementById('detail-price').innerText = `$${p.precio}.00 USD`;
     
-    const precioCUP = typeof calculateProductCUP === "function" ? calculateProductCUP(p.precio, p.pagos) : null;
+    // Pasamos 'null' en el segundo parámetro y 'p.cup_extra' en el tercero
+const precioCUP = typeof calculateProductCUP === "function" ? calculateProductCUP(p.precio, null, p.cup_extra) : null;
     const labelCUP = document.getElementById('detail-price-cup');
 
     if (precioCUP) {
@@ -2786,7 +2801,9 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
             qty: 1,
             precio_venta: Number(selectedProduct.precio),
             comision_actual: Number(selectedProduct.comision || 0),
-            shipping_linea: defaultShipping // NUEVO CAMPO: Envío específico para esta línea
+            shipping_linea: defaultShipping, // NUEVO CAMPO: Envío específico para esta línea
+            cup_extra: selectedProduct.cup_extra || 0
+            
         });
     }
     
@@ -2903,32 +2920,43 @@ function changeQty(index, delta) {
 
     function recalcularTotalFinal() {
     const select = document.getElementById('check-moneda');
+    const opcionElegida = select.value || "USD";
     
-    // Sumamos (Precio Venta * Cantidad) + (Envío de esa Línea)
-    // Nota: shipping_linea ya es el total para esa línea (ej: si son 2 TVs y envío es 20, shipping_linea es 20)
+    // 1. Calcular TOTAL USD (Igual que antes)
     const totalUSD = cart.reduce((acc, item) => {
         return acc + (item.precio_venta * item.qty) + (parseFloat(item.shipping_linea) || 0);
     }, 0);
 
-    const opcionElegida = select.value || "USD";
+    // 2. Calcular TOTAL CUP (Matemática línea por línea)
+    // Aquí es donde arreglamos el error de los 19,600 vs 20,000
+    const totalCUPCalculado = cart.reduce((acc, item) => {
+        // Tasa individual para este producto (490 + 10 = 500)
+        const tasaEsteProducto = globalCUPRate + (item.cup_extra || 0);
+        
+        // Costo del equipo en CUP
+        const costoEquipoCUP = (item.precio_venta * item.qty) * tasaEsteProducto;
+        
+        // Costo del envío en CUP (Asumimos tasa global o la misma del producto)
+        // Usaremos la misma del producto para mantener consistencia
+        const costoEnvioCUP = (parseFloat(item.shipping_linea) || 0) * tasaEsteProducto;
+
+        return acc + costoEquipoCUP + costoEnvioCUP;
+    }, 0);
+
+    // 3. Mostrar Resultados
     let totalFinal = totalUSD;
     let simbolo = "$";
 
+    // Si el usuario selecciona CUP en el selector
     if (opcionElegida.toUpperCase().includes("CUP")) {
-        let tasaFinal = globalCUPRate || 450;
-        if (opcionElegida.includes("+")) {
-            const incremento = parseFloat(opcionElegida.match(/\d+/) || 0);
-            tasaFinal = tasaFinal + incremento;
-        } else {
-            const tasaFijaMatch = opcionElegida.match(/(\d{3,})/);
-            if(tasaFijaMatch) tasaFinal = parseFloat(tasaFijaMatch[0]);
-        }
-        totalFinal = totalUSD * tasaFinal;
+        totalFinal = totalCUPCalculado; // Usamos el cálculo preciso
         simbolo = "CUP";
     }
 
     document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
-    document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    
+    // Formatear con comas (ej: 20,000.00)
+    document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 }
 
     function actualizarOpcionesMoneda() {
@@ -3001,8 +3029,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
     // =====================================
 
-    // 1. INICIALIZAR MENSAJE WHATSAPP (Con Brazo Fuerte 💪)
-    let mensajeRaw = `💪 *NUEVO PEDIDO CONFIRMADO* 💪\n\n`;
+   // 1. INICIALIZAR MENSAJE (Lo iniciamos vacío para que cada pedido tenga su propia cabecera de factura)
+    let mensajeRaw = ""; 
     let erroresInsert = false;
     
     // Promesas para guardar en BD
@@ -3016,8 +3044,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         const ahora = new Date();
         const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString();
         
-        // Nota: Esto es asíncrono dentro de un loop, lo ideal es usar for..of con await
-        // Para simplificar y asegurar el orden, haremos el await aquí.
         const { count, error: errCount } = await supabaseClient
             .from('pedidos')
             .select('id', { count: 'exact', head: true })
@@ -3035,27 +3061,43 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         
         const strProd = `${item.qty}x ${item.nombre}`;
 
-        // B. CONSTRUIR BLOQUE WHATSAPP (CON EMOJIS 💪)
-        mensajeRaw += `💪 Pedido: ${codPedido}\n`;
-        mensajeRaw += `💪 Cliente: ${nombreC}\n`;
-        mensajeRaw += `💪 Municipio: ${municipioC}\n`;
-        mensajeRaw += `💪 Teléfono: ${telC}\n`;
-        mensajeRaw += `💪 Dirección: ${dirC}\n`;
-        mensajeRaw += `💪 Equipo: ${strProd}\n`;
-        // Aquí mostramos el total SUMADO (Equipo + Envío) como pediste
-        mensajeRaw += `💪 Total a Pagar: ${totalItem} USD\n`; 
-        mensajeRaw += `💪 Vuelto: ${vueltoC}\n`;
+        // B. CONSTRUIR BLOQUE WHATSAPP (ESTILO FACTURA DIGITAL 🧾)
+        mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n`;
+        mensajeRaw += `📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n`;
+
+        mensajeRaw += `👤 *DATOS DEL CLIENTE*\n`;
+        mensajeRaw += `Cliente: ${nombreC}\n`;
+        // Agregamos Carnet solo si tiene datos
+        if(typeof ciC !== 'undefined' && ciC && ciC !== "No especificado") mensajeRaw += `CI: ${ciC}\n`;
+        mensajeRaw += `Móvil: ${telC}\n`;
+        mensajeRaw += `Municipio: ${municipioC}\n`;
+        mensajeRaw += `Dirección: ${dirC}\n\n`;
+
+        mensajeRaw += `📦 *DETALLE DEL PEDIDO*\n`;
+        mensajeRaw += `Producto: ${strProd}\n`;
+        // Desglose útil para logística y proveedor
+        mensajeRaw += `(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
+
+        mensajeRaw += `💰 *TOTAL A COBRAR: ${totalItem} USD*\n`;
         
-        // Desglose interno útil para el proveedor
-        mensajeRaw += `   (Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n`;
-
-        if (isLogged) {
-            mensajeRaw += `💪 Comisión: ${comisionItem} USD\n`;
-            mensajeRaw += `💪 Gestor: ${activeGestor}\n`;
+        // Lógica visual para el Vuelto
+        if (vueltoC && vueltoC !== "no" && vueltoC !== "") {
+            mensajeRaw += `⚠️ *OJO VUELTO:* Cliente paga con billete de $${vueltoC}\n`;
+        } else {
+            mensajeRaw += `✅ Vuelto: No requiere (Pago exacto)\n`;
         }
-        mensajeRaw += `--------------------------------\n\n`;
 
-        // C. INSERTAR EN BD (PEDIDO INDIVIDUAL)
+        // Datos internos (Solo si eres tú o un gestor)
+        if (isLogged) {
+            mensajeRaw += `\n👮‍♂️ *GESTIÓN INTERNA*\n`;
+            mensajeRaw += `Agente: ${activeGestor}\n`;
+            mensajeRaw += `Comisión: $${comisionItem}\n`;
+        }
+        
+        // Separador por si hay múltiples productos en el carrito
+        mensajeRaw += `\n------------------------------------\n\n`;
+
+        // C. INSERTAR EN BD (Tu lógica original intacta)
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor,
             cliente: nombreC,
@@ -3064,12 +3106,12 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             direccion: dirC,
             municipio: municipioC,
             producto: `${strProd} [${monedaC}]`,
-            total: totalItem, // Total con envío incluido
+            total: totalItem, 
             comision_total: comisionItem,
             estado: 'Pendiente',
             pago_gestor: 'Pendiente',
             proveedor: prov,
-            costo_mensajeria: costoEnvio, // Guardamos el envío específico
+            costo_mensajeria: costoEnvio,
             orden_dia: codPedido,
             origen: origenPedido
         }]);
@@ -3085,7 +3127,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // 3. ENVIAR WHATSAPP
     const mensajeCodificado = encodeURIComponent(mensajeRaw);
-    window.open(`https://wa.me/5356071095?text=${mensajeCodificado}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=5356071095&text=${mensajeCodificado}`, '_blank');
 
     // 4. GENERAR PDF UNIFICADO (UNA SOLA HOJA CON TODO)
     // Calculamos los totales globales para el PDF
@@ -4032,6 +4074,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         nombre: nombreInput,
         precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
+        cup_extra: parseInt(document.getElementById('p-cup-extra').value) || 0,
         categoria: categoriaInput,
         descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
         
@@ -4196,6 +4239,7 @@ function clearImageSlot(event, index) {
         'p-nombre': p.nombre,
         'p-precio': p.precio,
         'p-comision': p.comision,
+        'p-cup-extra': p.cup_extra || 0,
         'p-categoria': p.categoria,
         'p-garantia': p.garantia,
         'p-proveedor': p.proveedor,
@@ -4397,7 +4441,8 @@ function renderProductsCustom(lista) {
 
         if (showInCUP) {
             // Usamos la misma función inteligente
-            const precioCUP = calculateProductCUP(precio, p.pagos);
+            const precioCUP = calculateProductCUP(precio, null, p.cup_extra);
+
             
             if (precioCUP) {
                 // Formato limpio
@@ -5295,34 +5340,23 @@ function updateGlobalRate(val) {
 }
 
 // --- FUNCIÓN MAESTRA DE CÁLCULO DE PRECIO CUP ---
-function calculateProductCUP(priceUSD, pagosString) {
-    if (!pagosString) return priceUSD * globalCUPRate; // Si no hay info, usar tasa general
+// --- FUNCIÓN MATEMÁTICA FINAL (SOLO NÚMEROS) ---
+function calculateProductCUP(priceUSD, pagosString, cupExtraDB) {
+    // 1. Obtener la Tasa Global (500)
+    let tasaBase = globalCUPRate; 
 
-    const str = pagosString.toLowerCase();
+    // 2. Obtener el Extra del Producto (Ej: 5 o 10)
+    // Nota: 'cupExtraDB' viene de la base de datos (p.cup_extra)
+    let extra = 0;
+    if (cupExtraDB && !isNaN(cupExtraDB)) {
+        extra = parseFloat(cupExtraDB);
+    }
     
-    // CASO 1: Tasa Fija (Ej: "CUP efectivo 470", "CUP 470")
-    // Buscamos un número grande (mayor a 100) cerca de la palabra CUP
-    // Regex: Busca 'cup' seguido de cualquier cosa y luego un número de 3 dígitos
-    const fixedMatch = str.match(/cup.*?(\d{3,})/);
-    if (fixedMatch) {
-        const fixedRate = parseFloat(fixedMatch[1]);
-        return priceUSD * fixedRate;
-    }
+    // 3. Calcular Tasa Final (500 + 5 = 505)
+    let tasaFinal = tasaBase + extra;
 
-    // CASO 2: Tasa Variable con Plus (Ej: "CUP +10")
-    const plusMatch = str.match(/cup\s*\+\s*(\d+)/);
-    if (plusMatch) {
-        const extra = parseFloat(plusMatch[1]);
-        return priceUSD * (globalCUPRate + extra);
-    }
-
-    // CASO 3: Solo dice "CUP" sin números -> Usa Tasa del Día
-    if (str.includes('cup')) {
-        return priceUSD * globalCUPRate;
-    }
-
-    // CASO 4: No acepta CUP (No dice CUP en ningún lado)
-    return null; // Indicador de que no acepta CUP
+    // 4. Retornar Precio Final
+    return priceUSD * tasaFinal;
 }
 
 // Llamar a esto dentro de loadAdminData()
