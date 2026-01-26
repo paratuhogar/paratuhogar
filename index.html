@@ -2,6 +2,9 @@
 <html class="light" lang="es">
 <head>
     <meta charset="utf-8"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>paratuhogar | Electrodomésticos para Cuba</title>
     
@@ -1574,6 +1577,28 @@
 
     <!-- Scripts de Lógica -->
     <script>
+        // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
+    const versionActual = "2601"; 
+    const urlParamsVersion = new URLSearchParams(window.location.search);
+    if (urlParamsVersion.get('v') !== versionActual) {
+        urlParamsVersion.set('v', versionActual);
+        // Esto redirige la página añadiendo ?v=2601 al final, lo que limpia el caché
+        window.location.search = urlParamsVersion.toString();
+    }
+
+    // === 2. CÓDIGO DE LIMPIEZA DE EMERGENCIA ===
+    (function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Si la URL tiene ?limpiar=true, borramos todo
+        if (urlParams.get('limpiar') === 'true') {
+            localStorage.removeItem('pth_referrer');
+            localStorage.removeItem('pth_referrer_smart');
+            localStorage.removeItem('pth_session');
+            alert("✅ MEMORIA RESETEADA: Se ha borrado el rastro anterior.");
+            // Recargar la página limpia
+            window.location.href = window.location.origin + window.location.pathname;
+        }
+    })();
 
         // === CÓDIGO DE LIMPIEZA DE EMERGENCIA ===
 (function() {
@@ -3314,13 +3339,13 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
-    btn.innerText = "PROCESANDO PEDIDO..."; // Cambio de texto para feedback
+    btn.innerText = "PROCESANDO PEDIDO...";
 
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session;
 
     const nombreC = document.getElementById('check-nombre').value;
-    const municipioC = document.getElementById('check-municipio').value; // NUEVO
+    const municipioC = document.getElementById('check-municipio').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
@@ -3328,7 +3353,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // 1. DETERMINAR QUIÉN ES EL GESTOR (Tu lógica original)
+    // --- 1. DETERMINAR GESTOR (Tu lógica original intacta) ---
     let activeGestor = "Venta Directa";
     if (window.gestorName) {
         activeGestor = window.gestorName;
@@ -3342,7 +3367,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
 
-    // 2. LOGICA DE BINDEO (Tu lógica original)
+    // --- 2. LÓGICA DE BINDEO (Tu lógica original intacta) ---
     const levelData = getLevelData(window.gestorSalesCount || 0);
     if (levelData.lvl >= 5 && activeGestor !== "Venta Directa") {
         try {
@@ -3352,91 +3377,102 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             });
         } catch (err) { console.error("Error en bindeo:", err); }
     }
-    // === LÓGICA DE DETECCIÓN DE ORIGEN ===
-    let origenPedido = "Directo/Web"; // Valor por defecto si falla todo
 
+    // --- 3. LÓGICA DE ORIGEN (Tu lógica original intacta) ---
+    let origenPedido = "Directo/Web";
     if (isLogged) {
         origenPedido = "Manual (Panel)";
     } else {
-        // Buscamos en la memoria lo que guardamos en el Paso 1
         const referrerSmart = localStorage.getItem('pth_referrer_smart');
         const referrerSimple = localStorage.getItem('pth_referrer');
-        
         if (referrerSmart || referrerSimple) {
             origenPedido = "Enlace Compartido";
         }
     }
-    // =====================================
 
-   // 1. INICIALIZAR MENSAJE (Lo iniciamos vacío para que cada pedido tenga su propia cabecera de factura)
-    let mensajeRaw = ""; 
-    let erroresInsert = false;
-    
-    // Promesas para guardar en BD
-    const promesas = [];
-
-    // 2. ITERAR SOBRE EL CARRITO (UN PEDIDO POR TIPO DE PRODUCTO)
-    for (const item of cart) {
+    // --- 4. AGRUPAR CARRITO POR PROVEEDOR ---
+    const gruposPorProveedor = cart.reduce((acc, item) => {
         const prov = item.proveedor || 'General';
+        if (!acc[prov]) acc[prov] = [];
+        acc[prov].push(item);
+        return acc;
+    }, {});
+
+    let mensajeRaw = ""; 
+    const promesas = [];
+    const agentPhone = getAgentPhone(); // Obtenemos el teléfono del gestor
+
+    // --- 5. GENERAR VALES AGRUPADOS POR PROVEEDOR ---
+    for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         
-        // A. Consultar Consecutivo
+        // A. CONSECUTIVO ANUAL (Desde el 1 de Enero)
         const ahora = new Date();
-        const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString();
+        const inicioAnio = new Date(ahora.getFullYear(), 0, 1).toISOString();
         
         const { count, error: errCount } = await supabaseClient
             .from('pedidos')
             .select('id', { count: 'exact', head: true })
             .eq('proveedor', prov)
-            .gte('fecha', inicioHoy); 
+            .gte('fecha', inicioAnio); 
 
-        const nroConsecutivo = (errCount ? 0 : (count || 0)) + 1;
+        // Offset manual (ajustar según tu lista)
+        const startOffset = {
+            'CA': 5, 
+            'A': 1,
+            'M': 1,
+            'JM': 1
+        };
+
+        const nroConsecutivo = (errCount ? 0 : (count || 0)) + (startOffset[prov] || 0) + 1;
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
-        // Datos Financieros del Ítem
-        const costoEquipo = item.precio_venta * item.qty;
-        const costoEnvio = parseFloat(item.shipping_linea) || 0;
-        const totalItem = costoEquipo + costoEnvio;
-        const comisionItem = (item.comision_actual * item.qty);
-        
-        const strProd = `${item.qty}x ${item.nombre}`;
+        // B. CÁLCULOS DEL VALE
+        let detalleCuerpo = "";
+        let totalUSDVale = 0;
+        let comisionTotalVale = 0;
+        let envioTotalVale = 0;
 
-        // B. CONSTRUIR BLOQUE WHATSAPP (ESTILO FACTURA DIGITAL 🧾)
+        productos.forEach(item => {
+            const costoEquipo = item.precio_venta * item.qty;
+            const costoEnvio = parseFloat(item.shipping_linea) || 0;
+            totalUSDVale += (costoEquipo + costoEnvio);
+            comisionTotalVale += (item.comision_actual * item.qty);
+            envioTotalVale += costoEnvio;
+            detalleCuerpo += `Producto: ${item.qty}x ${item.nombre}\n(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
+        });
+
+        // C. CONSTRUIR BLOQUE WHATSAPP
         mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n`;
         mensajeRaw += `📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n`;
 
         mensajeRaw += `👤 *DATOS DEL CLIENTE*\n`;
         mensajeRaw += `Cliente: ${nombreC}\n`;
-        // Agregamos Carnet solo si tiene datos
         if(typeof ciC !== 'undefined' && ciC && ciC !== "No especificado") mensajeRaw += `CI: ${ciC}\n`;
         mensajeRaw += `Móvil: ${telC}\n`;
         mensajeRaw += `Municipio: ${municipioC}\n`;
         mensajeRaw += `Dirección: ${dirC}\n\n`;
 
         mensajeRaw += `📦 *DETALLE DEL PEDIDO*\n`;
-        mensajeRaw += `Producto: ${strProd}\n`;
-        // Desglose útil para logística y proveedor
-        mensajeRaw += `(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
+        mensajeRaw += detalleCuerpo;
 
-        mensajeRaw += `💰 *TOTAL A COBRAR: ${totalItem} USD*\n`;
+        mensajeRaw += `💰 *TOTAL A COBRAR: ${totalUSDVale} USD*\n`;
         
-        // Lógica visual para el Vuelto
         if (vueltoC && vueltoC !== "no" && vueltoC !== "") {
             mensajeRaw += `⚠️ *OJO VUELTO:* Cliente paga con billete de $${vueltoC}\n`;
         } else {
             mensajeRaw += `✅ Vuelto: No requiere (Pago exacto)\n`;
         }
 
-        // Datos internos (Solo si eres tú o un gestor)
-        if (isLogged) {
+        if (isLogged || activeGestor !== "Venta Directa") {
             mensajeRaw += `\n👮‍♂️ *GESTIÓN INTERNA*\n`;
             mensajeRaw += `Agente: ${activeGestor}\n`;
-            mensajeRaw += `Comisión: $${comisionItem}\n`;
+            mensajeRaw += `Comisión: $${comisionTotalVale}\n`;
+            mensajeRaw += `Teléfono: ${agentPhone}\n`; // Añadido teléfono
         }
         
-        // Separador por si hay múltiples productos en el carrito
         mensajeRaw += `\n------------------------------------\n\n`;
 
-        // C. INSERTAR EN BD (Tu lógica original intacta)
+        // D. INSERTAR EN BD (Un registro por vale agrupado)
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor,
             cliente: nombreC,
@@ -3444,13 +3480,13 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             telefono: telC,
             direccion: dirC,
             municipio: municipioC,
-            producto: `${strProd} [${monedaC}]`,
-            total: totalItem, 
-            comision_total: comisionItem,
+            producto: productos.map(p => `${p.qty}x ${p.nombre}`).join(' + ') + ` [${monedaC}]`,
+            total: totalUSDVale, 
+            comision_total: comisionTotalVale,
             estado: 'Pendiente',
             pago_gestor: 'Pendiente',
             proveedor: prov,
-            costo_mensajeria: costoEnvio,
+            costo_mensajeria: envioTotalVale,
             orden_dia: codPedido,
             origen: origenPedido
         }]);
@@ -3458,42 +3494,31 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         promesas.push(insertPromise);
     }
 
-    // Esperar a que todo se guarde
-    const resultados = await Promise.all(promesas);
-    if (resultados.some(r => r.error)) {
-        alert("Hubo un error guardando algunos pedidos en la base de datos, pero el WhatsApp está listo.");
-    }
+    // Guardar todo
+    await Promise.all(promesas);
 
-    // 3. ENVIAR WHATSAPP
-    const mensajeCodificado = encodeURIComponent(mensajeRaw);
+    // Enviar WhatsApp
+    const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
     window.open(`https://api.whatsapp.com/send?phone=5356071095&text=${mensajeCodificado}`, '_blank');
 
-    // 4. GENERAR PDF UNIFICADO (UNA SOLA HOJA CON TODO)
-    // Calculamos los totales globales para el PDF
+    // Generar PDF Unificado para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
     const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
-    const totalGlobal = totalGlobalProductos + totalGlobalEnvio;
-
-    // Preparamos el objeto unificado para el PDF
     const datosParaPDF = {
         cliente: nombreC,
         ci: ciC,
         direccion: `${dirC} (${municipioC})`,
-        totalUSD: totalGlobal,
-        mensajeria: totalGlobalEnvio, // Suma de todos los envíos individuales
+        totalUSD: totalGlobalProductos + totalGlobalEnvio,
+        mensajeria: totalGlobalEnvio,
         items: cart.map(item => ({
             nombre: item.nombre,
             qty: item.qty,
-            price: item.precio_venta,
-            // Truco: Pasamos el 'total' de la línea como (precio*qty) para que el PDF calcule bien, 
-            // la mensajería la mostramos abajo como un ítem separado o sumada al final.
-            // Para que el PDF desglose bien, pasamos los items tal cual.
+            price: item.precio_venta
         }))
     };
-
     setTimeout(() => { generarComprobanteVenta(datosParaPDF); }, 1500); 
 
-    // Limpieza final
+    // Limpieza
     setTimeout(() => {
         cart = [];
         clearAutoSave();
@@ -4710,7 +4735,7 @@ async function getOrGenerateShortLink(gestor, longLink) {
     const gestor = window.gestorName || 'Ventas';
     const miTelefono = getAgentPhone(); // <--- Aquí usamos el "Cerebro"
     
-    let longLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    let longLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}&v=2601`;
     const finalLink = await getOrGenerateShortLink(gestor, longLink);
 
     const textoVenta = 
@@ -8141,6 +8166,8 @@ async function downloadCatalogPDF() {
 }
 
 </script>
+
+
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (VERSIÓN EDUCATIVA PRO) === -->
