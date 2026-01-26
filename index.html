@@ -6435,38 +6435,80 @@ function alertLockedInfo(title, desc) {
 /* ============================================== */
 
 // 1. Guardar Referido al entrar (INIT)
+// ==============================================
+// LÓGICA DE REFERIDOS: ÚLTIMO CLIC GANA (LAST CLICK WINS)
+// ==============================================
+
 async function initSmartReferral() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlGestor = urlParams.get('gestor');
     const urlTel = urlParams.get('tel');
 
+    // CASO 1: EL CLIENTE ENTRA POR UN ENLACE DE GESTOR
+    // Aquí es donde aplicamos la lógica: El nuevo enlace SIEMPRE gana.
     if (urlGestor) {
-        const today = new Date();
-        today.setDate(today.getDate() - 30);
-        
-        // CORRECCIÓN: Quitamos 'head: true' aquí también
-        const { count, error } = await supabaseClient
-            .from('pedidos')
-            .select('id', { count: 'exact' })
-            .eq('gestor', urlGestor)
-            .eq('estado', 'Entregado')
-            .gte('created_at', today.toISOString());
-        
-        const sales = count || 0;
-        const data = getLevelData(sales);
-        const hours = data.duration;
+        try {
+            // 1. Calculamos el nivel del NUEVO gestor para saber cuánto tiempo merece el amarre
+            // Nota: Hacemos la consulta rápida para ver sus ventas y determinar su nivel
+            const today = new Date();
+            today.setDate(today.getDate() - 30);
+            
+            const { count, error } = await supabaseClient
+                .from('pedidos')
+                .select('id', { count: 'exact', head: true })
+                .eq('gestor', urlGestor)
+                .eq('estado', 'Entregado')
+                .gte('created_at', today.toISOString());
+            
+            const sales = count || 0;
+            const data = getLevelData(sales); // Obtenemos info del nivel (días de duración)
+            const hours = data.duration;
 
-        const now = new Date().getTime();
-        const expirationTime = now + (hours * 60 * 60 * 1000);
+            const now = new Date().getTime();
+            const expirationTime = now + (hours * 60 * 60 * 1000);
 
-        const referrerData = {
-            nombre: urlGestor,
-            telefono: urlTel || "",
-            timestamp: now,
-            expiresAt: expirationTime
-        };
+            // 2. CREAMOS EL NUEVO REGISTRO
+            const newReferrerData = {
+                nombre: urlGestor,
+                telefono: urlTel || "",
+                timestamp: now,
+                expiresAt: expirationTime
+            };
 
-        localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
+            // 3. SOBRESCRIBIMOS LA MEMORIA (Aquí ocurre el cambio de dueño)
+            // No importa si había otro antes, este es el último clic y es el que manda.
+            localStorage.setItem('pth_referrer_smart', JSON.stringify(newReferrerData));
+            
+            // También actualizamos la versión simple por compatibilidad
+            localStorage.setItem('pth_referrer', JSON.stringify(newReferrerData));
+
+            console.log(`✅ Nuevo Gestor Asignado: ${urlGestor} (Vence en ${hours} horas)`);
+
+        } catch (e) {
+            console.error("Error al asignar nuevo gestor:", e);
+        }
+    } 
+    // CASO 2: EL CLIENTE ENTRA DIRECTO (SIN ENLACE)
+    else {
+        // Aquí verificamos si ya tiene dueño y si el tiempo no ha expirado
+        checkExpiration();
+    }
+}
+
+// Función auxiliar para limpiar si expiró
+function checkExpiration() {
+    const stored = localStorage.getItem('pth_referrer_smart');
+    if (!stored) return;
+
+    const data = JSON.parse(stored);
+    const now = new Date().getTime();
+
+    if (now > data.expiresAt) {
+        console.log("❌ El amarre del gestor ha expirado. Cliente libre.");
+        localStorage.removeItem('pth_referrer_smart');
+        localStorage.removeItem('pth_referrer');
+    } else {
+        console.log(`🔒 Cliente amarrado a: ${data.nombre} (Vigente)`);
     }
 }
 
@@ -6750,7 +6792,8 @@ async function superMagicAI() {
 
         // --- 4. PETICIÓN A GOOGLE (USANDO LA KEY DEL USUARIO) ---
         // Usamos el modelo gemini-1.5-flash que es el estándar actual gratuito
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
 
         const response = await fetch(url, {
             method: 'POST',
