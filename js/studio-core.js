@@ -1,6 +1,5 @@
 // js/studio-core.js
 
-// 1. CONFIGURACIÓN SUPABASE
 const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -10,7 +9,9 @@ let filteredProducts = [];
 let gestorData = {};
 let visibleCount = 12;
 
-// 2. INICIALIZACIÓN
+// CACHÉ DE IMÁGENES LIMPIAS (Para que no procese 2 veces la misma foto)
+const imageCache = {}; 
+
 window.addEventListener('load', async () => {
     const session = JSON.parse(localStorage.getItem('pth_session') || '{}');
     if (!session.name) {
@@ -48,7 +49,8 @@ window.addEventListener('load', async () => {
         });
     });
     
-    const switches = ['toggle-format', 'toggle-white-bg', 'toggle-price', 'toggle-phone', 'toggle-delivery', 'toggle-warranty'];
+    // El toggle de IA debe regenerar la vista
+    const switches = ['toggle-format', 'toggle-ai-bg', 'toggle-price', 'toggle-phone', 'toggle-delivery', 'toggle-warranty'];
     switches.forEach(id => document.getElementById(id).addEventListener('change', refreshPreviews));
 });
 
@@ -85,15 +87,14 @@ function fixImageUrl(url) {
     return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
 }
 
-// 7. RENDERIZAR VISTAS
 async function refreshPreviews() {
     const container = document.getElementById('preview-grid');
     container.innerHTML = ""; 
 
     const options = {
         theme: document.getElementById('ctrl-theme').value,
+        useAI: document.getElementById('toggle-ai-bg').checked, // NUEVO
         isStory: document.getElementById('toggle-format').checked,
-        forceWhite: document.getElementById('toggle-white-bg').checked,
         showPrice: document.getElementById('toggle-price').checked,
         showPhone: document.getElementById('toggle-phone').checked,
         showDelivery: document.getElementById('toggle-delivery').checked,
@@ -118,9 +119,24 @@ async function refreshPreviews() {
         canvas.height = options.isStory ? 1920 : 1080;
         canvas.className = "canvas-preview w-full h-auto bg-slate-800 rounded-lg shadow-lg border border-slate-700";
         
-        wrapper.appendChild(canvas);
+        // Loader visual si la IA está activa
+        if(options.useAI && !imageCache[prod.id]) {
+            wrapper.innerHTML = `<div class="w-full aspect-[9/16] flex items-center justify-center bg-slate-800 rounded-lg text-slate-500 text-xs animate-pulse">🤖 IA Trabajando...</div>`;
+        } else {
+            wrapper.appendChild(canvas);
+        }
+        
         container.appendChild(wrapper);
-        drawProductCard(canvas, prod, options); // Async pero no bloqueante para UI
+
+        // Si hay IA pendiente, dibujamos y luego reemplazamos el loader
+        if(options.useAI && !imageCache[prod.id]) {
+            drawProductCard(canvas, prod, options).then(() => {
+                wrapper.innerHTML = '';
+                wrapper.appendChild(canvas);
+            });
+        } else {
+            drawProductCard(canvas, prod, options);
+        }
     }
 
     if (visibleCount < filteredProducts.length) {
@@ -134,13 +150,58 @@ async function refreshPreviews() {
 
 window.loadMoreItems = function() { visibleCount += 12; refreshPreviews(); };
 
-// --- 8. MOTOR GRÁFICO AVANZADO ---
+// --- FUNCIÓN INTELIGENTE DE CARGA DE IMAGEN ---
+async function getSmartImage(product, useAI) {
+    // 1. Si ya tenemos la imagen limpia en caché, devolverla
+    if (useAI && imageCache[product.id]) {
+        return imageCache[product.id];
+    }
+
+    const originalUrl = fixImageUrl(product.thumbnail);
+    
+    // 2. Si NO piden IA, devolver la original
+    if (!useAI) {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = originalUrl;
+        return new Promise((resolve) => {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+        });
+    }
+
+    // 3. SI PIDEN IA y no está en caché: PROCESAR
+    try {
+        console.log("🤖 Procesando IA para: " + product.nombre);
+        // Usamos la librería imgly que ya importamos en el HTML
+        const blob = await imgly.removeBackground(originalUrl);
+        const urlLimpia = URL.createObjectURL(blob);
+        
+        const imgLimpia = new Image();
+        imgLimpia.src = urlLimpia;
+        
+        await new Promise(r => imgLimpia.onload = r);
+        
+        // Guardar en caché para no volver a gastar CPU
+        imageCache[product.id] = imgLimpia;
+        return imgLimpia;
+
+    } catch (e) {
+        console.warn("Fallo IA, usando original:", e);
+        // Fallback a original si falla la IA
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = originalUrl;
+        return new Promise(r => img.onload = () => r(img));
+    }
+}
+
+// --- MOTOR GRÁFICO ---
 async function drawProductCard(canvas, product, opt) {
     const ctx = canvas.getContext('2d');
     const W = canvas.width;
     const H = canvas.height;
 
-    // --- CONFIGURACIÓN DE TEMA ---
     const themes = {
         classic: { bgStart: "#f8fafc", bgEnd: "#e2e8f0", textMain: "#0f172a", textAccent: "#1a4789", priceBg: "#e11d48", font: "'Manrope', sans-serif" },
         minimal: { bgStart: "#ffffff", bgEnd: "#ffffff", textMain: "#1d1d1f", textAccent: "#86868b", priceBg: "#000000", font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
@@ -154,28 +215,19 @@ async function drawProductCard(canvas, product, opt) {
     const isImpact = opt.theme === 'impact';
 
     // 1. FONDO
-    if (opt.forceWhite && !isImpact && !isDark) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, W, H);
-    } else {
-        const grad = ctx.createLinearGradient(0, 0, 0, H);
-        grad.addColorStop(0, t.bgStart);
-        grad.addColorStop(1, t.bgEnd);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, W, H);
-    }
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, t.bgStart);
+    grad.addColorStop(1, t.bgEnd);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
 
-    // 2. HEADER (Marca)
+    // 2. HEADER
     const headerH = opt.isStory ? 200 : 150;
-    
     if (!isMinimal) {
-        // En minimal no ponemos barra de color, solo texto
         ctx.fillStyle = isImpact ? "#fbbf24" : (isDark ? "#1e293b" : "#1a4789");
         if(isDark) ctx.fillStyle = "rgba(255,255,255,0.05)";
-        
         ctx.fillRect(0, 0, W, headerH);
     }
-
     ctx.fillStyle = isMinimal ? "#000000" : (isImpact ? "#990000" : "#ffffff");
     ctx.font = `900 ${isMinimal ? 50 : 60}px ${t.font}`;
     ctx.textAlign = "center";
@@ -183,57 +235,49 @@ async function drawProductCard(canvas, product, opt) {
     ctx.letterSpacing = "2px";
     ctx.fillText("PARATUHOGAR", W/2, headerH/2);
 
-    // 3. IMAGEN DEL PRODUCTO
-    // Calculamos área útil
+    // 3. IMAGEN
     const footerH = opt.isStory ? 250 : 180;
     const availableH = H - headerH - footerH;
-    const imgMargin = isMinimal ? 40 : 80;
-    
-    // Altura de imagen
-    let imgH = availableH * 0.65; // Ocupa el 65% del espacio central
-    let imgY = headerH + (availableH - imgH) / 2 - 100; // Centrado verticalmente tirando arriba
+    let imgH = availableH * 0.65;
+    let imgY = headerH + (availableH - imgH) / 2 - 100;
 
-    const imgUrl = fixImageUrl(product.thumbnail);
-    const img = new Image(); img.crossOrigin = "Anonymous"; img.src = imgUrl;
+    // --- CARGA DE IMAGEN INTELIGENTE (IA o NORMAL) ---
+    const img = await getSmartImage(product, opt.useAI);
 
-    try {
-        await new Promise((r, j) => { img.onload = r; img.onerror = j; });
-
-        // SOMBRA (Efecto Elevación)
+    if (img) {
+        // SOMBRA
         if (!isImpact) {
             ctx.shadowColor = isDark ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.2)";
             ctx.shadowBlur = isMinimal ? 60 : 40;
             ctx.shadowOffsetY = 30;
         }
 
-        // Si el tema es Minimal, no ponemos tarjeta blanca, la imagen flota limpia
-        if (!isMinimal && !isDark && !isImpact) {
+        // Si NO estamos usando IA y NO es Minimal, ponemos la tarjeta blanca de fondo
+        // para que no se vea feo el recorte cuadrado de la foto original
+        if (!opt.useAI && !isMinimal && !isDark && !isImpact) {
             ctx.fillStyle = "white";
             const cardSize = Math.min(W - 100, imgH + 100);
             const cardX = (W - cardSize) / 2;
             ctx.fillRect(cardX, imgY, cardSize, cardSize);
         }
 
-        // DIBUJAR IMAGEN
+        // DIBUJO
         const targetSize = isMinimal ? W - 100 : Math.min(W - 150, imgH);
         const scale = Math.min(targetSize / img.width, targetSize / img.height);
         const drawW = img.width * scale;
         const drawH = img.height * scale;
         const drawX = (W - drawW) / 2;
-        const drawY = imgY + (targetSize - drawH) / 2; // Centrado en su área
+        const drawY = imgY + (targetSize - drawH) / 2;
 
         ctx.drawImage(img, drawX, drawY, drawW, drawH);
-        ctx.shadowColor = "transparent"; // Reset sombra
+        ctx.shadowColor = "transparent";
+    }
 
-    } catch (e) { /* Fallback */ }
-
-    // 4. PRECIO (GIGANTE)
+    // 4. PRECIO
     if (opt.showPrice) {
         const priceY = imgY + imgH + (opt.isStory ? 100 : 50);
-        
         ctx.textAlign = "center";
         
-        // Estilo Precio
         if (isMinimal) {
             ctx.fillStyle = "#000000";
             ctx.font = `900 130px ${t.font}`;
@@ -242,7 +286,6 @@ async function drawProductCard(canvas, product, opt) {
             ctx.fillStyle = "#86868b";
             ctx.fillText("USD / Efectivo", W/2, priceY + 60);
         } else {
-            // Estilo Badge/Etiqueta
             const priceText = `$${product.precio} USD`;
             ctx.font = `900 110px ${t.font}`;
             const textMetrics = ctx.measureText(priceText);
@@ -250,18 +293,9 @@ async function drawProductCard(canvas, product, opt) {
             const bgH = 160;
             
             ctx.fillStyle = t.priceBg;
-            
-            // Sombra neón para Midnight
-            if (isDark) {
-                ctx.shadowColor = "#fbbf24";
-                ctx.shadowBlur = 30;
-            } else {
-                ctx.shadowColor = "rgba(0,0,0,0.3)";
-                ctx.shadowBlur = 20;
-                ctx.shadowOffsetY = 10;
-            }
+            if (isDark) { ctx.shadowColor = "#fbbf24"; ctx.shadowBlur = 30; } 
+            else { ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10; }
 
-            // Pastilla redondeada
             ctx.beginPath();
             ctx.roundRect((W - bgW)/2, priceY - bgH/1.5, bgW, bgH, 30);
             ctx.fill();
@@ -272,123 +306,83 @@ async function drawProductCard(canvas, product, opt) {
         }
     }
 
-    // 5. NOMBRE DEL PRODUCTO
+    // 5. NOMBRE
     const nameY = imgY + imgH + (opt.isStory ? 280 : 180);
     ctx.fillStyle = t.textMain;
     ctx.font = `800 ${opt.isStory ? 55 : 45}px ${t.font}`;
     const nameText = product.nombre.length > 40 ? product.nombre.substring(0, 37) + "..." : product.nombre;
     ctx.fillText(nameText, W/2, nameY);
 
-    // 6. GARANTÍA REAL (SELLO DORADO)
+    // 6. GARANTÍA
     if (opt.showWarranty) {
         const badgeX = W - (opt.isStory ? 160 : 120);
         const badgeY = headerH + (opt.isStory ? 80 : 60);
         const r = opt.isStory ? 75 : 60;
 
-        // Círculo Exterior
-        ctx.fillStyle = isMinimal ? "#000000" : "#d97706"; // Dorado oscuro o Negro en minimal
+        ctx.fillStyle = isMinimal ? "#000000" : "#d97706";
         ctx.beginPath(); ctx.arc(badgeX, badgeY, r, 0, 2*Math.PI); ctx.fill();
-
-        // Círculo Interior
-        ctx.fillStyle = isMinimal ? "#ffffff" : "#fbbf24"; // Dorado claro
+        ctx.fillStyle = isMinimal ? "#ffffff" : "#fbbf24";
         ctx.beginPath(); ctx.arc(badgeX, badgeY, r - 5, 0, 2*Math.PI); ctx.fill();
 
-        // Texto
         ctx.fillStyle = isMinimal ? "#000000" : "#78350f";
         ctx.font = `bold ${opt.isStory ? 22 : 18}px Arial`;
         ctx.fillText("GARANTÍA", badgeX, badgeY - 10);
         ctx.font = `900 ${opt.isStory ? 32 : 26}px Arial`;
         ctx.fillText("REAL", badgeX, badgeY + 20);
-        
-        // Estrellas decorativas
-        ctx.font = "20px Arial";
-        ctx.fillText("★ ★ ★", badgeX, badgeY + 45);
     }
 
-    // 7. ENTREGA 24H (PASTILLA VERDE)
+    // 7. ENTREGA 24H
     if (opt.showDelivery) {
         const delX = (opt.isStory ? 160 : 120);
         const delY = headerH + (opt.isStory ? 80 : 60);
         
-        // Pastilla
-        ctx.fillStyle = isMinimal ? "#e5e5e5" : "#22c55e"; // Verde o Gris
+        ctx.fillStyle = isMinimal ? "#e5e5e5" : "#22c55e";
         ctx.shadowColor = "rgba(0,0,0,0.2)";
         ctx.shadowBlur = 10;
-        
-        const pillW = 220;
-        const pillH = 60;
-        ctx.beginPath();
-        ctx.roundRect(delX - pillW/2, delY - pillH/2, pillW, pillH, 50);
-        ctx.fill();
+        const pillW = 220; const pillH = 60;
+        ctx.beginPath(); ctx.roundRect(delX - pillW/2, delY - pillH/2, pillW, pillH, 50); ctx.fill();
         ctx.shadowColor = "transparent";
 
-        // Texto
         ctx.fillStyle = isMinimal ? "#000000" : "#ffffff";
         ctx.font = "bold 24px 'Manrope', sans-serif";
         ctx.fillText("🚀 ENTREGA 24H", delX, delY + 8);
     }
 
-    // 8. FOOTER (CONTACTO)
+    // 8. FOOTER
     if (opt.showPhone) {
         const footerY = H - footerH;
-        
-        if (isMinimal) {
-            // Estilo Apple: Footer gris muy claro
-            ctx.fillStyle = "#f5f5f7";
-            ctx.fillRect(0, footerY, W, footerH);
-            ctx.fillStyle = "#1d1d1f";
-        } else if (isDark) {
-            ctx.fillStyle = "#1e293b";
-            ctx.fillRect(0, footerY, W, footerH);
-            ctx.fillStyle = "#fbbf24";
-        } else {
-            ctx.fillStyle = "#0f172a";
-            ctx.fillRect(0, footerY, W, footerH);
-            ctx.fillStyle = "#ffffff";
-        }
+        if (isMinimal) { ctx.fillStyle = "#f5f5f7"; ctx.fillRect(0, footerY, W, footerH); ctx.fillStyle = "#1d1d1f"; }
+        else if (isDark) { ctx.fillStyle = "#1e293b"; ctx.fillRect(0, footerY, W, footerH); ctx.fillStyle = "#fbbf24"; }
+        else { ctx.fillStyle = "#0f172a"; ctx.fillRect(0, footerY, W, footerH); ctx.fillStyle = "#ffffff"; }
 
-        // Icono WA
         const iconX = 120;
         const centerY = footerY + footerH/2;
-        
-        ctx.beginPath();
-        ctx.arc(iconX, centerY, 50, 0, 2 * Math.PI);
-        ctx.fillStyle = "#22c55e"; // Siempre verde el WA
-        ctx.fill();
-        
-        ctx.fillStyle = "white";
-        ctx.font = "bold 55px Arial";
-        ctx.fillText("W", iconX, centerY + 20);
+        ctx.beginPath(); ctx.arc(iconX, centerY, 50, 0, 2 * Math.PI); ctx.fillStyle = "#22c55e"; ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "bold 55px Arial"; ctx.fillText("W", iconX, centerY + 20);
 
-        // Texto Pedido
         ctx.textAlign = "left";
         const textColor = isMinimal ? "#000000" : (isDark ? "#ffffff" : "#ffffff");
         ctx.fillStyle = textColor;
         ctx.font = `bold ${opt.isStory ? 60 : 50}px 'Manrope', sans-serif`;
         ctx.fillText(`PEDIDOS: ${opt.gestorPhone}`, iconX + 80, centerY + 15);
-        
-        // Agente
         ctx.font = `500 ${opt.isStory ? 30 : 25}px 'Manrope', sans-serif`;
         ctx.fillStyle = isMinimal ? "#86868b" : "#94a3b8";
         ctx.fillText(`Agente Autorizado: ${opt.gestorName}`, iconX + 80, centerY - 45);
     }
 }
 
-// 9. DESCARGAR TODO
 async function downloadAllImages() {
     const btn = document.getElementById('btn-download');
     const oldText = btn.innerText;
-    btn.innerText = "⏳ GENERANDO PIXELES...";
+    btn.innerText = "⏳ GENERANDO...";
     btn.disabled = true;
 
     try {
-        if(typeof JSZip === 'undefined') throw new Error("Librería ZIP no cargada");
-
         const zip = new JSZip();
         const options = {
             theme: document.getElementById('ctrl-theme').value,
+            useAI: document.getElementById('toggle-ai-bg').checked,
             isStory: document.getElementById('toggle-format').checked,
-            forceWhite: document.getElementById('toggle-white-bg').checked,
             showPrice: document.getElementById('toggle-price').checked,
             showPhone: document.getElementById('toggle-phone').checked,
             showDelivery: document.getElementById('toggle-delivery').checked,
@@ -410,12 +404,9 @@ async function downloadAllImages() {
         const content = await zip.generateAsync({type:"blob"});
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
-        link.download = `Pack_${options.theme}_${new Date().toLocaleDateString().replace(/\//g,'-')}.zip`;
-        document.body.appendChild(link);
+        link.download = `Pack_${options.theme}.zip`;
         link.click();
-        document.body.removeChild(link);
-
-        alert("✅ Pack Descargado Exitosamente");
+        alert("✅ Pack Descargado");
     } catch (e) {
         console.error(e);
         alert("Error: " + e.message);
@@ -424,4 +415,3 @@ async function downloadAllImages() {
         btn.disabled = false;
     }
 }
-// --- FIN DEL ARCHIVO ---
