@@ -162,6 +162,116 @@
             color: #94a3b8; /* Gris suave inactivo */
         }
     </style>
+    <!-- FUENTE SOLO LEVELING -->
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    /* === ESTILOS SOLO LEVELING (SYSTEM HUD) === */
+    .font-system { font-family: 'Rajdhani', sans-serif; }
+    
+    /* Fondo del Sistema */
+    .bg-system-dark { background-color: #020617; } /* Azul casi negro */
+    
+    /* Efecto Neón Azul (Standard) */
+    .neon-border-blue {
+        border: 1px solid #22d3ee;
+        box-shadow: 0 0 5px #22d3ee, 0 0 10px #22d3ee inset;
+    }
+    .text-neon-blue {
+        color: #a5f3fc;
+        text-shadow: 0 0 5px #22d3ee;
+    }
+
+    /* Efecto Neón Púrpura (Monarca) */
+    .neon-border-purple {
+        border: 1px solid #d8b4fe;
+        box-shadow: 0 0 8px #a855f7, 0 0 15px #a855f7 inset;
+    }
+    .text-neon-purple {
+        color: #e9d5ff;
+        text-shadow: 0 0 5px #a855f7;
+    }
+
+    /* Efecto Desactivado (Gris apagado) */
+    .system-locked {
+        border: 1px solid #334155;
+        background: rgba(15, 23, 42, 0.8);
+        opacity: 0.5;
+        filter: grayscale(100%);
+    }
+
+    /* Animación Scanline (Línea bajando) */
+    .scanline {
+        width: 100%;
+        height: 100px;
+        z-index: 10;
+        background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(34, 211, 238, 0.1) 50%, rgba(0,0,0,0) 100%);
+        opacity: 0.1;
+        position: absolute;
+        bottom: 100%;
+        animation: scanline 10s linear infinite;
+        pointer-events: none;
+    }
+    @keyframes scanline {
+        0% { bottom: 100%; }
+        100% { bottom: -100%; }
+    }
+
+    /* Caja de Titulo "STATUS" */
+    .status-header-box {
+        border: 2px solid #22d3ee;
+        background: rgba(6, 182, 212, 0.1);
+        position: relative;
+    }
+    /* Decoración de esquinas */
+    .corner-bracket {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border: 2px solid #22d3ee;
+        transition: all 0.3s;
+    }
+    .tl { top: -2px; left: -2px; border-bottom: 0; border-right: 0; }
+    .tr { top: -2px; right: -2px; border-bottom: 0; border-left: 0; }
+    .bl { bottom: -2px; left: -2px; border-top: 0; border-right: 0; }
+    .br { bottom: -2px; right: -2px; border-top: 0; border-left: 0; }
+
+    <style>
+    /* === ESTILOS RANKING SOLO LEVELING === */
+    
+    /* Fondo de rejilla tecnológica */
+    .bg-grid-pattern {
+        background-image: linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+
+    /* Carta Rango S (Top 1) - Estilo Monarca */
+    .card-rank-1 {
+        background: rgba(10, 10, 10, 0.8);
+        border: 1px solid #a855f7; /* Púrpura */
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+    }
+    
+    /* Carta Rango A (Top 2-3) - Estilo Sistema */
+    .card-rank-normal {
+        background: rgba(2, 6, 23, 0.8);
+        border: 1px solid #22d3ee; /* Cian */
+        box-shadow: 0 0 10px rgba(34, 211, 238, 0.1);
+    }
+
+    /* Separadores finos como en la imagen 3 */
+    .tech-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        margin: 8px 0;
+    }
+    
+    /* Texto brillante */
+    .text-glow-blue { text-shadow: 0 0 5px #22d3ee; }
+    .text-glow-purple { text-shadow: 0 0 5px #a855f7; }
+</style>
+</style>
 </head>
 
 <body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
@@ -391,82 +501,184 @@
 
             <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
 <!-- TARJETA NIVEL ESTÁNDAR -->
-        <div class="bg-gradient-to-r from-[#1a4789] to-[#2c6fb5] rounded-3xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden mb-8">
+        <!-- === 1. TARJETA DE NIVEL (SYSTEM DASHBOARD STYLE) === -->
+        <div class="relative w-full mb-8 font-system overflow-hidden rounded-lg bg-[#020617] border border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.15)] group">
             
-            <div class="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                <!-- Info Izquierda -->
-                <div class="space-y-2">
-                    <div class="flex items-center gap-3">
-                        <span id="lvl-badge" class="bg-white/20 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border border-white/30">
-                            Nivel 0
+            <!-- Decoración de fondo -->
+            <div class="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
+                <span class="material-symbols-outlined text-9xl text-purple-600">workspace_premium</span>
+            </div>
+            
+            <!-- Línea de escaneo animada -->
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent h-[200%] w-full animate-[scanline_8s_linear_infinite] pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-center p-6 gap-6">
+                
+                <!-- INFO IZQUIERDA -->
+                <div class="flex-1 space-y-2">
+                    <div class="flex items-center gap-3 mb-1">
+                        <span class="px-2 py-0.5 bg-purple-900/30 border border-purple-500 text-purple-300 text-[10px] font-bold tracking-widest uppercase rounded-sm">
+                            Player Status
                         </span>
-                        <span id="lvl-name" class="text-sm font-semibold text-blue-100 opacity-90">Iniciado</span>
+                        <span id="dash-lvl-badge" class="text-xs font-bold text-purple-400 tracking-wider">
+                            LVL 5
+                        </span>
                     </div>
                     
-                    <h2 id="lvl-title" class="text-2xl md:text-4xl font-black italic uppercase tracking-tight">
-                        AGENTE INICIADO
+                    <h2 class="text-3xl md:text-4xl font-bold text-white tracking-[0.1em] uppercase leading-none">
+                        <span id="dash-lvl-title" class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-500 text-shadow-glow">SHADOW MONARCH</span>
                     </h2>
                     
-                    <p class="text-sm text-blue-100 max-w-lg leading-relaxed opacity-90">
-                        Tu enlace expira en <span id="lvl-link-duration" class="font-bold text-white">24 HORAS</span>. 
-                        Sube de nivel para desbloquear herramientas.
+                    <p class="text-xs text-slate-400 font-mono flex items-center gap-2">
+                        <span class="text-purple-500">SYSTEM MESSAGE:</span> 
+                        <span id="dash-link-msg">Unlimited Access Granted.</span>
                     </p>
                 </div>
 
-                <!-- Barra Derecha -->
-                <div class="w-full lg:w-72 bg-black/20 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                    <div class="flex justify-between text-xs font-bold uppercase mb-2 text-white/90">
-                        <span>Meta Siguiente Nivel</span>
-                        <span id="lvl-counter">0 / 3 Ventas</span>
+                <!-- BARRA DERECHA (QUEST) -->
+                <div class="w-full md:w-80 bg-black/40 border border-slate-800 p-4 rounded-sm backdrop-blur-sm">
+                    <div class="flex justify-between text-[10px] font-bold uppercase text-slate-400 mb-2 tracking-widest">
+                        <span>Quest Progress</span>
+                        <span id="dash-lvl-counter" class="text-purple-400">MAX LEVEL</span>
                     </div>
                     
-                    <div class="h-3 bg-white/10 rounded-full overflow-hidden">
-                        <div id="lvl-progress-bar" class="h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] transition-all duration-1000" style="width: 0%"></div>
+                    <!-- Barra de progreso segmentada -->
+                    <div class="h-3 w-full bg-slate-900 border border-slate-700 relative skew-x-[-10deg] overflow-hidden">
+                        <div id="dash-lvl-progress" class="h-full bg-purple-600 shadow-[0_0_10px_#9333ea] w-full transition-all duration-1000"></div>
                     </div>
                     
-                    <button onclick="openGamificationModal()" class="mt-4 w-full bg-white text-[#1a4789] py-2.5 rounded-xl text-xs font-black uppercase hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-base">upgrade</span> Ver Ascenso
+                    <button onclick="openGamificationModal()" class="mt-4 w-full group relative px-4 py-2 bg-purple-900/20 border border-purple-500/50 hover:bg-purple-500/20 transition-all text-purple-300 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 overflow-hidden">
+                        <span class="relative z-10 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">upgrade</span> Open System
+                        </span>
+                        <!-- Efecto hover -->
+                        <div class="absolute inset-0 bg-purple-500/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                     </button>
                 </div>
             </div>
         </div>
             <!-- BLOQUE FINANCIERO HOMOGENEIZADO -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- 1. Por Cobrar -->
-                <div class="bg-orange-500 p-6 rounded-3xl text-white shadow-xl shadow-orange-500/20 relative overflow-hidden flex flex-col justify-center min-h-[140px]">
-                    <div class="relative z-10">
-                        <p class="text-xs font-bold uppercase tracking-widest opacity-90 mb-1">Por Cobrar (Acumulado)</p>
-                        <h2 id="dash-money-pending" class="text-4xl md:text-5xl font-black tracking-tight">$0.00</h2>
-                        <p class="text-xs font-medium mt-2 opacity-80 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-sm">pending</span> Esperando liquidación
-                        </p>
-                    </div>
-                    <!-- Icono de fondo decorativo -->
-                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl opacity-10 pointer-events-none">pending_actions</span>
-                </div>
+           <!-- === ESTADÍSTICAS DE RECURSOS (SYSTEM STYLE) === -->
+<div class="font-system space-y-6 mb-8">
+    
+    <!-- BLOQUE 1: FINANZAS (GOLD & ASSETS) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- TARJETA 1: POR COBRAR (Orange Neon - Gold Pending) -->
+        <div class="relative overflow-hidden rounded-sm bg-[#020617] border border-orange-500/30 p-6 shadow-[0_0_15px_rgba(249,115,22,0.1)] group transition-all hover:border-orange-500/60 hover:shadow-[0_0_25px_rgba(249,115,22,0.2)]">
+            <!-- Fondo Decorativo -->
+            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <span class="material-symbols-outlined text-8xl text-orange-500">hourglass_top</span>
+            </div>
+            <!-- Scanline sutil -->
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/5 to-transparent h-[200%] w-full animate-[scanline_6s_linear_infinite] pointer-events-none"></div>
 
-                <!-- 2. Cobrado -->
-                <div class="bg-emerald-500 p-6 rounded-3xl text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden flex flex-col justify-center min-h-[140px]">
-                    <div class="relative z-10">
-                        <p class="text-xs font-bold uppercase tracking-widest opacity-90 mb-1">Dinero Cobrado</p>
-                        <h2 id="dash-money-paid" class="text-4xl md:text-5xl font-black tracking-tight">$0.00</h2>
-                        <p class="text-xs font-medium mt-2 opacity-80 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-sm">check_circle</span> Pagos recibidos
-                        </p>
-                    </div>
-                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl opacity-10 pointer-events-none">savings</span>
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-orange-400 uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
+                    Pendiente de Pago
+                </p>
+                <div class="flex items-baseline gap-1">
+                    <h2 id="dash-money-pending" class="text-5xl font-bold text-white tracking-tighter text-shadow-glow">$0.00</h2>
+                    <span class="text-xs text-orange-500 font-bold">USD</span>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 font-mono">
+                    <span class="material-symbols-outlined text-sm">pending</span>
+                    <span>Procesando liquidación...</span>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:bg-gray-800">
-                    <p class="text-[9px] font-black text-gray-400 uppercase">Pedidos Entregados</p>
-                    <p id="dash-ok" class="text-2xl font-black text-primary">0</p>
+        </div>
+
+        <!-- TARJETA 2: COBRADO (Emerald Neon - Loot Acquired) -->
+        <div class="relative overflow-hidden rounded-sm bg-[#020617] border border-emerald-500/30 p-6 shadow-[0_0_15px_rgba(16,185,129,0.1)] group transition-all hover:border-emerald-500/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.2)]">
+            <!-- Fondo Decorativo -->
+            <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <span class="material-symbols-outlined text-8xl text-emerald-500">account_balance_wallet</span>
+            </div>
+            
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-1 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-xs">check_circle</span>
+                    Dinero Recibido
+                </p>
+                <div class="flex items-baseline gap-1">
+                    <h2 id="dash-money-paid" class="text-5xl font-bold text-white tracking-tighter text-shadow-glow">$0.00</h2>
+                    <span class="text-xs text-emerald-500 font-bold">USD</span>
                 </div>
-                <div class="bg-white p-5 rounded-2xl border border-gray-100 dark:bg-gray-800">
-                    <p class="text-[9px] font-black text-gray-400 uppercase">Pedidos Pendientes</p>
-                    <p id="dash-pending" class="text-2xl font-black text-orange-500">0</p>
+                <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 font-mono">
+                    <span class="material-symbols-outlined text-sm">history</span>
+                    <span>Transferido a tu cuenta.</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- BLOQUE 2: CONTADORES DE MISIONES (PEDIDOS) -->
+    <!-- BLOQUE 2: CONTADORES DE MISIONES (HOLOGRAM CARDS) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 font-system">
+    
+    <!-- CARD 1: ENTREGADOS (BLUE QUEST) -->
+    <div class="relative h-32 overflow-hidden rounded-lg bg-gradient-to-r from-[#0B1120] to-[#151e32] border-l-4 border-cyan-500 shadow-[0_5px_15px_rgba(6,182,212,0.15)] group transition-all hover:scale-[1.02] hover:shadow-[0_10px_25px_rgba(6,182,212,0.25)]">
+        
+        <!-- Fondo Decorativo (Icono Gigante) -->
+        <div class="absolute -right-4 -bottom-6 opacity-10 group-hover:opacity-20 transition-all duration-500 group-hover:scale-110">
+            <span class="material-symbols-outlined text-[10rem] text-cyan-400">inventory_2</span>
+        </div>
+        
+        <!-- Brillo de Neón Superior -->
+        <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-cyan-500/0 via-cyan-500/50 to-cyan-500/0"></div>
+
+        <div class="relative z-10 p-5 flex flex-col justify-between h-full">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.2em] mb-1">Misiones Completadas</p>
+                    <h3 class="text-xs text-slate-400 font-mono">Entregas Finalizadas</h3>
+                </div>
+                <div class="bg-cyan-500/10 p-1.5 rounded border border-cyan-500/30">
+                    <span class="material-symbols-outlined text-cyan-400 text-lg">check_circle</span>
+                </div>
+            </div>
+
+            <div class="flex items-end gap-3">
+                <span id="dash-ok" class="text-5xl font-bold text-white leading-none tracking-tighter drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">0</span>
+                <span class="text-[10px] text-cyan-600 font-black uppercase mb-1.5 animate-pulse">Quest Complete</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 2: EN PROCESO (GOLD QUEST) -->
+    <div class="relative h-32 overflow-hidden rounded-lg bg-gradient-to-r from-[#0B1120] to-[#1e1b10] border-l-4 border-amber-500 shadow-[0_5px_15px_rgba(245,158,11,0.15)] group transition-all hover:scale-[1.02] hover:shadow-[0_10px_25px_rgba(245,158,11,0.25)]">
+        
+        <!-- Fondo Decorativo -->
+        <div class="absolute -right-4 -bottom-6 opacity-10 group-hover:opacity-20 transition-all duration-500 group-hover:scale-110">
+            <span class="material-symbols-outlined text-[10rem] text-amber-500">running_with_errors</span>
+        </div>
+
+        <!-- Brillo de Neón Superior -->
+        <div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-amber-500/0 via-amber-500/50 to-amber-500/0"></div>
+
+        <div class="relative z-10 p-5 flex flex-col justify-between h-full">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-[10px] font-bold text-amber-400 uppercase tracking-[0.2em] mb-1">Misiones Activas</p>
+                    <h3 class="text-xs text-slate-400 font-mono">Pedidos en Curso</h3>
+                </div>
+                <div class="bg-amber-500/10 p-1.5 rounded border border-amber-500/30">
+                    <span class="material-symbols-outlined text-amber-400 text-lg">bolt</span>
+                </div>
+            </div>
+
+            <div class="flex items-end gap-3">
+                <span id="dash-pending" class="text-5xl font-bold text-white leading-none tracking-tighter drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">0</span>
+                <span class="text-[10px] text-amber-600 font-black uppercase mb-1.5 animate-pulse">Quest Ongoing</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+
+
             <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
                     <h3 class="text-xs font-black uppercase tracking-widest text-gray-500">Ranking de Agentes</h3>
@@ -1837,156 +2049,283 @@ function timeAgo(dateString) {
 }
 
 // 2. FUNCIÓN PRINCIPAL CORREGIDA
+// --- FUNCIÓN PRINCIPAL DE RANKING (SYSTEM STYLE) ---
+// --- FUNCIÓN PRINCIPAL DE RANKING (SYSTEM STYLE - HIGH CONTRAST) ---
+// --- RENDERIZADOR DEL RANKING (ESPAÑOL Y ADICTIVO) ---
+// --- RENDERIZADOR DEL RANKING (FULL SYSTEM: TICKER + PODIO + BARRA + LISTA) ---
+// --- RENDERIZADOR DEL RANKING (MODO VENTAS + MISTERIO) ---
 async function renderRankingAnonimo(allPedidos, nombreGestor) {
     const container = document.getElementById('ranking-list');
     if (!container) return;
 
-    // --- PROCESAMIENTO DE DATOS ---
+    // 1. PROCESAR DATOS (AHORA CONTAMOS VENTAS TAMBIÉN)
     const rankingMap = {};
     const salesFeed = []; 
 
     allPedidos.forEach(p => {
         if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa') {
             const monto = Number(p.comision_total) || 0;
-            rankingMap[p.gestor] = (rankingMap[p.gestor] || 0) + monto;
+            
+            // Inicializar si no existe
+            if (!rankingMap[p.gestor]) {
+                rankingMap[p.gestor] = { money: 0, sales: 0 };
+            }
+            
+            // Acumular Dinero y Contar Ventas
+            rankingMap[p.gestor].money += monto;
+            rankingMap[p.gestor].sales += 1;
+            
             salesFeed.push(p);
         }
     });
 
-    // Ordenar ventas por fecha (Lo más nuevo primero)
+    // Ordenar Feed (Noticias)
     salesFeed.sort((a, b) => new Date(b.created_at || b.fecha) - new Date(a.created_at || a.fecha));
 
-    // Crear Array de Ranking
+    // Crear Array de Ranking (Ordenado por Dinero, pero guardamos las ventas)
     const rankingArray = Object.entries(rankingMap)
-        .map(([name, total]) => ({ name, total }))
+        .map(([name, data]) => ({ name, total: data.money, count: data.sales }))
         .sort((a, b) => b.total - a.total);
 
+    // Datos para la Barra
     const myRankIndex = rankingArray.findIndex(r => r.name === nombreGestor);
-    const myData = rankingArray[myRankIndex] || { total: 0 };
-    const topData = rankingArray[0] || { total: 1 }; 
+    const myData = rankingArray[myRankIndex] || { total: 0, count: 0 };
+    const topData = rankingArray[0] || { total: 1, count: 1 }; // El líder
+    const maxScore = topData.total; // Para el podio seguimos usando dinero
+    const gestoresActivos = rankingArray.length;
 
-    // --- CORRECCIÓN: DATO REAL DE GESTORES ACTIVOS ---
-    // Contamos cuánta gente hay en el ranking (gente que ha vendido algo)
-    const gestoresReales = rankingArray.length;
-    let liveViewText = `👥 ${gestoresReales} Gestores están compitiendo ahora.`;
-
-    // Intentamos buscar visualizaciones reales (Opcional)
-    try {
-        const { data: vistas } = await supabaseClient
-            .from('metricas_vistas')
-            .select('nombre_producto')
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-        if (vistas && vistas.length > 0) {
-            // Si hay datos, los mostramos
-            liveViewText = `👁️ Alguien está viendo <b>${vistas[0].nombre_producto.substring(0,20)}...</b>`;
-        }
-    } catch (e) { 
-        // Si falla, se queda con el texto de "Gestores compitiendo" calculado arriba
-    }
-
+    // --- 2. CONSTRUCCIÓN DEL HTML ---
     let html = '';
 
-    // --- A. TICKER CORREGIDO (CON TIEMPO) ---
+    // A. MONITOR DEL SISTEMA (Igual que antes)
     const lastSale = salesFeed[0];
-    
-    let tickerContent = `💤 Esperando venta...`;
+    let tickerContent = `SISTEMA: Escaneando transacciones...`;
     
     if (lastSale) {
-        // Calculamos el tiempo
         const tiempo = timeAgo(lastSale.created_at || lastSale.fecha);
-        
-        // Construimos el HTML
         tickerContent = `
-            🚀 <span class="text-amber-400 font-bold text-xs md:text-sm">${lastSale.gestor.substring(0,3)}***</span> 
-            vendió <span class="text-cyan-300 font-bold text-xs md:text-sm">${lastSale.producto.substring(0,50)}${lastSale.producto.length > 50 ? '...' : ''}</span>
-            <span class="text-gray-400 text-[10px] ml-1 whitespace-nowrap">(${tiempo})</span>
+            <span class="text-emerald-400 font-bold">📢 [NUEVO]</span> 
+            <span class="text-white font-black">${lastSale.gestor.substring(0,10).toUpperCase()}</span> 
+            VENDIÓ: <span class="text-cyan-300 font-bold">${lastSale.producto.substring(0,30)}...</span>
+            <span class="text-slate-500 text-[10px] ml-2 font-mono">(${tiempo})</span>
         `;
     }
 
     html += `
-    <div class="mb-16 relative overflow-hidden rounded-xl bg-[#0f172a] shadow-lg border border-white/10 group z-0 mx-1">
-        <div class="relative z-10 p-3 flex flex-col items-center gap-2">
-            
-            <!-- Barra de Notificación -->
-            <div class="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 w-full border border-white/5">
-                <div class="h-2 w-2 rounded-full bg-green-500 live-indicator flex-shrink-0 self-start mt-1.5 md:mt-0"></div>
-                <div class="ticker-anim text-xs text-white tracking-wide w-full font-medium whitespace-normal leading-tight">
-                    ${tickerContent}
-                </div>
+    <div class="mb-8 bg-[#020617] border border-slate-800 rounded-lg p-1 shadow-lg font-system">
+        <div class="flex justify-between items-center bg-slate-900/50 px-4 py-2 rounded-t mb-1 border-b border-slate-800/50">
+            <span class="text-[10px] text-slate-500 font-bold tracking-widest uppercase">SERVIDOR: LA HABANA</span>
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span class="text-[10px] font-black text-green-400 tracking-widest uppercase">${gestoresActivos} AGENTES ONLINE</span>
             </div>
-            
-            <!-- Texto de Gestores Activos -->
-            <div class="text-[10px] text-blue-200 font-medium opacity-80 w-full text-center">
-                ${liveViewText}
+        </div>
+        <div class="px-4 py-2 overflow-hidden whitespace-nowrap">
+            <div class="text-xs md:text-sm text-slate-300 font-mono tracking-wide animate-pulse">
+                ${tickerContent}
             </div>
         </div>
     </div>`;
 
-    // B. PODIO
-    html += `<div class="flex items-center justify-center gap-1 md:gap-4 mt-8 mb-12 px-0 perspective-1000 relative z-10">`;
+    // B. PODIO (Se mantiene igual visualmente)
+    html += `<div class="flex flex-col md:flex-row items-end justify-center gap-6 mb-10 px-2 relative z-10 font-system">`;
     const [p1, p2, p3] = [rankingArray[0], rankingArray[1], rankingArray[2]];
-    if (p2) html += renderHighEndPodium(p2, 2, nombreGestor);
-    if (p1) html += renderHighEndPodium(p1, 1, nombreGestor);
-    if (p3) html += renderHighEndPodium(p3, 3, nombreGestor);
+    
+    if (p2) html += renderSystemCard(p2, 2, nombreGestor, maxScore);
+    if (p1) html += renderSystemCard(p1, 1, nombreGestor, maxScore);
+    if (p3) html += renderSystemCard(p3, 3, nombreGestor, maxScore);
     html += `</div>`;
 
-    // C. BARRA RENDIMIENTO
-    if (myRankIndex > 0) {
-        const percentage = Math.min(100, (myData.total / topData.total) * 100);
+    // ======================================================
+    // C. BARRA DE SINCRONIZACIÓN (MODIFICADA: VENTAS)
+    // ======================================================
+    if (myRankIndex > 0 && myData.count > 0) {
+        // Calculamos porcentaje basado en CANTIDAD DE VENTAS, no dinero
+        const percentage = Math.min(100, (myData.count / topData.count) * 100);
+        const ventasRestantes = topData.count - myData.count;
+        
+        // Frase motivacional basada en la diferencia numérica
+        let fraseMotivacional = "";
+        if(ventasRestantes <= 2) fraseMotivacional = "¡ESTÁS A PUNTO DE SUPERARLO!";
+        else fraseMotivacional = `Elimina ${ventasRestantes} objetivos más para igualar al Monarca.`;
+
         html += `
-        <div class="glass-panel p-4 md:p-6 rounded-2xl mb-8 border border-slate-200 shadow-sm mx-1">
-            <div class="flex justify-between items-end mb-2">
-                <div>
-                    <span class="text-[10px] font-bold uppercase text-slate-400 block">Distancia al Líder</span>
-                    <h4 class="text-lg font-black text-slate-800 dark:text-white">Tu Rendimiento</h4>
+        <div class="mb-12 relative group font-system mx-2">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+            
+            <div class="relative bg-[#020617] border border-slate-700 p-6 rounded-lg shadow-2xl">
+                <div class="flex justify-between items-end mb-3">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">COMPARACIÓN DE PODER (VENTAS)</p>
+                        <h4 class="text-xl font-black text-white uppercase italic tracking-wide">
+                            DISTANCIA AL <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">MONARCA</span>
+                        </h4>
+                    </div>
+                    <span class="text-4xl font-black text-white font-mono">${percentage.toFixed(0)}%</span>
                 </div>
-                <span class="text-xl font-black text-primary">${percentage.toFixed(0)}%</span>
+
+                <!-- Barra de Progreso -->
+                <div class="h-5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800 relative">
+                    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                    
+                    <!-- Tu Barra -->
+                    <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative transition-all duration-1000 shadow-[0_0_20px_rgba(139,92,246,0.6)]" style="width: ${percentage}%">
+                        <div class="absolute right-0 top-0 h-full w-1 bg-white/80 shadow-[0_0_10px_white]"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center">
+                    <!-- Tu dato -->
+                    <div class="flex flex-col">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase">TU NIVEL ACTUAL</span>
+                        <span class="text-white font-mono font-bold text-lg">${myData.count} <span class="text-xs text-slate-500">VENTAS</span></span>
+                    </div>
+
+                    <!-- Mensaje Central -->
+                    <p class="text-purple-400 text-xs font-bold italic animate-pulse text-center hidden md:block">
+                        "${fraseMotivacional}"
+                    </p>
+
+                    <!-- Dato Monarca (Misterioso) -->
+                    <div class="flex flex-col items-end">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase">PODER DEL TOP 1</span>
+                        <span class="text-purple-400 font-mono font-black text-lg tracking-widest">??? <span class="text-xs text-slate-600">VENTAS</span></span>
+                    </div>
+                </div>
+                
+                <!-- Mensaje móvil -->
+                <p class="text-purple-400 text-xs font-bold italic mt-3 text-center md:hidden">"${fraseMotivacional}"</p>
             </div>
-            <div class="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative" style="width: ${percentage}%"></div>
-            </div>
-             <p class="text-[10px] text-slate-400 mt-2 text-center italic">
-                "El líder factura <b>${(topData.total / (myData.total || 1)).toFixed(1)}x</b> más que tú."
-            </p>
         </div>`;
     }
 
-    // D. LISTA
-    html += `<div class="space-y-3 px-1">`;
+    // D. LISTA DEL GREMIO (Igual que antes)
+    html += `<div class="bg-[#0f172a] rounded-xl border border-slate-700 overflow-hidden shadow-2xl font-system">
+                <div class="bg-[#020617] p-4 border-b border-slate-700 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400">toc</span>
+                        <h4 class="text-sm font-black text-slate-300 uppercase tracking-[0.2em]">Tabla de Posiciones</h4>
+                    </div>
+                    <span class="text-[9px] font-bold text-slate-600 uppercase border border-slate-800 px-2 py-1 rounded">Global Ranking</span>
+                </div>
+                <div class="divide-y divide-slate-800">`;
+    
     rankingArray.forEach((user, index) => {
         const rank = index + 1;
         if (rank > 3) {
             const isMe = user.name === nombreGestor;
-            const displayMoney = isMe ? `$${user.total.toFixed(0)}` : '🔒';
-            const displayName = isMe ? `${user.name}` : user.name.substring(0, 3) + '***';
+            // Aquí en la lista SÍ mostramos el dinero porque es el ranking oficial
+            const displayMoney = isMe ? `$${user.total.toFixed(0)}` : '???'; 
+            const displayName = isMe ? `${user.name.toUpperCase()}` : user.name.substring(0, 3).toUpperCase() + '***';
             
-            let carrotMsg = "";
-            if (isMe) {
-                const prevUser = rankingArray[index - 1];
-                const diff = prevUser.total - user.total;
-                carrotMsg = `<span class="text-xs text-orange-500 font-bold ml-2 animate-pulse">(-$${diff} para subir)</span>`;
-            }
+            const bgClass = isMe ? "bg-cyan-950/40" : "bg-[#0f172a] hover:bg-[#1e293b]";
+            const textClass = isMe ? "text-cyan-300 text-shadow-glow" : "text-slate-300";
+            const borderClass = isMe ? "border-l-4 border-cyan-400" : "border-l-4 border-transparent";
 
             html += `
-            <div class="flex items-center justify-between p-3 rounded-xl ${isMe ? 'bg-white shadow-md border-l-4 border-blue-500' : 'bg-transparent border border-gray-100'}">
-                <div class="flex items-center gap-3">
-                    <span class="text-sm font-black text-slate-300 w-6">#${rank}</span>
-                    <span class="text-xs font-black text-slate-700 dark:text-gray-200 uppercase">${displayName} ${isMe ? '(Tú)' : ''}</span>
+            <div class="flex items-center justify-between p-4 ${bgClass} ${borderClass} transition-colors group">
+                <div class="flex items-center gap-6">
+                    <span class="text-lg font-mono font-bold text-slate-600 w-8 group-hover:text-slate-400 transition-colors">#${rank < 10 ? '0'+rank : rank}</span>
+                    <div class="flex flex-col">
+                        <span class="text-sm md:text-base font-black ${textClass} tracking-wide uppercase">
+                            ${displayName} 
+                            ${isMe ? '<span class="ml-2 text-[9px] bg-cyan-600 text-white px-1.5 py-0.5 rounded align-middle tracking-widest">YOU</span>' : ''}
+                        </span>
+                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${user.count} VENTAS</span>
+                    </div>
                 </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-xs font-black text-slate-800 dark:text-gray-300 bg-slate-100 px-2 py-1 rounded">
+                <div class="text-right">
+                    <span class="hidden md:block text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">Ganancia Total</span>
+                    <span class="text-sm md:text-base font-mono font-black text-amber-500 bg-black/30 px-2 py-1 rounded border border-white/5">
                         ${displayMoney}
                     </span>
-                    ${carrotMsg}
                 </div>
             </div>`;
         }
     });
-    html += `</div>`;
+    html += `</div></div>`;
 
     container.innerHTML = html;
+}
+
+// --- TARJETA DE RANGO (VISUALMENTE ADICTIVA) ---
+function renderSystemCard(user, rank, meName, maxScore) {
+    const isMe = user.name === meName;
+    const nameDisplay = isMe ? 'TÚ' : user.name.split(' ')[0].toUpperCase();
+    const moneyDisplay = isMe ? `$${user.total.toFixed(0)}` : 'BLOQUEADO';
+    
+    // Porcentaje para la barra de poder
+    const powerPercent = (user.total / maxScore) * 100;
+
+    let c = {};
+    if (rank === 1) {
+        c = {
+            wrapper: "order-1 md:order-2 w-full md:w-1/3 z-20 scale-110 border-purple-500/50 bg-[#0a0a0a]",
+            rankText: "1", rankColor: "text-purple-500",
+            title: "MONARCA (TOP 1)", titleBg: "bg-purple-900/50 text-purple-200 border-purple-500",
+            barColor: "bg-purple-600",
+            glow: "shadow-[0_0_40px_rgba(168,85,247,0.2)]"
+        };
+    } else {
+        c = {
+            wrapper: "order-2 md:order-1 w-full md:w-1/4 z-10 opacity-90 hover:opacity-100 border-cyan-500/30 bg-[#020617]",
+            rankText: rank, rankColor: "text-cyan-500",
+            title: rank === 2 ? "NIVEL NACIONAL" : "CAZADOR ÉLITE", 
+            titleBg: "bg-cyan-900/30 text-cyan-200 border-cyan-500/50",
+            barColor: "bg-cyan-600",
+            glow: "shadow-[0_0_20px_rgba(34,211,238,0.1)]"
+        };
+    }
+
+    return `
+    <div class="relative border-2 rounded-lg overflow-hidden transition-all duration-500 group ${c.wrapper} ${c.glow}">
+        
+        <!-- Header Rango -->
+        <div class="p-6 text-center border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
+            <p class="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-2">POSICIÓN</p>
+            <h1 class="text-7xl font-black ${c.rankColor} leading-none mb-4 drop-shadow-lg">${c.rankText}</h1>
+            <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${c.titleBg}">
+                ${c.title}
+            </span>
+        </div>
+
+        <!-- Stats Cuerpo -->
+        <div class="p-6 space-y-4">
+            
+            <div class="flex justify-between items-end border-b border-slate-800 pb-2">
+                <span class="text-[10px] font-bold text-slate-500 uppercase">AGENTE</span>
+                <span class="text-lg font-black text-white uppercase tracking-wide truncate max-w-[120px] text-right">${nameDisplay}</span>
+            </div>
+
+            <!-- Barra de Poder (Reemplaza HP/MP) -->
+            <div>
+                <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    <span>Dominio del Mercado</span>
+                    <span>${powerPercent.toFixed(0)}%</span>
+                </div>
+                <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full ${c.barColor} transition-all duration-1000 shadow-[0_0_10px_currentColor]" style="width: ${powerPercent}%"></div>
+                </div>
+            </div>
+
+            <!-- Recompensa -->
+            <div class="pt-2 mt-2">
+                <p class="text-[10px] font-bold text-slate-500 uppercase text-center mb-1">GANANCIA ACUMULADA</p>
+                <div class="text-center">
+                    <span class="text-2xl font-mono font-black text-white bg-white/5 px-4 py-2 rounded border border-white/10 block">
+                        ${moneyDisplay}
+                    </span>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Efecto Borde Brillante al pasar el mouse -->
+        <div class="absolute inset-0 border-2 border-white/0 group-hover:border-white/20 transition-all rounded-lg pointer-events-none"></div>
+    </div>`;
 }
 
 // --- FUNCIÓN UTILITARIA DE TIEMPO ---
@@ -6312,64 +6651,177 @@ async function checkGamificationStatus() {
 }
 
 // 2. ACTUALIZACIÓN VISUAL (Tarjeta Dashboard + Modal Carrera)
+// 2. ACTUALIZACIÓN VISUAL (ESTILO SOLO LEVELING)
+// 2. ACTUALIZACIÓN VISUAL MAESTRA (SYSTEM UI)
+// 2. ACTUALIZACIÓN VISUAL (MODO CLARO Y LEGIBLE)
+// 2. ACTUALIZACIÓN VISUAL (MODO SYSTEM + DATOS PRECISOS)
+// 2. ACTUALIZACIÓN VISUAL (MODO LEGIBLE Y ESPAÑOL)
 function updateGamificationUI(sales) {
     const data = getLevelData(sales);
     
-    // --- A. ACTUALIZAR TARJETA DASHBOARD (LA DE ARRIBA) ---
-    const badge = document.getElementById('lvl-badge');
-    if(badge) {
-        badge.innerText = `Nivel ${data.lvl}`;
-        document.getElementById('lvl-name').innerText = data.name;
-        document.getElementById('lvl-title').innerText = `AGENTE ${data.name.toUpperCase()}`;
-        
-        const diasReales = data.duration / 24;
-        const durationText = data.lvl === 0 ? "24 HORAS" : `${diasReales} DÍAS`;
-        document.getElementById('lvl-link-duration').innerText = durationText;
+    // ===============================================
+    // PARTE A: TARJETA DEL DASHBOARD (BANNER)
+    // ===============================================
+    const dashTitle = document.getElementById('dash-lvl-title');
+    const dashBadge = document.getElementById('dash-lvl-badge');
+    const dashMsg = document.getElementById('dash-link-msg');
+    const dashCounter = document.getElementById('dash-lvl-counter');
+    const dashBar = document.getElementById('dash-lvl-progress');
+    // Buscamos el botón dentro del contenedor padre o por clase si es necesario, 
+    // pero aquí inyectaremos el HTML del botón directamente para asegurar que se vea bien.
 
-        const counterEl = document.getElementById('lvl-counter');
-        if (counterEl) counterEl.innerText = `${sales} / ${data.next} Ventas`;
+    if (dashTitle) {
+        // Título traducido y poderoso
+        const tituloEspanol = data.name === "Shadow Monarch" ? "MONARCA DE LAS SOMBRAS" : data.name.toUpperCase();
+        dashTitle.innerText = tituloEspanol;
+        dashBadge.innerText = `NIVEL ${data.lvl}`;
         
-        const barEl = document.getElementById('lvl-progress-bar');
-        if (barEl) {
-            const percent = Math.min(100, (sales / data.next) * 100);
-            barEl.style.width = `${percent}%`;
-            // Color de barra según nivel
-            if (data.lvl === 5) barEl.style.background = "linear-gradient(to right, #9333ea, #db2777)";
-            else if (data.lvl === 4) barEl.style.backgroundColor = "#10b981";
-            else barEl.style.backgroundColor = "#fbbf24";
+        // Mensaje de Sistema en Español
+        const dias = data.duration / 24;
+        const tiempoTexto = data.lvl === 5 ? "∞ (ETERNO)" : `${dias} DÍAS`;
+        dashMsg.innerHTML = `<span class="text-purple-400 font-bold">SISTEMA:</span> Duración del enlace extendida a <span class="text-white font-black text-sm">${tiempoTexto}</span>`;
+
+        // Barra
+        dashCounter.innerText = `${sales} / ${data.next} VENTAS`;
+        const percent = Math.min(100, (sales / data.next) * 100);
+        dashBar.style.width = `${percent}%`;
+
+        // Colores según nivel
+        if (data.lvl === 5) {
+            dashBar.className = "h-full bg-purple-600 shadow-[0_0_20px_#9333ea] w-full transition-all duration-1000";
+            dashTitle.className = "text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-fuchsia-500 drop-shadow-md";
+        } else {
+            dashBar.className = "h-full bg-cyan-500 shadow-[0_0_20px_#06b6d4] w-full transition-all duration-1000";
+            dashTitle.className = "text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 drop-shadow-md";
         }
     }
 
-    // --- B. ACTUALIZAR GRID DE TARJETAS (EL NUEVO DISEÑO) ---
-    for (let i = 0; i <= 5; i++) {
-        const card = document.getElementById(`card-lvl-${i}`);
-        if (!card) continue;
+    // ACTUALIZAR BOTÓN "ABRIR SISTEMA" (Hacerlo evidente)
+    // Buscamos el botón que llama a openGamificationModal() dentro de la tarjeta
+    const btnSystem = document.querySelector("button[onclick='openGamificationModal()']");
+    if(btnSystem) {
+        // Le damos un estilo de botón sólido y brillante
+        btnSystem.className = "mt-4 w-full py-3 rounded-md bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-black uppercase tracking-[0.15em] shadow-[0_0_15px_rgba(147,51,234,0.5)] transition-all transform hover:scale-[1.02] border border-purple-400 flex items-center justify-center gap-3";
+        btnSystem.innerHTML = `<span class="material-symbols-outlined animate-pulse">ads_click</span> VER MI PROGRESO`;
+    }
 
-        // Limpieza de clases dinámicas
-        card.classList.remove('ring-4', 'ring-offset-4', 'scale-105', 'z-20', 'shadow-2xl', 'opacity-100', 'grayscale-0', 'filter-none');
-        card.classList.add('opacity-60', 'grayscale', 'filter'); // Por defecto bloqueado
+    // ===============================================
+    // PARTE B: MODAL DE NIVELES (TEXTO GRANDE)
+    // ===============================================
+    
+    const slName = document.getElementById('sl-player-name');
+    if (slName) {
+        slName.innerText = window.gestorName ? window.gestorName.toUpperCase() : "AGENTE";
+        document.getElementById('sl-job-title').innerText = data.name.toUpperCase();
+        document.getElementById('sl-current-rank').innerText = `RANGO ${data.lvl}`;
+        document.getElementById('sl-level-num').innerText = data.lvl;
+        
+        const percent = Math.min(100, (sales / data.next) * 100);
+        document.getElementById('sl-xp-bar').style.width = `${percent}%`;
+        document.getElementById('sl-xp-text').innerText = `${sales} / ${data.next}`;
+        
+        const dias = data.duration / 24;
+        const textoTiempo = data.lvl === 0 ? "1 SEMANA" : (data.lvl >= 5 ? "1 AÑO" : `${dias} DÍAS`);
+        document.getElementById('sl-mana-text').innerText = textoTiempo;
+    }
 
-        if (i < data.lvl) {
-            // NIVEL SUPERADO (Desbloqueado pero normal)
-            card.classList.remove('opacity-60', 'grayscale', 'filter');
-            card.classList.add('opacity-100', 'grayscale-0', 'filter-none');
+    // CONFIGURACIÓN DE TARJETAS (IGUAL A IMAGEN 1)
+    const levelsConfig = [
+        {
+            lvl: 0, name: "INICIADO", req: "Registro",
+            color: "cyan", 
+            features: [
+                { icon: "link", title: "Enlace Básico", desc: "Tienda activa 24h." },
+                { icon: "image", title: "Descarga Foto", desc: "Baja fotos individuales." }
+            ]
+        },
+        {
+            lvl: 1, name: "NOVATO", req: "3 Ventas",
+            color: "orange",
+            features: [
+                { icon: "flash_on", title: "Respuesta Rápida", desc: "Copia precios al instante." },
+                { icon: "fit_screen", title: "Creador Historias", desc: "Diseños para WhatsApp." }
+            ]
+        },
+        {
+            lvl: 2, name: "EXPERTO", req: "10 Ventas",
+            color: "blue",
+            features: [
+                { icon: "folder_zip", title: "Pack de Fotos", desc: "Descarga todo en 1 clic." },
+                { icon: "content_copy", title: "Copiado Masivo", desc: "Textos listos para grupos." }
+            ]
+        },
+        {
+            lvl: 3, name: "ÉLITE", req: "20 Ventas",
+            color: "indigo",
+            features: [
+                { icon: "radar", title: "Radar de Ventas", desc: "Descubre qué se vende hoy." },
+                { icon: "autorenew", title: "IA de Textos", desc: "Mejora tu publicidad." }
+            ]
+        },
+        {
+            lvl: 4, name: "MONARCA", req: "40 Ventas",
+            color: "emerald",
+            features: [
+                { icon: "picture_as_pdf", title: "Catálogo PDF", desc: "Tu portafolio profesional." },
+                { icon: "receipt_long", title: "Reporte Contable", desc: "Control total de dinero." }
+            ]
+        },
+        {
+            lvl: 5, name: "EMPERADOR", req: "70+ Ventas",
+            color: "purple",
+            features: [
+                { icon: "auto_fix", title: "Magic Studio", desc: "Publicidad automática." },
+                { icon: "lock_person", title: "Cliente Eterno", desc: "Comisión de por vida." }
+            ]
+        }
+    ];
+
+    const grid = document.getElementById('gamification-grid');
+    if (grid) {
+        grid.innerHTML = levelsConfig.map(l => {
+            const isUnlocked = data.lvl >= l.lvl;
+            const isCurrent = data.lvl === l.lvl;
             
-        } else if (i === data.lvl) {
-            // NIVEL ACTUAL (Resaltado y Brillante)
-            card.classList.remove('opacity-60', 'grayscale', 'filter');
-            card.classList.add('opacity-100', 'grayscale-0', 'filter-none', 'scale-105', 'z-20', 'shadow-2xl');
-            
-            // Color del anillo según el nivel
-            let ringColor = 'ring-gray-300';
-            if(i===1) ringColor = 'ring-orange-400';
-            if(i===2) ringColor = 'ring-blue-400';
-            if(i===3) ringColor = 'ring-indigo-400';
-            if(i===4) ringColor = 'ring-emerald-400';
-            if(i===5) ringColor = 'ring-purple-500';
+            // Estilos de borde y fondo
+            let borderClass = `border-${l.color}-500`;
+            let textTitle = isUnlocked ? "text-white" : "text-slate-500";
+            let bgClass = isUnlocked ? `bg-${l.color}-900/10` : "bg-slate-900/40";
+            let shadowClass = isCurrent ? `shadow-[0_0_30px_rgba(255,255,255,0.15)]` : (isUnlocked ? `shadow-[0_0_15px_rgba(0,0,0,0.5)]` : "");
+            let opacity = (isUnlocked && !isCurrent && data.lvl > l.lvl) ? "opacity-70" : "opacity-100";
 
-            card.classList.add('ring-4', 'ring-offset-2', ringColor);
-        } 
-        // Los niveles mayores a data.lvl se quedan con opacity-60 y grayscale
+            return `
+            <div class="relative rounded-xl border-2 ${borderClass} ${bgClass} ${shadowClass} ${opacity} p-6 flex flex-col justify-between h-full transition-all duration-300 hover:scale-[1.01]">
+                
+                ${isCurrent ? `<span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-${l.color}-500 text-white text-[10px] font-black px-3 py-1 rounded-full tracking-widest animate-pulse border border-white">TU NIVEL ACTUAL</span>` : ''}
+                
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-3xl font-black uppercase ${textTitle} tracking-wide leading-none mb-1">${l.name}</h4>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.15em]">REQUISITO: <span class="text-${l.color}-400">${l.req}</span></p>
+                    </div>
+                    <div class="px-3 py-1 rounded bg-[#020617] border border-slate-700">
+                        <span class="text-xs font-bold text-slate-400">NIVEL ${l.lvl}</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4 mb-2">
+                    ${l.features.map(f => `
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-black/50 border border-slate-700 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-xl ${isUnlocked ? `text-${l.color}-400` : 'text-slate-600'}">${f.icon}</span>
+                            </div>
+                            <div>
+                                <p class="text-base font-bold ${isUnlocked ? 'text-slate-100' : 'text-slate-500'} leading-tight">${f.title}</p>
+                                <p class="text-xs font-medium ${isUnlocked ? 'text-slate-400' : 'text-slate-600'} leading-tight mt-0.5">${f.desc}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                ${!isUnlocked ? `<div class="absolute inset-0 bg-[#020617]/60 flex items-center justify-center backdrop-blur-[1px] rounded-xl"><span class="material-symbols-outlined text-5xl text-slate-600">lock</span></div>` : ''}
+            </div>`;
+        }).join('');
     }
 }
 
@@ -7692,251 +8144,105 @@ async function downloadCatalogPDF() {
 
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (PLAN DE CARRERA) === -->
 <!-- === 2. MODAL SISTEMA DE GAMIFICACIÓN (VERSIÓN EDUCATIVA PRO) === -->
-<div id="modal-gamification" class="fixed inset-0 z-[250] hidden bg-[#0f172a]/95 backdrop-blur-md overflow-y-auto animate-fade-in">
-    <div class="min-h-screen px-4 py-12 flex items-center justify-center">
-        <div class="w-full max-w-6xl bg-[#f8fafc] dark:bg-[#1e293b] rounded-[40px] shadow-2xl overflow-hidden border border-white/10 relative">
+<!-- MODAL SISTEMA DE GAMIFICACIÓN (SOLO LEVELING STYLE) -->
+<!-- MODAL SISTEMA DE CARRERA (ESTILO SOLO LEVELING - LEGIBLE) -->
+<div id="modal-gamification" class="fixed inset-0 z-[250] hidden bg-black/95 backdrop-blur-md overflow-y-auto font-system">
+    
+    <!-- Línea de escaneo decorativa -->
+    <div class="scanline fixed inset-0 pointer-events-none"></div>
+
+    <div class="min-h-screen px-4 py-8 flex items-center justify-center relative z-20">
+        
+        <!-- Contenedor Principal -->
+        <div class="w-full max-w-6xl bg-[#020617] border-2 border-slate-800 relative p-6 md:p-10 shadow-[0_0_60px_rgba(6,182,212,0.1)] rounded-lg">
             
-            <button onclick="closeGamificationModal()" class="absolute top-6 right-6 z-20 h-10 w-10 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg hover:rotate-90 transition-transform">
-                <span class="material-symbols-outlined text-gray-600 dark:text-white">close</span>
+            <!-- Botón Cerrar Gigante -->
+            <button onclick="closeGamificationModal()" class="absolute top-4 right-4 z-50 text-cyan-400 hover:text-white bg-slate-900/80 p-2 rounded hover:bg-red-900 transition-colors border border-cyan-900">
+                <span class="material-symbols-outlined text-4xl">close</span>
             </button>
 
-            <!-- Header -->
-            <div class="bg-[#1a4789] px-6 py-12 md:px-12 md:py-16 text-white text-center relative overflow-hidden">
-                <span class="material-symbols-outlined text-6xl mb-4 text-amber-400 drop-shadow-lg">workspace_premium</span>
-                <h2 class="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-4">Tu Carrera <span class="text-blue-300">Profesional</span></h2>
-                <p class="text-sm md:text-base text-blue-100 max-w-2xl mx-auto">
-                    Asciende de rango para desbloquear herramientas que multiplicarán tus ventas y asegura tus comisiones por más tiempo.
-                </p>
+            <!-- 1. HEADER: ESTADO (Títulos Grandes) -->
+            <div class="flex flex-col items-center justify-center mb-10 mt-2">
+                <div class="status-header-box px-16 py-4 mb-8 border-2 border-cyan-500 bg-cyan-950/30 relative">
+                    <!-- Decoración esquinas -->
+                    <div class="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-cyan-400"></div>
+                    <div class="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-cyan-400"></div>
+                    <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-cyan-400"></div>
+                    <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-cyan-400"></div>
+                    
+                    <h2 class="text-5xl md:text-6xl font-bold tracking-[0.1em] text-cyan-100 text-center drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">ESTADO</h2>
+                </div>
+
+                <!-- Tabla de Datos del Agente (Texto Gigante) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 w-full max-w-4xl border-t-2 border-b-2 border-slate-800 py-8">
+                    
+                    <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                        <span class="text-xl font-bold text-slate-400 uppercase tracking-widest">NOMBRE</span>
+                        <span id="sl-player-name" class="text-2xl md:text-3xl font-bold text-white text-right">---</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                        <span class="text-xl font-bold text-slate-400 uppercase tracking-widest">RANGO</span>
+                        <span id="sl-job-title" class="text-2xl md:text-3xl font-bold text-cyan-300 text-right">---</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                        <span class="text-xl font-bold text-slate-400 uppercase tracking-widest">TÍTULO</span>
+                        <span id="sl-current-rank" class="text-2xl md:text-3xl font-bold text-purple-300 text-right">---</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-end border-b border-slate-800/50 pb-2">
+                        <span class="text-xl font-bold text-slate-400 uppercase tracking-widest">NIVEL</span>
+                        <span id="sl-level-num" class="text-4xl font-black text-white text-right">0</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Cuerpo -->
-            <div class="p-6 md:p-10 space-y-8">
+            <!-- 2. BARRAS DE PROGRESO (Legibles) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12 px-2 md:px-8">
+                <!-- Barra Ventas -->
+                <div>
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-cyan-400 text-lg font-bold uppercase tracking-wider">Progreso de Ventas</span>
+                        <span id="sl-xp-text" class="text-white text-xl font-black">0 / 3</span>
+                    </div>
+                    <div class="h-6 w-full bg-slate-900 border-2 border-slate-600">
+                        <div id="sl-xp-bar" class="h-full bg-cyan-500 shadow-[0_0_20px_#06b6d4] w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+                <!-- Barra Tiempo Link -->
+                <div>
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-blue-400 text-lg font-bold uppercase tracking-wider">Duración de tu Enlace</span>
+                        <span id="sl-mana-text" class="text-white text-xl font-black">24 Horas</span>
+                    </div>
+                    <div class="h-6 w-full bg-slate-900 border-2 border-slate-600">
+                        <div class="h-full bg-blue-600 shadow-[0_0_20px_#2563eb] w-full opacity-90"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ÁRBOL DE BENEFICIOS (Cards Grandes y Explicativas) -->
+            <div class="px-0 md:px-4">
+                <h3 class="text-slate-400 text-sm font-bold uppercase tracking-[0.2em] mb-6 border-b border-slate-800 pb-2">
+                    HABILIDADES DESBLOQUEADAS Y BENEFICIOS
+                </h3>
                 
-                <!-- GRID DE NIVELES -->
-                <!-- GRID DE NIVELES GAMIFICADO (DISEÑO PREMIUM) -->
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 relative z-10">
-
-    <!-- NIVEL 0: INICIADO (Gris/Básico) -->
-    <div id="card-lvl-0" class="relative group rounded-3xl p-6 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden">
-        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <span class="material-symbols-outlined text-8xl">water_drop</span>
-        </div>
-        <div class="relative z-10">
-            <div class="flex justify-between items-center mb-4">
-                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 0</span>
-                <span class="text-xs font-bold text-slate-400">0 - 2 Ventas</span>
-            </div>
-            <h3 class="text-2xl font-black text-slate-700 dark:text-white uppercase italic mb-1">Iniciado</h3>
-            <p class="text-xs text-slate-500 mb-6">Tu primer paso en el mundo de las ventas.</p>
-
-            <!-- Barra Duración -->
-            <div class="bg-slate-50 rounded-xl p-3 mb-6 border border-slate-100">
-                <div class="flex justify-between text-[9px] font-black uppercase text-slate-400 mb-1">
-                    <span>Vida del Enlace</span>
-                    <span>1 Semana</span>
-                </div>
-                <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-slate-500 w-[15%]"></div>
+                <!-- Aquí se inyectarán las cartas desde JS -->
+                <div id="gamification-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Se llena con JS -->
                 </div>
             </div>
 
-            <!-- Poderes -->
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-xs font-bold text-slate-600">
-                    <div class="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-sm">link</span></div>
-                    Enlace Básico
-                </li>
-                <li class="flex items-center gap-3 text-xs font-bold text-slate-600">
-                    <div class="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><span class="material-symbols-outlined text-sm">image</span></div>
-                    Descarga 1 Foto
-                </li>
-            </ul>
+            <!-- Footer -->
+            <div class="mt-12 text-center">
+                 <p class="text-cyan-600 text-sm font-bold uppercase tracking-widest animate-pulse">
+                     Sigue vendiendo para desbloquear más poder.
+                 </p>
+            </div>
+
         </div>
     </div>
-
-    <!-- NIVEL 1: NOVATO (Naranja/Energía) -->
-    <div id="card-lvl-1" class="relative group rounded-3xl p-6 border border-orange-100 bg-gradient-to-br from-orange-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-orange-500/20 overflow-hidden opacity-60 grayscale filter">
-        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <span class="material-symbols-outlined text-8xl text-orange-500">bolt</span>
-        </div>
-        <div class="relative z-10">
-            <div class="flex justify-between items-center mb-4">
-                <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 1</span>
-                <span class="text-xs font-bold text-orange-400">3 - 9 Ventas</span>
-            </div>
-            <h3 class="text-2xl font-black text-orange-600 uppercase italic mb-1">Novato</h3>
-            <p class="text-xs text-orange-400 mb-6">Desbloquea la velocidad de respuesta.</p>
-
-            <!-- Barra Duración -->
-            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-orange-100">
-                <div class="flex justify-between text-[9px] font-black uppercase text-orange-400 mb-1">
-                    <span>Vida del Enlace</span>
-                    <span>1 Mes</span>
-                </div>
-                <div class="h-2 w-full bg-orange-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-orange-500 w-[30%]"></div>
-                </div>
-            </div>
-
-            <!-- Poderes -->
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-xs font-bold text-orange-800">
-                    <div class="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm"><span class="material-symbols-outlined text-sm">flash_on</span></div>
-                    Respuesta Flash (Botón Rápido)
-                </li>
-                <li class="flex items-center gap-3 text-xs font-bold text-orange-800">
-                    <div class="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm"><span class="material-symbols-outlined text-sm">fit_screen</span></div>
-                    Story Maker
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- NIVEL 2: EXPERTO (Azul/Tecnología) -->
-    <div id="card-lvl-2" class="relative group rounded-3xl p-6 border border-blue-100 bg-gradient-to-br from-blue-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/20 overflow-hidden opacity-60 grayscale filter">
-        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <span class="material-symbols-outlined text-8xl text-blue-500">bubble_chart</span>
-        </div>
-        <div class="relative z-10">
-            <div class="flex justify-between items-center mb-4">
-                <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 2</span>
-                <span class="text-xs font-bold text-blue-400">10 - 19 Ventas</span>
-            </div>
-            <h3 class="text-2xl font-black text-blue-600 uppercase italic mb-1">Experto</h3>
-            <p class="text-xs text-blue-400 mb-6">Automatización y volumen masivo.</p>
-
-            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-blue-100">
-                <div class="flex justify-between text-[9px] font-black uppercase text-blue-400 mb-1">
-                    <span>Vida del Enlace</span>
-                    <span>1 Mes</span>
-                </div>
-                <div class="h-2 w-full bg-blue-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-500 w-[45%]"></div>
-                </div>
-            </div>
-
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-xs font-bold text-blue-800">
-                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm"><span class="material-symbols-outlined text-sm">folder_zip</span></div>
-                    Pack Fotos ZIP
-                </li>
-                <li class="flex items-center gap-3 text-xs font-bold text-blue-800">
-                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm"><span class="material-symbols-outlined text-sm">content_copy</span></div>
-                    Copiado Masivo
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- NIVEL 3: ÉLITE (Indigo/Inteligencia) -->
-    <div id="card-lvl-3" class="relative group rounded-3xl p-6 border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20 overflow-hidden opacity-60 grayscale filter">
-        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <span class="material-symbols-outlined text-8xl text-indigo-500">military_tech</span>
-        </div>
-        <div class="relative z-10">
-            <div class="flex justify-between items-center mb-4">
-                <span class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 3</span>
-                <span class="text-xs font-bold text-indigo-400">20 - 39 Ventas</span>
-            </div>
-            <h3 class="text-2xl font-black text-indigo-600 uppercase italic mb-1">Élite</h3>
-            <p class="text-xs text-indigo-400 mb-6">Información privilegiada del mercado.</p>
-
-            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-indigo-100">
-                <div class="flex justify-between text-[9px] font-black uppercase text-indigo-400 mb-1">
-                    <span>Vida del Enlace</span>
-                    <span>3 Meses</span>
-                </div>
-                <div class="h-2 w-full bg-indigo-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-500 w-[65%]"></div>
-                </div>
-            </div>
-
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-xs font-bold text-indigo-800">
-                    <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm"><span class="material-symbols-outlined text-sm">radar</span></div>
-                    Radar de Tendencias
-                </li>
-                <li class="flex items-center gap-3 text-xs font-bold text-indigo-800">
-                    <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm"><span class="material-symbols-outlined text-sm">autorenew</span></div>
-                    Anti-Spam Text IA
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- NIVEL 4: MONARCA (Esmeralda/Negocio) -->
-    <div id="card-lvl-4" class="relative group rounded-3xl p-6 border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/20 overflow-hidden opacity-60 grayscale filter">
-        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <span class="material-symbols-outlined text-8xl text-emerald-500">crown</span>
-        </div>
-        <div class="relative z-10">
-            <div class="flex justify-between items-center mb-4">
-                <span class="bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Nivel 4</span>
-                <span class="text-xs font-bold text-emerald-400">40 - 69 Ventas</span>
-            </div>
-            <h3 class="text-2xl font-black text-emerald-600 uppercase italic mb-1">Monarca</h3>
-            <p class="text-xs text-emerald-400 mb-6">Imagen corporativa y control total.</p>
-
-            <div class="bg-white/60 rounded-xl p-3 mb-6 border border-emerald-100">
-                <div class="flex justify-between text-[9px] font-black uppercase text-emerald-400 mb-1">
-                    <span>Vida del Enlace</span>
-                    <span>6 Meses</span>
-                </div>
-                <div class="h-2 w-full bg-emerald-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-emerald-500 w-[85%]"></div>
-                </div>
-            </div>
-
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-xs font-bold text-emerald-800">
-                    <div class="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm"><span class="material-symbols-outlined text-sm">picture_as_pdf</span></div>
-                    Catálogo PDF Pro
-                </li>
-                <li class="flex items-center gap-3 text-xs font-bold text-emerald-800">
-                    <div class="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm"><span class="material-symbols-outlined text-sm">receipt_long</span></div>
-                    Reporte Contable
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- NIVEL 5: EMPERADOR (Morado/Ultimátum) -->
-    <div id="card-lvl-5" class="relative group rounded-3xl p-6 border-2 border-purple-200 bg-gradient-to-br from-purple-100 via-white to-purple-50 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-purple-500/30 overflow-hidden opacity-60 grayscale filter">
-        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diamond-upholstery.png')] opacity-20"></div>
-        <div class="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-30 transition-opacity">
-            <span class="material-symbols-outlined text-8xl text-purple-600">diamond</span>
-        </div>
-        <div class="relative z-10">
-            <div class="flex justify-between items-center mb-4">
-                <span class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-purple-500/30">Nivel 5</span>
-                <span class="text-xs font-black text-purple-600">70+ Ventas</span>
-            </div>
-            <h3 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 uppercase italic mb-1">Emperador</h3>
-            <p class="text-xs text-purple-400 mb-6 font-bold">El rango máximo. Poder absoluto.</p>
-
-            <div class="bg-white/80 rounded-xl p-3 mb-6 border border-purple-200 shadow-sm">
-                <div class="flex justify-between text-[9px] font-black uppercase text-purple-500 mb-1">
-                    <span>Vida del Enlace</span>
-                    <span>1 AÑO (ULTRA)</span>
-                </div>
-                <div class="h-2 w-full bg-purple-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 w-[100%]"></div>
-                </div>
-            </div>
-
-            <ul class="space-y-3">
-                <li class="flex items-center gap-3 text-xs font-black text-purple-900">
-                    <div class="h-9 w-9 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20"><span class="material-symbols-outlined text-sm">auto_fix</span></div>
-                    Magic Studio AI (NUEVO)
-                </li>
-                <li class="flex items-center gap-3 text-xs font-black text-purple-900">
-                    <div class="h-9 w-9 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20"><span class="material-symbols-outlined text-sm">lock_person</span></div>
-                    Amarre de Cliente Total
-                </li>
-            </ul>
-        </div>
-    </div>
-
 </div>
 
             </div>
