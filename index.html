@@ -8222,6 +8222,36 @@ async function downloadCatalogPDF() {
                 </div>
             </div>
 
+            <!-- === REGLA DE SUPERVIVENCIA (30 DÍAS) === -->
+<div class="mx-2 md:mx-8 mb-10 p-5 rounded-r-lg border-l-4 border-amber-500 bg-[#0f172a] relative overflow-hidden group shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+    
+    <!-- Decoración de fondo (Reloj) -->
+    <div class="absolute right-[-10px] top-[-10px] opacity-10 rotate-12 pointer-events-none">
+        <span class="material-symbols-outlined text-9xl text-amber-500">history_toggle_off</span>
+    </div>
+
+    <div class="relative z-10 flex items-start gap-4">
+        <!-- Icono de Alerta Pulsante -->
+        <div class="p-2 bg-amber-900/20 rounded border border-amber-500/30 shrink-0 mt-1">
+            <span class="material-symbols-outlined text-amber-500 animate-pulse">warning</span>
+        </div>
+
+        <div>
+            <h5 class="text-amber-500 font-black uppercase tracking-[0.2em] text-xs mb-2 flex items-center gap-2">
+                AVISO DEL SISTEMA: RANGO DINÁMICO
+            </h5>
+            
+            <p class="text-slate-200 text-sm md:text-base font-bold leading-relaxed">
+                Tu Nivel actual se calcula sumando únicamente las ventas de los <span class="text-white bg-amber-600/20 px-2 py-0.5 rounded border border-amber-600/50">ÚLTIMOS 30 DÍAS</span>.
+            </p>
+            
+            <p class="text-slate-500 text-xs mt-2 italic border-t border-slate-700/50 pt-2">
+                "El poder no es eterno. Las ventas antiguas caducan y tu rango descenderá si dejas de cazar. ¡Mantén la racha viva!"
+            </p>
+        </div>
+    </div>
+</div>
+
             <!-- 3. ÁRBOL DE BENEFICIOS (Cards Grandes y Explicativas) -->
             <div class="px-0 md:px-4">
                 <h3 class="text-slate-400 text-sm font-bold uppercase tracking-[0.2em] mb-6 border-b border-slate-800 pb-2">
