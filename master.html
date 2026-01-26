@@ -45,6 +45,16 @@
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // --- CALCULADORA DE TARIFA TECNOLÓGICA (TÚ PAGO) ---
+function calculateDevFee(precioVenta) {
+    const p = parseFloat(precioVenta) || 0;
+    
+    // Regla de Negocio Acordada:
+    if (p > 1500) return 10; // Industrial / Kits
+    if (p > 400) return 5;   // Gama Alta (Motos, Neveras grandes)
+    if (p >= 100) return 2;  // Gama Media (Lavadoras, TV)
+    return 1;                // Gama Baja (Ollas, Ventiladores)
+}
 </script>
 </head>
 <body class="pb-20">
@@ -139,6 +149,44 @@
         <!-- 3. VISTA NÓMINA (Para los sábados) -->
         <!-- 3. VISTA NÓMINA (Para los sábados y Adelantos) -->
 <section id="sec-nomina" class="tab-content hidden">
+
+    <!-- === TARJETA DE COBRO DE TARIFA TECNOLÓGICA === -->
+<div class="mb-8 bg-slate-900 rounded-3xl border border-indigo-500/50 p-6 shadow-[0_0_30px_rgba(99,102,241,0.15)] relative overflow-hidden group">
+    
+    <!-- Decoración de Fondo -->
+    <div class="absolute -right-10 -top-10 text-indigo-500/10">
+        <span class="material-symbols-outlined text-[150px]">dns</span>
+    </div>
+
+    <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+        
+        <!-- Info Izquierda -->
+        <div class="flex items-center gap-4">
+            <div class="bg-indigo-600 p-3 rounded-2xl shadow-lg shadow-indigo-600/40">
+                <span class="material-symbols-outlined text-white text-3xl">developer_board</span>
+            </div>
+            <div>
+                <h3 class="text-white text-lg font-black uppercase tracking-widest">SISTEMA & MANTENIMIENTO</h3>
+                <p class="text-indigo-300 text-xs font-medium">Tarifa operativa por uso de plataforma</p>
+            </div>
+        </div>
+
+        <!-- El Dinero (Contador) -->
+        <div class="text-center">
+            <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">DEUDA ACUMULADA</p>
+            <h2 id="sys-debt-amount" class="text-5xl font-black text-white tracking-tight">$0.00</h2>
+            <p id="sys-debt-count" class="text-slate-500 text-xs font-mono mt-1">0 pedidos pendientes de liquidar</p>
+        </div>
+
+        <!-- Botón de Cobrar -->
+        <button onclick="liquidarSystemFee()" id="btn-pay-sys" class="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined">payments</span>
+                <span>LIQUIDAR AHORA</span>
+            </div>
+        </button>
+    </div>
+</div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <!-- COLUMNA IZQUIERDA: GESTIÓN DE CAJA (Adelantos) -->
@@ -179,6 +227,8 @@
             </div>
         </div>
 
+        
+
         <!-- COLUMNA DERECHA: TABLA DE PAGOS (Corte Sábado) -->
         <div class="lg:col-span-2">
             <div class="glass-panel p-6 rounded-2xl">
@@ -188,6 +238,8 @@
                         <span class="material-symbols-outlined text-sm">refresh</span> Actualizar
                     </button>
                 </div>
+
+                
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-slate-300">
@@ -310,10 +362,42 @@
         // --- LOGICA DEL MASTER ---
 
         let inventario = [];
+        // --- VARIABLE GLOBAL NECESARIA ---
+let pedidosRawAdmin = []; 
+
+// --- LA FUNCIÓN QUE FALTABA ---
+async function loadAdminData() {
+    console.log("🔄 Actualizando datos del Sistema...");
+
+    // 1. Cargar todos los pedidos ENTREGADOS (necesarios para calcular tu deuda y estadísticas)
+    const { data, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('estado', 'Entregado');
+
+    if (error) {
+        console.error("Error cargando pedidos maestros:", error);
+        return;
+    }
+
+    // 2. Guardar en memoria
+    pedidosRawAdmin = data;
+
+    // 3. Renderizar la tarjeta de deuda del sistema (Tu pago)
+    renderSystemDebt();
+    
+    // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
+    if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
+        // Actualizamos el caché del dashboard también
+        allOrdersCache = data; 
+        filterDash('total');
+    }
+}
 
         async function initMaster() {
-            await loadCostos();
-        }
+    await loadCostos();
+    await loadAdminData(); // <--- AGREGAR ESTO PARA QUE CARGUE TU DEUDA AL INICIAR
+}
 
         function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -333,6 +417,7 @@
         // 1. CARGA DE COSTOS (TABLA EXCEL)
         // 1. CARGA DE COSTOS (TABLA EXCEL)
 // 1. CARGA DE COSTOS (MEJORADA: PASA EL ELEMENTO "THIS")
+// 1. CARGA DE COSTOS (CON TARIFA TECNOLÓGICA)
 async function loadCostos() {
     const { data, error } = await supabaseClient.from('productos').select('*').order('nombre');
     
@@ -341,39 +426,72 @@ async function loadCostos() {
         return;
     }
     
-    inventario = data; // Guardamos en memoria
+    inventario = data; 
     const tbody = document.getElementById('table-costos');
+    
+    // Actualizamos el Header de la tabla para incluir la nueva columna
+    const thead = document.querySelector('#sec-costos thead tr');
+    if(thead && thead.children.length < 8) { // Evita duplicar si ya existe
+        // Insertamos antes de Utilidad
+        const thUtilidad = thead.children[5]; // Índice de Utilidad
+        const newTh = document.createElement('th');
+        newTh.className = "p-4 text-right text-indigo-400";
+        newTh.innerText = "Fee Sistema";
+        thead.insertBefore(newTh, thUtilidad);
+    }
+
     let totalProfit = 0;
 
     tbody.innerHTML = data.map(p => {
-        const costo = p.costo_proveedor || 0;
-        const comision = p.comision || 0;
-        const profit = p.precio - costo - comision;
+        const precio = parseFloat(p.precio) || 0;
+        const costo = parseFloat(p.costo_proveedor) || 0;
+        const comision = parseFloat(p.comision) || 0;
         
+        // --- CÁLCULO AUTOMÁTICO DE TU PAGO ---
+        const devFee = calculateDevFee(precio);
+        
+        // --- UTILIDAD REAL DE ÁNGEL ---
+        // Precio - Costo Compra - Comisión Vendedor - Tu Tarifa
+        const profit = precio - costo - comision - devFee;
+        
+        // Solo sumamos al total si está en stock (es proyección)
         if(p.disponible === 'SI') totalProfit += profit;
 
         return `
         <tr class="hover:bg-slate-800 transition-colors border-b border-slate-800">
-            <td class="p-4 font-bold text-white">${p.nombre}</td>
-            <td class="p-4 text-xs">${p.proveedor || 'General'}</td>
-            <td class="p-4 text-right font-mono text-slate-300">$${p.precio}</td>
+            <td class="p-4 font-bold text-white">
+                ${p.nombre}
+                <div class="text-[9px] text-slate-500">${p.categoria || 'Varios'}</div>
+            </td>
+            <td class="p-4 text-xs text-slate-400">${p.proveedor || 'General'}</td>
+            <td class="p-4 text-right font-mono text-blue-300 font-bold">$${precio}</td>
+            
+            <!-- INPUT DE COSTO DEL PROVEEDOR (LO ÚNICO QUE TOCA ÁNGEL) -->
             <td class="p-4 text-right">
-                <!-- CAMBIO AQUÍ: Agregamos 'this' al final para controlar el color -->
                 <input type="number" value="${costo}" 
                     onchange="updateCosto('${p.id}', this.value, this)"
                     class="bg-slate-950 border border-slate-700 text-red-400 font-bold text-right w-24 rounded px-2 py-1 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-all">
             </td>
-            <td class="p-4 text-right text-orange-400 font-mono">-$${comision}</td>
-            <!-- Le ponemos un ID al profit para actualizarlo sin recargar -->
-            <td id="profit-${p.id}" class="p-4 text-right font-black text-emerald-400 text-lg">$${profit.toFixed(0)}</td>
+            
+            <td class="p-4 text-right text-orange-400 font-mono text-xs">-$${comision}</td>
+            
+            <!-- TU TARIFA VISIBLE -->
+            <td class="p-4 text-right text-indigo-400 font-mono text-xs font-bold" title="Mantenimiento Plataforma">
+                -$${devFee}
+            </td>
+
+            <!-- UTILIDAD NETA DE ÁNGEL -->
+            <td id="profit-${p.id}" class="p-4 text-right font-black ${profit > 0 ? 'text-emerald-400' : 'text-red-500'} text-lg">
+                $${profit.toFixed(0)}
+            </td>
+            
             <td class="p-4 text-center">
-                <span class="material-symbols-outlined text-slate-600 text-sm">edit</span>
+                <span class="material-symbols-outlined text-slate-600 text-sm">lock</span>
             </td>
         </tr>
         `;
     }).join('');
     
-    // Actualizar proyección total visual
     const profitEl = document.getElementById('total-profit-projected');
     if(profitEl) profitEl.innerText = `$${totalProfit.toLocaleString()}`;
 }
@@ -404,18 +522,36 @@ async function updateCosto(id, nuevoCosto, inputElement) {
             inputElement.classList.add('border-slate-700', 'text-red-400');
         }, 2000);
 
-        // 4. ACTUALIZAR MEMORIA LOCAL (CRUCIAL PARA QUE NO SE BORRE AL CAMBIAR PESTAÑA)
+        // 4. ACTUALIZAR MEMORIA LOCAL Y RECALCULAR CON FEE
         const productoEnMemoria = inventario.find(p => p.id === id);
+        
         if (productoEnMemoria) {
+            // A. Actualizamos el costo en la memoria volátil
             productoEnMemoria.costo_proveedor = nuevoCosto;
             
-            // Recalcular la utilidad en pantalla al instante
-            const nuevaUtilidad = productoEnMemoria.precio - nuevoCosto - productoEnMemoria.comision;
+            // B. Obtenemos los valores numéricos limpios
+            const precio = parseFloat(productoEnMemoria.precio) || 0;
+            const comision = parseFloat(productoEnMemoria.comision) || 0;
+            const costo = parseFloat(nuevoCosto) || 0;
+
+            // C. Calculamos TU TARIFA basada en el precio (usando la función que creamos arriba)
+            const devFee = calculateDevFee(precio);
+
+            // D. FÓRMULA FINAL DE UTILIDAD:
+            // Precio Venta - Costo Compra - Comisión Gestor - TARIFA SISTEMA
+            const nuevaUtilidad = precio - costo - comision - devFee;
+            
+            // E. Actualizar la celda en pantalla
             const celdaUtilidad = document.getElementById(`profit-${id}`);
-            if(celdaUtilidad) celdaUtilidad.innerText = `$${nuevaUtilidad.toFixed(0)}`;
+            if(celdaUtilidad) {
+                celdaUtilidad.innerText = `$${nuevaUtilidad.toFixed(0)}`;
+                
+                // F. Actualizar color (Verde si gana, Rojo si pierde)
+                celdaUtilidad.className = `p-4 text-right font-black text-lg ${nuevaUtilidad > 0 ? 'text-emerald-400' : 'text-red-500'}`;
+            }
         }
         
-        console.log("Costo guardado y memoria actualizada.");
+        console.log("Costo guardado, Fee descontado y utilidad actualizada.");
     }
 }
 
@@ -809,7 +945,13 @@ function calculateMetrics(orders) {
         const costoTotal = costoBase * qty;
         const mensajeria = parseFloat(p.costo_mensajeria || 0);
 
-        const gananciaBoss = venta - costoTotal - comision - mensajeria;
+        // --- NUEVO: RESTAR TU FEE POR CADA UNIDAD VENDIDA ---
+        // (Asumimos que el fee se cobra por unidad vendida, igual que la comisión)
+        const unitFee = calculateDevFee(venta / qty); // Calculamos fee unitario basado en precio unitario
+        const totalDevFee = unitFee * qty;
+
+        // GANANCIA LÍQUIDA DE ÁNGEL
+        const gananciaBoss = venta - costoTotal - comision - mensajeria - totalDevFee;
 
         // Sumatorias Generales
         netProfit += gananciaBoss;
@@ -874,6 +1016,94 @@ function calculateMetrics(orders) {
     // Renderizar Gráficos
     renderChartGestor(gestorStats);
     renderChartTrend(trendData);
+}
+
+// 1. CALCULAR Y MOSTRAR DEUDA DEL SISTEMA
+function renderSystemDebt() {
+    // Usamos la variable global donde cargaste los pedidos en loadAdminData
+    if (!pedidosRawAdmin) return;
+
+    // Filtramos: Entregados Y que no te hayan pagado el fee
+    const deudaOrders = pedidosRawAdmin.filter(p => 
+        p.estado === 'Entregado' && 
+        (p.pago_sistema === 'Pendiente' || !p.pago_sistema) // !p.pago_sistema por si es null al principio
+    );
+
+    let totalDeuda = 0;
+    const idsDeuda = [];
+
+    deudaOrders.forEach(p => {
+        const precio = parseFloat(p.total) || 0; // Usamos el total de venta para calcular el rango
+        
+        // Usamos la misma función de rangos que creamos antes
+        // OJO: Si la venta tiene varios productos (ej: 2 ventiladores), el precio total es alto
+        // Lo ideal es calcular por unidad, pero si 'p.total' es el precio final, usamos eso.
+        // Si tienes cantidad en el string, podrías refinarlo, pero por total funciona bien para rangos.
+        const fee = calculateDevFee(precio); 
+        
+        totalDeuda += fee;
+        idsDeuda.push(p.id);
+    });
+
+    // Actualizar UI
+    const elAmount = document.getElementById('sys-debt-amount');
+    const elCount = document.getElementById('sys-debt-count');
+    const btn = document.getElementById('btn-pay-sys');
+
+    if(elAmount) elAmount.innerText = `$${totalDeuda.toLocaleString()}.00`;
+    if(elCount) elCount.innerText = `${idsDeuda.length} pedidos por procesar`;
+
+    // Guardamos los IDs en el botón para usarlos al pagar
+    if(btn) {
+        btn.dataset.ids = JSON.stringify(idsDeuda);
+        if (totalDeuda === 0) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> <span>AL DÍA</span>`;
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `<div class="flex items-center gap-2"><span class="material-symbols-outlined">payments</span><span>LIQUIDAR ($${totalDeuda})</span></div>`;
+        }
+    }
+}
+
+// 2. FUNCIÓN PARA COBRAR (LIQUIDAR)
+async function liquidarSystemFee() {
+    const btn = document.getElementById('btn-pay-sys');
+    const ids = JSON.parse(btn.dataset.ids || "[]");
+    
+    if (ids.length === 0) return;
+
+    const monto = document.getElementById('sys-debt-amount').innerText;
+
+    const confirmacion = confirm(`¿Confirmas que Ángel te ha pagado ${monto} por el uso de la plataforma?\n\nEsto marcará ${ids.length} pedidos como "Pagado al Sistema".`);
+    
+    if (!confirmacion) return;
+
+    btn.innerHTML = "Procesando...";
+    btn.disabled = true;
+
+    try {
+        // Actualizamos en lote en Supabase
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update({ pago_sistema: 'Pagado' })
+            .in('id', ids);
+
+        if (error) throw error;
+
+        alert("✅ ¡Pago Registrado! El contador se ha reiniciado.");
+        
+        // Recargar datos
+        loadAdminData(); 
+
+    } catch (e) {
+        console.error(e);
+        alert("Error al guardar el pago: " + e.message);
+        btn.disabled = false;
+        btn.innerHTML = "Reintentar";
+    }
 }
 
 // GRÁFICO 1: GESTORES
