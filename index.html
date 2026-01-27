@@ -308,9 +308,7 @@
         <!-- Botones de Acción (Carrito, Login, Moneda) -->
         <div class="flex items-center gap-2 md:gap-4">
             <!-- Selector Moneda -->
-            <button onclick="toggleCurrency()" class="h-10 px-3 rounded-lg bg-white/10 text-white border border-white/20 text-xs font-bold hover:bg-white/20 transition-all">
-                <span id="currency-label">USD</span>
-            </button>
+            
             
             <!-- Carrito -->
             <button onclick="toggleCartModal(true)" class="relative flex items-center justify-center rounded-lg h-10 w-10 bg-white/20 text-white hover:bg-white/30 transition-all">
@@ -836,7 +834,6 @@
                 
                 <div class="flex items-baseline gap-4 mb-8">
                     <span id="detail-price" class="text-4xl font-black text-primary"></span>
-                    <span id="detail-price-cup" class="text-lg text-gray-400"></span>
                 </div>
 
                 <!-- Specs Grid -->
@@ -917,7 +914,6 @@
                 <div class="flex justify-between items-end mb-4">
                     <span class="text-gray-400 font-bold uppercase text-xs">Total a Pagar</span>
                     <div class="text-right">
-                        <p id="cart-total" class="text-gray-400 text-xs line-through">$0.00</p>
                         <p id="total-convertido" class="text-3xl font-black text-primary">$0.00</p>
                     </div>
                 </div>
@@ -1002,10 +998,7 @@
 
         <!-- PAGO Y VUELTO (Estilo Tarjeta) -->
         <div class="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4">
-            <div>
-                <label class="block text-xs font-black uppercase text-blue-400 mb-1">Método de Pago</label>
-                <select id="check-moneda" class="w-full bg-transparent border-b border-blue-200 text-xl font-black text-blue-900 py-2 focus:ring-0 focus:border-blue-500 px-0"></select>
-            </div>
+            
             <div>
                 <label class="block text-xs font-black uppercase text-blue-400 mb-1">¿Necesita Vuelto? (Escribir Billete)</label>
                 <input type="number" id="check-vuelto" placeholder="No, tengo el importe exacto" class="w-full bg-transparent border-b border-blue-200 text-lg font-bold text-blue-900 py-2 focus:ring-0 focus:border-blue-500 px-0 placeholder:text-blue-300/70">
@@ -1071,17 +1064,7 @@
             <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Gestión de Logística y Finanzas</p>
         </div>
         <div class="flex items-center gap-4">
-            <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-2xl flex items-center gap-3 border px-4">
-    <div class="flex flex-col">
-        <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Tasa del Día</span>
-        <div class="flex items-center gap-1">
-            <span class="text-xs text-gray-400">$1 =</span>
-            <!-- ID cambiado a 'daily-rate' -->
-            <input type="number" id="daily-rate" value="" onchange="updateGlobalRate(this.value)" class="w-12 bg-transparent border-none font-black text-primary p-0 focus:ring-0 text-xl text-right">
-            <span class="text-xs font-bold text-gray-400">CUP</span>
-        </div>
-    </div>
-</div>
+            
             <button onclick="location.reload()" class="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all">
                 <span class="material-symbols-outlined">power_settings_new</span>
             </button>
@@ -1578,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701c"; 
+    const versionActual = "2701d"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -1727,7 +1710,6 @@ checkShortLinks();
         initAutoSaveSystem(); 
         loadClientCRM();
         initAgentFloatingButton();
-        initCurrencyPersistence(); // <--- Sincroniza la tasa de la nube
     });
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
@@ -3087,18 +3069,8 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     document.getElementById('detail-price').innerText = `$${p.precio}.00 USD`;
     
     // Pasamos 'null' en el segundo parámetro y 'p.cup_extra' en el tercero
-const precioCUP = typeof calculateProductCUP === "function" ? calculateProductCUP(p.precio, null, p.cup_extra) : null;
-    const labelCUP = document.getElementById('detail-price-cup');
 
-    if (precioCUP) {
-        labelCUP.innerText = `/ CUP ${precioCUP.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-        labelCUP.classList.remove('text-red-500', 'text-xs', 'font-bold', 'uppercase');
-        labelCUP.classList.add('text-gray-400', 'text-lg');
-    } else {
-        labelCUP.innerText = " (Solo USD/EUR)";
-        labelCUP.classList.remove('text-gray-400', 'text-lg');
-        labelCUP.classList.add('text-red-500', 'text-xs', 'font-bold', 'uppercase');
-    }
+
 
     // 6. Otros detalles
     document.getElementById('detail-cat').innerText = p.categoria || '';
@@ -3285,55 +3257,20 @@ function changeQty(index, delta) {
 }
 
     function recalcularTotalFinal() {
-    const select = document.getElementById('check-moneda');
-    const opcionElegida = select.value || "USD";
-    
-    // 1. Calcular TOTAL USD (Igual que antes)
+    // Solo sumamos USD
     const totalUSD = cart.reduce((acc, item) => {
         return acc + (item.precio_venta * item.qty) + (parseFloat(item.shipping_linea) || 0);
     }, 0);
 
-    // 2. Calcular TOTAL CUP (Matemática línea por línea)
-    // Aquí es donde arreglamos el error de los 19,600 vs 20,000
-    const totalCUPCalculado = cart.reduce((acc, item) => {
-        // Tasa individual para este producto (490 + 10 = 500)
-        const tasaEsteProducto = globalCUPRate + (item.cup_extra || 0);
-        
-        // Costo del equipo en CUP
-        const costoEquipoCUP = (item.precio_venta * item.qty) * tasaEsteProducto;
-        
-        // Costo del envío en CUP (Asumimos tasa global o la misma del producto)
-        // Usaremos la misma del producto para mantener consistencia
-        const costoEnvioCUP = (parseFloat(item.shipping_linea) || 0) * tasaEsteProducto;
-
-        return acc + costoEquipoCUP + costoEnvioCUP;
-    }, 0);
-
-    // 3. Mostrar Resultados
-    let totalFinal = totalUSD;
-    let simbolo = "$";
-
-    // Si el usuario selecciona CUP en el selector
-    if (opcionElegida.toUpperCase().includes("CUP")) {
-        totalFinal = totalCUPCalculado; // Usamos el cálculo preciso
-        simbolo = "CUP";
+    // Mostramos solo el total en USD
+    const elTotal = document.getElementById('total-convertido');
+    if(elTotal) {
+        elTotal.innerText = `$ ${totalUSD.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
-
-    document.getElementById('cart-total').innerText = `$${totalUSD.toFixed(2)} USD`;
-    
-    // Formatear con comas (ej: 20,000.00)
-    document.getElementById('total-convertido').innerText = `${simbolo} ${totalFinal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 }
 
-    function actualizarOpcionesMoneda() {
-        const select = document.getElementById('check-moneda');
-        if (!select || cart.length === 0) return;
-        const pagosTexto = cart[0].pagos || "USD, CUP +10, Zelle";
-        const opciones = pagosTexto.split(',').map(opt => opt.trim());
-        select.innerHTML = opciones.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-        select.onchange = recalcularTotalFinal;
-        recalcularTotalFinal();
-    }
+    
+
 
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
@@ -3351,7 +3288,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
-    const monedaC = document.getElementById('check-moneda').value;
+    const monedaC = "USD";
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
@@ -3586,7 +3523,6 @@ function renderFloatingWA(nombre, telefono) {
     }
 }
     function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
-    function toggleCurrency() { showInCUP = !showInCUP; document.getElementById('currency-label').innerText = showInCUP ? 'CUP' : 'USD'; renderProducts(); }
     
     function filterByCategory(cat) { 
         activeCategory = cat; 
@@ -4765,19 +4701,7 @@ function renderProductsCustom(lista) {
         // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE (IGUAL QUE EN RENDERPRODUCTS) ---
         let pDisplay = `$${precio}`; // Valor por defecto
 
-        if (showInCUP) {
-            // Usamos la misma función inteligente
-            const precioCUP = calculateProductCUP(precio, null, p.cup_extra);
-
-            
-            if (precioCUP) {
-                // Formato limpio
-                pDisplay = `CUP ${precioCUP.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-            } else {
-                // Si el producto no acepta CUP
-                pDisplay = "<span class='text-sm text-gray-400'>Solo USD/EUR</span>";
-            }
-        }
+        
         // --- FIN: NUEVA LÓGICA ---
         
         // Etiqueta de Comisión + Indicador de Precio Flexible
@@ -5666,24 +5590,7 @@ function updateGlobalRate(val) {
 }
 
 // --- FUNCIÓN MAESTRA DE CÁLCULO DE PRECIO CUP ---
-// --- FUNCIÓN MATEMÁTICA FINAL (SOLO NÚMEROS) ---
-function calculateProductCUP(priceUSD, pagosString, cupExtraDB) {
-    // 1. Obtener la Tasa Global (500)
-    let tasaBase = globalCUPRate; 
 
-    // 2. Obtener el Extra del Producto (Ej: 5 o 10)
-    // Nota: 'cupExtraDB' viene de la base de datos (p.cup_extra)
-    let extra = 0;
-    if (cupExtraDB && !isNaN(cupExtraDB)) {
-        extra = parseFloat(cupExtraDB);
-    }
-    
-    // 3. Calcular Tasa Final (500 + 5 = 505)
-    let tasaFinal = tasaBase + extra;
-
-    // 4. Retornar Precio Final
-    return priceUSD * tasaFinal;
-}
 
 // Llamar a esto dentro de loadAdminData()
 // if (pedidos && productos) { renderAnaliticaCompleta(pedidos, productos, vistas); }
@@ -7071,63 +6978,14 @@ async function magicPasteProduct() {
 
 // 1. Ejecutar al cargar la página
 window.addEventListener('load', () => {
-    initCurrencyPersistence();
 });
 
 // --- CARGA DE TASA DESDE LA NUBE ---
-async function initCurrencyPersistence() {
-    try {
-        const { data, error } = await supabaseClient
-            .from('configuracion')
-            .select('valor')
-            .eq('clave', 'tasa_cup')
-            .single();
 
-        if (data && !error) {
-            globalCUPRate = parseFloat(data.valor);
-            // Actualizar el numerito visual en el panel de admin
-            const inputRate = document.getElementById('daily-rate');
-            if (inputRate) inputRate.value = data.valor;
-            
-            console.log("☁️ Tasa sincronizada desde Supabase:", data.valor);
-            
-            // Refrescar el catálogo para que use la tasa nueva
-            renderProducts(); 
-        }
-    } catch (e) {
-        console.error("Error cargando tasa de la nube:", e);
-        // Fallback por si falla el internet: usar 485
-        globalCUPRate = 485;
-    }
-}
 
 // 2. Modificar la función updateGlobalRate existente
 // --- GUARDAR TASA EN LA NUBE ---
-async function updateGlobalRate(val) {
-    if(!val) return;
-    
-    // 1. Actualizar memoria local inmediata
-    globalCUPRate = parseFloat(val);
-    
-    // 2. Guardar en Supabase para que cambie en todos los dispositivos
-    const { error } = await supabaseClient
-        .from('configuracion')
-        .update({ valor: val.toString() })
-        .eq('clave', 'tasa_cup');
 
-    if (error) {
-        alert("❌ Error al guardar en la nube: " + error.message);
-    } else {
-        console.log("✅ Tasa actualizada en la nube");
-        // Refrescar vistas
-        if(!document.getElementById('sec-catalogo').classList.contains('hidden')) {
-            renderProducts();
-        }
-        if(!document.getElementById('sec-admin-master').classList.contains('hidden')) {
-            renderAdminCortes();
-        }
-    }
-}
 
 // --- FUNCIÓN COPIAR DESCRIPCIÓN SIMPLE (NIVEL 0) ---
 // --- FUNCIÓN COPIAR DESCRIPCIÓN SIMPLE (CORREGIDA) ---
