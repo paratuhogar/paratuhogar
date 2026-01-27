@@ -1578,7 +1578,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701a"; 
+    const versionActual = "2701c"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -1704,36 +1704,30 @@ checkShortLinks();
         
         if (savedSession) {
             const s = JSON.parse(savedSession);
-            
-            // --- ESTA LÍNEA ES EL ARREGLO PARA EL TELÉFONO ---
             window.currentUserData = s.data || {}; 
-            // -------------------------------------------------
-
             setupSession(s.name, s.isAdmin);
         } else {
-            // 1. Ocultamos la ventana de login por si acaso
             const overlay = document.getElementById('login-overlay');
             if (overlay) overlay.classList.add('hidden'); 
             
-            // 2. Limpiamos estados
             window.gestorName = null;
             window.isAdmin = false;
-            window.currentUserData = null; // Limpiar datos también
+            window.currentUserData = null;
             
-            // 3. MOSTRAR EL BOTÓN DE LA PERSONITA
             const btnLogin = document.getElementById('btn-login-open');
             if (btnLogin) btnLogin.classList.remove('hidden'); 
             
-            // 4. Ocultamos cosas de gestor/admin que no deben verse
             if (document.getElementById('admin-nav')) document.getElementById('admin-nav').classList.add('hidden');
             if (document.getElementById('btn-logout')) document.getElementById('btn-logout').classList.add('hidden');
             
             loadProducts();
         }
 
+        // 3. INICIALIZAR FUNCIONES DEL SISTEMA (Una sola vez cada una)
         initAutoSaveSystem(); 
         loadClientCRM();
-        initAgentFloatingButton();      
+        initAgentFloatingButton();
+        initCurrencyPersistence(); // <--- Sincroniza la tasa de la nube
     });
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
@@ -7080,42 +7074,59 @@ window.addEventListener('load', () => {
     initCurrencyPersistence();
 });
 
-function initCurrencyPersistence() {
-    // Intentar recuperar de la memoria
-    const savedRate = localStorage.getItem('pth_daily_rate');
-    
-    // Si existe, actualizamos la variable global y el input visual
-    if (savedRate) {
-        globalCUPRate = parseFloat(savedRate);
-        const inputRate = document.getElementById('daily-rate');
-        if (inputRate) inputRate.value = savedRate;
-        console.log("Tasa recuperada:", savedRate);
-    } else {
-        // Si no existe, usamos 450 por defecto
-        globalCUPRate = 450;
-        const inputRate = document.getElementById('daily-rate');
-        if (inputRate) inputRate.value = "450";
+// --- CARGA DE TASA DESDE LA NUBE ---
+async function initCurrencyPersistence() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('configuracion')
+            .select('valor')
+            .eq('clave', 'tasa_cup')
+            .single();
+
+        if (data && !error) {
+            globalCUPRate = parseFloat(data.valor);
+            // Actualizar el numerito visual en el panel de admin
+            const inputRate = document.getElementById('daily-rate');
+            if (inputRate) inputRate.value = data.valor;
+            
+            console.log("☁️ Tasa sincronizada desde Supabase:", data.valor);
+            
+            // Refrescar el catálogo para que use la tasa nueva
+            renderProducts(); 
+        }
+    } catch (e) {
+        console.error("Error cargando tasa de la nube:", e);
+        // Fallback por si falla el internet: usar 485
+        globalCUPRate = 485;
     }
 }
 
 // 2. Modificar la función updateGlobalRate existente
-function updateGlobalRate(val) {
+// --- GUARDAR TASA EN LA NUBE ---
+async function updateGlobalRate(val) {
     if(!val) return;
+    
+    // 1. Actualizar memoria local inmediata
     globalCUPRate = parseFloat(val);
     
-    // GUARDAR EN MEMORIA PARA SIEMPRE (Hasta que borres caché)
-    localStorage.setItem('pth_daily_rate', val);
-    
-    // Refrescar vistas
-    if(!document.getElementById('sec-catalogo').classList.contains('hidden')) {
-        renderProducts();
+    // 2. Guardar en Supabase para que cambie en todos los dispositivos
+    const { error } = await supabaseClient
+        .from('configuracion')
+        .update({ valor: val.toString() })
+        .eq('clave', 'tasa_cup');
+
+    if (error) {
+        alert("❌ Error al guardar en la nube: " + error.message);
+    } else {
+        console.log("✅ Tasa actualizada en la nube");
+        // Refrescar vistas
+        if(!document.getElementById('sec-catalogo').classList.contains('hidden')) {
+            renderProducts();
+        }
+        if(!document.getElementById('sec-admin-master').classList.contains('hidden')) {
+            renderAdminCortes();
+        }
     }
-    if(!document.getElementById('sec-admin-master').classList.contains('hidden')) {
-        renderAdminCortes();
-    }
-    
-    // Feedback visual opcional
-    // alert("Tasa actualizada a: " + val); 
 }
 
 // --- FUNCIÓN COPIAR DESCRIPCIÓN SIMPLE (NIVEL 0) ---
