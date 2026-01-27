@@ -1578,7 +1578,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2601"; 
+    const versionActual = "2601b"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -3353,7 +3353,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // --- 1. DETERMINAR GESTOR (Tu lógica original intacta) ---
+    // --- 1. DETERMINAR GESTOR ---
     let activeGestor = "Venta Directa";
     if (window.gestorName) {
         activeGestor = window.gestorName;
@@ -3367,7 +3367,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
 
-    // --- 2. LÓGICA DE BINDEO (Tu lógica original intacta) ---
+    // --- 2. LÓGICA DE BINDEO ---
     const levelData = getLevelData(window.gestorSalesCount || 0);
     if (levelData.lvl >= 5 && activeGestor !== "Venta Directa") {
         try {
@@ -3378,7 +3378,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         } catch (err) { console.error("Error en bindeo:", err); }
     }
 
-    // --- 3. LÓGICA DE ORIGEN (Tu lógica original intacta) ---
+    // --- 3. LÓGICA DE ORIGEN ---
     let origenPedido = "Directo/Web";
     if (isLogged) {
         origenPedido = "Manual (Panel)";
@@ -3400,33 +3400,22 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     let mensajeRaw = ""; 
     const promesas = [];
-    const agentPhone = getAgentPhone(); // Obtenemos el teléfono del gestor
+    const agentPhone = getAgentPhone();
 
-    // --- 5. GENERAR VALES AGRUPADOS POR PROVEEDOR ---
+    // --- 5. BUCLE DE PROVEEDORES (Solo para WhatsApp y DB) ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
-        
-        // A. CONSECUTIVO ANUAL (Desde el 1 de Enero)
         const ahora = new Date();
         const inicioAnio = new Date(ahora.getFullYear(), 0, 1).toISOString();
-        
         const { count, error: errCount } = await supabaseClient
             .from('pedidos')
             .select('id', { count: 'exact', head: true })
             .eq('proveedor', prov)
             .gte('fecha', inicioAnio); 
 
-        // Offset manual (ajustar según tu lista)
-        const startOffset = {
-            'CA': 5, 
-            'A': 1,
-            'M': 1,
-            'JM': 1
-        };
-
+        const startOffset = { 'CA': 5, 'A': 1, 'M': 1, 'JM': 1 };
         const nroConsecutivo = (errCount ? 0 : (count || 0)) + (startOffset[prov] || 0) + 1;
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
-        // B. CÁLCULOS DEL VALE
         let detalleCuerpo = "";
         let totalUSDVale = 0;
         let comisionTotalVale = 0;
@@ -3441,90 +3430,56 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             detalleCuerpo += `Producto: ${item.qty}x ${item.nombre}\n(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
         });
 
-        // C. CONSTRUIR BLOQUE WHATSAPP
-        mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n`;
-        mensajeRaw += `📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n`;
-
-        mensajeRaw += `👤 *DATOS DEL CLIENTE*\n`;
-        mensajeRaw += `Cliente: ${nombreC}\n`;
-        if(typeof ciC !== 'undefined' && ciC && ciC !== "No especificado") mensajeRaw += `CI: ${ciC}\n`;
-        mensajeRaw += `Móvil: ${telC}\n`;
-        mensajeRaw += `Municipio: ${municipioC}\n`;
-        mensajeRaw += `Dirección: ${dirC}\n\n`;
-
-        mensajeRaw += `📦 *DETALLE DEL PEDIDO*\n`;
-        mensajeRaw += detalleCuerpo;
-
-        mensajeRaw += `💰 *TOTAL A COBRAR: ${totalUSDVale} USD*\n`;
-        
-        if (vueltoC && vueltoC !== "no" && vueltoC !== "") {
-            mensajeRaw += `⚠️ *OJO VUELTO:* Cliente paga con billete de $${vueltoC}\n`;
-        } else {
-            mensajeRaw += `✅ Vuelto: No requiere (Pago exacto)\n`;
-        }
+        mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n👤 *DATOS DEL CLIENTE*\nCliente: ${nombreC}\n${ciC !== "No especificado" ? "CI: "+ciC+"\n" : ""}Móvil: ${telC}\nMunicipio: ${municipioC}\nDirección: ${dirC}\n\n📦 *DETALLE DEL PEDIDO*\n${detalleCuerpo}💰 *TOTAL A COBRAR: ${totalUSDVale} USD*\n${vueltoC !== "no" ? "⚠️ *OJO VUELTO:* paga con $"+vueltoC+"\n" : "✅ Vuelto: No requiere\n"}`;
 
         if (isLogged || activeGestor !== "Venta Directa") {
-            mensajeRaw += `\n👮‍♂️ *GESTIÓN INTERNA*\n`;
-            mensajeRaw += `Agente: ${activeGestor}\n`;
-            mensajeRaw += `Comisión: $${comisionTotalVale}\n`;
-            mensajeRaw += `Teléfono: ${agentPhone}\n`; // Añadido teléfono
+            mensajeRaw += `\n👮‍♂️ *GESTIÓN INTERNA*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTeléfono: ${agentPhone}\n`;
         }
-        
         mensajeRaw += `\n------------------------------------\n\n`;
 
-        // D. INSERTAR EN BD (Un registro por vale agrupado)
         const insertPromise = supabaseClient.from('pedidos').insert([{
-            gestor: activeGestor,
-            cliente: nombreC,
-            ci: ciC,
-            telefono: telC,
-            direccion: dirC,
-            municipio: municipioC,
+            gestor: activeGestor, cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC, municipio: municipioC,
             producto: productos.map(p => `${p.qty}x ${p.nombre}`).join(' + ') + ` [${monedaC}]`,
-            total: totalUSDVale, 
-            comision_total: comisionTotalVale,
-            estado: 'Pendiente',
-            pago_gestor: 'Pendiente',
-            proveedor: prov,
-            costo_mensajeria: envioTotalVale,
-            orden_dia: codPedido,
-            origen: origenPedido
+            total: totalUSDVale, comision_total: comisionTotalVale, estado: 'Pendiente', pago_gestor: 'Pendiente',
+            proveedor: prov, costo_mensajeria: envioTotalVale, orden_dia: codPedido, origen: origenPedido
         }]);
-        
         promesas.push(insertPromise);
     }
 
-    // Guardar todo
+    // --- 6. FINALIZAR PROCESO (Fuera del bucle para PDF UNIFICADO) ---
     await Promise.all(promesas);
 
     // Enviar WhatsApp
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
     window.open(`https://api.whatsapp.com/send?phone=5356071095&text=${mensajeCodificado}`, '_blank');
 
-    // Generar PDF Unificado para el cliente
+    // Preparar datos para el PDF ÚNICO del cliente (Suma todo el carrito)
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
     const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
+
     const datosParaPDF = {
         cliente: nombreC,
         ci: ciC,
         direccion: `${dirC} (${municipioC})`,
         totalUSD: totalGlobalProductos + totalGlobalEnvio,
-        mensajeria: totalGlobalEnvio,
+        mensajeria: totalGlobalEnvio, // Suma de toda la mensajería acordada
         items: cart.map(item => ({
             nombre: item.nombre,
             qty: item.qty,
             price: item.precio_venta
         }))
     };
-    setTimeout(() => { generarComprobanteVenta(datosParaPDF); }, 1500); 
 
-    // Limpieza
+    // Lanzar generación de PDF
+    setTimeout(() => { generarComprobanteVenta(datosParaPDF, 'descargar'); }, 1500); 
+
+    // Limpieza final (Aumentamos a 3 segundos para dar tiempo a la descarga del PDF)
     setTimeout(() => {
         cart = [];
         clearAutoSave();
         toggleCartModal(false);
         location.reload();
-    }, 1000);
+    }, 3000); 
 }
 
     // 6. FUNCIONES AUXILIARES
