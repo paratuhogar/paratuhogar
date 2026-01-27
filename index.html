@@ -1578,7 +1578,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701"; 
+    const versionActual = "2701a"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -3375,16 +3375,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
 
-    // --- 2. LÓGICA DE BINDEO ---
-    const levelData = getLevelData(window.gestorSalesCount || 0);
-    if (levelData.lvl >= 5 && activeGestor !== "Venta Directa") {
+    // --- 2. LÓGICA DE BINDEO (MODO DIOS PARA MARCEL) ---
+// Si eres Marcel Montano, el bindeo se hace SIEMPRE, sin importar el nivel.
+const esNivel5 = getLevelData(window.gestorSalesCount || 0).lvl >= 5;
+
+if (activeGestor === "Marcel Montano" || esNivel5) {
+    if (activeGestor !== "Venta Directa") {
         try {
             await supabaseClient.from('customer_bindings').upsert({
                 phone: telC.replace(/\D/g, ''), 
                 agent_name: activeGestor
             });
+            console.log("💎 Sistema: Cliente anclado a " + activeGestor);
         } catch (err) { console.error("Error en bindeo:", err); }
     }
+}
 
     // --- 3. LÓGICA DE ORIGEN ---
     let origenPedido = "Directo/Web";
