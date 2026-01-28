@@ -1561,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701i"; 
+    const versionActual = "2701j"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -3345,6 +3345,14 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
     const promesas = [];
     const agentPhone = getAgentPhone();
 
+    // --- NUEVO: DETERMINAR DESTINATARIO WHATSAPP (MODIFICADO) ---
+    // Si el cliente entró por link de gestor, le enviamos a él. Si no, a la tienda.
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    let whatsappDestino = "5356071095"; // Por defecto tienda
+    if (referrer && referrer.telefono) {
+        whatsappDestino = referrer.telefono.replace(/\D/g, ''); 
+    }
+
     // --- 5. BUCLE DE PROVEEDORES (Solo para WhatsApp y DB) ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         const ahora = new Date();
@@ -3368,7 +3376,12 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
             const costoEquipo = item.precio_venta * item.qty;
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
             totalUSDVale += (costoEquipo + costoEnvio);
-            comisionTotalVale += (item.comision_actual * item.qty);
+            
+            // --- MODIFICADO: ANULAR COMISIÓN SI ES VENTA DIRECTA ---
+            if (activeGestor !== "Venta Directa") {
+                comisionTotalVale += (item.comision_actual * item.qty);
+            }
+            
             envioTotalVale += costoEnvio;
             detalleCuerpo += `Producto: ${item.qty}x ${item.nombre}\n(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
         });
@@ -3389,12 +3402,14 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
         promesas.push(insertPromise);
     }
 
-    // --- 6. FINALIZAR PROCESO (Fuera del bucle para PDF UNIFICADO) ---
+    // --- 6. FINALIZAR PROCESO ---
     await Promise.all(promesas);
 
-    // Enviar WhatsApp
+    // --- MODIFICADO: USAR EL TELÉFONO DINÁMICO EN EL ENVÍO ---
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
-    window.open(`https://api.whatsapp.com/send?phone=5356071095&text=${mensajeCodificado}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
+
+    // Preparar datos para el PDF ÚNICO... (El resto sigue igual)
 
     // Preparar datos para el PDF ÚNICO del cliente (Suma todo el carrito)
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
