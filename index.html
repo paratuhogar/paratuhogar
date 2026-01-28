@@ -1679,6 +1679,7 @@ checkShortLinks();
                 placeholder: 'Descripción...',
                 modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
             });
+            
         }
 
         // 2. Intentar recuperar sesión
@@ -1709,6 +1710,8 @@ checkShortLinks();
         initAutoSaveSystem(); 
         loadClientCRM();
         initAgentFloatingButton();
+        // Sensor: Registrar entrada y contar visita
+trackSpy('INICIO_SESION', 'Cliente entró a la tienda');
     });
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
@@ -2987,8 +2990,16 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
         return matchSearch && matchCat && matchComm && p.disponible === "SI";
     });
 
-    // 4. ESTADO VACÍO
     if (filtered.length === 0) {
+        // --- SENSOR: CAPTURAR DEMANDA NO SATISFECHA ---
+        const term = document.getElementById('search-bar').value.trim();
+        
+        // Solo rastreamos si escribió más de 3 letras (para evitar basura)
+        if (term.length > 3) {
+            trackSpy('BUSQUEDA_VACIA', term);
+        }
+        // ----------------------------------------------
+
         container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold">No se encontraron equipos.</div>`;
         return;
     }
@@ -3058,6 +3069,10 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     // 3. DETALLE DE PRODUCTO
     // 3. DETALLE DE PRODUCTO
  function openDetail(name) {
+    // Sensor: Iniciar tiempo de lectura
+tiempoInicioLectura = Date.now();
+productoActualLectura = name;
+// (Aquí sigue tu código normal de openDetail...)
     trackSpy('VIO_DETALLE', name);
     // Esto convierte el &quot; de nuevo en " para poder buscarlo en la lista de productos
     const nombreReal = name.replace(/&quot;/g, '"');
@@ -3534,7 +3549,25 @@ function renderFloatingWA(nombre, telefono) {
         }
     }
 }
-    function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); document.body.style.overflow = 'auto'; }
+    function closeDetail() {
+    // 1. SENSOR: Calcular tiempo de lectura antes de cerrar
+    if (tiempoInicioLectura > 0) {
+        const segundos = Math.floor((Date.now() - tiempoInicioLectura) / 1000);
+        
+        // Solo lo enviamos al Radar si el cliente leyó más de 2 segundos
+        if (segundos > 2) {
+            trackSpy('LECTURA_PROFUNDA', productoActualLectura, segundos);
+        }
+        
+        // Resetear variables del sensor
+        tiempoInicioLectura = 0;
+        productoActualLectura = "";
+    }
+
+    // 2. LÓGICA ORIGINAL: Cerrar el modal
+    document.getElementById('detail-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
     
     function filterByCategory(cat) { 
         activeCategory = cat; 
@@ -8056,19 +8089,46 @@ async function verificarDuenioAlEscribir(telefono) {
 // === MOTOR DEL PROYECTO RADAR (MODO ESPIA) ===
 
 // 1. Función Maestra de Rastreo
-async function trackSpy(accion, detalle) {
+// === SENSORES DE INTELIGENCIA v3.0 (MODO DIOS) ===
+let tiempoInicioLectura = 0;
+let productoActualLectura = "";
+
+async function trackSpy(accion, detalle, duracion = 0) {
     try {
         const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-        const { ip } = await fetch('https://api.ipify.org?format=json').then(r => r.json());
         
+        // 1. RASTREO DE REINCIDENCIA (Fidelidad)
+        let visitas = parseInt(localStorage.getItem('pth_v_count') || "0");
+        if (accion === 'INICIO_SESION') {
+            visitas++;
+            localStorage.setItem('pth_v_count', visitas);
+        }
+
+        // 2. PROCEDENCIA SOCIAL (Detección de fuente)
+        let fuente = "Directo / Link";
+        const refUrl = document.referrer.toLowerCase();
+        if (refUrl.includes('facebook.com') || refUrl.includes('fb.me')) fuente = "Facebook";
+        else if (refUrl.includes('t.co')) fuente = "Twitter/X";
+        else if (window.location.search.includes('wa')) fuente = "WhatsApp";
+
+        // 3. GEOLOCALIZACIÓN (Obtener Ciudad e IP)
+        // Usamos ipapi.co (Gratis y rápida)
+        const geoReq = await fetch('https://ipapi.co/json/').then(r => r.json());
+        const ubicacion = `${geoReq.city || 'Desconocida'}, ${geoReq.region || ''}`;
+
+        // 4. GUARDAR EN SUPABASE
         await supabaseClient.from('log_espia').insert([{
-            ip: ip,
+            ip: geoReq.ip,
             accion: accion,
             detalle: detalle,
             gestor_atribuido: ref ? ref.nombre : 'Directo',
-            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC'
+            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC',
+            ciudad: ubicacion,
+            fuente_social: fuente,
+            reincidencia: visitas || 1,
+            duracion: duracion
         }]);
-    } catch (e) { /* Invisible */ }
+    } catch (e) { console.log("Radar: Error silencioso capturado."); }
 }
 
 // 2. Captura de Leads Fantasma (Ghost Tracking)
@@ -8078,24 +8138,20 @@ function captureGhostLead() {
     ghostTimer = setTimeout(async () => {
         const nombre = document.getElementById('check-nombre').value;
         const tel = document.getElementById('check-tel').value.trim();
-        
-        // Solo guardamos si hay al menos un teléfono iniciado
         if (tel.length < 5) return;
 
         const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
         const prodNames = cart.map(i => i.nombre).join(', ');
 
-        // USAMOS UPSERT: Si el teléfono ya existe, actualiza el nombre y productos.
-        // Importante: En Supabase, la columna 'telefono' debe ser UNIQUE para que esto funcione perfecto.
+        // Actualizamos o insertamos (upsert) basado en el teléfono
         await supabaseClient.from('leads_fantasma').upsert([{
             telefono: tel,
             nombre: nombre,
             producto_en_carrito: prodNames,
             gestor_atribuido: ref ? ref.nombre : 'Directo'
-        }], { onConflict: 'telefono' }); 
+        }], { onConflict: 'telefono' });
 
-        console.log("🕵️ Radar: Lead actualizado.");
-    }, 3000);
+    }, 3000); 
 }
 
 </script>

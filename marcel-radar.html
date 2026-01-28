@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SISTEMA RADAR | Operaciones Marcel</title>
+    <title>SISTEMA RADAR PRO | Operaciones Marcel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -22,34 +22,34 @@
 </head>
 <body class="radar-grid min-h-screen">
 
-    <!-- HEADER SUPERIOR -->
+    <!-- HEADER SUPERIOR INTELIGENTE -->
     <header class="p-4 md:p-6 border-b border-cyan-900/30 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-center md:text-left">
-                <h1 class="text-3xl font-bold neon-text tracking-tighter">PROJECT RADAR <span class="text-white opacity-20">v2.0</span></h1>
-                <p class="text-[10px] uppercase tracking-[0.4em] text-cyan-500/70">Inteligencia de Mercado en Tiempo Real</p>
+                <h1 class="text-3xl font-black neon-text tracking-tighter">PROJECT RADAR <span class="text-white opacity-20">v3.0</span></h1>
+                <p class="text-[10px] uppercase tracking-[0.4em] text-cyan-500/70 font-bold">Mantenimiento de Inteligencia de Mercado</p>
             </div>
             <div class="flex items-center gap-6 bg-slate-900/50 p-2 px-4 rounded-2xl border border-white/5">
                 <div class="text-right hidden sm:block">
-                    <p class="text-[10px] font-bold text-slate-500">OPERADOR</p>
+                    <p class="text-[10px] font-bold text-slate-500">OPERADOR SUPREMO</p>
                     <p class="text-xs font-black text-white uppercase">Marcel Montano</p>
                 </div>
                 <div class="h-8 w-px bg-white/10"></div>
                 <p id="status" class="text-xs font-bold text-emerald-500 animate-pulse flex items-center gap-2">
-                    <span class="block w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></span> ONLINE
+                    <span class="block w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></span> SATÉLITE ONLINE
                 </p>
             </div>
         </div>
     </header>
 
-    <main class="max-w-[1600px] mx-auto p-4 md:p-6">
+    <main class="max-w-[1700px] mx-auto p-4 md:p-6">
         
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- COLUMNA IZQUIERDA: LOGS (3 cols) -->
-            <div class="lg:col-span-3 space-y-4 order-3 lg:order-1">
+            <!-- COLUMNA 1: ACTIVIDAD CON CIUDAD Y FUENTE (3 cols) -->
+            <div class="lg:col-span-3 space-y-4">
                 <div class="flex justify-between items-center border-l-4 border-cyan-500 pl-3">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-white">Actividad Reciente</h2>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-white">Monitor de Actividad</h2>
                     <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-cyan-400 font-mono" id="stat-log-count">0</span>
                 </div>
                 <div id="live-feed" class="space-y-3 h-[75vh] overflow-y-auto pr-2">
@@ -57,37 +57,60 @@
                 </div>
             </div>
 
-            <!-- COLUMNA CENTRAL: GRÁFICA Y MÉTRICAS (6 cols) -->
-            <div class="lg:col-span-6 space-y-6 order-1 lg:order-2">
+            <!-- COLUMNA 2: EL CEREBRO (GRÁFICAS Y KPIs) (6 cols) -->
+            <div class="lg:col-span-6 space-y-6">
                 
-                <!-- KPIs Rápidos -->
-                <div class="grid grid-cols-2 gap-4">
+                <!-- KPIs AVANZADOS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 text-center">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">Vistas (Hoy)</p>
-                        <p id="stat-views" class="text-3xl font-black text-cyan-400">0</p>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase">Fugas (Búsquedas Vacías)</p>
+                        <p id="stat-empty" class="text-3xl font-black text-red-500">0</p>
                     </div>
                     <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 text-center">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">WhatsApp (Hoy)</p>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase">Clientes Reincidentes</p>
+                        <p id="stat-loyal" class="text-3xl font-black text-purple-400">0</p>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 text-center">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase">WhatsApp (Conversión)</p>
                         <p id="stat-wa" class="text-3xl font-black text-emerald-400">0</p>
                     </div>
                 </div>
 
-                <!-- Gráfica Principal -->
-                <div class="bg-slate-900/80 p-6 rounded-3xl neon-border relative overflow-hidden">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-cyan-400 mb-6 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-lg">analytics</span> Radar de Interés por Producto
-                    </h3>
-                    <div style="height: 400px;">
+                <!-- GRÁFICAS -->
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Interés (Vistas) -->
+                    <div class="bg-slate-900/80 p-6 rounded-3xl neon-border relative h-[350px]">
+                        <h3 class="text-[10px] font-black uppercase text-cyan-400 mb-4 flex justify-between">
+                            <span>Radar de Interés (Clics)</span>
+                            <span class="opacity-40">Barras: Total Vistas</span>
+                        </h3>
                         <canvas id="vistasChart"></canvas>
+                    </div>
+                    
+                    <!-- Engagement (Tiempo) -->
+                    <div class="bg-slate-900/80 p-6 rounded-3xl border border-white/5 h-[350px]">
+                        <h3 class="text-[10px] font-black uppercase text-purple-400 mb-4 flex justify-between">
+                            <span>Fidelidad de Lectura (Segundos)</span>
+                            <span class="opacity-40">Barras: Promedio Permanencia</span>
+                        </h3>
+                        <canvas id="engagementChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- RANKING SOCIAL -->
+                <div class="bg-slate-900/80 p-6 rounded-3xl border border-white/5">
+                    <h3 class="text-[10px] font-black uppercase text-blue-400 mb-4">Tráfico por Red Social / Gestor</h3>
+                    <div id="social-radar" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: LEADS FANTASMA (3 cols) -->
-            <div class="lg:col-span-3 space-y-4 order-2 lg:order-3">
+            <!-- COLUMNA 3: LEADS FANTASMA (ORO) (3 cols) -->
+            <div class="lg:col-span-3 space-y-4">
                 <div class="flex justify-between items-center border-l-4 border-orange-500 pl-3">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-orange-500">Leads a Rescatar</h2>
-                    <span class="animate-ping text-orange-500 text-xs">●</span>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-orange-500">Misión de Rescate</h2>
+                    <span class="text-[10px] font-bold text-orange-500 animate-pulse">EN VIVO</span>
                 </div>
                 <div id="ghost-feed" class="space-y-4 h-[75vh] overflow-y-auto pr-2">
                     <!-- JS -->
@@ -103,6 +126,7 @@
         const radarClient = supabase.createClient(SUPABASE_URL_RADAR, SUPABASE_KEY_RADAR);
 
         let vistasChart = null;
+        let engChart = null;
         let lastGhostId = null;
 
         function playAlertSound() {
@@ -122,125 +146,127 @@
             } catch(e) {}
         }
 
-        async function initRadar() {
-            const session = JSON.parse(localStorage.getItem('pth_session'));
-            if (!session || session.name !== 'Marcel Montano') {
-                window.location.href = 'index.html';
-                return;
-            }
-            loadData();
-            setInterval(loadData, 5000);
-        }
-
         async function loadData() {
-            loadFeed();
+            const { data: logs } = await radarClient.from('log_espia').select('*').order('timestamp', { ascending: false }).limit(100);
+            if (logs) {
+                renderFeed(logs);
+                updateCharts(logs);
+                renderSocial(logs);
+            }
             loadGhosts();
         }
 
-        async function loadFeed() {
-            const { data } = await radarClient.from('log_espia').select('*').order('timestamp', { ascending: false }).limit(50);
-            if (!data) return;
-
-            // Actualizar Gráfica
-            updateChart(data);
-
+        function renderFeed(logs) {
             const container = document.getElementById('live-feed');
-            container.innerHTML = data.slice(0, 15).map(log => {
-                const hora = new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                let color = log.accion === 'COMPRA_CONFIRMADA' ? "text-emerald-400" : (log.accion === 'BUSQUEDA' ? "text-purple-400" : "text-cyan-400");
+            container.innerHTML = logs.slice(0, 20).map(l => {
+                const hora = new Date(l.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                const reincidente = l.reincidencia > 1 ? `<span class="bg-purple-500/20 text-purple-400 text-[8px] px-1.5 rounded-full border border-purple-500/30">Fiel #${l.reincidencia}</span>` : '';
+                let color = l.accion === 'COMPRA_CONFIRMADA' ? "text-emerald-400" : (l.accion === 'BUSQUEDA_VACIA' ? "text-red-400" : "text-cyan-400");
                 
                 return `
-                <div class="feed-item bg-slate-900/50 border border-white/5 p-3 rounded-xl mb-2">
-                    <div class="flex justify-between items-start">
-                        <span class="text-[9px] font-mono opacity-30">${hora}</span>
-                        <span class="text-[8px] uppercase font-black text-slate-500">${log.dispositivo}</span>
+                <div class="feed-item bg-slate-900/50 border border-white/5 p-4 rounded-2xl mb-2 transition-all hover:bg-slate-800/80">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-mono opacity-30">${hora}</span>
+                        <span class="text-[8px] uppercase font-black text-slate-500">${l.fuente_social}</span>
                     </div>
-                    <p class="text-xs font-bold ${color} mt-1">${log.accion}</p>
-                    <p class="text-white text-xs opacity-80 truncate">${log.detalle}</p>
-                    <p class="text-[9px] opacity-40 mt-1 uppercase">GESTOR: ${log.gestor_atribuido || 'Directo'}</p>
+                    <p class="text-xs font-bold ${color}">${l.accion}</p>
+                    <p class="text-white text-sm font-medium mt-1">${l.detalle}</p>
+                    <div class="mt-2 flex flex-wrap gap-2 items-center">
+                        <span class="text-[9px] opacity-40 uppercase tracking-tighter">UBICACIÓN: ${l.ciudad || 'Desconocida'}</span>
+                        ${reincidente}
+                    </div>
+                    <p class="text-[9px] text-slate-600 mt-2 font-black uppercase">AGENTE: ${l.gestor_atribuido}</p>
                 </div>`;
             }).join('');
 
-            document.getElementById('stat-views').innerText = data.filter(l => l.accion === 'VIO_DETALLE').length;
-            document.getElementById('stat-wa').innerText = data.filter(l => l.accion === 'COMPRA_CONFIRMADA').length;
-            document.getElementById('stat-log-count').innerText = data.length;
+            document.getElementById('stat-empty').innerText = logs.filter(l => l.accion === 'BUSQUEDA_VACIA').length;
+            document.getElementById('stat-loyal').innerText = logs.filter(l => l.reincidencia > 2).length;
+            document.getElementById('stat-wa').innerText = logs.filter(l => l.accion === 'COMPRA_CONFIRMADA').length;
+            document.getElementById('stat-log-count').innerText = logs.length;
         }
 
         async function loadGhosts() {
-            const { data } = await radarClient.from('leads_fantasma').select('*').order('timestamp', { ascending: false }).limit(15);
+            const { data } = await radarClient.from('leads_fantasma').select('*').order('timestamp', { ascending: false }).limit(10);
             if (!data) return;
 
-            if (data.length > 0) {
-                if (lastGhostId && data[0].id > lastGhostId) playAlertSound();
-                lastGhostId = data[0].id;
-            }
+            if (data.length > 0 && lastGhostId && data[0].id > lastGhostId) playAlertSound();
+            lastGhostId = data ? (data[0]?.id || null) : null;
 
-            const container = document.getElementById('ghost-feed');
-            container.innerHTML = data.map(lead => {
-                const hasPhone = lead.telefono && lead.telefono.length > 5;
-                return `
-                <div class="bg-gradient-to-br from-orange-500/10 to-transparent border-l-2 border-orange-500 p-4 rounded-r-xl relative overflow-hidden group shadow-lg">
-                    <div class="absolute right-[-10px] top-[-10px] opacity-5 text-orange-500">
-                        <span class="material-symbols-outlined text-6xl">person_search</span>
-                    </div>
-                    <div class="flex justify-between items-start mb-2 relative z-10">
-                        <p class="text-white text-xs font-black uppercase">${lead.nombre || 'Anónimo'}</p>
+            document.getElementById('ghost-feed').innerHTML = data.map(lead => `
+                <div class="bg-gradient-to-br from-orange-500/10 to-slate-900 border-l-4 border-orange-500 p-5 rounded-r-2xl shadow-xl hover:scale-[1.02] transition-transform">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-white text-xs font-black uppercase">${lead.nombre || 'Interesado'}</p>
                         <span class="text-[9px] opacity-40">${new Date(lead.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                     </div>
-                    <p class="text-orange-400 text-xl font-black tracking-tighter mb-2 relative z-10">${lead.telefono || 'SIN TELÉFONO'}</p>
-                    <div class="bg-black/30 p-2 rounded border border-white/5 mb-3 relative z-10">
-                        <p class="text-[9px] text-slate-500 uppercase font-bold mb-1">Carrito:</p>
-                        <p class="text-[10px] text-slate-300 truncate">${lead.producto_en_carrito || '...'}</p>
-                    </div>
-                    ${hasPhone ? `
+                    <p class="text-orange-400 text-2xl font-black tracking-tighter mb-3">${lead.telefono}</p>
+                    <div class="text-[10px] text-slate-400 bg-black/40 p-2 rounded border border-white/5 mb-4 italic truncate">🛒 ${lead.producto_en_carrito}</div>
                     <a href="https://wa.me/${lead.telefono.replace(/\D/g, '')}" target="_blank" 
-                       class="w-full text-center block text-[10px] bg-orange-600 text-white font-black py-2 rounded-lg hover:bg-orange-500 transition-all uppercase tracking-widest shadow-lg shadow-orange-900/40">
-                       RESCATAR VENTA
-                    </a>` : `<p class="text-[10px] text-red-500 text-center font-bold">⚠️ DATO INCOMPLETO</p>`}
-                </div>`;
-            }).join('');
+                       class="w-full text-center block text-[11px] bg-orange-600 text-white font-black py-3 rounded-xl hover:bg-orange-500 transition-all uppercase tracking-widest shadow-lg shadow-orange-900/40">
+                       RESCATAR AHORA
+                    </a>
+                </div>`).join('');
         }
 
-        function updateChart(logs) {
-            const ctx = document.getElementById('vistasChart').getContext('2d');
-            const counts = {};
-            logs.forEach(l => { if(l.accion === 'VIO_DETALLE') counts[l.detalle] = (counts[l.detalle] || 0) + 1; });
+        function updateCharts(logs) {
+            // 1. CHART VISTAS
+            const vCtx = document.getElementById('vistasChart').getContext('2d');
+            const vCounts = {};
+            logs.filter(l => l.accion === 'VIO_DETALLE').forEach(l => { vCounts[l.detalle] = (vCounts[l.detalle] || 0) + 1; });
             
-            const labels = Object.keys(counts);
-            const values = Object.values(counts);
+            if (vistasChart) vistasChart.destroy();
+            vistasChart = new Chart(vCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(vCounts),
+                    datasets: [{ data: Object.values(vCounts), backgroundColor: 'rgba(34, 211, 238, 0.4)', borderColor: '#22d3ee', borderWidth: 2 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b' }, grid: { display: false } }, y: { ticks: { color: '#ffffff', font: {size: 10} } } } }
+            });
 
-            if (vistasChart) {
-                vistasChart.data.labels = labels;
-                vistasChart.data.datasets[0].data = values;
-                vistasChart.update();
-            } else {
-                vistasChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: values,
-                            backgroundColor: 'rgba(34, 211, 238, 0.4)',
-                            borderColor: '#22d3ee',
-                            borderWidth: 2,
-                            borderRadius: 5
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                            y: { grid: { display: false }, ticks: { color: '#ffffff', font: { size: 10, weight: 'bold' } } }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            }
+            // 2. CHART ENGAGEMENT
+            const eCtx = document.getElementById('engagementChart').getContext('2d');
+            const eMap = {};
+            logs.filter(l => l.accion === 'LECTURA_PROFUNDA').forEach(l => {
+                if(!eMap[l.detalle]) eMap[l.detalle] = { total: 0, count: 0 };
+                eMap[l.detalle].total += l.duracion; eMap[l.detalle].count++;
+            });
+            const eLabels = Object.keys(eMap);
+            const eAverages = Object.values(eMap).map(v => (v.total / v.count).toFixed(0));
+
+            if (engChart) engChart.destroy();
+            engChart = new Chart(eCtx, {
+                type: 'bar',
+                data: {
+                    labels: eLabels,
+                    datasets: [{ data: eAverages, backgroundColor: 'rgba(168, 85, 247, 0.4)', borderColor: '#a855f7', borderWidth: 2 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b' }, grid: { display: false } }, y: { ticks: { color: '#ffffff', font: {size: 10} } } } }
+            });
         }
 
-        initRadar();
+        function renderSocial(logs) {
+            const socialMap = {};
+            logs.forEach(l => {
+                const key = `${l.gestor_atribuido} | ${l.fuente_social}`;
+                socialMap[key] = (socialMap[key] || 0) + 1;
+            });
+            const sorted = Object.entries(socialMap).sort((a,b) => b[1] - a[1]).slice(0, 6);
+            document.getElementById('social-radar').innerHTML = sorted.map(([key, count]) => `
+                <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                    <span class="text-[10px] font-bold text-slate-300 uppercase truncate pr-2">${key}</span>
+                    <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        // Seguridad Marcel
+        const session = JSON.parse(localStorage.getItem('pth_session'));
+        if(!session || session.name !== 'Marcel Montano') {
+            window.location.href = 'index.html';
+        } else {
+            loadData();
+            setInterval(loadData, 5000);
+        }
     </script>
 </body>
 </html>
