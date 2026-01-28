@@ -299,7 +299,7 @@
                         <div class="text-white/80 flex items-center justify-center pl-4">
                             <span class="material-symbols-outlined text-xl">search</span>
                         </div>
-                        <input id="search-bar" oninput="filterProducts(); trackSpy('BUSQUEDA', this.value)" type="text" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
+                        <input id="search-bar" oninput="filterProducts()" type="text" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
                     </div>
                 </label>
             </div>
@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801q"; 
+const versionActual = "2801r"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3583,8 +3583,27 @@ function renderFloatingWA(nombre, telefono) {
         if(label) label.innerText = cat;
     }
     function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); }
-    function filterProducts() { renderProducts(); }
-    function copyOffer() {
+let searchSpyTimer; // Variable para el temporizador
+
+function filterProducts() {
+    renderProducts(); // Esto mantiene el filtrado visual instantáneo (rápido)
+
+    // --- LÓGICA DE RASTREO INTELIGENTE (DEBOUNCE) ---
+    const searchTerm = document.getElementById('search-bar').value.trim();
+
+    // Cancelamos el envío anterior si el usuario sigue escribiendo
+    clearTimeout(searchSpyTimer);
+
+    // Solo rastreamos si escribió 3 letras o más
+    if (searchTerm.length >= 3) {
+        // Esperamos 1 segundo después de la última letra para enviar al Radar
+        searchSpyTimer = setTimeout(() => {
+            trackSpy('BUSQUEDA', searchTerm);
+        }, 1000); 
+    }
+}
+
+function copyOffer() {
         const text = `🔥 *OFERTA DISPONIBLE*\n📦 ${selectedProduct.nombre}\n💰 Precio: $${selectedProduct.precio} USD\n🛡️ Garantía: ${selectedProduct.garantia}\n🚛 Envío: ${selectedProduct.mensajeria}`;
         navigator.clipboard.writeText(text).then(() => alert("¡Copiado!"));
     }
