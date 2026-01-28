@@ -1561,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701j"; 
+    const versionActual = "2801j"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -3930,7 +3930,7 @@ function renderAdminCortes() {
     // -----------------------
 
     // Filtramos solo los pedidos entregados que deben comisión
-    const deuda = pedidosRawAdmin.filter(p => p.estado === 'Entregado' && p.pago_gestor === 'Pendiente');
+    const deuda = pedidosRawAdmin.filter(p => p.estado === 'Entregado' && p.pago_gestor === 'Pendiente' && p.gestor !== 'Venta Directa');
 
     // Agrupar por gestor
     const porGestor = deuda.reduce((acc, p) => {
@@ -3942,7 +3942,12 @@ function renderAdminCortes() {
         return acc;
     }, {});
 
-    const entries = Object.entries(porGestor).filter(([name]) => name.toLowerCase().includes(searchTerm));
+    // Filtramos para que NO aparezca "Venta Directa" y respetamos el buscador
+    const entries = Object.entries(porGestor).filter(([name]) => {
+        const noEsVentaDirecta = name !== "Venta Directa";
+        const coincideBuscador = name.toLowerCase().includes(searchTerm);
+        return noEsVentaDirecta && coincideBuscador;
+    });
 
     if (entries.length === 0) {
         container.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-400 font-bold uppercase text-xs">Todo al día. No hay comisiones pendientes de pago.</td></tr>`;
