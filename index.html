@@ -1561,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701e"; 
+    const versionActual = "2701f"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -7289,8 +7289,24 @@ async function generarComprobanteVenta(datosPedido, accion) {
 
     const nombreGestor = window.gestorName || "Asesor de Ventas";
     const telfGestor = getAgentPhone();
-    const slug = window.location.search.includes('s=') ? new URLSearchParams(window.location.search).get('s') : 'oficial';
-    const linkPersonal = `${window.location.origin}${window.location.pathname}?s=${slug}`;
+    // --- LÓGICA DE LINK PERSONALIZADO PARA EL PDF ---
+    const session = JSON.parse(localStorage.getItem('pth_session'));
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    
+    // Prioridad: 1. Sesión activa (tú) / 2. Referido guardado (cliente)
+    const activeData = session || referrer;
+
+    let linkPersonal = window.location.origin + window.location.pathname;
+
+    if (activeData && activeData.nombre) {
+        // En lugar de usar un slug que puede fallar, usamos el link largo 
+        // que el sistema ya sabe reconocer y atribuir al gestor.
+        const telf = activeData.telefono || activeData.data?.telefono || "";
+        linkPersonal += `?gestor=${encodeURIComponent(activeData.name || activeData.nombre)}&tel=${telf}`;
+    } else {
+        linkPersonal += `?s=oficial`;
+    }
+    // ------------------------------------------------
 
     // --- 1. CABECERA (HEADER PREMIUM) ---
     doc.setFillColor(...cPrimary);
