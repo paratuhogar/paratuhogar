@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801t"; 
+const versionActual = "2801u"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8096,43 +8096,7 @@ async function verificarDuenioAlEscribir(telefono) {
 let tiempoInicioLectura = 0;
 let productoActualLectura = "";
 
-async function trackSpy(accion, detalle, duracion = 0) {
-    try {
-        const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-        
-        // 1. RASTREO DE REINCIDENCIA (Fidelidad)
-        let visitas = parseInt(localStorage.getItem('pth_v_count') || "0");
-        if (accion === 'INICIO_SESION') {
-            visitas++;
-            localStorage.setItem('pth_v_count', visitas);
-        }
 
-        // 2. PROCEDENCIA SOCIAL (Detección de fuente)
-        let fuente = "Directo / Link";
-        const refUrl = document.referrer.toLowerCase();
-        if (refUrl.includes('facebook.com') || refUrl.includes('fb.me')) fuente = "Facebook";
-        else if (refUrl.includes('t.co')) fuente = "Twitter/X";
-        else if (window.location.search.includes('wa')) fuente = "WhatsApp";
-
-        // 3. GEOLOCALIZACIÓN (Obtener Ciudad e IP)
-        // Usamos ipapi.co (Gratis y rápida)
-        const geoReq = await fetch('https://ipapi.co/json/').then(r => r.json());
-        const ubicacion = `${geoReq.city || 'Desconocida'}, ${geoReq.region || ''}`;
-
-        // 4. GUARDAR EN SUPABASE
-        await supabaseClient.from('log_espia').insert([{
-            ip: geoReq.ip,
-            accion: accion,
-            detalle: detalle,
-            gestor_atribuido: ref ? ref.nombre : 'Directo',
-            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC',
-            ciudad: ubicacion,
-            fuente_social: fuente,
-            reincidencia: visitas || 1,
-            duracion: duracion
-        }]);
-    } catch (e) { console.log("Radar: Error silencioso capturado."); }
-}
 
 let searchSpyTimer;
 function filterProducts() {
@@ -8149,28 +8113,56 @@ function filterProducts() {
     }
 }
 
+// 1. trackSpy mejorado para esperar al gestor
+async function trackSpy(accion, detalle, duracion = 0) {
+    try {
+        // Pequeña espera para asegurar que initSmartReferral terminó
+        if (accion === 'INICIO_SESION') await new Promise(r => setTimeout(r, 500));
+
+        // Buscamos el gestor en TODAS las memorias posibles
+        const ref = JSON.parse(localStorage.getItem('pth_referrer_smart')) || 
+                    JSON.parse(localStorage.getItem('pth_referrer'));
+        
+        const { ip } = await fetch('https://api.ipify.org?format=json').then(r => r.json());
+        
+        // Si no hay gestor en memoria, intentamos el rastro de IP antes de rendirnos
+        let gestorFinal = ref ? ref.nombre : (await buscarDuenoPorIP() || 'Directo');
+
+        await supabaseClient.from('log_espia').insert([{
+            ip: ip,
+            accion: accion,
+            detalle: detalle,
+            gestor_atribuido: gestorFinal,
+            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC'
+        }]);
+    } catch (e) { console.log("Radar en espera..."); }
+}
+
+// 2. captureGhostLead blindado contra duplicados
 let ghostTimer;
 function captureGhostLead() {
     clearTimeout(ghostTimer);
     ghostTimer = setTimeout(async () => {
         const nombre = document.getElementById('check-nombre').value.trim();
-        const tel = document.getElementById('check-tel').value.trim();
+        const telRaw = document.getElementById('check-tel').value.trim();
         
-        // REGLA DE ORO: Si el teléfono tiene menos de 7 dígitos, NO enviamos nada
-        if (tel.length < 7) return;
+        // Limpiamos el teléfono: solo números y sin el 53 al inicio para comparar siempre igual
+        let telLimpio = telRaw.replace(/\D/g, '');
+        if (telLimpio.startsWith('53')) telLimpio = telLimpio.substring(2);
+        
+        if (telLimpio.length < 8) return; // No guardar basura
 
         const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
         const prodNames = cart.map(i => i.nombre).join(', ');
 
-        // Gracias al cambio en el PASO 1, esto ahora sobreescribirá la fila anterior
         await supabaseClient.from('leads_fantasma').upsert([{
-            telefono: tel,
+            telefono: telLimpio, // Esta es la clave única ahora
             nombre: nombre,
             producto_en_carrito: prodNames,
             gestor_atribuido: ref ? ref.nombre : 'Directo'
         }], { onConflict: 'telefono' });
 
-    }, 2000); // Espera 2 segundos de calma para guardar
+    }, 2000); 
 }
 
 </script>

@@ -185,24 +185,43 @@
             document.getElementById('stat-log-count').innerText = logs.length;
         }
 
-        async function loadGhosts() {
-    // 1. Traemos los últimos 20 por si acaso hay muchos de otros gestores
-    const { data, error } = await radarClient
+       async function loadGhosts() {
+    // 1. Traemos los últimos 20 leads
+    const { data: leads, error } = await radarClient
         .from('leads_fantasma')
         .select('*')
         .order('timestamp', { ascending: false })
         .limit(20);
 
-    if (error || !data) return;
+    if (error || !leads) return;
 
-    // 2. FILTRO MODO DIOS: Solo Marcel o Venta Directa
-    // Esto limpia tu lista de rescate de los clientes de otros gestores
-    const leadsParaRescatar = data.filter(lead => {
+    // --- NUEVO: OBTENER COMPRADORES DE HOY ---
+    // Buscamos en la tabla de pedidos los teléfonos que ya cerraron venta hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    const { data: pedidosHoy } = await radarClient
+        .from('pedidos')
+        .select('telefono')
+        .gte('fecha', hoy);
+
+    // Creamos un Set con los últimos 8 dígitos de los que ya compraron para comparar rápido
+    const telefonosCompradores = new Set(
+        (pedidosHoy || []).map(p => p.telefono.replace(/\D/g, '').slice(-8))
+    );
+    // -----------------------------------------
+
+    // 2. FILTRO MODO DIOS: Solo Marcel/Directo Y que NO hayan comprado ya
+    const leadsParaRescatar = leads.filter(lead => {
         const gestor = lead.gestor_atribuido;
-        return gestor === 'Marcel Montano' || gestor === 'Directo' || !gestor;
+        const esMio = gestor === 'Marcel Montano' || gestor === 'Directo' || !gestor;
+        
+        // NUEVO: Verificamos si este lead ya está en la lista de compradores
+        const telLimpioComp = lead.telefono ? lead.telefono.replace(/\D/g, '').slice(-8) : '';
+        const yaCompro = telefonosCompradores.has(telLimpioComp);
+
+        return esMio && !yaCompro; // Solo pasa si es mío y NO ha comprado
     });
 
-    // 3. Lógica de Alerta Sonora (Solo suena si el lead es para TI)
+    // 3. Lógica de Alerta Sonora (Se mantiene igual)
     if (leadsParaRescatar.length > 0) {
         const currentTopId = leadsParaRescatar[0].id;
         if (lastGhostId && currentTopId > lastGhostId) {
@@ -218,7 +237,7 @@
         return;
     }
 
-    // 4. Dibujar solo tus leads filtrados
+    // 4. Dibujar solo tus leads filtrados (Se mantiene tu diseño exacto)
     container.innerHTML = leadsParaRescatar.map(lead => {
         const telLimpio = lead.telefono ? lead.telefono.replace(/\D/g, '') : '';
         const esValido = telLimpio.length >= 7;
