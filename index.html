@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801o"; 
+const versionActual = "2801p"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -1951,6 +1951,28 @@ function openLoginModal() {
             console.log("✅ Acceso Financiero Habilitado");
         }
     }
+    // --- PUERTA SECRETA AL RADAR (SOLO PARA MARCEL) ---
+if (name === "Marcel Montano") {
+    // Buscamos el contenedor de botones en el header (donde está el carrito y el login)
+    const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
+    
+    if (headerActions && !document.getElementById('btn-radar-secret')) {
+        const btnRadar = document.createElement('button');
+        btnRadar.id = 'btn-radar-secret';
+        btnRadar.title = "SISTEMA RADAR";
+        // Al hacer clic, te lleva a tu archivo secreto
+        btnRadar.onclick = () => window.location.href = 'marcel-radar.html';
+        
+        // Estilo: Púrpura, con brillo y animación de pulso
+        btnRadar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600/20 text-purple-400 border border-purple-500/40 hover:bg-purple-600 hover:text-white transition-all animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.4)]";
+        
+        btnRadar.innerHTML = '<span class="material-symbols-outlined">radar</span>';
+        
+        // Lo ponemos al principio de la lista de botones del header
+        headerActions.prepend(btnRadar);
+        console.log("📡 Radar Online: Puerta secreta abierta.");
+    }
+}
 }
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
