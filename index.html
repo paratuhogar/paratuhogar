@@ -1561,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701f"; 
+    const versionActual = "2701h"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -3375,7 +3375,7 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
 
         mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n👤 *DATOS DEL CLIENTE*\nCliente: ${nombreC}\n${ciC !== "No especificado" ? "CI: "+ciC+"\n" : ""}Móvil: ${telC}\nMunicipio: ${municipioC}\nDirección: ${dirC}\n\n📦 *DETALLE DEL PEDIDO*\n${detalleCuerpo}💰 *TOTAL A COBRAR: ${totalUSDVale} USD*\n${vueltoC !== "no" ? "⚠️ *OJO VUELTO:* paga con $"+vueltoC+"\n" : "✅ Vuelto: No requiere\n"}`;
 
-        if (isLogged || activeGestor !== "Venta Directa") {
+        if (isLogged) {
             mensajeRaw += `\n👮‍♂️ *GESTIÓN INTERNA*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTeléfono: ${agentPhone}\n`;
         }
         mensajeRaw += `\n------------------------------------\n\n`;
@@ -7289,24 +7289,31 @@ async function generarComprobanteVenta(datosPedido, accion) {
 
     const nombreGestor = window.gestorName || "Asesor de Ventas";
     const telfGestor = getAgentPhone();
-    // --- LÓGICA DE LINK PERSONALIZADO PARA EL PDF ---
+    // --- LÓGICA DE LINK PERSONALIZADO PARA EL PDF (CORREGIDA) ---
     const session = JSON.parse(localStorage.getItem('pth_session'));
     const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
     
-    // Prioridad: 1. Sesión activa (tú) / 2. Referido guardado (cliente)
-    const activeData = session || referrer;
-
     let linkPersonal = window.location.origin + window.location.pathname;
+    let nombreParaLink = "";
+    let telParaLink = "";
 
-    if (activeData && activeData.nombre) {
-        // En lugar de usar un slug que puede fallar, usamos el link largo 
-        // que el sistema ya sabe reconocer y atribuir al gestor.
-        const telf = activeData.telefono || activeData.data?.telefono || "";
-        linkPersonal += `?gestor=${encodeURIComponent(activeData.name || activeData.nombre)}&tel=${telf}`;
+    // 1. Prioridad: Si hay sesión activa (tú logueado)
+    if (session && session.name) {
+        nombreParaLink = session.name;
+        telParaLink = session.data?.telefono || "";
+    } 
+    // 2. Si no, si hay un referido guardado (el cliente tiene dueño)
+    else if (referrer && (referrer.nombre || referrer.name)) {
+        nombreParaLink = referrer.nombre || referrer.name;
+        telParaLink = referrer.telefono || "";
+    }
+
+    if (nombreParaLink) {
+        linkPersonal += `?gestor=${encodeURIComponent(nombreParaLink)}&tel=${telParaLink}`;
     } else {
         linkPersonal += `?s=oficial`;
     }
-    // ------------------------------------------------
+    // -----------------------------------------------------------
 
     // --- 1. CABECERA (HEADER PREMIUM) ---
     doc.setFillColor(...cPrimary);
