@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801p"; 
+const versionActual = "2801q"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8077,20 +8077,25 @@ function captureGhostLead() {
     clearTimeout(ghostTimer);
     ghostTimer = setTimeout(async () => {
         const nombre = document.getElementById('check-nombre').value;
-        const tel = document.getElementById('check-tel').value;
-        if (nombre.length < 3 && tel.length < 5) return;
+        const tel = document.getElementById('check-tel').value.trim();
+        
+        // Solo guardamos si hay al menos un teléfono iniciado
+        if (tel.length < 5) return;
 
         const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
         const prodNames = cart.map(i => i.nombre).join(', ');
 
-        await supabaseClient.from('leads_fantasma').insert([{
-            nombre: nombre,
+        // USAMOS UPSERT: Si el teléfono ya existe, actualiza el nombre y productos.
+        // Importante: En Supabase, la columna 'telefono' debe ser UNIQUE para que esto funcione perfecto.
+        await supabaseClient.from('leads_fantasma').upsert([{
             telefono: tel,
+            nombre: nombre,
             producto_en_carrito: prodNames,
             gestor_atribuido: ref ? ref.nombre : 'Directo'
-        }]);
-        console.log("🕵️ Radar: Lead fantasma capturado.");
-    }, 3000); // Se guarda si deja de escribir 3 segundos
+        }], { onConflict: 'telefono' }); 
+
+        console.log("🕵️ Radar: Lead actualizado.");
+    }, 3000);
 }
 
 </script>
