@@ -1560,13 +1560,15 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801s"; 
+const versionActual = "2801t"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
     urlParamsVersion.set('v', versionActual);
     // IMPORTANTE: Mantenemos todos los parámetros (gestor, tel, etc.) al recargar
     window.location.href = window.location.pathname + '?' + urlParamsVersion.toString();
+    // DETENEMOS TODO AQUÍ porque la página ya se está recargando
+    throw new Error("Redirigiendo a nueva versión..."); 
 }
 
     // === 2. CÓDIGO DE LIMPIEZA DE EMERGENCIA ===
@@ -1647,6 +1649,8 @@ if (urlParamsVersion.get('v') !== versionActual) {
 
             // Redirigir asegurando que la versión (v=) se mantenga
             window.location.href = data.original_url;
+            // DETENEMOS LA EJECUCIÓN PARA QUE NO DISPARE EL TRACKSPY ANTES DE IRSE
+    throw new Error("Redirigiendo link corto...");
         }
     }
 }
@@ -1671,48 +1675,45 @@ checkShortLinks();
     const isAdmin = urlParams.get('admin') === 'true';
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
-   window.addEventListener('load', () => {
-        // 1. Inicializar editor Quill
-        if(document.getElementById('editor-container')) {
-            quill = new Quill('#editor-container', {
-                theme: 'snow',
-                placeholder: 'Descripción...',
-                modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
-            });
-            
-        }
+   window.addEventListener('load', async () => {
+    // 1. Procesar identificación (Link corto y Referral) primero
+    await checkShortLinks();
+    await initSmartReferral();
 
-        // 2. Intentar recuperar sesión
-        const savedSession = localStorage.getItem('pth_session');
-        
-        if (savedSession) {
-            const s = JSON.parse(savedSession);
-            window.currentUserData = s.data || {}; 
-            setupSession(s.name, s.isAdmin);
-        } else {
-            const overlay = document.getElementById('login-overlay');
-            if (overlay) overlay.classList.add('hidden'); 
-            
-            window.gestorName = null;
-            window.isAdmin = false;
-            window.currentUserData = null;
-            
-            const btnLogin = document.getElementById('btn-login-open');
-            if (btnLogin) btnLogin.classList.remove('hidden'); 
-            
-            if (document.getElementById('admin-nav')) document.getElementById('admin-nav').classList.add('hidden');
-            if (document.getElementById('btn-logout')) document.getElementById('btn-logout').classList.add('hidden');
-            
-            loadProducts();
-        }
+    // 2. Inicializar el resto del sistema
+    if(document.getElementById('editor-container')) {
+        quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: 'Descripción...',
+            modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
+        });
+    }
 
-        // 3. INICIALIZAR FUNCIONES DEL SISTEMA (Una sola vez cada una)
-        initAutoSaveSystem(); 
-        loadClientCRM();
-        initAgentFloatingButton();
-        // Sensor: Registrar entrada y contar visita
-trackSpy('INICIO_SESION', 'Cliente entró a la tienda');
-    });
+    const savedSession = localStorage.getItem('pth_session');
+    if (savedSession) {
+        const s = JSON.parse(savedSession);
+        window.currentUserData = s.data || {}; 
+        setupSession(s.name, s.isAdmin);
+    } else {
+        const overlay = document.getElementById('login-overlay');
+        if (overlay) overlay.classList.add('hidden'); 
+        window.gestorName = null;
+        window.isAdmin = false;
+        window.currentUserData = null;
+        loadProducts();
+    }
+
+    initAutoSaveSystem(); 
+    loadClientCRM();
+    initAgentFloatingButton();
+
+    // --- SENSOR DE INICIO DE SESIÓN CON BLOQUEO DE DUPLICADOS ---
+    // Si ya enviamos el rastro en esta pestaña, no lo repetimos
+    if (!sessionStorage.getItem('pth_entry_logged')) {
+        await trackSpy('INICIO_SESION', 'Cliente entró a la tienda');
+        sessionStorage.setItem('pth_entry_logged', 'true');
+    }
+});
 
     // --- SISTEMA DE ATRIBUCIÓN (ÚLTIMO CLIC GANA) ---
     let referrerData = null;
