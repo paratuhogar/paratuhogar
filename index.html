@@ -1561,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701h"; 
+    const versionActual = "2701i"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -6790,56 +6790,30 @@ function alertLockedInfo(title, desc) {
 async function initSmartReferral() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlGestor = urlParams.get('gestor');
-    const urlTel = urlParams.get('tel');
+    let urlTel = urlParams.get('tel');
 
-    // CASO 1: EL CLIENTE ENTRA POR UN ENLACE DE GESTOR
-    // Aquí es donde aplicamos la lógica: El nuevo enlace SIEMPRE gana.
     if (urlGestor) {
-        try {
-            // 1. Calculamos el nivel del NUEVO gestor para saber cuánto tiempo merece el amarre
-            // Nota: Hacemos la consulta rápida para ver sus ventas y determinar su nivel
-            const today = new Date();
-            today.setDate(today.getDate() - 30);
-            
-            const { count, error } = await supabaseClient
-                .from('pedidos')
-                .select('id', { count: 'exact', head: true })
-                .eq('gestor', urlGestor)
-                .eq('estado', 'Entregado')
-                .gte('created_at', today.toISOString());
-            
-            const sales = count || 0;
-            const data = getLevelData(sales); // Obtenemos info del nivel (días de duración)
-            const hours = data.duration;
-
-            const now = new Date().getTime();
-            const expirationTime = now + (hours * 60 * 60 * 1000);
-
-            // 2. CREAMOS EL NUEVO REGISTRO
-            const newReferrerData = {
-                nombre: urlGestor,
-                telefono: urlTel || "",
-                timestamp: now,
-                expiresAt: expirationTime
-            };
-
-            // 3. SOBRESCRIBIMOS LA MEMORIA (Aquí ocurre el cambio de dueño)
-            // No importa si había otro antes, este es el último clic y es el que manda.
-            localStorage.setItem('pth_referrer_smart', JSON.stringify(newReferrerData));
-            
-            // También actualizamos la versión simple por compatibilidad
-            localStorage.setItem('pth_referrer', JSON.stringify(newReferrerData));
-
-            console.log(`✅ Nuevo Gestor Asignado: ${urlGestor} (Vence en ${hours} horas)`);
-
-        } catch (e) {
-            console.error("Error al asignar nuevo gestor:", e);
+        // Si el link no trae teléfono, lo buscamos en la base de datos para completar el perfil
+        if (!urlTel) {
+            const { data } = await supabaseClient
+                .from('gestores')
+                .select('telefono')
+                .eq('nombre', urlGestor)
+                .single();
+            if (data) urlTel = data.telefono;
         }
-    } 
-    // CASO 2: EL CLIENTE ENTRA DIRECTO (SIN ENLACE)
-    else {
-        // Aquí verificamos si ya tiene dueño y si el tiempo no ha expirado
-        checkExpiration();
+
+        const now = new Date().getTime();
+        const referrerData = {
+            nombre: urlGestor,
+            telefono: urlTel || "",
+            timestamp: now,
+            expiresAt: now + (30 * 24 * 60 * 60 * 1000) // 30 días
+        };
+
+        localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
+        localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
+        console.log(`✅ Gestor Atribuido: ${urlGestor} | Tel: ${urlTel}`);
     }
 }
 
@@ -7281,39 +7255,37 @@ async function generarComprobanteVenta(datosPedido, accion) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
+    // 1. IDENTIFICACIÓN ÚNICA DEL GESTOR (Para texto y para link)
+    const session = JSON.parse(localStorage.getItem('pth_session'));
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    
+    let nombreFinal = "ASESOR DE VENTAS";
+    let telfFinal = "5356071095"; // Teléfono de respaldo (Dueño)
+
+    // Prioridad 1: Sesión activa (Gestor logueado)
+    if (session && session.name) {
+        nombreFinal = session.name;
+        telfFinal = session.data?.telefono || getAgentPhone();
+    } 
+    // Prioridad 2: Referido guardado (Cliente con dueño asignado)
+    else if (referrer && (referrer.nombre || referrer.name)) {
+        nombreFinal = referrer.nombre || referrer.name;
+        telfFinal = referrer.telefono || telfFinal;
+    }
+
+    // Construcción del Link Personalizado
+    let linkPersonal = window.location.origin + window.location.pathname;
+    if (nombreFinal !== "ASESOR DE VENTAS") {
+        linkPersonal += `?gestor=${encodeURIComponent(nombreFinal)}&tel=${telfFinal}`;
+    } else {
+        linkPersonal += `?s=oficial`;
+    }
+
     // PALETA DE COLORES PREMIUM
     const cPrimary = [26, 71, 137];   // Azul Profundo
     const cSecondary = [44, 111, 181]; // Azul Accento
     const cSlate = [30, 41, 59];      // Gris Oscuro para textos
     const cLight = [100, 116, 139];   // Gris suave para etiquetas
-
-    const nombreGestor = window.gestorName || "Asesor de Ventas";
-    const telfGestor = getAgentPhone();
-    // --- LÓGICA DE LINK PERSONALIZADO PARA EL PDF (CORREGIDA) ---
-    const session = JSON.parse(localStorage.getItem('pth_session'));
-    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-    
-    let linkPersonal = window.location.origin + window.location.pathname;
-    let nombreParaLink = "";
-    let telParaLink = "";
-
-    // 1. Prioridad: Si hay sesión activa (tú logueado)
-    if (session && session.name) {
-        nombreParaLink = session.name;
-        telParaLink = session.data?.telefono || "";
-    } 
-    // 2. Si no, si hay un referido guardado (el cliente tiene dueño)
-    else if (referrer && (referrer.nombre || referrer.name)) {
-        nombreParaLink = referrer.nombre || referrer.name;
-        telParaLink = referrer.telefono || "";
-    }
-
-    if (nombreParaLink) {
-        linkPersonal += `?gestor=${encodeURIComponent(nombreParaLink)}&tel=${telParaLink}`;
-    } else {
-        linkPersonal += `?s=oficial`;
-    }
-    // -----------------------------------------------------------
 
     // --- 1. CABECERA (HEADER PREMIUM) ---
     doc.setFillColor(...cPrimary);
@@ -7330,14 +7302,12 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.text(`EMITIDA EL: ${fechaActual.toUpperCase()}`, 195, 33, { align: "right" });
 
     // --- 2. BLOQUES DE DATOS (CLIENTE VS GESTOR) ---
-    // Etiquetas
     doc.setTextColor(...cLight);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.text("DATOS DEL CLIENTE (FACTURADO A)", 15, 65);
     doc.text("DATOS DEL COMERCIAL (ATENDIDO POR)", 120, 65);
 
-    // Separador visual fino
     doc.setDrawColor(226, 232, 240);
     doc.line(15, 67, 195, 67);
 
@@ -7355,23 +7325,25 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.setTextColor(...cSlate);
     doc.text(datosPedido.direccion, 15, 92, { maxWidth: 85 });
 
-    // Información del Gestor
+    // Información del Gestor (USANDO LAS VARIABLES UNIFICADAS)
     doc.setFont("helvetica", "bold");
-    doc.text(nombreGestor.toUpperCase(), 120, 75);
+    doc.text(nombreFinal.toUpperCase(), 120, 75);
     
     doc.setFont("helvetica", "normal");
-    doc.text(`WhatsApp: +${telfGestor}`, 120, 81);
-    doc.text(`Correo: ${window.currentUserData?.email || 'ventas@paratuhogar.cu'}`, 120, 86);
+    doc.text(`WhatsApp: +${telfFinal}`, 120, 81);
+    
+    const emailFinal = session?.data?.email || "ventas@paratuhogar.cu";
+    doc.text(`Correo: ${emailFinal}`, 120, 86);
     
     // Botón / Link Interactivo
     doc.setTextColor(...cSecondary);
     doc.setFont("helvetica", "bold");
     doc.text("VISITAR MI TIENDA ONLINE", 120, 95);
     doc.setDrawColor(...cSecondary);
-    doc.line(120, 96, 172, 96); // Subrayado estético
+    doc.line(120, 96, 172, 96); 
     doc.link(120, 92, 60, 6, { url: linkPersonal });
 
-    // --- 3. TABLA DE PRODUCTOS (ESTILO LIMPIO) ---
+    // --- 3. TABLA DE PRODUCTOS ---
     const filasTabla = datosPedido.items.map(i => [
         i.nombre.toUpperCase(), 
         i.qty, 
@@ -7406,11 +7378,8 @@ async function generarComprobanteVenta(datosPedido, accion) {
 
     // --- 4. RESUMEN FINANCIERO ---
     const finalY = doc.lastAutoTable.finalY + 10;
-    
-    // Caja de Total
     doc.setFillColor(...cPrimary);
     doc.rect(125, finalY, 70, 15, 'F');
-    
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.text("TOTAL A PAGAR:", 130, finalY + 9.5);
@@ -7422,7 +7391,6 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.text("NOTAS E INSTRUCCIONES DE PAGO:", 15, finalY + 10);
-    
     doc.setFont("helvetica", "normal");
     const notas = [
         "• El pago se realiza en efectivo o transferencia al momento de recibir el equipo.",
@@ -7431,7 +7399,6 @@ async function generarComprobanteVenta(datosPedido, accion) {
     ];
     doc.text(notas, 15, finalY + 16);
 
-    // Firma de Calidad
     doc.setFontSize(22);
     doc.setTextColor(...cPrimary);
     doc.setFont("helvetica", "bold");
