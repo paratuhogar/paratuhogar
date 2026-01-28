@@ -299,7 +299,7 @@
                         <div class="text-white/80 flex items-center justify-center pl-4">
                             <span class="material-symbols-outlined text-xl">search</span>
                         </div>
-                        <input id="search-bar" oninput="filterProducts()" type="text" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
+                        <input id="search-bar" oninput="filterProducts(); trackSpy('BUSQUEDA', this.value)" type="text" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
                     </div>
                 </label>
             </div>
@@ -946,7 +946,7 @@
         
         <div>
             <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Nombre del Cliente</label>
-            <input type="text" id="check-nombre" placeholder="Ej: Juan Pérez" 
+            <input type="text" id="check-nombre" oninput="captureGhostLead()" placeholder="Ej: Juan Pérez" 
                 class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
         </div>
         
@@ -958,7 +958,7 @@
             </div>
             <div>
     <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Teléfono</label>
-    <input type="tel" id="check-tel" 
+    <input type="tel" id="check-tel" oninput="captureGhostLead()"
         onblur="verificarDuenioAlEscribir(this.value)" 
         placeholder="5xxx-xxxx" 
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801m"; 
+const versionActual = "2801o"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3036,6 +3036,7 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     // 3. DETALLE DE PRODUCTO
     // 3. DETALLE DE PRODUCTO
  function openDetail(name) {
+    trackSpy('VIO_DETALLE', name);
     // Esto convierte el &quot; de nuevo en " para poder buscarlo en la lista de productos
     const nombreReal = name.replace(/&quot;/g, '"');
     selectedProduct = productosRaw.find(p => p.nombre === nombreReal);
@@ -3393,6 +3394,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // Enviar WhatsApp al dueño real detectado
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
+    trackSpy('COMPRA_CONFIRMADA', nombreC);
     window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
 
     // Generar PDF Unificado
@@ -8028,6 +8030,45 @@ async function verificarDuenioAlEscribir(telefono) {
             renderFloatingWA(dueno, data.telefono);
         }
     }
+}
+// === MOTOR DEL PROYECTO RADAR (MODO ESPIA) ===
+
+// 1. Función Maestra de Rastreo
+async function trackSpy(accion, detalle) {
+    try {
+        const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        const { ip } = await fetch('https://api.ipify.org?format=json').then(r => r.json());
+        
+        await supabaseClient.from('log_espia').insert([{
+            ip: ip,
+            accion: accion,
+            detalle: detalle,
+            gestor_atribuido: ref ? ref.nombre : 'Directo',
+            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC'
+        }]);
+    } catch (e) { /* Invisible */ }
+}
+
+// 2. Captura de Leads Fantasma (Ghost Tracking)
+let ghostTimer;
+function captureGhostLead() {
+    clearTimeout(ghostTimer);
+    ghostTimer = setTimeout(async () => {
+        const nombre = document.getElementById('check-nombre').value;
+        const tel = document.getElementById('check-tel').value;
+        if (nombre.length < 3 && tel.length < 5) return;
+
+        const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        const prodNames = cart.map(i => i.nombre).join(', ');
+
+        await supabaseClient.from('leads_fantasma').insert([{
+            nombre: nombre,
+            telefono: tel,
+            producto_en_carrito: prodNames,
+            gestor_atribuido: ref ? ref.nombre : 'Directo'
+        }]);
+        console.log("🕵️ Radar: Lead fantasma capturado.");
+    }, 3000); // Se guarda si deja de escribir 3 segundos
 }
 
 </script>
