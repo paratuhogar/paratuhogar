@@ -315,7 +315,7 @@ document.getElementById('total-rescatable').innerText = leadsParaRescatar.length
             const eMap = {};
             logs.filter(l => l.accion === 'LECTURA_PROFUNDA').forEach(l => {
                 if(!eMap[l.detalle]) eMap[l.detalle] = { total: 0, count: 0 };
-                eMap[l.detalle].total += l.duracion; eMap[l.detalle].count++;
+                eMap[l.detalle].total += (l.duracion || 0); eMap[l.detalle].count++;
             });
             const eLabels = Object.keys(eMap);
             const eAverages = Object.values(eMap).map(v => (v.total / v.count).toFixed(0));

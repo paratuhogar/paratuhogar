@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801u"; 
+const versionActual = "2801w"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8145,6 +8145,7 @@ async function trackSpy(accion, detalle, duracion = 0) {
             ip: ip,
             accion: accion,
             detalle: detalle,
+            duracion: duracion,
             gestor_atribuido: gestorFinal,
             dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC'
         }]);
