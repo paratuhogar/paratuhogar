@@ -97,6 +97,18 @@
                     </div>
                 </div>
 
+                <div id="bolsa-rescate" class="mt-4 p-6 bg-emerald-900/20 border border-emerald-500/30 rounded-3xl">
+    <div class="flex justify-between items-center">
+        <div>
+            <h3 class="text-emerald-400 font-black uppercase text-xs tracking-widest">Dinero por Rescatar</h3>
+            <p class="text-slate-400 text-[10px]">Suma de productos en Leads Fantasma (Tus enlaces)</p>
+        </div>
+        <div class="text-right">
+            <p id="total-rescatable" class="text-3xl font-black text-emerald-400">$0</p>
+        </div>
+    </div>
+</div>
+
                 <!-- RANKING SOCIAL -->
                 <div class="bg-slate-900/80 p-6 rounded-3xl border border-white/5">
                     <h3 class="text-[10px] font-black uppercase text-blue-400 mb-4">Tráfico por Red Social / Gestor</h3>
@@ -272,6 +284,14 @@
             `}
         </div>`;
     }).join('');
+    // Calcular el dinero total que podrías ganar si rescatas todos tus leads
+const totalUSD = leadsParaRescatar.reduce((acc, lead) => {
+    // Si guardaste el precio en el lead, lo sumamos. 
+    // Si no, podemos hacer un conteo de oportunidades.
+    return acc + 1; // Aquí podrías poner lógica de precio real
+}, 0);
+
+document.getElementById('total-rescatable').innerText = leadsParaRescatar.length + " Ventas";
 }
 
         function updateCharts(logs) {
@@ -311,20 +331,56 @@
             });
         }
 
-        function renderSocial(logs) {
-            const socialMap = {};
-            logs.forEach(l => {
-                const key = `${l.gestor_atribuido} | ${l.fuente_social}`;
-                socialMap[key] = (socialMap[key] || 0) + 1;
-            });
-            const sorted = Object.entries(socialMap).sort((a,b) => b[1] - a[1]).slice(0, 6);
-            document.getElementById('social-radar').innerHTML = sorted.map(([key, count]) => `
-                <div class="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
-                    <span class="text-[10px] font-bold text-slate-300 uppercase truncate pr-2">${key}</span>
-                    <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">${count}</span>
-                </div>
-            `).join('');
-        }
+        async function renderSocial(logs) {
+    // 1. Obtener los Leads Fantasma actuales para calcular el dinero
+    const { data: ghosts } = await radarClient.from('leads_fantasma').select('*');
+    
+    const moneyMap = {};
+
+    // 2. Calcular cuánto dinero tiene cada gestor "en el aire"
+    if (ghosts) {
+        ghosts.forEach(lead => {
+            const gestor = lead.gestor_atribuido || 'Venta Directa';
+            if (!moneyMap[gestor]) moneyMap[gestor] = { usd: 0, leads: 0 };
+            
+            // Intentamos extraer el valor del carrito (esto es una estimación)
+            // Para que sea exacto, podrías guardar el total en la tabla leads_fantasma
+            moneyMap[gestor].leads++;
+            // Simulamos un valor promedio por lead si no tenemos el total guardado, 
+            // o mejor, mostramos el conteo de intención.
+        });
+    }
+
+    // 3. Limpiar los nombres de las fuentes para que sean humanos
+    const socialMap = {};
+    logs.forEach(l => {
+        let fuente = l.fuente_social;
+        if (fuente === "Directo / Link" || !fuente) fuente = "Link Pegado";
+        
+        const key = `${l.gestor_atribuido || 'Venta Directa'} | ${fuente}`;
+        socialMap[key] = (socialMap[key] || 0) + 1;
+    });
+
+    const sorted = Object.entries(socialMap).sort((a,b) => b[1] - a[1]).slice(0, 6);
+
+    // 4. Renderizar con diseño de "Performance"
+    document.getElementById('social-radar').innerHTML = sorted.map(([key, count]) => {
+        const [nombre, red] = key.split(' | ');
+        return `
+        <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
+            <div>
+                <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">${red}</p>
+                <p class="text-sm font-black text-white uppercase">${nombre}</p>
+            </div>
+            <div class="text-right">
+                <span class="text-xs font-bold text-slate-500 block uppercase">Efectividad</span>
+                <span class="bg-blue-600/20 text-blue-400 text-lg font-black px-3 py-0.5 rounded-lg border border-blue-500/30">
+                    ${count} <span class="text-[10px]">CLICS</span>
+                </span>
+            </div>
+        </div>`;
+    }).join('');
+}
 
         // Seguridad Marcel
         const session = JSON.parse(localStorage.getItem('pth_session'));

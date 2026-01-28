@@ -3181,6 +3181,10 @@ productoActualLectura = name;
             cup_extra: selectedProduct.cup_extra || 0
             
         });
+        // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
+    if (typeof captureGhostLead === "function") {
+        captureGhostLead(); 
+    }
     }
     
     document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
@@ -3292,6 +3296,11 @@ function changeQty(index, delta) {
     
     // Volver a dibujar el carrito
     renderCart();
+    // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
+    if (typeof captureGhostLead === "function") {
+        captureGhostLead(); 
+    }
+
 }
 
     function recalcularTotalFinal() {
@@ -3583,7 +3592,11 @@ function renderFloatingWA(nombre, telefono) {
         const label = document.getElementById('marketing-cat-label');
         if(label) label.innerText = cat;
     }
-    function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); }
+    function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
+    if (typeof captureGhostLead === "function") {
+        captureGhostLead(); 
+    }
+}
 
 
 
