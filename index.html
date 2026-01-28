@@ -1560,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801r"; 
+const versionActual = "2801s"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3583,25 +3583,8 @@ function renderFloatingWA(nombre, telefono) {
         if(label) label.innerText = cat;
     }
     function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); }
-let searchSpyTimer; // Variable para el temporizador
 
-function filterProducts() {
-    renderProducts(); // Esto mantiene el filtrado visual instantáneo (rápido)
 
-    // --- LÓGICA DE RASTREO INTELIGENTE (DEBOUNCE) ---
-    const searchTerm = document.getElementById('search-bar').value.trim();
-
-    // Cancelamos el envío anterior si el usuario sigue escribiendo
-    clearTimeout(searchSpyTimer);
-
-    // Solo rastreamos si escribió 3 letras o más
-    if (searchTerm.length >= 3) {
-        // Esperamos 1 segundo después de la última letra para enviar al Radar
-        searchSpyTimer = setTimeout(() => {
-            trackSpy('BUSQUEDA', searchTerm);
-        }, 1000); 
-    }
-}
 
 function copyOffer() {
         const text = `🔥 *OFERTA DISPONIBLE*\n📦 ${selectedProduct.nombre}\n💰 Precio: $${selectedProduct.precio} USD\n🛡️ Garantía: ${selectedProduct.garantia}\n🚛 Envío: ${selectedProduct.mensajeria}`;
@@ -8150,19 +8133,35 @@ async function trackSpy(accion, detalle, duracion = 0) {
     } catch (e) { console.log("Radar: Error silencioso capturado."); }
 }
 
-// 2. Captura de Leads Fantasma (Ghost Tracking)
+let searchSpyTimer;
+function filterProducts() {
+    renderProducts(); // Rapidez visual
+
+    const term = document.getElementById('search-bar').value.trim();
+    clearTimeout(searchSpyTimer);
+
+    // Solo enviamos al radar si hay 3 letras o más Y el usuario paró de escribir 1.2 segundos
+    if (term.length >= 3) {
+        searchSpyTimer = setTimeout(() => {
+            trackSpy('BUSQUEDA', term);
+        }, 1200);
+    }
+}
+
 let ghostTimer;
 function captureGhostLead() {
     clearTimeout(ghostTimer);
     ghostTimer = setTimeout(async () => {
-        const nombre = document.getElementById('check-nombre').value;
+        const nombre = document.getElementById('check-nombre').value.trim();
         const tel = document.getElementById('check-tel').value.trim();
-        if (tel.length < 5) return;
+        
+        // REGLA DE ORO: Si el teléfono tiene menos de 7 dígitos, NO enviamos nada
+        if (tel.length < 7) return;
 
         const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
         const prodNames = cart.map(i => i.nombre).join(', ');
 
-        // Actualizamos o insertamos (upsert) basado en el teléfono
+        // Gracias al cambio en el PASO 1, esto ahora sobreescribirá la fila anterior
         await supabaseClient.from('leads_fantasma').upsert([{
             telefono: tel,
             nombre: nombre,
@@ -8170,7 +8169,7 @@ function captureGhostLead() {
             gestor_atribuido: ref ? ref.nombre : 'Directo'
         }], { onConflict: 'telefono' });
 
-    }, 3000); 
+    }, 2000); // Espera 2 segundos de calma para guardar
 }
 
 </script>

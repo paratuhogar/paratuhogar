@@ -186,26 +186,74 @@
         }
 
         async function loadGhosts() {
-            const { data } = await radarClient.from('leads_fantasma').select('*').order('timestamp', { ascending: false }).limit(10);
-            if (!data) return;
+    // 1. Traemos los últimos 20 por si acaso hay muchos de otros gestores
+    const { data, error } = await radarClient
+        .from('leads_fantasma')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(20);
 
-            if (data.length > 0 && lastGhostId && data[0].id > lastGhostId) playAlertSound();
-            lastGhostId = data ? (data[0]?.id || null) : null;
+    if (error || !data) return;
 
-            document.getElementById('ghost-feed').innerHTML = data.map(lead => `
-                <div class="bg-gradient-to-br from-orange-500/10 to-slate-900 border-l-4 border-orange-500 p-5 rounded-r-2xl shadow-xl hover:scale-[1.02] transition-transform">
-                    <div class="flex justify-between items-start mb-2">
-                        <p class="text-white text-xs font-black uppercase">${lead.nombre || 'Interesado'}</p>
-                        <span class="text-[9px] opacity-40">${new Date(lead.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <p class="text-orange-400 text-2xl font-black tracking-tighter mb-3">${lead.telefono}</p>
-                    <div class="text-[10px] text-slate-400 bg-black/40 p-2 rounded border border-white/5 mb-4 italic truncate">🛒 ${lead.producto_en_carrito}</div>
-                    <a href="https://wa.me/${lead.telefono.replace(/\D/g, '')}" target="_blank" 
-                       class="w-full text-center block text-[11px] bg-orange-600 text-white font-black py-3 rounded-xl hover:bg-orange-500 transition-all uppercase tracking-widest shadow-lg shadow-orange-900/40">
-                       RESCATAR AHORA
-                    </a>
-                </div>`).join('');
+    // 2. FILTRO MODO DIOS: Solo Marcel o Venta Directa
+    // Esto limpia tu lista de rescate de los clientes de otros gestores
+    const leadsParaRescatar = data.filter(lead => {
+        const gestor = lead.gestor_atribuido;
+        return gestor === 'Marcel Montano' || gestor === 'Directo' || !gestor;
+    });
+
+    // 3. Lógica de Alerta Sonora (Solo suena si el lead es para TI)
+    if (leadsParaRescatar.length > 0) {
+        const currentTopId = leadsParaRescatar[0].id;
+        if (lastGhostId && currentTopId > lastGhostId) {
+            playAlertSound();
         }
+        lastGhostId = currentTopId;
+    }
+
+    const container = document.getElementById('ghost-feed');
+    
+    if (leadsParaRescatar.length === 0) {
+        container.innerHTML = "<p class='text-center p-10 opacity-30 italic text-sm'>No hay prospectos tuyos pendientes...</p>";
+        return;
+    }
+
+    // 4. Dibujar solo tus leads filtrados
+    container.innerHTML = leadsParaRescatar.map(lead => {
+        const telLimpio = lead.telefono ? lead.telefono.replace(/\D/g, '') : '';
+        const esValido = telLimpio.length >= 7;
+
+        return `
+        <div class="bg-gradient-to-br from-orange-500/10 to-slate-900 border-l-4 border-orange-500 p-5 rounded-r-2xl shadow-xl mb-4 transition-all hover:scale-[1.02]">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex flex-col">
+                    <p class="text-white text-xs font-black uppercase tracking-tight">${lead.nombre || 'Anónimo'}</p>
+                    <span class="text-[8px] text-orange-500 font-bold uppercase">${lead.gestor_atribuido || 'Venta Directa'}</span>
+                </div>
+                <span class="text-[9px] opacity-40 font-mono">${new Date(lead.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
+            
+            <p class="text-orange-400 text-2xl font-black tracking-tighter mb-3">
+                ${esValido ? lead.telefono : '<span class="text-slate-600 text-sm italic">[Escribiendo...]</span>'}
+            </p>
+
+            <div class="text-[10px] text-slate-400 mb-4 bg-black/40 p-2 rounded border border-white/5 italic truncate">
+                🛒 ${lead.producto_en_carrito || 'Curioseando'}
+            </div>
+
+            ${esValido ? `
+                <a href="https://wa.me/${telLimpio}" target="_blank" 
+                   class="block w-full bg-orange-600 text-white text-center py-3 rounded-xl font-black uppercase text-[11px] shadow-lg shadow-orange-900/40 hover:bg-orange-500 transition-all tracking-widest">
+                   RESCATAR AHORA
+                </a>
+            ` : `
+                <div class="w-full bg-slate-800 text-slate-500 text-center py-3 rounded-xl font-bold uppercase text-[10px] cursor-not-allowed border border-white/5">
+                   Dato incompleto
+                </div>
+            `}
+        </div>`;
+    }).join('');
+}
 
         function updateCharts(logs) {
             // 1. CHART VISTAS
