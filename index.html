@@ -1398,7 +1398,7 @@
 
     <input type="text" id="p-nombre" placeholder="Nombre del Equipo" class="md:col-span-2 rounded-xl border-gray-100 font-bold" required>
     <!-- BLOQUE DE PRECIOS Y COMISIONES -->
-        <div class="md:col-span-2 grid grid-cols-3 gap-4">
+        <div class="md:col-span-2 grid grid-cols-2 gap-4">
             <div>
                 <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Precio (USD)</label>
                 <input type="number" id="p-precio" placeholder="0.00" class="w-full rounded-xl border-gray-100 font-bold" required>
@@ -1407,11 +1407,7 @@
                 <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Comisión Gestor</label>
                 <input type="number" id="p-comision" placeholder="0.00" class="w-full rounded-xl border-gray-100 font-bold" required>
             </div>
-            <div>
-                <label class="text-[10px] font-black uppercase text-blue-500 ml-1">Extra CUP (+)</label>
-                <input type="number" id="p-cup-extra" placeholder="0" value="0" class="w-full rounded-xl border-blue-100 bg-blue-50 font-bold text-blue-700">
-                <p class="text-[8px] text-gray-400 mt-1">Ej: Pon 5 para Tasa+5</p>
-            </div>
+            
         </div>
     
     <!-- === NUEVOS CAMPOS PROVEEDOR Y FLEXIBILIDAD === -->
@@ -1564,7 +1560,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801l"; 
+const versionActual = "2801m"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4333,7 +4329,6 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         nombre: nombreInput,
         precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
-        cup_extra: parseInt(document.getElementById('p-cup-extra').value) || 0,
         categoria: categoriaInput,
         descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
         
@@ -4498,7 +4493,6 @@ function clearImageSlot(event, index) {
         'p-nombre': p.nombre,
         'p-precio': p.precio,
         'p-comision': p.comision,
-        'p-cup-extra': p.cup_extra || 0,
         'p-categoria': p.categoria,
         'p-garantia': p.garantia,
         'p-proveedor': p.proveedor,
@@ -7099,7 +7093,7 @@ async function superMagicAI() {
 
         // --- 4. PETICIÓN A GOOGLE (USANDO LA KEY DEL USUARIO) ---
         // Usamos el modelo gemini-1.5-flash que es el estándar actual gratuito
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
 
         const response = await fetch(url, {
