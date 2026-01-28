@@ -766,7 +766,10 @@ async function loadNomina() {
     const todosGestores = Object.keys(nomina).sort();
     selectGestor.innerHTML = todosGestores.map(g => `<option value="${g}">${g}</option>`).join('');
 
-    tbody.innerHTML = Object.entries(nomina).map(([gestor, datos]) => {
+    // MODIFICADO: Filtramos para que "Venta Directa" no aparezca en la lista de pagos
+tbody.innerHTML = Object.entries(nomina)
+    .filter(([gestor]) => gestor !== "Venta Directa") // <--- ESTA ES LA LÍNEA MÁGICA
+    .map(([gestor, datos]) => {
         const totalPagar = datos.comision - datos.adelantos;
         const idsString = datos.pedidosIds.join(',');
 
@@ -1112,7 +1115,11 @@ function renderChartGestor(data) {
     if (window.myChart2) window.myChart2.destroy();
 
     // Ordenar por ganancia
-    const sortedEntries = Object.entries(data).sort(([,a], [,b]) => b - a).slice(0,5);
+    // Filtramos Venta Directa para que el gráfico solo muestre el ranking de gestores reales
+const sortedEntries = Object.entries(data)
+    .filter(([name]) => name !== "Venta Directa")
+    .sort(([,a], [,b]) => b - a)
+    .slice(0,5);
 
     window.myChart2 = new Chart(ctx, {
         type: 'doughnut',
