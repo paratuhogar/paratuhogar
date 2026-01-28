@@ -957,10 +957,12 @@
                     class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300">
             </div>
             <div>
-                <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Teléfono</label>
-                <input type="tel" id="check-tel" placeholder="5xxx-xxxx" 
-                    class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
-            </div>
+    <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Teléfono</label>
+    <input type="tel" id="check-tel" 
+        onblur="verificarDuenioAlEscribir(this.value)" 
+        placeholder="5xxx-xxxx" 
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
+</div>
         </div>
 
         <div>
@@ -1561,13 +1563,15 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2801j"; 
-    const urlParamsVersion = new URLSearchParams(window.location.search);
-    if (urlParamsVersion.get('v') !== versionActual) {
-        urlParamsVersion.set('v', versionActual);
-        // Esto redirige la página añadiendo ?v=2601 al final, lo que limpia el caché
-        window.location.search = urlParamsVersion.toString();
-    }
+    // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
+const versionActual = "2801l"; 
+const urlParamsVersion = new URLSearchParams(window.location.search);
+
+if (urlParamsVersion.get('v') !== versionActual) {
+    urlParamsVersion.set('v', versionActual);
+    // IMPORTANTE: Mantenemos todos los parámetros (gestor, tel, etc.) al recargar
+    window.location.href = window.location.pathname + '?' + urlParamsVersion.toString();
+}
 
     // === 2. CÓDIGO DE LIMPIEZA DE EMERGENCIA ===
     (function() {
@@ -3277,63 +3281,56 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
-    btn.innerText = "PROCESANDO PEDIDO...";
+    btn.innerText = "VERIFICANDO GESTOR...";
 
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session;
 
+    // 1. Captura de datos
     const nombreC = document.getElementById('check-nombre').value;
     const municipioC = document.getElementById('check-municipio').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
-    const monedaC = "USD";
+    const monedaC = "USD"; // Mantenemos tu estándar
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // --- 1. DETERMINAR GESTOR ---
-    let activeGestor = "Venta Directa";
-    if (window.gestorName) {
-        activeGestor = window.gestorName;
-    } else {
-        const duenoEterno = await checkCustomerOwnership(telC);
-        if (duenoEterno) {
-            activeGestor = duenoEterno;
-        } else {
-            const referido = await getActiveReferrer();
-            if (referido) activeGestor = referido.nombre;
+    // --- 2. EL CEREBRO: DETECTAR DUEÑO REAL (Prioridad máxima) ---
+    // Esta función busca por: Sesión > Link > Teléfono Cliente en DB > IP
+    const activeGestor = await obtenerDuenoReal(telC);
+    
+    // --- 3. DETERMINAR DESTINATARIO WHATSAPP ---
+    let whatsappDestino = "5356071095"; // Jefe por defecto
+    if (activeGestor !== "Venta Directa") {
+        const { data: gDB } = await supabaseClient.from('gestores').select('telefono').eq('nombre', activeGestor).maybeSingle();
+        if (gDB && gDB.telefono) {
+            whatsappDestino = gDB.telefono.replace(/\D/g, '');
+            if (whatsappDestino.length === 8) whatsappDestino = "53" + whatsappDestino;
         }
     }
 
-    // --- 2. LÓGICA DE BINDEO (MODO DIOS PARA MARCEL) ---
-// Si eres Marcel Montano, el bindeo se hace SIEMPRE, sin importar el nivel.
-const esNivel5 = getLevelData(window.gestorSalesCount || 0).lvl >= 5;
-
-if (activeGestor === "Marcel Montano" || esNivel5) {
-    if (activeGestor !== "Venta Directa") {
+    // --- 4. LÓGICA DE BINDEO (MODO DIOS) ---
+    const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
+    if ((activeGestor === "Marcel Montano" || lvl >= 5) && activeGestor !== "Venta Directa") {
         try {
             await supabaseClient.from('customer_bindings').upsert({
                 phone: telC.replace(/\D/g, ''), 
                 agent_name: activeGestor
             });
-            console.log("💎 Sistema: Cliente anclado a " + activeGestor);
         } catch (err) { console.error("Error en bindeo:", err); }
     }
-}
 
-    // --- 3. LÓGICA DE ORIGEN ---
+    // --- 5. LÓGICA DE ORIGEN DETALLADA ---
     let origenPedido = "Directo/Web";
     if (isLogged) {
         origenPedido = "Manual (Panel)";
     } else {
-        const referrerSmart = localStorage.getItem('pth_referrer_smart');
-        const referrerSimple = localStorage.getItem('pth_referrer');
-        if (referrerSmart || referrerSimple) {
-            origenPedido = "Enlace Compartido";
-        }
+        // Si no está logueado pero el sistema detectó un gestor, es por enlace (o por rastro)
+        if (activeGestor !== "Venta Directa") origenPedido = "Enlace Compartido";
     }
 
-    // --- 4. AGRUPAR CARRITO POR PROVEEDOR ---
+    // --- 6. AGRUPAR CARRITO POR PROVEEDOR ---
     const gruposPorProveedor = cart.reduce((acc, item) => {
         const prov = item.proveedor || 'General';
         if (!acc[prov]) acc[prov] = [];
@@ -3345,15 +3342,7 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
     const promesas = [];
     const agentPhone = getAgentPhone();
 
-    // --- NUEVO: DETERMINAR DESTINATARIO WHATSAPP (MODIFICADO) ---
-    // Si el cliente entró por link de gestor, le enviamos a él. Si no, a la tienda.
-    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-    let whatsappDestino = "5356071095"; // Por defecto tienda
-    if (referrer && referrer.telefono) {
-        whatsappDestino = referrer.telefono.replace(/\D/g, ''); 
-    }
-
-    // --- 5. BUCLE DE PROVEEDORES (Solo para WhatsApp y DB) ---
+    // --- 7. GENERAR VALES (Formato 🧾) ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         const ahora = new Date();
         const inicioAnio = new Date(ahora.getFullYear(), 0, 1).toISOString();
@@ -3377,7 +3366,7 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
             totalUSDVale += (costoEquipo + costoEnvio);
             
-            // --- MODIFICADO: ANULAR COMISIÓN SI ES VENTA DIRECTA ---
+            // Comisión 0 si es Venta Directa
             if (activeGestor !== "Venta Directa") {
                 comisionTotalVale += (item.comision_actual * item.qty);
             }
@@ -3386,6 +3375,7 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
             detalleCuerpo += `Producto: ${item.qty}x ${item.nombre}\n(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
         });
 
+        // Construcción del mensaje con el formato que te gusta
         mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n👤 *DATOS DEL CLIENTE*\nCliente: ${nombreC}\n${ciC !== "No especificado" ? "CI: "+ciC+"\n" : ""}Móvil: ${telC}\nMunicipio: ${municipioC}\nDirección: ${dirC}\n\n📦 *DETALLE DEL PEDIDO*\n${detalleCuerpo}💰 *TOTAL A COBRAR: ${totalUSDVale} USD*\n${vueltoC !== "no" ? "⚠️ *OJO VUELTO:* paga con $"+vueltoC+"\n" : "✅ Vuelto: No requiere\n"}`;
 
         if (isLogged) {
@@ -3402,42 +3392,30 @@ if (activeGestor === "Marcel Montano" || esNivel5) {
         promesas.push(insertPromise);
     }
 
-    // --- 6. FINALIZAR PROCESO ---
+    // 8. FINALIZAR
     await Promise.all(promesas);
 
-    // --- MODIFICADO: USAR EL TELÉFONO DINÁMICO EN EL ENVÍO ---
+    // Enviar WhatsApp al dueño real detectado
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
     window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
 
-    // Preparar datos para el PDF ÚNICO... (El resto sigue igual)
-
-    // Preparar datos para el PDF ÚNICO del cliente (Suma todo el carrito)
+    // Generar PDF Unificado
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
     const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
-
     const datosParaPDF = {
-        cliente: nombreC,
-        ci: ciC,
-        direccion: `${dirC} (${municipioC})`,
-        totalUSD: totalGlobalProductos + totalGlobalEnvio,
-        mensajeria: totalGlobalEnvio, // Suma de toda la mensajería acordada
-        items: cart.map(item => ({
-            nombre: item.nombre,
-            qty: item.qty,
-            price: item.precio_venta
-        }))
+        cliente: nombreC, ci: ciC, direccion: `${dirC} (${municipioC})`,
+        totalUSD: totalGlobalProductos + totalGlobalEnvio, mensajeria: totalGlobalEnvio,
+        items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
     };
-
-    // Lanzar generación de PDF
     setTimeout(() => { generarComprobanteVenta(datosParaPDF, 'descargar'); }, 1500); 
 
-    // Limpieza final (Aumentamos a 3 segundos para dar tiempo a la descarga del PDF)
+    // Limpieza
     setTimeout(() => {
         cart = [];
         clearAutoSave();
         toggleCartModal(false);
         location.reload();
-    }, 3000); 
+    }, 3500); 
 }
 
     // 6. FUNCIONES AUXILIARES
@@ -6813,27 +6791,21 @@ async function initSmartReferral() {
     let urlTel = urlParams.get('tel');
 
     if (urlGestor) {
-        // Si el link no trae teléfono, lo buscamos en la base de datos para completar el perfil
+        // Si el link no trae teléfono, lo buscamos para no perder el rastro de WhatsApp
         if (!urlTel) {
-            const { data } = await supabaseClient
-                .from('gestores')
-                .select('telefono')
-                .eq('nombre', urlGestor)
-                .single();
+            const { data } = await supabaseClient.from('gestores').select('telefono').eq('nombre', urlGestor).maybeSingle();
             if (data) urlTel = data.telefono;
         }
 
-        const now = new Date().getTime();
-        const referrerData = {
+        const dataGuardar = {
             nombre: urlGestor,
             telefono: urlTel || "",
-            timestamp: now,
-            expiresAt: now + (30 * 24 * 60 * 60 * 1000) // 30 días
+            timestamp: new Date().getTime(),
+            expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
         };
-
-        localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
-        localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
-        console.log(`✅ Gestor Atribuido: ${urlGestor} | Tel: ${urlTel}`);
+        localStorage.setItem('pth_referrer_smart', JSON.stringify(dataGuardar));
+        // Dejar rastro de IP
+        registrarRastroIP(urlGestor);
     }
 }
 
@@ -7022,6 +6994,31 @@ ${descLimpia.trim()}
     }).catch(err => {
         alert("Error al copiar: " + err);
     });
+}
+
+async function obtenerDuenoReal(telefonoCliente) {
+    // 1. Prioridad: Si el gestor está logueado, es dueño absoluto
+    if (window.gestorName) return window.gestorName;
+
+    // 2. Si el cliente tiene un dueño en memoria (Link reciente)
+    const referrer = await getActiveReferrer();
+    if (referrer) return referrer.nombre;
+
+    // 3. Si el cliente pone su teléfono, buscamos si ya tiene dueño eterno
+    if (telefonoCliente) {
+        const { data: binding } = await supabaseClient
+            .from('customer_bindings')
+            .select('agent_name')
+            .eq('phone', telefonoCliente.replace(/\D/g, ''))
+            .maybeSingle();
+        if (binding) return binding.agent_name;
+    }
+
+    // 4. Último recurso: Rastro por IP
+    const duenoIP = await buscarDuenoPorIP();
+    if (duenoIP) return duenoIP;
+
+    return "Venta Directa";
 }
 
 // --- SÚPER FUNCIÓN IA: MULTI-FOTO + CATEGORÍAS INTELIGENTES ---
@@ -8010,6 +8007,31 @@ async function downloadCatalogPDF() {
         if(btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
+        }
+    }
+}
+
+async function verificarDuenioAlEscribir(telefono) {
+    if (!telefono || telefono.length < 7) return;
+    
+    console.log("🔍 Verificando dueño para el teléfono:", telefono);
+    
+    // Llamamos a la función maestra que ya tienes
+    const dueno = await obtenerDuenoReal(telefono);
+    
+    if (dueno && dueno !== "Venta Directa") {
+        console.log("✅ Cliente reconocido. El dueño es: " + dueno);
+        
+        // Buscamos el teléfono del gestor en la base de datos para pintar el botón flotante
+        const { data } = await supabaseClient
+            .from('gestores')
+            .select('telefono')
+            .eq('nombre', dueno)
+            .maybeSingle();
+            
+        if (data && data.telefono) {
+            // Pintamos el botón de WhatsApp con la cara/nombre del gestor dueño
+            renderFloatingWA(dueno, data.telefono);
         }
     }
 }
