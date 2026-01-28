@@ -1561,7 +1561,7 @@
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
-    const versionActual = "2701d"; 
+    const versionActual = "2701e"; 
     const urlParamsVersion = new URLSearchParams(window.location.search);
     if (urlParamsVersion.get('v') !== versionActual) {
         urlParamsVersion.set('v', versionActual);
@@ -1617,36 +1617,35 @@
             .single();
 
         if (data && !error) {
-            // 1. Registrar analítica (Opcional, lo mantenemos)
-            const ua = navigator.userAgent;
-            supabaseClient.from('link_analytics').insert([{
-                slug: slug,
-                device_type: /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio',
-                agent_name: data.gestor // Guardamos el nombre para el rastro
-            }]);
-
-            // 2. Extraer datos del link original
-            // Intentamos sacar el teléfono si existe en la URL original
+            // Intentamos extraer el teléfono de la URL guardada
             let telOriginal = "";
             try {
                 const urlObj = new URL(data.original_url);
                 telOriginal = urlObj.searchParams.get('tel') || "";
             } catch(e) {}
 
-            // 3. GUARDADO CRÍTICO: Guardar en LocalStorage ANTES de redirigir
-            // Esto es lo que faltaba. Sin esto, el dato se pierde al recargar.
+            // SI NO HAY TELÉFONO EN EL LINK, lo buscamos en la tabla de gestores por su nombre
+            if (!telOriginal) {
+                const { data: gestorDB } = await supabaseClient
+                    .from('gestores')
+                    .select('telefono')
+                    .eq('nombre', data.gestor)
+                    .single();
+                if (gestorDB) telOriginal = gestorDB.telefono;
+            }
+
             const referrerData = {
                 nombre: data.gestor,
                 telefono: telOriginal,
                 timestamp: new Date().getTime(),
-                expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000) // Validez de 30 días
+                expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
             };
             
-            // Guardamos en ambas variables por seguridad
+            // Guardamos la información del gestor con su teléfono recuperado
             localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
             localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
 
-            // 4. Redirigir a la URL original
+            // Redirigir asegurando que la versión (v=) se mantenga
             window.location.href = data.original_url;
         }
     }
@@ -4627,13 +4626,16 @@ async function getOrGenerateShortLink(gestor, longLink) {
 }
 
     // Función para copiar texto de venta profesional con enlace de afiliado
-    async function copySmartOffer(btnElement) {
+ async function copySmartOffer(btnElement) {
     if(!selectedProduct) return;
     
     const gestor = window.gestorName || 'Ventas';
-    const miTelefono = getAgentPhone(); // <--- Aquí usamos el "Cerebro"
+    const miTelefono = getAgentPhone(); // Usamos tu función inteligente
     
-    let longLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}&v=2601`;
+    // IMPORTANTE: Asegurarnos de que el teléfono vaya en el link original
+    let longLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    
+    // El link corto ahora guardará la dirección COMPLETA con el teléfono
     const finalLink = await getOrGenerateShortLink(gestor, longLink);
 
     const textoVenta = 
