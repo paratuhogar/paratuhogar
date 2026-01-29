@@ -27,14 +27,6 @@
     <!-- 5. jsPDF (Generador de PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <!-- Librería IA: Background Removal v1.7.0 (Carga via Módulo) -->
-<script type="module">
-  import imglyRemoveBackground from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm';
-  // Publicamos la función al "window" para que tu botón (onclick) pueda verla
-  window.imglyRemoveBackground = imglyRemoveBackground;
-  console.log("🤖 IA de Background Removal cargada y lista.");
-</script>
-
 
     <!-- 3. Configuración de Diseño (ANEB Theme) -->
     <script id="tailwind-config">
@@ -1565,15 +1557,6 @@
                 <span class="material-symbols-outlined text-xs">close</span>
             </button>
         </div>
-
-                <div class="md:col-span-2 mt-2">
-            <button type="button" onclick="limpiarFondoIA()" id="btn-ia-clean" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2 rounded-xl font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
-                <span class="material-symbols-outlined text-sm">auto_fix</span>
-                LIMPIAR FONDO DE FOTO PRINCIPAL (IA)
-            </button>
-            <p id="ia-status" class="text-[9px] text-gray-400 mt-1 text-center hidden italic">🤖 Procesando... (la primera vez puede tardar unos segundos)</p>
-        </div>
-
     </div>
 </div>
 
@@ -1635,7 +1618,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2901b"; 
+const versionActual = "2801z"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8526,63 +8509,6 @@ window.addEventListener('load', () => {
     // Le damos un pequeño delay para asegurar que Supabase cargó
     setTimeout(checkVipButtonVisibility, 1000);
 });
-
-async function limpiarFondoIA() {
-    const btn = document.getElementById('btn-ia-clean');
-    const status = document.getElementById('ia-status');
-    const imgPathInput = document.getElementById('img-path-0'); 
-    const previewImg = document.getElementById('prev-0');
-
-    if (!imgPathInput.value) return alert("Sube una foto primero en el slot 0");
-
-    // Verificamos si la función ya está disponible en el objeto window
-    if (typeof window.imglyRemoveBackground !== 'function') {
-        return alert("⏳ La IA se está inicializando. Por favor, espera 5 segundos y pulsa de nuevo.");
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = `<span class="loader" style="width:12px;height:12px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span> PROCESANDO...`;
-    status.classList.remove('hidden');
-    status.innerText = "🤖 La IA está analizando los píxeles (5-10 seg)...";
-
-    try {
-        const imageUrl = fixDriveUrl(imgPathInput.value);
-
-        // --- LLAMADA A LA FUNCIÓN DEL MÓDULO ---
-        const blobLimpio = await window.imglyRemoveBackground(imageUrl, {
-            model: 'medium',
-            progress: (key, current, total) => {
-                const pct = Math.round((current / total) * 100);
-                status.innerText = `🤖 Descargando cerebro IA: ${pct}%`;
-            }
-        });
-
-        status.innerText = "✅ ¡Fondo eliminado! Guardando en Supabase...";
-
-        const fileName = `IA_${Date.now()}_clean.png`;
-
-        const { error } = await supabaseClient.storage
-            .from('productos')
-            .upload(fileName, blobLimpio);
-
-        if (error) throw error;
-
-        imgPathInput.value = fileName;
-        previewImg.src = URL.createObjectURL(blobLimpio);
-        previewImg.classList.remove('hidden');
-        document.getElementById('icon-0').classList.add('hidden');
-
-        alert("✨ ¡Imagen optimizada con éxito!");
-
-    } catch (e) {
-        console.error("Error IA:", e);
-        alert("Error: No se pudo procesar la imagen. Verifica tu conexión a internet.");
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span class="material-symbols-outlined text-sm">auto_fix</span> LIMPIAR FONDO DE FOTO PRINCIPAL (IA)`;
-        status.classList.add('hidden');
-    }
-}
 
 </script>
 
