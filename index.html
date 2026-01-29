@@ -496,11 +496,11 @@
             <span class="text-xs font-bold">PDF</span>
         </button>
 
-        <!-- Botón IA Marketing -->
-        <button onclick="openMarketingAI()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-pink-600 to-orange-500 text-white border border-pink-400 flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 whitespace-nowrap group hover:scale-105 transition-transform" title="Crear Post con IA">
-            <span class="material-symbols-outlined text-xl group-hover:animate-spin">smart_toy</span>
-            <span class="text-xs font-black">AI Post</span>
-        </button>
+        <!-- Botón IA Marketing (Con ID y estado inicial) -->
+<button id="btn-ai-post" onclick="openMarketingAI()" class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 shadow-sm whitespace-nowrap transition-all" title="Bloqueado - Requiere Nivel 3">
+    <span class="material-symbols-outlined text-xl">lock</span>
+    <span class="text-xs font-bold">AI Post</span>
+</button>
 
     </div>
 </div>
@@ -1618,7 +1618,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801y"; 
+const versionActual = "2801z"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -6446,31 +6446,35 @@ function closeWelcomeAgent() {
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
 // --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---
 // --- CORRECCIÓN: FUNCIÓN PARA GESTIONAR CANDADOS Y MENSAJES ---
+// --- FUNCIÓN DE GESTIÓN DE CANDADOS (ACTUALIZADA CON AI POST) ---
 function applyLockedFeatures() {
     const level = window.currentGestorLevel || 0; 
     const sales = window.gestorSalesCount || 0;
+    
+    // VALIDACIÓN MODO DIOS: Si eres tú, todo se desbloquea
+    const isGodMode = window.gestorName === "Marcel Montano";
 
     // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
+    const btnAi = document.getElementById('btn-ai-post'); // <--- NUEVO
     const btnPdf = document.getElementById('btn-pdf-bulk');
     const btnStudio = document.getElementById('btn-magic-studio');
 
-    // Estilo base para botones desbloqueados (para no repetir código)
-    const baseStyle = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer hover:scale-105 active:scale-95 shadow-sm";
+    // Estilo base para botones desbloqueados
+    const baseStyle = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer hover:scale-105 active:scale-95 shadow-sm whitespace-nowrap";
 
     // ------------------------------------------------------
     // NIVEL 2 (10 Ventas): TEXTO Y FOTOS
     // ------------------------------------------------------
     const TARGET_LVL_2 = 10;
     
-    if (level >= 2) {
+    if (level >= 2 || isGodMode) {
         // === BOTÓN TEXTO (DESBLOQUEADO) ===
         if (btnCopy) {
             btnCopy.className = `${baseStyle} bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50`;
             btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span>Texto</span>`;
             btnCopy.title = "Copiado Masivo";
-            // ASIGNACIÓN DIRECTA (LA SOLUCIÓN):
             btnCopy.onclick = function() { copyCategoryOffers(); };
         }
 
@@ -6479,14 +6483,29 @@ function applyLockedFeatures() {
             btnZip.className = `${baseStyle} bg-white text-blue-600 border-blue-100 hover:bg-blue-50`;
             btnZip.innerHTML = `<span class="material-symbols-outlined text-lg">folder_zip</span> <span>Fotos</span>`;
             btnZip.title = "Descargar Pack Fotos";
-            // ASIGNACIÓN DIRECTA (LA SOLUCIÓN):
             btnZip.onclick = function() { downloadCategoryPhotos(); };
         }
 
     } else {
-        // BLOQUEADOS (Usamos el helper antiguo que funciona bien para bloquear)
         lockButtonWithMath(btnCopy, "Texto Masivo", "Copia descripciones de 20 productos a la vez.", sales, TARGET_LVL_2, 2);
         lockButtonWithMath(btnZip, "Pack Fotos", "Descarga 50 fotos en un click.", sales, TARGET_LVL_2, 2);
+    }
+
+    // ------------------------------------------------------
+    // NIVEL 3 (20 Ventas): AI POST (NUEVO)
+    // ------------------------------------------------------
+    const TARGET_LVL_3 = 20;
+
+    if (level >= 3 || isGodMode) {
+        // === BOTÓN AI POST (DESBLOQUEADO) ===
+        if (btnAi) {
+            btnAi.className = `${baseStyle} bg-gradient-to-r from-pink-600 to-orange-500 text-white border-pink-400 shadow-lg shadow-pink-500/20 group`;
+            btnAi.innerHTML = `<span class="material-symbols-outlined text-xl group-hover:animate-spin">smart_toy</span> <span class="font-black">AI Post</span>`;
+            btnAi.onclick = function() { openMarketingAI(); };
+            btnAi.title = "Redactor IA Viral - Activo";
+        }
+    } else {
+        lockButtonWithMath(btnAi, "AI Post", "Redacta posts virales con Inteligencia Artificial.", sales, TARGET_LVL_3, 3);
     }
 
     // ------------------------------------------------------
@@ -6494,13 +6513,12 @@ function applyLockedFeatures() {
     // ------------------------------------------------------
     const TARGET_LVL_4 = 40;
     
-    if (level >= 4) {
+    if (level >= 4 || isGodMode) {
         // === BOTÓN PDF (DESBLOQUEADO) ===
         if (btnPdf) {
             btnPdf.className = `${baseStyle} bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white`;
             btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>`;
             btnPdf.title = "Generar Catálogo PDF";
-            // ASIGNACIÓN DIRECTA (LA SOLUCIÓN):
             btnPdf.onclick = function() { downloadCatalogPDF(); };
         }
     } else {
@@ -6512,13 +6530,12 @@ function applyLockedFeatures() {
     // ------------------------------------------------------
     const TARGET_LVL_5 = 70;
     
-    if (level >= 5) {
+    if (level >= 5 || isGodMode) {
         // === BOTÓN STUDIO (DESBLOQUEADO) ===
         if(btnStudio) {
             btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
             btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
             btnStudio.title = "Magic Studio AI - Activo";
-            // Este ya funcionaba, lo dejamos igual:
             btnStudio.onclick = function() { goToStudio(); };
         }
     } else {
