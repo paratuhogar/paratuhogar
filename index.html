@@ -337,6 +337,58 @@
     </div>
 </header>
 
+<!-- MODAL CLUB VIP (LEAD MAGNET) -->
+<div id="modal-vip-club" class="fixed inset-0 z-[200] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 relative overflow-hidden shadow-2xl border border-amber-400/30">
+        
+        <!-- Decoración dorada -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-300 via-yellow-500 to-amber-600"></div>
+        <button onclick="document.getElementById('modal-vip-club').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+
+        <div class="text-center mb-6 pt-4">
+            <div class="inline-block p-3 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 mb-3">
+                <span class="material-symbols-outlined text-3xl animate-pulse">stars</span>
+            </div>
+            <h3 class="text-2xl font-black uppercase text-slate-800 dark:text-white">Club VIP</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">Recibe ofertas secretas y descuentos.</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-2">Tu Nombre</label>
+                <input type="text" id="vip-name" placeholder="Ej: Maria" class="w-full rounded-xl border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 font-bold text-sm p-3">
+            </div>
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-2">Tu WhatsApp (Sin +53)</label>
+                <input type="tel" id="vip-phone" placeholder="Ej: 5xxxxxxx" class="w-full rounded-xl border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 font-bold text-sm p-3">
+            </div>
+            
+            <button onclick="registerVIPClient()" class="w-full py-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white font-black uppercase tracking-widest shadow-lg shadow-slate-900/30 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <span>Unirme Ahora</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+        </div>
+        
+        <p class="text-[9px] text-gray-400 text-center mt-4">Sin spam. Solo ofertas reales.</p>
+    </div>
+</div>
+
+<!-- BOTÓN ACTIVADOR (Puedes ponerlo donde quieras, ej: en el footer o flotante) -->
+<!-- Pégalo justo después del <header> o antes del <main> para probar -->
+<!-- BOTÓN ACTIVADOR (Oculto por defecto) -->
+<div id="vip-club-trigger" class="max-w-[1200px] mx-auto px-4 mt-4 hidden">
+    <button onclick="document.getElementById('modal-vip-club').classList.remove('hidden')" class="w-full bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 p-3 rounded-xl flex items-center justify-between group cursor-pointer hover:shadow-md transition-all">
+        <div class="flex items-center gap-3">
+            <span class="bg-amber-500 text-white p-1.5 rounded-lg material-symbols-outlined text-lg">workspace_premium</span>
+            <div class="text-left">
+                <p class="text-xs font-black text-amber-900 uppercase">¿Lo estás pensando?</p>
+                <p class="text-[10px] font-bold text-amber-700">Únete al Club VIP y recibe ofertas.</p>
+            </div>
+        </div>
+        <span class="material-symbols-outlined text-amber-400 group-hover:translate-x-1 transition-transform">chevron_right</span>
+    </button>
+</div>
+
     <main class="max-w-[1200px] mx-auto pb-20">
         
         <!-- 1. NAVEGACIÓN ADMIN (Fuera de los contenedores para que nunca desaparezca) -->
@@ -1566,7 +1618,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801x"; 
+const versionActual = "2801y"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -6231,37 +6283,57 @@ function toTitleCase(str) {
 /* ============================================== */
 
 // Datos Maestros de Niveles
+// Datos Maestros de Niveles (Actualizado)
 function getLevelData(sales) {
-    if (sales >= 70) return { 
-        lvl: 5, name: "Emperador", next: 1000, color: "text-purple-600", 
-        duration: 8760, // 1 AÑO (365 días)
+    // --- NIVEL 10: EL TERRATENIENTE (Amarre) ---
+    if (sales >= 200) return { 
+        lvl: 10, name: "Warlord", next: 500, color: "text-red-600", 
+        duration: 8760, // 1 Año
         hasShortLink: true,
-        power: "Bindeo de Cliente" // "Amarrar" el teléfono del cliente
+        power: "Dueño de Clientes (Amarre)" 
     };
+    
+    // --- NIVEL 5: EMPERADOR (Magic Studio) ---
+    if (sales >= 70) return { 
+        lvl: 5, name: "Emperador", next: 200, color: "text-purple-600", 
+        duration: 4320, // 6 Meses
+        hasShortLink: true,
+        power: "Magic Studio"
+    };
+
+    // --- NIVEL 4: MONARCA (PDF) ---
     if (sales >= 40) return { 
         lvl: 4, name: "Monarca", next: 70, color: "text-emerald-500", 
-        duration: 4320, // 6 MESES (180 días)
+        duration: 4320, 
         hasShortLink: true 
     };
+
+    // --- NIVEL 3: ÉLITE (AI POST + Radar) ---
     if (sales >= 20) return { 
         lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", 
-        duration: 2160, // 3 MESES (90 días)
-        hasShortLink: true 
+        duration: 2160, 
+        hasShortLink: true,
+        power: "Redactor IA" // <--- Aquí movimos la IA
     };
+
+    // --- NIVEL 2: EXPERTO (Fotos) ---
     if (sales >= 10) return { 
         lvl: 2, name: "Experto", next: 20, color: "text-blue-500", 
-        duration: 720, // 1 MES (30 días)
+        duration: 720, 
         hasShortLink: true 
     };
+
+    // --- NIVEL 1: NOVATO (Flash) ---
     if (sales >= 3)  return { 
         lvl: 1, name: "Novato", next: 10, color: "text-orange-500", 
-        duration: 720, // 1 MES (30 días)
+        duration: 720, 
         hasShortLink: true 
     };
+
     return { 
-        lvl: 0, name: "Iniciado", next: 3, color: "text-red-500", 
-        duration: 168, // 1 SEMANA (7 días)
-        hasShortLink: true // Todos tienen link corto ahora
+        lvl: 0, name: "Iniciado", next: 3, color: "text-gray-500", 
+        duration: 168, 
+        hasShortLink: true 
     };
 }
 
@@ -7070,27 +7142,44 @@ ${descLimpia.trim()}
 }
 
 async function obtenerDuenoReal(telefonoCliente) {
-    // 1. Prioridad: Si el gestor está logueado, es dueño absoluto
+    // 1. PRIORIDAD MÁXIMA: GESTOR LOGUEADO (Manual)
+    // Si tú estás dentro de tu panel escribiendo el pedido, la venta es tuya sí o sí.
     if (window.gestorName) return window.gestorName;
 
-    // 2. Si el cliente tiene un dueño en memoria (Link reciente)
+    // 2. PRIORIDAD ALTA: DUEÑO ETERNO (Base de Datos)
+    // Si el cliente no está siendo atendido manualmente, verificamos si tiene "Dueño"
+    if (telefonoCliente) {
+        // Limpieza del número para coincidir con la DB (8 dígitos)
+        let cleanPhone = telefonoCliente.replace(/\D/g, '');
+        if (cleanPhone.startsWith('53') && cleanPhone.length === 10) {
+            cleanPhone = cleanPhone.substring(2);
+        }
+
+        // Solo consultamos si es un número válido
+        if (cleanPhone.length === 8) {
+            const { data: binding } = await supabaseClient
+                .from('customer_bindings')
+                .select('agent_name')
+                .eq('phone', cleanPhone)
+                .maybeSingle();
+
+            if (binding && binding.agent_name) {
+                console.log(`🔒 Cliente vinculado permanentemente a: ${binding.agent_name}`);
+                return binding.agent_name; // ¡Gana el dueño original!
+            }
+        }
+    }
+
+    // 3. PRIORIDAD MEDIA: LINK TEMPORAL (Referrer)
+    // Si el cliente está "libre" (no tiene dueño en DB), gana quien compartió el link hoy.
     const referrer = await getActiveReferrer();
     if (referrer) return referrer.nombre;
 
-    // 3. Si el cliente pone su teléfono, buscamos si ya tiene dueño eterno
-    if (telefonoCliente) {
-        const { data: binding } = await supabaseClient
-            .from('customer_bindings')
-            .select('agent_name')
-            .eq('phone', telefonoCliente.replace(/\D/g, ''))
-            .maybeSingle();
-        if (binding) return binding.agent_name;
-    }
-
-    // 4. Último recurso: Rastro por IP
+    // 4. PRIORIDAD BAJA: RASTRO POR IP
     const duenoIP = await buscarDuenoPorIP();
     if (duenoIP) return duenoIP;
 
+    // 5. SIN DUEÑO
     return "Venta Directa";
 }
 
@@ -8185,11 +8274,13 @@ function captureGhostLead() {
     }, 2000); 
 }
 
-async function openMarketingAI() {
-    // 1. VALIDACIÓN MODO DIOS (ACCESO EXCLUSIVO)
-    // Solo permite pasar si el nombre es EXACTAMENTE "Marcel Montano"
-    if (window.gestorName !== "Marcel Montano") {
-        return alert("🔒 ACCESO DENEGADO (TOP SECRET)\n\nEsta herramienta de Inteligencia Artificial está en fase experimental.\nSolo el Administrador (Modo Dios) tiene acceso por ahora.");
+    async function openMarketingAI() {
+    // 1. Validaciones de Acceso (NIVEL 3 o MODO DIOS)
+    const level = window.currentGestorLevel || 0;
+    
+    // Si NO es Marcel Y tiene menos de nivel 3...
+    if (window.gestorName !== "Marcel Montano" && level < 3) {
+        return alert("🔒 HERRAMIENTA BLOQUEADA\n\nNecesitas ser Nivel 3 (Élite - 20 Ventas) para usar el Redactor IA.");
     }
 
 
@@ -8278,6 +8369,129 @@ async function openMarketingAI() {
         btn.disabled = false;
     }
 }
+
+// --- SISTEMA DE AMARRE DE CLIENTES (LEVEL 10) ---
+
+async function registerVIPClient() {
+    const nombre = document.getElementById('vip-name').value.trim();
+    let telefono = document.getElementById('vip-phone').value.replace(/\D/g, '');
+
+    if (telefono.startsWith('53') && telefono.length === 10) telefono = telefono.substring(2);
+    if (telefono.length !== 8) return alert("Por favor escribe un número válido de 8 dígitos.");
+    if (!nombre) return alert("Escribe tu nombre.");
+
+    // 1. Obtener al Gestor Actual
+    // Usamos el "Referrer" inteligente que ya tienes
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    let gestorDueño = referrer ? referrer.nombre : "Venta Directa";
+
+    // 2. VERIFICAR SI EL GESTOR MERECE EL AMARRE (Nivel 10 o Marcel)
+    let mereceAmarre = false;
+    
+    if (gestorDueño === "Marcel Montano") {
+        mereceAmarre = true;
+    } else if (gestorDueño !== "Venta Directa") {
+        // Consultar nivel en base de datos (para no confiar en el navegador)
+        const { count } = await supabaseClient
+            .from('pedidos')
+            .select('id', { count: 'exact', head: true })
+            .eq('gestor', gestorDueño)
+            .eq('estado', 'Entregado');
+            
+        // 200 Ventas es el requisito para Level 10
+        if (count >= 200) mereceAmarre = true;
+    }
+
+    // 3. GUARDAR (Solo si merece o si no existe dueño previo)
+    // Usamos upsert con "ignoreDuplicates" para respetar al PRIMER dueño
+    if (mereceAmarre) {
+        const { error } = await supabaseClient
+            .from('customer_bindings')
+            .insert([{ 
+                phone: telefono, 
+                agent_name: gestorDueño 
+            }]); // Si falla por duplicado, es que YA TIENE DUEÑO, y eso es bueno.
+
+        if (!error) console.log(`🔒 Cliente amarrado a ${gestorDueño}`);
+    }
+
+    // 4. Feedback al Cliente
+    alert(`✅ ¡Bienvenido/a ${nombre}! Te avisaremos de las ofertas.`);
+    document.getElementById('modal-vip-club').classList.add('hidden');
+    
+    // (Opcional) Guardar localmente para autocompletar luego
+    localStorage.setItem('autosave_check-nombre', nombre);
+    localStorage.setItem('autosave_check-tel', telefono);
+}
+
+// ESTA FUNCIÓN YA LA TIENES, PERO ASEGÚRATE QUE ESTÉ ASÍ:
+// Se usa en el Checkout para verificar si el cliente tiene dueño
+async function checkCustomerOwnership(phone) {
+    if (!phone) return null;
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('53')) cleanPhone = cleanPhone.substring(2);
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('customer_bindings')
+            .select('agent_name')
+            .eq('phone', cleanPhone)
+            .maybeSingle(); // Usamos maybeSingle para no dar error si no existe
+        
+        if (data && data.agent_name) {
+            console.log("💎 AMARRE DETECTADO: Comisión para", data.agent_name);
+            return data.agent_name;
+        }
+    } catch (e) { console.error(e); }
+    return null;
+}
+
+// --- FUNCIÓN PARA MOSTRAR BOTÓN SOLO SI EL GESTOR ES NIVEL 10 ---
+async function checkVipButtonVisibility() {
+    // 1. Obtener quién es el gestor activo (del Link o Memoria)
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    
+    // Si no hay gestor (cliente orgánico sin referencia), no mostramos nada
+    if (!referrer || !referrer.nombre) return;
+
+    const agentName = referrer.nombre;
+
+    // 2. MODO DIOS: Si eres tú, siempre aparece
+    if (agentName === "Marcel Montano") {
+        const btn = document.getElementById('vip-club-trigger');
+        if(btn) btn.classList.remove('hidden');
+        return;
+    }
+
+    // 3. VERIFICAR NIVEL EN BASE DE DATOS
+    try {
+        const { count, error } = await supabaseClient
+            .from('pedidos')
+            .select('id', { count: 'exact', head: true })
+            .eq('gestor', agentName)
+            .eq('estado', 'Entregado');
+
+        if (error) throw error;
+
+        // 4. SI TIENE 200+ VENTAS (Nivel 10), MOSTRAR BOTÓN
+        if (count >= 200) {
+            const btn = document.getElementById('vip-club-trigger');
+            if(btn) btn.classList.remove('hidden');
+            console.log(`🌟 Club VIP Activado: El gestor ${agentName} es Nivel 10 (${count} ventas).`);
+        } else {
+            console.log(`🔒 Club VIP Oculto: El gestor ${agentName} aún no es Nivel 10.`);
+        }
+
+    } catch (e) {
+        console.error("Error verificando nivel VIP:", e);
+    }
+}
+
+// EJECUTAR AL CARGAR
+window.addEventListener('load', () => {
+    // Le damos un pequeño delay para asegurar que Supabase cargó
+    setTimeout(checkVipButtonVisibility, 1000);
+});
 
 </script>
 
@@ -8623,5 +8837,6 @@ async function openMarketingAI() {
         </div>
     </div>
 </div>
+
 </body>
 </html>
