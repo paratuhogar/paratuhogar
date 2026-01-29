@@ -444,6 +444,12 @@
             <span class="text-xs font-bold">PDF</span>
         </button>
 
+        <!-- Botón IA Marketing -->
+        <button onclick="openMarketingAI()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-pink-600 to-orange-500 text-white border border-pink-400 flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 whitespace-nowrap group hover:scale-105 transition-transform" title="Crear Post con IA">
+            <span class="material-symbols-outlined text-xl group-hover:animate-spin">smart_toy</span>
+            <span class="text-xs font-black">AI Post</span>
+        </button>
+
     </div>
 </div>
 
@@ -8177,6 +8183,100 @@ function captureGhostLead() {
         }], { onConflict: 'telefono' });
 
     }, 2000); 
+}
+
+async function openMarketingAI() {
+    // 1. VALIDACIÓN MODO DIOS (ACCESO EXCLUSIVO)
+    // Solo permite pasar si el nombre es EXACTAMENTE "Marcel Montano"
+    if (window.gestorName !== "Marcel Montano") {
+        return alert("🔒 ACCESO DENEGADO (TOP SECRET)\n\nEsta herramienta de Inteligencia Artificial está en fase experimental.\nSolo el Administrador (Modo Dios) tiene acceso por ahora.");
+    }
+
+
+    const btn = event.currentTarget;
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = `<span class="loader w-4 h-4 border-white"></span>`;
+    btn.disabled = true;
+
+    try {
+        // 2. Identificar el contexto
+        const searchInput = document.getElementById('search-bar');
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+        const gestor = window.gestorName || 'Ventas';
+        const tel = getAgentPhone(); // Tu función que obtiene el tel del gestor
+
+        // Filtrar productos
+        let productsToPromote = productosRaw.filter(p => {
+            const matchSearch = p.nombre.toLowerCase().includes(query);
+            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+            return matchSearch && matchCat && p.disponible === 'SI';
+        });
+
+        if (productsToPromote.length === 0) throw new Error("No hay productos visibles para promocionar.");
+        
+        // Limitar a 15 productos máximo para no saturar
+        if (productsToPromote.length > 15) {
+            productsToPromote = productsToPromote.slice(0, 15);
+            if(!confirm(`Hay muchos productos. La IA usará los primeros 15 para el post. ¿Continuar?`)) {
+                btn.innerHTML = oldHtml;
+                btn.disabled = false;
+                return;
+            }
+        }
+
+        // =========================================================
+        // 3. Preparar la "Maleta" de datos (Payload)
+        // AQUÍ ES DONDE PEGAMOS TU CÓDIGO DE LINKS CORTOS
+        // =========================================================
+        
+        const preparedProducts = [];
+        
+        for (const p of productsToPromote) {
+             const cleanName = encodeURIComponent(p.nombre.trim());
+             const longLink = `${window.location.origin}${window.location.pathname}?search=${cleanName}&gestor=${encodeURIComponent(gestor)}&tel=${tel}`;
+             
+             // Intentamos generar corto, si falla usamos largo
+             let finalLink = longLink;
+             try {
+                // Verificamos si la función existe antes de llamarla
+                if(typeof getOrGenerateShortLink === 'function') {
+                    finalLink = await getOrGenerateShortLink(gestor, longLink);
+                }
+             } catch(e) {
+                 console.log("Error generando link corto, usando largo.");
+             }
+
+             preparedProducts.push({
+                name: p.nombre,
+                price: p.precio,
+                category: p.categoria,
+                link: finalLink
+             });
+        }
+        
+        // =========================================================
+        // FIN DE LA PARTE MODIFICADA
+        // =========================================================
+
+        const payload = {
+            timestamp: Date.now(),
+            agent: gestor,
+            category: activeCategory,
+            products: preparedProducts
+        };
+
+        // 4. Guardar en LocalStorage
+        localStorage.setItem('pth_marketing_payload', JSON.stringify(payload));
+
+        // 5. Abrir la página de la IA
+        window.open('marketing-ai.html', '_blank');
+
+    } catch (e) {
+        alert("⚠️ " + e.message);
+    } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
 }
 
 </script>

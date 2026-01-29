@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing AI | paratuhogar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #0f172a; color: white; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .neon-border { box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); border: 1px solid rgba(168, 85, 247, 0.5); }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #a855f7; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+
+    <div class="w-full max-w-4xl glass rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-purple-600 to-blue-600 p-3 rounded-xl">
+                    <span class="material-symbols-outlined text-2xl text-white">auto_awesome</span>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Redactor IA</h1>
+                    <p class="text-xs text-gray-400 font-mono">Modo: Facebook Viral Cuba</p>
+                </div>
+            </div>
+            <button onclick="window.close()" class="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <span class="material-symbols-outlined text-gray-400">close</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Panel Izquierdo: Configuración -->
+            <div class="space-y-6">
+                
+                <!-- Resumen de Productos -->
+                <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                    <p class="text-xs font-bold text-gray-500 uppercase mb-2">Productos Seleccionados</p>
+                    <div id="product-list" class="text-sm font-bold text-gray-200 max-h-32 overflow-y-auto space-y-1">
+                        <!-- Se llena con JS -->
+                    </div>
+                </div>
+
+                <!-- Configuración de Tono -->
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase mb-2 block">Estilo del Post</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="selectTone(this, 'Urgent')" class="tone-btn active p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-purple-200 text-xs font-black uppercase hover:bg-purple-500/40 transition-all">🔥 Oferta Flash</button>
+                        <button onclick="selectTone(this, 'Educational')" class="tone-btn p-3 rounded-xl border border-gray-700 bg-slate-800 text-gray-400 text-xs font-black uppercase hover:border-blue-500 hover:text-blue-400 transition-all">🧠 Informativo</button>
+                        <button onclick="selectTone(this, 'Humorous')" class="tone-btn p-3 rounded-xl border border-gray-700 bg-slate-800 text-gray-400 text-xs font-black uppercase hover:border-green-500 hover:text-green-400 transition-all">😄 Cubano Jocoso</button>
+                        <button onclick="selectTone(this, 'Minimal')" class="tone-btn p-3 rounded-xl border border-gray-700 bg-slate-800 text-gray-400 text-xs font-black uppercase hover:border-pink-500 hover:text-pink-400 transition-all">✨ Minimalista</button>
+                    </div>
+                </div>
+
+                <!-- API Key (Si no existe) -->
+                <div id="api-key-box" class="hidden">
+                    <label class="text-xs font-bold text-red-400 uppercase mb-2 block">Falta Google Gemini API Key</label>
+                    <input type="password" id="api-key-input" placeholder="Pega tu API Key aquí..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:border-purple-500 focus:outline-none">
+                </div>
+
+                <!-- Botón Generar -->
+                <button onclick="generatePost()" id="btn-generate" class="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-purple-500/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">rocket_launch</span> Generar Post
+                </button>
+            </div>
+
+            <!-- Panel Derecho: Resultado -->
+            <div class="relative">
+                <div class="absolute top-0 right-0 p-2 z-10">
+                    <button onclick="copyResult()" class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg text-xs font-bold flex items-center gap-1 border border-slate-600">
+                        <span class="material-symbols-outlined text-sm">content_copy</span> Copiar
+                    </button>
+                </div>
+                <textarea id="result-area" class="w-full h-full min-h-[400px] bg-slate-900/80 border border-slate-700 rounded-2xl p-6 text-sm leading-relaxed text-gray-300 focus:outline-none focus:border-purple-500 font-mono resize-none" placeholder="La IA escribirá el post aquí..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTone = 'Urgent';
+        let payload = null;
+
+        // 1. Cargar datos al iniciar
+        window.onload = function() {
+            // Recuperar la "maleta" de datos
+            const data = localStorage.getItem('pth_marketing_payload');
+            
+            // Validación 1: Si no hay datos
+            if(!data) {
+                alert("No hay datos de productos. Vuelve al catálogo.");
+                return;
+            }
+            
+            payload = JSON.parse(data);
+
+            // --- 🛡️ BLOQUE DE SEGURIDAD (MODO DIOS) ---
+            // Verificamos si el usuario que envió los datos es "Marcel Montano"
+            if (payload.agent !== "Marcel Montano") {
+                // Si no es Marcel, borramos toda la interfaz y mostramos pantalla de bloqueo
+                document.body.innerHTML = `
+                    <div style="height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:#020617; color:#ef4444; font-family:sans-serif; text-align:center;">
+                        <span style="font-size:4rem;">🚫</span>
+                        <h1 style="font-size:2rem; margin:20px 0; font-weight:900;">ACCESO DENEGADO</h1>
+                        <p style="color:#94a3b8; font-weight:bold;">Esta herramienta es TOP SECRET.</p>
+                        <p style="color:#64748b; font-size:0.8rem; margin-top:5px;">Usuario no autorizado: ${payload.agent || 'Anónimo'}</p>
+                        <button onclick="window.close()" style="margin-top:30px; padding:12px 24px; background:#dc2626; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold; text-transform:uppercase;">Cerrar Ventana</button>
+                    </div>
+                `;
+                return; // 🛑 IMPORTANTE: Detenemos el código aquí para que no cargue nada más
+            }
+            // --------------------------------------------
+            
+            // Si pasó la seguridad, continuamos renderizando:
+
+            // Renderizar lista pequeña
+            const list = document.getElementById('product-list');
+            
+            // Si usaste el diseño nuevo con contador, actualízalo también
+            if(document.getElementById('prod-count')) {
+                document.getElementById('prod-count').innerText = payload.products.length;
+            }
+
+            list.innerHTML = payload.products.map(p => `
+                <div class="flex justify-between border-b border-gray-800 pb-1">
+                    <span class="truncate w-2/3 text-gray-300">${p.name}</span>
+                    <span class="text-emerald-400">$${p.price}</span>
+                </div>
+            `).join('');
+
+            // Verificar API Key
+            if(!localStorage.getItem('pth_gemini_api_key')) {
+                document.getElementById('api-key-box').classList.remove('hidden');
+            }
+        };
+
+        function selectTone(btn, tone) {
+            document.querySelectorAll('.tone-btn').forEach(b => {
+                b.className = "tone-btn p-3 rounded-xl border border-gray-700 bg-slate-800 text-gray-400 text-xs font-black uppercase hover:border-gray-500 transition-all";
+            });
+            btn.className = "tone-btn active p-3 rounded-xl border border-purple-500 bg-purple-500/20 text-purple-200 text-xs font-black uppercase transition-all shadow-md shadow-purple-500/10";
+            currentTone = tone;
+        }
+
+        async function generatePost() {
+            // Guardar API Key si se ingresó
+            const inputKey = document.getElementById('api-key-input').value;
+            if(inputKey) localStorage.setItem('pth_gemini_api_key', inputKey);
+
+            const apiKey = localStorage.getItem('pth_gemini_api_key');
+            if(!apiKey) return alert("Necesitas una API Key de Google Gemini.");
+
+            const btn = document.getElementById('btn-generate');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="loader"></div> Pensando...`;
+            btn.disabled = true;
+
+            try {
+    // Preparar Prompt
+    const productText = payload.products.map(p => `
+        - PRODUCTO: ${p.name}
+        - PRECIO: $${p.price} USD
+        - ENLACE DE VENTA: ${p.link}
+    `).join('\n');
+
+    const toneDescriptions = {
+        'Urgent': 'Urgente, crea FOMO (miedo a perderse la oferta), sensación de escasez',
+        'Educational': 'Educativo pero persuasivo, resalta beneficios prácticos y soluciones',
+        'Humorous': 'Cubano auténtico, gracioso pero profesional, jerga del barrio con medida',
+        'Minimal': 'Directo, elegante, minimalista - menos es más'
+    };
+
+    const prompt = `
+Eres un experto en Marketing Digital especializado en Facebook para el mercado cubano. Tu misión es crear un post ALTAMENTE VIRAL que convierta en ventas.
+
+CONTEXTO: paratuhogar - Tienda de electrodomésticos en La Habana
+ESTILO: ${currentTone}
+TONO: ${toneDescriptions[currentTone]}
+
+PRODUCTOS A PROMOCIONAR:
+${productText}
+
+ESTRUCTURA OBLIGATORIA:
+
+1. GANCHO INICIAL (Primera línea):
+   - Capta atención en los primeros 3 segundos
+   - Usa emojis estratégicos (máximo 3)
+   - Crea curiosidad o urgencia inmediata
+   - Ejemplos: "🚨 ESTO SE ACABA HOY..." / "💡 ¿Sabías que..." / "😱 Mira lo que llegó..."
+
+2. PROBLEMA/DESEO (2-3 líneas):
+   - Conecta emocionalmente con una necesidad real
+   - Usa lenguaje conversacional cubano
+   - Menciona situaciones cotidianas reconocibles
+
+3. SOLUCIÓN (Presentación de productos):
+   Para CADA producto incluye:
+   - ✨ Emoji + Nombre del producto EN MAYÚSCULAS
+   - 1 beneficio clave concreto (no características técnicas aburridas)
+   - 💰 Precio destacado: $[precio] USD
+   - 🔗 Enlace directo en la siguiente línea: [link del producto]
+   - Espacio en blanco entre productos para claridad
+
+4. VALOR AGREGADO (lo que diferencia la tienda):
+   🚀 Entrega en 24 horas a toda La Habana
+   📋 Factura + Certificado de garantía incluido
+   💬 Asesoría personalizada por WhatsApp
+   ${currentTone === 'Urgent' ? '⏰ Oferta válida SOLO por 48 horas' : ''}
+
+5. CALL TO ACTION PODEROSO:
+   - NO uses frases débiles como "si te interesa escríbenos"
+   - USA comandos directos: "Escríbenos AHORA al WhatsApp", "Separa el tuyo YA"
+   - Crea urgencia: "Quedan pocas unidades", "Solo hasta mañana"
+   - Termina con: "📱 WhatsApp: [Escríbenos]"
+
+6. HASHTAGS ESTRATÉGICOS (8-12):
+   - Mezcla: generales + específicos del producto + locales
+   - Incluye SIEMPRE: #LaHabana #Cuba #VentasCuba #ParaTuHogar
+   - Agrega hashtags relacionados con cada categoría de producto
+   - Usa jerga cubana: #AsereQueVuelta #LoMejorDeLaHabana #CubaEmprende
+
+REGLAS DE ORO:
+❌ NO uses frases genéricas como "aprovecha esta oportunidad"
+❌ NO hagas el texto muy largo (máximo 15-18 líneas de contenido)
+❌ NO pongas todos los emojis juntos al principio
+❌ NO copies el formato del prompt, crea un post natural
+✅ SÍ usa saltos de línea para mejor lectura en móvil
+✅ SÍ crea sensación de escasez o exclusividad
+✅ SÍ habla como un cubano real pero profesional
+✅ SÍ resalta los PRECIOS de forma muy visible
+✅ SÍ asegúrate que cada enlace de producto esté en su propia línea
+
+FORMATO FINAL:
+- Texto limpio y bien espaciado
+- Enlaces claramente visibles y separados
+- Fácil de leer en dispositivos móviles
+- Que invite naturalmente a compartir
+
+${currentTone === 'Humorous' ? '\nEXTRA PARA TONO JOCOSO: Usa expresiones cubanas auténticas como "asere", "mi socio", "tremenda ganga", "no te lo pierdas", pero con medida y buen gusto. Mantén el profesionalismo.' : ''}
+
+¡CREA UN POST QUE HAGA QUE LA GENTE PARE EL SCROLL, SE EMOCIONE Y COMPRE AHORA MISMO!
+    `;
+
+                // Llamada a Gemini
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                
+                if(data.error) throw new Error(data.error.message);
+
+                const generatedText = data.candidates[0].content.parts[0].text;
+                
+                // Efecto de escritura
+                const textArea = document.getElementById('result-area');
+                textArea.value = "";
+                let i = 0;
+                const typeWriter = setInterval(() => {
+                    if (i < generatedText.length) {
+                        textArea.value += generatedText.charAt(i);
+                        i++;
+                        textArea.scrollTop = textArea.scrollHeight;
+                    } else {
+                        clearInterval(typeWriter);
+                    }
+                }, 5); // Velocidad de escritura
+
+            } catch (e) {
+                alert("Error: " + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function copyResult() {
+            const copyText = document.getElementById("result-area");
+            copyText.select();
+            document.execCommand("copy");
+            alert("✅ ¡Copiado al portapapeles! Listo para Facebook.");
+        }
+    </script>
+</body>
+</html>
