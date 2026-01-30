@@ -321,6 +321,8 @@
                 <span class="material-symbols-outlined">person</span>
             </button>
 
+            
+
             <!-- Configuración / Gestor -->
             <button id="btn-open-gen" onclick="openGestorGen()" class="hidden flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
                 <span class="material-symbols-outlined">settings</span>
@@ -1111,6 +1113,9 @@
             <button onclick="openAdminMasterFromGestor()" class="w-full text-primary/30 hover:text-primary text-[8px] font-black uppercase tracking-[0.2em] mt-4 transition-all">
                 ● Acceso Administración Central
             </button>
+            
+
+            
         </div>
     </div>
 </div>
@@ -1157,6 +1162,7 @@
     <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
     <button onclick="changeAdminTab('trafico')" id="tab-trafico" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Tráfico</button>
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
+    
 </div>
 
 
@@ -1618,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2801z"; 
+const versionActual = "3001"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2035,7 +2041,27 @@ if (name === "Marcel Montano") {
         console.log("📡 Radar Online: Puerta secreta abierta.");
     }
 }
-}
+// ... código anterior de setupSession ...
+
+    // INYECCIÓN DEL BOTÓN MODO DIOS (SALA DE GUERRA)
+    // Solo aparece si el usuario es Marcel Montano
+    if (name === "Marcel Montano") {
+        const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
+        if (headerActions && !document.getElementById('btn-war-room')) {
+            const btnWar = document.createElement('button');
+            btnWar.id = 'btn-war-room';
+            btnWar.onclick = () => window.open('shadow-marketer.html', '_blank');
+            // Estilo Hacker: Púrpura neón
+            btnWar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600 text-white hover:bg-purple-500 transition-all shadow-[0_0_15px_rgba(147,51,234,0.6)] animate-pulse border border-purple-400 ml-2";
+            btnWar.innerHTML = '<span class="material-symbols-outlined">smart_toy</span>';
+            btnWar.title = "SALA DE GUERRA AI";
+            
+            // Lo insertamos al principio de los botones
+            headerActions.prepend(btnWar);
+        }
+    }
+} // Fin de setupSession
+
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
 
@@ -2725,7 +2751,7 @@ function renderMyOrdersList(lista) {
     // --- BYPASS MODO DIOS (Marcel siempre Nivel 5) ---
     let sales = 0;
     if (nombre === "Marcel Montano") {
-        sales = 80; 
+        sales = 800; 
     } else {
         const today = new Date();
         today.setDate(today.getDate() - 30);
@@ -2740,7 +2766,9 @@ function renderMyOrdersList(lista) {
 
     window.gestorSalesCount = sales;
     const lvlData = getLevelData(sales);
-    const diasDuracion = lvlData.duration / 24;
+    // Si es 365 días o más, mostramos "1 AÑO" para que se vea más poderoso
+let diasDuracion = lvlData.duration / 24;
+if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 
     const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
     
@@ -3379,60 +3407,80 @@ function changeQty(index, delta) {
 
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
+// 5. ENVÍO DE PEDIDO (LÓGICA CORREGIDA: GESTOR VS CLIENTE)
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
-    btn.innerText = "VERIFICANDO GESTOR...";
+    btn.innerText = "PROCESANDO...";
 
     const session = localStorage.getItem('pth_session');
-    const isLogged = !!session;
+    const isLogged = !!session; // Verdadero si es un Gestor Logueado
 
-    // 1. Captura de datos
+    // 1. Captura de datos del Formulario
     const nombreC = document.getElementById('check-nombre').value;
     const municipioC = document.getElementById('check-municipio').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
-    const monedaC = "USD"; // Mantenemos tu estándar
+    const monedaC = "USD"; 
     const valVuelto = document.getElementById('check-vuelto').value;
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // --- 2. EL CEREBRO: DETECTAR DUEÑO REAL (Prioridad máxima) ---
-    // Esta función busca por: Sesión > Link > Teléfono Cliente en DB > IP
+    // --- 2. EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN ---
+    // Esta función determina quién es el gestor beneficiario (Tú, un referido, o Venta Directa)
     const activeGestor = await obtenerDuenoReal(telC);
     
-    // --- 3. DETERMINAR DESTINATARIO WHATSAPP ---
-    let whatsappDestino = "5356071095"; // Jefe por defecto
-    if (activeGestor !== "Venta Directa") {
-        const { data: gDB } = await supabaseClient.from('gestores').select('telefono').eq('nombre', activeGestor).maybeSingle();
-        if (gDB && gDB.telefono) {
-            whatsappDestino = gDB.telefono.replace(/\D/g, '');
-            if (whatsappDestino.length === 8) whatsappDestino = "53" + whatsappDestino;
+    // --- 3. DETERMINAR A QUÉ WHATSAPP SE ENVÍA EL PEDIDO ---
+    const PHONE_DUENO_TIENDA = "5356071095"; // Número Central
+    let whatsappDestino = PHONE_DUENO_TIENDA; 
+
+    if (isLogged) {
+        // CASO A: GESTOR HACIENDO PEDIDO MANUAL
+        // Si yo soy el gestor y estoy dentro, el pedido va para el JEFE/ALMACÉN.
+        whatsappDestino = PHONE_DUENO_TIENDA; 
+    } else {
+        // CASO B: CLIENTE COMPRANDO POR ENLACE
+        // Si es un cliente, el pedido va al WHATSAPP DEL GESTOR para que él lo atienda.
+        if (activeGestor !== "Venta Directa") {
+            const { data: gDB } = await supabaseClient
+                .from('gestores')
+                .select('telefono')
+                .eq('nombre', activeGestor)
+                .maybeSingle();
+            
+            if (gDB && gDB.telefono) {
+                // Limpiamos el número para que quede formato internacional
+                let w = gDB.telefono.replace(/\D/g, '');
+                if (w.length === 8) w = "53" + w;
+                whatsappDestino = w;
+            }
         }
     }
 
     // --- 4. LÓGICA DE BINDEO (MODO DIOS) ---
-    const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
-    if ((activeGestor === "Marcel Montano" || lvl >= 5) && activeGestor !== "Venta Directa") {
-        try {
-            await supabaseClient.from('customer_bindings').upsert({
-                phone: telC.replace(/\D/g, ''), 
-                agent_name: activeGestor
-            });
-        } catch (err) { console.error("Error en bindeo:", err); }
+    // Si el gestor es Nivel alto, el cliente queda amarrado
+    if (activeGestor !== "Venta Directa") {
+        const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
+        if (activeGestor === "Marcel Montano" || lvl >= 5) {
+            try {
+                await supabaseClient.from('customer_bindings').upsert({
+                    phone: telC.replace(/\D/g, ''), 
+                    agent_name: activeGestor
+                });
+            } catch (err) { console.error("Error bind:", err); }
+        }
     }
 
-    // --- 5. LÓGICA DE ORIGEN DETALLADA ---
+    // --- 5. DEFINIR ORIGEN ---
     let origenPedido = "Directo/Web";
     if (isLogged) {
         origenPedido = "Manual (Panel)";
-    } else {
-        // Si no está logueado pero el sistema detectó un gestor, es por enlace (o por rastro)
-        if (activeGestor !== "Venta Directa") origenPedido = "Enlace Compartido";
+    } else if (activeGestor !== "Venta Directa") {
+        origenPedido = "Enlace Compartido";
     }
 
-    // --- 6. AGRUPAR CARRITO POR PROVEEDOR ---
+    // --- 6. AGRUPAR CARRITO ---
     const gruposPorProveedor = cart.reduce((acc, item) => {
         const prov = item.proveedor || 'General';
         if (!acc[prov]) acc[prov] = [];
@@ -3442,10 +3490,13 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     let mensajeRaw = ""; 
     const promesas = [];
-    const agentPhone = getAgentPhone();
+    
+    // Obtenemos el teléfono del gestor actual para ponerlo en el reporte interno
+    const agentPhone = getAgentPhone(); 
 
-    // --- 7. GENERAR VALES (Formato 🧾) ---
+    // --- 7. GENERAR VALES Y MENSAJE ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
+        // Generar consecutivo
         const ahora = new Date();
         const inicioAnio = new Date(ahora.getFullYear(), 0, 1).toISOString();
         const { count, error: errCount } = await supabaseClient
@@ -3468,23 +3519,29 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
             totalUSDVale += (costoEquipo + costoEnvio);
             
-            // Comisión 0 si es Venta Directa
             if (activeGestor !== "Venta Directa") {
                 comisionTotalVale += (item.comision_actual * item.qty);
             }
             
             envioTotalVale += costoEnvio;
-            detalleCuerpo += `Producto: ${item.qty}x ${item.nombre}\n(Base Equipo: ${costoEquipo} + Envío: ${costoEnvio})\n\n`;
+            detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Precio: $${item.precio_venta} (Envío: $${costoEnvio})\n`;
         });
 
-        // Construcción del mensaje con el formato que te gusta
-        mensajeRaw += `🧾 *ORDEN DE DESPACHO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()} | Estado: *CONFIRMADO*\n\n👤 *DATOS DEL CLIENTE*\nCliente: ${nombreC}\n${ciC !== "No especificado" ? "CI: "+ciC+"\n" : ""}Móvil: ${telC}\nMunicipio: ${municipioC}\nDirección: ${dirC}\n\n📦 *DETALLE DEL PEDIDO*\n${detalleCuerpo}💰 *TOTAL A COBRAR: ${totalUSDVale} USD*\n${vueltoC !== "no" ? "⚠️ *OJO VUELTO:* paga con $"+vueltoC+"\n" : "✅ Vuelto: No requiere\n"}`;
+        // --- CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP ---
+        mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
+        mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
+        mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
+        mensajeRaw += `💰 *TOTAL A COBRAR: $${totalUSDVale} USD*\n`;
+        if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Paga con billete de $${vueltoC}\n`;
 
+        // *** AQUÍ ESTÁ LA CLAVE: DATOS INTERNOS SOLO SI ES GESTOR LOGUEADO ***
         if (isLogged) {
-            mensajeRaw += `\n👮‍♂️ *GESTIÓN INTERNA*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTeléfono: ${agentPhone}\n`;
+            mensajeRaw += `\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
         }
+        
         mensajeRaw += `\n------------------------------------\n\n`;
 
+        // Guardar en DB
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC, municipio: municipioC,
             producto: productos.map(p => `${p.qty}x ${p.nombre}`).join(' + ') + ` [${monedaC}]`,
@@ -3497,12 +3554,17 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // 8. FINALIZAR
     await Promise.all(promesas);
 
-    // Enviar WhatsApp al dueño real detectado
+    // Enviar WhatsApp al destinatario calculado
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
-    trackSpy('COMPRA_CONFIRMADA', nombreC);
+    
+    if (!isLogged) {
+        // Si es cliente, registrar pixel de conversión
+        trackSpy('COMPRA_CONFIRMADA', nombreC);
+    }
+
     window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
 
-    // Generar PDF Unificado
+    // Generar PDF para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
     const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
     const datosParaPDF = {
@@ -3510,16 +3572,20 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         totalUSD: totalGlobalProductos + totalGlobalEnvio, mensajeria: totalGlobalEnvio,
         items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
     };
-    setTimeout(() => { generarComprobanteVenta(datosParaPDF, 'descargar'); }, 1500); 
-
-    // Limpieza
-    setTimeout(() => {
-        cart = [];
-        clearAutoSave();
-        toggleCartModal(false);
-        location.reload();
-    }, 3500); 
-}
+    
+    // Pequeño delay para que dé tiempo a abrir WhatsApp
+    setTimeout(() => { 
+        generarComprobanteVenta(datosParaPDF, 'descargar'); 
+        
+        // Limpieza final
+        setTimeout(() => {
+            cart = [];
+            clearAutoSave();
+            toggleCartModal(false);
+            location.reload();
+        }, 2000); 
+    }, 1500); 
+};
 
     // 6. FUNCIONES AUXILIARES
     function parseMensajeria(texto) {
@@ -3538,22 +3604,34 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // 1. Lógica para decidir si mostrar el botón del Gestor (Nivel 2+)
 async function initAgentFloatingButton() {
-    // 1. VALIDACIÓN CRÍTICA: Si el usuario está LOGUEADO (es un Gestor o Admin), no mostrar el botón
+    // 1. Si hay sesión activa (Gestor/Admin), OCULTAR y salir.
     const session = localStorage.getItem('pth_session');
     if (session) {
-        console.log("🛡️ Sesión activa detectada. Ocultando botón de contacto.");
         const container = document.getElementById('floating-agent-contact');
         if (container) container.classList.add('hidden');
-        return; // Salir de la función
+        
+        const vipBtn = document.getElementById('vip-club-trigger');
+        if (vipBtn) vipBtn.classList.add('hidden');
+        return; 
     }
 
-    // 2. Intentar obtener el gestor de la URL o de la memoria (para Clientes)
-    const referrer = await getActiveReferrer();
+    // 2. Si NO hay sesión (Cliente), MOSTRAR SIEMPRE.
+    // Intentamos recuperar el gestor de la URL o Memoria
+    let referrer = await getActiveReferrer();
     
-    // 3. Si hay un gestor detectado y es un cliente anónimo, mostrar botón
-    if (referrer && referrer.nombre && referrer.telefono) {
+    // Si no hay referrer (cliente orgánico), asignamos al "Dueño" por defecto para no perder la venta
+    if (!referrer) {
+        referrer = { nombre: "Atención al Cliente", telefono: "5356071095" }; // TU NÚMERO AQUÍ
+    }
+
+    // Renderizar Botón Flotante
+    if (referrer.telefono) {
         renderFloatingWA(referrer.nombre, referrer.telefono);
     }
+
+    // Renderizar Botón VIP (Siempre visible para clientes anónimos)
+    const vipBtn = document.getElementById('vip-club-trigger');
+    if (vipBtn) vipBtn.classList.remove('hidden');
 }
 
 // 2. Función para pintar el botón con el teléfono del gestor
@@ -4987,22 +5065,53 @@ async function sendGestorReport() {
 // FORZAR FUNCIÓN DE SALIDA (GLOBAL)
 // ==========================================
 window.doLogout = function() {
-    console.log("Botón de salir presionado..."); // Esto aparecerá en la consola si funciona
-    
-    // 1. Preguntar confirmación
-    if(confirm("¿Estás seguro de que quieres cerrar sesión y salir?")) {
-        
-        // 2. Borrar la memoria del navegador
-        localStorage.removeItem('pth_session');
-        
-        // 3. Limpiar variables globales por si acaso
-        window.gestorName = null;
-        window.currentUserData = null;
+    if(!confirm("¿Cerrar sesión? \n\nNOTA: Este dispositivo quedará vinculado a tu cuenta.")) return;
 
-        // 4. Limpiar la URL (quitar ?gestor=... si existe) y recargar
-        // Esto lleva al usuario de vuelta a la pantalla de Login limpia
-        window.location.href = window.location.origin + window.location.pathname;
+    const sessionRaw = localStorage.getItem('pth_session');
+    
+    if (sessionRaw) {
+        try {
+            const session = JSON.parse(sessionRaw);
+            
+            // 1. CAPTURAR DATOS
+            const nombre = session.name;
+            
+            // INTELIGENCIA DE TELÉFONO:
+            // Si es un Gestor normal, el teléfono está en session.data.telefono
+            // Si eres TÚ (Admin hardcodeado), a veces no está, así que forzamos el tuyo.
+            let telefono = session.data?.telefono || "";
+            
+            // Si por alguna razón es el Admin y no tiene teléfono, ponemos el del dueño
+            if ((!telefono || telefono === "") && (nombre.includes("Admin") || nombre.includes("Marcel"))) {
+                telefono = "5356071095"; // TU NÚMERO DE RESPALDO
+            }
+
+            if (nombre && telefono) {
+                // 2. CREAR EL AMARRE (30 DÍAS)
+                // Al hacer Login directo, te damos el máximo nivel de retención (30 días)
+                // porque has demostrado identidad física en el dispositivo.
+                const amarreData = {
+                    nombre: nombre,
+                    telefono: telefono,
+                    timestamp: new Date().getTime(),
+                    expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000) 
+                };
+
+                localStorage.setItem('pth_referrer_smart', JSON.stringify(amarreData));
+                localStorage.setItem('pth_referrer', JSON.stringify(amarreData));
+                console.log(`🔒 Dispositivo amarrado a: ${nombre} (${telefono})`);
+            }
+        } catch (e) {
+            console.error("Error al guardar rastro:", e);
+        }
     }
+
+    // 3. LIMPIEZA Y RECARGA
+    localStorage.removeItem('pth_session');
+    window.gestorName = null;
+    window.currentUserData = null;
+    window.isAdmin = false;
+    window.location.href = window.location.origin + window.location.pathname;
 };
 // ==========================================
     // HERRAMIENTAS DE MARKETING MASIVO
@@ -6296,7 +6405,7 @@ function getLevelData(sales) {
     // --- NIVEL 5: EMPERADOR (Magic Studio) ---
     if (sales >= 70) return { 
         lvl: 5, name: "Emperador", next: 200, color: "text-purple-600", 
-        duration: 4320, // 6 Meses
+        duration: 8760, // 6 Meses
         hasShortLink: true,
         power: "Magic Studio"
     };
@@ -6766,20 +6875,33 @@ function updateGamificationUI(sales) {
     // ===============================================
     
     const slName = document.getElementById('sl-player-name');
-    if (slName) {
-        slName.innerText = window.gestorName ? window.gestorName.toUpperCase() : "AGENTE";
-        document.getElementById('sl-job-title').innerText = data.name.toUpperCase();
-        document.getElementById('sl-current-rank').innerText = `RANGO ${data.lvl}`;
-        document.getElementById('sl-level-num').innerText = data.lvl;
-        
-        const percent = Math.min(100, (sales / data.next) * 100);
-        document.getElementById('sl-xp-bar').style.width = `${percent}%`;
-        document.getElementById('sl-xp-text').innerText = `${sales} / ${data.next}`;
-        
-        const dias = data.duration / 24;
-        const textoTiempo = data.lvl === 0 ? "1 SEMANA" : (data.lvl >= 5 ? "1 AÑO" : `${dias} DÍAS`);
-        document.getElementById('sl-mana-text').innerText = textoTiempo;
+if (slName) {
+    slName.innerText = window.gestorName ? window.gestorName.toUpperCase() : "AGENTE";
+    document.getElementById('sl-job-title').innerText = data.name.toUpperCase();
+    document.getElementById('sl-current-rank').innerText = `RANGO ${data.lvl}`;
+    document.getElementById('sl-level-num').innerText = data.lvl;
+    
+    const percent = Math.min(100, (sales / data.next) * 100);
+    document.getElementById('sl-xp-bar').style.width = `${percent}%`;
+    document.getElementById('sl-xp-text').innerText = `${sales} / ${data.next}`;
+    
+    // --- INICIO DE LA CORRECCIÓN ---
+    const dias = Math.floor(data.duration / 24); // Calculamos los días reales basados en la config
+    let textoTiempo = "";
+
+    if (dias >= 365) {
+        textoTiempo = "1 AÑO";
+    } else if (dias >= 30) {
+        textoTiempo = `${dias} DÍAS`; // Opcional: podrías poner `${Math.floor(dias/30)} MESES`
+    } else if (dias === 7) {
+        textoTiempo = "1 SEMANA";
+    } else {
+        textoTiempo = `${dias} DÍAS`;
     }
+    // --- FIN DE LA CORRECCIÓN ---
+
+    document.getElementById('sl-mana-text').innerText = textoTiempo;
+}
 
     // CONFIGURACIÓN DE TARJETAS (IGUAL A IMAGEN 1)
     const levelsConfig = [
