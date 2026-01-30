@@ -46,14 +46,16 @@
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // --- CALCULADORA DE TARIFA TECNOLÓGICA (TÚ PAGO) ---
+// --- CALCULADORA DE TARIFA TECNOLÓGICA (NUEVA TABLA 5 NIVELES) ---
 function calculateDevFee(precioVenta) {
     const p = parseFloat(precioVenta) || 0;
     
-    // Regla de Negocio Acordada:
-    if (p > 1500) return 10; // Industrial / Kits
-    if (p > 400) return 5;   // Gama Alta (Motos, Neveras grandes)
-    if (p >= 100) return 2;  // Gama Media (Lavadoras, TV)
-    return 1;                // Gama Baja (Ollas, Ventiladores)
+    // Tabla de "Costo Operativo" (Sale de la ganancia del Boss)
+    if (p <= 60) return 0.50;   // Micro (Arroceras, Licuadoras)
+    if (p <= 150) return 1.00;  // Baja (Ventiladores, Ollas)
+    if (p <= 399) return 2.00;  // Media (Lavadoras, Splits)
+    if (p <= 999) return 3.00;  // Alta (Neveras medianas)
+    return 5.00;                // Premium (Kits, Neveras grandes)
 }
 </script>
 </head>
