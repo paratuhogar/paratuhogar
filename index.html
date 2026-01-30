@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3001"; 
+const versionActual = "3001a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3360,7 +3360,7 @@ function renderCart() {
     // Ya no hay input global de envío al final
     container.innerHTML = htmlItems;
     recalcularTotalFinal(); // Importante llamar esto para actualizar el total abajo
-    actualizarOpcionesMoneda(); 
+
 }
 
 // Función para sumar o restar cantidad

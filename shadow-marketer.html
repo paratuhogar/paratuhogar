@@ -192,7 +192,9 @@
                 ]);
 
                 // Generar Link Específico del Producto
-                const finalLink = constructAffiliateLink(p.nombre);
+                // --- CAMBIO AQUÍ: GENERAR LINK CORTO REAL ---
+                // Usamos await porque ahora consultamos a Supabase
+                const finalLink = await getOrGenerateShortLink(p.nombre);
                 
                 // Link individual para WhatsApp (Para la publicación individual)
                 const waLinkIndividual = `https://wa.me/${AGENT_PHONE}?text=${encodeURIComponent('Hola Marcel, me interesa: ' + p.nombre)}`;
@@ -400,7 +402,9 @@
             const data = await response.json();
             return data.candidates[0].content.parts[0].text.trim();
         } catch (e) {
-            return `🔥 ¡OFERTA NUEVA! \n📦 ${p.nombre}\n💎 Calidad Premium.\n🚀 ¡Escribe antes que se acabe!`;
+            console.error("Error IA:", e); // Para ver en consola por qué falla
+            // Texto de respaldo mejorado
+            return `🔥 ¡OFERTA DISPONIBLE!\n📦 Modelo: *${p.nombre}*\n💰 Precio: *$${p.precio} USD*\n💎 Garantía y Entrega Rápida.\n🚀 ¡Escribe antes que se agote!`;
         }
     }
 
@@ -411,11 +415,44 @@
         return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
     }
 
-    function constructAffiliateLink(productName) {
-        // Enlace correcto para producción
-        const baseUrl = "https://paratuhogar.cu"; // FORZAMOS URL REAL
-        // Si estás en local, podrías usar window.location.origin, pero para compartir quieres la real
-        return `${baseUrl}/index.html?search=${encodeURIComponent(productName.trim())}&gestor=${encodeURIComponent(AGENT_NAME)}&tel=${AGENT_PHONE}`;
+    // --- NUEVA CONFIGURACIÓN DE URL ---
+    const BASE_WEB_URL = "https://paratuhogar.github.io/paratuhogar"; 
+
+    // --- FUNCIÓN PARA GENERAR LINK CORTO REAL (CON SUPABASE) ---
+    async function getOrGenerateShortLink(productName) {
+        // 1. Construir el enlace largo base con TU web correcta
+        const cleanName = encodeURIComponent(productName.trim());
+        const longLink = `${BASE_WEB_URL}/index.html?search=${cleanName}&gestor=${encodeURIComponent(AGENT_NAME)}&tel=${AGENT_PHONE}`;
+
+        try {
+            // 2. Verificar si ya existe en la base de datos
+            const { data } = await supabaseClient
+                .from('short_links')
+                .select('slug')
+                .eq('original_url', longLink)
+                .maybeSingle();
+
+            if (data && data.slug) {
+                return `${BASE_WEB_URL}/index.html?s=${data.slug}`;
+            }
+
+            // 3. Si no existe, crear uno nuevo
+            const newSlug = Math.random().toString(36).substring(2, 7);
+            const { error } = await supabaseClient.from('short_links').insert([{
+                slug: newSlug,
+                original_url: longLink,
+                gestor: AGENT_NAME
+            }]);
+
+            if (!error) {
+                return `${BASE_WEB_URL}/index.html?s=${newSlug}`;
+            }
+        } catch (e) {
+            console.error("Error acortando link:", e);
+        }
+
+        // Si falla la base de datos, devuelve el largo por seguridad
+        return longLink;
     }
 
     function copyToClipboard(id) {
