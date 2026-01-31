@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3001a"; 
+const versionActual = "3101"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -1671,11 +1671,14 @@ if (urlParamsVersion.get('v') !== versionActual) {
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function checkShortLinks() {
+async function checkShortLinks() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
 
     if (slug) {
+        // 1. BANDERA DE SEGURIDAD: Avisamos al navegador que estamos saltando
+        sessionStorage.setItem('pth_redirecting', 'true');
+
         const { data, error } = await supabaseClient
             .from('short_links')
             .select('*')
@@ -1683,14 +1686,12 @@ if (urlParamsVersion.get('v') !== versionActual) {
             .single();
 
         if (data && !error) {
-            // Intentamos extraer el teléfono de la URL guardada
             let telOriginal = "";
             try {
                 const urlObj = new URL(data.original_url);
                 telOriginal = urlObj.searchParams.get('tel') || "";
             } catch(e) {}
 
-            // SI NO HAY TELÉFONO EN EL LINK, lo buscamos en la tabla de gestores por su nombre
             if (!telOriginal) {
                 const { data: gestorDB } = await supabaseClient
                     .from('gestores')
@@ -1707,15 +1708,21 @@ if (urlParamsVersion.get('v') !== versionActual) {
                 expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
             };
             
-            // Guardamos la información del gestor con su teléfono recuperado
             localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
             localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
 
-            // Redirigir asegurando que la versión (v=) se mantenga
+            // Redirigir
             window.location.href = data.original_url;
-            // DETENEMOS LA EJECUCIÓN PARA QUE NO DISPARE EL TRACKSPY ANTES DE IRSE
-    throw new Error("Redirigiendo link corto...");
+            
+            // Detener ejecución para que no se registre nada en esta página intermedia
+            throw new Error("Redirigiendo link corto...");
         }
+    } else {
+        // Si NO hay slug, significa que ya aterrizamos. Quitamos la bandera.
+        // Pero lo hacemos con un pequeño delay para que el trackSpy no se dispare antes de tiempo
+        setTimeout(() => {
+            sessionStorage.removeItem('pth_redirecting');
+        }, 2000);
     }
 }
 
@@ -2069,7 +2076,7 @@ if (name === "Marcel Montano") {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // 1. Consultar TODOS los datos necesarios de los pedidos
+    // 1. Consultar TODOS los datos
     const { data: allPedidos, error } = await supabaseClient
         .from('pedidos')
         .select('*')
@@ -2077,11 +2084,11 @@ async function loadProDashboard(nombreGestor) {
 
     if(error) { console.error(error); return; }
     
-    // 2. Filtrar SOLO mis ventas
+    // 2. Filtrar y preparar datos
     const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
-    myOrdersData = misVentas; // Guardamos para el buscador
+    myOrdersData = misVentas; 
 
-    // 3. Cálculos Financieros
+    // 3. Cálculos Financieros (Tu lógica existente)
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
     const misPendientes = misVentas.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
 
@@ -2099,30 +2106,17 @@ async function loadProDashboard(nombreGestor) {
     if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
     if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
 
-    // 4. RANKING
-    renderRankingAnonimo(allPedidos, nombreGestor);
-
-    // 5. RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
-    renderMyOrdersList(misVentas);
-    // ... dentro de loadProDashboard ...
-
-    // 5. RENDERIZAR LA LISTA DE PEDIDOS DETALLADA
+    // 4. RENDERIZAR TABLA DE MIS PEDIDOS
     renderMyOrdersList(misVentas);
 
-    // 6. NUEVO: RENDERIZAR GRÁFICA DE ORIGEN
-    renderSourceChart(misVentas); // <--- PEGA ESTO AQUÍ
-    
-    // ... resto del código ...
+    // 5. GRÁFICA DE FUENTES
+    renderSourceChart(misVentas);
 
-    // 6. INYECTAR ENLACES (Corregido: Solo una vez y con await)
-    // Esto es lo que genera el link corto automáticamente si eres Nivel 3+
+    // 6. ENLACES (Link corto)
     await injectLinksSection(nombreGestor);
 
-    // Al final, DESPUÉS de obtener los datos de pedidos:
-    renderMyOrdersList(misVentas); 
-    
-    // Y el ranking
-    renderRankingAnonimo(allPedidos, nombreGestor);
+    // --- AQUÍ ESTÁ EL CAMBIO: LLAMADA A LA FUNCIÓN CON BLOQUEO ---
+    renderLockedRanking(allPedidos, nombreGestor);
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
@@ -7074,8 +7068,9 @@ async function initSmartReferral() {
     const urlGestor = urlParams.get('gestor');
     let urlTel = urlParams.get('tel');
 
+    // CASO 1: HAY NUEVOS DATOS EN LA URL (Sobrescribir)
     if (urlGestor) {
-        // Si el link no trae teléfono, lo buscamos para no perder el rastro de WhatsApp
+        // Recuperar teléfono si falta
         if (!urlTel) {
             const { data } = await supabaseClient.from('gestores').select('telefono').eq('nombre', urlGestor).maybeSingle();
             if (data) urlTel = data.telefono;
@@ -7085,11 +7080,31 @@ async function initSmartReferral() {
             nombre: urlGestor,
             telefono: urlTel || "",
             timestamp: new Date().getTime(),
+            // Amarre de 30 días renovado
             expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
         };
         localStorage.setItem('pth_referrer_smart', JSON.stringify(dataGuardar));
-        // Dejar rastro de IP
+        localStorage.setItem('pth_referrer', JSON.stringify(dataGuardar)); // Backup compatibilidad
+        
+        // Rastro IP
         registrarRastroIP(urlGestor);
+    } 
+    // CASO 2: URL LIMPIA (Mantener lo que había)
+    else {
+        // Verificar si hay algo guardado y si sigue vigente
+        const stored = localStorage.getItem('pth_referrer_smart');
+        if (stored) {
+            const data = JSON.parse(stored);
+            const now = new Date().getTime();
+            
+            // Solo borramos si REALMENTE expiró el tiempo (30 días)
+            if (now > data.expiresAt) {
+                console.log("Amarre expirado por tiempo.");
+                localStorage.removeItem('pth_referrer_smart');
+            } else {
+                console.log("Amarre activo mantenido:", data.nombre);
+            }
+        }
     }
 }
 
@@ -7762,16 +7777,51 @@ async function checkCustomerOwnership(phone) {
 
 // Función para dejar rastro de IP al usar un link
 async function registrarRastroIP(nombreGestor) {
+    if (!nombreGestor) return;
+
     try {
         const res = await fetch('https://api.ipify.org?format=json');
         const { ip } = await res.json();
         
-        // Guardamos en la tabla de analítica
-        await supabaseClient.from('link_analytics').insert([{
-            agent_name: nombreGestor,
-            ip_address: ip
-        }]);
-    } catch (e) { console.error("Rastro IP fallido (VPN o Bloqueo)"); }
+        // 1. Definir Huella Digital (UserAgent + Ancho Pantalla)
+        const fingerprint = navigator.userAgent + "|" + screen.width;
+
+        // 2. Definir Cooldown (30 min) para no saturar la base de datos
+        const margenTiempo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+        // 3. Verificar si ya existe este rastro reciente
+        const { data: existente, error: errCheck } = await supabaseClient
+            .from('link_analytics')
+            .select('id')
+            .eq('agent_name', nombreGestor)
+            .eq('ip_address', ip)
+            .gte('timestamp', margenTiempo) 
+            .limit(1);
+
+        if (errCheck) throw errCheck;
+
+        // 4. Si NO existe reciente, guardamos
+        if (!existente || existente.length === 0) {
+            const ua = navigator.userAgent;
+            // Detectamos Móvil/PC para la gráfica
+            const tipoDispositivo = /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio';
+            const sistemaOperativo = ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil";
+
+            await supabaseClient.from('link_analytics').insert([{
+                agent_name: nombreGestor,
+                ip_address: ip,
+                device_type: tipoDispositivo, // Mantenemos esto limpio para la gráfica
+                os: sistemaOperativo,
+                browser: fingerprint, // <--- AQUÍ GUARDAMOS LA HUELLA ÚNICA
+                timestamp: new Date().toISOString()
+            }]);
+            console.log("📍 Rastro Digital guardado (IP + Huella).");
+        } else {
+            console.log("⏩ Rastro duplicado omitido (Cooldown activo).");
+        }
+    } catch (e) { 
+        console.error("Error rastro IP:", e); 
+    }
 }
 
 // Función para buscar si una IP tiene dueño en las últimas 48 horas
@@ -7780,19 +7830,27 @@ async function buscarDuenoPorIP() {
         const res = await fetch('https://api.ipify.org?format=json');
         const { ip } = await res.json();
         
-        // Buscamos el rastro más reciente de esta IP (máximo 48h de antigüedad)
-        const limiteTiempo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+        // Generamos la misma huella para comparar
+        const fingerprint = navigator.userAgent + "|" + screen.width;
+        
+        // Buscamos en las últimas 24 horas (más estricto es mejor)
+        const limiteTiempo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-        const { data, error } = await supabaseClient
+        const { data } = await supabaseClient
             .from('link_analytics')
             .select('agent_name')
             .eq('ip_address', ip)
-            .gte('timestamp', limiteTiempo) // Filtro de 48 horas
+            .eq('browser', fingerprint) // <--- COMPARAMOS LA HUELLA EXACTA AQUÍ
+            .gte('timestamp', limiteTiempo)
             .order('timestamp', { ascending: false })
             .limit(1)
             .maybeSingle();
             
-        return data ? data.agent_name : null;
+        if (data) {
+            console.log(`🕵️ Detectado por Huella Digital: ${data.agent_name}`);
+            return data.agent_name;
+        }
+        return null;
     } catch (e) { return null; }
 }
 
@@ -8362,19 +8420,34 @@ function filterProducts() {
 
 // 1. trackSpy mejorado para esperar al gestor
 async function trackSpy(accion, detalle, duracion = 0) {
-    try {
-        // Pequeña espera para asegurar que initSmartReferral terminó
-        if (accion === 'INICIO_SESION') await new Promise(r => setTimeout(r, 500));
+    // 1. PORTERO: Si estamos redirigiendo, CALLARSE.
+    if (sessionStorage.getItem('pth_redirecting') === 'true') return;
 
-        // Buscamos el gestor en TODAS las memorias posibles
-        const ref = JSON.parse(localStorage.getItem('pth_referrer_smart')) || 
-                    JSON.parse(localStorage.getItem('pth_referrer'));
+    try {
+        // 2. ESPERA INTELIGENTE: Si es inicio de sesión, dar tiempo a que cargue la memoria
+        if (accion === 'INICIO_SESION') await new Promise(r => setTimeout(r, 1500));
+
+        // 3. RECUPERACIÓN DE GESTOR (Jerarquía estricta)
+        let gestorFinal = 'Directo';
         
+        // A. Memoria Inteligente (Link Corto)
+        const refSmart = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        if (refSmart && refSmart.nombre) {
+            gestorFinal = refSmart.nombre;
+        } else {
+            // B. Memoria Histórica
+            const refOld = JSON.parse(localStorage.getItem('pth_referrer'));
+            if (refOld && refOld.nombre) {
+                gestorFinal = refOld.nombre;
+            } else {
+                // C. Último recurso: IP (Plan B)
+                const ipOwner = await buscarDuenoPorIP();
+                if (ipOwner) gestorFinal = ipOwner;
+            }
+        }
+
         const { ip } = await fetch('https://api.ipify.org?format=json').then(r => r.json());
         
-        // Si no hay gestor en memoria, intentamos el rastro de IP antes de rendirnos
-        let gestorFinal = ref ? ref.nombre : (await buscarDuenoPorIP() || 'Directo');
-
         await supabaseClient.from('log_espia').insert([{
             ip: ip,
             accion: accion,
@@ -8394,20 +8467,41 @@ function captureGhostLead() {
         const nombre = document.getElementById('check-nombre').value.trim();
         const telRaw = document.getElementById('check-tel').value.trim();
         
-        // Limpiamos el teléfono: solo números y sin el 53 al inicio para comparar siempre igual
+        // Limpieza de teléfono
         let telLimpio = telRaw.replace(/\D/g, '');
-        if (telLimpio.startsWith('53')) telLimpio = telLimpio.substring(2);
+        if (telLimpio.startsWith('53') && telLimpio.length > 8) telLimpio = telLimpio.substring(2);
         
-        if (telLimpio.length < 8) return; // No guardar basura
+        if (telLimpio.length < 8) return; // Esperar a que termine de escribir
 
-        const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        // --- LÓGICA DE ASIGNACIÓN DE DUEÑO ---
+        let gestorAtribuido = 'Directo';
+
+        // 1. Verificar si este teléfono YA tiene dueño en la base de datos (Amarre)
+        const { data: binding } = await supabaseClient
+            .from('customer_bindings')
+            .select('agent_name')
+            .eq('phone', telLimpio)
+            .maybeSingle();
+
+        if (binding && binding.agent_name) {
+            gestorAtribuido = binding.agent_name; // ¡Es de un gestor, rescatarlo para él!
+        } else {
+            // 2. Si no tiene amarre, mirar la memoria local
+            const ref = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+            if (ref && ref.nombre) {
+                gestorAtribuido = ref.nombre;
+            }
+        }
+
         const prodNames = cart.map(i => i.nombre).join(', ');
 
+        // Guardar o Actualizar en Leads Fantasma
         await supabaseClient.from('leads_fantasma').upsert([{
-            telefono: telLimpio, // Esta es la clave única ahora
+            telefono: telLimpio,
             nombre: nombre,
-            producto_en_carrito: prodNames,
-            gestor_atribuido: ref ? ref.nombre : 'Directo'
+            producto_en_carrito: prodNames || 'Viendo Catálogo',
+            gestor_atribuido: gestorAtribuido,
+            completado: false // Marcar como pendiente
         }], { onConflict: 'telefono' });
 
     }, 2000); 
@@ -8631,6 +8725,132 @@ window.addEventListener('load', () => {
     // Le damos un pequeño delay para asegurar que Supabase cargó
     setTimeout(checkVipButtonVisibility, 1000);
 });
+
+function renderLockedRanking(allPedidos, nombreGestor) {
+    const container = document.getElementById('ranking-list');
+    if (!container) return;
+
+    // 1. Verificar Nivel
+    const salesCount = window.gestorSalesCount || 0;
+    const currentLevel = window.currentGestorLevel || 0;
+    const NIVEL_REQUERIDO = 4; // Monarca
+    const VENTAS_REQUERIDAS = 40; // Ajusta según tu tabla de niveles
+
+    // CASO A: MODO DIOS O NIVEL SUFICIENTE -> MOSTRAR TODO
+    if (nombreGestor === "Marcel Montano" || currentLevel >= NIVEL_REQUERIDO) {
+        // Llamamos a tu función original que pinta el ranking real
+        renderRankingAnonimo(allPedidos, nombreGestor);
+        return;
+    }
+
+    // CASO B: BLOQUEADO (Efecto Borroso)
+    const faltan = VENTAS_REQUERIDAS - salesCount;
+    
+    container.innerHTML = `
+    <div class="relative w-full h-64 bg-slate-900 rounded-xl overflow-hidden border border-slate-700 group cursor-pointer" onclick="alert('🔒 RANKING GLOBAL BLOQUEADO\\n\\nNecesitas ser NIVEL 4 (Monarca) para ver la competencia.\\n\\n📉 Te faltan: ${faltan} ventas.')">
+        
+        <!-- Fondo Falso Borroso (Simulación) -->
+        <div class="absolute inset-0 p-4 space-y-4 opacity-30 blur-sm select-none pointer-events-none filter grayscale">
+            ${[1,2,3,4].map(i => `
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <div class="flex gap-2"><span class="w-8 h-8 bg-slate-700 rounded-full"></span><div class="h-4 w-32 bg-slate-700 rounded"></div></div>
+                <div class="h-6 w-16 bg-slate-700 rounded"></div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Capa de Bloqueo (Overlay) -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/40 hover:bg-black/50 transition-all">
+            
+            <div class="relative">
+                <span class="material-symbols-outlined text-6xl text-red-500 animate-pulse drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">lock</span>
+                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">LVL 4</div>
+            </div>
+
+            <h3 class="mt-4 text-xl font-black text-white uppercase tracking-widest italic">CLASIFICADO</h3>
+            <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Ranking Global de Agentes</p>
+            
+            <!-- Tooltip Fijo -->
+            <div class="mt-4 px-4 py-2 bg-slate-800/90 border border-slate-600 rounded-lg backdrop-blur-md transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                <p class="text-xs text-center text-white">
+                    <span class="text-red-400 font-black">BLOQUEADO:</span> Te faltan <span class="text-white font-black text-lg">${faltan}</span> ventas<br>
+                    para espiar a la competencia.
+                </p>
+            </div>
+        </div>
+    </div>`;
+}
+async function renderRescueMissions(nombreGestor) {
+    // 1. Buscar Leads Fantasma de ESTE gestor que NO han comprado hoy
+    const { data: leads, error } = await supabaseClient
+        .from('leads_fantasma')
+        .select('*')
+        .eq('gestor_atribuido', nombreGestor)
+        .eq('completado', false) // Asumiendo que tienes una columna boolean 'completado'
+        .order('timestamp', { ascending: false })
+        .limit(5);
+
+    if (error || !leads || leads.length === 0) return;
+
+    // 2. Buscar si alguno ya compró (para no mostrar falsas alarmas)
+    // Traemos los teléfonos de los pedidos de hoy de este gestor
+    const { data: pedidosHoy } = await supabaseClient
+        .from('pedidos')
+        .select('telefono')
+        .eq('gestor', nombreGestor)
+        .gte('fecha', new Date().toISOString().split('T')[0]);
+
+    const telefonosCompradores = new Set(pedidosHoy.map(p => p.telefono.replace(/\D/g, '').slice(-8)));
+
+    // Filtramos los leads que YA están en pedidos
+    const leadsReales = leads.filter(l => {
+        const telLead = l.telefono.replace(/\D/g, '').slice(-8);
+        return !telefonosCompradores.has(telLead);
+    });
+
+    if (leadsReales.length === 0) return;
+
+    // 3. Crear el HTML de Alerta
+    const container = document.getElementById('sub-dash-resumen');
+    
+    // Eliminar alerta previa si existe
+    const oldAlert = document.getElementById('rescue-mission-alert');
+    if(oldAlert) oldAlert.remove();
+
+    let htmlLeads = leadsReales.map(l => {
+        const tel = l.telefono;
+        const nombre = l.nombre || "Cliente";
+        const prod = l.producto_en_carrito || "Algo";
+        const msg = `Hola ${nombre}, vi que intentabas pedir el ${prod} pero no se completó. ¿Te dio algún error?`;
+        
+        return `
+        <div class="flex justify-between items-center bg-red-900/30 p-2 rounded-lg border border-red-500/30 mb-2">
+            <div>
+                <p class="text-xs font-black text-white uppercase">${nombre}</p>
+                <p class="text-[10px] text-red-200">${prod}</p>
+            </div>
+            <a href="https://wa.me/53${tel}?text=${encodeURIComponent(msg)}" target="_blank" 
+               class="bg-green-500 text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform animate-pulse">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+        </div>`;
+    }).join('');
+
+    const htmlAlert = `
+    <div id="rescue-mission-alert" class="mb-6 bg-gradient-to-r from-red-600 to-red-800 p-4 rounded-2xl shadow-xl shadow-red-900/50 border border-red-400 relative overflow-hidden">
+        <div class="absolute -right-4 -top-4 opacity-20"><span class="material-symbols-outlined text-8xl text-white">emergency_share</span></div>
+        <div class="relative z-10">
+            <h3 class="text-white font-black uppercase italic text-sm mb-1 flex items-center gap-2">
+                <span class="animate-ping w-2 h-2 bg-white rounded-full"></span> Misión de Rescate
+            </h3>
+            <p class="text-[10px] text-red-100 mb-3 font-medium">Estos clientes pusieron sus datos en TU LINK pero no enviaron el WhatsApp. ¡Contáctalos ya!</p>
+            <div class="space-y-1">
+                ${htmlLeads}
+            </div>
+        </div>
+    </div>`;
+
+    container.insertAdjacentHTML('afterbegin', htmlAlert);
+}
 
 </script>
 
