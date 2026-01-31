@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101"; 
+const versionActual = "3101a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2115,8 +2115,7 @@ async function loadProDashboard(nombreGestor) {
     // 6. ENLACES (Link corto)
     await injectLinksSection(nombreGestor);
 
-    // --- AQUÍ ESTÁ EL CAMBIO: LLAMADA A LA FUNCIÓN CON BLOQUEO ---
-    renderLockedRanking(allPedidos, nombreGestor);
+renderRankingAnonimo(allPedidos, nombreGestor);
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
@@ -3604,8 +3603,8 @@ async function initAgentFloatingButton() {
         const container = document.getElementById('floating-agent-contact');
         if (container) container.classList.add('hidden');
         
-        const vipBtn = document.getElementById('vip-club-trigger');
-        if (vipBtn) vipBtn.classList.add('hidden');
+        //const vipBtn = document.getElementById('vip-club-trigger');
+        //if (vipBtn) vipBtn.classList.add('hidden');
         return; 
     }
 
@@ -8680,23 +8679,27 @@ async function checkCustomerOwnership(phone) {
 }
 
 // --- FUNCIÓN PARA MOSTRAR BOTÓN SOLO SI EL GESTOR ES NIVEL 10 ---
+// --- FUNCIÓN PARA MOSTRAR BOTÓN SOLO SI EL GESTOR ES NIVEL 10 O MARCEL ---
 async function checkVipButtonVisibility() {
-    // 1. Obtener quién es el gestor activo (del Link o Memoria)
+    // 1. Ocultar por defecto (Seguridad)
+    const btn = document.getElementById('vip-club-trigger');
+    if(btn) btn.classList.add('hidden');
+
+    // 2. Obtener quién es el gestor activo
     const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
     
-    // Si no hay gestor (cliente orgánico sin referencia), no mostramos nada
+    // Si no hay gestor (cliente orgánico sin referencia), ADIÓS.
     if (!referrer || !referrer.nombre) return;
 
     const agentName = referrer.nombre;
 
-    // 2. MODO DIOS: Si eres tú, siempre aparece
+    // 3. MODO DIOS: Si eres tú, siempre aparece
     if (agentName === "Marcel Montano") {
-        const btn = document.getElementById('vip-club-trigger');
         if(btn) btn.classList.remove('hidden');
         return;
     }
 
-    // 3. VERIFICAR NIVEL EN BASE DE DATOS
+    // 4. VERIFICAR NIVEL EN BASE DE DATOS
     try {
         const { count, error } = await supabaseClient
             .from('pedidos')
@@ -8706,17 +8709,14 @@ async function checkVipButtonVisibility() {
 
         if (error) throw error;
 
-        // 4. SI TIENE 200+ VENTAS (Nivel 10), MOSTRAR BOTÓN
+        // SI TIENE 200+ VENTAS (Nivel 10), MOSTRAR BOTÓN
         if (count >= 200) {
-            const btn = document.getElementById('vip-club-trigger');
             if(btn) btn.classList.remove('hidden');
-            console.log(`🌟 Club VIP Activado: El gestor ${agentName} es Nivel 10 (${count} ventas).`);
-        } else {
-            console.log(`🔒 Club VIP Oculto: El gestor ${agentName} aún no es Nivel 10.`);
-        }
+            console.log(`🌟 Club VIP Activado: El gestor ${agentName} es Nivel 10.`);
+        } 
 
     } catch (e) {
-        console.error("Error verificando nivel VIP:", e);
+        console.error("Error nivel VIP:", e);
     }
 }
 
