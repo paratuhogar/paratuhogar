@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101c"; 
+const versionActual = "3101d"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -7266,12 +7266,24 @@ window.addEventListener('load', () => {
 function copySimpleDesc(btnElement) {
     if(!selectedProduct) return;
 
-    // 1. Limpiar HTML
+    // --- 1. LÓGICA DE LIMPIEZA INTELIGENTE ---
+    let rawHtml = selectedProduct.descripcion || "Sin descripción detallada.";
+
+    // Reemplazamos etiquetas HTML por saltos de línea y viñetas
+    let descFormateada = rawHtml
+        .replace(/<br\s*\/?>/gi, "\n")       // <br> se convierte en Salto
+        .replace(/<\/p>/gi, "\n\n")          // Fin de párrafo </p> se convierte en Doble Salto
+        .replace(/<\/div>/gi, "\n")          // Fin de div se convierte en Salto
+        .replace(/<li>/gi, "• ")             // <li> se convierte en viñeta
+        .replace(/<\/li>/gi, "\n")           // Fin de item de lista se convierte en Salto
+        .replace(/&nbsp;/g, " ");            // Espacios raros se convierten en normales
+
+    // Ahora sí, quitamos cualquier otra etiqueta HTML sobrante (negritas, colores, etc)
     const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = selectedProduct.descripcion || "Sin descripción detallada.";
+    tempDiv.innerHTML = descFormateada;
     const descLimpia = tempDiv.textContent || tempDiv.innerText || "";
 
-    // 2. Texto
+    // --- 2. CONSTRUCCIÓN DEL MENSAJE ---
     const texto = 
 `📦 *${selectedProduct.nombre}*
 
@@ -7282,18 +7294,17 @@ ${descLimpia.trim()}
 🛡️ *Garantía:* ${selectedProduct.garantia || 'Sí'}
 🚚 *Mensajería:* ${selectedProduct.mensajeria || 'Consultar'}`;
 
-    // 3. Copiar
+    // --- 3. COPIAR AL PORTAPAPELES ---
     navigator.clipboard.writeText(texto).then(() => {
-        // AQUI ESTABA EL ERROR: Ahora usamos btnElement que recibimos arriba
         const original = btnElement.innerHTML;
         
-        // Cambiamos el texto del botón temporalmente
+        // Feedback visual (Botón verde)
         btnElement.innerHTML = `<span class="material-symbols-outlined text-xl text-green-500">check</span>Copiado`;
-        btnElement.classList.add("border-green-500", "text-green-500"); // Ponerlo verde
+        btnElement.classList.add("border-green-500", "text-green-500");
         
         setTimeout(() => {
             btnElement.innerHTML = original;
-            btnElement.classList.remove("border-green-500", "text-green-500"); // Quitar verde
+            btnElement.classList.remove("border-green-500", "text-green-500");
         }, 2000);
         
     }).catch(err => {
