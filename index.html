@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101d"; 
+const versionActual = "3101e"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -9214,6 +9214,273 @@ async function renderRescueMissions(nombreGestor) {
         </div>
     </div>
 </div>
+
+
+<!-- INTERFAZ DEL SISTEMA (TUTORIAL) -->
+<div id="system-interface-overlay" class="system-hidden">
+    <div class="system-window">
+        <!-- Decoración estilo HUD -->
+        <div class="hud-corner top-left"></div>
+        <div class="hud-corner top-right"></div>
+        <div class="hud-corner bottom-left"></div>
+        <div class="hud-corner bottom-right"></div>
+        
+        <!-- Cabecera del Sistema -->
+        <div class="system-header">
+            <span class="system-alert">⚠ MENSAJE DEL SISTEMA</span>
+            <div class="system-level">RANGO: <span id="current-rank-display">INICIADO</span></div>
+        </div>
+        
+        <!-- Contenido Central -->
+        <div class="system-content">
+            <div class="system-icon-container">
+                <div class="system-icon" id="sys-icon">⚔️</div>
+                <div class="icon-glow"></div>
+            </div>
+            
+            <h2 id="sys-title">BIENVENIDO, JUGADOR</h2>
+            <div class="text-box">
+                <p id="sys-text">Cargando tutorial...</p>
+            </div>
+        </div>
+        
+        <!-- Barra de Experiencia -->
+        <div class="exp-bar-container">
+            <div class="exp-text">PROGRESO</div>
+            <div class="exp-track">
+                <div class="exp-fill" id="sys-progress"></div>
+            </div>
+        </div>
+        
+        <!-- Botones -->
+        <div class="system-actions">
+            <button id="sys-btn" onclick="nextMission()">ACEPTAR MISIÓN</button>
+        </div>
+        
+        <div class="sys-step" id="sys-step-count">1 / 5</div>
+    </div>
+</div>
+
+<!-- ESTILOS VISUALES (SOLO LEVELING / DARK RPG) -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');
+
+    :root {
+        --neon-blue: #00f0ff;
+        --neon-purple: #bc13fe;
+        --dark-bg: #0a0e17;
+        --panel-bg: rgba(12, 18, 30, 0.95);
+        --border-color: #2d4a8a;
+    }
+
+    #system-interface-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-family: 'Rajdhani', sans-serif; /* Fuente tecnológica */
+    }
+
+    .system-hidden { visibility: hidden; pointer-events: none; }
+    .system-visible { visibility: visible; pointer-events: auto; opacity: 1 !important; }
+
+    .system-window {
+        background: var(--panel-bg);
+        width: 90%;
+        max-width: 500px;
+        padding: 2px; /* Para el borde gradiente */
+        border-radius: 4px;
+        position: relative;
+        box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .system-visible .system-window { transform: scale(1); }
+
+    /* Esquinas decorativas HUD */
+    .hud-corner { position: absolute; width: 15px; height: 15px; border: 2px solid var(--neon-blue); z-index: 2; transition: all 0.3s; }
+    .top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+    .system-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        background: linear-gradient(90deg, rgba(0,240,255,0.1) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .system-alert { color: var(--neon-blue); font-weight: 700; letter-spacing: 1px; font-size: 14px; animation: blink 2s infinite; }
+    .system-level { color: var(--neon-purple); font-weight: 700; font-size: 14px; text-transform: uppercase; }
+
+    .system-content { padding: 30px 20px; text-align: center; color: white; }
+
+    .system-icon-container { position: relative; width: 60px; height: 60px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; }
+    .system-icon { font-size: 40px; z-index: 2; }
+    .icon-glow { position: absolute; width: 100%; height: 100%; background: var(--neon-blue); filter: blur(20px); opacity: 0.4; animation: pulse 2s infinite; }
+
+    #sys-title {
+        color: white;
+        font-size: 26px;
+        margin: 0 0 15px 0;
+        text-transform: uppercase;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    .text-box { min-height: 110px; display: flex; align-items: center; justify-content: center; }
+    #sys-text { color: #cfd8e3; font-size: 18px; line-height: 1.5; margin: 0; }
+    #sys-text b { color: var(--neon-blue); font-weight: 700; }
+    #sys-text span.highlight { color: var(--neon-purple); font-weight: 700; }
+
+    /* Barra XP */
+    .exp-bar-container { padding: 0 25px 20px; }
+    .exp-text { color: #5a7499; font-size: 10px; margin-bottom: 5px; letter-spacing: 2px; }
+    .exp-track { width: 100%; height: 6px; background: #1a233a; border: 1px solid #2d4a8a; }
+    .exp-fill { height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); width: 20%; box-shadow: 0 0 10px var(--neon-blue); transition: width 0.4s; }
+
+    /* Botón */
+    .system-actions { padding: 0 25px 25px; }
+    #sys-btn {
+        background: transparent;
+        color: var(--neon-blue);
+        border: 1px solid var(--neon-blue);
+        width: 100%;
+        padding: 12px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+    }
+    #sys-btn:hover { background: var(--neon-blue); color: black; box-shadow: 0 0 20px var(--neon-blue); }
+
+    .sys-step { text-align: center; color: #5a7499; font-size: 12px; margin-bottom: 10px; }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.2; } 50% { transform: scale(1.2); opacity: 0.5; } 100% { transform: scale(0.8); opacity: 0.2; } }
+</style>
+
+<!-- LÓGICA DEL SISTEMA (SCRIPTS) -->
+<script>
+    const missionData = [
+        {
+            rank: "INICIADO",
+            icon: "🌌",
+            title: "El Despertar",
+            text: "Bienvenido, Jugador. Has sido elegido para convertirte en el mejor gestor. <br>El Sistema te dará habilidades (herramientas) a medida que subas de nivel. <br><b>Tu única misión ahora:</b> Generar ventas para ganar experiencia (XP).",
+            btn: "CONFIRMAR"
+        },
+        {
+            rank: "NOVATO (NVL 1)",
+            icon: "⏳",
+            title: "Habilidad: Vínculo Temporal",
+            text: "Tu Enlace de Venta tiene un límite de tiempo (Atribución). <br><b>Nivel 0:</b> El vínculo dura solo <b>1 semana</b>.<br><b>Nivel 1 (3 ventas):</b> Sube a <b>2 semanas</b>.<br>Si el cliente compra dentro de ese tiempo, la XP es tuya.",
+            btn: "ENTENDIDO"
+        },
+        {
+            rank: "EXPERTO (NVL 2)",
+            icon: "⚔️",
+            title: "Nivel 2: Arsenal Pesado",
+            text: "Al llegar a <b>10 ventas</b>, evolucionas a <span class='highlight'>EXPERTO</span>.<br>Desbloqueas:<br>1. <b>Pack de Fotos</b> (Descarga todo en 1 clic).<br>2. <b>Copiado Masivo</b>.<br>3. Tu enlace ahora dura <b>1 MES</b> completo.",
+            btn: "QUIERO ESE PODER"
+        },
+        {
+            rank: "EMPERADOR (NVL 5)",
+            icon: "👑",
+            title: "La Meta Final",
+            text: "En Nivel 5 (<span class='highlight'>EMPERADOR</span>), obtienes la habilidad definitiva: <b>Cliente Eterno</b>.<br>El vínculo con tu cliente nunca caduca (Dura 1 año o de por vida).<br>Además desbloqueas el <b>Magic Studio</b> (Publicidad Automática).",
+            btn: "LO LOGRARÉ"
+        },
+        {
+            rank: "FUTURO",
+            icon: "🔮",
+            title: "Misiones Ocultas",
+            text: "El Sistema sigue expandiéndose. <br>Pronto llegarán habilidades de <b>Clase S</b>: Radar de Tendencias, IA de Mercado y Recuperación de Clientes Perdidos.<br>¡Empieza tu ascenso ahora, Jugador!",
+            btn: "INICIAR CACERÍA"
+        }
+    ];
+
+    let currentMission = 0;
+
+    // Elementos
+    const sysOverlay = document.getElementById('system-interface-overlay');
+    const sysRank = document.getElementById('current-rank-display');
+    const sysTitle = document.getElementById('sys-title');
+    const sysText = document.getElementById('sys-text');
+    const sysIcon = document.getElementById('sys-icon');
+    const sysBtn = document.getElementById('sys-btn');
+    const sysProgress = document.getElementById('sys-progress');
+    const sysCount = document.getElementById('sys-step-count');
+
+    window.addEventListener('load', () => {
+        // localStorage.removeItem('system_tutorial_v3'); // Descomentar para reiniciar
+        
+        const tutorialDone = localStorage.getItem('system_tutorial_v3');
+        if (!tutorialDone) {
+            setTimeout(() => {
+                sysOverlay.classList.remove('system-hidden');
+                sysOverlay.classList.add('system-visible');
+                updateMission();
+            }, 1000);
+        }
+    });
+
+    function updateMission() {
+        const mission = missionData[currentMission];
+        
+        // Efecto glitch simple (opcional visualmente, aquí solo opacidad)
+        sysText.style.opacity = 0;
+        
+        setTimeout(() => {
+            sysRank.innerText = mission.rank;
+            sysTitle.innerHTML = mission.title;
+            sysText.innerHTML = mission.text;
+            sysIcon.innerText = mission.icon;
+            sysBtn.innerText = mission.btn;
+            
+            // Color del rango según nivel
+            if(currentMission >= 3) sysRank.style.color = "#bc13fe"; // Purpura para niveles altos
+            else sysRank.style.color = "#00f0ff"; // Azul para bajos
+            
+            // Barra XP
+            const percent = ((currentMission + 1) / missionData.length) * 100;
+            sysProgress.style.width = `${percent}%`;
+            sysCount.innerText = `${currentMission + 1} / ${missionData.length}`;
+            
+            sysText.style.opacity = 1;
+        }, 150);
+    }
+
+    function nextMission() {
+        if (currentMission < missionData.length - 1) {
+            currentMission++;
+            updateMission();
+        } else {
+            closeSystem();
+        }
+    }
+
+    function closeSystem() {
+        sysOverlay.classList.remove('system-visible');
+        sysOverlay.classList.add('system-hidden');
+        localStorage.setItem('system_tutorial_v3', 'true');
+    }
+</script>
+
 
 </body>
 </html>
