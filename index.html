@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101b"; 
+const versionActual = "3101c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4045,10 +4045,16 @@ function renderAdminLogistica() {
         const esFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
 
         return `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all text-xs border-b dark:border-gray-700">
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all border-b dark:border-gray-700 bg-white dark:bg-gray-900">
             <td class="p-4 font-bold uppercase text-[10px]">
-                <p class="text-gray-400 mb-1">${new Date(p.fecha).toLocaleDateString()}</p>
-                <span class="text-primary">${p.cliente}</span>
+                <!-- AQUI AGREGAMOS EL CONSECUTIVO -->
+                <div class="mb-1">
+                    <span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[9px] font-black tracking-widest border border-slate-600">
+                        #${p.orden_dia || '---'}
+                    </span>
+                </div>
+                <p class="text-gray-400 mb-0.5">${new Date(p.fecha).toLocaleDateString()}</p>
+                <span class="text-primary text-xs leading-tight block">${p.cliente}</span>
             </td>
             <td class="p-4"><span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold text-[9px] uppercase">${p.proveedor || 'General'}</span></td>
             <td class="p-4 text-gray-500 truncate max-w-xs" title="${p.producto}">${p.producto}</td>
@@ -5714,6 +5720,7 @@ function exportLogisticaExcel() {
     // 3. Formatear los datos para que el Excel se vea Profesional
     // Aquí elegimos qué columnas salen y con qué nombre
     const dataParaExcel = datosFiltrados.map(p => ({
+        "ID PEDIDO": p.orden_dia || '-',
         "Fecha": new Date(p.fecha).toLocaleDateString(),
         "Cliente": p.cliente,
         "CI": p.ci || '-',
