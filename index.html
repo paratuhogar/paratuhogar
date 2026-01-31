@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101a"; 
+const versionActual = "3101b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3498,7 +3498,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             .eq('proveedor', prov)
             .gte('fecha', inicioAnio); 
 
-        const startOffset = { 'CA': 5, 'A': 1, 'M': 1, 'JM': 1 };
+        const startOffset = { 'CA': 167, 'A': 39, 'M': 5, 'Q': 1 ,'JM': 8, 'SA': 12, 'B': 9, 'SE': 3 };
         const nroConsecutivo = (errCount ? 0 : (count || 0)) + (startOffset[prov] || 0) + 1;
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
