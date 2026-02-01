@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102"; 
+const versionActual = "0102a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -9362,7 +9362,281 @@ function reenviarPedidoAdmin(id) {
 </div>
 
 
+<!-- ========================================== -->
+<!-- SISTEMA DE INICIACIÓN (SOLO LEVELING HUD)  -->
+<!-- ========================================== -->
 
+<div id="sl-system-overlay" class="sl-hidden">
+    <!-- Fondo oscuro con scanlines -->
+    <div class="sl-scanlines"></div>
+    
+    <div class="sl-window">
+        <!-- Decoración Esquinas HUD -->
+        <div class="sl-hud-corner sl-tl"></div>
+        <div class="sl-hud-corner sl-tr"></div>
+        <div class="sl-hud-corner sl-bl"></div>
+        <div class="sl-hud-corner sl-br"></div>
+
+        <!-- Cabecera del Sistema -->
+        <div class="sl-header">
+            <div class="flex items-center gap-2">
+                <span class="sl-alert-icon">!</span>
+                <span class="sl-system-msg">MENSAJE DEL SISTEMA</span>
+            </div>
+            <div class="sl-rank-display">RANGO: <span id="sl-card-rank">PLAYER</span></div>
+        </div>
+
+        <!-- Contenido Dinámico -->
+        <div class="sl-content">
+            <div class="sl-icon-box">
+                <span id="sl-card-icon" class="material-symbols-outlined sl-main-icon">verified_user</span>
+                <div class="sl-icon-glow"></div>
+            </div>
+
+            <h2 id="sl-card-title" class="sl-title">BIENVENIDO, JUGADOR</h2>
+            
+            <div class="sl-text-container">
+                <p id="sl-card-text" class="sl-text">Cargando interfaz...</p>
+            </div>
+        </div>
+
+        <!-- Barra de Progreso (XP) -->
+        <div class="sl-xp-container">
+            <div class="flex justify-between text-[10px] text-blue-400 font-bold mb-1 tracking-widest">
+                <span>SINCRONIZACIÓN</span>
+                <span id="sl-step-count">1/5</span>
+            </div>
+            <div class="sl-xp-track">
+                <div id="sl-xp-fill" class="sl-xp-bar"></div>
+            </div>
+        </div>
+
+        <!-- Botón de Acción -->
+        <div class="p-6 pt-0">
+            <button id="sl-action-btn" onclick="nextSystemSlide()" class="sl-btn">
+                ACEPTAR MISIÓN
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ESTILOS CSS (SYSTEM STYLE) -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap');
+
+    :root {
+        --sl-blue: #00f0ff;
+        --sl-purple: #bc13fe;
+        --sl-dark: #020617;
+        --sl-border: #1e3a8a;
+    }
+
+    /* Contenedor Principal */
+    #sl-system-overlay {
+        position: fixed; inset: 0; z-index: 100000;
+        background: rgba(2, 6, 23, 0.95);
+        backdrop-filter: blur(5px);
+        display: flex; justify-content: center; align-items: center;
+        font-family: 'Rajdhani', sans-serif;
+        opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+    }
+    .sl-visible { opacity: 1 !important; pointer-events: auto !important; }
+    .sl-hidden { display: none; }
+
+    /* Ventana del Sistema */
+    .sl-window {
+        width: 90%; max-width: 500px;
+        background: rgba(10, 15, 30, 0.9);
+        border: 1px solid var(--sl-border);
+        box-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
+        position: relative; overflow: hidden;
+        transform: scale(0.95); transition: transform 0.3s ease;
+    }
+    .sl-visible .sl-window { transform: scale(1); }
+
+    /* Efecto Scanlines */
+    .sl-scanlines {
+        position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+        background-size: 100% 4px; z-index: 0; opacity: 0.3;
+    }
+
+    /* Esquinas HUD */
+    .sl-hud-corner { position: absolute; width: 20px; height: 20px; border: 2px solid var(--sl-blue); z-index: 10; transition: all 0.3s; }
+    .sl-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+    .sl-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+    .sl-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+    .sl-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+    /* Header */
+    .sl-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 15px 20px; background: linear-gradient(90deg, rgba(0,240,255,0.1) 0%, transparent 100%);
+        border-bottom: 1px solid var(--sl-border);
+    }
+    .sl-alert-icon {
+        background: var(--sl-blue); color: black; font-weight: 900; width: 18px; height: 18px;
+        display: flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 12px;
+        animation: pulse-blue 2s infinite;
+    }
+    .sl-system-msg { color: var(--sl-blue); font-weight: 700; letter-spacing: 2px; font-size: 12px; }
+    .sl-rank-display { color: white; font-weight: 600; font-size: 12px; letter-spacing: 1px; }
+    #sl-card-rank { color: var(--sl-purple); text-shadow: 0 0 5px var(--sl-purple); }
+
+    /* Contenido */
+    .sl-content { padding: 30px 20px; text-align: center; color: white; position: relative; z-index: 2; }
+    
+    .sl-icon-box { position: relative; width: 60px; height: 60px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; }
+    .sl-main-icon { font-size: 48px; color: white; z-index: 2; text-shadow: 0 0 15px var(--sl-blue); }
+    .sl-icon-glow { position: absolute; inset: 0; background: var(--sl-blue); filter: blur(25px); opacity: 0.4; animation: pulse-glow 3s infinite; }
+
+    .sl-title { 
+        font-size: 28px; font-weight: 700; text-transform: uppercase; margin-bottom: 15px; 
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); letter-spacing: 1px;
+    }
+
+    .sl-text-container { min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .sl-text { font-size: 18px; line-height: 1.5; color: #cbd5e1; font-weight: 500; }
+    .sl-highlight { color: var(--sl-blue); font-weight: 700; }
+    .sl-highlight-p { color: var(--sl-purple); font-weight: 700; text-shadow: 0 0 5px var(--sl-purple); }
+
+    /* XP Bar */
+    .sl-xp-container { padding: 0 25px 25px; }
+    .sl-xp-track { width: 100%; height: 6px; background: #0f172a; border: 1px solid #334155; }
+    .sl-xp-bar { height: 100%; width: 0%; background: var(--sl-blue); box-shadow: 0 0 10px var(--sl-blue); transition: width 0.3s ease; }
+
+    /* Botón */
+    .sl-btn {
+        width: 100%; padding: 14px; background: transparent;
+        border: 1px solid var(--sl-blue); color: var(--sl-blue);
+        font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px;
+        text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    }
+    .sl-btn:hover { background: var(--sl-blue); color: black; box-shadow: 0 0 20px var(--sl-blue); }
+
+    @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(0, 240, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); } }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 0.6; transform: scale(1.1); } }
+</style>
+
+<!-- LÓGICA DEL SISTEMA -->
+<script>
+    const systemCards = [
+        {
+            rank: "EL DESPERTAR",
+            icon: "swords", // Icono Material Symbols
+            title: "BIENVENIDO, GESTOR",
+            text: "El Sistema te ha elegido. Esto no es una tienda normal, es tu <span class='sl-highlight'>Campo de Batalla</span>. <br>Nuestra misión es darte las armas. <br>Tu misión: Generar ventas para subir de nivel.",
+            btn: "ACEPTAR MISIÓN"
+        },
+        {
+            rank: "HABILIDAD PASIVA",
+            icon: "link",
+            title: "VÍNCULO INVISIBLE",
+            text: "Tu enlace de afiliado tiene memoria. Cuando un cliente entra con tu link, se le pega una <span class='sl-highlight'>Etiqueta Mágica</span> (Cookie).<br>Si no compra hoy, pero vuelve en 10 días... <span class='sl-highlight'>¡LA COMISIÓN ES TUYA!</span>",
+            btn: "ENTENDIDO"
+        },
+        {
+            rank: "REGLAS DEL TIEMPO",
+            icon: "hourglass_top",
+            title: "DURACIÓN DEL VÍNCULO",
+            text: "El poder de tu etiqueta depende de tu Nivel:<br>🔹 <span class='sl-highlight'>Nivel 0:</span> Dura 1 Semana.<br>🔹 <span class='sl-highlight'>Nivel 3:</span> Dura 1 Mes.<br>🟣 <span class='sl-highlight-p'>Nivel 5:</span> ETERNO (Para siempre).<br>¡Sube de rango para atrapar clientes de por vida!",
+            btn: "QUIERO ETERNIDAD"
+        },
+        {
+            rank: "INVENTARIO OCULTO",
+            icon: "lock_open",
+            title: "HERRAMIENTAS SELLADAS",
+            text: "Hay funciones poderosas bloqueadas: <span class='sl-highlight'>Magic Studio</span>, <span class='sl-highlight'>IA Redactora</span> y <span class='sl-highlight'>CRM de Clientes</span>.<br>El Sistema las desbloqueará automáticamente cuando alcances las metas de venta.",
+            btn: "ROMPE EL SELLO"
+        },
+        {
+            rank: "OBJETIVO FINAL",
+            icon: "rocket_launch",
+            title: "CONVIÉRTETE EN MONARCA",
+            text: "El camino está abierto. <br>Cada venta es se acumula. Cada nivel te da más herramientas y mejores habilidades.<br>¿Hasta dónde serás capaz de llegar, Gestor?",
+            btn: "COMENZAR CACERÍA"
+        }
+    ];
+
+    let currentSysSlide = 0;
+
+    // Función de inicialización segura
+    function initSystemTutorial() {
+        // 1. VERIFICACIÓN DE SEGURIDAD: ¿Es un Gestor?
+        // Usamos la variable global window.gestorName que ya existe en tu código
+        if (!window.gestorName) {
+            // Si no hay gestor logueado, destruimos el tutorial para ahorrar memoria
+            // console.log("Sistema: Usuario es Cliente. Tutorial desactivado.");
+            return;
+        }
+
+        // 2. VERIFICAR SI YA LO VIO
+        const tutorialDone = localStorage.getItem('sl_tutorial_completed_v1');
+        if (tutorialDone) return;
+
+        // 3. LANZAR SISTEMA
+        const overlay = document.getElementById('sl-system-overlay');
+        overlay.classList.remove('sl-hidden');
+        
+        // Pequeño delay para la animación de entrada
+        setTimeout(() => {
+            overlay.classList.add('sl-visible');
+            renderSystemSlide();
+        }, 1000);
+    }
+
+    function renderSystemSlide() {
+        const card = systemCards[currentSysSlide];
+        
+        // Elementos
+        document.getElementById('sl-card-rank').innerText = card.rank;
+        document.getElementById('sl-card-icon').innerText = card.icon;
+        document.getElementById('sl-card-title').innerText = card.title;
+        document.getElementById('sl-card-text').innerHTML = card.text;
+        document.getElementById('sl-action-btn').innerText = card.btn;
+        document.getElementById('sl-step-count').innerText = `${currentSysSlide + 1} / ${systemCards.length}`;
+        
+        // Barra XP
+        const percent = ((currentSysSlide + 1) / systemCards.length) * 100;
+        document.getElementById('sl-xp-fill').style.width = `${percent}%`;
+
+        // Colores según nivel de la tarjeta
+        const rankText = document.getElementById('sl-card-rank');
+        if (currentSysSlide >= 2) rankText.style.color = "#bc13fe"; // Purple
+        else rankText.style.color = "#00f0ff"; // Blue
+    }
+
+    function nextSystemSlide() {
+        if (currentSysSlide < systemCards.length - 1) {
+            // Animación de transición simple (Opacidad)
+            const textContainer = document.querySelector('.sl-text-container');
+            textContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                currentSysSlide++;
+                renderSystemSlide();
+                textContainer.style.opacity = '1';
+            }, 200);
+        } else {
+            closeSystemTutorial();
+        }
+    }
+
+    function closeSystemTutorial() {
+        const overlay = document.getElementById('sl-system-overlay');
+        overlay.classList.remove('sl-visible');
+        setTimeout(() => overlay.classList.add('sl-hidden'), 500);
+        
+        // MARCAR COMO VISTO
+        localStorage.setItem('sl_tutorial_completed_v1', 'true');
+    }
+
+    // Ejecutar al cargar la página (se integra con tu window.onload existente)
+    window.addEventListener('load', () => {
+        // Le damos un momento a tu script principal para que determine si hay sesión
+        setTimeout(initSystemTutorial, 2000); 
+    });
+</script>
 
 
 </body>
