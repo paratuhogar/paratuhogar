@@ -1254,11 +1254,11 @@
         <table class="w-full text-left border-collapse">
             <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
                 <tr>
-                    <th class="p-4">Fecha/Cliente</th>
-                    <th class="p-4">Proveedor</th>
-                    <th class="p-4">Producto</th>
+                    <th class="p-4">Fecha / Cliente</th>
+                    <th class="p-4">📍 Entrega (Destino)</th> <!-- NUEVA COLUMNA -->
+                    <th class="p-4">🏭 Origen / Equipo</th>   <!-- COLUMNA CORREGIDA -->
                     <th class="p-4">Gestor</th>
-                    <th class="p-4 text-right">Estado Logística</th>
+                    <th class="p-4 text-right">Logística y Pago</th>
                 </tr>
             </thead>
             <tbody id="list-admin-pedidos" class="divide-y dark:divide-gray-700">
@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102a"; 
+const versionActual = "0102b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4101,6 +4101,8 @@ function renderAdminLogistica() {
         return;
     }
 
+    // --- DENTRO DE function renderAdminLogistica() ---
+    
     container.innerHTML = filtrados.map(p => {
         let colorClass = "bg-gray-100 text-gray-600";
         if(p.estado === 'Pendiente') colorClass = "bg-yellow-100 text-yellow-700";
@@ -4111,32 +4113,106 @@ function renderAdminLogistica() {
 
         const esFinal = (p.estado === 'Entregado' || p.estado === 'Cancelado');
 
+        // Alerta de Tiempo
+        const fechaPedido = new Date(p.fecha);
+        const hoy = new Date();
+        const horasPasadas = (hoy - fechaPedido) / (1000 * 60 * 60);
+        let alertaTiempo = "";
+        if (!esFinal && horasPasadas > 48) alertaTiempo = `<span class="bg-red-50 text-red-500 border border-red-100 px-1.5 rounded text-[9px] font-black">+48h</span>`;
+
+        // Costo Mensajería
+        const costoEnvio = parseFloat(p.costo_mensajeria) || 0;
+        const envioDisplay = costoEnvio > 0 
+            ? `<span class="text-blue-600 font-black bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 ml-1">$${costoEnvio}</span>` 
+            : `<span class="text-gray-400 font-bold ml-1 text-[9px]">Gratis</span>`;
+
+        // Link de Google Maps para la dirección
+        const mapaUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion + ', ' + p.municipio + ', La Habana, Cuba')}`;
+
         return `
         <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-            <td class="p-4 font-bold uppercase text-[10px]">
-                <!-- AQUI AGREGAMOS EL CONSECUTIVO -->
+            
+            <!-- COL 1: CLIENTE + TELÉFONO -->
+            <td class="p-4 align-top">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[9px] font-black tracking-widest">#${p.orden_dia || '---'}</span>
+                    <span class="text-[9px] text-gray-400 font-bold">${new Date(p.fecha).toLocaleDateString()}</span>
+                    ${alertaTiempo}
+                </div>
+                
                 <div class="mb-1">
-                    <span class="bg-slate-800 text-white px-2 py-0.5 rounded text-[9px] font-black tracking-widest border border-slate-600">
-                        #${p.orden_dia || '---'}
+                    <span class="text-primary text-xs font-black uppercase block leading-tight">${p.cliente}</span>
+                    <!-- AQUI ESTÁ EL TELÉFONO DEL CLIENTE -->
+                    <a href="tel:${p.telefono}" class="text-[10px] text-slate-500 font-bold hover:text-blue-600 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[10px]">call</span> ${p.telefono}
+                    </a>
+                </div>
+
+                <a href="https://wa.me/${p.telefono.replace(/\D/g,'')}" target="_blank" class="inline-flex items-center gap-1 text-[9px] bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded hover:bg-green-100 transition-colors font-bold">
+                    <i class="fab fa-whatsapp"></i> Chat Cliente
+                </a>
+            </td>
+
+            <!-- COL 2: DESTINO (MUNICIPIO Y DIRECCIÓN) -->
+            <td class="p-4 align-top w-64">
+                <div class="flex flex-col h-full justify-start">
+                    <span class="text-xs font-black text-slate-700 dark:text-white uppercase mb-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm text-red-400">location_on</span>
+                        ${p.municipio || '---'}
+                    </span>
+                    <p class="text-[10px] text-gray-500 leading-snug break-words font-medium bg-gray-50 p-1.5 rounded border border-gray-100 mb-1">
+                        ${p.direccion}
+                    </p>
+                    <a href="${mapaUrl}" target="_blank" class="text-[9px] text-blue-400 font-bold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[10px]">map</span> Ver en Mapa
+                    </a>
+                </div>
+            </td>
+
+            <!-- COL 3: ORIGEN (PROVEEDOR Y PRODUCTO) -->
+            <td class="p-4 align-top w-56">
+                <div class="flex items-center gap-1 mb-2">
+                    <span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-black text-[9px] uppercase border border-indigo-100 shadow-sm">
+                        ${p.proveedor || 'General'}
                     </span>
                 </div>
-                <p class="text-gray-400 mb-0.5">${new Date(p.fecha).toLocaleDateString()}</p>
-                <span class="text-primary text-xs leading-tight block">${p.cliente}</span>
+                <p class="text-[10px] text-slate-600 font-bold leading-tight" title="${p.producto}">
+                    ${p.producto}
+                </p>
             </td>
-            <td class="p-4"><span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold text-[9px] uppercase">${p.proveedor || 'General'}</span></td>
-            <td class="p-4 text-gray-500 truncate max-w-xs" title="${p.producto}">${p.producto}</td>
-            <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold">${p.gestor}</span></td>
-            <td class="p-4 text-right">
-                ${esFinal ? 
-                    `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass}">${p.estado}</span>` :
-                    `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-2 cursor-pointer focus:ring-0 text-center w-full max-w-[150px]">
-                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                        <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén</option>
-                        <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Mensajero</option>
-                        <option value="Entregado">✅ Entregado</option>
-                        <option value="Cancelado">❌ Cancelado</option>
-                    </select>`
-                }
+
+            <!-- COL 4: GESTOR (CON BOTÓN WHATSAPP) -->
+            <td class="p-4 align-top">
+                <div class="flex flex-col gap-1">
+                    <span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold text-slate-600 w-fit">${p.gestor}</span>
+                    
+                    <!-- BOTÓN CONTACTAR GESTOR -->
+                    <!-- Nota: Requiere que tengas el teléfono del gestor cargado o usa un link genérico -->
+                    <button onclick="alert('Para contactar a ${p.gestor}, búscalo en la pestaña de Equipo.')" class="text-[9px] text-gray-400 hover:text-green-500 flex items-center gap-1 font-bold transition-colors">
+                        <i class="fab fa-whatsapp"></i> Contactar
+                    </button>
+                </div>
+            </td>
+
+            <!-- COL 5: ESTADO LOGÍSTICA -->
+            <td class="p-4 text-right align-top">
+                <div class="flex flex-col items-end gap-2">
+                    ${esFinal ? 
+                        `<span class="px-3 py-1.5 rounded-lg font-black text-[9px] uppercase ${colorClass} shadow-sm">${p.estado}</span>` :
+                        `<select onchange="updatePedidoStatus('${p.id}', this.value)" class="text-[10px] font-black uppercase rounded-lg border-none ${colorClass} py-1.5 cursor-pointer focus:ring-0 text-center w-32 shadow-sm">
+                            <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                            <option value="Recogida Almacén" ${p.estado === 'Recogida Almacén' ? 'selected' : ''}>🏭 En Almacén</option>
+                            <option value="Asignado Mensajero" ${p.estado === 'Asignado Mensajero' ? 'selected' : ''}>🏍️ Mensajero</option>
+                            <option value="Entregado">✅ Entregado</option>
+                            <option value="Cancelado">❌ Cancelado</option>
+                        </select>`
+                    }
+                    
+                    <div class="flex items-center text-[9px] font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">
+                        <span class="material-symbols-outlined text-[12px] mr-1 text-slate-400">two_wheeler</span>
+                        Pago Envío: ${envioDisplay}
+                    </div>
+                </div>
             </td>
         </tr>`;
     }).join('');
