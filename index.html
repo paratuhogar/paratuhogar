@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101f"; 
+const versionActual = "3101g"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3487,7 +3487,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // Obtenemos el teléfono del gestor actual para ponerlo en el reporte interno
     const agentPhone = getAgentPhone(); 
 
-    // --- 7. GENERAR VALES Y MENSAJE ---
+    // --- 7. GENERAR VALES Y MENSAJE (LÓGICA CORREGIDA PARA MENSAJERÍA) ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         // Generar consecutivo
         const ahora = new Date();
@@ -3503,43 +3503,67 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
         let detalleCuerpo = "";
-        let totalUSDVale = 0;
-        let comisionTotalVale = 0;
-        let envioTotalVale = 0;
+        
+        // VARIABLES SEPARADAS PARA CALCULO CORRECTO
+        let subtotalProductos = 0; // Solo valor de los equipos
+        let envioTotalVale = 0;    // Solo valor de la mensajería
+        let comisionTotalVale = 0; // Comisión del gestor
 
         productos.forEach(item => {
-            const costoEquipo = item.precio_venta * item.qty;
+            // 1. Calcular precio base del producto (Sin envío)
+            const costoEquipo = Number(item.precio_venta) * Number(item.qty);
+            subtotalProductos += costoEquipo;
+
+            // 2. Calcular costo de envío de esta línea (lo que se puso en el input del carrito)
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
-            totalUSDVale += (costoEquipo + costoEnvio);
+            envioTotalVale += costoEnvio;
             
+            // 3. Calcular comisiones
             if (activeGestor !== "Venta Directa") {
                 comisionTotalVale += (item.comision_actual * item.qty);
             }
             
-            envioTotalVale += costoEnvio;
-            detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Precio: $${item.precio_venta} (Envío: $${costoEnvio})\n`;
+            // Construir detalle visual para WhatsApp
+            detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Equipo: $${item.precio_venta} | 🚚 Envío: $${costoEnvio}\n`;
         });
+
+        // EL TOTAL A GUARDAR EN BD ES LA SUMA DE TODO (EQUIPO + ENVÍO)
+        let totalUSDVale = subtotalProductos + envioTotalVale;
 
         // --- CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP ---
         mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
         mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
         mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
-        mensajeRaw += `💰 *TOTAL A COBRAR: $${totalUSDVale} USD*\n`;
+        mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
+        
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Paga con billete de $${vueltoC}\n`;
 
-        // *** AQUÍ ESTÁ LA CLAVE: DATOS INTERNOS SOLO SI ES GESTOR LOGUEADO ***
+        // *** DATOS INTERNOS (SOLO ALMACÉN) ***
         if (isLogged) {
-            mensajeRaw += `\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
+            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
         }
         
         mensajeRaw += `\n------------------------------------\n\n`;
 
-        // Guardar en DB
+        // GUARDAR EN BASE DE DATOS (AQUÍ ESTÁ EL CAMBIO CLAVE)
         const insertPromise = supabaseClient.from('pedidos').insert([{
-            gestor: activeGestor, cliente: nombreC, ci: ciC, telefono: telC, direccion: dirC, municipio: municipioC,
-            producto: productos.map(p => `${p.qty}x ${p.nombre}`).join(' + ') + ` [${monedaC}]`,
-            total: totalUSDVale, comision_total: comisionTotalVale, estado: 'Pendiente', pago_gestor: 'Pendiente',
-            proveedor: prov, costo_mensajeria: envioTotalVale, orden_dia: codPedido, origen: origenPedido
+            gestor: activeGestor, 
+            cliente: nombreC, 
+            ci: ciC, 
+            telefono: telC, 
+            direccion: dirC, 
+            municipio: municipioC,
+            producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
+            
+            total: totalUSDVale,              // GUARDA LA SUMA (Producto + Envío)
+            costo_mensajeria: envioTotalVale, // GUARDA EL ENVÍO APARTE
+            
+            comision_total: comisionTotalVale, 
+            estado: 'Pendiente', 
+            pago_gestor: 'Pendiente',
+            proveedor: prov, 
+            orden_dia: codPedido, 
+            origen: origenPedido
         }]);
         promesas.push(insertPromise);
     }
