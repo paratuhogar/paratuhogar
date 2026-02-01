@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101i"; 
+const versionActual = "0102"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -1949,7 +1949,7 @@ function openLoginModal() {
         // MODO GESTOR (Ventas)
         
         // 1. Mostrar Dashboard y Cargar Datos
-        showSection('dashboard');
+        showSection('catalogo');
         loadProducts(); 
         loadProDashboard(name);
         
@@ -2622,15 +2622,15 @@ function renderMyOrdersList(lista) {
     if (!container) return;
     if (!lista) lista = [];
 
-    // LÓGICA DE FILTRADO (MANTENIDA)
+    // LÓGICA DE FILTRADO (INTACTA)
     const filteredByStatus = currentMyOrdersFilter === 'TODOS' 
         ? lista 
         : lista.filter(p => p.estado === currentMyOrdersFilter);
 
-    // 1. CALCULAR CUÁNTOS VIENEN POR ENLACE (MANTENIDO)
+    // 1. CALCULAR CUÁNTOS VIENEN POR ENLACE (INTACTO)
     const countLinks = filteredByStatus.filter(p => p.origen === 'Enlace Compartido').length;
 
-    // Estado Vacío (MANTENIDO)
+    // Estado Vacío (INTACTO)
     if (filteredByStatus.length === 0) {
         container.innerHTML = `
             <div class="p-8 text-center flex flex-col items-center opacity-50">
@@ -2640,7 +2640,7 @@ function renderMyOrdersList(lista) {
         return;
     }
 
-    // 2. CREAR EL AVISO PULSÁTIL (MANTENIDO)
+    // 2. CREAR EL AVISO PULSÁTIL (INTACTO)
     let headerHTML = '';
     if (countLinks > 0) {
         headerHTML = `
@@ -2652,26 +2652,25 @@ function renderMyOrdersList(lista) {
 
     // 3. RENDERIZADO DE TARJETAS
     const cardsHTML = filteredByStatus.map(p => {
-        // A. Detectar si es por Enlace (MANTENIDO)
+        // A. Estilos visuales (INTACTO)
         const esPorEnlace = p.origen === 'Enlace Compartido';
-        
         const cardStyle = esPorEnlace 
             ? 'bg-red-50 border border-red-200 shadow-sm' 
             : 'bg-white border border-gray-200 shadow-sm';
 
-        // B. Estilos de Estado (MANTENIDO)
+        // B. Estilos de Estado (INTACTO)
         let estadoStyle = 'bg-gray-100 text-gray-600';
         if(p.estado === 'Pendiente') estadoStyle = 'bg-amber-50 text-amber-600 border border-amber-100';
         if(p.estado === 'Asignado Mensajero') estadoStyle = 'bg-blue-50 text-blue-600 border border-blue-100';
         if(p.estado === 'Entregado') estadoStyle = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
         
-        // C. Datos básicos (MANTENIDO)
+        // C. Datos básicos (INTACTO)
         const fechaDoc = new Date(p.fecha).toLocaleDateString();
         const primerNombre = p.cliente.split(' ')[0];
         const msjWA = `Hola ${primerNombre}, le escribo de paratuhogar por su pedido...`;
         const urlWA = `https://wa.me/${p.telefono.replace(/\D/g,'')}?text=${encodeURIComponent(msjWA)}`;
 
-        // D. BADGE DE ORIGEN (MANTENIDO)
+        // D. BADGE DE ORIGEN (INTACTO)
         let sourceBadge = '';
         if (esPorEnlace) {
             sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-red-600 bg-white px-1.5 py-0.5 rounded border border-red-200 ml-2 shadow-sm" title="Venta Automática"><span class="material-symbols-outlined text-[10px]">link</span> Enlace</span>`;
@@ -2681,16 +2680,24 @@ function renderMyOrdersList(lista) {
             sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 ml-2"><span class="material-symbols-outlined text-[10px]">language</span> Web</span>`;
         }
 
-        // --- E. BOTÓN ELIMINAR (ESTO ES LO ÚNICO NUEVO) --- 
+        // --- E. BOTÓN ELIMINAR (MANTENIDO DE TU VERSIÓN ANTERIOR) --- 
         let deleteBtn = '';
-        if (p.estado === 'Pendiente') { // Solo si está pendiente
+        if (p.estado === 'Pendiente') { 
             deleteBtn = `
             <button onclick="deleteMyOrder('${p.id}')" title="Eliminar Pedido (Error)"
                 class="h-7 w-7 bg-white text-gray-400 border border-gray-200 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors ml-1">
                 <span class="material-symbols-outlined text-sm">delete</span>
             </button>`;
         }
-        // --------------------------------------------------
+
+        // --- F. BOTÓN REENVÍO AL SISTEMA (ESTO ES LO NUEVO) ---
+        // Este botón aparece SIEMPRE para que el gestor pueda reenviar cuando quiera.
+        const btnReenviar = `
+            <button onclick="reenviarPedidoAdmin('${p.id}')" title="Reenviar Pedido al Almacén" 
+                class="h-7 w-7 bg-teal-500 text-white rounded-full flex items-center justify-center hover:bg-teal-600 transition-colors shadow-sm ml-1 border border-teal-600">
+                <span class="material-symbols-outlined text-sm">send</span>
+            </button>
+        `;
 
         return `
         <div class="p-3 rounded-xl mb-3 relative transition-all hover:shadow-md group ${cardStyle}">
@@ -2702,13 +2709,19 @@ function renderMyOrdersList(lista) {
                     ${sourceBadge}
                 </div>
                 
-                <!-- BOTONES -->
-                <div class="flex items-center gap-2">
-                    <a href="${urlWA}" target="_blank" title="WhatsApp"
+                <!-- BOTONES DE ACCIÓN -->
+                <div class="flex items-center gap-1">
+                    
+                    <!-- 1. Botón Cliente (Verde) - INTACTO -->
+                    <a href="${urlWA}" target="_blank" title="Chat con Cliente"
                        class="h-7 w-7 bg-[#25D366] text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
                         <i class="fab fa-whatsapp text-sm"></i>
                     </a>
+
+                    <!-- 2. Botón Reenvío (Turquesa) - NUEVO AQUÍ -->
+                    ${btnReenviar}
                     
+                    <!-- 3. Botones PDF (Rojo/Azul) - INTACTOS -->
                     <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" title="PDF"
                         class="h-7 w-7 bg-red-50 text-red-500 border border-red-100 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-sm">download</span>
@@ -2719,11 +2732,12 @@ function renderMyOrdersList(lista) {
                         <span class="material-symbols-outlined text-sm">share</span>
                     </button>
 
-                    ${deleteBtn} <!-- AQUÍ SE INYECTA EL BOTÓN NUEVO -->
+                    <!-- 4. Botón Eliminar (Gris/Rojo) - INTACTO -->
+                    ${deleteBtn} 
                 </div>
             </div>
 
-            <!-- CUERPO COMPACTO (MANTENIDO) -->
+            <!-- CUERPO COMPACTO (INTACTO) -->
             <div class="flex justify-between items-end gap-2">
                 <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-black text-slate-700 uppercase truncate leading-tight mb-0.5" title="${p.cliente}">${p.cliente}</h4>
@@ -2734,7 +2748,7 @@ function renderMyOrdersList(lista) {
                     </span>
                 </div>
 
-                <!-- PRECIO (MANTENIDO) -->
+                <!-- PRECIO (INTACTO) -->
                 <div class="text-right flex-shrink-0">
                     <p class="text-[10px] font-bold text-slate-400 mb-0.5">$${Number(p.total || 0).toFixed(0)}</p>
                     <p class="text-sm font-black text-emerald-600 whitespace-nowrap">+$${Number(p.comision_total).toFixed(2)}</p>
@@ -8976,6 +8990,30 @@ async function deleteMyOrder(id) {
         console.error(e);
         alert("❌ Error al eliminar: " + e.message);
     }
+}
+
+// --- FUNCIÓN PARA REENVIAR PEDIDO AL ALMACÉN (MANUAL) ---
+function reenviarPedidoAdmin(id) {
+    const p = myOrdersData.find(item => item.id === id);
+    if (!p) return alert("Error: No se encuentran los datos del pedido.");
+
+    const PHONE_DUENO = "5356071095"; 
+    const fecha = new Date(p.fecha).toLocaleDateString();
+    
+    // Cálculo inverso seguro
+    const envio = parseFloat(p.costo_mensajeria) || 0;
+    const total = parseFloat(p.total) || 0;
+    const equipo = total - envio;
+
+    let mensaje = `🧾 *REENVÍO PEDIDO #${p.orden_dia || '---'}*\n📅 Fecha: ${fecha}\n\n👤 *CLIENTE*\nNombre: ${p.cliente}\nTel: ${p.telefono}\nDirección: ${p.direccion}, ${p.municipio}\n`;
+    if(p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
+    
+    mensaje += `\n🛒 *DETALLE*\n📦 ${p.producto}\n\n💰 *TOTAL A COBRAR: $${total} USD*\n(Equipos: $${equipo} + Envío: $${envio})\n`;
+
+    const miTel = getAgentPhone(); 
+    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nAgente: ${p.gestor}\nComisión: $${p.comision_total}\nTel Agente: ${miTel}\n`;
+    
+    window.open(`https://api.whatsapp.com/send?phone=${PHONE_DUENO}&text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
 </script>
