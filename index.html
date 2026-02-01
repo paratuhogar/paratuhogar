@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "3101g"; 
+const versionActual = "3101h"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3288,28 +3288,46 @@ function renderCart() {
     const container = document.getElementById('cart-items');
     const isGestor = window.gestorName ? true : false;
 
-    // 1. Renderizar Productos con INPUT DE MENSAJERÍA INDIVIDUAL
+    // 1. Renderizar Productos
     let htmlItems = cart.map((item, index) => {
         const minPrice = Number(item.precio) - Number(item.comision);
         const maxPrice = (item.precio_flexible === 'SI') ? 100000 : Number(item.precio);
         
-        // Input de Precio del Equipo
+        // Input de Precio del Equipo (Tu lógica original intacta)
         const precioInput = isGestor ? 
             `<input type="number" value="${item.precio_venta}" min="${minPrice}" max="${maxPrice}" 
                    onchange="updateCartItemPrice(${index}, this.value)"
                    class="w-20 text-right font-black text-primary border-gray-200 rounded-lg py-0 px-1 text-xs h-6 mb-1">` 
             : `<p class="text-primary font-black text-sm mb-1">$${item.precio_venta}</p>`;
 
-        // Input de Mensajería (AHORA EN CADA ÍTEM)
+        // --- NUEVO: Lógica del botón de consulta (Solo para clientes) ---
+        let botonConsultar = '';
+        if (!isGestor) {
+            // Escapamos el nombre para evitar errores con comillas
+            const nombreSeguro = item.nombre.replace(/'/g, "\\'");
+            botonConsultar = `
+                <button type="button" onclick="consultarMensajeria('${nombreSeguro}')" 
+                    class="mt-1 text-[9px] font-bold text-blue-500 hover:text-blue-700 underline cursor-pointer flex items-center justify-end gap-1 w-full bg-transparent border-none p-0 transition-colors">
+                    <span class="material-symbols-outlined text-[10px]">chat</span>
+                    <span>Consultar costo</span>
+                </button>
+            `;
+        }
+
+        // Input de Mensajería (Tu lógica original + El botón nuevo debajo)
         const shippingInput = `
-            <div class="flex items-center justify-end gap-1 mt-1">
-                <span class="text-[9px] font-bold text-gray-400 uppercase">🚚 Envío:</span>
-                <input type="number" value="${item.shipping_linea}" min="0" 
-                       onchange="updateLineShipping(${index}, this.value)"
-                       class="w-16 text-right font-bold text-slate-600 border-gray-200 bg-gray-50 rounded py-0 px-1 text-[10px] h-6 focus:bg-white focus:border-primary">
+            <div class="flex flex-col items-end mt-1">
+                <div class="flex items-center justify-end gap-1">
+                    <span class="text-[9px] font-bold text-gray-400 uppercase">🚚 Envío:</span>
+                    <input type="number" value="${item.shipping_linea}" min="0" 
+                           onchange="updateLineShipping(${index}, this.value)"
+                           class="w-16 text-right font-bold text-slate-600 border-gray-200 bg-gray-50 rounded py-0 px-1 text-[10px] h-6 focus:bg-white focus:border-primary placeholder:text-gray-300">
+                </div>
+                ${botonConsultar} <!-- Aquí se inyecta el botón si es cliente -->
             </div>
         `;
 
+        // Tu lógica de colores de ganancia intacta
         let colorGanancia = "text-emerald-500";
         if(item.comision_actual < item.comision) colorGanancia = "text-orange-500";
         if(item.comision_actual > item.comision) colorGanancia = "text-blue-600";
@@ -3319,13 +3337,14 @@ function renderCart() {
                 Gan: $${(item.comision_actual * item.qty).toFixed(0)}
              </p>` : '';
 
+        // Estructura HTML (Idéntica a la tuya)
         return `
         <div class="flex gap-2 bg-white dark:bg-gray-800 p-3 rounded-xl relative border border-gray-100 dark:border-gray-700 mb-3 shadow-sm">
             <img src="${fixDriveUrl(item.thumbnail)}" class="w-16 h-16 object-contain bg-gray-50 rounded border border-gray-200">
             <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-start">
                     <h4 class="text-xs font-bold leading-tight pr-6 mb-1 truncate w-full" title="${item.nombre}">${item.nombre}</h4>
-                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-0.5"><span class="material-symbols-outlined text-sm">close</span></button>
+                    <button onclick="removeFromCart(${index})" class="text-gray-300 hover:text-red-500 p-0.5 absolute top-2 right-2"><span class="material-symbols-outlined text-sm">close</span></button>
                 </div>
                 
                 <div class="flex justify-between items-end mt-1">
@@ -3339,7 +3358,7 @@ function renderCart() {
                     <!-- Columna Precios -->
                     <div class="flex flex-col items-end">
                         <div class="flex flex-col items-end">
-                           <label class="text-[8px] text-gray-400 font-bold uppercase">Precio Unit.</label>
+                           ${isGestor ? `<label class="text-[8px] text-gray-400 font-bold uppercase">Precio Unit.</label>` : ''}
                            ${precioInput}
                         </div>
                         ${shippingInput}
@@ -3350,10 +3369,8 @@ function renderCart() {
         </div>`;
     }).join('');
 
-    // Ya no hay input global de envío al final
     container.innerHTML = htmlItems;
-    recalcularTotalFinal(); // Importante llamar esto para actualizar el total abajo
-
+    recalcularTotalFinal(); 
 }
 
 // Función para sumar o restar cantidad
@@ -8892,6 +8909,29 @@ async function renderRescueMissions(nombreGestor) {
     </div>`;
 
     container.insertAdjacentHTML('afterbegin', htmlAlert);
+}
+
+// Función para abrir WhatsApp y consultar costo de envío
+function consultarMensajeria(nombreProd) {
+    // 1. Recuperar datos del gestor inteligente
+    const stored = localStorage.getItem('pth_referrer_smart');
+    let telefonoDestino = "5356071095"; // Tu número de respaldo
+    let nombreAgente = "Soporte";
+
+    if (stored) {
+        try {
+            const data = JSON.parse(stored);
+            if (data.telefono) {
+                let t = data.telefono.replace(/\D/g, ''); 
+                if (t.length === 8) t = "53" + t; // Formato Cuba
+                telefonoDestino = t;
+                nombreAgente = data.nombre || "Agente";
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    const texto = `Hola ${nombreAgente}, estoy haciendo el pedido de: *${nombreProd}*. El sistema me pide el costo de envío. ¿Me lo puedes indicar?`;
+    window.open(`https://wa.me/${telefonoDestino}?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
 </script>
