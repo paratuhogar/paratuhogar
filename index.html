@@ -7,6 +7,16 @@
 <meta http-equiv="Expires" content="0" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>paratuhogar | Electrodomésticos para Cuba</title>
+
+    <!-- === METADATOS PARA REDES SOCIALES (OBLIGATORIO) === -->
+    <meta name="description" content="Venta de electrodomésticos en Cuba con entrega a domicilio. Refrigeradores, Splits, Cocinas y más. Garantía y pago al recibir.">
+    
+    <!-- Facebook / WhatsApp (Open Graph) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://paratuhogar.github.io/">
+    <meta property="og:title" content="paratuhogar | Electrodomésticos para Cuba">
+    <meta property="og:description" content="El mejor catálogo de electrodomésticos para tu familia. Entrega rápida en La Habana y garantía incluida. ¡Mira las ofertas de hoy!">
+    <meta property="og:image" content="https://paratuhogar.github.io/ruta-a-una-foto-bonita-de-portada.jpg">
     
     <!-- 1. Estilos y Fuentes -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -548,11 +558,8 @@
             <div id="sub-dash-precios" class="hidden animate-fade-in">
                 <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl mb-6">
                     <h3 class="text-lg font-black text-indigo-900 uppercase italic mb-2">Configurador de Precios</h3>
-                    <p class="text-xs text-indigo-700 mb-4">
-                        Aquí puedes subir el precio de los productos marcados como "Flexibles". 
-                        <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
-                        Cuando los clientes entren por tu link, verán los precios que tu estableciste. 
-                    </p>
+                    <!-- Texto eliminado para que Facebook no lo lea. Se inyecta con JS -->
+<p id="msg-instrucciones-seguro" class="text-xs text-indigo-700 mb-4"></p>
                     <div id="list-gestor-precios" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Se llena con JS -->
                     </div>
@@ -1624,7 +1631,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102c"; 
+const versionActual = "0102d"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8172,8 +8179,19 @@ function showDashSection(section) {
         document.getElementById('sub-dash-resumen').classList.remove('hidden');
         document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
     } else {
+        // === AQUÍ INYECTAMOS EL TEXTO SECRETO ===
+        // Solo se escribe cuando el usuario entra a esta sección
         document.getElementById('sub-dash-precios').classList.remove('hidden');
         document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
+        
+        // Inyección del texto prohibido para Facebook
+        const textoSecreto = `Aquí puedes subir el precio de los productos marcados como "Flexibles". 
+        <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
+        Cuando los clientes entren por tu link, verán los precios que tú estableciste.`;
+        
+        const elMsg = document.getElementById('msg-instrucciones-seguro');
+        if(elMsg) elMsg.innerHTML = textoSecreto;
+
         renderGestorPricing(); // Refrescar lista
     }
 }
