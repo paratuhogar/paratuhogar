@@ -1624,7 +1624,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102b"; 
+const versionActual = "0102c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -5397,57 +5397,75 @@ window.doLogout = function() {
     // ==========================================
     // 4. GENERADOR DE INSTAGRAM STORY (DISEÑO PREMIUM)
     // ==========================================
+    // ==========================================
+    // 4. GENERADOR DE INSTAGRAM STORY (DISEÑO PREMIUM 2.0)
+    // ==========================================
     async function generateStoryImage() {
         if(!selectedProduct) return;
         
         const btn = event.currentTarget;
         const originalText = btn.innerHTML;
-        btn.innerHTML = "🎨 Diseñando...";
+        btn.innerHTML = `<span class="loader w-4 h-4 border-white"></span> Diseñando...`;
         btn.disabled = true;
         
         try {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Resolución HD (1080x1920)
+            // Resolución HD (1080x1920) - Formato Story
             canvas.width = 1080;
             canvas.height = 1920;
 
-            // --- 1. FONDO LIMPIO ---
-            ctx.fillStyle = '#f8fafc'; // Gris muy claro (Slate-50)
+            // --- 1. FONDO PREMIUM (Degradado Sutil) ---
+            const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+            grad.addColorStop(0, '#f1f5f9'); // Slate 100 (Arriba)
+            grad.addColorStop(1, '#e2e8f0'); // Slate 200 (Abajo)
+            ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 1080, 1920);
 
-            // --- 2. HEADER (MARCA) ---
-            // Barra superior
-            ctx.fillStyle = '#1a4789'; // Azul ANEB
-            ctx.fillRect(0, 0, 1080, 180);
-            
-            // Texto Marca
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '900 60px Manrope, sans-serif'; // Fuente gruesa
-            ctx.textAlign = 'center';
-            ctx.fillText("PARATUHOGAR", 540, 110);
-            
-            ctx.font = '500 30px Manrope, sans-serif';
-            ctx.fillText("Envíos a toda Cuba | Garantía Real", 540, 155);
+            // Decoración de fondo (Círculo abstracto sutil)
+            ctx.beginPath();
+            ctx.arc(900, 200, 400, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(26, 71, 137, 0.05)'; // Azul marca muy transparente
+            ctx.fill();
 
-            // --- 3. CONTENEDOR DE IMAGEN (TARJETA) ---
-            // Dibujamos un cuadro blanco detrás de la foto para darle relieve
-            const cardY = 300;
-            const cardHeight = 900;
+            // --- 2. HEADER (MARCA Y GARANTÍA) ---
+            // Barra superior sólida
+            ctx.fillStyle = '#1a4789'; // Azul ANEB
+            ctx.fillRect(0, 0, 1080, 220);
+            
+            // LOGO / NOMBRE
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 70px Manrope, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.shadowBlur = 10;
+            ctx.fillText("PARATUHOGAR", 540, 120);
+            ctx.shadowBlur = 0; // Reset sombra
+            
+            // SUBTÍTULO (CORREGIDO: HABANA + FACTURA)
+            ctx.font = '700 32px Manrope, sans-serif';
+            ctx.fillStyle = '#cbd5e1'; // Gris claro
+            // Usamos iconos de texto para asegurar que salgan
+            ctx.fillText("🚚 Envíos en La Habana  |  🛡️ Se entrega con Factura y Garantía", 540, 180);
+
+            // --- 3. CONTENEDOR DE IMAGEN (TARJETA FLOTANTE) ---
+            const cardY = 350;
+            const cardHeight = 850;
             const cardWidth = 900;
             const cardX = (1080 - cardWidth) / 2;
 
-            // Sombra de la tarjeta
-            ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
-            ctx.shadowBlur = 40;
-            ctx.shadowOffsetY = 20;
-            ctx.fillStyle = '#ffffff';
+            // Sombra de la tarjeta (Elevación)
+            ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
+            ctx.shadowBlur = 60;
+            ctx.shadowOffsetY = 30;
             
-            // Función para bordes redondeados
-            roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 40);
+            // Fondo Tarjeta
+            ctx.fillStyle = '#ffffff';
+            roundRect(ctx, cardX, cardY, cardWidth, cardHeight, 50);
             ctx.fill();
             ctx.shadowColor = "transparent"; // Reset sombra
+            ctx.shadowBlur = 0;
 
             // --- 4. IMAGEN DEL PRODUCTO ---
             const img = new Image();
@@ -5459,58 +5477,104 @@ window.doLogout = function() {
                 img.onerror = reject;
             });
 
-            // Calcular proporciones para que quepa en el cuadro (padding 50px)
-            const maxImgSize = 800;
-            const scale = Math.min(maxImgSize / img.width, maxImgSize / img.height);
+            // Lógica de escalado inteligente (Padding 60px)
+            const maxW = cardWidth - 120;
+            const maxH = cardHeight - 120;
+            const scale = Math.min(maxW / img.width, maxH / img.height);
             const w = img.width * scale;
             const h = img.height * scale;
-            const imgX = 540 - (w / 2); // Centrado horizontal
-            const imgY = cardY + (cardHeight - h) / 2; // Centrado vertical en la tarjeta
+            const imgX = 540 - (w / 2);
+            const imgY = cardY + (cardHeight - h) / 2;
 
+            // Dibujar imagen
             ctx.drawImage(img, imgX, imgY, w, h);
 
             // --- 5. DETALLES DEL PRODUCTO ---
             ctx.textAlign = 'center';
-            const textYStart = 1350;
+            let textCursorY = 1320;
 
-            // Etiqueta "OFERTA"
-            ctx.fillStyle = '#2c6fb5'; // Azul secundario
-            ctx.font = 'bold 40px Manrope, sans-serif';
-            ctx.fillText("🔥 DISPONIBLE AHORA", 540, textYStart);
-
-            // Nombre del Producto (Wrapping inteligente)
-            ctx.fillStyle = '#0f172a'; // Dark Slate
-            ctx.font = '800 70px Manrope, sans-serif';
-            wrapText(ctx, selectedProduct.nombre, 540, textYStart + 100, 950, 85);
-
-            // PRECIO (Grande y llamativo)
-            ctx.fillStyle = '#1a4789'; // Azul ANEB
-            ctx.font = '900 130px Manrope, sans-serif';
-            // Calculamos posición Y basada en el nombre (aprox)
-            ctx.fillText(`$${selectedProduct.precio} USD`, 540, 1700);
-
-            // --- 6. FOOTER (CONTACTO GESTOR) ---
-            ctx.fillStyle = '#1a4789';
-            ctx.fillRect(0, 1780, 1080, 140);
+            // Etiqueta "DISPONIBLE"
+            ctx.fillStyle = '#e6f4f1'; // Fondo verde muy claro
+            // Dibujar pastilla de fondo para el texto
+            roundRect(ctx, 390, textCursorY, 300, 60, 30);
+            ctx.fillStyle = '#059669'; // Texto verde esmeralda
+            ctx.fill();
             
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 45px Manrope, sans-serif';
-            const gestor = window.gestorName || "Ventas";
-            const tel = window.currentUserData?.telefono || "";
+            ctx.font = '800 28px Manrope, sans-serif';
+            ctx.fillText("🔥 DISPONIBLE YA", 540, textCursorY + 40);
+
+            textCursorY += 120;
+
+            // NOMBRE DEL PRODUCTO (Negro, Grande, Multilínea)
+            ctx.fillStyle = '#0f172a'; // Slate 900
+            ctx.font = '800 75px Manrope, sans-serif';
+            // Función wrapText maneja el salto de línea y devuelve la nueva Y
+            wrapText(ctx, selectedProduct.nombre, 540, textCursorY, 950, 90);
             
-            // Icono de WhatsApp simulado con texto (o podrías cargar un icono)
-            ctx.fillText(`📞 Pide aquí: ${tel}  |  👤 Agente: ${gestor}`, 540, 1865);
+            // Ajustar posición del precio según lo largo del nombre
+            // (Calculamos líneas aproximadas)
+            const estimatedLines = Math.ceil(ctx.measureText(selectedProduct.nombre).width / 950);
+            textCursorY += (estimatedLines * 90) + 40;
+
+            // PRECIO (Gigante y Azul)
+            ctx.fillStyle = '#1a4789'; // Azul Marca
+            ctx.font = '900 160px Manrope, sans-serif';
+            
+            // Calculadora de precio visual (CUP o USD)
+            let precioTexto = `$${selectedProduct.precio} USD`;
+            if (showInCUP) { // Si tienes la variable global showInCUP activa
+                 // Lógica simple si no tienes la función compleja a mano aquí
+                 const tasa = parseFloat(localStorage.getItem('pth_daily_rate')) || 450;
+                 const enCUP = parseFloat(selectedProduct.precio) * tasa;
+                 // precioTexto = `$${enCUP.toLocaleString()} CUP`; // Descomenta si prefieres CUP
+            }
+            
+            ctx.fillText(precioTexto, 540, textCursorY);
+
+            // --- 6. FOOTER (AQUÍ ESTÁ LA CORRECCIÓN) ---
+        const footerY = 1720;
+        
+        // Fondo Footer
+        ctx.fillStyle = '#0f172a'; 
+        ctx.beginPath();
+        ctx.moveTo(0, footerY);
+        ctx.quadraticCurveTo(540, footerY - 40, 1080, footerY); 
+        ctx.lineTo(1080, 1920);
+        ctx.lineTo(0, 1920);
+        ctx.fill();
+        
+        // === LÓGICA DE LIMPIEZA DE TELÉFONO ===
+        let tel = getAgentPhone(); // Obtiene el número (ej: 5358183649)
+        
+        // 1. Limpiar cualquier cosa que no sea número
+        tel = tel.replace(/\D/g, '');
+
+        // 2. Si el número tiene 10 dígitos y empieza con 53, le quitamos el 53 del inicio
+        //    (Para que quede 58183649 y no se duplique)
+        if (tel.length === 10 && tel.startsWith('53')) {
+            tel = tel.substring(2);
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px Manrope, sans-serif';
+        ctx.fillText("📲 Pide por WhatsApp aquí:", 540, footerY + 80);
+        
+        ctx.fillStyle = '#fbbf24'; 
+        ctx.font = '900 65px Manrope, sans-serif';
+        // Ahora dibujamos el +53 manual + el número limpio
+        ctx.fillText(`+53 ${tel}`, 540, footerY + 160);
 
             // --- 7. DESCARGAR ---
             const link = document.createElement('a');
-            const cleanName = selectedProduct.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 15);
+            const cleanName = selectedProduct.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
             link.download = `Story_${cleanName}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = canvas.toDataURL('image/png', 1.0); // Calidad máxima
             link.click();
 
         } catch (e) {
             console.error(e);
-            alert("Error generando diseño. Intenta 'Descargar Foto' normal.");
+            alert("Hubo un error creando el diseño. Intenta de nuevo.");
         } finally {
             btn.innerHTML = originalText;
             btn.disabled = false;

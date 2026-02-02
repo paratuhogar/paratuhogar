@@ -5,127 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SISTEMA RADAR PRO | Operaciones Marcel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Rajdhani', sans-serif; background: #020617; color: #94a3b8; overflow-x: hidden; }
         .radar-grid { background-image: radial-gradient(#1e293b 0.5px, transparent 0.5px); background-size: 15px 15px; }
         .neon-text { text-shadow: 0 0 10px #22d3ee; color: #22d3ee; }
-        .neon-border { border: 1px solid rgba(34, 211, 238, 0.2); box-shadow: 0 0 20px rgba(34, 211, 238, 0.05); }
-        .feed-item { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        /* Animación suave para nuevos elementos */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .item-anim { animation: slideIn 0.4s ease-out forwards; }
     </style>
 </head>
-<body class="radar-grid min-h-screen">
+<body class="radar-grid min-h-screen flex flex-col">
 
-    <!-- HEADER SUPERIOR INTELIGENTE -->
-    <header class="p-4 md:p-6 border-b border-cyan-900/30 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="text-center md:text-left">
-                <h1 class="text-3xl font-black neon-text tracking-tighter">PROJECT RADAR <span class="text-white opacity-20">v3.0</span></h1>
-                <p class="text-[10px] uppercase tracking-[0.4em] text-cyan-500/70 font-bold">Mantenimiento de Inteligencia de Mercado</p>
+    <!-- HEADER: ESTATUS DEL SISTEMA -->
+    <header class="p-4 border-b border-cyan-900/30 bg-slate-950/90 backdrop-blur-md sticky top-0 z-50 shadow-2xl shadow-cyan-900/10">
+        <div class="max-w-[1800px] mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-black neon-text tracking-tighter italic">RADAR <span class="text-white">v4.0</span></h1>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-cyan-600 font-bold">Panel de Ataque - Modo Dios</p>
             </div>
-            <div class="flex items-center gap-6 bg-slate-900/50 p-2 px-4 rounded-2xl border border-white/5">
-                <div class="text-right hidden sm:block">
-                    <p class="text-[10px] font-bold text-slate-500">OPERADOR SUPREMO</p>
-                    <p class="text-xs font-black text-white uppercase">Marcel Montano</p>
-                </div>
-                <div class="h-8 w-px bg-white/10"></div>
-                <p id="status" class="text-xs font-bold text-emerald-500 animate-pulse flex items-center gap-2">
-                    <span class="block w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></span> SATÉLITE ONLINE
-                </p>
+            
+            <div class="flex items-center gap-4 bg-slate-900 border border-slate-700 rounded-full px-4 py-1.5">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></div>
+                <p class="text-xs font-bold text-slate-300">MARCEL MONTANO <span class="text-slate-600">|</span> <span class="text-emerald-500">ONLINE</span></p>
             </div>
         </div>
     </header>
 
-    <main class="max-w-[1700px] mx-auto p-4 md:p-6">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <main class="flex-1 max-w-[1800px] mx-auto w-full p-4 md:p-6 space-y-6">
+    
+        <!-- 1. DASHBOARD DE MÉTRICAS (HEADS UP DISPLAY) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Contador Targets -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-950 p-4 rounded-2xl border border-orange-500/20 shadow-lg relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-all"><span class="material-symbols-outlined text-5xl text-orange-500">crisis_alert</span></div>
+                <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Objetivos Vivos</p>
+                <p class="text-xs text-slate-500 font-bold">Leads Fantasma (Hoy)</p>
+                <p id="count-targets" class="text-4xl font-black text-white mt-1">0</p>
+            </div>
+
+            <!-- Contador Mina -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-950 p-4 rounded-2xl border border-emerald-500/20 shadow-lg relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-all"><span class="material-symbols-outlined text-5xl text-emerald-500">savings</span></div>
+                <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Cartera Activa</p>
+                <p class="text-xs text-slate-500 font-bold">Clientes Reciclables</p>
+                <p id="count-goldmine" class="text-4xl font-black text-white mt-1">0</p>
+            </div>
             
-            <!-- COLUMNA 1: ACTIVIDAD CON CIUDAD Y FUENTE (3 cols) -->
-            <div class="lg:col-span-3 space-y-4">
-                <div class="flex justify-between items-center border-l-4 border-cyan-500 pl-3">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-white">Monitor de Actividad</h2>
-                    <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-cyan-400 font-mono" id="stat-log-count">0</span>
+            <!-- Estado Actual -->
+            <div class="col-span-2 bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Estado del Radar</p>
+                    <p class="text-sm text-cyan-400 font-bold animate-pulse">ESCANEO ACTIVO...</p>
                 </div>
-                <div id="live-feed" class="space-y-3 h-[75vh] overflow-y-auto pr-2">
-                    <!-- JS -->
-                </div>
+                <button onclick="loadWarRoom()" class="bg-cyan-900/30 hover:bg-cyan-500/20 text-cyan-400 p-2 rounded-lg transition-all border border-cyan-500/30">
+                    <span class="material-symbols-outlined">refresh</span>
+                </button>
             </div>
-
-            <!-- COLUMNA 2: EL CEREBRO (GRÁFICAS Y KPIs) (6 cols) -->
-            <div class="lg:col-span-6 space-y-6">
-                
-                <!-- KPIs AVANZADOS -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 text-center">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">Fugas (Búsquedas Vacías)</p>
-                        <p id="stat-empty" class="text-3xl font-black text-red-500">0</p>
-                    </div>
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 text-center">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">Clientes Reincidentes</p>
-                        <p id="stat-loyal" class="text-3xl font-black text-purple-400">0</p>
-                    </div>
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 text-center">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase">WhatsApp (Conversión)</p>
-                        <p id="stat-wa" class="text-3xl font-black text-emerald-400">0</p>
-                    </div>
-                </div>
-
-                <!-- GRÁFICAS -->
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Interés (Vistas) -->
-                    <div class="bg-slate-900/80 p-6 rounded-3xl neon-border relative h-[350px]">
-                        <h3 class="text-[10px] font-black uppercase text-cyan-400 mb-4 flex justify-between">
-                            <span>Radar de Interés (Clics)</span>
-                            <span class="opacity-40">Barras: Total Vistas</span>
-                        </h3>
-                        <canvas id="vistasChart"></canvas>
-                    </div>
-                    
-                    <!-- Engagement (Tiempo) -->
-                    <div class="bg-slate-900/80 p-6 rounded-3xl border border-white/5 h-[350px]">
-                        <h3 class="text-[10px] font-black uppercase text-purple-400 mb-4 flex justify-between">
-                            <span>Fidelidad de Lectura (Segundos)</span>
-                            <span class="opacity-40">Barras: Promedio Permanencia</span>
-                        </h3>
-                        <canvas id="engagementChart"></canvas>
-                    </div>
-                </div>
-
-                <div id="bolsa-rescate" class="mt-4 p-6 bg-emerald-900/20 border border-emerald-500/30 rounded-3xl">
-    <div class="flex justify-between items-center">
-        <div>
-            <h3 class="text-emerald-400 font-black uppercase text-xs tracking-widest">Dinero por Rescatar</h3>
-            <p class="text-slate-400 text-[10px]">Suma de productos en Leads Fantasma (Tus enlaces)</p>
         </div>
-        <div class="text-right">
-            <p id="total-rescatable" class="text-3xl font-black text-emerald-400">$0</p>
-        </div>
-    </div>
-</div>
 
-                <!-- RANKING SOCIAL -->
-                <div class="bg-slate-900/80 p-6 rounded-3xl border border-white/5">
-                    <h3 class="text-[10px] font-black uppercase text-blue-400 mb-4">Tráfico por Red Social / Gestor</h3>
-                    <div id="social-radar" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <!-- JS -->
+        <!-- 2. TABLERO DE COMANDO (3 COLUMNAS) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[75vh]">
+            
+            <!-- COLUMNA 1: FRANCOTIRADOR (5/12) -->
+            <div class="lg:col-span-5 flex flex-col bg-[#0f172a] rounded-3xl border border-orange-500/20 shadow-2xl shadow-orange-900/5 overflow-hidden">
+                <div class="p-4 border-b border-orange-500/20 bg-gradient-to-r from-orange-900/10 to-transparent flex justify-between items-center">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-orange-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg animate-pulse">target</span> 
+                        FRANCOTIRADOR
+                    </h2>
+                    <span class="text-[9px] font-bold bg-orange-500/10 px-2 py-1 rounded text-orange-300 border border-orange-500/20">LEADS FANTASMA</span>
+                </div>
+                <div id="sniper-feed" class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
+                    <!-- JS INYECTA AQUÍ -->
+                    <div class="text-center mt-10">
+                        <span class="loader block w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></span>
+                        <p class="text-xs text-slate-600 italic">Buscando señales...</p>
                     </div>
                 </div>
             </div>
 
-            <!-- COLUMNA 3: LEADS FANTASMA (ORO) (3 cols) -->
-            <div class="lg:col-span-3 space-y-4">
-                <div class="flex justify-between items-center border-l-4 border-orange-500 pl-3">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-orange-500">Misión de Rescate</h2>
-                    <span class="text-[10px] font-bold text-orange-500 animate-pulse">EN VIVO</span>
+            <!-- COLUMNA 2: MINA DE ORO (4/12) -->
+            <div class="lg:col-span-4 flex flex-col bg-[#0f172a] rounded-3xl border border-emerald-500/20 shadow-2xl shadow-emerald-900/5 overflow-hidden">
+                <div class="p-4 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-900/10 to-transparent flex justify-between items-center">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-emerald-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg">recycling</span> 
+                        MINA DE ORO
+                    </h2>
+                    <span class="text-[9px] font-bold bg-emerald-500/10 px-2 py-1 rounded text-emerald-300 border border-emerald-500/20">RE-MARKETING</span>
                 </div>
-                <div id="ghost-feed" class="space-y-4 h-[75vh] overflow-y-auto pr-2">
-                    <!-- JS -->
+                <div id="goldmine-feed" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- JS INYECTA AQUÍ -->
+                </div>
+            </div>
+
+            <!-- COLUMNA 3: ORÁCULO (3/12) -->
+            <div class="lg:col-span-3 flex flex-col bg-[#0f172a] rounded-3xl border border-purple-500/20 shadow-2xl shadow-purple-900/5 overflow-hidden">
+                <div class="p-4 border-b border-purple-500/20 bg-gradient-to-r from-purple-900/10 to-transparent">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-purple-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg">visibility</span> 
+                        ORÁCULO
+                    </h2>
+                    <p class="text-[10px] text-purple-300/60 mt-0.5 font-bold ml-7">TENDENCIAS GLOBALES</p>
+                </div>
+                <div id="oracle-feed" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- JS INYECTA AQUÍ -->
                 </div>
             </div>
 
@@ -133,262 +121,247 @@
     </main>
 
     <script>
+        // --- 1. CONEXIÓN A SUPABASE (CRUCIAL) ---
         const SUPABASE_URL_RADAR = 'https://ljqwaovevfatkiigirhf.supabase.co';
         const SUPABASE_KEY_RADAR = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
         const radarClient = supabase.createClient(SUPABASE_URL_RADAR, SUPABASE_KEY_RADAR);
 
-        let vistasChart = null;
-        let engChart = null;
-        let lastGhostId = null;
-
-        function playAlertSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.5);
-            } catch(e) {}
+        // --- CONFIGURACIÓN ---
+        const MY_NAME = "Marcel Montano"; 
+        
+        async function loadWarRoom() {
+            console.log("📡 Iniciando Escaneo de Combate...");
+            await loadSniperTargets();  // Columna 1
+            await loadGoldMine();       // Columna 2
+            await loadOracle();         // Columna 3
         }
 
-        async function loadData() {
-            const { data: logs } = await radarClient.from('log_espia').select('*').order('timestamp', { ascending: false }).limit(100);
-            if (logs) {
-                renderFeed(logs);
-                updateCharts(logs);
-                renderSocial(logs);
+        // ======================================================
+        // 1. EL FRANCOTIRADOR (Tus Leads Fantasma)
+        // ======================================================
+        async function loadSniperTargets() {
+            // Traemos leads recientes
+            const { data: leads, error } = await radarClient
+                .from('leads_fantasma')
+                .select('*')
+                .eq('completado', false) // Solo los que no se han cerrado
+                .order('timestamp', { ascending: false })
+                .limit(30);
+
+            if (error || !leads) return;
+
+            // FILTRO DE PROPIEDAD: Solo Marcel o Directo
+            const misLeads = leads.filter(l => 
+                l.gestor_atribuido === MY_NAME || l.gestor_atribuido === 'Venta Directa' || l.gestor_atribuido === 'Directo'
+            );
+
+            document.getElementById('count-targets').innerText = misLeads.length;
+            const container = document.getElementById('sniper-feed');
+            
+            if (misLeads.length === 0) {
+                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-600 opacity-50"><span class="material-symbols-outlined text-4xl mb-2">radar</span><p class="text-xs uppercase font-bold">Sin objetivos activos</p></div>`;
+                return;
             }
-            loadGhosts();
-        }
 
-        function renderFeed(logs) {
-            const container = document.getElementById('live-feed');
-            container.innerHTML = logs.slice(0, 20).map(l => {
-                const hora = new Date(l.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                const reincidente = l.reincidencia > 1 ? `<span class="bg-purple-500/20 text-purple-400 text-[8px] px-1.5 rounded-full border border-purple-500/30">Fiel #${l.reincidencia}</span>` : '';
-                let color = l.accion === 'COMPRA_CONFIRMADA' ? "text-emerald-400" : (l.accion === 'BUSQUEDA_VACIA' ? "text-red-400" : "text-cyan-400");
+            container.innerHTML = "";
+
+            misLeads.forEach(lead => {
+                // SCORING: Calcular nivel de calor
+                let score = 10;
+                let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO</span>`;
                 
-                return `
-                <div class="feed-item bg-slate-900/50 border border-white/5 p-4 rounded-2xl mb-2 transition-all hover:bg-slate-800/80">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-mono opacity-30">${hora}</span>
-                        <span class="text-[8px] uppercase font-black text-slate-500">${l.fuente_social}</span>
+                // Heurística de calor
+                if (lead.nombre && lead.nombre.length > 2) score += 40;
+                if (lead.nombre && lead.nombre.length > 15) score = 100; // Nombre largo suele ser dirección pegada por error
+                
+                if (score >= 50 && score < 100) badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO</span>`;
+                if (score >= 100) badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 FUEGO</span>`;
+
+                // DATOS
+                const prod = lead.producto_en_carrito || "un equipo";
+                const nombre = lead.nombre || "Hola";
+                const tel = lead.telefono;
+                
+                // Limpieza de teléfono para el link
+                const cleanTel = tel.replace(/\D/g, '');
+                const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
+
+                // Mensajes Psicológicos
+                const msgCierre = `Hola ${nombre}, vi que estabas pidiendo el *${prod}* en la web. Ya te lo tengo separado en almacén. ¿Te confirmo el envío para mañana?`;
+                const msgAyuda = `Hola, soy Marcel de paratuhogar. Vi que intentabas pedir *${prod}* pero no se completó. ¿Te dio algún error la página? Avísame para ayudarte.`;
+
+                // Renderizado
+                const html = `
+                <div class="item-anim bg-slate-800/40 border border-slate-700/50 p-4 rounded-xl hover:bg-slate-800 hover:border-orange-500/30 transition-all group relative">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1.5">
+                                ${badge}
+                                <span class="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[10px]">schedule</span> ${timeAgo(lead.timestamp)}
+                                </span>
+                            </div>
+                            <p class="text-white font-black uppercase text-sm leading-tight mb-0.5">${lead.nombre || 'Anónimo'}</p>
+                            <p class="text-orange-400 font-mono text-xs font-bold tracking-wider">${lead.telefono}</p>
+                        </div>
                     </div>
-                    <p class="text-xs font-bold ${color}">${l.accion}</p>
-                    <p class="text-white text-sm font-medium mt-1">${l.detalle}</p>
-                    <div class="mt-2 flex flex-wrap gap-2 items-center">
-                        <span class="text-[9px] opacity-40 uppercase tracking-tighter">UBICACIÓN: ${l.ciudad || 'Desconocida'}</span>
-                        ${reincidente}
+                    
+                    <div class="bg-black/30 p-2 rounded border border-white/5 mb-3">
+                        <p class="text-[10px] text-slate-400 italic truncate"><span class="text-slate-500 not-italic font-bold">INTENTO:</span> ${prod}</p>
                     </div>
-                    <p class="text-[9px] text-slate-600 mt-2 font-black uppercase">AGENTE: ${l.gestor_atribuido}</p>
+
+                    <!-- BOTONERA DE ATAQUE -->
+                    <div class="grid grid-cols-2 gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgCierre)}" target="_blank" 
+                           class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase py-2.5 rounded-lg text-center flex items-center justify-center gap-1 shadow-lg shadow-emerald-900/20 active:scale-95 transition-all">
+                           <span class="material-symbols-outlined text-sm">check_circle</span> Cierre
+                        </a>
+                        <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgAyuda)}" target="_blank"
+                           class="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2.5 rounded-lg text-center flex items-center justify-center gap-1 border border-slate-600 active:scale-95 transition-all">
+                           <span class="material-symbols-outlined text-sm">support_agent</span> Ayuda
+                        </a>
+                    </div>
                 </div>`;
-            }).join('');
-
-            document.getElementById('stat-empty').innerText = logs.filter(l => l.accion === 'BUSQUEDA_VACIA').length;
-            document.getElementById('stat-loyal').innerText = logs.filter(l => l.reincidencia > 2).length;
-            document.getElementById('stat-wa').innerText = logs.filter(l => l.accion === 'COMPRA_CONFIRMADA').length;
-            document.getElementById('stat-log-count').innerText = logs.length;
-        }
-
-       async function loadGhosts() {
-    // 1. Traemos los últimos 20 leads
-    const { data: leads, error } = await radarClient
-        .from('leads_fantasma')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(20);
-
-    if (error || !leads) return;
-
-    // --- NUEVO: OBTENER COMPRADORES DE HOY ---
-    // Buscamos en la tabla de pedidos los teléfonos que ya cerraron venta hoy
-    const hoy = new Date().toISOString().split('T')[0];
-    const { data: pedidosHoy } = await radarClient
-        .from('pedidos')
-        .select('telefono')
-        .gte('fecha', hoy);
-
-    // Creamos un Set con los últimos 8 dígitos de los que ya compraron para comparar rápido
-    const telefonosCompradores = new Set(
-        (pedidosHoy || []).map(p => p.telefono.replace(/\D/g, '').slice(-8))
-    );
-    // -----------------------------------------
-
-    // 2. FILTRO MODO DIOS: Solo Marcel/Directo Y que NO hayan comprado ya
-    const leadsParaRescatar = leads.filter(lead => {
-        const gestor = lead.gestor_atribuido;
-        const esMio = gestor === 'Marcel Montano' || gestor === 'Directo' || !gestor;
-        
-        // NUEVO: Verificamos si este lead ya está en la lista de compradores
-        const telLimpioComp = lead.telefono ? lead.telefono.replace(/\D/g, '').slice(-8) : '';
-        const yaCompro = telefonosCompradores.has(telLimpioComp);
-
-        return esMio && !yaCompro; // Solo pasa si es mío y NO ha comprado
-    });
-
-    // 3. Lógica de Alerta Sonora (Se mantiene igual)
-    if (leadsParaRescatar.length > 0) {
-        const currentTopId = leadsParaRescatar[0].id;
-        if (lastGhostId && currentTopId > lastGhostId) {
-            playAlertSound();
-        }
-        lastGhostId = currentTopId;
-    }
-
-    const container = document.getElementById('ghost-feed');
-    
-    if (leadsParaRescatar.length === 0) {
-        container.innerHTML = "<p class='text-center p-10 opacity-30 italic text-sm'>No hay prospectos tuyos pendientes...</p>";
-        return;
-    }
-
-    // 4. Dibujar solo tus leads filtrados (Se mantiene tu diseño exacto)
-    container.innerHTML = leadsParaRescatar.map(lead => {
-        const telLimpio = lead.telefono ? lead.telefono.replace(/\D/g, '') : '';
-        const esValido = telLimpio.length >= 7;
-
-        return `
-        <div class="bg-gradient-to-br from-orange-500/10 to-slate-900 border-l-4 border-orange-500 p-5 rounded-r-2xl shadow-xl mb-4 transition-all hover:scale-[1.02]">
-            <div class="flex justify-between items-start mb-2">
-                <div class="flex flex-col">
-                    <p class="text-white text-xs font-black uppercase tracking-tight">${lead.nombre || 'Anónimo'}</p>
-                    <span class="text-[8px] text-orange-500 font-bold uppercase">${lead.gestor_atribuido || 'Venta Directa'}</span>
-                </div>
-                <span class="text-[9px] opacity-40 font-mono">${new Date(lead.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-            </div>
-            
-            <p class="text-orange-400 text-2xl font-black tracking-tighter mb-3">
-                ${esValido ? lead.telefono : '<span class="text-slate-600 text-sm italic">[Escribiendo...]</span>'}
-            </p>
-
-            <div class="text-[10px] text-slate-400 mb-4 bg-black/40 p-2 rounded border border-white/5 italic truncate">
-                🛒 ${lead.producto_en_carrito || 'Curioseando'}
-            </div>
-
-            ${esValido ? `
-                <a href="https://wa.me/${telLimpio}" target="_blank" 
-                   class="block w-full bg-orange-600 text-white text-center py-3 rounded-xl font-black uppercase text-[11px] shadow-lg shadow-orange-900/40 hover:bg-orange-500 transition-all tracking-widest">
-                   RESCATAR AHORA
-                </a>
-            ` : `
-                <div class="w-full bg-slate-800 text-slate-500 text-center py-3 rounded-xl font-bold uppercase text-[10px] cursor-not-allowed border border-white/5">
-                   Dato incompleto
-                </div>
-            `}
-        </div>`;
-    }).join('');
-    // Calcular el dinero total que podrías ganar si rescatas todos tus leads
-const totalUSD = leadsParaRescatar.reduce((acc, lead) => {
-    // Si guardaste el precio en el lead, lo sumamos. 
-    // Si no, podemos hacer un conteo de oportunidades.
-    return acc + 1; // Aquí podrías poner lógica de precio real
-}, 0);
-
-document.getElementById('total-rescatable').innerText = leadsParaRescatar.length + " Ventas";
-}
-
-        function updateCharts(logs) {
-            // 1. CHART VISTAS
-            const vCtx = document.getElementById('vistasChart').getContext('2d');
-            const vCounts = {};
-            logs.filter(l => l.accion === 'VIO_DETALLE').forEach(l => { vCounts[l.detalle] = (vCounts[l.detalle] || 0) + 1; });
-            
-            if (vistasChart) vistasChart.destroy();
-            vistasChart = new Chart(vCtx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(vCounts),
-                    datasets: [{ data: Object.values(vCounts), backgroundColor: 'rgba(34, 211, 238, 0.4)', borderColor: '#22d3ee', borderWidth: 2 }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b' }, grid: { display: false } }, y: { ticks: { color: '#ffffff', font: {size: 10} } } } }
-            });
-
-            // 2. CHART ENGAGEMENT
-            const eCtx = document.getElementById('engagementChart').getContext('2d');
-            const eMap = {};
-            logs.filter(l => l.accion === 'LECTURA_PROFUNDA').forEach(l => {
-                if(!eMap[l.detalle]) eMap[l.detalle] = { total: 0, count: 0 };
-                eMap[l.detalle].total += (l.duracion || 0); eMap[l.detalle].count++;
-            });
-            const eLabels = Object.keys(eMap);
-            const eAverages = Object.values(eMap).map(v => (v.total / v.count).toFixed(0));
-
-            if (engChart) engChart.destroy();
-            engChart = new Chart(eCtx, {
-                type: 'bar',
-                data: {
-                    labels: eLabels,
-                    datasets: [{ data: eAverages, backgroundColor: 'rgba(168, 85, 247, 0.4)', borderColor: '#a855f7', borderWidth: 2 }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b' }, grid: { display: false } }, y: { ticks: { color: '#ffffff', font: {size: 10} } } } }
+                
+                container.insertAdjacentHTML('beforeend', html);
             });
         }
 
-        async function renderSocial(logs) {
-    // 1. Obtener los Leads Fantasma actuales para calcular el dinero
-    const { data: ghosts } = await radarClient.from('leads_fantasma').select('*');
-    
-    const moneyMap = {};
+        // ======================================================
+        // 2. LA MINA DE ORO (Tus Clientes Antiguos)
+        // ======================================================
+        async function loadGoldMine() {
+            // Buscamos clientes TUYOS de hace más de 15 días
+            const today = new Date();
+            const limitDate = new Date();
+            limitDate.setDate(today.getDate() - 15); 
 
-    // 2. Calcular cuánto dinero tiene cada gestor "en el aire"
-    if (ghosts) {
-        ghosts.forEach(lead => {
-            const gestor = lead.gestor_atribuido || 'Venta Directa';
-            if (!moneyMap[gestor]) moneyMap[gestor] = { usd: 0, leads: 0 };
+            const { data: pedidos, error } = await radarClient
+                .from('pedidos')
+                .select('*')
+                .eq('gestor', MY_NAME)
+                .eq('estado', 'Entregado')
+                .lt('fecha', limitDate.toISOString())
+                .order('fecha', { ascending: false })
+                .limit(15);
+
+            const container = document.getElementById('goldmine-feed');
             
-            // Intentamos extraer el valor del carrito (esto es una estimación)
-            // Para que sea exacto, podrías guardar el total en la tabla leads_fantasma
-            moneyMap[gestor].leads++;
-            // Simulamos un valor promedio por lead si no tenemos el total guardado, 
-            // o mejor, mostramos el conteo de intención.
-        });
-    }
+            if (!pedidos || pedidos.length === 0) {
+                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-600 opacity-50"><span class="material-symbols-outlined text-4xl mb-2">hourglass_empty</span><p class="text-xs uppercase font-bold">Sin clientes antiguos</p></div>`;
+                document.getElementById('count-goldmine').innerText = "0";
+                return;
+            }
 
-    // 3. Limpiar los nombres de las fuentes para que sean humanos
-    const socialMap = {};
-    logs.forEach(l => {
-        let fuente = l.fuente_social;
-        if (fuente === "Directo / Link" || !fuente) fuente = "Link Pegado";
-        
-        const key = `${l.gestor_atribuido || 'Venta Directa'} | ${fuente}`;
-        socialMap[key] = (socialMap[key] || 0) + 1;
-    });
+            container.innerHTML = "";
+            document.getElementById('count-goldmine').innerText = pedidos.length;
 
-    const sorted = Object.entries(socialMap).sort((a,b) => b[1] - a[1]).slice(0, 6);
+            pedidos.forEach(p => {
+                // Lógica de Venta Cruzada
+                let sugerencia = "un protector de voltaje";
+                const prodPrevio = p.producto.toLowerCase();
+                
+                if (prodPrevio.includes('split') || prodPrevio.includes('aire')) sugerencia = "el mantenimiento o un soporte";
+                if (prodPrevio.includes('nevera')) sugerencia = "un protector de voltaje profesional";
+                if (prodPrevio.includes('moto')) sugerencia = "accesorios o casco";
 
-    // 4. Renderizar con diseño de "Performance"
-    document.getElementById('social-radar').innerHTML = sorted.map(([key, count]) => {
-        const [nombre, red] = key.split(' | ');
-        return `
-        <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
-            <div>
-                <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">${red}</p>
-                <p class="text-sm font-black text-white uppercase">${nombre}</p>
-            </div>
-            <div class="text-right">
-                <span class="text-xs font-bold text-slate-500 block uppercase">Efectividad</span>
-                <span class="bg-blue-600/20 text-blue-400 text-lg font-black px-3 py-0.5 rounded-lg border border-blue-500/30">
-                    ${count} <span class="text-[10px]">CLICS</span>
-                </span>
-            </div>
-        </div>`;
-    }).join('');
-}
+                const nombreCliente = p.cliente.split(' ')[0];
+                const msgRemarketing = `Hola ${nombreCliente}, ¿qué tal te ha salido el equipo? Espero que todo bien. Te escribo porque me llegaron ofertas de *${sugerencia}* que te pueden servir. Avísame si te interesa. Saludos, Marcel.`;
+                
+                // Teléfono limpio
+                const cleanTel = p.telefono.replace(/\D/g, '');
+                const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
 
-        // Seguridad Marcel
+                const diasPasados = Math.floor((today - new Date(p.fecha))/(1000*60*60*24));
+
+                const html = `
+                <div class="item-anim flex items-center gap-3 p-3 rounded-xl border border-emerald-500/10 bg-[#0f172a] hover:bg-emerald-900/10 transition-all group relative">
+                    <div class="bg-emerald-500/10 text-emerald-500 w-10 h-10 rounded-lg flex flex-col items-center justify-center border border-emerald-500/20 shrink-0">
+                        <span class="text-[10px] font-black">${diasPasados}</span>
+                        <span class="text-[8px] uppercase">Días</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-black text-white truncate uppercase">${p.cliente}</p>
+                        <p class="text-[10px] text-slate-500 truncate">Compró: ${p.producto.split('[')[0]}</p>
+                    </div>
+                    <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgRemarketing)}" target="_blank"
+                       class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded-lg shadow-lg transition-colors active:scale-95" title="Enviar Oferta">
+                        <span class="material-symbols-outlined text-lg">send</span>
+                    </a>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // ======================================================
+        // 3. EL ORÁCULO (Tendencias Globales para tus Estados)
+        // ======================================================
+        async function loadOracle() {
+            const { data: logs } = await radarClient
+                .from('log_espia')
+                .select('detalle, timestamp')
+                .eq('accion', 'VIO_DETALLE')
+                .order('timestamp', { ascending: false })
+                .limit(50);
+
+            if (!logs) return;
+
+            const conteo = {};
+            logs.forEach(l => {
+                const prod = l.detalle;
+                if(prod) conteo[prod] = (conteo[prod] || 0) + 1;
+            });
+
+            const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            
+            const container = document.getElementById('oracle-feed');
+            container.innerHTML = "";
+
+            top.forEach(([prod, count], index) => {
+                const width = Math.min(100, count * 15); 
+                const msgEstado = `😱 ${count} personas están preguntando por el *${prod}* hoy. ¡Me quedan pocos! Escríbeme ya.`;
+
+                const html = `
+                <div class="item-anim mb-4 last:mb-0">
+                    <div class="flex justify-between text-[10px] uppercase font-bold text-purple-200 mb-1">
+                        <span class="truncate pr-2 w-3/4">${prod}</span>
+                        <span class="text-purple-400 whitespace-nowrap">${count} VISTAS</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-slate-800 rounded-full mb-2 overflow-hidden">
+                        <div class="h-full bg-purple-500 shadow-[0_0_10px_#a855f7]" style="width: ${width}%"></div>
+                    </div>
+                    <button onclick="navigator.clipboard.writeText('${msgEstado}').then(()=>alert('✅ Texto copiado. Pégalo en tu Estado.'))" 
+                        class="w-full text-[9px] font-bold bg-purple-900/20 text-purple-300 border border-purple-500/30 py-1.5 rounded hover:bg-purple-500 hover:text-white transition-all flex items-center justify-center gap-1 group">
+                        <span class="material-symbols-outlined text-[10px] group-hover:rotate-12 transition-transform">content_copy</span> COPIAR PARA ESTADO
+                    </button>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function timeAgo(dateString) {
+            const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+            if (seconds < 60) return "Ahora";
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m`;
+            const hours = Math.floor(minutes / 60);
+            return `${hours}h`;
+        }
+
+        // AUTO-ARRANQUE CON SEGURIDAD
         const session = JSON.parse(localStorage.getItem('pth_session'));
+        
+        // Verificación Simple (Si no eres Marcel, te saca)
         if(!session || session.name !== 'Marcel Montano') {
-            window.location.href = 'index.html';
+            document.body.innerHTML = `<div class="h-screen w-full flex items-center justify-center bg-black text-red-500 font-mono font-bold flex-col gap-4">
+                <span class="material-symbols-outlined text-6xl">lock</span>
+                <p>ACCESO DENEGADO: PROTOCOLO OMEGA</p>
+                <button onclick="window.location.href='index.html'" class="text-white underline">Volver</button>
+            </div>`;
         } else {
-            loadData();
-            setInterval(loadData, 5000);
+            loadWarRoom();
+            // Actualización automática cada 10 segundos
+            setInterval(loadSniperTargets, 10000); 
         }
     </script>
 </body>
