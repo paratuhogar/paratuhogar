@@ -1637,7 +1637,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102p"; 
+const versionActual = "0102q"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3909,15 +3909,29 @@ async function loadFullDashboard() {
         `).join('');
     }
 
-    function showSection(section) {
-        const isCat = section === 'catalogo';
-        document.getElementById('sec-catalogo').style.display = isCat ? 'block' : 'none';
-        document.getElementById('sec-dashboard').classList.toggle('hidden', isCat);
-        document.getElementById('tab-cat').className = isCat ? "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white" : "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400";
-        document.getElementById('tab-dash').className = !isCat ? "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white" : "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400";
-        if(!isCat) loadFullDashboard();
-        window.scrollTo(0,0);
+    // Busca esta función y reemplázala completamente
+function showSection(section) {
+    const isCat = section === 'catalogo';
+    
+    // 1. Mostrar/Ocultar contenedores
+    document.getElementById('sec-catalogo').style.display = isCat ? 'block' : 'none';
+    document.getElementById('sec-dashboard').classList.toggle('hidden', isCat);
+    
+    // 2. Actualizar estilos de los botones del menú superior
+    document.getElementById('tab-cat').className = isCat ? "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white" : "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400";
+    document.getElementById('tab-dash').className = !isCat ? "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-primary text-white" : "flex-1 py-3 rounded-xl font-bold text-xs uppercase bg-gray-100 text-gray-400";
+    
+    // 3. CORRECCIÓN PRINCIPAL: Cargar el Dashboard PRO si entramos a la sección dashboard
+    if (!isCat) {
+        // Obtenemos el nombre del gestor de la variable global
+        const currentGestor = window.gestorName;
+        if (currentGestor) {
+            loadProDashboard(currentGestor); // <--- ESTO CARGA EL RANKING Y PODIO
+        }
     }
+    
+    window.scrollTo(0,0);
+}
 
     // GESTORES
     function openGestorGen() { document.getElementById('gestor-modal').classList.remove('hidden'); }
