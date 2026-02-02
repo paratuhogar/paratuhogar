@@ -139,58 +139,79 @@
         // ======================================================
         // 1. EL FRANCOTIRADOR (Tus Leads Fantasma)
         // ======================================================
+        // ======================================================
+        // 1. EL FRANCOTIRADOR (BLINDADO Y ÉTICO)
+        // ======================================================
         async function loadSniperTargets() {
-            // Traemos leads recientes
+            // 1. Traemos leads recientes (últimas 24h es lo relevante para francotirador)
+            const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            
             const { data: leads, error } = await radarClient
                 .from('leads_fantasma')
                 .select('*')
-                .eq('completado', false) // Solo los que no se han cerrado
-                .order('timestamp', { ascending: false })
-                .limit(30);
+                .eq('completado', false) 
+                .gte('timestamp', hace24h) // Solo leads frescos
+                .order('timestamp', { ascending: false });
 
             if (error || !leads) return;
 
-            // FILTRO DE PROPIEDAD: Solo Marcel o Directo
-            const misLeads = leads.filter(l => 
-                l.gestor_atribuido === MY_NAME || l.gestor_atribuido === 'Venta Directa' || l.gestor_atribuido === 'Directo'
+            // 2. CONSULTA DE SEGURIDAD: ¿Quién ha comprado hoy?
+            // Traemos TODOS los pedidos de hoy (de cualquier gestor) para comparar teléfonos
+            const { data: ventasHoy } = await radarClient
+                .from('pedidos')
+                .select('telefono')
+                .gte('fecha', hace24h);
+
+            // Creamos una lista de teléfonos que YA COMPRARON (Cleaned)
+            const telefonosVendidos = new Set(
+                (ventasHoy || []).map(v => v.telefono.replace(/\D/g, ''))
             );
 
+            // 3. FILTRADO DE PROPIEDAD ESTRICTA + ANTI-ROBO
+            const misLeads = leads.filter(l => {
+                // A. Filtro de Propiedad: SOLO si dice explícitamente TU NOMBRE
+                // Eliminamos 'Directo' y 'Venta Directa' para evitar confusiones.
+                const esMio = l.gestor_atribuido === MY_NAME;
+
+                // B. Filtro Anti-Robo: Verificamos si ya compró
+                const telLead = l.telefono.replace(/\D/g, '');
+                const yaCompro = telefonosVendidos.has(telLead);
+
+                // Solo pasa si ES MÍO y NO HA COMPRADO AÚN
+                return esMio && !yaCompro;
+            });
+
+            // 4. RENDERIZADO (Igual que antes)
             document.getElementById('count-targets').innerText = misLeads.length;
             const container = document.getElementById('sniper-feed');
             
             if (misLeads.length === 0) {
-                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-600 opacity-50"><span class="material-symbols-outlined text-4xl mb-2">radar</span><p class="text-xs uppercase font-bold">Sin objetivos activos</p></div>`;
+                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-600 opacity-50"><span class="material-symbols-outlined text-4xl mb-2">radar</span><p class="text-xs uppercase font-bold">Sin objetivos confirmados</p></div>`;
                 return;
             }
 
             container.innerHTML = "";
 
             misLeads.forEach(lead => {
-                // SCORING: Calcular nivel de calor
                 let score = 10;
                 let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO</span>`;
                 
-                // Heurística de calor
                 if (lead.nombre && lead.nombre.length > 2) score += 40;
-                if (lead.nombre && lead.nombre.length > 15) score = 100; // Nombre largo suele ser dirección pegada por error
+                if (lead.producto_en_carrito && lead.producto_en_carrito.length > 3) score += 20;
                 
-                if (score >= 50 && score < 100) badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO</span>`;
-                if (score >= 100) badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 FUEGO</span>`;
+                if (score >= 50) badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO</span>`;
+                if (score >= 70) badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 FUEGO</span>`;
 
-                // DATOS
                 const prod = lead.producto_en_carrito || "un equipo";
-                const nombre = lead.nombre || "Hola";
+                const nombre = lead.nombre || "Cliente";
                 const tel = lead.telefono;
                 
-                // Limpieza de teléfono para el link
                 const cleanTel = tel.replace(/\D/g, '');
                 const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
 
-                // Mensajes Psicológicos
-                const msgCierre = `Hola ${nombre}, vi que estabas pidiendo el *${prod}* en la web. Ya te lo tengo separado en almacén. ¿Te confirmo el envío para mañana?`;
-                const msgAyuda = `Hola, soy Marcel de paratuhogar. Vi que intentabas pedir *${prod}* pero no se completó. ¿Te dio algún error la página? Avísame para ayudarte.`;
+                const msgCierre = `Hola ${nombre}, vi que intentaste pedir el *${prod}* en mi enlace personal. Ya te lo tengo separado. ¿Te confirmo el envío?`;
+                const msgAyuda = `Hola ${nombre}, soy Marcel. Vi que estabas comprando *${prod}* pero no terminaste. ¿Te dio error la página?`;
 
-                // Renderizado
                 const html = `
                 <div class="item-anim bg-slate-800/40 border border-slate-700/50 p-4 rounded-xl hover:bg-slate-800 hover:border-orange-500/30 transition-all group relative">
                     <div class="flex justify-between items-start mb-3">
@@ -201,8 +222,8 @@
                                     <span class="material-symbols-outlined text-[10px]">schedule</span> ${timeAgo(lead.timestamp)}
                                 </span>
                             </div>
-                            <p class="text-white font-black uppercase text-sm leading-tight mb-0.5">${lead.nombre || 'Anónimo'}</p>
-                            <p class="text-orange-400 font-mono text-xs font-bold tracking-wider">${lead.telefono}</p>
+                            <p class="text-white font-black uppercase text-sm leading-tight mb-0.5">${nombre}</p>
+                            <p class="text-orange-400 font-mono text-xs font-bold tracking-wider">${tel}</p>
                         </div>
                     </div>
                     
@@ -210,7 +231,6 @@
                         <p class="text-[10px] text-slate-400 italic truncate"><span class="text-slate-500 not-italic font-bold">INTENTO:</span> ${prod}</p>
                     </div>
 
-                    <!-- BOTONERA DE ATAQUE -->
                     <div class="grid grid-cols-2 gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                         <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgCierre)}" target="_blank" 
                            class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase py-2.5 rounded-lg text-center flex items-center justify-center gap-1 shadow-lg shadow-emerald-900/20 active:scale-95 transition-all">
