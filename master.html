@@ -1024,29 +1024,40 @@ function calculateMetrics(orders) {
 }
 
 // 1. CALCULAR Y MOSTRAR DEUDA DEL SISTEMA
+// --- VERSIÓN CORREGIDA: DETECTA CANTIDADES (5x, 2x...) ---
 function renderSystemDebt() {
-    // Usamos la variable global donde cargaste los pedidos en loadAdminData
     if (!pedidosRawAdmin) return;
 
     // Filtramos: Entregados Y que no te hayan pagado el fee
     const deudaOrders = pedidosRawAdmin.filter(p => 
         p.estado === 'Entregado' && 
-        (p.pago_sistema === 'Pendiente' || !p.pago_sistema) // !p.pago_sistema por si es null al principio
+        (p.pago_sistema === 'Pendiente' || !p.pago_sistema)
     );
 
     let totalDeuda = 0;
     const idsDeuda = [];
 
     deudaOrders.forEach(p => {
-        const precio = parseFloat(p.total) || 0; // Usamos el total de venta para calcular el rango
+        // 1. Detectar Cantidad (Qty)
+        let qty = 1;
+        const match = p.producto.match(/^(\d+)x/);
+        if (match) qty = parseInt(match[1]);
+
+        // 2. Limpiar valores monetarios
+        const totalVenta = parseFloat(p.total) || 0;
+        const mensajeria = parseFloat(p.costo_mensajeria) || 0;
+
+        // 3. Calcular Precio Unitario Real del Equipo
+        // (Total - Envio) / Cantidad
+        const precioUnitario = (totalVenta - mensajeria) / qty;
+
+        // 4. Calcular Tarifa Unitaria
+        const feeUnitario = calculateDevFee(precioUnitario);
         
-        // Usamos la misma función de rangos que creamos antes
-        // OJO: Si la venta tiene varios productos (ej: 2 ventiladores), el precio total es alto
-        // Lo ideal es calcular por unidad, pero si 'p.total' es el precio final, usamos eso.
-        // Si tienes cantidad en el string, podrías refinarlo, pero por total funciona bien para rangos.
-        const fee = calculateDevFee(precio); 
+        // 5. Calcular Tarifa Total del Pedido
+        const feeTotalPedido = feeUnitario * qty;
         
-        totalDeuda += fee;
+        totalDeuda += feeTotalPedido;
         idsDeuda.push(p.id);
     });
 
@@ -1055,10 +1066,9 @@ function renderSystemDebt() {
     const elCount = document.getElementById('sys-debt-count');
     const btn = document.getElementById('btn-pay-sys');
 
-    if(elAmount) elAmount.innerText = `$${totalDeuda.toLocaleString()}.00`;
+    if(elAmount) elAmount.innerText = `$${totalDeuda.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     if(elCount) elCount.innerText = `${idsDeuda.length} pedidos por procesar`;
 
-    // Guardamos los IDs en el botón para usarlos al pagar
     if(btn) {
         btn.dataset.ids = JSON.stringify(idsDeuda);
         if (totalDeuda === 0) {
@@ -1068,7 +1078,7 @@ function renderSystemDebt() {
         } else {
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btn.innerHTML = `<div class="flex items-center gap-2"><span class="material-symbols-outlined">payments</span><span>LIQUIDAR ($${totalDeuda})</span></div>`;
+            btn.innerHTML = `<div class="flex items-center gap-2"><span class="material-symbols-outlined">payments</span><span>LIQUIDAR ($${totalDeuda.toFixed(2)})</span></div>`;
         }
     }
 }
