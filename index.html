@@ -1637,7 +1637,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102j"; 
+const versionActual = "0102k"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4198,16 +4198,22 @@ function renderAdminLogistica() {
                 </p>
             </td>
 
-            <!-- COL 4: GESTOR (CON BOTÓN WHATSAPP) -->
+            <!-- COL 4: GESTOR Y HERRAMIENTAS -->
             <td class="p-4 align-top">
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-2">
                     <span class="bg-slate-100 px-2 py-1 rounded text-[9px] font-bold text-slate-600 w-fit">${p.gestor}</span>
                     
-                    <!-- BOTÓN CONTACTAR GESTOR -->
-                    <!-- Nota: Requiere que tengas el teléfono del gestor cargado o usa un link genérico -->
-                    <button onclick="alert('Para contactar a ${p.gestor}, búscalo en la pestaña de Equipo.')" class="text-[9px] text-gray-400 hover:text-green-500 flex items-center gap-1 font-bold transition-colors">
+                    <!-- Botón Contactar Gestor -->
+                    <button onclick="alert('Gestor: ${p.gestor}')" class="text-[9px] text-gray-400 hover:text-green-500 flex items-center gap-1 font-bold transition-colors">
                         <i class="fab fa-whatsapp"></i> Contactar
                     </button>
+
+                    <!-- === NUEVO BOTÓN: REENVIAR VALE === -->
+                    <button onclick="reenviarValeAdmin('${p.id}')" class="flex items-center justify-center gap-1 bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1.5 rounded-lg shadow-sm hover:bg-teal-100 transition-all active:scale-95 group" title="Generar Vale de Pedido (Rescate)">
+                        <span class="material-symbols-outlined text-[14px] group-hover:rotate-180 transition-transform duration-500">receipt_long</span>
+                        <span class="text-[9px] font-black uppercase">Generar Vale</span>
+                    </button>
+
                 </div>
             </td>
 
@@ -9312,6 +9318,52 @@ function reenviarPedidoAdmin(id) {
     mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nAgente: ${p.gestor}\nComisión: $${p.comision_total}\nTel Agente: ${miTel}\n`;
     
     window.open(`https://api.whatsapp.com/send?phone=${PHONE_DUENO}&text=${encodeURIComponent(mensaje)}`, '_blank');
+}
+
+// --- FUNCIÓN PARA REENVIAR VALE (DESDE ADMIN) ---
+function reenviarValeAdmin(id) {
+    // 1. Buscar el pedido en la lista maestra del Admin
+    const p = pedidosRawAdmin.find(item => item.id === id);
+    
+    if (!p) return alert("Error: No se encuentran los datos del pedido en memoria.");
+
+    // 2. Definir el número destino (La Central / Tu número)
+    const PHONE_CENTRAL = "5356071095"; 
+
+    // 3. Cálculos matemáticos inversos (Para desglosar el total)
+    const totalCobrar = parseFloat(p.total) || 0;
+    const envio = parseFloat(p.costo_mensajeria) || 0;
+    const precioEquipos = totalCobrar - envio;
+
+    // 4. Construir el mensaje (Idéntico al del carrito)
+    let mensaje = `🧾 *REENVÍO MANUAL (ADMIN) #${p.orden_dia || '---'}*\n`;
+    mensaje += `📅 Fecha: ${new Date(p.fecha).toLocaleDateString()}\n\n`;
+    
+    mensaje += `👤 *CLIENTE*\n`;
+    mensaje += `Nombre: ${p.cliente}\n`;
+    mensaje += `Tel: ${p.telefono}\n`;
+    mensaje += `Dirección: ${p.direccion}, ${p.municipio}\n`;
+    
+    if(p.ci && p.ci !== "No especificado") {
+        mensaje += `CI: ${p.ci}\n`;
+    }
+
+    mensaje += `\n🛒 *DETALLE*\n`;
+    mensaje += `📦 ${p.producto}\n\n`;
+    
+    mensaje += `💰 *TOTAL A PAGAR: $${totalCobrar} USD*\n`;
+    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+
+    // Datos internos para que el almacén sepa de quién es
+    mensaje += `\n------------------------------------\n`;
+    mensaje += `👮‍♂️ *DATOS INTERNOS*\n`;
+    mensaje += `Agente Original: ${p.gestor}\n`;
+    mensaje += `Comisión: $${p.comision_total}\n`;
+    
+    // 5. Enviar
+    // Usamos api.whatsapp.com para asegurar que abra en PC y Móvil
+    const url = `https://api.whatsapp.com/send?phone=${PHONE_CENTRAL}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
 }
 
 </script>
