@@ -1637,7 +1637,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102k"; 
+const versionActual = "0102l"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3545,19 +3545,39 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // Obtenemos el teléfono del gestor actual para ponerlo en el reporte interno
     const agentPhone = getAgentPhone(); 
 
-    // --- 7. GENERAR VALES Y MENSAJE (LÓGICA CORREGIDA PARA MENSAJERÍA) ---
+    // --- 7. GENERAR VALES Y MENSAJE (LÓGICA CORREGIDA: BUSCAR ÚLTIMO ID + 1) ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
-        // Generar consecutivo
-        const ahora = new Date();
-        const inicioAnio = new Date(ahora.getFullYear(), 0, 1).toISOString();
-        const { count, error: errCount } = await supabaseClient
+        
+        // 1. BUSCAR EL ÚLTIMO NÚMERO USADO REAL EN LA BASE DE DATOS
+        // En lugar de contar cuántos hay, miramos cuál fue el último que se guardó.
+        const { data: ultimos, error: errLast } = await supabaseClient
             .from('pedidos')
-            .select('id', { count: 'exact', head: true })
+            .select('orden_dia')
             .eq('proveedor', prov)
-            .gte('fecha', inicioAnio); 
+            .order('fecha', { ascending: false }) // Ordenamos por fecha descendente
+            .limit(1);
 
+        // Offsets de seguridad (Solo se usan si la base de datos está VACÍA para ese proveedor)
         const startOffset = { 'CA': 167, 'A': 39, 'M': 5, 'Q': 1 ,'JM': 8, 'SA': 12, 'B': 9, 'SE': 3 };
-        const nroConsecutivo = (errCount ? 0 : (count || 0)) + (startOffset[prov] || 0) + 1;
+        
+        let nroConsecutivo = 1;
+
+        if (ultimos && ultimos.length > 0 && ultimos[0].orden_dia) {
+            // Lógica: Tomamos "CA-176", partimos por el guión y cogemos "176"
+            const parts = ultimos[0].orden_dia.split('-');
+            const lastNum = parseInt(parts[parts.length - 1]);
+            
+            if (!isNaN(lastNum)) {
+                nroConsecutivo = lastNum + 1; // El nuevo es el anterior + 1
+            } else {
+                // Si el último tenía un formato raro, usamos el offset por defecto
+                nroConsecutivo = (startOffset[prov] || 0) + 1;
+            }
+        } else {
+            // Si es el PRIMER pedido de la historia para este proveedor
+            nroConsecutivo = (startOffset[prov] || 0) + 1;
+        }
+
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
         let detalleCuerpo = "";
@@ -3572,7 +3592,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             const costoEquipo = Number(item.precio_venta) * Number(item.qty);
             subtotalProductos += costoEquipo;
 
-            // 2. Calcular costo de envío de esta línea (lo que se puso en el input del carrito)
+            // 2. Calcular costo de envío de esta línea
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
             envioTotalVale += costoEnvio;
             
@@ -3605,7 +3625,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         
         mensajeRaw += `\n------------------------------------\n\n`;
 
-        // GUARDAR EN BASE DE DATOS (AQUÍ ESTÁ EL CAMBIO CLAVE)
+        // GUARDAR EN BASE DE DATOS
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, 
             cliente: nombreC, 
@@ -3978,6 +3998,62 @@ async function loadAdminData() {
     }
 }
 
+// ABRIR EL MODAL Y CARGAR DATOS
+function openFinanceModal(id) {
+    // 1. Buscar el pedido en la memoria
+    const p = pedidosRawAdmin.find(item => item.id === id);
+    if(!p) return alert("Error: No se encuentra el pedido.");
+
+    // 2. Llenar los campos
+    document.getElementById('edit-order-id').value = id;
+    document.getElementById('edit-mensajeria').value = parseFloat(p.costo_mensajeria) || 0;
+    document.getElementById('edit-comision').value = parseFloat(p.comision_total) || 0;
+    document.getElementById('edit-total').value = parseFloat(p.total) || 0;
+
+    // 3. Mostrar Modal
+    document.getElementById('modal-edit-finance').classList.remove('hidden');
+}
+
+// GUARDAR LOS CAMBIOS EN SUPABASE
+async function saveFinancialChanges() {
+    const id = document.getElementById('edit-order-id').value;
+    const nuevoEnvio = parseFloat(document.getElementById('edit-mensajeria').value) || 0;
+    const nuevaComi = parseFloat(document.getElementById('edit-comision').value) || 0;
+    const nuevoTotal = parseFloat(document.getElementById('edit-total').value) || 0;
+    
+    const btn = document.getElementById('btn-save-finance');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = "Guardando...";
+    btn.disabled = true;
+
+    try {
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update({
+                costo_mensajeria: nuevoEnvio,
+                comision_total: nuevaComi,
+                total: nuevoTotal
+            })
+            .eq('id', id);
+
+        if(error) throw error;
+
+        alert("✅ Ajuste financiero guardado correctamente.");
+        document.getElementById('modal-edit-finance').classList.add('hidden');
+        
+        // Recargar la tabla para ver los cambios
+        loadAdminData();
+
+    } catch(e) {
+        console.error(e);
+        alert("Error al guardar: " + e.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 // --- FUNCIÓN PARA APROBAR O RECHAZAR GESTORES ---
 async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
     const confirmacion = confirm(`¿Estás seguro de que quieres cambiar el estado de ${nombre} a ${nuevoEstado}?`);
@@ -4217,7 +4293,7 @@ function renderAdminLogistica() {
                 </div>
             </td>
 
-            <!-- COL 5: ESTADO LOGÍSTICA -->
+            <!-- COL 5: ESTADO LOGÍSTICA (MODIFICADA) -->
             <td class="p-4 text-right align-top">
                 <div class="flex flex-col items-end gap-2">
                     ${esFinal ? 
@@ -4231,10 +4307,20 @@ function renderAdminLogistica() {
                         </select>`
                     }
                     
-                    <div class="flex items-center text-[9px] font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">
-                        <span class="material-symbols-outlined text-[12px] mr-1 text-slate-400">two_wheeler</span>
-                        Pago Envío: ${envioDisplay}
+                    <!-- AQUI ESTÁ EL CAMBIO: Un div contenedor para alinear el precio y el botón -->
+                    <div class="flex items-center justify-end gap-1">
+                        <!-- Tu badge original de envío -->
+                        <div class="flex items-center text-[9px] font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">
+                            <span class="material-symbols-outlined text-[12px] mr-1 text-slate-400">two_wheeler</span>
+                            Pago Envío: ${envioDisplay}
+                        </div>
+                        
+                        <!-- EL NUEVO BOTÓN DE LÁPIZ -->
+                        <button onclick="openFinanceModal('${p.id}')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 p-1 rounded border border-amber-300 transition-colors shadow-sm flex items-center justify-center" title="Corregir Comisión/Envío">
+                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                        </button>
                     </div>
+
                 </div>
             </td>
         </tr>`;
@@ -9988,6 +10074,46 @@ function reenviarValeAdmin(id) {
     });
 </script>
 
+<!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
+<div id="modal-edit-finance" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-pop-in">
+        
+        <!-- Header -->
+        <div class="bg-slate-900 p-4 flex justify-between items-center">
+            <h3 class="text-white font-black uppercase text-sm tracking-widest flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-500">edit_document</span> Ajuste Financiero
+            </h3>
+            <button onclick="document.getElementById('modal-edit-finance').classList.add('hidden')" class="text-gray-400 hover:text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Formulario -->
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="edit-order-id">
+            
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                <label class="text-[10px] font-black uppercase text-blue-800 dark:text-blue-300 block mb-1">🚚 Costo Mensajería</label>
+                <input type="number" id="edit-mensajeria" class="w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg p-2 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                <p class="text-[9px] text-gray-400 mt-1">Si subes esto, recuerda bajar la comisión.</p>
+            </div>
+
+            <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                <label class="text-[10px] font-black uppercase text-emerald-800 dark:text-emerald-300 block mb-1">💰 Comisión Gestor</label>
+                <input type="number" id="edit-comision" class="w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg p-2 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">💵 Total Venta (Cuidado)</label>
+                <input type="number" id="edit-total" class="w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg p-2 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-slate-500 outline-none">
+            </div>
+
+            <button onclick="saveFinancialChanges()" id="btn-save-finance" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold uppercase text-xs hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">save</span> Guardar Cambios
+            </button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
