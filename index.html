@@ -1055,6 +1055,22 @@
                 class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 h-32 resize-none focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required></textarea>
         </div>
 
+        <!-- === NUEVO SELECTOR DE MONEDA (INFORMATIVO) === -->
+<div class="mb-4">
+    <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Método de Pago Preferido</label>
+    <div class="relative">
+        <select id="check-moneda-pago" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 appearance-none focus:bg-white focus:border-primary focus:ring-0 transition-all cursor-pointer">
+            <option value="USD (Efectivo)" selected>💵 USD (Efectivo)</option>
+            <option value="EUR (Efectivo)">💶 EUR (Efectivo)</option>
+            <option value="Zelle">📱 Zelle (USA)</option>
+            <option value="CUP (Al cambio)">🇨🇺 CUP (Al cambio del día)</option>
+        </select>
+        <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+            <span class="material-symbols-outlined">payments</span>
+        </div>
+    </div>
+</div>
+
         <!-- PAGO Y VUELTO (Estilo Tarjeta) -->
         <div class="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-4">
             
@@ -1621,7 +1637,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102c"; 
+const versionActual = "0102j"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3458,6 +3474,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const dirC = document.getElementById('check-dir').value;
     const monedaC = "USD"; 
     const valVuelto = document.getElementById('check-vuelto').value;
+    const metodoPagoSeleccionado = document.getElementById('check-moneda-pago').value;
+
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
     // --- 2. EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN ---
@@ -3575,6 +3593,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
         mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
         mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
+        mensajeRaw += `💳 *MÉTODO PAGO:* ${metodoPagoSeleccionado}\n`; 
+
         
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Paga con billete de $${vueltoC}\n`;
 
@@ -7787,21 +7807,151 @@ async function loadPendingGestores() {
         `).join('');
     }
 
-    // --- RENDERIZAR ACTIVOS ---
+    // --- RENDERIZAR ACTIVOS (VERSION INTELIGENCIA DE NEGOCIO) ---
     if (activos.length === 0) {
-        containerActivos.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">Aún no tienes equipo activo.</td></tr>`;
+        containerActivos.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 text-xs font-bold italic">Aún no tienes equipo activo.</td></tr>`;
     } else {
-        containerActivos.innerHTML = activos.map(g => `
-            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-                <td class="p-4 font-bold text-slate-700 dark:text-white uppercase">${g.nombre}</td>
-                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-                <td class="p-4 text-right">
-                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-red-400 hover:text-red-600 p-2 transition-colors">
-                        <span class="material-symbols-outlined text-sm">delete</span>
+        // 1. OBTENER DATOS DE INTELIGENCIA (PEDIDOS + CLICS)
+        const { data: pedidos } = await supabaseClient
+            .from('pedidos')
+            .select('gestor, created_at, total')
+            .eq('estado', 'Entregado'); // Solo cuentan las ventas reales
+
+        const { data: clics } = await supabaseClient
+            .from('link_analytics')
+            .select('agent_name, timestamp');
+
+        containerActivos.innerHTML = activos.map(g => {
+            // A. FILTRAR DATOS DE ESTE GESTOR
+            const misVentas = pedidos ? pedidos.filter(p => p.gestor === g.nombre) : [];
+            const misClics = clics ? clics.filter(c => c.agent_name === g.nombre) : [];
+
+            // B. CÁLCULO DE METRICAS
+            const totalVentas = misVentas.length;
+            const totalClics = misClics.length;
+            
+            // Tasa de Conversión (Evitando división por cero)
+            const conversion = totalClics > 0 ? ((totalVentas / totalClics) * 100).toFixed(1) : "0.0";
+            
+            // Color de conversión
+            let colorConv = "text-gray-400";
+            if(conversion > 5) colorConv = "text-emerald-500"; // Excelente
+            else if(conversion > 1) colorConv = "text-blue-500"; // Normal
+            else if(totalClics > 50 && conversion < 1) colorConv = "text-red-500"; // Alerta (Mucho tráfico, poca venta)
+
+            // C. RANGO Y NIVEL (Usando tu función getLevelData)
+            const nivelData = getLevelData(totalVentas);
+            const rangoNombre = nivelData.name.toUpperCase();
+            // Colores de rango
+            const colorRango = {
+                0: "bg-gray-100 text-gray-500 border-gray-200",
+                1: "bg-orange-50 text-orange-600 border-orange-200",
+                2: "bg-blue-50 text-blue-600 border-blue-200",
+                3: "bg-indigo-50 text-indigo-600 border-indigo-200",
+                4: "bg-emerald-50 text-emerald-600 border-emerald-200",
+                5: "bg-purple-50 text-purple-600 border-purple-200",
+                10: "bg-red-50 text-red-600 border-red-200"
+            }[nivelData.lvl] || "bg-gray-100 text-gray-500";
+
+            // D. SEMÁFORO DE ACTIVIDAD (Login/Venta/Clic más reciente)
+            // Buscamos la fecha más reciente entre su registro, última venta o último clic generado
+            let fechasActividad = [new Date(g.created_at).getTime()];
+            if (misVentas.length > 0) fechasActividad.push(new Date(misVentas[misVentas.length - 1].created_at).getTime());
+            if (misClics.length > 0) fechasActividad.push(new Date(misClics[0].timestamp).getTime()); // Asumiendo orden desc
+
+            const ultimaActividad = Math.max(...fechasActividad);
+            const diasInactivo = Math.floor((new Date() - ultimaActividad) / (1000 * 60 * 60 * 24));
+
+            let semaforo = "bg-gray-400"; // Muerto (Gris)
+            let estadoTexto = "💤 Inactivo";
+            
+            if (diasInactivo <= 2) {
+                semaforo = "bg-emerald-500 shadow-[0_0_8px_#10b981]"; // Verde (Activo hoy/ayer)
+                estadoTexto = "🟢 Online";
+            } else if (diasInactivo <= 7) {
+                semaforo = "bg-emerald-400"; // Verde suave (Esta semana)
+                estadoTexto = "Hace días";
+            } else if (diasInactivo <= 30) {
+                semaforo = "bg-yellow-400"; // Amarillo (Alerta)
+                estadoTexto = "⚠️ Ausente";
+            } else {
+                semaforo = "bg-red-500 animate-pulse"; // Rojo (Peligro)
+                estadoTexto = "🔴 +30 Días";
+            }
+
+            // E. RENDERIZADO DE LA FILA
+            return `
+            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-slate-50 transition-all group">
+                
+                <!-- 1. PERFIL + SEMÁFORO -->
+                <td class="p-4 align-middle">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 border border-slate-200 text-lg">
+                                ${g.nombre.charAt(0)}
+                            </div>
+                            <!-- EL PUNTO DEL SEMÁFORO -->
+                            <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${semaforo}" title="Última actividad: Hace ${diasInactivo} días"></div>
+                        </div>
+                        <div>
+                            <p class="font-black text-slate-700 dark:text-white uppercase leading-tight text-sm">${g.nombre}</p>
+                            
+                            <!-- BADGE DE RANGO -->
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${colorRango}">
+                                    ${rangoNombre}
+                                </span>
+                                <span class="text-[9px] text-gray-400 font-bold">${estadoTexto}</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- 2. CONTACTO -->
+                <td class="p-4 align-middle">
+                    <a href="https://wa.me/${g.telefono.replace(/\D/g,'')}" target="_blank" 
+                       class="inline-flex items-center gap-2 text-slate-500 hover:text-[#25D366] transition-colors group/wa">
+                        <span class="material-symbols-outlined text-lg group-hover/wa:scale-110 transition-transform">chat</span>
+                        <span class="font-bold text-xs">${g.telefono}</span>
+                    </a>
+                </td>
+
+                <!-- 3. METRICAS DE RENDIMIENTO (EL CEREBRO) -->
+                <td class="p-4 align-middle">
+                    <div class="flex items-center gap-6">
+                        
+                        <!-- VENTAS -->
+                        <div class="text-center">
+                            <span class="block text-xl font-black text-slate-800 leading-none">${totalVentas}</span>
+                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-wide">Ventas</span>
+                        </div>
+
+                        <!-- DIVISOR -->
+                        <div class="h-8 w-px bg-slate-200"></div>
+
+                        <!-- CLICS (TRÁFICO) -->
+                        <div class="text-center">
+                            <span class="block text-sm font-bold text-slate-600 leading-none mb-1">${totalClics}</span>
+                            <span class="text-[9px] font-bold text-gray-400 uppercase">Clics</span>
+                        </div>
+
+                        <!-- CONVERSIÓN (CALIDAD) -->
+                        <div class="text-center" title="Efectividad: Ventas / Clics">
+                            <span class="block text-sm font-black ${colorConv} leading-none mb-1">${conversion}%</span>
+                            <span class="text-[9px] font-bold text-gray-400 uppercase">Conv.</span>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- 4. ACCIONES -->
+                <td class="p-4 align-middle text-right">
+                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all" title="Eliminar / Bloquear">
+                        <span class="material-symbols-outlined">delete</span>
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
     }
 }
 
