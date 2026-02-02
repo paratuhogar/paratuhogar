@@ -1631,7 +1631,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102d"; 
+const versionActual = "0102e"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -5378,26 +5378,44 @@ window.doLogout = function() {
     */
 
     // 2. COMPARTIR REDES SOCIALES
-    async function shareProductSocial(name, network) {
-    const p = productosRaw.find(prod => prod.nombre === name);
-    if(!p) return;
+    // --- FUNCIÓN CORREGIDA PARA COMPARTIR EN REDES (SOLUCIÓN ERROR FACEBOOK) ---
+function shareProductSocial(name, network) {
+    // 1. Encontrar el producto
+    // Nota: Usamos replace para asegurar que coincida el nombre exacto
+    const p = productosRaw.find(prod => prod.nombre === name.replace(/&quot;/g, '"'));
+    
+    if(!p) return alert("Error: Producto no encontrado para compartir.");
 
+    // 2. Obtener datos del Gestor (Tú)
     const gestor = window.gestorName || '';
     const userData = window.currentUserData || {};
+    // Recuperamos el teléfono de la sesión o de la URL si eres cliente
     const miTelefono = userData.telefono || new URLSearchParams(window.location.search).get('tel') || '';
     
-    let rawLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}`;
-    if (gestor) rawLink += `&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    // 3. CONSTRUIR EL LINK DIRECTO (SEGURO)
+    // Usamos el link largo porque GitHub Pages no falla con este.
+    const baseUrl = window.location.origin + window.location.pathname;
+    const cleanName = encodeURIComponent(p.nombre);
+    
+    let finalLink = `${baseUrl}?search=${cleanName}`;
+    
+    // Si hay gestor, le pegamos la etiqueta de afiliado
+    if (gestor) {
+        finalLink += `&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    }
 
-    // Generar link corto antes de compartir
-    const finalLink = await getOrGenerateShortLink(gestor, rawLink);
-
-
+    // 4. ACCIONES SEGÚN LA RED SOCIAL
     if (network === 'wa') {
+        // WHATSAPP: Usamos formato para COMPARTIR (sin poner teléfono de destino)
+        // Esto abre la lista de contactos/estados para que lo publiques.
         const text = `🔥 ¡Oferta Flash! *${p.nombre}* a solo *$${p.precio} USD*. \n\nVer detalles aquí: ${finalLink}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+        
     } else if (network === 'fb') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(finalLink)}`, '_blank');
+        // FACEBOOK: Usamos el link directo. Facebook leerá los Meta Tags nuevos que pusimos
+        // pero al hacer clic, llevará al cliente directo a ESTE producto.
+        const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(finalLink)}`;
+        window.open(fbUrl, '_blank');
     }
 }
 
