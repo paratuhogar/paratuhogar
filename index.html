@@ -1644,7 +1644,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0302a"; 
+const versionActual = "0302b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3568,30 +3568,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // --- 7. GENERAR VALES Y MENSAJE ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         
-        const { data: ultimos, error: errLast } = await supabaseClient
-            .from('pedidos')
-            .select('orden_dia')
-            .eq('proveedor', prov)
-            .order('fecha', { ascending: false }) 
-            .limit(1);
+        // --- NUEVO CÓDIGO SEGURO ---
+// Llamamos a la función de base de datos que creamos
+const { data: nuevoID, error: rpcError } = await supabaseClient
+    .rpc('get_next_order_id', { provider_code: prov });
 
-        const startOffset = { 'CA': 167, 'A': 39, 'M': 5, 'Q': 1 ,'JM': 8, 'SA': 12, 'B': 9, 'SE': 3 };
-        let nroConsecutivo = 1;
+if (rpcError || !nuevoID) {
+    alert("Error generando número de orden. Intente de nuevo.");
+    btn.disabled = false;
+    btn.innerText = "Reintentar";
+    return;
+}
 
-        if (ultimos && ultimos.length > 0 && ultimos[0].orden_dia) {
-            const parts = ultimos[0].orden_dia.split('-');
-            const lastNum = parseInt(parts[parts.length - 1]);
-            
-            if (!isNaN(lastNum)) {
-                nroConsecutivo = lastNum + 1; 
-            } else {
-                nroConsecutivo = (startOffset[prov] || 0) + 1;
-            }
-        } else {
-            nroConsecutivo = (startOffset[prov] || 0) + 1;
-        }
+const codPedido = nuevoID; 
+// ---------------------------
 
-        const codPedido = `${prov}-${nroConsecutivo}`; 
 
         let detalleCuerpo = "";
         let subtotalProductos = 0; 
