@@ -1644,7 +1644,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0302"; 
+const versionActual = "0302a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3464,8 +3464,23 @@ function changeQty(index, delta) {
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
 // 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
+// 5. ENVÍO DE PEDIDO (CON CANDADO DE SEGURIDAD PARA ENVÍO $0)
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
+
+    // === INICIO BLOQUEO DE SEGURIDAD (NUEVO) ===
+    // 1. Verificamos cuánto suma la mensajería de todo el carrito
+    const totalEnvioCheck = cart.reduce((acc, item) => acc + (parseFloat(item.shipping_linea) || 0), 0);
+
+    // 2. Si el envío es 0, lanzamos la alerta bloqueante
+    if (totalEnvioCheck === 0) {
+        const confirmarGratis = confirm("⚠️ ¡ATENCIÓN: ENVÍO $0! ⚠️\n\nEl costo de mensajería está marcado como GRATIS.\n\n¿Estás seguro de procesar el pedido sin cobrar envío?\n\n[Aceptar] = Sí, es correcto. Enviar.\n[Cancelar] = ¡Me olvidé! Volver para corregir.");
+        
+        // Si el usuario cancela, detenemos la función inmediatamente.
+        if (!confirmarGratis) return;
+    }
+    // === FIN BLOQUEO DE SEGURIDAD ===
+
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
     btn.innerText = "PROCESANDO...";
@@ -3621,7 +3636,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         mensajeRaw += `\n------------------------------------\n\n`;
 
         // GUARDAR EN BASE DE DATOS
-        // Truco seguro: Concatenamos la nota a la dirección para que se guarde sin cambiar la base de datos
         const direccionFinalDB = notasC ? `${dirC} [NOTA: ${notasC}]` : dirC;
 
         const insertPromise = supabaseClient.from('pedidos').insert([{
