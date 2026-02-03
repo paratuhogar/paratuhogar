@@ -1055,6 +1055,13 @@
                 class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 h-32 resize-none focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required></textarea>
         </div>
 
+        <!-- CAMPO DE NOTAS (NUEVO) -->
+<div class="mb-4">
+    <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Notas / Observaciones</label>
+    <textarea id="check-notas" placeholder="Ej: Entregar después de las 5pm, llamar al..." 
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 h-24 resize-none focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300"></textarea>
+</div>
+
         <!-- === NUEVO SELECTOR DE MONEDA (INFORMATIVO) === -->
 <div class="mb-4">
     <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Método de Pago Preferido</label>
@@ -1637,7 +1644,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0102q"; 
+const versionActual = "0302"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3456,7 +3463,7 @@ function changeQty(index, delta) {
 
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
-// 5. ENVÍO DE PEDIDO (LÓGICA CORREGIDA: GESTOR VS CLIENTE)
+// 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
     const btn = document.getElementById('final-submit-btn');
@@ -3472,14 +3479,18 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
-    const monedaC = "USD"; 
+    
+    // --- NUEVO: CAPTURAMOS LA NOTA (Si no existe, queda vacío) ---
+    const notasInput = document.getElementById('check-notas');
+    const notasC = notasInput ? notasInput.value.trim() : "";
+    // -------------------------------------------------------------
+
     const valVuelto = document.getElementById('check-vuelto').value;
     const metodoPagoSeleccionado = document.getElementById('check-moneda-pago').value;
 
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
     // --- 2. EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN ---
-    // Esta función determina quién es el gestor beneficiario (Tú, un referido, o Venta Directa)
     const activeGestor = await obtenerDuenoReal(telC);
     
     // --- 3. DETERMINAR A QUÉ WHATSAPP SE ENVÍA EL PEDIDO ---
@@ -3488,11 +3499,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     if (isLogged) {
         // CASO A: GESTOR HACIENDO PEDIDO MANUAL
-        // Si yo soy el gestor y estoy dentro, el pedido va para el JEFE/ALMACÉN.
         whatsappDestino = PHONE_DUENO_TIENDA; 
     } else {
         // CASO B: CLIENTE COMPRANDO POR ENLACE
-        // Si es un cliente, el pedido va al WHATSAPP DEL GESTOR para que él lo atienda.
         if (activeGestor !== "Venta Directa") {
             const { data: gDB } = await supabaseClient
                 .from('gestores')
@@ -3501,7 +3510,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 .maybeSingle();
             
             if (gDB && gDB.telefono) {
-                // Limpiamos el número para que quede formato internacional
                 let w = gDB.telefono.replace(/\D/g, '');
                 if (w.length === 8) w = "53" + w;
                 whatsappDestino = w;
@@ -3510,7 +3518,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
 
     // --- 4. LÓGICA DE BINDEO (MODO DIOS) ---
-    // Si el gestor es Nivel alto, el cliente queda amarrado
     if (activeGestor !== "Venta Directa") {
         const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
         if (activeGestor === "Marcel Montano" || lvl >= 5) {
@@ -3541,84 +3548,72 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     let mensajeRaw = ""; 
     const promesas = [];
-    
-    // Obtenemos el teléfono del gestor actual para ponerlo en el reporte interno
     const agentPhone = getAgentPhone(); 
 
-    // --- 7. GENERAR VALES Y MENSAJE (LÓGICA CORREGIDA: BUSCAR ÚLTIMO ID + 1) ---
+    // --- 7. GENERAR VALES Y MENSAJE ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         
-        // 1. BUSCAR EL ÚLTIMO NÚMERO USADO REAL EN LA BASE DE DATOS
-        // En lugar de contar cuántos hay, miramos cuál fue el último que se guardó.
         const { data: ultimos, error: errLast } = await supabaseClient
             .from('pedidos')
             .select('orden_dia')
             .eq('proveedor', prov)
-            .order('fecha', { ascending: false }) // Ordenamos por fecha descendente
+            .order('fecha', { ascending: false }) 
             .limit(1);
 
-        // Offsets de seguridad (Solo se usan si la base de datos está VACÍA para ese proveedor)
         const startOffset = { 'CA': 167, 'A': 39, 'M': 5, 'Q': 1 ,'JM': 8, 'SA': 12, 'B': 9, 'SE': 3 };
-        
         let nroConsecutivo = 1;
 
         if (ultimos && ultimos.length > 0 && ultimos[0].orden_dia) {
-            // Lógica: Tomamos "CA-176", partimos por el guión y cogemos "176"
             const parts = ultimos[0].orden_dia.split('-');
             const lastNum = parseInt(parts[parts.length - 1]);
             
             if (!isNaN(lastNum)) {
-                nroConsecutivo = lastNum + 1; // El nuevo es el anterior + 1
+                nroConsecutivo = lastNum + 1; 
             } else {
-                // Si el último tenía un formato raro, usamos el offset por defecto
                 nroConsecutivo = (startOffset[prov] || 0) + 1;
             }
         } else {
-            // Si es el PRIMER pedido de la historia para este proveedor
             nroConsecutivo = (startOffset[prov] || 0) + 1;
         }
 
         const codPedido = `${prov}-${nroConsecutivo}`; 
 
         let detalleCuerpo = "";
-        
-        // VARIABLES SEPARADAS PARA CALCULO CORRECTO
-        let subtotalProductos = 0; // Solo valor de los equipos
-        let envioTotalVale = 0;    // Solo valor de la mensajería
-        let comisionTotalVale = 0; // Comisión del gestor
+        let subtotalProductos = 0; 
+        let envioTotalVale = 0;    
+        let comisionTotalVale = 0; 
 
         productos.forEach(item => {
-            // 1. Calcular precio base del producto (Sin envío)
             const costoEquipo = Number(item.precio_venta) * Number(item.qty);
             subtotalProductos += costoEquipo;
-
-            // 2. Calcular costo de envío de esta línea
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
             envioTotalVale += costoEnvio;
             
-            // 3. Calcular comisiones
             if (activeGestor !== "Venta Directa") {
                 comisionTotalVale += (item.comision_actual * item.qty);
             }
             
-            // Construir detalle visual para WhatsApp
             detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Equipo: $${item.precio_venta} | 🚚 Envío: $${costoEnvio}\n`;
         });
 
-        // EL TOTAL A GUARDAR EN BD ES LA SUMA DE TODO (EQUIPO + ENVÍO)
         let totalUSDVale = subtotalProductos + envioTotalVale;
 
         // --- CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP ---
         mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
         mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
+        
+        // --- NUEVO: AGREGAR NOTAS AL MENSAJE SI EXISTEN ---
+        if (notasC) {
+            mensajeRaw += `📝 *NOTAS / OBSERVACIONES:*\n${notasC}\n\n`;
+        }
+        // --------------------------------------------------
+
         mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
         mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
         mensajeRaw += `💳 *MÉTODO PAGO:* ${metodoPagoSeleccionado}\n`; 
 
-        
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Paga con billete de $${vueltoC}\n`;
 
-        // *** DATOS INTERNOS (SOLO ALMACÉN) ***
         if (isLogged) {
             mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
         }
@@ -3626,18 +3621,20 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         mensajeRaw += `\n------------------------------------\n\n`;
 
         // GUARDAR EN BASE DE DATOS
+        // Truco seguro: Concatenamos la nota a la dirección para que se guarde sin cambiar la base de datos
+        const direccionFinalDB = notasC ? `${dirC} [NOTA: ${notasC}]` : dirC;
+
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, 
             cliente: nombreC, 
             ci: ciC, 
             telefono: telC, 
-            direccion: dirC, 
+            direccion: direccionFinalDB, // Usamos la variable con la nota incluida
             municipio: municipioC,
             producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
             
-            total: totalUSDVale,              // GUARDA LA SUMA (Producto + Envío)
-            costo_mensajeria: envioTotalVale, // GUARDA EL ENVÍO APARTE
-            
+            total: totalUSDVale,              
+            costo_mensajeria: envioTotalVale, 
             comision_total: comisionTotalVale, 
             estado: 'Pendiente', 
             pago_gestor: 'Pendiente',
@@ -3651,11 +3648,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // 8. FINALIZAR
     await Promise.all(promesas);
 
-    // Enviar WhatsApp al destinatario calculado
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
     
     if (!isLogged) {
-        // Si es cliente, registrar pixel de conversión
         trackSpy('COMPRA_CONFIRMADA', nombreC);
     }
 
@@ -3664,17 +3659,19 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // Generar PDF para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
     const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
+    
+    // Agregamos la nota al PDF también
+    const dirPDF = notasC ? `${dirC} (${municipioC}) - NOTA: ${notasC}` : `${dirC} (${municipioC})`;
+
     const datosParaPDF = {
-        cliente: nombreC, ci: ciC, direccion: `${dirC} (${municipioC})`,
+        cliente: nombreC, ci: ciC, direccion: dirPDF,
         totalUSD: totalGlobalProductos + totalGlobalEnvio, mensajeria: totalGlobalEnvio,
         items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
     };
     
-    // Pequeño delay para que dé tiempo a abrir WhatsApp
     setTimeout(() => { 
         generarComprobanteVenta(datosParaPDF, 'descargar'); 
         
-        // Limpieza final
         setTimeout(() => {
             cart = [];
             clearAutoSave();
