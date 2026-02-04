@@ -1349,6 +1349,26 @@
         <h4 class="text-xs font-black uppercase text-emerald-500 flex items-center gap-2">
             <span class="material-symbols-outlined text-sm">verified_user</span> Gestores Activos (Equipo)
         </h4>
+
+        <!-- FILTROS DE EQUIPO (NUEVO) -->
+<div class="flex flex-wrap gap-2 mb-4">
+    <button onclick="filterAgents('TODOS', this)" class="btn-agent-filter active px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-800 text-white shadow-lg transition-all border border-slate-700">
+        Todos
+    </button>
+    <button onclick="filterAgents('TOP', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-amber-50 hover:text-amber-600 transition-all">
+        🏆 Top Ventas
+    </button>
+    <button onclick="filterAgents('ONLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-600 transition-all">
+        🟢 Conectados
+    </button>
+    <button onclick="filterAgents('OFFLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-600 transition-all">
+        💤 Inactivos
+    </button>
+    <button onclick="filterAgents('PELIGRO', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-600 transition-all">
+        🔴 En Peligro (+30 días)
+    </button>
+</div>
+
         <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
@@ -1644,7 +1664,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0402b"; 
+const versionActual = "0402c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3146,15 +3166,12 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
 
         if (showInCUP) {
             // Usamos la función inteligente que lee "p.pagos" y calcula según si es fijo, +10 o tasa día
-            // Nota: Asegúrate de haber pegado la función calculateProductCUP() en tu código antes
             const precioCUP = calculateProductCUP(precio, null, p.cup_extra);
-
             
             if (precioCUP) {
                 // Formateamos con comas (ej: 15,400)
                 pDisplay = `CUP ${precioCUP.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
             } else {
-                // Si el producto no acepta CUP (la función devolvió null)
                 pDisplay = "<span class='text-sm text-gray-400'>Solo USD/EUR</span>";
             }
         }
@@ -3167,13 +3184,19 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
                 ${p.precio_flexible === 'SI' ? '<span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-md border border-white">📈 PRECIO LIBRE</span>' : ''}
              </div>` : '';
 
+        // --- CAMBIO CLAVE AQUÍ ABAJO (Lazy Loading) ---
         return `
         <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
             ${htmlComision}
             
-            <!-- Imagen Clickable -->
-            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
-                <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
+            <!-- Imagen Clickable OPTIMIZADA (Lazy Load) -->
+            <div onclick="openDetail('${p.nombre.replace(/'/g, "\\'")}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer flex items-center justify-center">
+                <img 
+                    src="${fixDriveUrl(p.thumbnail)}" 
+                    loading="lazy" 
+                    alt="${p.nombre}"
+                    class="w-full h-full object-contain transition-transform group-hover:scale-110 duration-500"
+                >
             </div>
 
             <!-- Info -->
@@ -3993,7 +4016,7 @@ let inventoryRawAdmin = []; // Variable global vital para el inventario
 
 async function loadAdminData() {
     // 1. CARGA PRIORITARIA: GESTORES (Para que esto nunca falle)
-    loadPendingGestores();
+    
 
     // 2. Cargamos los datos masivos
     const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
@@ -4029,6 +4052,7 @@ async function loadAdminData() {
             renderAnaliticaConversion(pedidos, vistas || []);
         } catch(e) { console.log("Cruce de datos pendiente"); }
     }
+    loadPendingGestores();
 }
 
 // --- NUEVA LÓGICA DE EDICIÓN TOTAL (ADMIN MASTER) ---
@@ -7925,9 +7949,13 @@ function getGlobalTrendRadar(todosLosPedidos) {
 }
 
 // 1. Cargar gestores pendientes (Llamar esto dentro de loadAdminData)
+// Variables globales para los filtros
+let globalAgentsList = []; 
+let currentAgentFilter = 'TODOS';
+
 async function loadPendingGestores() {
-    // Usamos supabaseClient
-    const { data, error } = await supabaseClient
+    // 1. Cargar lista de gestores
+    const { data: gestoresDB, error } = await supabaseClient
         .from('gestores')
         .select('*')
         .in('estado', ['pendiente', 'activo', 'bloqueado'])
@@ -7935,177 +7963,226 @@ async function loadPendingGestores() {
 
     if (error) return console.error("Error cargando gestores:", error);
 
+    // 2. Obtener datos de Tráfico (Para saber cuándo entraron a la web)
+    const { data: clicsDB } = await supabaseClient
+        .from('link_analytics')
+        .select('agent_name, timestamp')
+        .order('timestamp', { ascending: false });
+
+    // 3. Separar Pendientes y Activos
+    const pendientes = gestoresDB.filter(g => g.estado === 'pendiente');
+    const activos = gestoresDB.filter(g => g.estado === 'activo');
+
+    // --- RENDERIZAR TABLA PENDIENTES (Exactamente igual que tu código original) ---
     const containerPendientes = document.getElementById('list-admin-aprobaciones');
-    const containerActivos = document.getElementById('list-admin-activos');
+    if (containerPendientes) {
+        if (pendientes.length === 0) {
+            containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
+        } else {
+            containerPendientes.innerHTML = pendientes.map(g => `
+                <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+                    <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
+                    <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
+                        <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    // --- PROCESAMIENTO INTELIGENTE DE ACTIVOS (AQUÍ ESTÁ LA MAGIA) ---
     
-    if (!containerPendientes || !containerActivos) return;
+    // Usamos la variable global 'pedidosRawAdmin' que carga TODAS las ventas en loadAdminData.
+    // Esto soluciona el problema de que salgan en 0.
+    const todosLosPedidos = (typeof pedidosRawAdmin !== 'undefined') ? pedidosRawAdmin : [];
 
-    // Filtrar
-    const pendientes = data.filter(g => g.estado === 'pendiente');
-    const activos = data.filter(g => g.estado === 'activo');
+    globalAgentsList = activos.map(g => {
+        // Normalizamos nombres (quitar espacios y poner minúsculas para comparar bien)
+        const nombreGestorNorm = g.nombre.trim().toLowerCase();
 
-    // --- RENDERIZAR PENDIENTES ---
-    if (pendientes.length === 0) {
-        containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
-    } else {
-        containerPendientes.innerHTML = pendientes.map(g => `
-            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-                <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
-                <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-                <td class="p-4 text-right">
-                    <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
-                    <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
-                </td>
-            </tr>
-        `).join('');
+        // A. BUSCAR VENTAS (Comparación flexible)
+        const misVentas = todosLosPedidos.filter(p => {
+            const nombrePedido = (p.gestor || "").trim().toLowerCase();
+            return nombrePedido === nombreGestorNorm && p.estado === 'Entregado';
+        });
+
+        // B. BUSCAR CLICS (Tráfico)
+        const misClics = clicsDB ? clicsDB.filter(c => (c.agent_name || "").trim().toLowerCase() === nombreGestorNorm) : [];
+
+        // C. CALCULAR FECHAS
+        let fechaUltimaVenta = null;
+        if (misVentas.length > 0) {
+            // Ordenar por fecha para sacar la última
+            misVentas.sort((a,b) => new Date(b.created_at || b.fecha) - new Date(a.created_at || a.fecha));
+            fechaUltimaVenta = new Date(misVentas[0].created_at || misVentas[0].fecha);
+        }
+
+        // Fecha último acceso (Registro o último clic)
+        let fechaUltimoAcceso = new Date(g.created_at); 
+        if (misClics.length > 0) {
+            const ultimoClic = new Date(misClics[0].timestamp);
+            if (ultimoClic > fechaUltimoAcceso) fechaUltimoAcceso = ultimoClic;
+        }
+        // Si vendió después de su último clic registrado, usamos fecha venta como acceso
+        if (fechaUltimaVenta && fechaUltimaVenta > fechaUltimoAcceso) fechaUltimoAcceso = fechaUltimaVenta;
+
+        // D. ESTADO DE ACTIVIDAD (DÍAS)
+        const diasInactivo = Math.floor((new Date() - fechaUltimoAcceso) / (1000 * 60 * 60 * 24));
+
+        return {
+            id: g.id,
+            nombre: g.nombre,
+            telefono: g.telefono,
+            ventas: misVentas.length,
+            clics: misClics.length,
+            conversion: misClics.length > 0 ? ((misVentas.length / misClics.length) * 100).toFixed(1) : "0.0",
+            ultimaVenta: fechaUltimaVenta,
+            ultimoAcceso: fechaUltimoAcceso,
+            diasInactivo: diasInactivo
+        };
+    });
+
+    // Una vez calculados los datos, llamamos a la función que dibuja la tabla
+    renderAgentTeamTable();
+}
+
+// Función para aplicar filtros visuales
+function filterAgents(tipo, btn) {
+    currentAgentFilter = tipo;
+
+    // Actualizar estilo de botones
+    document.querySelectorAll('.btn-agent-filter').forEach(b => {
+        b.classList.remove('bg-slate-800', 'text-white', 'shadow-lg', 'border-slate-700');
+        b.classList.add('bg-white', 'text-gray-500', 'border-gray-200');
+    });
+    
+    // Activar el botón presionado
+    btn.classList.remove('bg-white', 'text-gray-500', 'border-gray-200');
+    btn.classList.add('bg-slate-800', 'text-white', 'shadow-lg', 'border-slate-700');
+
+    renderAgentTeamTable();
+}
+
+// Función que dibuja la tabla
+function renderAgentTeamTable() {
+    const container = document.getElementById('list-admin-activos');
+    if (!container) return;
+
+    // 1. APLICAR FILTROS SOBRE LA LISTA GLOBAL
+    let listaFiltrada = [...globalAgentsList];
+
+    if (currentAgentFilter === 'TOP') {
+        // Ordenar por número de ventas (Mayor a menor)
+        listaFiltrada.sort((a,b) => b.ventas - a.ventas);
+    } 
+    else if (currentAgentFilter === 'ONLINE') {
+        // Conectados hace 3 días o menos
+        listaFiltrada = listaFiltrada.filter(g => g.diasInactivo <= 3);
+    }
+    else if (currentAgentFilter === 'OFFLINE') {
+        // Entre 4 y 30 días
+        listaFiltrada = listaFiltrada.filter(g => g.diasInactivo > 3 && g.diasInactivo <= 30);
+    }
+    else if (currentAgentFilter === 'PELIGRO') {
+        // Más de 30 días sin dar señales de vida
+        listaFiltrada = listaFiltrada.filter(g => g.diasInactivo > 30);
+    }
+    else {
+        // TODOS: Orden alfabético
+        listaFiltrada.sort((a,b) => a.nombre.localeCompare(b.nombre));
     }
 
-    // --- RENDERIZAR ACTIVOS (VERSION INTELIGENCIA DE NEGOCIO) ---
-    if (activos.length === 0) {
-        containerActivos.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 text-xs font-bold italic">Aún no tienes equipo activo.</td></tr>`;
-    } else {
-        // 1. OBTENER DATOS DE INTELIGENCIA (PEDIDOS + CLICS)
-        const { data: pedidos } = await supabaseClient
-            .from('pedidos')
-            .select('gestor, created_at, total')
-            .eq('estado', 'Entregado'); // Solo cuentan las ventas reales
-
-        const { data: clics } = await supabaseClient
-            .from('link_analytics')
-            .select('agent_name, timestamp');
-
-        containerActivos.innerHTML = activos.map(g => {
-            // A. FILTRAR DATOS DE ESTE GESTOR
-            const misVentas = pedidos ? pedidos.filter(p => p.gestor === g.nombre) : [];
-            const misClics = clics ? clics.filter(c => c.agent_name === g.nombre) : [];
-
-            // B. CÁLCULO DE METRICAS
-            const totalVentas = misVentas.length;
-            const totalClics = misClics.length;
-            
-            // Tasa de Conversión (Evitando división por cero)
-            const conversion = totalClics > 0 ? ((totalVentas / totalClics) * 100).toFixed(1) : "0.0";
-            
-            // Color de conversión
-            let colorConv = "text-gray-400";
-            if(conversion > 5) colorConv = "text-emerald-500"; // Excelente
-            else if(conversion > 1) colorConv = "text-blue-500"; // Normal
-            else if(totalClics > 50 && conversion < 1) colorConv = "text-red-500"; // Alerta (Mucho tráfico, poca venta)
-
-            // C. RANGO Y NIVEL (Usando tu función getLevelData)
-            const nivelData = getLevelData(totalVentas);
-            const rangoNombre = nivelData.name.toUpperCase();
-            // Colores de rango
-            const colorRango = {
-                0: "bg-gray-100 text-gray-500 border-gray-200",
-                1: "bg-orange-50 text-orange-600 border-orange-200",
-                2: "bg-blue-50 text-blue-600 border-blue-200",
-                3: "bg-indigo-50 text-indigo-600 border-indigo-200",
-                4: "bg-emerald-50 text-emerald-600 border-emerald-200",
-                5: "bg-purple-50 text-purple-600 border-purple-200",
-                10: "bg-red-50 text-red-600 border-red-200"
-            }[nivelData.lvl] || "bg-gray-100 text-gray-500";
-
-            // D. SEMÁFORO DE ACTIVIDAD (Login/Venta/Clic más reciente)
-            // Buscamos la fecha más reciente entre su registro, última venta o último clic generado
-            let fechasActividad = [new Date(g.created_at).getTime()];
-            if (misVentas.length > 0) fechasActividad.push(new Date(misVentas[misVentas.length - 1].created_at).getTime());
-            if (misClics.length > 0) fechasActividad.push(new Date(misClics[0].timestamp).getTime()); // Asumiendo orden desc
-
-            const ultimaActividad = Math.max(...fechasActividad);
-            const diasInactivo = Math.floor((new Date() - ultimaActividad) / (1000 * 60 * 60 * 24));
-
-            let semaforo = "bg-gray-400"; // Muerto (Gris)
-            let estadoTexto = "💤 Inactivo";
-            
-            if (diasInactivo <= 2) {
-                semaforo = "bg-emerald-500 shadow-[0_0_8px_#10b981]"; // Verde (Activo hoy/ayer)
-                estadoTexto = "🟢 Online";
-            } else if (diasInactivo <= 7) {
-                semaforo = "bg-emerald-400"; // Verde suave (Esta semana)
-                estadoTexto = "Hace días";
-            } else if (diasInactivo <= 30) {
-                semaforo = "bg-yellow-400"; // Amarillo (Alerta)
-                estadoTexto = "⚠️ Ausente";
-            } else {
-                semaforo = "bg-red-500 animate-pulse"; // Rojo (Peligro)
-                estadoTexto = "🔴 +30 Días";
-            }
-
-            // E. RENDERIZADO DE LA FILA
-            return `
-            <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-slate-50 transition-all group">
-                
-                <!-- 1. PERFIL + SEMÁFORO -->
-                <td class="p-4 align-middle">
-                    <div class="flex items-center gap-3">
-                        <div class="relative">
-                            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 border border-slate-200 text-lg">
-                                ${g.nombre.charAt(0)}
-                            </div>
-                            <!-- EL PUNTO DEL SEMÁFORO -->
-                            <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${semaforo}" title="Última actividad: Hace ${diasInactivo} días"></div>
-                        </div>
-                        <div>
-                            <p class="font-black text-slate-700 dark:text-white uppercase leading-tight text-sm">${g.nombre}</p>
-                            
-                            <!-- BADGE DE RANGO -->
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${colorRango}">
-                                    ${rangoNombre}
-                                </span>
-                                <span class="text-[9px] text-gray-400 font-bold">${estadoTexto}</span>
-                            </div>
-                        </div>
-                    </div>
-                </td>
-
-                <!-- 2. CONTACTO -->
-                <td class="p-4 align-middle">
-                    <a href="https://wa.me/${g.telefono.replace(/\D/g,'')}" target="_blank" 
-                       class="inline-flex items-center gap-2 text-slate-500 hover:text-[#25D366] transition-colors group/wa">
-                        <span class="material-symbols-outlined text-lg group-hover/wa:scale-110 transition-transform">chat</span>
-                        <span class="font-bold text-xs">${g.telefono}</span>
-                    </a>
-                </td>
-
-                <!-- 3. METRICAS DE RENDIMIENTO (EL CEREBRO) -->
-                <td class="p-4 align-middle">
-                    <div class="flex items-center gap-6">
-                        
-                        <!-- VENTAS -->
-                        <div class="text-center">
-                            <span class="block text-xl font-black text-slate-800 leading-none">${totalVentas}</span>
-                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-wide">Ventas</span>
-                        </div>
-
-                        <!-- DIVISOR -->
-                        <div class="h-8 w-px bg-slate-200"></div>
-
-                        <!-- CLICS (TRÁFICO) -->
-                        <div class="text-center">
-                            <span class="block text-sm font-bold text-slate-600 leading-none mb-1">${totalClics}</span>
-                            <span class="text-[9px] font-bold text-gray-400 uppercase">Clics</span>
-                        </div>
-
-                        <!-- CONVERSIÓN (CALIDAD) -->
-                        <div class="text-center" title="Efectividad: Ventas / Clics">
-                            <span class="block text-sm font-black ${colorConv} leading-none mb-1">${conversion}%</span>
-                            <span class="text-[9px] font-bold text-gray-400 uppercase">Conv.</span>
-                        </div>
-                    </div>
-                </td>
-
-                <!-- 4. ACCIONES -->
-                <td class="p-4 align-middle text-right">
-                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all" title="Eliminar / Bloquear">
-                        <span class="material-symbols-outlined">delete</span>
-                    </button>
-                </td>
-            </tr>
-            `;
-        }).join('');
+    // Caso Vacío
+    if (listaFiltrada.length === 0) {
+        container.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-400 text-xs font-bold uppercase italic">No se encontraron gestores en este filtro.</td></tr>`;
+        return;
     }
+
+    // 2. GENERAR HTML (Con las fechas y contadores nuevos)
+    container.innerHTML = listaFiltrada.map(g => {
+        // Semáforo de Colores
+        let semaforo = "bg-gray-400";
+        let estadoTexto = "💤 Inactivo";
+        
+        if (g.diasInactivo <= 2) {
+            semaforo = "bg-emerald-500 shadow-[0_0_8px_#10b981]";
+            estadoTexto = "🟢 Online";
+        } else if (g.diasInactivo <= 7) {
+            semaforo = "bg-emerald-400";
+            estadoTexto = "Hace días";
+        } else if (g.diasInactivo <= 30) {
+            semaforo = "bg-yellow-400";
+            estadoTexto = "⚠️ Ausente";
+        } else {
+            semaforo = "bg-red-500 animate-pulse";
+            estadoTexto = "🔴 Peligro";
+        }
+
+        // Formateo de fechas relativas (ej: Hace 5 min, Ayer)
+        const txtVenta = g.ultimaVenta ? timeAgo(g.ultimaVenta) : "Nunca";
+        const txtAcceso = g.diasInactivo === 0 ? "Hoy" : `Hace ${g.diasInactivo} días`;
+
+        return `
+        <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-slate-50 transition-all group">
+            
+            <!-- 1. PERFIL -->
+            <td class="p-4 align-middle w-1/4">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 border border-slate-200 uppercase">
+                            ${g.nombre.charAt(0)}
+                        </div>
+                        <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${semaforo}"></div>
+                    </div>
+                    <div>
+                        <p class="font-black text-slate-700 dark:text-white uppercase text-[11px] truncate max-w-[120px]" title="${g.nombre}">${g.nombre}</p>
+                        <span class="text-[9px] text-gray-400 font-bold bg-gray-50 px-1.5 rounded border border-gray-100">${estadoTexto}</span>
+                    </div>
+                </div>
+            </td>
+
+            <!-- 2. CONTACTO -->
+            <td class="p-4 align-middle">
+                <a href="https://wa.me/${g.telefono.replace(/\D/g,'')}" target="_blank" 
+                   class="flex items-center gap-1 text-slate-500 hover:text-[#25D366] transition-colors">
+                    <span class="material-symbols-outlined text-lg">chat</span>
+                    <span class="font-bold text-[10px] hidden md:inline">${g.telefono}</span>
+                </a>
+            </td>
+
+            <!-- 3. ACTIVIDAD (LO QUE PEDISTE: ULTIMA VENTA Y ACCESO) -->
+            <td class="p-4 align-middle">
+                <div class="flex flex-col gap-1 w-32">
+                    <div class="flex justify-between items-center text-[9px] bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                        <span class="text-slate-400 font-bold uppercase">Web:</span>
+                        <span class="text-slate-700 font-black">${txtAcceso}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[9px] bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
+                        <span class="text-emerald-400 font-bold uppercase">Venta:</span>
+                        <span class="text-emerald-700 font-black">${txtVenta}</span>
+                    </div>
+                </div>
+            </td>
+
+            <!-- 4. METRICAS (VENTAS REALES) -->
+            <td class="p-4 align-middle text-center">
+                <div class="inline-block" title="Clics: ${g.clics} | Conv: ${g.conversion}%">
+                    <span class="block text-xl font-black text-slate-800 leading-none">${g.ventas}</span>
+                    <span class="text-[8px] font-black text-gray-400 uppercase">Ventas</span>
+                </div>
+            </td>
+
+            <!-- 5. ACCIONES -->
+            <td class="p-4 align-middle text-right">
+                <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all" title="Bloquear Acceso">
+                    <span class="material-symbols-outlined text-lg">block</span>
+                </button>
+            </td>
+        </tr>
+        `;
+    }).join('');
 }
 
 async function generarComprobanteVenta(datosPedido, accion) {
