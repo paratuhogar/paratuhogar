@@ -1644,7 +1644,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0402a"; 
+const versionActual = "0402b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2635,7 +2635,7 @@ function setMyOrdersFilter(status, btn) {
     renderMyOrdersList(myOrdersData); 
 }
 
-// 2. FUNCIÓN DE RENDERIZADO (Con letra GRANDE estilo App)
+// 2. FUNCIÓN DE RENDERIZADO (CORREGIDA Y GARANTIZADA)
 function renderMyOrdersList(lista) {
     const container = document.getElementById('list-mis-pedidos');
     
@@ -2664,7 +2664,7 @@ function renderMyOrdersList(lista) {
     let headerHTML = '';
     if (countLinks > 0) {
         headerHTML = `
-        <div class="mb-4 bg-red-500 text-white p-2 rounded-xl flex items-center justify-center gap-2 animate-pulse shadow-lg shadow-red-500/30">
+        <div class="mb-4 bg-red-50 text-white p-2 rounded-xl flex items-center justify-center gap-2 animate-pulse shadow-lg shadow-red-500/30">
             <span class="material-symbols-outlined text-lg">link</span>
             <span class="text-xs font-black uppercase tracking-widest">¡ATENCIÓN! ${countLinks} PEDIDOS POR ENLACE</span>
         </div>`;
@@ -2700,18 +2700,25 @@ function renderMyOrdersList(lista) {
             sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 ml-2"><span class="material-symbols-outlined text-[10px]">language</span> Web</span>`;
         }
 
-        // --- E. BOTÓN ELIMINAR (MANTENIDO DE TU VERSIÓN ANTERIOR) --- 
-        let deleteBtn = '';
+        // --- E. BOTONES DE GESTIÓN (EDITAR / ELIMINAR) --- 
+        // <--- CAMBIO AQUÍ: Definimos actionBtns en lugar de deleteBtn
+        let actionBtns = '';
         if (p.estado === 'Pendiente') { 
-            deleteBtn = `
-            <button onclick="deleteMyOrder('${p.id}')" title="Eliminar Pedido (Error)"
+            actionBtns = `
+            <!-- Botón Editar (Lápiz Azul) -->
+            <button onclick="openGestorEdit('${p.id}')" title="Corregir Datos"
+                class="h-7 w-7 bg-indigo-50 text-indigo-500 border border-indigo-100 rounded-full flex items-center justify-center hover:bg-indigo-500 hover:text-white transition-colors ml-1">
+                <span class="material-symbols-outlined text-sm">edit</span>
+            </button>
+
+            <!-- Botón Eliminar (Basura Roja) -->
+            <button onclick="deleteMyOrder('${p.id}')" title="Eliminar Pedido"
                 class="h-7 w-7 bg-white text-gray-400 border border-gray-200 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors ml-1">
                 <span class="material-symbols-outlined text-sm">delete</span>
             </button>`;
         }
 
-        // --- F. BOTÓN REENVÍO AL SISTEMA (ESTO ES LO NUEVO) ---
-        // Este botón aparece SIEMPRE para que el gestor pueda reenviar cuando quiera.
+        // --- F. BOTÓN REENVÍO AL SISTEMA (INTACTO) ---
         const btnReenviar = `
             <button onclick="reenviarPedidoAdmin('${p.id}')" title="Reenviar Pedido al Almacén" 
                 class="h-7 w-7 bg-teal-500 text-white rounded-full flex items-center justify-center hover:bg-teal-600 transition-colors shadow-sm ml-1 border border-teal-600">
@@ -2738,7 +2745,7 @@ function renderMyOrdersList(lista) {
                         <i class="fab fa-whatsapp text-sm"></i>
                     </a>
 
-                    <!-- 2. Botón Reenvío (Turquesa) - NUEVO AQUÍ -->
+                    <!-- 2. Botón Reenvío (Turquesa) - INTACTO -->
                     ${btnReenviar}
                     
                     <!-- 3. Botones PDF (Rojo/Azul) - INTACTOS -->
@@ -2752,8 +2759,8 @@ function renderMyOrdersList(lista) {
                         <span class="material-symbols-outlined text-sm">share</span>
                     </button>
 
-                    <!-- 4. Botón Eliminar (Gris/Rojo) - INTACTO -->
-                    ${deleteBtn} 
+                    <!-- 4. BOTONES NUEVOS -->
+                    ${actionBtns}  <!-- CAMBIO AQUÍ: Usamos actionBtns en vez de deleteBtn -->
                 </div>
             </div>
 
@@ -10126,6 +10133,70 @@ function reenviarValeAdmin(id) {
         // Le damos un momento a tu script principal para que determine si hay sesión
         setTimeout(initSystemTutorial, 2000); 
     });
+
+    // --- FUNCIONES DE EDICIÓN PARA GESTOR ---
+
+function openGestorEdit(id) {
+    // Buscar el pedido en la memoria local (myOrdersData se carga en loadProDashboard)
+    const p = myOrdersData.find(item => item.id === id);
+    if (!p) return alert("Error: No se encuentra el pedido.");
+
+    // Llenar formulario
+    document.getElementById('g-edit-id').value = id;
+    document.getElementById('g-edit-cliente').value = p.cliente || '';
+    document.getElementById('g-edit-tel').value = p.telefono || '';
+    document.getElementById('g-edit-ci').value = p.ci || '';
+    document.getElementById('g-edit-municipio').value = p.municipio || '';
+    
+    // Limpiamos la dirección de la nota (si la tiene pegada) para que sea más fácil editar
+    let dirLimpia = p.direccion || '';
+    // Opcional: Si quieres separar la nota visualmente, podrías hacerlo, pero editar el string completo es más seguro.
+    document.getElementById('g-edit-dir').value = dirLimpia;
+
+    // Mostrar
+    document.getElementById('modal-gestor-edit').classList.remove('hidden');
+}
+
+async function saveGestorEdit() {
+    const id = document.getElementById('g-edit-id').value;
+    const btn = document.getElementById('btn-save-gestor');
+    
+    // Recoger datos
+    const updates = {
+        cliente: document.getElementById('g-edit-cliente').value,
+        telefono: document.getElementById('g-edit-tel').value,
+        ci: document.getElementById('g-edit-ci').value,
+        municipio: document.getElementById('g-edit-municipio').value,
+        direccion: document.getElementById('g-edit-dir').value
+    };
+
+    btn.innerHTML = "Guardando...";
+    btn.disabled = true;
+
+    try {
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update(updates)
+            .eq('id', id)
+            .eq('estado', 'Pendiente'); // SEGURIDAD EXTRA: Solo si sigue pendiente
+
+        if (error) throw error;
+
+        alert("✅ Datos corregidos exitosamente.");
+        document.getElementById('modal-gestor-edit').classList.add('hidden');
+        
+        // Recargar dashboard
+        const gestor = window.gestorName;
+        if(gestor) loadProDashboard(gestor);
+
+    } catch (e) {
+        console.error(e);
+        alert("❌ Error: " + e.message);
+    } finally {
+        btn.innerHTML = "Guardar Corrección";
+        btn.disabled = false;
+    }
+}
 </script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
@@ -10232,6 +10303,76 @@ function reenviarValeAdmin(id) {
     </div>
 </div>
     <script src="system-events.js"></script>
+
+    <!-- MODAL EDICIÓN RÁPIDA GESTOR -->
+<div id="modal-gestor-edit" class="fixed inset-0 z-[250] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        
+        <div class="bg-indigo-600 p-4 flex justify-between items-center">
+            <h3 class="text-white font-black uppercase text-sm tracking-widest flex items-center gap-2">
+                <span class="material-symbols-outlined">edit_note</span> Corregir Pedido
+            </h3>
+            <button onclick="document.getElementById('modal-gestor-edit').classList.add('hidden')" class="text-white/70 hover:text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="g-edit-id">
+            
+            <!-- Aviso -->
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-3 text-[10px] text-amber-700 font-bold mb-4">
+                ⚠️ Solo puedes editar datos logísticos. Si el precio o producto está mal, elimina el pedido y créalo de nuevo.
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Nombre Cliente</label>
+                    <input type="text" id="g-edit-cliente" class="w-full rounded-xl border-gray-200 text-xs font-bold bg-gray-50">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Teléfono</label>
+                    <input type="text" id="g-edit-tel" class="w-full rounded-xl border-gray-200 text-xs font-bold bg-gray-50">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Carnet (CI)</label>
+                <input type="text" id="g-edit-ci" class="w-full rounded-xl border-gray-200 text-xs font-bold bg-gray-50">
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Municipio</label>
+                <select id="g-edit-municipio" class="w-full rounded-xl border-gray-200 text-xs font-bold bg-gray-50">
+                    <option value="Playa">Playa</option>
+                    <option value="Plaza de la Revolución">Plaza de la Revolución</option>
+                    <option value="Centro Habana">Centro Habana</option>
+                    <option value="Habana Vieja">Habana Vieja</option>
+                    <option value="Regla">Regla</option>
+                    <option value="Diez de Octubre">Diez de Octubre</option>
+                    <option value="Cerro">Cerro</option>
+                    <option value="Marianao">Marianao</option>
+                    <option value="La Lisa">La Lisa</option>
+                    <option value="Boyeros">Boyeros</option>
+                    <option value="Arroyo Naranjo">Arroyo Naranjo</option>
+                    <option value="Cotorro">Cotorro</option>
+                    <option value="Guanabacoa">Guanabacoa</option>
+                    <option value="San Miguel del Padrón">San Miguel del Padrón</option>
+                    <option value="Habana del Este">Habana del Este</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Dirección Exacta (Corregir error)</label>
+                <textarea id="g-edit-dir" rows="2" class="w-full rounded-xl border-gray-200 text-xs font-bold bg-gray-50"></textarea>
+            </div>
+
+            <button onclick="saveGestorEdit()" id="btn-save-gestor" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase text-xs shadow-lg transition-all">
+                Guardar Corrección
+            </button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
