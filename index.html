@@ -1664,7 +1664,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0402c"; 
+const versionActual = "0402d"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3598,20 +3598,27 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // --- 7. GENERAR VALES Y MENSAJE ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
         
-        // --- NUEVO CÓDIGO SEGURO ---
-// Llamamos a la función de base de datos que creamos
-const { data: nuevoID, error: rpcError } = await supabaseClient
-    .rpc('get_next_order_id', { provider_code: prov });
+        // --- CÓDIGO BLINDADO (FALLBACK) ---
+        let codPedido = "";
+        
+        try {
+            // Intentamos pedir el número bonito a la base de datos
+            const { data: nuevoID, error: rpcError } = await supabaseClient
+                .rpc('get_next_order_id', { provider_code: prov });
 
-if (rpcError || !nuevoID) {
-    alert("Error generando número de orden. Intente de nuevo.");
-    btn.disabled = false;
-    btn.innerText = "Reintentar";
-    return;
-}
+            if (rpcError || !nuevoID) {
+                throw new Error("Fallo Supabase");
+            }
+            codPedido = nuevoID;
 
-const codPedido = nuevoID; 
-// ---------------------------
+        } catch (e) {
+            // SI FALLA SUPABASE (Por cuota o internet), GENERAMOS UNO LOCAL
+            // Ejemplo: "OFF-8392" (OFFline + últimos 4 dígitos del tiempo)
+            console.warn("Usando ID local por error de cuota/red");
+            const random = Math.floor(1000 + Math.random() * 9000);
+            codPedido = `TEMP-${random}`;
+        }
+        // ---------------------------
 
 
         let detalleCuerpo = "";
