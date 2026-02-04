@@ -1644,7 +1644,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0402"; 
+const versionActual = "0402a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4024,61 +4024,89 @@ async function loadAdminData() {
     }
 }
 
-// ABRIR EL MODAL Y CARGAR DATOS
-function openFinanceModal(id) {
-    // 1. Buscar el pedido en la memoria
-    const p = pedidosRawAdmin.find(item => item.id === id);
-    if(!p) return alert("Error: No se encuentra el pedido.");
+// --- NUEVA LÓGICA DE EDICIÓN TOTAL (ADMIN MASTER) ---
 
-    // 2. Llenar los campos
+function openFinanceModal(id) {
+    // 1. Buscar el pedido en la memoria (pedidosRawAdmin debe estar cargado)
+    const p = pedidosRawAdmin.find(item => item.id === id);
+    if(!p) return alert("Error: No se encuentra el pedido en memoria. Recarga la página.");
+
+    // 2. Llenar TODOS los campos
     document.getElementById('edit-order-id').value = id;
+    
+    // Identificación
+    document.getElementById('edit-orden-dia').value = p.orden_dia || '';
+    document.getElementById('edit-estado').value = p.estado || 'Pendiente';
+    document.getElementById('edit-proveedor').value = p.proveedor || '';
+
+    // Cliente
+    document.getElementById('edit-cliente').value = p.cliente || '';
+    document.getElementById('edit-telefono').value = p.telefono || '';
+    document.getElementById('edit-ci').value = p.ci || '';
+    document.getElementById('edit-municipio').value = p.municipio || '';
+    document.getElementById('edit-direccion').value = p.direccion || '';
+
+    // Producto y Finanzas
+    document.getElementById('edit-producto').value = p.producto || '';
+    document.getElementById('edit-total').value = parseFloat(p.total) || 0;
     document.getElementById('edit-mensajeria').value = parseFloat(p.costo_mensajeria) || 0;
     document.getElementById('edit-comision').value = parseFloat(p.comision_total) || 0;
-    document.getElementById('edit-total').value = parseFloat(p.total) || 0;
 
     // 3. Mostrar Modal
     document.getElementById('modal-edit-finance').classList.remove('hidden');
 }
 
-// GUARDAR LOS CAMBIOS EN SUPABASE
 async function saveFinancialChanges() {
-    const id = document.getElementById('edit-order-id').value;
-    const nuevoEnvio = parseFloat(document.getElementById('edit-mensajeria').value) || 0;
-    const nuevaComi = parseFloat(document.getElementById('edit-comision').value) || 0;
-    const nuevoTotal = parseFloat(document.getElementById('edit-total').value) || 0;
-    
     const btn = document.getElementById('btn-save-finance');
     const originalText = btn.innerHTML;
-    
-    btn.innerHTML = "Guardando...";
+    const id = document.getElementById('edit-order-id').value;
+
+    btn.innerHTML = "GUARDANDO CAMBIOS...";
     btn.disabled = true;
 
     try {
+        // 1. Recoger TODOS los datos del formulario
+        const updates = {
+            orden_dia: document.getElementById('edit-orden-dia').value, // El consecutivo
+            estado: document.getElementById('edit-estado').value,
+            proveedor: document.getElementById('edit-proveedor').value,
+            
+            cliente: document.getElementById('edit-cliente').value,
+            telefono: document.getElementById('edit-telefono').value,
+            ci: document.getElementById('edit-ci').value,
+            municipio: document.getElementById('edit-municipio').value,
+            direccion: document.getElementById('edit-direccion').value,
+            
+            producto: document.getElementById('edit-producto').value,
+            total: parseFloat(document.getElementById('edit-total').value) || 0,
+            costo_mensajeria: parseFloat(document.getElementById('edit-mensajeria').value) || 0,
+            comision_total: parseFloat(document.getElementById('edit-comision').value) || 0
+        };
+
+        // 2. Enviar a Supabase
         const { error } = await supabaseClient
             .from('pedidos')
-            .update({
-                costo_mensajeria: nuevoEnvio,
-                comision_total: nuevaComi,
-                total: nuevoTotal
-            })
+            .update(updates)
             .eq('id', id);
 
         if(error) throw error;
 
-        alert("✅ Ajuste financiero guardado correctamente.");
+        // 3. Éxito
+        alert("✅ Pedido actualizado correctamente.");
         document.getElementById('modal-edit-finance').classList.add('hidden');
         
-        // Recargar la tabla para ver los cambios
+        // Recargar la tabla maestra para ver los cambios
         loadAdminData();
 
     } catch(e) {
         console.error(e);
-        alert("Error al guardar: " + e.message);
+        alert("❌ Error al guardar: " + e.message);
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
+
 
 // --- FUNCIÓN PARA APROBAR O RECHAZAR GESTORES ---
 async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
@@ -10101,41 +10129,104 @@ function reenviarValeAdmin(id) {
 </script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
-<div id="modal-edit-finance" class="fixed inset-0 z-[400] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-pop-in">
+<!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->
+<div id="modal-edit-finance" class="fixed inset-0 z-[400] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-4">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
         
         <!-- Header -->
-        <div class="bg-slate-900 p-4 flex justify-between items-center">
+        <div class="bg-slate-900 p-4 flex justify-between items-center shrink-0">
             <h3 class="text-white font-black uppercase text-sm tracking-widest flex items-center gap-2">
-                <span class="material-symbols-outlined text-amber-500">edit_document</span> Ajuste Financiero
+                <span class="material-symbols-outlined text-amber-500">settings_suggest</span> Edición Maestra de Pedido
             </h3>
             <button onclick="document.getElementById('modal-edit-finance').classList.add('hidden')" class="text-gray-400 hover:text-white">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
 
-        <!-- Formulario -->
-        <div class="p-6 space-y-4">
+        <!-- Formulario con Scroll -->
+        <div class="p-6 overflow-y-auto custom-scrollbar space-y-4">
             <input type="hidden" id="edit-order-id">
             
-            <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                <label class="text-[10px] font-black uppercase text-blue-800 dark:text-blue-300 block mb-1">🚚 Costo Mensajería</label>
-                <input type="number" id="edit-mensajeria" class="w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg p-2 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
-                <p class="text-[9px] text-gray-400 mt-1">Si subes esto, recuerda bajar la comisión.</p>
+            <!-- 1. IDENTIFICACIÓN Y LOGÍSTICA -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-100 dark:border-slate-600">
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-3 border-b pb-1">Identificación y Rastreo</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase"># Consecutivo (Orden Día)</label>
+                        <input type="number" id="edit-orden-dia" class="w-full rounded-lg border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-xs font-black text-primary h-8">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Estado Pedido</label>
+                        <select id="edit-estado" class="w-full rounded-lg border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-xs font-bold h-8 p-1">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Recogida Almacén">Recogida Almacén</option>
+                            <option value="Asignado Mensajero">Asignado Mensajero</option>
+                            <option value="Entregado">Entregado</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Proveedor</label>
+                        <input type="text" id="edit-proveedor" class="w-full rounded-lg border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-xs h-8">
+                    </div>
+                </div>
             </div>
 
-            <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
-                <label class="text-[10px] font-black uppercase text-emerald-800 dark:text-emerald-300 block mb-1">💰 Comisión Gestor</label>
-                <input type="number" id="edit-comision" class="w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg p-2 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <!-- 2. DATOS DEL CLIENTE (CORRECCIÓN DIRECCIONES) -->
+            <div class="p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800">
+                <p class="text-[10px] font-black text-blue-400 uppercase mb-3 border-b border-blue-200 pb-1">Datos del Cliente</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input type="text" id="edit-cliente" placeholder="Nombre Cliente" class="w-full rounded-lg border-gray-300 text-xs font-bold">
+                    <input type="text" id="edit-telefono" placeholder="Teléfono" class="w-full rounded-lg border-gray-300 text-xs font-bold">
+                    <input type="text" id="edit-ci" placeholder="Carnet ID" class="w-full rounded-lg border-gray-300 text-xs">
+                    <select id="edit-municipio" class="w-full rounded-lg border-gray-300 text-xs">
+                        <option value="Playa">Playa</option>
+                        <option value="Plaza de la Revolución">Plaza de la Revolución</option>
+                        <option value="Centro Habana">Centro Habana</option>
+                        <option value="Habana Vieja">Habana Vieja</option>
+                        <option value="Regla">Regla</option>
+                        <option value="Diez de Octubre">Diez de Octubre</option>
+                        <option value="Cerro">Cerro</option>
+                        <option value="Marianao">Marianao</option>
+                        <option value="La Lisa">La Lisa</option>
+                        <option value="Boyeros">Boyeros</option>
+                        <option value="Arroyo Naranjo">Arroyo Naranjo</option>
+                        <option value="Cotorro">Cotorro</option>
+                        <option value="Guanabacoa">Guanabacoa</option>
+                        <option value="San Miguel del Padrón">San Miguel del Padrón</option>
+                        <option value="Habana del Este">Habana del Este</option>
+                    </select>
+                </div>
+                <textarea id="edit-direccion" rows="2" placeholder="Dirección Exacta..." class="w-full rounded-lg border-gray-300 text-xs"></textarea>
             </div>
 
-            <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label class="text-[10px] font-black uppercase text-slate-500 block mb-1">💵 Total Venta (Cuidado)</label>
-                <input type="number" id="edit-total" class="w-full bg-white dark:bg-gray-900 border border-gray-300 rounded-lg p-2 text-sm font-bold text-slate-700 dark:text-white focus:ring-2 focus:ring-slate-500 outline-none">
+            <!-- 3. PRODUCTO Y FINANZAS -->
+            <div class="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                <p class="text-[10px] font-black text-emerald-500 uppercase mb-3 border-b border-emerald-200 pb-1">Producto y Finanzas</p>
+                <textarea id="edit-producto" rows="2" class="w-full rounded-lg border-gray-300 text-xs font-mono mb-3" placeholder="Detalle productos..."></textarea>
+                
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-gray-500">Total Venta ($)</label>
+                        <input type="number" id="edit-total" class="w-full rounded-lg border-emerald-300 text-sm font-black text-emerald-700 h-8">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-gray-500">Costo Envío ($)</label>
+                        <input type="number" id="edit-mensajeria" class="w-full rounded-lg border-blue-300 text-sm font-bold text-blue-700 h-8">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold uppercase text-gray-500">Comisión Gestor ($)</label>
+                        <input type="number" id="edit-comision" class="w-full rounded-lg border-orange-300 text-sm font-bold text-orange-700 h-8">
+                    </div>
+                </div>
             </div>
 
-            <button onclick="saveFinancialChanges()" id="btn-save-finance" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold uppercase text-xs hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-sm">save</span> Guardar Cambios
+        </div>
+
+        <!-- Footer Botones -->
+        <div class="p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 shrink-0">
+            <button onclick="saveFinancialChanges()" id="btn-save-finance" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black uppercase text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">save_as</span> Guardar Todos los Cambios
             </button>
         </div>
     </div>
