@@ -1644,7 +1644,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0302b"; 
+const versionActual = "0402"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3734,12 +3734,22 @@ async function initAgentFloatingButton() {
 }
 
 // 2. Función para pintar el botón con el teléfono del gestor
+// 2. Función para pintar el botón con el teléfono del gestor
 function renderFloatingWA(nombre, telefono) {
     const container = document.getElementById('floating-agent-contact');
     if (!container || !telefono) return;
 
-    // Limpiar el teléfono (quitar espacios, +, etc)
-    const telLimpio = telefono.replace(/\D/g, '');
+    // 1. Limpiar caracteres raros (quitar espacios, +, paréntesis)
+    let telLimpio = telefono.replace(/\D/g, '');
+
+    // === CORRECCIÓN ANTI-ERROR DE PAÍS ===
+    // Si el número tiene exactamente 8 dígitos (ej: 52087899),
+    // asumimos que es de Cuba y le pegamos el 53 delante.
+    if (telLimpio.length === 8) {
+        telLimpio = '53' + telLimpio;
+    }
+    // ======================================
+
     const primerNombre = nombre.split(' ')[0];
 
     container.innerHTML = `
