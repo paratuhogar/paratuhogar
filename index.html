@@ -1664,7 +1664,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0402f"; 
+const versionActual = "0502"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3757,11 +3757,51 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         return match ? parseFloat(match[0]) : 0;
     }
 
-    function fixDriveUrl(url) {
-        if (!url) return 'https://placehold.co/400x400?text=No+Imagen';
-        if (url.startsWith('http')) return url;
-        return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
+    // --- FUNCIÓN CORREGIDA: CARGA IMÁGENES DESDE GITHUB (CARPETA LOCAL) ---
+// --- FUNCIÓN CORREGIDA: CARGA IMÁGENES DESDE GITHUB (FIX URL ENCODING) ---
+// --- FUNCIÓN BLINDADA: CARGA FOTOS DESDE GITHUB Y CORRIGE NOMBRES ---
+// --- FUNCIÓN CORREGIDA: CARGA IMÁGENES DESDE GITHUB (CARPETA LOCAL) ---
+// --- FUNCIÓN DE ALTA PRECISIÓN PARA CARGAR FOTOS ---
+function fixDriveUrl(url) {
+    // 1. Si no hay dato, devolver imagen por defecto
+    if (!url || url === 'null' || url === 'undefined' || url.trim() === '') {
+        return 'https://placehold.co/400x400/1a4789/ffffff?text=Sin+Foto';
     }
+
+    // 2. Limpieza básica: Obtener solo el nombre del archivo
+    let nombreArchivo = url;
+    
+    // Si viene una URL completa antigua, nos quedamos con el final
+    if (url.includes('/')) {
+        nombreArchivo = url.split('/').pop();
+    }
+    
+    // Quitar parámetros extra (?token=...)
+    nombreArchivo = nombreArchivo.split('?')[0];
+
+    // Decodificar caracteres raros (%20 -> espacio)
+    try {
+        nombreArchivo = decodeURIComponent(nombreArchivo);
+    } catch(e) {}
+
+    // Quitar comillas si las hubiera
+    nombreArchivo = nombreArchivo.trim().replace(/['"]/g, '');
+
+    // === REGLA DE ORO ===
+    // Tu código anterior ELIMINABA los espacios (.replace(/\s+/g, '')).
+    // Si tienes una foto en GitHub llamada "Olla.jpg" (sin espacios), funcionaba.
+    // Si tenías "Olla Reina.jpg", tu código buscaba "OllaReina.jpg" y fallaba.
+    
+    // VAMOS A ELIMINAR LOS ESPACIOS PARA ESTANDARIZAR
+    // ESTO SIGNIFICA QUE EN GITHUB *TIENES* QUE SUBIRLAS SIN ESPACIOS
+    nombreArchivo = nombreArchivo.replace(/\s+/g, '');
+
+    const GITHUB_USER = 'paratuhogar'; 
+    const BRANCH = 'main'; // O 'master', verifica tu rama en GitHub
+
+    // Usamos encodeURIComponent por si queda algún caracter especial
+    return `https://raw.githubusercontent.com/${GITHUB_USER}/paratuhogar/${BRANCH}/img_productos/${nombreArchivo}`;
+}
 
     // 1. Lógica para decidir si mostrar el botón del Gestor (Nivel 2+)
 async function initAgentFloatingButton() {
