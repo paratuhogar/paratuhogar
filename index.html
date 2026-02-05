@@ -1613,50 +1613,18 @@
 
     <!-- SECCIÓN DE FOTOS (4 espacios) -->
     <!-- SECCIÓN DE FOTOS (4 espacios con botón de borrar) -->
+<!-- SECCIÓN DE FOTOS (MODO GITHUB MANUAL) -->
 <div class="md:col-span-2 border-y py-4 my-2">
-    <p class="text-[10px] font-black text-gray-400 uppercase mb-3 italic">Galería de Imágenes (Máx 4)</p>
-    <div class="grid grid-cols-4 gap-2">
-        <!-- Foto 0 -->
-        <div onclick="document.getElementById('file-0').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
-            <input type="file" id="file-0" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 0)">
-            <img id="prev-0" class="absolute inset-0 w-full h-full object-cover hidden">
-            <span id="icon-0" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-            <input type="hidden" id="img-path-0">
-            <!-- BOTÓN BORRAR -->
-            <button type="button" onclick="clearImageSlot(event, 0)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <span class="material-symbols-outlined text-xs">close</span>
-            </button>
+    <p class="text-[10px] font-black text-gray-400 uppercase mb-3 italic">Nombres de Imágenes (GitHub)</p>
+    <div class="grid grid-cols-1 gap-2">
+        <div class="bg-orange-50 p-2 rounded text-[10px] text-orange-700 mb-2">
+            ⚠️ <b>IMPORTANTE:</b> No subir archivos aquí. Escribe el nombre exacto de la foto (ej: <code>tv_samsung.jpg</code>) y envía la foto real al Programador para que la suba a GitHub.
         </div>
-        <!-- Foto 1 -->
-        <div onclick="document.getElementById('file-1').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
-            <input type="file" id="file-1" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 1)">
-            <img id="prev-1" class="absolute inset-0 w-full h-full object-cover hidden">
-            <span id="icon-1" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-            <input type="hidden" id="img-path-1">
-            <button type="button" onclick="clearImageSlot(event, 1)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <span class="material-symbols-outlined text-xs">close</span>
-            </button>
-        </div>
-        <!-- Foto 2 -->
-        <div onclick="document.getElementById('file-2').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
-            <input type="file" id="file-2" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 2)">
-            <img id="prev-2" class="absolute inset-0 w-full h-full object-cover hidden">
-            <span id="icon-2" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-            <input type="hidden" id="img-path-2">
-            <button type="button" onclick="clearImageSlot(event, 2)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <span class="material-symbols-outlined text-xs">close</span>
-            </button>
-        </div>
-        <!-- Foto 3 -->
-        <div onclick="document.getElementById('file-3').click()" class="aspect-square bg-gray-50 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer relative overflow-hidden group">
-            <input type="file" id="file-3" accept="image/*" class="hidden" onchange="handlePowerUpload(this, 3)">
-            <img id="prev-3" class="absolute inset-0 w-full h-full object-cover hidden">
-            <span id="icon-3" class="material-symbols-outlined text-gray-300">add_a_photo</span>
-            <input type="hidden" id="img-path-3">
-            <button type="button" onclick="clearImageSlot(event, 3)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <span class="material-symbols-outlined text-xs">close</span>
-            </button>
-        </div>
+        
+        <input type="text" id="img-path-0" placeholder="Nombre Foto Principal (ej: lavadora.jpg)" class="w-full rounded-xl border-gray-200 text-xs font-bold mb-1">
+        <input type="text" id="img-path-1" placeholder="Foto 2 (Opcional)" class="w-full rounded-xl border-gray-200 text-xs font-bold mb-1">
+        <input type="text" id="img-path-2" placeholder="Foto 3 (Opcional)" class="w-full rounded-xl border-gray-200 text-xs font-bold mb-1">
+        <input type="text" id="img-path-3" placeholder="Foto 4 (Opcional)" class="w-full rounded-xl border-gray-200 text-xs font-bold">
     </div>
 </div>
 
@@ -1718,7 +1686,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0502c"; 
+const versionActual = "0502d"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
