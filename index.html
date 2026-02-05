@@ -1664,7 +1664,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0502"; 
+const versionActual = "0502b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3597,52 +3597,58 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // --- 7. GENERAR VALES Y MENSAJE ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
-        
+                
+        // --- NUEVA LÓGICA ROBUSTA (SERVIDOR) ---
+       // --- LÓGICA DE CÁLCULO MANUAL (BYPASS SUPABASE RPC) ---
+       // --- LÓGICA DE CÁLCULO MANUAL (CORREGIDA: COLUMNA FECHA) ---
         let codPedido = "";
         
-        // --- INTENTO DE CÁLCULO INTELIGENTE ---
         try {
-            // 1. Preguntamos cuál fue el ÚLTIMO pedido de este proveedor
-            const { data: ultimosPedidos, error: errQuery } = await supabaseClient
+            // 1. Buscamos el ÚLTIMO pedido de este proveedor
+            // CORRECCIÓN IMPORTANTE: Cambiamos 'created_at' por 'fecha'
+            const { data: ultimosPedidos, error: errLast } = await supabaseClient
                 .from('pedidos')
                 .select('orden_dia')
                 .eq('proveedor', prov)
-                .order('created_at', { ascending: false }) // Ordenar por fecha de creación real
-                .limit(1);
+                .order('fecha', { ascending: false }) // <--- AQUÍ ESTABA EL ERROR
+                .limit(5); // Traemos los últimos 5 para asegurar
 
-            // 2. Si hay error de red o bloqueo, lanzamos error para ir al plan de emergencia
-            if (errQuery) throw new Error("Fallo consulta");
-
-            // 3. Calculamos el siguiente número
-            if (ultimosPedidos && ultimosPedidos.length > 0) {
-                const ultimoID = ultimosPedidos[0].orden_dia; // Ej: "CA-199"
-                
-                // Separamos las letras del número
-                const partes = ultimoID.split('-'); 
-                if (partes.length === 2) {
-                    const numeroAnterior = parseInt(partes[1]);
-                    if (!isNaN(numeroAnterior)) {
-                        // ¡EUREKA! Sumamos 1
-                        codPedido = `${prov}-${numeroAnterior + 1}`; 
-                    } else {
-                        // Si el formato era raro, reiniciamos
-                        codPedido = `${prov}-1`;
-                    }
-                } else {
-                    codPedido = `${prov}-1`;
-                }
-            } else {
-                // Si no hay pedidos previos de este proveedor, empezamos en 1
-                codPedido = `${prov}-1`;
+            if (errLast) {
+                console.error("Error Supabase:", errLast.message);
+                throw errLast;
             }
 
+            let siguienteNumero = 1; // Por defecto empezamos en 1 (Para nuevos como SA)
+
+            // 2. Filtramos en JavaScript para ignorar los TEMP
+            // Esto es más seguro que hacerlo en la consulta
+            const ultimoValido = (ultimosPedidos || []).find(p => 
+                p.orden_dia && !p.orden_dia.includes('TEMP')
+            );
+
+            if (ultimoValido) {
+                // Ejemplo orden_dia: "CA-212" -> Parte en ["CA", "212"]
+                const partes = ultimoValido.orden_dia.split('-'); 
+                // Toma la última parte: "212"
+                const numeroAnterior = parseInt(partes[partes.length - 1]);
+                
+                if (!isNaN(numeroAnterior)) {
+                    siguienteNumero = numeroAnterior + 1;
+                }
+            }
+
+            // Construimos el ID final: Ej "SA-1" o "CA-213"
+            codPedido = `${prov}-${siguienteNumero}`;
+
         } catch (e) {
-            // SI TODO FALLA (Muy mala conexión o bloqueo total)
-            // Al menos le ponemos el código del proveedor para que tú sepas quién despacha
-            console.warn("Usando ID de emergencia");
+            console.error("Fallo cálculo manual:", e);
+            // Solo si falla todo usamos TEMP
             const random = Math.floor(1000 + Math.random() * 9000);
-            codPedido = `${prov}-TEMP-${random}`; // Ej: CA-TEMP-4821
+            codPedido = `${prov}-TEMP-${random}`;
         }
+        // ------------------------------------------------------
+        // ------------------------------------------------------
+        // ---------------------------------------
         // ---------------------------
 
 
