@@ -1723,7 +1723,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0502e"; 
+const versionActual = "0502f"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -5200,21 +5200,23 @@ function clearImageSlot(event, index) {
             if(editorDiv) editorDiv.innerHTML = p.descripcion || ""; 
         }
 
-        // 5. Cargar Fotos (Previsualización)
+        // 5. Cargar Fotos (Modo GitHub Texto)
         const fotos = [p.thumbnail, p.image1, p.image2, p.image3];
         fotos.forEach((foto, i) => {
-            const pathInput = document.getElementById(`img-path-${i}`);
-            const prev = document.getElementById(`prev-${i}`);
-            const icon = document.getElementById(`icon-${i}`);
-
-            if (pathInput) pathInput.value = foto || "";
+            const input = document.getElementById(`img-path-${i}`);
             
+            // Limpiamos la URL completa para dejar solo el nombre del archivo
+            // Esto es para que en el input se vea "lavadora.jpg" y no "https://raw..."
+            let nombreArchivo = "";
             if (foto) {
-                if(prev) { prev.src = fixDriveUrl(foto); prev.classList.remove('hidden'); }
-                if(icon) icon.classList.add('hidden');
-            } else {
-                if(prev) { prev.src = ""; prev.classList.add('hidden'); }
-                if(icon) icon.classList.remove('hidden');
+                nombreArchivo = foto.split('/').pop(); // Toma lo último después del /
+                nombreArchivo = nombreArchivo.split('?')[0]; // Quita tokens si los hay
+            }
+
+            if (input) {
+                input.value = nombreArchivo;
+                // Disparamos la previsualización manualmente
+                previewGithubImage(i);
             }
         });
 
