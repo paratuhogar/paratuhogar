@@ -1723,7 +1723,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0502f"; 
+const versionActual = "0602"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10569,6 +10569,26 @@ async function saveGestorEdit() {
         btn.disabled = false;
     }
 }
+
+// Función para auto-completar el prefijo del almacén
+function formatearConsecutivo(input) {
+    let valor = input.value.trim().toUpperCase(); // Lo que escribiste (ej: "17")
+    const proveedor = document.getElementById('edit-proveedor').value.trim().toUpperCase(); // El proveedor (ej: "B" o "CA")
+
+    // 1. Si está vacío o no hay proveedor, no hacemos nada
+    if (!valor || !proveedor) return;
+
+    // 2. Si escribiste SOLO números (ej: "17")
+    if (/^\d+$/.test(valor)) {
+        // Tomamos la primera palabra del proveedor como código (ej: "CA" de "CA Almacén")
+        // O usamos todo el proveedor si es corto (ej: "B")
+        const codigo = proveedor.split(' ')[0]; 
+        
+        // Actualizamos el campo automáticamente
+        input.value = `${codigo}-${valor}`;
+    }
+}
+
 </script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
@@ -10596,7 +10616,7 @@ async function saveGestorEdit() {
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <div>
                         <label class="text-[9px] font-bold text-gray-500 uppercase"># Consecutivo (Orden Día)</label>
-                        <input type="number" id="edit-orden-dia" class="w-full rounded-lg border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-xs font-black text-primary h-8">
+                        <input type="text" id="edit-orden-dia" onblur="formatearConsecutivo(this)" class="w-full rounded-lg border-gray-300 dark:bg-gray-900 dark:border-gray-600 text-xs font-black text-primary h-8 placeholder:text-gray-300" placeholder="Ej: CA-17">
                     </div>
                     <div>
                         <label class="text-[9px] font-bold text-gray-500 uppercase">Estado Pedido</label>
@@ -10745,6 +10765,8 @@ async function saveGestorEdit() {
         </div>
     </div>
 </div>
+
+
 
 </body>
 </html>
