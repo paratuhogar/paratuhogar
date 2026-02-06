@@ -1723,7 +1723,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0602"; 
+const versionActual = "0602a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3660,52 +3660,48 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         // --- NUEVA LÓGICA ROBUSTA (SERVIDOR) ---
        // --- LÓGICA DE CÁLCULO MANUAL (BYPASS SUPABASE RPC) ---
        // --- LÓGICA DE CÁLCULO MANUAL (CORREGIDA: COLUMNA FECHA) ---
+        // --- LÓGICA DE CÁLCULO DE CONSECUTIVO MEJORADA (v4) ---
         let codPedido = "";
         
         try {
-            // 1. Buscamos el ÚLTIMO pedido de este proveedor
-            // CORRECCIÓN IMPORTANTE: Cambiamos 'created_at' por 'fecha'
+            // 1. Buscamos el ÚLTIMO pedido REAL de este proveedor (Ignorando TEMPs)
             const { data: ultimosPedidos, error: errLast } = await supabaseClient
                 .from('pedidos')
                 .select('orden_dia')
                 .eq('proveedor', prov)
-                .order('fecha', { ascending: false }) // <--- AQUÍ ESTABA EL ERROR
-                .limit(5); // Traemos los últimos 5 para asegurar
+                .not('orden_dia', 'like', '%TEMP%') // FILTRO CLAVE: Ignora los temporales en la búsqueda
+                .order('fecha', { ascending: false }) // Ordena por fecha exacta
+                .limit(1);
 
-            if (errLast) {
-                console.error("Error Supabase:", errLast.message);
-                throw errLast;
-            }
+            if (errLast) throw errLast;
 
-            let siguienteNumero = 1; // Por defecto empezamos en 1 (Para nuevos como SA)
+            let siguienteNumero = 1; // Si no hay nada, empezamos en 1
 
-            // 2. Filtramos en JavaScript para ignorar los TEMP
-            // Esto es más seguro que hacerlo en la consulta
-            const ultimoValido = (ultimosPedidos || []).find(p => 
-                p.orden_dia && !p.orden_dia.includes('TEMP')
-            );
-
-            if (ultimoValido) {
-                // Ejemplo orden_dia: "CA-212" -> Parte en ["CA", "212"]
-                const partes = ultimoValido.orden_dia.split('-'); 
-                // Toma la última parte: "212"
-                const numeroAnterior = parseInt(partes[partes.length - 1]);
+            // 2. Si encontramos un último pedido, le sumamos 1
+            if (ultimosPedidos && ultimosPedidos.length > 0) {
+                const ultimoID = ultimosPedidos[0].orden_dia; // Ej: "CA-232"
                 
-                if (!isNaN(numeroAnterior)) {
-                    siguienteNumero = numeroAnterior + 1;
+                if (ultimoID && ultimoID.includes('-')) {
+                    const partes = ultimoID.split('-'); 
+                    // Tomamos la última parte numérica
+                    const numeroAnterior = parseInt(partes[partes.length - 1]);
+                    
+                    if (!isNaN(numeroAnterior)) {
+                        siguienteNumero = numeroAnterior + 1;
+                    }
                 }
             }
 
-            // Construimos el ID final: Ej "SA-1" o "CA-213"
+            // 3. Generamos el código final
             codPedido = `${prov}-${siguienteNumero}`;
 
         } catch (e) {
-            console.error("Fallo cálculo manual:", e);
-            // Solo si falla todo usamos TEMP
+            console.error("Fallo cálculo manual, usando emergencia:", e);
+            // Solo si falla la conexión usamos TEMP para no perder la venta
             const random = Math.floor(1000 + Math.random() * 9000);
             codPedido = `${prov}-TEMP-${random}`;
         }
-        // ------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------
         // ------------------------------------------------------
         // ---------------------------------------
         // ---------------------------
