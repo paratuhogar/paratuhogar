@@ -1723,7 +1723,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0602a"; 
+const versionActual = "0702"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3661,46 +3661,57 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
        // --- LÓGICA DE CÁLCULO MANUAL (BYPASS SUPABASE RPC) ---
        // --- LÓGICA DE CÁLCULO MANUAL (CORREGIDA: COLUMNA FECHA) ---
         // --- LÓGICA DE CÁLCULO DE CONSECUTIVO MEJORADA (v4) ---
+        // --- LÓGICA DE CÁLCULO MATEMÁTICO BLINDADA (v6 - Final) ---
         let codPedido = "";
         
         try {
-            // 1. Buscamos el ÚLTIMO pedido REAL de este proveedor (Ignorando TEMPs)
+            // 1. Buscamos los últimos 20 pedidos ESPECÍFICOS DE ESTE PROVEEDOR
+            // Al usar .eq('proveedor', prov), ignoramos todos los demás (CA, A, B...)
             const { data: ultimosPedidos, error: errLast } = await supabaseClient
                 .from('pedidos')
                 .select('orden_dia')
-                .eq('proveedor', prov)
-                .not('orden_dia', 'like', '%TEMP%') // FILTRO CLAVE: Ignora los temporales en la búsqueda
-                .order('fecha', { ascending: false }) // Ordena por fecha exacta
-                .limit(1);
+                .eq('proveedor', prov) // <--- ESTO GARANTIZA QUE SOLO MIRE LOS DE 'S' (o el que sea)
+                .not('orden_dia', 'like', '%TEMP%') 
+                .order('fecha', { ascending: false }) // Usamos 'fecha' según tu base de datos
+                .limit(20); 
 
             if (errLast) throw errLast;
 
-            let siguienteNumero = 1; // Si no hay nada, empezamos en 1
+            let maximoNumero = 0;
 
-            // 2. Si encontramos un último pedido, le sumamos 1
+            // 2. Extraemos los números y buscamos el mayor matemáticamente
             if (ultimosPedidos && ultimosPedidos.length > 0) {
-                const ultimoID = ultimosPedidos[0].orden_dia; // Ej: "CA-232"
-                
-                if (ultimoID && ultimoID.includes('-')) {
-                    const partes = ultimoID.split('-'); 
-                    // Tomamos la última parte numérica
-                    const numeroAnterior = parseInt(partes[partes.length - 1]);
-                    
-                    if (!isNaN(numeroAnterior)) {
-                        siguienteNumero = numeroAnterior + 1;
-                    }
+                const numeros = ultimosPedidos.map(p => {
+                    if (!p.orden_dia) return 0;
+                    // Rompemos el texto "CA-239" por el guion
+                    const partes = p.orden_dia.split('-');
+                    // Tomamos la última parte y la convertimos en NÚMERO REAL
+                    const num = parseInt(partes[partes.length - 1]);
+                    return isNaN(num) ? 0 : num;
+                });
+
+                // Math.max encuentra el número más alto real (239 es mayor que 74)
+                if (numeros.length > 0) {
+                    maximoNumero = Math.max(...numeros);
                 }
             }
 
-            // 3. Generamos el código final
+            // 3. Sumamos 1 al mayor encontrado
+            // Si maximoNumero es 0 (porque no hay pedidos de S), empezará en 1.
+            // Si el último era 23, el nuevo será 24.
+            const siguienteNumero = maximoNumero + 1;
+
+            // 4. Creamos el código final
             codPedido = `${prov}-${siguienteNumero}`;
+
+            console.log(`Cálculo ID para ${prov}: Último mayor ${maximoNumero} -> Nuevo ${codPedido}`);
 
         } catch (e) {
             console.error("Fallo cálculo manual, usando emergencia:", e);
-            // Solo si falla la conexión usamos TEMP para no perder la venta
             const random = Math.floor(1000 + Math.random() * 9000);
             codPedido = `${prov}-TEMP-${random}`;
         }
+        // ------------------------------------------------------
         // ------------------------------------------------------------------------------------------------------
         // ------------------------------------------------------
         // ---------------------------------------
