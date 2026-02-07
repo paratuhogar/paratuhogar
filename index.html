@@ -1725,7 +1725,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0702b"; 
+const versionActual = "0702c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2972,13 +2972,26 @@ if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
-    let urlGestor = urlParams.get('gestor'); // Gestor en URL (Cliente)
-    const sessionGestor = window.gestorName; // Gestor Logueado (Tú)
+    let urlGestor = urlParams.get('gestor'); // Gestor en URL (Link nuevo)
+    const sessionGestor = window.gestorName; // Gestor Logueado (Tú editando)
 
-    // 1. Prioridad de Gestor: Si estoy logueado soy yo, si no, es el de la URL
-    const activeGestor = sessionGestor || urlGestor;
+    // --- NUEVO: BUSCAR EN MEMORIA (El arreglo para Beatriz) ---
+    let memoriaGestor = null;
+    try {
+        // Buscamos si ya hay un "Botón Verde" activo en este teléfono
+        const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        if (stored && stored.nombre) {
+            memoriaGestor = stored.nombre;
+        }
+    } catch(e) {}
 
-    // --- LOGICA LINK CORTO (Mantenida) ---
+    // 1. PRIORIDAD DE GESTOR (CORREGIDA)
+    // A. Si estás logueado (Tú) -> Mandas tú.
+    // B. Si hay link nuevo (?gestor=Beatriz) -> Manda el Link.
+    // C. Si no hay link, pero el teléfono recuerda a Beatriz -> Manda la Memoria.
+    const activeGestor = sessionGestor || urlGestor || memoriaGestor;
+
+    // --- LOGICA LINK CORTO (Mantenida Intacta) ---
     if (slug) {
         const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
         if (data) {
@@ -2987,9 +3000,11 @@ async function loadProducts() {
             return;
         }
     }
+    
+    // Solo registramos el rastro si es un clic NUEVO (viene por URL)
     if (urlGestor) await registrarRastroIP(urlGestor);
 
-    // --- CARGA DE DATOS ---
+    // --- CARGA DE DATOS (Mantenida Intacta) ---
     try {
         // A. Cargar Productos Base
         const { data: productos, error } = await supabaseClient
@@ -3001,6 +3016,7 @@ async function loadProducts() {
         productosRaw = productos; // Guardamos copia original cruda
 
         // B. FUSIÓN DE PRECIOS (LA MAGIA)
+        // Ahora 'activeGestor' puede venir de la memoria, arreglando el problema de Beatriz
         if (activeGestor) {
             // Buscamos si este gestor tiene precios personalizados
             const { data: preciosCustom } = await supabaseClient
@@ -3042,7 +3058,7 @@ async function loadProducts() {
         
         // Si estoy logueado, cargo mi configurador de precios
         if (sessionGestor) {
-            renderGestorPricing(); // Función nueva (ver abajo)
+            renderGestorPricing(); 
         }
 
         // Abrir producto si viene en URL
