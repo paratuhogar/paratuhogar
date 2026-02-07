@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html class="light" lang="es">
 <head>
+
+    
     <meta charset="utf-8"/>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
@@ -1723,7 +1725,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0702"; 
+const versionActual = "0702a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10596,6 +10598,92 @@ function formatearConsecutivo(input) {
     }
 }
 
+// --- FUNCIÓN 1: BORRADO ABSOLUTO ---
+async function deleteOrderMaster() {
+    const id = document.getElementById('edit-order-id').value;
+    
+    if (!id) return;
+
+    // Confirmación de seguridad
+    const confirmacion = confirm("⚠️ ¡ADVERTENCIA DE SEGURIDAD! ⚠️\n\nEstás a punto de ELIMINAR este pedido permanentemente de la base de datos.\n\n- Desaparecerá del historial.\n- Desaparecerá de la nómina del gestor.\n- No se puede deshacer.\n\n¿Estás seguro de borrarlo?");
+
+    if (!confirmacion) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        alert("🗑️ Pedido eliminado correctamente.");
+        document.getElementById('modal-edit-finance').classList.add('hidden');
+        
+        // Recargamos la tabla maestra para que desaparezca visualmente
+        loadAdminData(); 
+
+    } catch (e) {
+        console.error(e);
+        alert("❌ Error al eliminar: " + e.message);
+    }
+}
+
+// --- FUNCIÓN 2: EDICIÓN SIN RESTRICCIONES ---
+async function saveFinancialChanges() {
+    const btn = document.getElementById('btn-save-finance');
+    const originalText = btn.innerHTML;
+    const id = document.getElementById('edit-order-id').value;
+
+    btn.innerHTML = "GUARDANDO...";
+    btn.disabled = true;
+
+    try {
+        // Recogemos TODOS los datos del formulario (Poder Absoluto)
+        const updates = {
+            // Identificación
+            orden_dia: document.getElementById('edit-orden-dia').value,
+            estado: document.getElementById('edit-estado').value, // Aquí cambias el estado a lo que quieras
+            proveedor: document.getElementById('edit-proveedor').value,
+            
+            // Cliente
+            cliente: document.getElementById('edit-cliente').value,
+            telefono: document.getElementById('edit-telefono').value,
+            ci: document.getElementById('edit-ci').value,
+            municipio: document.getElementById('edit-municipio').value,
+            direccion: document.getElementById('edit-direccion').value,
+            
+            // Producto y Dinero
+            producto: document.getElementById('edit-producto').value,
+            total: parseFloat(document.getElementById('edit-total').value) || 0,
+            costo_mensajeria: parseFloat(document.getElementById('edit-mensajeria').value) || 0,
+            comision_total: parseFloat(document.getElementById('edit-comision').value) || 0
+        };
+
+        // Enviamos el UPDATE directo a Supabase
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update(updates)
+            .eq('id', id);
+
+        if(error) throw error;
+
+        // Éxito
+        alert("✅ Cambios aplicados con éxito.");
+        document.getElementById('modal-edit-finance').classList.add('hidden');
+        
+        // Refrescamos la vista
+        loadAdminData();
+
+    } catch(e) {
+        console.error(e);
+        alert("❌ Error al guardar: " + e.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 </script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
@@ -10693,11 +10781,21 @@ function formatearConsecutivo(input) {
 
         </div>
 
-        <!-- Footer Botones -->
-        <div class="p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 shrink-0">
-            <button onclick="saveFinancialChanges()" id="btn-save-finance" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black uppercase text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined">save_as</span> Guardar Todos los Cambios
+        <!-- Footer Botones (MODIFICADO: CONTROL TOTAL) -->
+        <div class="p-4 bg-gray-50 dark:bg-gray-800 border-t dark:border-gray-700 shrink-0 flex justify-between gap-4">
+            
+            <!-- 1. BOTÓN ELIMINAR (NUEVO) -->
+            <button type="button" onclick="deleteOrderMaster()" class="px-6 py-4 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl font-black uppercase text-xs flex items-center gap-2 transition-all border border-red-200">
+                <span class="material-symbols-outlined text-lg">delete_forever</span> 
+                Eliminar
             </button>
+
+            <!-- 2. BOTÓN GUARDAR (EXISTENTE) -->
+            <button onclick="saveFinancialChanges()" id="btn-save-finance" class="flex-1 py-4 bg-slate-900 text-white rounded-xl font-black uppercase text-sm hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">save_as</span> 
+                Guardar Cambios
+            </button>
+
         </div>
     </div>
 </div>
