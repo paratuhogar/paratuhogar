@@ -1725,7 +1725,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0702c"; 
+const versionActual = "0902"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -9659,34 +9659,44 @@ function consultarMensajeria(nombreProd) {
 }
 
 // --- FUNCIÓN PARA ELIMINAR PEDIDO (GESTOR) ---
+// --- FUNCIÓN PARA CANCELAR PEDIDO (ANTES ELIMINAR) ---
+// MODIFICADO: Ahora cambia el estado a "Cancelado" en lugar de borrar el registro
 async function deleteMyOrder(id) {
-    if (!confirm("⚠️ ¿Estás seguro de ELIMINAR este pedido?\n\nEsta acción no se puede deshacer. Úsalo solo si cometiste un error al crearlo.")) return;
+    // 1. Confirmación clara para el gestor
+    if (!confirm("⚠️ ¿Estás seguro de CANCELAR este pedido?\n\nEl pedido NO se borrará de la base de datos, pero pasará a estado 'Cancelado' y saldrá de tu lista de pendientes.")) return;
 
     try {
-        // 1. Ejecutar borrado en Supabase
+        // 2. CAMBIO CLAVE: Usamos .update() en lugar de .delete()
         const { error } = await supabaseClient
             .from('pedidos')
-            .delete()
+            .update({ estado: 'Cancelado' }) // <--- Aquí está la magia
             .eq('id', id);
 
         if (error) throw error;
 
-        // 2. Éxito: Actualizar la lista visualmente
-        alert("🗑️ Pedido eliminado correctamente.");
+        // 3. Éxito visual
+        alert("🗑️ Pedido marcado como Cancelado.");
         
-        // Eliminamos el pedido del array global en memoria para que desaparezca al instante
+        // 4. Actualizar la memoria local para que la interfaz reaccione al instante
         if (typeof myOrdersData !== 'undefined') {
-            myOrdersData = myOrdersData.filter(p => p.id !== id);
+            // Buscamos el pedido en la lista local y le cambiamos el estado
+            const index = myOrdersData.findIndex(p => p.id === id);
+            if (index !== -1) {
+                myOrdersData[index].estado = 'Cancelado';
+            }
+            
+            // Re-renderizamos la lista. 
+            // Como el filtro actual seguramente es 'Pendiente', el pedido desaparecerá de la vista automáticamente.
             renderMyOrdersList(myOrdersData);
         } else {
-            // Si por alguna razón la variable no está, recargamos el dashboard
+            // Si por alguna razón falla la memoria local, recargamos todo el dashboard
             const gestor = window.gestorName;
             if(gestor) loadProDashboard(gestor);
         }
 
     } catch (e) {
         console.error(e);
-        alert("❌ Error al eliminar: " + e.message);
+        alert("❌ Error al cancelar: " + e.message);
     }
 }
 
