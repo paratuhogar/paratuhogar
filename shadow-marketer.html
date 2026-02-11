@@ -409,11 +409,30 @@
     }
 
     // --- UTILIDADES ---
-    function fixDriveUrl(url) {
-        if (!url) return 'https://placehold.co/400x400';
-        if (url.startsWith('http')) return url;
-        return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
+    // --- PEGAR ESTO EN shadow-marketer.html ---
+function fixDriveUrl(url) {
+    // 1. Si no hay dato, devolver imagen por defecto
+    if (!url || url === 'null' || url === 'undefined' || url.trim() === '') {
+        return 'https://placehold.co/400x400/1a4789/ffffff?text=Sin+Foto';
     }
+
+    // 2. Limpieza básica
+    let nombreArchivo = url;
+    if (url.includes('/')) nombreArchivo = url.split('/').pop(); // Quita rutas viejas
+    nombreArchivo = nombreArchivo.split('?')[0]; // Quita tokens extra
+    
+    // 3. REGLA DE ORO: Limpieza idéntica a como se suben
+    try { nombreArchivo = decodeURIComponent(nombreArchivo); } catch(e) {}
+    nombreArchivo = nombreArchivo.trim().replace(/['"]/g, '');
+    nombreArchivo = nombreArchivo.replace(/\s+/g, ''); // Quita espacios
+
+    // 4. CONSTRUCCIÓN URL GITHUB
+    const GITHUB_USER = 'paratuhogar'; 
+    const REPO = 'paratuhogar-fotos'; 
+    const BRANCH = 'main'; 
+
+    return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/img_productos/${nombreArchivo}`;
+}
 
     // --- NUEVA CONFIGURACIÓN DE URL ---
     const BASE_WEB_URL = "https://paratuhogar.github.io/paratuhogar"; 
