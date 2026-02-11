@@ -249,12 +249,17 @@
                 statusText.innerText = `Procesando: ${p.nombre.substring(0,15)}...`;
 
                 let imgObj = null;
+                // --- PEGAR ESTO EN catalog-maker.html (Dentro de startGeneration) ---
                 if (p.thumbnail) {
-                    let url = p.thumbnail;
-                    if (!url.startsWith('http')) {
-                        url = `https://ljqwaovevfatkiigirhf.supabase.co/storage/v1/object/public/productos/${url}`;
-                    }
-                    // Obtenemos la imagen con sus dimensiones reales para no deformarla
+                    // 1. Limpieza del nombre
+                    let nombreLimpio = p.thumbnail;
+                    if (nombreLimpio.includes('/')) nombreLimpio = nombreLimpio.split('/').pop();
+                    nombreLimpio = nombreLimpio.split('?')[0].replace(/['"]/g, '').replace(/\s+/g, '');
+
+                    // 2. Construir URL GitHub
+                    let url = `https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/${nombreLimpio}`;
+
+                    // 3. Obtener imagen procesada
                     imgObj = await getProImage(url);
                 }
                 
