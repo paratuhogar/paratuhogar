@@ -81,10 +81,29 @@ function applyFilters() {
     refreshPreviews();
 }
 
+// --- REEMPLAZA LA FUNCIÓN fixImageUrl CON ESTO ---
 function fixImageUrl(url) {
-    if (!url) return 'https://placehold.co/600x600?text=No+Image';
-    if (url.startsWith('http')) return url;
-    return `${SUPABASE_URL}/storage/v1/object/public/productos/${url}`;
+    // 1. Si no hay dato, devolver imagen por defecto
+    if (!url || url === 'null' || url === 'undefined' || url.trim() === '') {
+        return 'https://placehold.co/600x600?text=No+Image';
+    }
+
+    // 2. Limpieza básica para extraer solo el nombre del archivo
+    let nombreArchivo = url;
+    if (url.includes('/')) nombreArchivo = url.split('/').pop(); 
+    nombreArchivo = nombreArchivo.split('?')[0]; 
+
+    // 3. Limpieza de caracteres (Igual que en tu index.html)
+    try { nombreArchivo = decodeURIComponent(nombreArchivo); } catch(e) {}
+    nombreArchivo = nombreArchivo.trim().replace(/['"]/g, '');
+    nombreArchivo = nombreArchivo.replace(/\s+/g, ''); // Quita espacios
+
+    // 4. URL GITHUB
+    const GITHUB_USER = 'paratuhogar'; 
+    const REPO = 'paratuhogar-fotos'; 
+    const BRANCH = 'main'; 
+
+    return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/img_productos/${nombreArchivo}`;
 }
 
 async function refreshPreviews() {
