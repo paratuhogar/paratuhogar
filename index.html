@@ -1702,6 +1702,13 @@
                 <input type="text" id="log-user" placeholder="Tu Nombre de Usuario" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <button onclick="processLogin()" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase shadow-lg shadow-primary/30">Iniciar Sesión</button>
+                
+                <!-- BOTÓN NUEVO: OLVIDÉ CONTRASEÑA -->
+                <div class="text-center mt-2">
+                    <button onclick="toggleLoginMode('recover')" class="text-[10px] font-bold text-gray-400 hover:text-primary underline">
+                        ¿Olvidaste tu contraseña?
+                    </button>
+                </div>
             </div>
 
             <!-- FORMULARIO REGISTRO -->
@@ -1713,19 +1720,37 @@
                 <button onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
             </div>
 
+            <!-- NUEVO: FORMULARIO RECUPERACIÓN -->
+            <div id="form-recover" class="space-y-4 hidden">
+                <div class="bg-blue-50 p-3 rounded-xl mb-4 border border-blue-100">
+                    <p class="text-[10px] text-blue-800 text-center font-bold">Para seguridad, verifica tu identidad:</p>
+                </div>
+                <input type="tel" id="rec-tel" placeholder="Tu Teléfono (WhatsApp)" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="email" id="rec-email" placeholder="Tu Correo Electrónico" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="password" id="rec-new-pass" placeholder="NUEVA Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                
+                <button onclick="processRecovery()" class="w-full bg-emerald-500 text-white py-4 rounded-xl font-black uppercase shadow-lg shadow-emerald-500/30">
+                    Cambiar Contraseña
+                </button>
+                
+                <button onclick="toggleLoginMode('login')" class="w-full text-xs text-gray-400 font-bold uppercase mt-2">
+                    Cancelar / Volver
+                </button>
+            </div>
+
         </div>
 
-        <button onclick="enterAsClient()" class="text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-primary mt-4">
-            Solo quiero ver el catálogo (Cliente)
-        </button>
-    </div>
-</div>
+                <button onclick="enterAsClient()" class="text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-primary mt-4">
+                    Solo quiero ver el catálogo (Cliente)
+                </button>
+            </div>
+        </div>
 
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0902"; 
+const versionActual = "1102"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -1943,13 +1968,118 @@ function openLoginModal() {
     // --- 1. LÓGICA DE ACCESO (LOGIN/REGISTRO) ---
     
     function toggleLoginMode(mode) {
-        const isLogin = mode === 'login';
-        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
-        document.getElementById('form-register').classList.toggle('hidden', isLogin);
-        
-        document.getElementById('tab-login-btn').className = isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
-        document.getElementById('tab-register-btn').className = !isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
+    // 1. Obtener todos los formularios
+    const fLogin = document.getElementById('form-login');
+    const fRegister = document.getElementById('form-register');
+    const fRecover = document.getElementById('form-recover'); // Este es el nuevo
+
+    // 2. Obtener los botones de las pestañas
+    const btnTabLogin = document.getElementById('tab-login-btn');
+    const btnTabRegister = document.getElementById('tab-register-btn');
+
+    // 3. OCULTAR TODO POR DEFECTO (Reseteo)
+    if(fLogin) fLogin.classList.add('hidden');
+    if(fRegister) fRegister.classList.add('hidden');
+    if(fRecover) fRecover.classList.add('hidden');
+
+    // 4. RESETEAR ESTILOS DE PESTAÑAS (Ponerlas grises)
+    // Usamos border-transparent para que no se vea la línea azul
+    const estiloInactivo = "flex-1 pb-2 font-black text-xs uppercase text-gray-400 border-b-2 border-transparent";
+    const estiloActivo = "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary";
+
+    if(btnTabLogin) btnTabLogin.className = estiloInactivo;
+    if(btnTabRegister) btnTabRegister.className = estiloInactivo;
+
+    // 5. LÓGICA DE ACTIVACIÓN
+    if (mode === 'login') {
+        if(fLogin) fLogin.classList.remove('hidden');
+        if(btnTabLogin) btnTabLogin.className = estiloActivo;
+    } 
+    else if (mode === 'register') {
+        if(fRegister) fRegister.classList.remove('hidden');
+        if(btnTabRegister) btnTabRegister.className = estiloActivo;
+    } 
+    else if (mode === 'recover') {
+        // AQUÍ ESTÁ EL ARREGLO: Mostramos el form de recuperar y dejamos las pestañas apagadas
+        if(fRecover) {
+            fRecover.classList.remove('hidden');
+        } else {
+            console.error("Error: No encuentro el div con id='form-recover' en el HTML");
+            alert("Error del sistema: Falta el formulario de recuperación.");
+        }
     }
+}
+
+async function processRecovery() {
+    // 1. Obtener datos
+    const telInput = document.getElementById('rec-tel');
+    const emailInput = document.getElementById('rec-email');
+    const newPassInput = document.getElementById('rec-new-pass');
+    const btn = document.querySelector('#form-recover button'); // El botón de confirmar
+
+    const tel = telInput.value.trim();
+    const email = emailInput.value.trim();
+    const newPass = newPassInput.value.trim();
+
+    // 2. Validaciones
+    if (!tel || !email || !newPass) {
+        return alert("⚠️ Por favor completa todos los campos para verificar tu identidad.");
+    }
+
+    if (newPass.length < 4) {
+        return alert("⚠️ La contraseña debe tener al menos 4 caracteres.");
+    }
+
+    // Bloquear botón
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Verificando...";
+
+    try {
+        // 3. Buscar usuario que coincida EXACTAMENTE con Teléfono Y Email
+        const { data: usuario, error: searchError } = await supabaseClient
+            .from('gestores')
+            .select('id, nombre')
+            .eq('telefono', tel)
+            .eq('email', email)
+            .maybeSingle(); // Usamos maybeSingle para que no de error si no encuentra nada
+
+        if (searchError) throw searchError;
+
+        if (!usuario) {
+            alert("❌ Datos incorrectos. No encontramos un usuario con ese Teléfono y Email combinados.");
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
+        }
+
+        // 4. Si encontramos al usuario, actualizamos la contraseña
+        const { error: updateError } = await supabaseClient
+            .from('gestores')
+            .update({ password: newPass })
+            .eq('id', usuario.id);
+
+        if (updateError) throw updateError;
+
+        // 5. Éxito
+        alert(`✅ ¡Contraseña restablecida correctamente, ${usuario.nombre}!\nAhora puedes iniciar sesión con tu nueva clave.`);
+        
+        // Limpiar campos
+        telInput.value = "";
+        emailInput.value = "";
+        newPassInput.value = "";
+        
+        // Volver al login
+        toggleLoginMode('login');
+
+    } catch (e) {
+        console.error("Error recuperación:", e);
+        alert("Ocurrió un error de conexión. Inténtalo más tarde.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+}
 
     // REGISTRO DE NUEVO GESTOR
     async function processRegister() {
@@ -6053,15 +6183,7 @@ async function downloadCatalogPDF() {
     // LÓGICA DE ACCESO Y SEGURIDAD (RESTAURADA)
     // ==========================================
 
-    // 1. Alternar entre Login y Registro
-    function toggleLoginMode(mode) {
-        const isLogin = mode === 'login';
-        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
-        document.getElementById('form-register').classList.toggle('hidden', isLogin);
-        
-        document.getElementById('tab-login-btn').className = isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
-        document.getElementById('tab-register-btn').className = !isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
-    }
+
 
     // 2. Proceso de Login
     // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
