@@ -438,12 +438,14 @@ ${textoLimpio.trim()}
         
         processing = true;
         const btn = document.getElementById('btn-nuke');
+        const originalBtnText = btn.innerHTML;
         btn.innerHTML = `<span class="loader"></span> TRABAJANDO...`;
 
         // 1. Filtrar solo los seleccionados
         const targets = allProducts.filter(p => selectedIds.has(p.id));
         
-        // 2. Preparar Texto Resumen
+        // 2. Preparar ZIP y Texto Resumen
+        const zip = new JSZip(); // Iniciamos el ZIP
         let summaryContent = `🚨 *¡OFERTAS DISPONIBLES!* 🚨\n\n`;
         summaryContent += `Selección especial de hoy. Entrega rápida en La Habana. 🚚💨\n\n`;
 
@@ -466,6 +468,11 @@ ${textoLimpio.trim()}
                     generateAdCopy(p)
                 ]);
 
+                // AÑADIR AL ZIP (Truco: quitamos la cabecera data:image/jpeg;base64,)
+                const imgData = imgBase64.split(',')[1];
+                const cleanName = p.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+                zip.file(`${cleanName}.jpg`, imgData, {base64: true});
+
                 // Mostrar en tarjeta
                 const imgEl = document.getElementById(`img-result-${p.id}`);
                 const txtEl = document.getElementById(`text-result-${p.id}`);
@@ -477,7 +484,7 @@ ${textoLimpio.trim()}
                     document.getElementById(`result-${p.id}`).classList.remove('hidden');
                 }
 
-                // Agregar al resumen
+                // Agregar al resumen de texto
                 summaryContent += `✅ *${p.nombre}*\n💰 $${p.precio} USD\n🔗 ${link}\n➖➖➖➖➖\n`;
 
                 if(statusDiv) statusDiv.innerHTML = `<span class="text-xs text-green-500 font-bold">✅ LISTO</span>`;
@@ -488,12 +495,23 @@ ${textoLimpio.trim()}
             await new Promise(r => setTimeout(r, 500)); // Pequeña pausa
         }
 
-        // Finalizar Resumen
+        // Finalizar Resumen Texto
         summaryContent += `\n📲 *Pedir aquí:* https://wa.me/${AGENT_PHONE}`;
         document.getElementById('summary-text-area').value = summaryContent;
         document.getElementById('batch-summary-box').classList.remove('hidden');
 
-        btn.innerHTML = `Generar (${selectedIds.size})`;
+        // --- DESCARGAR ZIP FINAL ---
+        btn.innerHTML = `📦 COMPRIMIENDO ZIP...`;
+        try {
+            const content = await zip.generateAsync({type:"blob"});
+            saveAs(content, `Pack_Ofertas_${new Date().toLocaleDateString().replace(/\//g,'-')}.zip`);
+            alert("✅ ¡Proceso terminado! Las fotos se han descargado en un ZIP.");
+        } catch(e) {
+            console.error("Error ZIP:", e);
+            alert("Error generando el ZIP, pero las imágenes están en pantalla.");
+        }
+
+        btn.innerHTML = originalBtnText; // Restaurar botón
         processing = false;
     }
 
@@ -560,22 +578,34 @@ ${textoLimpio.trim()}
             ctx.drawImage(img, ix, iy, iw, ih);
         } catch(e) {}
 
-        // --- CORRECCIÓN DEL PRECIO AQUÍ ---
+        // --- CORRECCIÓN DEL PRECIO Y VISIBILIDAD ---
         ctx.fillStyle = '#EAB308'; 
         ctx.font = '900 130px Rajdhani';
         
-        // 1. Dibujamos el número
+        // 1. Sombra fuerte para el precio (para que resalte)
+        ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 4;
+
+        // 2. Dibujamos el número
         const precioStr = `$${p.precio}`;
         ctx.fillText(precioStr, w/2, 850);
         
-        // 2. Medimos el ancho REAL del número (mientras la fuente es grande)
+        // 3. Medimos el ancho REAL del número
         const anchoPrecio = ctx.measureText(precioStr).width;
 
-        // 3. Cambiamos a fuente pequeña y dibujamos USD al lado
+        // 4. USD Pequeño con Sombra para que se vea sobre blanco
         ctx.font = '700 40px Rajdhani'; 
         ctx.fillStyle = '#fff';
-        // Fórmula: Centro + Mitad del ancho del precio + un margen de 15px
+        // Fórmula: Centro + Mitad del ancho del precio + un margen
         ctx.fillText("USD", (w/2) + (anchoPrecio / 2) + 20, 850);
+
+        // RESETEAR SOMBRA (Importante para que no afecte al footer)
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
 
         // Footer
         ctx.fillStyle = '#1e40af'; ctx.fillRect(0, 930, w, 150);
