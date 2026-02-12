@@ -5494,32 +5494,61 @@ https://wa.me/${miTelefono}?text=${encodeURIComponent('Hola, me interesa el equi
 
 // --- 1. LÓGICA DE FILTROS Y ORDENAMIENTO ---
 
-function applySort() {
-    const criteria = document.getElementById('sort-selector').value;
-    let sorted = [...productosRaw]; // Copia para no dañar original
+// --- PEGAR ESTO EN index.html (Reemplaza la función applySort antigua) ---
 
+function applySort() {
+    // 1. Obtener el criterio de ordenamiento
+    const selector = document.getElementById('sort-selector');
+    const criteria = selector ? selector.value : 'defecto';
+
+    // 2. Obtener el término de búsqueda actual
+    const searchInput = document.getElementById('search-bar');
+    const query = searchInput ? searchInput.value.toLowerCase() : "";
+
+    // 3. Verificar filtro de "Ganancia Alta" (Modo Tiburón)
+    const filterCheckbox = document.getElementById('filter-high-comm');
+    const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
+
+    // 4. FILTRAR PRIMERO (Crucial: Aplicar las mismas reglas que la carga inicial)
+    let listaProcesada = productosRaw.filter(p => {
+        // A. Coincidencia de texto
+        const matchSearch = p.nombre.toLowerCase().includes(query) || 
+                            (p.categoria && p.categoria.toLowerCase().includes(query));
+        
+        // B. Coincidencia de Categoría (Aquí estaba el error, antes se ignoraba esto)
+        const matchCat = activeCategory === 'TODOS' || 
+                         (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
+        
+        // C. Coincidencia de Ganancia
+        const matchComm = !filterHighComm || (Number(p.comision || 0) > 10);
+
+        // D. Solo productos disponibles
+        return matchSearch && matchCat && matchComm && p.disponible === "SI";
+    });
+
+    // 5. APLICAR ORDENAMIENTO
     switch (criteria) {
         case 'comision_desc':
-            // Ordenar por comisión (mayor a menor)
-            sorted.sort((a, b) => (parseFloat(b.comision) || 0) - (parseFloat(a.comision) || 0));
+            // Mayor Ganancia primero
+            listaProcesada.sort((a, b) => (parseFloat(b.comision) || 0) - (parseFloat(a.comision) || 0));
             break;
         case 'precio_asc':
-            sorted.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio));
-            break;
-        case 'precio_desc':
-            sorted.sort((a, b) => parseFloat(b.precio) - parseFloat(a.precio));
+            // Precio de menor a mayor
+            listaProcesada.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio));
             break;
         case 'nuevo':
-            // Asumimos que ID más alto o fecha 'created_at' es más nuevo
-            sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            // Lo más reciente primero
+            listaProcesada.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
             break;
+        case 'defecto':
         default:
-            // Por defecto (Alfabético o como venga de DB)
-            sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            // Relevancia (Orden Alfabético o por defecto de la base de datos)
+            listaProcesada.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            break;
     }
     
-    // Renderizamos pasando la lista ordenada
-    renderProductsCustom(sorted);
+    // 6. RENDERIZAR LA LISTA FINAL
+    renderProductsCustom(listaProcesada);
 }
 
 function renderProductsCustom(lista) {
