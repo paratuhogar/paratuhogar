@@ -342,47 +342,93 @@
         if(currentRevolicoProduct) generateRevolicoText(currentRevolicoProduct);
     }
 
+    // --- PEGAR ESTO EN shadow-marketer.html (Reemplaza la función generateRevolicoText anterior) ---
     async function generateRevolicoText(p) {
         const apiKey = localStorage.getItem('pth_gemini_api_key');
-        if(!apiKey) return alert("Falta API Key");
+        if(!apiKey) return alert("Falta API Key de Gemini. Refresca e ingrésala.");
 
-        const prompt = `Actúa como un vendedor experto en Revolico (sitio de clasificados en Cuba).
+        const prompt = `Actúa como un vendedor experto en Revolico (Cuba).
         PRODUCTO: "${p.nombre}"
         PRECIO: $${p.precio} USD
-        DESCRIPCIÓN BASE: "${p.descripcion || 'Garantía y Transporte incluído'}"
+        DESCRIPCIÓN: "${p.descripcion || 'Garantía y Transporte incluído'}"
         
-        TAREA: Genera un JSON estricto con dos campos:
-        1. "titulo": Llamativo, corto (max 10 palabras), con emojis al inicio y fin. NO pongas el precio en el título.
-        2. "cuerpo": Descripción de venta persuasiva. Usa listas con emojis (✅, ⚡, 📦). Incluye datos técnicos si los sabes. Menciona que hay Garantía y Transporte.
+        TAREA: Genera un JSON con:
+        1. "titulo": Llamativo, corto, emojis al inicio y fin. SIN PRECIO.
+        2. "cuerpo": Descripción vendedora con listas y emojis.
         
         Responde SOLO el JSON.`;
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            // Usamos 'gemini-pro' que es más robusto para texto o 'gemini-1.5-flash'
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview-latest:generateContent?key=${apiKey}`;
+
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
+
+            if (!response.ok) throw new Error(`Error API: ${response.status}`);
+
             const data = await response.json();
-            const rawText = data.candidates[0].content.parts[0].text;
             
-            // Limpieza JSON
+            // Validación de seguridad para evitar pantalla blanca
+            if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                throw new Error("La IA no devolvió resultados válidos.");
+            }
+
+            const rawText = data.candidates[0].content.parts[0].text;
             const jsonStr = rawText.replace(/```json|```/g, '').trim();
             const result = JSON.parse(jsonStr);
 
             // Rellenar Modal
-            document.getElementById('rev-title-input').value = result.titulo;
-            document.getElementById('rev-body-input').value = result.cuerpo;
+            document.getElementById('rev-title-input').value = result.titulo || p.nombre;
+            document.getElementById('rev-body-input').value = result.cuerpo || p.descripcion;
 
             // Mostrar
             document.getElementById('rev-loader').classList.add('hidden');
             document.getElementById('rev-content').classList.remove('hidden');
 
         } catch(e) {
-            console.error(e);
-            alert("Error IA Revolico: Intenta de nuevo.");
-            closeRevolico();
-        }
+        console.error("Detalle del Error:", e);
+        // alert("⚠️ La IA falló. Se cargaron los datos básicos.\n\nCausa: " + e.message);
+        
+        // --- LIMPIEZA DE HTML (TEXTO DE RESCATE) ---
+        let rawHtml = p.descripcion || "";
+
+        // 1. Convertir saltos de línea y viñetas HTML a texto normal
+        let descFormateada = rawHtml
+            .replace(/<br\s*\/?>/gi, "\n")       // <br> a Salto de línea
+            .replace(/<\/p>/gi, "\n\n")          // Fin de párrafo a Doble Salto
+            .replace(/<\/div>/gi, "\n")          // Fin de div a Salto
+            .replace(/<li>/gi, "• ")             // <li> a viñeta
+            .replace(/<\/li>/gi, "\n")           // Fin de lista a Salto
+            .replace(/&nbsp;/g, " ");            // Espacios raros a espacio normal
+
+        // 2. Eliminar cualquier otra etiqueta HTML sobrante (strip tags)
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = descFormateada;
+        const textoLimpio = tempDiv.textContent || tempDiv.innerText || "";
+
+        // --- LLENAR CAMPOS CON TEXTO LIMPIO ---
+        document.getElementById('rev-title-input').value = `🔥 ${p.nombre} - Nuevo en Caja 📦`;
+        
+        // Cuerpo del anuncio limpio
+        document.getElementById('rev-body-input').value = 
+`✅ ESTADO: Nuevo en caja
+💲 PRECIO: $${p.precio} USD
+
+📝 DETALLES:
+${textoLimpio.trim()}
+
+-----------------------------
+🚚 Transporte Disponible
+📲 Contactar al WhatsApp: +53 ${AGENT_PHONE}`;
+        
+        document.getElementById('rev-loader').classList.add('hidden');
+        document.getElementById('rev-content').classList.remove('hidden');
+    }
     }
 
     // --- 7. GENERACIÓN MASIVA (IMAGEN + POST FB) ---
@@ -454,6 +500,7 @@
     // --- 8. FUNCIONES AUXILIARES (GRÁFICA Y TEXTO) ---
     
     // (Mismo motor gráfico que tenías, adaptado a GitHub)
+    // --- PEGAR ESTO EN shadow-marketer.html (Reemplaza la función generateAdImage anterior) ---
     async function generateAdImage(p) {
         const canvas = document.getElementById('generator-canvas');
         const ctx = canvas.getContext('2d');
@@ -470,7 +517,7 @@
         for(let i=0; i<w; i+=60) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke(); }
         for(let i=0; i<h; i+=60) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(w,i); ctx.stroke(); }
 
-        // Texto
+        // Texto Título
         ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = '800 60px Rajdhani';
         
         // Envolver titulo
@@ -487,23 +534,48 @@
         ctx.fillText(line, w/2, yText);
 
         // Imagen
-        const img = new Image(); img.crossOrigin = "Anonymous"; img.src = fixDriveUrl(p.thumbnail);
+        const img = new Image(); 
+        img.crossOrigin = "Anonymous"; 
+        img.src = fixDriveUrl(p.thumbnail);
+        
         try {
             await new Promise((r, j) => { img.onload = r; img.onerror = j; });
-            const imgAreaY = yText + 50; const imgAreaH = 880 - imgAreaY; 
+            
+            // Ajustar imagen en el centro
+            const imgAreaY = yText + 50; 
+            const imgAreaH = 880 - imgAreaY; 
+            
             const scale = Math.min((w - 100) / img.width, imgAreaH / img.height);
-            const iw = img.width * scale; const ih = img.height * scale;
-            const ix = (w - iw) / 2; const iy = imgAreaY + (imgAreaH - ih) / 2;
+            const iw = img.width * scale; 
+            const ih = img.height * scale;
+            const ix = (w - iw) / 2; 
+            const iy = imgAreaY + (imgAreaH - ih) / 2;
 
-            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.roundRect(ix - 15, iy - 15, iw + 30, ih + 30, 20); ctx.fill();
+            // Marco blanco tipo sticker
+            ctx.fillStyle = 'white'; 
+            ctx.beginPath(); 
+            ctx.roundRect(ix - 15, iy - 15, iw + 30, ih + 30, 20); 
+            ctx.fill();
+            
             ctx.drawImage(img, ix, iy, iw, ih);
         } catch(e) {}
 
-        // Precio
-        ctx.fillStyle = '#EAB308'; ctx.font = '900 130px Rajdhani';
-        ctx.fillText(`$${p.precio}`, w/2, 850);
-        ctx.font = '700 40px Rajdhani'; ctx.fillStyle = '#fff';
-        ctx.fillText("USD", w/2 + (ctx.measureText(`$${p.precio}`).width / 2) + 20, 850);
+        // --- CORRECCIÓN DEL PRECIO AQUÍ ---
+        ctx.fillStyle = '#EAB308'; 
+        ctx.font = '900 130px Rajdhani';
+        
+        // 1. Dibujamos el número
+        const precioStr = `$${p.precio}`;
+        ctx.fillText(precioStr, w/2, 850);
+        
+        // 2. Medimos el ancho REAL del número (mientras la fuente es grande)
+        const anchoPrecio = ctx.measureText(precioStr).width;
+
+        // 3. Cambiamos a fuente pequeña y dibujamos USD al lado
+        ctx.font = '700 40px Rajdhani'; 
+        ctx.fillStyle = '#fff';
+        // Fórmula: Centro + Mitad del ancho del precio + un margen de 15px
+        ctx.fillText("USD", (w/2) + (anchoPrecio / 2) + 20, 850);
 
         // Footer
         ctx.fillStyle = '#1e40af'; ctx.fillRect(0, 930, w, 150);
