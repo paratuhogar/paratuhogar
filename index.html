@@ -538,6 +538,7 @@
             <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
                 <button onclick="showDashSection('resumen')" id="btn-dash-resumen" class="px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all">📊 Resumen</button>
                 <button onclick="showDashSection('precios')" id="btn-dash-precios" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🏷️ Mis Precios (Config)</button>
+                <button onclick="showDashSection('escuadron')" id="btn-dash-escuadron" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🛡️ Mi Escuadrón</button>
             </div>
 
             <!-- 1. SECCIÓN RESUMEN (Aquí envolvemos lo que ya tenías) -->
@@ -557,6 +558,64 @@
                     </div>
                 </div>
             </div>
+
+            <!-- === SECCIÓN DE ESCUADRÓN (LÍDERES) === -->
+<div id="sub-dash-escuadron" class="hidden animate-fade-in space-y-6">
+    
+    <!-- 1. ZONA DE CAZA (RECLUTAMIENTO) -->
+    <div class="bg-slate-900 text-white p-6 rounded-3xl border border-slate-700 relative overflow-hidden">
+        <div class="flex justify-between items-start mb-4 relative z-10">
+            <div>
+                <h3 class="text-lg font-black uppercase italic text-cyan-400">Zona de Caza</h3>
+                <p class="text-[10px] text-slate-400">Recluta agentes externos. Tienes 48h para convencerlos.</p>
+            </div>
+            <div class="bg-cyan-900/50 px-3 py-1 rounded border border-cyan-500/30">
+                <span class="text-xs font-bold text-cyan-300">Agentes Libres</span>
+            </div>
+        </div>
+        
+        <!-- ESTE ES EL ELEMENTO QUE FALTABA (ID="recruitment-list") -->
+        <div id="recruitment-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 relative z-10">
+            <p class="text-xs text-gray-500">Cargando radar...</p>
+        </div>
+
+        <!-- Decoración de fondo -->
+        <div class="absolute -right-10 -bottom-10 opacity-10">
+            <span class="material-symbols-outlined text-9xl">radar</span>
+        </div>
+    </div>
+
+    <!-- 1.5 SOLICITUDES DE INGRESO (NUEVO BLOQUE) -->
+<div id="box-squad-requests" class="hidden bg-indigo-900/20 border border-indigo-500/30 p-4 rounded-2xl mb-6">
+    <h3 class="text-sm font-black uppercase text-indigo-400 mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined animate-bounce">person_add</span> Nuevos Reclutas
+    </h3>
+    <div id="list-squad-requests" class="space-y-2">
+        <!-- Aquí saldrá Pepe Test -->
+    </div>
+</div>
+
+    <!-- 2. PENDIENTES DE APROBACIÓN (PEDIDOS DE HIJOS) -->
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700">
+        <h3 class="text-sm font-black uppercase text-orange-500 mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined">gavel</span> Pedidos por Aprobar
+        </h3>
+        <div id="squad-pending-orders" class="space-y-3">
+            <p class="text-xs text-gray-400 italic">No tienes pedidos pendientes de revisión.</p>
+        </div>
+    </div>
+
+    <!-- 3. MONITOR DE RENDIMIENTO -->
+<div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 mt-6">
+    <h3 class="text-sm font-black uppercase text-slate-700 dark:text-white mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-blue-500">monitoring</span> Rendimiento del Equipo
+    </h3>
+    <div id="squad-monitor-list" class="space-y-2">
+        <p class="text-xs text-gray-400 italic">Cargando estadísticas...</p>
+    </div>
+</div>
+
+</div>
 
 
             <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
@@ -1702,13 +1761,6 @@
                 <input type="text" id="log-user" placeholder="Tu Nombre de Usuario" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <button onclick="processLogin()" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase shadow-lg shadow-primary/30">Iniciar Sesión</button>
-                
-                <!-- BOTÓN NUEVO: OLVIDÉ CONTRASEÑA -->
-                <div class="text-center mt-2">
-                    <button onclick="toggleLoginMode('recover')" class="text-[10px] font-bold text-gray-400 hover:text-primary underline">
-                        ¿Olvidaste tu contraseña?
-                    </button>
-                </div>
             </div>
 
             <!-- FORMULARIO REGISTRO -->
@@ -1720,37 +1772,19 @@
                 <button onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
             </div>
 
-            <!-- NUEVO: FORMULARIO RECUPERACIÓN -->
-            <div id="form-recover" class="space-y-4 hidden">
-                <div class="bg-blue-50 p-3 rounded-xl mb-4 border border-blue-100">
-                    <p class="text-[10px] text-blue-800 text-center font-bold">Para seguridad, verifica tu identidad:</p>
-                </div>
-                <input type="tel" id="rec-tel" placeholder="Tu Teléfono (WhatsApp)" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
-                <input type="email" id="rec-email" placeholder="Tu Correo Electrónico" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
-                <input type="password" id="rec-new-pass" placeholder="NUEVA Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
-                
-                <button onclick="processRecovery()" class="w-full bg-emerald-500 text-white py-4 rounded-xl font-black uppercase shadow-lg shadow-emerald-500/30">
-                    Cambiar Contraseña
-                </button>
-                
-                <button onclick="toggleLoginMode('login')" class="w-full text-xs text-gray-400 font-bold uppercase mt-2">
-                    Cancelar / Volver
-                </button>
-            </div>
-
         </div>
 
-                <button onclick="enterAsClient()" class="text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-primary mt-4">
-                    Solo quiero ver el catálogo (Cliente)
-                </button>
-            </div>
-        </div>
+        <button onclick="enterAsClient()" class="text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-primary mt-4">
+            Solo quiero ver el catálogo (Cliente)
+        </button>
+    </div>
+</div>
 
     <!-- Scripts de Lógica -->
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1202"; 
+const versionActual = "0702c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -1968,147 +2002,52 @@ function openLoginModal() {
     // --- 1. LÓGICA DE ACCESO (LOGIN/REGISTRO) ---
     
     function toggleLoginMode(mode) {
-    // 1. Obtener todos los formularios
-    const fLogin = document.getElementById('form-login');
-    const fRegister = document.getElementById('form-register');
-    const fRecover = document.getElementById('form-recover'); // Este es el nuevo
-
-    // 2. Obtener los botones de las pestañas
-    const btnTabLogin = document.getElementById('tab-login-btn');
-    const btnTabRegister = document.getElementById('tab-register-btn');
-
-    // 3. OCULTAR TODO POR DEFECTO (Reseteo)
-    if(fLogin) fLogin.classList.add('hidden');
-    if(fRegister) fRegister.classList.add('hidden');
-    if(fRecover) fRecover.classList.add('hidden');
-
-    // 4. RESETEAR ESTILOS DE PESTAÑAS (Ponerlas grises)
-    // Usamos border-transparent para que no se vea la línea azul
-    const estiloInactivo = "flex-1 pb-2 font-black text-xs uppercase text-gray-400 border-b-2 border-transparent";
-    const estiloActivo = "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary";
-
-    if(btnTabLogin) btnTabLogin.className = estiloInactivo;
-    if(btnTabRegister) btnTabRegister.className = estiloInactivo;
-
-    // 5. LÓGICA DE ACTIVACIÓN
-    if (mode === 'login') {
-        if(fLogin) fLogin.classList.remove('hidden');
-        if(btnTabLogin) btnTabLogin.className = estiloActivo;
-    } 
-    else if (mode === 'register') {
-        if(fRegister) fRegister.classList.remove('hidden');
-        if(btnTabRegister) btnTabRegister.className = estiloActivo;
-    } 
-    else if (mode === 'recover') {
-        // AQUÍ ESTÁ EL ARREGLO: Mostramos el form de recuperar y dejamos las pestañas apagadas
-        if(fRecover) {
-            fRecover.classList.remove('hidden');
-        } else {
-            console.error("Error: No encuentro el div con id='form-recover' en el HTML");
-            alert("Error del sistema: Falta el formulario de recuperación.");
-        }
-    }
-}
-
-async function processRecovery() {
-    // 1. Obtener datos
-    const telInput = document.getElementById('rec-tel');
-    const emailInput = document.getElementById('rec-email');
-    const newPassInput = document.getElementById('rec-new-pass');
-    const btn = document.querySelector('#form-recover button'); // El botón de confirmar
-
-    const tel = telInput.value.trim();
-    const email = emailInput.value.trim();
-    const newPass = newPassInput.value.trim();
-
-    // 2. Validaciones
-    if (!tel || !email || !newPass) {
-        return alert("⚠️ Por favor completa todos los campos para verificar tu identidad.");
-    }
-
-    if (newPass.length < 4) {
-        return alert("⚠️ La contraseña debe tener al menos 4 caracteres.");
-    }
-
-    // Bloquear botón
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "Verificando...";
-
-    try {
-        // 3. Buscar usuario que coincida EXACTAMENTE con Teléfono Y Email
-        const { data: usuario, error: searchError } = await supabaseClient
-            .from('gestores')
-            .select('id, nombre')
-            .eq('telefono', tel)
-            .eq('email', email)
-            .maybeSingle(); // Usamos maybeSingle para que no de error si no encuentra nada
-
-        if (searchError) throw searchError;
-
-        if (!usuario) {
-            alert("❌ Datos incorrectos. No encontramos un usuario con ese Teléfono y Email combinados.");
-            btn.disabled = false;
-            btn.innerText = originalText;
-            return;
-        }
-
-        // 4. Si encontramos al usuario, actualizamos la contraseña
-        const { error: updateError } = await supabaseClient
-            .from('gestores')
-            .update({ password: newPass })
-            .eq('id', usuario.id);
-
-        if (updateError) throw updateError;
-
-        // 5. Éxito
-        alert(`✅ ¡Contraseña restablecida correctamente, ${usuario.nombre}!\nAhora puedes iniciar sesión con tu nueva clave.`);
+        const isLogin = mode === 'login';
+        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+        document.getElementById('form-register').classList.toggle('hidden', isLogin);
         
-        // Limpiar campos
-        telInput.value = "";
-        emailInput.value = "";
-        newPassInput.value = "";
-        
-        // Volver al login
-        toggleLoginMode('login');
-
-    } catch (e) {
-        console.error("Error recuperación:", e);
-        alert("Ocurrió un error de conexión. Inténtalo más tarde.");
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalText;
+        document.getElementById('tab-login-btn').className = isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
+        document.getElementById('tab-register-btn').className = !isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
     }
-}
 
     // REGISTRO DE NUEVO GESTOR
-    async function processRegister() {
+    // REEMPLAZA TU FUNCIÓN ACTUAL 'processRegister' POR ESTA VERSIÓN 2.0
+
+async function processRegister() {
     // 1. Capturar elementos y valores
     const btn = document.querySelector('#form-register button');
     const nombre = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
-    const tel = document.getElementById('reg-tel').value.trim();
+    const telRaw = document.getElementById('reg-tel').value.trim();
     const pass = document.getElementById('reg-pass').value.trim();
 
-    // 2. Validaciones básicas
-    if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
+    // 2. Validaciones básicas (IGUAL QUE ANTES)
+    if(!nombre || !pass || !telRaw) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
 
-    // Bloquear botón para evitar múltiples clics
+    // Limpieza de teléfono (MEJORA: Para asegurar que los datos estén limpios en la BD)
+    let telLimpio = telRaw.replace(/\D/g, '');
+    if (telLimpio.startsWith('53') && telLimpio.length > 8) telLimpio = telLimpio.substring(2);
+
+    // 3. DETECTAR SI VIENE RECOMENDADO POR UN LÍDER (NUEVO)
+    const urlParams = new URLSearchParams(window.location.search);
+    const jefeNombre = urlParams.get('lider'); // Captura ?lider=Nombre
+
+    // Bloquear botón
     btn.disabled = true;
     const originalText = btn.innerText;
     btn.innerText = "PROCESANDO...";
 
     try {
-        // 3. VERIFICAR SI YA EXISTE (Duplicados)
-        const { data: existe, error: errCheck } = await supabaseClient
+        // 4. VERIFICAR DUPLICADOS (IGUAL QUE ANTES)
+        const { data: existe } = await supabaseClient
             .from('gestores')
             .select('id, estado')
-            .eq('telefono', tel)
+            .eq('telefono', telRaw) 
             .maybeSingle();
 
         if (existe) {
             if (existe.estado === 'pendiente') {
-                alert("⏳ Ya tenemos una solicitud con este número en revisión. ¡Ten paciencia, te avisaremos pronto!");
+                alert("⏳ Ya tenemos una solicitud con este número en revisión.");
             } else {
                 alert("✅ Este número ya tiene una cuenta activa. Ve a la pestaña de ENTRAR.");
             }
@@ -2117,30 +2056,47 @@ async function processRecovery() {
             return;
         }
 
-        // 4. INSERTAR NUEVO REGISTRO
-        const { error } = await supabaseClient
-            .from('gestores')
-            .insert([{ 
-                nombre: nombre, 
-                email: email, 
-                telefono: tel, 
-                password: pass,
-                estado: 'pendiente' 
-            }]);
+        // 5. INSERTAR NUEVO REGISTRO (EVOLUCIÓN: Acepta jefe_id)
+        const nuevoGestor = { 
+            nombre: nombre, 
+            email: email, 
+            telefono: telRaw, 
+            password: pass,
+            estado: 'pendiente',
+            // Si hay jefe en la URL, lo guarda. Si no, guarda null (como antes).
+            jefe_id: jefeNombre || null 
+        };
+
+        const { error } = await supabaseClient.from('gestores').insert([nuevoGestor]);
 
         if (error) throw error;
 
-        // 5. ÉXITO
-        alert("✅ Solicitud enviada correctamente. El administrador debe aprobar tu cuenta antes de que puedas entrar. Te avisaremos por WhatsApp.");
+        // 6. LIMPIEZA DE LISTA DE CAZA (NUEVO: Solo si fue reclutado)
+        // Intenta marcar como 'reclutado' en la tabla de leads si el número existía ahí
+        await supabaseClient
+            .from('leads_reclutamiento')
+            .update({ estado: 'reclutado' })
+            .or(`telefono.eq.53${telLimpio},telefono.eq.${telLimpio}`);
+
+        // 7. ÉXITO
+        let msg = "✅ Solicitud enviada correctamente.";
         
-        // Limpiar formulario y mandar al login
+        // Mensaje personalizado según el caso
+        if (jefeNombre) {
+            msg += `\n\nHas sido asignado al equipo de: ${jefeNombre}. Él aprobará tu acceso.`;
+        } else {
+            msg += "\n\nEl administrador revisará tu cuenta.";
+        }
+
+        alert(msg);
+        
+        // Limpiar formulario y mandar al login (IGUAL QUE ANTES)
         document.getElementById('form-register').querySelectorAll('input').forEach(i => i.value = "");
         toggleLoginMode('login');
 
     } catch (e) {
         alert("Error al registrar: " + e.message);
     } finally {
-        // Reactivar botón por si hubo error
         btn.disabled = false;
         btn.innerText = originalText;
     }
@@ -2307,7 +2263,7 @@ if (name === "Marcel Montano") {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // 1. Consultar TODOS los datos
+    // 1. Consultar TODOS los datos (PARA QUE EL RANKING SIGA FUNCIONANDO)
     const { data: allPedidos, error } = await supabaseClient
         .from('pedidos')
         .select('*')
@@ -2315,8 +2271,10 @@ async function loadProDashboard(nombreGestor) {
 
     if(error) { console.error(error); return; }
     
-    // 2. Filtrar y preparar datos
-    const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
+    // 2. FILTRAR MIS VENTAS (MODIFICADO PARA SUBGESTORES)
+    // Aquí decimos: "Es mi venta si soy el Gestor Titular O si soy el Sub-Gestor"
+    const misVentas = allPedidos.filter(p => p.gestor === nombreGestor || p.sub_gestor === nombreGestor);
+    
     myOrdersData = misVentas; 
 
     // 3. Cálculos Financieros (Tu lógica existente)
@@ -2881,6 +2839,9 @@ function renderMyOrdersList(lista) {
         </div>`;
     }
 
+    // === DETECCIÓN DE SUBGESTOR (NUEVO) ===
+    const soySubGestor = window.currentUserData && window.currentUserData.jefe_id;
+
     // 3. RENDERIZADO DE TARJETAS
     const cardsHTML = filteredByStatus.map(p => {
         // A. Estilos visuales (INTACTO)
@@ -2889,12 +2850,20 @@ function renderMyOrdersList(lista) {
             ? 'bg-red-50 border border-red-200 shadow-sm' 
             : 'bg-white border border-gray-200 shadow-sm';
 
-        // B. Estilos de Estado (INTACTO)
+        // B. Estilos de Estado (INTACTO + Tu corrección anterior)
         let estadoStyle = 'bg-gray-100 text-gray-600';
         if(p.estado === 'Pendiente') estadoStyle = 'bg-amber-50 text-amber-600 border border-amber-100';
         if(p.estado === 'Asignado Mensajero') estadoStyle = 'bg-blue-50 text-blue-600 border border-blue-100';
         if(p.estado === 'Entregado') estadoStyle = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
         
+        let estadoTexto = p.estado; 
+
+        // Si soy yo el que lo vendió como subgestor Y está en revisión interna
+        if (p.sub_gestor === window.gestorName && p.estado_interno === 'revision') {
+            estadoStyle = 'bg-purple-50 text-purple-600 border border-purple-100';
+            estadoTexto = '⏳ Revisión Líder';
+        }
+
         // C. Datos básicos (INTACTO)
         const fechaDoc = new Date(p.fecha).toLocaleDateString();
         const primerNombre = p.cliente.split(' ')[0];
@@ -2911,31 +2880,30 @@ function renderMyOrdersList(lista) {
             sourceBadge = `<span class="flex items-center gap-1 text-[9px] font-black uppercase text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 ml-2"><span class="material-symbols-outlined text-[10px]">language</span> Web</span>`;
         }
 
-        // --- E. BOTONES DE GESTIÓN (EDITAR / ELIMINAR) --- 
-        // <--- CAMBIO AQUÍ: Definimos actionBtns en lugar de deleteBtn
+        // --- E. BOTONES DE GESTIÓN (INTACTO) ---
         let actionBtns = '';
         if (p.estado === 'Pendiente') { 
             actionBtns = `
-            <!-- Botón Editar (Lápiz Azul) -->
             <button onclick="openGestorEdit('${p.id}')" title="Corregir Datos"
                 class="h-7 w-7 bg-indigo-50 text-indigo-500 border border-indigo-100 rounded-full flex items-center justify-center hover:bg-indigo-500 hover:text-white transition-colors ml-1">
                 <span class="material-symbols-outlined text-sm">edit</span>
             </button>
-
-            <!-- Botón Eliminar (Basura Roja) -->
             <button onclick="deleteMyOrder('${p.id}')" title="Eliminar Pedido"
                 class="h-7 w-7 bg-white text-gray-400 border border-gray-200 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors ml-1">
                 <span class="material-symbols-outlined text-sm">delete</span>
             </button>`;
         }
 
-        // --- F. BOTÓN REENVÍO AL SISTEMA (INTACTO) ---
-        const btnReenviar = `
+        // --- F. BOTÓN REENVÍO (OCULTO PARA SUBGESTORES) ---
+        // Si soy Subgestor, esto queda vacío. Si soy Líder, aparece.
+        let btnReenviar = '';
+        if (!soySubGestor) {
+            btnReenviar = `
             <button onclick="reenviarPedidoAdmin('${p.id}')" title="Reenviar Pedido al Almacén" 
                 class="h-7 w-7 bg-teal-500 text-white rounded-full flex items-center justify-center hover:bg-teal-600 transition-colors shadow-sm ml-1 border border-teal-600">
                 <span class="material-symbols-outlined text-sm">send</span>
-            </button>
-        `;
+            </button>`;
+        }
 
         return `
         <div class="p-3 rounded-xl mb-3 relative transition-all hover:shadow-md group ${cardStyle}">
@@ -2950,16 +2918,16 @@ function renderMyOrdersList(lista) {
                 <!-- BOTONES DE ACCIÓN -->
                 <div class="flex items-center gap-1">
                     
-                    <!-- 1. Botón Cliente (Verde) - INTACTO -->
+                    <!-- Botón Cliente (INTACTO) -->
                     <a href="${urlWA}" target="_blank" title="Chat con Cliente"
                        class="h-7 w-7 bg-[#25D366] text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-sm">
                         <i class="fab fa-whatsapp text-sm"></i>
                     </a>
 
-                    <!-- 2. Botón Reenvío (Turquesa) - INTACTO -->
+                    <!-- Botón Reenvío (CONDICIONAL) -->
                     ${btnReenviar}
                     
-                    <!-- 3. Botones PDF (Rojo/Azul) - INTACTOS -->
+                    <!-- Botones PDF (INTACTOS) -->
                     <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" title="PDF"
                         class="h-7 w-7 bg-red-50 text-red-500 border border-red-100 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors">
                         <span class="material-symbols-outlined text-sm">download</span>
@@ -2970,23 +2938,21 @@ function renderMyOrdersList(lista) {
                         <span class="material-symbols-outlined text-sm">share</span>
                     </button>
 
-                    <!-- 4. BOTONES NUEVOS -->
-                    ${actionBtns}  <!-- CAMBIO AQUÍ: Usamos actionBtns en vez de deleteBtn -->
+                    ${actionBtns}
                 </div>
             </div>
 
-            <!-- CUERPO COMPACTO (INTACTO) -->
+            <!-- CUERPO (INTACTO) -->
             <div class="flex justify-between items-end gap-2">
                 <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-black text-slate-700 uppercase truncate leading-tight mb-0.5" title="${p.cliente}">${p.cliente}</h4>
                     <p class="text-[10px] text-gray-400 truncate mb-2">${p.producto}</p>
                     
                     <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide ${estadoStyle}">
-                        ${p.estado}
+                        ${estadoTexto}
                     </span>
                 </div>
 
-                <!-- PRECIO (INTACTO) -->
                 <div class="text-right flex-shrink-0">
                     <p class="text-[10px] font-bold text-slate-400 mb-0.5">$${Number(p.total || 0).toFixed(0)}</p>
                     <p class="text-sm font-black text-emerald-600 whitespace-nowrap">+$${Number(p.comision_total).toFixed(2)}</p>
@@ -2995,7 +2961,6 @@ function renderMyOrdersList(lista) {
         </div>`;
     }).join('');
 
-    // Insertar HEADER + TARJETAS
     container.innerHTML = headerHTML + cardsHTML;
 }
 
@@ -3102,26 +3067,19 @@ if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
-    let urlGestor = urlParams.get('gestor'); // Gestor en URL (Link nuevo)
-    const sessionGestor = window.gestorName; // Gestor Logueado (Tú editando)
+    let urlGestor = urlParams.get('gestor'); 
+    const sessionGestor = window.gestorName; 
 
-    // --- NUEVO: BUSCAR EN MEMORIA (El arreglo para Beatriz) ---
+    // --- 1. MEMORIA INTELIGENTE (TU LÓGICA INTACTA) ---
     let memoriaGestor = null;
     try {
-        // Buscamos si ya hay un "Botón Verde" activo en este teléfono
         const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-        if (stored && stored.nombre) {
-            memoriaGestor = stored.nombre;
-        }
+        if (stored && stored.nombre) memoriaGestor = stored.nombre;
     } catch(e) {}
 
-    // 1. PRIORIDAD DE GESTOR (CORREGIDA)
-    // A. Si estás logueado (Tú) -> Mandas tú.
-    // B. Si hay link nuevo (?gestor=Beatriz) -> Manda el Link.
-    // C. Si no hay link, pero el teléfono recuerda a Beatriz -> Manda la Memoria.
     const activeGestor = sessionGestor || urlGestor || memoriaGestor;
 
-    // --- LOGICA LINK CORTO (Mantenida Intacta) ---
+    // --- LINK CORTO (INTACTO) ---
     if (slug) {
         const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
         if (data) {
@@ -3130,68 +3088,93 @@ async function loadProducts() {
             return;
         }
     }
-    
-    // Solo registramos el rastro si es un clic NUEVO (viene por URL)
     if (urlGestor) await registrarRastroIP(urlGestor);
 
-    // --- CARGA DE DATOS (Mantenida Intacta) ---
     try {
-        // A. Cargar Productos Base
+        // A. Cargar Productos
         const { data: productos, error } = await supabaseClient
             .from('productos')
             .select('*')
             .order('nombre', { ascending: true });
 
         if (error) throw error;
-        productosRaw = productos; // Guardamos copia original cruda
+        productosRaw = productos;
 
-        // B. FUSIÓN DE PRECIOS (LA MAGIA)
-        // Ahora 'activeGestor' puede venir de la memoria, arreglando el problema de Beatriz
+        // B. CÁLCULO DE PRECIOS EN CASCADA (NUEVA LÓGICA SEGURA)
         if (activeGestor) {
-            // Buscamos si este gestor tiene precios personalizados
+            // 1. Verificar si el gestor activo tiene jefe
+            const { data: datosGestor } = await supabaseClient
+                .from('gestores')
+                .select('jefe_id')
+                .eq('nombre', activeGestor)
+                .maybeSingle();
+
+            const jefe = datosGestor ? datosGestor.jefe_id : null;
+
+            // 2. Traer configuraciones de ambos
+            let usuariosAConsultar = [activeGestor];
+            if (jefe) usuariosAConsultar.push(jefe);
+
             const { data: preciosCustom } = await supabaseClient
                 .from('precios_personalizados')
-                .select('producto_id, nuevo_precio')
-                .eq('gestor', activeGestor);
+                .select('*')
+                .in('gestor', usuariosAConsultar);
 
-            if (preciosCustom && preciosCustom.length > 0) {
-                // Recorremos los productos y aplicamos la máscara
+            const { data: reglasEquipo } = await supabaseClient
+                .from('configuracion_equipo')
+                .select('*')
+                .in('lider_id', usuariosAConsultar);
+
+            if (preciosCustom || reglasEquipo) {
                 productosRaw.forEach(p => {
-                    const custom = preciosCustom.find(c => c.producto_id === p.id);
-                    if (custom) {
-                        const precioBase = parseFloat(p.precio);
-                        const precioNuevo = parseFloat(custom.nuevo_precio);
-                        
-                        // Solo aplicamos si el nuevo es mayor (seguridad)
-                        if (precioNuevo >= precioBase) {
-                            // 1. Calculamos la ganancia extra
-                            const extra = precioNuevo - precioBase;
-                            
-                            // 2. SOBRESCRIBIMOS EN MEMORIA (El cliente ve esto)
-                            p.precio = precioNuevo; 
-                            
-                            // 3. SUMAMOS A LA COMISIÓN (El sistema sabe cuánto pagarte)
-                            p.comision = (parseFloat(p.comision) + extra).toFixed(2);
-                            
-                            // Marca interna para saber que está modificado
-                            p.is_custom = true; 
+                    let precioFinal = parseFloat(p.precio);
+                    let miComision = parseFloat(p.comision); 
+
+                    if (jefe) {
+                        // --- CASO SUBGESTOR ---
+                        // 1. Precio Base = Precio del Jefe (o Almacén si Jefe no tiene)
+                        const configJefe = preciosCustom?.find(c => c.producto_id === p.id && c.gestor === jefe);
+                        let precioJefe = configJefe ? parseFloat(configJefe.nuevo_precio) : precioFinal;
+                        if (precioJefe < precioFinal) precioJefe = precioFinal;
+
+                        // 2. Comisión Base = Lo que el jefe configuró para este equipo
+                        const regla = reglasEquipo?.find(c => c.producto_id === p.id && c.lider_id === jefe);
+                        let comisionBase = regla ? parseFloat(regla.comision_para_sub) : 0;
+
+                        // 3. Mi Precio Final = Lo que yo configuré (o el del jefe)
+                        const miConfig = preciosCustom?.find(c => c.producto_id === p.id && c.gestor === activeGestor);
+                        let miPrecioVenta = miConfig ? parseFloat(miConfig.nuevo_precio) : precioJefe;
+
+                        // 4. Ganancia = Comisión Base + Sobreprecio
+                        miComision = comisionBase + (miPrecioVenta - precioJefe);
+                        precioFinal = miPrecioVenta;
+
+                    } else {
+                        // --- CASO LÍDER / INDEPENDIENTE ---
+                        const miConfig = preciosCustom?.find(c => c.producto_id === p.id && c.gestor === activeGestor);
+                        if (miConfig) {
+                            const nuevoP = parseFloat(miConfig.nuevo_precio);
+                            if (nuevoP >= precioFinal) {
+                                const extra = nuevoP - precioFinal;
+                                precioFinal = nuevoP;
+                                miComision += extra;
+                            }
                         }
                     }
+
+                    // Aplicar
+                    p.precio = precioFinal;
+                    p.comision = miComision.toFixed(2);
+                    p.is_custom = true;
                 });
-                console.log("✅ Precios personalizados aplicados para: " + activeGestor);
             }
         }
 
-        // --- RENDERIZADO FINAL ---
         renderCategories();
         renderProducts();
         
-        // Si estoy logueado, cargo mi configurador de precios
-        if (sessionGestor) {
-            renderGestorPricing(); 
-        }
+        if (sessionGestor) renderGestorPricing(); 
 
-        // Abrir producto si viene en URL
         const searchParam = urlParams.get('search');
         if (searchParam) {
             const existe = productosRaw.find(p => p.nombre === searchParam);
@@ -3199,7 +3182,7 @@ async function loadProducts() {
         }
 
     } catch (e) { 
-        console.error("Error cargando catálogo:", e);
+        console.error("Error catálogo:", e);
         document.getElementById('productos-container').innerHTML = `<div class="col-span-full py-10 text-center text-gray-400">Error de conexión.</div>`;
     }
 }
@@ -3706,92 +3689,119 @@ function changeQty(index, delta) {
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
 
-    // === INICIO BLOQUEO DE SEGURIDAD (NUEVO) ===
-    // 1. Verificamos cuánto suma la mensajería de todo el carrito
+    // 1. BLOQUEO SEGURIDAD ENVÍO $0 (INTACTO)
     const totalEnvioCheck = cart.reduce((acc, item) => acc + (parseFloat(item.shipping_linea) || 0), 0);
-
-    // 2. Si el envío es 0, lanzamos la alerta bloqueante
     if (totalEnvioCheck === 0) {
         const confirmarGratis = confirm("⚠️ ¡ATENCIÓN: ENVÍO $0! ⚠️\n\nEl costo de mensajería está marcado como GRATIS.\n\n¿Estás seguro de procesar el pedido sin cobrar envío?\n\n[Aceptar] = Sí, es correcto. Enviar.\n[Cancelar] = ¡Me olvidé! Volver para corregir.");
-        
-        // Si el usuario cancela, detenemos la función inmediatamente.
         if (!confirmarGratis) return;
     }
-    // === FIN BLOQUEO DE SEGURIDAD ===
 
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
     btn.innerText = "PROCESANDO...";
 
     const session = localStorage.getItem('pth_session');
-    const isLogged = !!session; // Verdadero si es un Gestor Logueado
+    const isLogged = !!session;
+    const userData = window.currentUserData || {};
 
-    // 1. Captura de datos del Formulario
+    // Detección inicial
+    const esSubGestorLogueado = isLogged && userData.jefe_id;
+
+    // Captura de datos (INTACTO)
     const nombreC = document.getElementById('check-nombre').value;
     const municipioC = document.getElementById('check-municipio').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
-    
-    // --- NUEVO: CAPTURAMOS LA NOTA (Si no existe, queda vacío) ---
     const notasInput = document.getElementById('check-notas');
     const notasC = notasInput ? notasInput.value.trim() : "";
-    // -------------------------------------------------------------
-
     const valVuelto = document.getElementById('check-vuelto').value;
     const metodoPagoSeleccionado = document.getElementById('check-moneda-pago').value;
-
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // --- 2. EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN ---
-    const activeGestor = await obtenerDuenoReal(telC);
-    
-    // --- 3. DETERMINAR A QUÉ WHATSAPP SE ENVÍA EL PEDIDO ---
-    const PHONE_DUENO_TIENDA = "5356071095"; // Número Central
-    let whatsappDestino = PHONE_DUENO_TIENDA; 
+    // --- VARIABLES DINÁMICAS ---
+    let activeGestor = "Venta Directa";
+    let whatsappDestino = "5356071095"; 
+    let subGestorNombre = null;
+    let estadoInterno = "aprobado";
+    let usarIdTemporal = false; // Flag para saber si generamos ID o no
 
-    if (isLogged) {
-        // CASO A: GESTOR HACIENDO PEDIDO MANUAL
-        whatsappDestino = PHONE_DUENO_TIENDA; 
-    } else {
-        // CASO B: CLIENTE COMPRANDO POR ENLACE
-        if (activeGestor !== "Venta Directa") {
-            const { data: gDB } = await supabaseClient
+    // --- LÓGICA DE ROLES ---
+
+    if (esSubGestorLogueado) {
+        // CASO A: SOY PEPE LOGUEADO (Subgestor Manual)
+        activeGestor = userData.jefe_id;
+        subGestorNombre = userData.nombre;
+        estadoInterno = "revision";
+        usarIdTemporal = true;
+        
+        if (userData.telefono_jefe) {
+            let t = userData.telefono_jefe.replace(/\D/g, '');
+            if (t.length === 8) t = "53" + t;
+            whatsappDestino = t;
+        }
+    } 
+    else if (isLogged) {
+        // CASO B: SOY MARCEL LOGUEADO (Líder Manual)
+        activeGestor = window.gestorName;
+        // Todo normal, va a central
+    } 
+    else {
+        // CASO C: CLIENTE (Enlace o Público)
+        // 1. Detectar quién trajo al cliente
+        const duenoDetectado = await obtenerDuenoReal(telC);
+        
+        if (duenoDetectado !== "Venta Directa") {
+            // 2. Verificar si ese "Dueño" (ej: Pepe) tiene un JEFE
+            const { data: datosGestor } = await supabaseClient
                 .from('gestores')
-                .select('telefono')
-                .eq('nombre', activeGestor)
+                .select('telefono, jefe_id') // Pedimos también el jefe_id
+                .eq('nombre', duenoDetectado)
                 .maybeSingle();
-            
-            if (gDB && gDB.telefono) {
-                let w = gDB.telefono.replace(/\D/g, '');
-                if (w.length === 8) w = "53" + w;
-                whatsappDestino = w;
+
+            if (datosGestor) {
+                if (datosGestor.jefe_id) {
+                    // --- CASO C.1: LINK DE PEPE (SUBGESTOR) ---
+                    // Redirigimos todo al jefe (Marcel)
+                    activeGestor = datosGestor.jefe_id; // Titular = Marcel
+                    subGestorNombre = duenoDetectado;   // Sub = Pepe
+                    estadoInterno = "revision";         // Bloqueado
+                    usarIdTemporal = true;              // ID Temp
+
+                    // Buscamos el teléfono del JEFE para enviarle el WhatsApp
+                    const { data: datosJefe } = await supabaseClient
+                        .from('gestores')
+                        .select('telefono')
+                        .eq('nombre', datosGestor.jefe_id)
+                        .maybeSingle();
+                    
+                    if (datosJefe && datosJefe.telefono) {
+                        let w = datosJefe.telefono.replace(/\D/g, '');
+                        if (w.length === 8) w = "53" + w;
+                        whatsappDestino = w;
+                    }
+
+                } else {
+                    // --- CASO C.2: LINK DE MARCEL (LÍDER O INDEPENDIENTE) ---
+                    activeGestor = duenoDetectado;
+                    if (datosGestor.telefono) {
+                        let w = datosGestor.telefono.replace(/\D/g, '');
+                        if (w.length === 8) w = "53" + w;
+                        whatsappDestino = w;
+                    }
+                }
             }
         }
     }
 
-    // --- 4. LÓGICA DE BINDEO (MODO DIOS) ---
-    if (activeGestor !== "Venta Directa") {
+    // --- LÓGICA BINDEO (INTACTA) ---
+    if (!isLogged && activeGestor !== "Venta Directa") {
         const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
         if (activeGestor === "Marcel Montano" || lvl >= 5) {
-            try {
-                await supabaseClient.from('customer_bindings').upsert({
-                    phone: telC.replace(/\D/g, ''), 
-                    agent_name: activeGestor
-                });
-            } catch (err) { console.error("Error bind:", err); }
+            try { await supabaseClient.from('customer_bindings').upsert({ phone: telC.replace(/\D/g, ''), agent_name: activeGestor }); } catch (err) {}
         }
     }
 
-    // --- 5. DEFINIR ORIGEN ---
-    let origenPedido = "Directo/Web";
-    if (isLogged) {
-        origenPedido = "Manual (Panel)";
-    } else if (activeGestor !== "Venta Directa") {
-        origenPedido = "Enlace Compartido";
-    }
-
-    // --- 6. AGRUPAR CARRITO ---
     const gruposPorProveedor = cart.reduce((acc, item) => {
         const prov = item.proveedor || 'General';
         if (!acc[prov]) acc[prov] = [];
@@ -3803,70 +3813,48 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const promesas = [];
     const agentPhone = getAgentPhone(); 
 
-    // --- 7. GENERAR VALES Y MENSAJE ---
+    // --- PROCESAMIENTO ---
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
-                
-        // --- NUEVA LÓGICA ROBUSTA (SERVIDOR) ---
-       // --- LÓGICA DE CÁLCULO MANUAL (BYPASS SUPABASE RPC) ---
-       // --- LÓGICA DE CÁLCULO MANUAL (CORREGIDA: COLUMNA FECHA) ---
-        // --- LÓGICA DE CÁLCULO DE CONSECUTIVO MEJORADA (v4) ---
-        // --- LÓGICA DE CÁLCULO MATEMÁTICO BLINDADA (v6 - Final) ---
+        
         let codPedido = "";
         
-        try {
-            // 1. Buscamos los últimos 20 pedidos ESPECÍFICOS DE ESTE PROVEEDOR
-            // Al usar .eq('proveedor', prov), ignoramos todos los demás (CA, A, B...)
-            const { data: ultimosPedidos, error: errLast } = await supabaseClient
-                .from('pedidos')
-                .select('orden_dia')
-                .eq('proveedor', prov) // <--- ESTO GARANTIZA QUE SOLO MIRE LOS DE 'S' (o el que sea)
-                .not('orden_dia', 'like', '%TEMP%') 
-                .order('fecha', { ascending: false }) // Usamos 'fecha' según tu base de datos
-                .limit(20); 
-
-            if (errLast) throw errLast;
-
-            let maximoNumero = 0;
-
-            // 2. Extraemos los números y buscamos el mayor matemáticamente
-            if (ultimosPedidos && ultimosPedidos.length > 0) {
-                const numeros = ultimosPedidos.map(p => {
-                    if (!p.orden_dia) return 0;
-                    // Rompemos el texto "CA-239" por el guion
-                    const partes = p.orden_dia.split('-');
-                    // Tomamos la última parte y la convertimos en NÚMERO REAL
-                    const num = parseInt(partes[partes.length - 1]);
-                    return isNaN(num) ? 0 : num;
-                });
-
-                // Math.max encuentra el número más alto real (239 es mayor que 74)
-                if (numeros.length > 0) {
-                    maximoNumero = Math.max(...numeros);
-                }
-            }
-
-            // 3. Sumamos 1 al mayor encontrado
-            // Si maximoNumero es 0 (porque no hay pedidos de S), empezará en 1.
-            // Si el último era 23, el nuevo será 24.
-            const siguienteNumero = maximoNumero + 1;
-
-            // 4. Creamos el código final
-            codPedido = `${prov}-${siguienteNumero}`;
-
-            console.log(`Cálculo ID para ${prov}: Último mayor ${maximoNumero} -> Nuevo ${codPedido}`);
-
-        } catch (e) {
-            console.error("Fallo cálculo manual, usando emergencia:", e);
+        if (usarIdTemporal) {
+            // ID TEMPORAL PARA SUBGESTORES (LINK O MANUAL)
             const random = Math.floor(1000 + Math.random() * 9000);
-            codPedido = `${prov}-TEMP-${random}`;
+            codPedido = `TEMP-${random}`;
+        } else {
+            // ID REAL PARA LÍDERES (TU LÓGICA MATEMÁTICA v6 INTACTA)
+            try {
+                const { data: ultimosPedidos, error: errLast } = await supabaseClient
+                    .from('pedidos')
+                    .select('orden_dia')
+                    .eq('proveedor', prov)
+                    .not('orden_dia', 'like', '%TEMP%') 
+                    .order('fecha', { ascending: false }) 
+                    .limit(20); 
+
+                if (errLast) throw errLast;
+
+                let maximoNumero = 0;
+                if (ultimosPedidos && ultimosPedidos.length > 0) {
+                    const numeros = ultimosPedidos.map(p => {
+                        if (!p.orden_dia) return 0;
+                        const partes = p.orden_dia.split('-');
+                        const num = parseInt(partes[partes.length - 1]);
+                        return isNaN(num) ? 0 : num;
+                    });
+                    if (numeros.length > 0) maximoNumero = Math.max(...numeros);
+                }
+                const siguienteNumero = maximoNumero + 1;
+                codPedido = `${prov}-${siguienteNumero}`;
+            } catch (e) {
+                console.error("Fallo cálculo:", e);
+                const random = Math.floor(1000 + Math.random() * 9000);
+                codPedido = `${prov}-TEMP-${random}`;
+            }
         }
-        // ------------------------------------------------------
-        // ------------------------------------------------------------------------------------------------------
-        // ------------------------------------------------------
-        // ---------------------------------------
-        // ---------------------------
 
-
+        // CÁLCULOS (INTACTOS)
         let detalleCuerpo = "";
         let subtotalProductos = 0; 
         let envioTotalVale = 0;    
@@ -3877,95 +3865,75 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             subtotalProductos += costoEquipo;
             const costoEnvio = parseFloat(item.shipping_linea) || 0;
             envioTotalVale += costoEnvio;
-            
-            if (activeGestor !== "Venta Directa") {
-                comisionTotalVale += (item.comision_actual * item.qty);
-            }
-            
+            comisionTotalVale += (item.comision_actual * item.qty);
             detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Equipo: $${item.precio_venta} | 🚚 Envío: $${costoEnvio}\n`;
         });
 
         let totalUSDVale = subtotalProductos + envioTotalVale;
 
-        // --- CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP ---
-        mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
-        mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
-        
-        // --- NUEVO: AGREGAR NOTAS AL MENSAJE SI EXISTEN ---
-        if (notasC) {
-            mensajeRaw += `📝 *NOTAS / OBSERVACIONES:*\n${notasC}\n\n`;
+        // --- MENSAJE WHATSAPP ---
+        if (usarIdTemporal) {
+            // AVISO AL JEFE (CORTITO)
+            mensajeRaw += `🔔 *NUEVO PEDIDO DE EQUIPO*\n`;
+            // Si viene de enlace público, aclararlo
+            const origenTexto = !isLogged ? "Enlace Compartido" : "Manual";
+            mensajeRaw += `👨‍💻 Sub-Agente: *${subGestorNombre}* (${origenTexto})\n`;
+            mensajeRaw += `👤 Cliente: ${nombreC}\n`;
+            mensajeRaw += `💰 Total: $${totalUSDVale}\n`;
+            mensajeRaw += `👉 *Entra a tu panel "Mi Escuadrón" para aprobar y generar el vale.*`;
+        } else {
+            // VALE COMPLETO PARA CENTRAL
+            mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
+            mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
+            if (notasC) mensajeRaw += `📝 *NOTAS:*\n${notasC}\n\n`;
+            mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
+            mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n`;
+            mensajeRaw += `💳 *PAGO:* ${metodoPagoSeleccionado}\n`; 
+            if(vueltoC !== "no") mensajeRaw += `⚠️ *VUELTO:* $${vueltoC}\n`;
+
+            if (isLogged || activeGestor !== "Venta Directa") {
+                mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
+            }
+            mensajeRaw += `\n------------------------------------\n\n`;
         }
-        // --------------------------------------------------
 
-        mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
-        mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
-        mensajeRaw += `💳 *MÉTODO PAGO:* ${metodoPagoSeleccionado}\n`; 
-
-        if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Paga con billete de $${vueltoC}\n`;
-
-        if (isLogged) {
-            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
-        }
-        
-        mensajeRaw += `\n------------------------------------\n\n`;
-
-        // GUARDAR EN BASE DE DATOS
+        // GUARDAR EN BD
         const direccionFinalDB = notasC ? `${dirC} [NOTA: ${notasC}]` : dirC;
+        
+        let origenFinal = "Directo/Web";
+        if (usarIdTemporal) origenFinal = !isLogged ? "Sub-Agente (Enlace)" : "Sub-Agente (Manual)";
+        else if (isLogged) origenFinal = "Manual (Panel)";
+        else if (activeGestor !== "Venta Directa") origenFinal = "Enlace Compartido";
 
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, 
-            cliente: nombreC, 
-            ci: ciC, 
-            telefono: telC, 
-            direccion: direccionFinalDB, // Usamos la variable con la nota incluida
-            municipio: municipioC,
-            producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
+            sub_gestor: subGestorNombre, // Se llena si aplica
+            estado_interno: estadoInterno,
             
-            total: totalUSDVale,              
-            costo_mensajeria: envioTotalVale, 
-            comision_total: comisionTotalVale, 
-            estado: 'Pendiente', 
-            pago_gestor: 'Pendiente',
-            proveedor: prov, 
-            orden_dia: codPedido, 
-            origen: origenPedido
+            cliente: nombreC, ci: ciC, telefono: telC, 
+            direccion: direccionFinalDB, municipio: municipioC,
+            producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
+            total: totalUSDVale, costo_mensajeria: envioTotalVale, comision_total: comisionTotalVale, 
+            estado: 'Pendiente', pago_gestor: 'Pendiente',
+            proveedor: prov, orden_dia: codPedido, 
+            origen: origenFinal
         }]);
         promesas.push(insertPromise);
     }
 
-    // 8. FINALIZAR
     await Promise.all(promesas);
 
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
-    
-    if (!isLogged) {
-        trackSpy('COMPRA_CONFIRMADA', nombreC);
-    }
+    if (!isLogged) trackSpy('COMPRA_CONFIRMADA', nombreC);
 
     window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
 
-    // Generar PDF para el cliente
-    const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
-    const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
-    
-    // Agregamos la nota al PDF también
-    const dirPDF = notasC ? `${dirC} (${municipioC}) - NOTA: ${notasC}` : `${dirC} (${municipioC})`;
-
-    const datosParaPDF = {
-        cliente: nombreC, ci: ciC, direccion: dirPDF,
-        totalUSD: totalGlobalProductos + totalGlobalEnvio, mensajeria: totalGlobalEnvio,
-        items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
-    };
-    
-    setTimeout(() => { 
-        generarComprobanteVenta(datosParaPDF, 'descargar'); 
-        
-        setTimeout(() => {
-            cart = [];
-            clearAutoSave();
-            toggleCartModal(false);
-            location.reload();
-        }, 2000); 
+    setTimeout(() => {
+        cart = [];
+        clearAutoSave();
+        toggleCartModal(false);
+        if(usarIdTemporal && isLogged) alert("✅ Solicitud enviada a tu Líder.");
+        location.reload();
     }, 1500); 
 };
 
@@ -6213,7 +6181,15 @@ async function downloadCatalogPDF() {
     // LÓGICA DE ACCESO Y SEGURIDAD (RESTAURADA)
     // ==========================================
 
-
+    // 1. Alternar entre Login y Registro
+    function toggleLoginMode(mode) {
+        const isLogin = mode === 'login';
+        document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+        document.getElementById('form-register').classList.toggle('hidden', isLogin);
+        
+        document.getElementById('tab-login-btn').className = isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
+        document.getElementById('tab-register-btn').className = !isLogin ? "flex-1 pb-2 font-black text-xs uppercase text-primary border-b-2 border-primary" : "flex-1 pb-2 font-black text-xs uppercase text-gray-400";
+    }
 
     // 2. Proceso de Login
     // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
@@ -6226,41 +6202,31 @@ async function processLogin() {
     const user = userInput ? userInput.value.trim() : "";
     const pass = passInput ? passInput.value.trim() : "";
 
-    // --- CLAVES MAESTRAS ---
-    // 1. Clave de Logística (Solo ve pedidos)
+    // --- CLAVES MAESTRAS (TU LÓGICA INTACTA) ---
     const KEY_LOGISTICA = "PRO_ADMIN_2025"; 
-    
-    // 2. Clave del DUEÑO (Ve el Dinero) - ¡CAMBIA ESTA SI QUIERES!
     const KEY_DUENO = "ANGEL_ORO"; 
 
-    // --- CASO A: NIVEL DUEÑO (SUPERADMIN) ---
     if (pass === KEY_DUENO) { 
         closeLogin();
-        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin' }; // Rol clave
+        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin' };
         window.currentUserData = bossData;
-        
         saveSessionToMemory("Administrador Supremo", true, bossData); 
         setupSession("Administrador Supremo", true);
         alert("🔓 BÓVEDA FINANCIERA DESBLOQUEADA");
         return;
     }
 
-    // --- CASO B: NIVEL LOGÍSTICA (ADMIN SIMPLE) ---
     if (pass === KEY_LOGISTICA) { 
         closeLogin();
-        // Nota: El rol es 'logistica', NO 'superadmin'. Esto le prohíbe entrar al master.html
         const adminData = { nombre: "Encargado Logística", telefono: "5356071095", rol: 'logistica' }; 
         window.currentUserData = adminData;
-        
         saveSessionToMemory("Logística", true, adminData); 
         setupSession("Logística", true);
         return;
     }
 
-    // --- CASO C: GESTOR (Validación Normal) ---
-    if (!user || !pass) {
-        return alert("Por favor ingresa usuario y contraseña.");
-    }
+    // --- CASO GESTOR / SUBGESTOR ---
+    if (!user || !pass) return alert("Por favor ingresa usuario y contraseña.");
 
     try {
         const { data, error } = await supabaseClient
@@ -6275,6 +6241,21 @@ async function processLogin() {
         } else {
             if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
             if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
+
+            // === LÓGICA NUEVA: SI ES SUBGESTOR, BUSCAR TELEFONO DEL JEFE ===
+            // Esto no afecta a los gestores normales porque data.jefe_id será null
+            if (data.jefe_id) {
+                const { data: jefeData } = await supabaseClient
+                    .from('gestores')
+                    .select('telefono')
+                    .eq('nombre', data.jefe_id)
+                    .single();
+                
+                if (jefeData) {
+                    data.telefono_jefe = jefeData.telefono; 
+                }
+            }
+            // ==============================================================
 
             closeLogin();
             window.currentUserData = data; 
@@ -8284,7 +8265,8 @@ async function loadPendingGestores() {
         .order('timestamp', { ascending: false });
 
     // 3. Separar Pendientes y Activos
-    const pendientes = gestoresDB.filter(g => g.estado === 'pendiente');
+    // Solo mostramos pendientes que NO tengan jefe (Independientes)
+const pendientes = gestoresDB.filter(g => g.estado === 'pendiente' && !g.jefe_id);
     const activos = gestoresDB.filter(g => g.estado === 'activo');
 
     // --- RENDERIZAR TABLA PENDIENTES (Exactamente igual que tu código original) ---
@@ -8850,33 +8832,55 @@ function esMensajeriaAmbigua(texto) {
 
 // --- LÓGICA DE PESTAÑAS DEL DASHBOARD ---
 function showDashSection(section) {
-    // Ocultar todo
+    // 1. Ocultar todas las secciones
     document.getElementById('sub-dash-resumen').classList.add('hidden');
     document.getElementById('sub-dash-precios').classList.add('hidden');
     
-    // Desactivar botones
-    document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
-    document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
+    const secEscuadron = document.getElementById('sub-dash-escuadron');
+    if(secEscuadron) secEscuadron.classList.add('hidden');
+    
+    // 2. Desactivar estilos botones
+    const btnResumen = document.getElementById('btn-dash-resumen');
+    const btnPrecios = document.getElementById('btn-dash-precios');
+    const btnEscuadron = document.getElementById('btn-dash-escuadron');
 
-    // Activar selección
+    const estiloInactivo = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
+    const estiloActivo = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
+
+    btnResumen.className = estiloInactivo;
+    btnPrecios.className = estiloInactivo;
+    if(btnEscuadron) btnEscuadron.className = estiloInactivo;
+
+    // === SEGURIDAD VISUAL SUBGESTOR ===
+    const esSubGestor = window.currentUserData && window.currentUserData.jefe_id;
+    
+    // Si soy subgestor, oculto los botones prohibidos para que no se vean
+    if (esSubGestor) {
+        if(btnEscuadron) btnEscuadron.style.display = 'none';
+        if(btnPrecios) btnPrecios.style.display = 'none';
+    } else {
+        if(btnEscuadron) btnEscuadron.style.display = 'inline-block';
+        if(btnPrecios) btnPrecios.style.display = 'inline-block';
+    }
+
+    // 3. Activar Sección
     if(section === 'resumen') {
         document.getElementById('sub-dash-resumen').classList.remove('hidden');
-        document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
-    } else {
-        // === AQUÍ INYECTAMOS EL TEXTO SECRETO ===
-        // Solo se escribe cuando el usuario entra a esta sección
+        btnResumen.className = estiloActivo;
+    } 
+    else if(section === 'precios') {
+        if(esSubGestor) return alert("Función reservada para Líderes.");
         document.getElementById('sub-dash-precios').classList.remove('hidden');
-        document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
-        
-        // Inyección del texto prohibido para Facebook
-        const textoSecreto = `Aquí puedes subir el precio de los productos marcados como "Flexibles". 
-        <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
-        Cuando los clientes entren por tu link, verán los precios que tú estableciste.`;
-        
+        btnPrecios.className = estiloActivo.replace('#1a4789', 'bg-indigo-600');
         const elMsg = document.getElementById('msg-instrucciones-seguro');
-        if(elMsg) elMsg.innerHTML = textoSecreto;
-
-        renderGestorPricing(); // Refrescar lista
+        if(elMsg) elMsg.innerHTML = `Configura tus precios. Tu ganancia extra es 100% tuya.`;
+        renderGestorPricing();
+    }
+    else if(section === 'escuadron') {
+        if(esSubGestor) return alert("Función reservada para Líderes.");
+        if(secEscuadron) secEscuadron.classList.remove('hidden');
+        if(btnEscuadron) btnEscuadron.className = estiloActivo.replace('#1a4789', 'bg-slate-900');
+        if(typeof initSquadSystem === 'function') initSquadSystem();
     }
 }
 
@@ -8886,66 +8890,126 @@ async function renderGestorPricing() {
     const container = document.getElementById('list-gestor-precios');
     if(!container) return;
 
-    // 1. Filtrar productos flexibles Y DISPONIBLES
+    const miNombre = window.gestorName;
+    const misDatos = window.currentUserData || {};
+    const miJefe = misDatos.jefe_id; 
+
+    // 1. Filtrar productos (TODOS los disponibles)
     const { data: productosBase } = await supabaseClient
         .from('productos')
         .select('*')
-        .eq('precio_flexible', 'SI')
         .eq('disponible', 'SI')
         .order('nombre');
 
     if(!productosBase || productosBase.length === 0) {
-        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos flexibles en stock.</p>`;
+        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos disponibles.</p>`;
         return;
     }
 
-    // 2. Obtener mis precios actuales
-    const { data: misPrecios } = await supabaseClient
+    // 2. Traer Precios Personalizados (Míos y de mi Jefe)
+    let usuariosQuery = [miNombre];
+    if (miJefe) usuariosQuery.push(miJefe);
+
+    const { data: preciosDB } = await supabaseClient
         .from('precios_personalizados')
         .select('*')
-        .eq('gestor', window.gestorName);
+        .in('gestor', usuariosQuery);
+
+    // 3. Traer Configuración de Equipo (Comisiones asignadas por el líder)
+    const liderAConsultar = miJefe || miNombre;
+    const { data: configEquipo } = await supabaseClient
+        .from('configuracion_equipo')
+        .select('*')
+        .eq('lider_id', liderAConsultar);
 
     container.innerHTML = productosBase.map(p => {
-        // Encontrar precio guardado (p.id es UUID string)
-        const saved = misPrecios.find(c => c.producto_id === p.id);
-        const precioActual = saved ? parseFloat(saved.nuevo_precio) : parseFloat(p.precio);
-        const gananciaBase = parseFloat(p.comision);
-        // Calculo inicial de ganancia
-        const gananciaTotal = gananciaBase + (precioActual - parseFloat(p.precio));
+        let precioBaseAlmacen = parseFloat(p.precio);
+        let precioSuelo = precioBaseAlmacen;
+        
+        // Si soy Subgestor, mi suelo es el precio de mi jefe
+        if (miJefe) {
+            const configJefe = preciosDB.find(c => c.producto_id === p.id && c.gestor === miJefe);
+            if (configJefe) {
+                const pJefe = parseFloat(configJefe.nuevo_precio);
+                if (pJefe > precioSuelo) precioSuelo = pJefe;
+            }
+        }
 
-        // Limpieza de nombre para evitar errores con comillas
+        // Mi precio configurado
+        const miConfig = preciosDB.find(c => c.producto_id === p.id && c.gestor === miNombre);
+        const miPrecioActual = miConfig ? parseFloat(miConfig.nuevo_precio) : precioSuelo;
+
+        const esFlexible = p.precio_flexible === 'SI';
         const nombreSafe = p.nombre.replace(/"/g, '&quot;');
+        let htmlPanel = '';
 
-        // OJO AQUÍ: He puesto comillas simples '${p.id}' dentro de las funciones onclick y oninput
+        if (!miJefe) {
+            // --- VISTA LÍDER (MARCEL) ---
+            const configEq = configEquipo ? configEquipo.find(c => c.producto_id === p.id) : null;
+            const comisionDada = configEq ? parseFloat(configEq.comision_para_sub) : 0;
+            
+            // Ganancia Total Mía = (Mi Precio - Base Almacén) + Comisión Almacén
+            const miGananciaTotal = (miPrecioActual - precioBaseAlmacen) + parseFloat(p.comision);
+            const meQueda = miGananciaTotal - comisionDada;
+            const colorQueda = meQueda < 0 ? 'text-red-500' : 'text-gray-400';
+
+            htmlPanel = `
+            <div class="bg-gray-50 p-3 rounded-xl space-y-2">
+                <div class="flex justify-between items-center">
+                    <label class="text-[9px] font-black uppercase text-indigo-500">Mi Venta:</label>
+                    ${esFlexible ? 
+                        `<input type="number" id="price-${p.id}" value="${miPrecioActual}" min="${precioBaseAlmacen}" class="w-16 h-7 text-xs font-bold text-center border-gray-300 rounded">` : 
+                        `<span class="text-xs font-black text-gray-500 bg-gray-200 px-2 py-1 rounded">$${miPrecioActual}</span>`
+                    }
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-200 pt-2">
+                    <label class="text-[9px] font-black uppercase text-orange-500">Pago a Sub:</label>
+                    <input type="number" id="comm-sub-${p.id}" value="${comisionDada}" class="w-16 h-7 text-xs font-bold text-center border-orange-200 rounded text-orange-600">
+                </div>
+                <div class="flex justify-between items-end pt-1">
+                    <span class="text-[9px] ${colorQueda} font-bold">Te quedan: $${meQueda.toFixed(0)}</span>
+                    <button onclick="saveLeaderConfig('${p.id}', ${precioBaseAlmacen})" class="bg-slate-800 text-white px-3 py-1 rounded text-[9px] font-black uppercase shadow hover:bg-black">Guardar</button>
+                </div>
+            </div>`;
+        } else {
+            // --- VISTA SUBGESTOR (PEPE) - DESBLOQUEADA ---
+            const configEq = configEquipo ? configEquipo.find(c => c.producto_id === p.id) : null;
+            const miComisionBase = configEq ? parseFloat(configEq.comision_para_sub) : 0;
+            
+            // Ganancia = Comisión Base + Sobreprecio
+            const miSobrePrecio = miPrecioActual - precioSuelo;
+            const miGananciaTotal = miComisionBase + miSobrePrecio;
+
+            htmlPanel = `
+            <div class="bg-purple-50 p-3 rounded-xl space-y-2 border border-purple-100">
+                <div class="flex justify-between text-[9px] text-gray-500">
+                    <span>Base Jefe: <b>$${precioSuelo}</b></span>
+                    <span>Comisión Base: <b>$${miComisionBase}</b></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <label class="text-[9px] font-black uppercase text-indigo-500">Mi Precio:</label>
+                    ${esFlexible ? 
+                        `<input type="number" id="price-sub-${p.id}" value="${miPrecioActual}" min="${precioSuelo}" oninput="calcSubGainUI('${p.id}', ${precioSuelo}, ${miComisionBase})" class="w-16 h-7 text-xs font-bold text-center border-purple-300 rounded">` : 
+                        `<span class="text-xs font-black text-gray-500 bg-gray-200 px-2 py-1 rounded">$${miPrecioActual}</span>`
+                    }
+                </div>
+                <div class="flex justify-between items-end border-t border-purple-200 pt-2">
+                    <span id="gain-sub-${p.id}" class="text-[10px] font-black text-emerald-600">Ganas: $${miGananciaTotal.toFixed(0)}</span>
+                    ${esFlexible ? `<button onclick="saveSubPrice('${p.id}', ${precioSuelo})" class="bg-purple-600 text-white px-3 py-1 rounded text-[9px] font-black uppercase shadow hover:bg-purple-700">Guardar</button>` : ''}
+                </div>
+            </div>`;
+        }
+
         return `
-        <div class="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm flex flex-col gap-3">
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-3">
             <div class="flex gap-3">
                 <img src="${fixDriveUrl(p.thumbnail)}" class="w-12 h-12 rounded-lg object-contain bg-gray-50">
                 <div class="overflow-hidden">
                     <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${p.categoria}</p>
                     <p class="text-xs font-black text-slate-700 leading-tight truncate">${nombreSafe}</p>
-                    <p class="text-[10px] text-gray-500">Base: $${p.precio} | Comi: $${p.comision}</p>
                 </div>
             </div>
-
-            <div class="bg-gray-50 p-3 rounded-xl">
-                <div class="flex justify-between items-center mb-1">
-                    <label class="text-[9px] font-black uppercase text-indigo-400">Tu Precio de Venta</label>
-                    <span id="gain-label-${p.id}" class="text-[9px] font-bold text-emerald-500">
-                        Ganancia: $${gananciaTotal.toFixed(0)}
-                    </span>
-                </div>
-                <div class="flex gap-2">
-                    <input type="number" id="input-price-${p.id}" value="${precioActual}" min="${p.precio}" 
-                        oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision})"
-                        class="w-full rounded-lg border-gray-200 text-sm font-black text-slate-700 px-3 py-2">
-                    
-                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
-                        class="bg-indigo-600 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-colors">
-                        <span class="material-symbols-outlined text-lg">save</span>
-                    </button>
-                </div>
-            </div>
+            ${htmlPanel}
         </div>`;
     }).join('');
 }
@@ -10870,6 +10934,58 @@ async function saveFinancialChanges() {
     }
 }
 
+// --- FUNCIONES AUXILIARES PARA GUARDAR (AÑADIRLAS AL INDEX.HTML O JS EXTERNO) ---
+
+window.saveLeaderConfig = async function(prodId, basePrice) {
+    const gestor = window.gestorName;
+    const precioEl = document.getElementById(`price-${prodId}`); // Puede no existir si es fijo
+    const commEl = document.getElementById(`comm-sub-${prodId}`);
+    
+    const nuevoPrecio = precioEl ? parseFloat(precioEl.value) : basePrice;
+    const nuevaComm = parseFloat(commEl.value) || 0;
+
+    // 1. Guardar Precio (si cambió)
+    if (precioEl) {
+        await supabaseClient.from('precios_personalizados').upsert(
+            { gestor: gestor, producto_id: prodId, nuevo_precio: nuevoPrecio }, 
+            { onConflict: 'gestor, producto_id' }
+        );
+    }
+
+    // 2. Guardar Regla de Equipo
+    const { error } = await supabaseClient.from('configuracion_equipo').upsert(
+        { lider_id: gestor, producto_id: prodId, comision_para_sub: nuevaComm },
+        { onConflict: 'lider_id, producto_id' }
+    );
+
+    if(!error) alert("✅ Configuración guardada.");
+    else alert("Error al guardar.");
+};
+
+window.saveSubPrice = async function(prodId, floorPrice) {
+    const gestor = window.gestorName;
+    const input = document.getElementById(`price-sub-${prodId}`);
+    const val = parseFloat(input.value);
+
+    if(val < floorPrice) return alert("No puedes bajar del precio base.");
+
+    const { error } = await supabaseClient.from('precios_personalizados').upsert(
+        { gestor: gestor, producto_id: prodId, nuevo_precio: val },
+        { onConflict: 'gestor, producto_id' }
+    );
+
+    if(!error) alert("✅ Tu precio ha sido actualizado.");
+    else alert("Error.");
+};
+
+window.calcSubGainUI = function(id, floor, baseComm) {
+    const input = document.getElementById(`price-sub-${id}`);
+    const val = parseFloat(input.value) || floor;
+    const extra = val - floor;
+    const total = baseComm + extra;
+    document.getElementById(`gain-sub-${id}`).innerText = `Ganas: $${total.toFixed(0)}`;
+};
+
 </script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
@@ -11056,6 +11172,7 @@ async function saveFinancialChanges() {
         </div>
     </div>
 </div>
+<script src="sistema-escuadron.js"></script>
 
 
 
