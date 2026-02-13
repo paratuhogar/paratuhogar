@@ -1,12 +1,12 @@
 /* ======================================================
    SYSTEM EVENTS MANAGER - PROYECTO SOLO LEVELING
-   Versión: 1.0 (Evento Febrero)
+   Versión: 1.1 (Corrección Fechas y Filtros)
    ====================================================== */
 
 const SystemEvent = {
     // CONFIGURACIÓN DEL EVENTO ACTUAL
     config: {
-        id: "feb_quest_2026", // Cambia esto para que el anuncio vuelva a salir
+        id: "feb_quest_2026_v2", // Cambiamos ID para reiniciar si es necesario
         title: "EVENTO DE TEMPORADA",
         subTitle: "LA CACERÍA DE FEBRERO",
         missionText: "El Administrador ha activado una bonificación temporal.<br><br>🎯 <b>OBJETIVO:</b> Entrega equipos.<br>💰 <b>RECOMPENSA:</b> Cada <span style='color:#00f0ff'>5 VENTAS</span> recibes <span style='color:#fbbf24'>$5 USD EXTRA</span>.<br><br>El contador se reinicia al completar el combo.",
@@ -34,16 +34,20 @@ const SystemEvent = {
         }
     },
 
-    // LÓGICA MATEMÁTICA (Consulatas a BD)
+    // LÓGICA MATEMÁTICA (Consultas a BD)
     calculateProgress: async function() {
+        // CORRECCIÓN: Usamos 'fecha' en lugar de 'created_at' para coincidir con el admin
         const { count, error } = await supabaseClient
             .from('pedidos')
             .select('id', { count: 'exact', head: true })
             .eq('gestor', window.gestorName)
-            .eq('estado', 'Entregado')
-            .gte('created_at', this.config.startDate);
+            .eq('estado', 'Entregado') // IMPORTANTE: Solo cuenta si dice "Entregado"
+            .gte('fecha', this.config.startDate); // <-- CAMBIO AQUÍ
 
-        if (error) return { current: 0, total_bonus: 0 };
+        if (error) {
+            console.error("Error calculando evento:", error);
+            return { current: 0, total_bonus: 0 };
+        }
 
         const totalVentas = count || 0;
         const currentCombo = totalVentas % this.config.target; // Residuo (Ej: 13 % 5 = 3)
@@ -61,42 +65,48 @@ const SystemEvent = {
         const container = document.getElementById('sub-dash-resumen');
         if (!container) return;
 
+        // Limpiar si ya existía para no duplicar
+        const existing = document.getElementById('combo-bar-container');
+        if(existing) existing.remove();
+
         // Crear bloques del combo
         let blocksHTML = '';
         for (let i = 1; i <= this.config.target; i++) {
             const isFilled = i <= data.current;
-            const glowClass = isFilled ? 'bg-cyan-400 shadow-[0_0_10px_#22d3ee]' : 'bg-slate-800 border border-slate-700';
-            blocksHTML += `<div class="h-3 flex-1 rounded-sm transform skew-x-[-10deg] transition-all duration-500 ${glowClass}"></div>`;
+            // Efecto neón más fuerte si está lleno
+            const glowClass = isFilled ? 'bg-cyan-400 shadow-[0_0_15px_#22d3ee] scale-105' : 'bg-slate-800 border border-slate-700 opacity-50';
+            blocksHTML += `<div class="h-4 flex-1 rounded-sm transform skew-x-[-10deg] transition-all duration-500 ${glowClass}"></div>`;
         }
 
         const html = `
-        <div class="mb-6 font-system animate-fade-in">
-            <div class="flex justify-between items-end mb-2">
+        <div id="combo-bar-container" class="mb-8 font-system animate-fade-in bg-[#020617] p-4 rounded-xl border border-cyan-900/30">
+            <div class="flex justify-between items-end mb-3">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-cyan-400 animate-pulse">military_tech</span>
-                    <span class="text-xs font-bold text-white tracking-widest uppercase">COMBO DE CAZA</span>
+                    <span class="material-symbols-outlined text-cyan-400 animate-pulse text-2xl">military_tech</span>
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-500 tracking-widest uppercase block leading-none mb-1">MISIÓN ACTIVA</span>
+                        <span class="text-sm font-black text-white tracking-widest uppercase text-shadow-glow">COMBO DE CAZA</span>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase">BONUS ACUMULADO</span>
-                    <span class="block text-xl font-black text-amber-400 text-shadow-glow">$${data.total_bonus} USD</span>
+                    <span class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">BONUS ACUMULADO</span>
+                    <span class="block text-2xl font-black text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">$${data.total_bonus} USD</span>
                 </div>
             </div>
             
             <!-- BARRA SEGMENTADA -->
-            <div class="flex gap-1 mb-2">
+            <div class="flex gap-2 mb-3 px-1">
                 ${blocksHTML}
             </div>
             
-            <div class="flex justify-between text-[9px] font-bold uppercase text-slate-500">
-                <span>Progreso: ${data.current} / 5</span>
-                <span>${data.current === 0 && data.total_bonus > 0 ? '¡COMBO COMPLETADO! EMPEZANDO DE NUEVO...' : '¡COMPLETA 5 PARA RECLAMAR!'}</span>
+            <div class="flex justify-between text-[9px] font-bold uppercase text-slate-400">
+                <span>PROGRESO ACTUAL: <span class="text-cyan-400 text-lg">${data.current}</span> / 5</span>
+                <span class="animate-pulse">${data.current === 0 && data.total_bonus > 0 ? '¡COMBO COMPLETADO! NUEVA RONDA...' : '¡COMPLETA 5 PARA RECLAMAR!'}</span>
             </div>
         </div>`;
 
         // Insertar al principio del dashboard
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        container.insertBefore(div, container.firstChild);
+        container.insertAdjacentHTML('afterbegin', html);
     },
 
     // RENDERIZAR EL MODAL (SOLO LEVELING)
@@ -148,7 +158,7 @@ const SystemEvent = {
                         <div class="absolute top-0 left-0 h-full w-full bg-cyan-500 shadow-[0_0_10px_#00f0ff]"></div>
                     </div>
 
-                    <button onclick="SystemEvent.closeModal()" class="w-full py-4 bg-transparent border border-cyan-500 text-cyan-400 font-black text-lg uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all hover:shadow-[0_0_30px_rgba(0,240,255,0.4)]">
+                    <button onclick="SystemEvent.closeModal()" class="w-full py-4 bg-transparent border border-cyan-500 text-cyan-400 font-black text-lg uppercase tracking-[0.2em] hover:bg-cyan-500 hover:text-black transition-all hover:shadow-[0_0_30px_rgba(0,240,255,0.4)] cursor-pointer">
                         ACEPTAR MISIÓN
                     </button>
                 </div>
