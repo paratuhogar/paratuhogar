@@ -1784,7 +1784,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "0702c"; 
+const versionActual = "1302"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8915,7 +8915,7 @@ async function renderGestorPricing() {
         .select('*')
         .in('gestor', usuariosQuery);
 
-    // 3. Traer Configuración de Equipo (Comisiones asignadas por el líder)
+    // 3. Traer Configuración de Equipo
     const liderAConsultar = miJefe || miNombre;
     const { data: configEquipo } = await supabaseClient
         .from('configuracion_equipo')
@@ -8926,7 +8926,6 @@ async function renderGestorPricing() {
         let precioBaseAlmacen = parseFloat(p.precio);
         let precioSuelo = precioBaseAlmacen;
         
-        // Si soy Subgestor, mi suelo es el precio de mi jefe
         if (miJefe) {
             const configJefe = preciosDB.find(c => c.producto_id === p.id && c.gestor === miJefe);
             if (configJefe) {
@@ -8935,7 +8934,6 @@ async function renderGestorPricing() {
             }
         }
 
-        // Mi precio configurado
         const miConfig = preciosDB.find(c => c.producto_id === p.id && c.gestor === miNombre);
         const miPrecioActual = miConfig ? parseFloat(miConfig.nuevo_precio) : precioSuelo;
 
@@ -8944,11 +8942,10 @@ async function renderGestorPricing() {
         let htmlPanel = '';
 
         if (!miJefe) {
-            // --- VISTA LÍDER (MARCEL) ---
+            // --- VISTA LÍDER (MODIFICADA PARA OCULTAR SUB) ---
             const configEq = configEquipo ? configEquipo.find(c => c.producto_id === p.id) : null;
             const comisionDada = configEq ? parseFloat(configEq.comision_para_sub) : 0;
             
-            // Ganancia Total Mía = (Mi Precio - Base Almacén) + Comisión Almacén
             const miGananciaTotal = (miPrecioActual - precioBaseAlmacen) + parseFloat(p.comision);
             const meQueda = miGananciaTotal - comisionDada;
             const colorQueda = meQueda < 0 ? 'text-red-500' : 'text-gray-400';
@@ -8962,21 +8959,23 @@ async function renderGestorPricing() {
                         `<span class="text-xs font-black text-gray-500 bg-gray-200 px-2 py-1 rounded">$${miPrecioActual}</span>`
                     }
                 </div>
-                <div class="flex justify-between items-center border-t border-gray-200 pt-2">
+                
+                <!-- AQUÍ ESTÁ EL CAMBIO: CLASE 'HIDDEN' AÑADIDA -->
+                <div class="hidden flex justify-between items-center border-t border-gray-200 pt-2">
                     <label class="text-[9px] font-black uppercase text-orange-500">Pago a Sub:</label>
                     <input type="number" id="comm-sub-${p.id}" value="${comisionDada}" class="w-16 h-7 text-xs font-bold text-center border-orange-200 rounded text-orange-600">
                 </div>
-                <div class="flex justify-between items-end pt-1">
-                    <span class="text-[9px] ${colorQueda} font-bold">Te quedan: $${meQueda.toFixed(0)}</span>
+
+                <!-- AQUÍ TAMBIÉN OCULTAMOS EL TEXTO DE 'TE QUEDAN' -->
+                <div class="flex justify-end items-end pt-1">
+                    <span class="hidden text-[9px] ${colorQueda} font-bold mr-auto">Te quedan: $${meQueda.toFixed(0)}</span>
                     <button onclick="saveLeaderConfig('${p.id}', ${precioBaseAlmacen})" class="bg-slate-800 text-white px-3 py-1 rounded text-[9px] font-black uppercase shadow hover:bg-black">Guardar</button>
                 </div>
             </div>`;
         } else {
-            // --- VISTA SUBGESTOR (PEPE) - DESBLOQUEADA ---
+            // --- VISTA SUBGESTOR (INTACTA O TAMBIÉN PUEDES OCULTARLE COSAS SI QUIERES) ---
             const configEq = configEquipo ? configEquipo.find(c => c.producto_id === p.id) : null;
             const miComisionBase = configEq ? parseFloat(configEq.comision_para_sub) : 0;
-            
-            // Ganancia = Comisión Base + Sobreprecio
             const miSobrePrecio = miPrecioActual - precioSuelo;
             const miGananciaTotal = miComisionBase + miSobrePrecio;
 
@@ -8984,7 +8983,8 @@ async function renderGestorPricing() {
             <div class="bg-purple-50 p-3 rounded-xl space-y-2 border border-purple-100">
                 <div class="flex justify-between text-[9px] text-gray-500">
                     <span>Base Jefe: <b>$${precioSuelo}</b></span>
-                    <span>Comisión Base: <b>$${miComisionBase}</b></span>
+                    <!-- OCULTAMOS COMISIÓN BASE SI ESTÁ EN 0 O SI QUIERES OCULTARLA SIEMPRE -->
+                    <span class="${miComisionBase === 0 ? 'hidden' : ''}">Comisión Base: <b>$${miComisionBase}</b></span>
                 </div>
                 <div class="flex justify-between items-center">
                     <label class="text-[9px] font-black uppercase text-indigo-500">Mi Precio:</label>
