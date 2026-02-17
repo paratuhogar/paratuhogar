@@ -16,6 +16,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+    <!-- Librería para Gráficas (Chart.js) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- 2. Librerías de Funcionalidad (Supabase, Excel, Editor) -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1398,22 +1401,11 @@
 
 
 <!-- 2. Al final de la sección sec-admin-master, justo ANTES del </section>, pega esto: -->
+<!-- Contenido: Tráfico (Se llena desde admin-stats.js) -->
 <div id="cnt-trafico" class="tab-cnt hidden space-y-6">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-            <div class="flex items-center gap-2 mb-6">
-                <span class="material-symbols-outlined text-primary">analytics</span>
-                <h4 class="font-black uppercase text-xs text-gray-700 dark:text-white">Clics por Agente</h4>
-            </div>
-            <div id="list-trafico-gestores" class="space-y-4"></div>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm">
-            <div class="flex items-center gap-2 mb-6">
-                <span class="material-symbols-outlined text-secondary">devices</span>
-                <h4 class="font-black uppercase text-xs text-gray-700 dark:text-white">Dispositivos</h4>
-            </div>
-            <div id="list-trafico-dispositivos" class="space-y-4"></div>
-        </div>
+    <!-- El contenido se cargará dinámicamente -->
+    <div class="py-20 text-center text-gray-400">
+        <span class="loader"></span> Cargando módulo de inteligencia...
     </div>
 </div>
 
@@ -3209,42 +3201,71 @@ async function loadProducts() {
 async function registrarRastroIP(nombreGestor) {
     if (!nombreGestor) return;
 
+    let ip = "";
+    let pais = "Desconocido";
+
     try {
-        // 1. Obtener la IP del visitante
-        const res = await fetch('https://api.ipify.org?format=json');
-        const { ip } = await res.json();
-        
-        // 2. Definir el tiempo de "cooldown" (30 minutos)
-        // Solo contaremos un clic nuevo si han pasado más de 30 min desde el último
+        // INTENTO 1: Obtener IP + PAÍS (Servicio ipapi)
+        const res = await fetch('https://ipapi.co/json/');
+        if (res.ok) {
+            const data = await res.json();
+            ip = data.ip;
+            pais = data.country_name || "Desconocido";
+        } else {
+            throw new Error("Fallo ipapi");
+        }
+    } catch (e) {
+        // PLAN B: Si falla el país, usamos el método antiguo (solo IP)
+        try {
+            const res2 = await fetch('https://api.ipify.org?format=json');
+            const data2 = await res2.json();
+            ip = data2.ip;
+        } catch (e2) {
+            console.error("No se pudo obtener la IP");
+            return; // Si todo falla, salimos
+        }
+    }
+
+    try {
+        // 1. Definir Huella Digital
+        const fingerprint = navigator.userAgent + "|" + screen.width;
+
+        // 2. Definir Cooldown (30 min)
         const margenTiempo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
-        // 3. Consultar si ya existe un registro reciente para esta IP y este Gestor
+        // 3. Verificar duplicado reciente
         const { data: existente, error: errCheck } = await supabaseClient
             .from('link_analytics')
             .select('id')
             .eq('agent_name', nombreGestor)
             .eq('ip_address', ip)
-            .gte('timestamp', margenTiempo) // Clics mayores o iguales a hace 30 min
+            .gte('timestamp', margenTiempo) 
             .limit(1);
 
         if (errCheck) throw errCheck;
 
-        // 4. SOLO insertar si no hay registros recientes
+        // 4. Si NO existe reciente, guardamos
         if (!existente || existente.length === 0) {
             const ua = navigator.userAgent;
+            const tipoDispositivo = /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio';
+            const sistemaOperativo = ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil";
+
+            // Guardamos en Supabase (Asegúrate de haber creado la columna 'pais')
             await supabaseClient.from('link_analytics').insert([{
                 agent_name: nombreGestor,
                 ip_address: ip,
-                device_type: /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio',
-                os: ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil",
-                browser: ua.includes("Chrome") ? "Chrome" : ua.includes("Firefox") ? "Firefox" : "Safari"
+                pais: pais, // <--- CAMPO NUEVO
+                device_type: tipoDispositivo,
+                os: sistemaOperativo,
+                browser: fingerprint,
+                timestamp: new Date().toISOString()
             }]);
-            console.log("📍 Rastro único registrado con éxito.");
+            console.log(`📍 Rastro registrado: ${ip} (${pais})`);
         } else {
-            console.log("⏩ Clic duplicado detectado (IP en tiempo de espera). No se guardó en la base de datos.");
+            console.log("⏩ Rastro duplicado omitido.");
         }
     } catch (e) { 
-        console.error("Error en rastro IP:", e); 
+        console.error("Error guardando rastro:", e); 
     }
 }
 
@@ -4914,15 +4935,22 @@ function changeAdminTab(tab) {
         cnt.classList.add('hidden');
     });
 
-    // 2. Mostrar el contenedor específico (ej: cnt-aprobaciones)
+    // 2. Mostrar el contenedor específico
     const target = document.getElementById('cnt-' + tab);
     if (target) {
         target.classList.remove('hidden');
+        
+        // --- NUEVO: Si entramos a tráfico, cargamos las gráficas ---
+        // El 'typeof' evita errores si aún no has cargado el archivo admin-stats.js
+        if (tab === 'trafico' && typeof initTrafficDashboard === 'function') {
+            initTrafficDashboard();
+        }
+        // -----------------------------------------------------------
     } else {
         console.error("No se encontró el contenedor: cnt-" + tab);
     }
 
-    // 3. Actualizar los estilos de los botones para que se vea cuál está activo
+    // 3. Actualizar los estilos de los botones
     document.querySelectorAll('.btn-tab-admin').forEach(btn => {
         btn.classList.remove('active', 'bg-primary', 'text-white');
         btn.classList.add('text-gray-400');
@@ -11057,7 +11085,9 @@ async function saveFinancialChanges() {
     </div>
 </div>
 
-
+<!-- Script de Estadísticas -->
+    <script src="admin-stats.js"></script>
+</body>
 
 </body>
 </html>
