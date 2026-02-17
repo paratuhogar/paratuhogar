@@ -558,27 +558,101 @@ async function updateCosto(id, nuevoCosto, inputElement) {
 }
 
         async function conciliarMasivo() {
-            const checks = document.querySelectorAll('.chk-conc:checked');
-            if(checks.length === 0) return alert("Selecciona pedidos");
+    const checks = document.querySelectorAll('.chk-conc:checked');
+    if(checks.length === 0) return alert("Selecciona pedidos");
 
-            const ids = Array.from(checks).map(c => c.value);
-            
-            if(!confirm(`¿Confirmas que el proveedor YA PAGÓ/COBRÓ estos ${ids.length} pedidos?\n\nAl aceptar, el dinero de la ganancia pasará a estar DISPONIBLE para pagarle a los gestores.`)) return;
+    const ids = Array.from(checks).map(c => c.value);
+    
+    // Obtenemos el monto total visible en pantalla para la confirmación
+    let montoTotalVisible = 0;
+    checks.forEach(chk => {
+        const row = chk.closest('tr');
+        const valGanancia = parseFloat(row.querySelector('.val-ganancia').dataset.val) || 0;
+        montoTotalVisible += valGanancia;
+    });
+    
+    if(!confirm(`¿Confirmas que el proveedor YA PAGÓ/COBRÓ estos ${ids.length} pedidos?\n\nMonto total calculado: $${montoTotalVisible.toFixed(2)}\n\nAl aceptar, el dinero de la ganancia pasará a estar DISPONIBLE para pagarle a los gestores.`)) return;
 
-            const { error } = await supabaseClient
-                .from('pedidos')
-                .update({ estado_financiero: 'Conciliado_Prov' }) // Estado intermedio clave
-                .in('id', ids);
+    const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ estado_financiero: 'Conciliado_Prov' }) 
+        .in('id', ids);
 
-            if(error) alert("Error: " + error.message);
-            else {
-                alert("✅ Pedidos conciliados. Ahora aparecerán en la Nómina de Pago.");
-                loadConciliacion();
-            }
+    if(error) alert("Error: " + error.message);
+    else {
+        alert("✅ Pedidos conciliados. Ahora aparecerán en la Nómina de Pago.");
+        loadConciliacion();
+    }
+}
+
+// --- FUNCIONES AUXILIARES PARA EL CÁLCULO MANUAL EN CONCILIACIÓN ---
+
+// 1. Recalcular una sola fila al escribir
+function recalcRow(id, totalVenta, inputElement) {
+    const nuevoCosto = parseFloat(inputElement.value) || 0;
+    const nuevaGanancia = totalVenta - nuevoCosto;
+    
+    // Actualizar celda de ganancia
+    const cell = document.getElementById(`cell-ganancia-${id}`);
+    if (cell) {
+        cell.innerText = (nuevaGanancia >= 0 ? '+' : '') + `$${nuevaGanancia.toFixed(2)}`;
+        cell.dataset.val = nuevaGanancia; // Guardar valor numérico para el total
+        
+        // Cambiar color dinámicamente
+        if (nuevaGanancia < 0) {
+            cell.className = "p-3 font-black text-red-500 text-lg val-ganancia";
+        } else {
+            cell.className = "p-3 font-black text-emerald-400 text-lg val-ganancia";
         }
+    }
+
+    // Actualizar el Panel Superior
+    recalcTotalPanel();
+}
+
+// 2. Recalcular el Panel Superior sumando todas las filas visibles
+function recalcTotalPanel() {
+    let sumaTotal = 0;
+    let count = 0;
+
+    // Sumar todos los valores de las celdas de ganancia visibles
+    document.querySelectorAll('.val-ganancia').forEach(el => {
+        sumaTotal += parseFloat(el.dataset.val) || 0;
+        count++;
+    });
+
+    // Actualizar texto del panel
+    const select = document.getElementById('filter-prov-conc');
+    const provName = select.value === 'TODOS' ? 'TOTAL GLOBAL' : `PROVEEDOR: ${select.value}`;
+    
+    updateTotalPanelHTML(provName, count, sumaTotal);
+}
+
+// 3. Renderizar el HTML del Panel Superior
+function updateTotalPanelHTML(nombre, cantidad, monto) {
+    const totalPanel = document.getElementById('panel-total-conciliacion');
+    if (totalPanel) {
+        totalPanel.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
+                    <span class="material-symbols-outlined text-2xl">payments</span>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">MONTO A RECOGER (${nombre})</p>
+                    <p class="text-[10px] text-slate-500">Suma de ${cantidad} pedidos seleccionados</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="block text-3xl font-black text-white tracking-tight">$${monto.toFixed(2)}</span>
+                <span class="text-xs text-emerald-400 font-bold">Disponible para traer</span>
+            </div>
+        `;
+    }
+}
 
         // 2. CARGA DE CONCILIACIÓN (CORREGIDA Y BLINDADA)
 // 2. CARGA DE CONCILIACIÓN (CON TOTALIZADOR POR PROVEEDOR)
+// 2. CARGA DE CONCILIACIÓN (MEJORADA: COSTOS EDITABLES)
 async function loadConciliacion() {
     
     // 1. Cargar inventario si falta (Seguridad)
@@ -613,13 +687,14 @@ async function loadConciliacion() {
         pedidosFiltrados = data.filter(p => (p.proveedor || 'General') === valorActual);
     }
 
-    // --- CÁLCULO DEL TOTAL ACUMULADO (NUEVO) ---
+    // --- CÁLCULO INICIAL DEL TOTAL ---
     let sumaTotalARecibir = 0;
     
-    // Procesamos los datos para la tabla y sumamos al vuelo
     const filasHTML = pedidosFiltrados.map(p => {
         const nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
         const prod = inventario.find(i => p.producto.includes(i.nombre) || i.nombre === nombreLimpio) || { costo_proveedor: 0 };
+        
+        // Costo Base inicial (lo que diga la base de datos hoy)
         const costoBase = Number(prod.costo_proveedor || 0);
         
         let qty = 1;
@@ -627,75 +702,67 @@ async function loadConciliacion() {
         if(match) qty = parseInt(match[1]);
 
         const totalVenta = parseFloat(p.total);
+        
+        // Total Costo = Costo unitario * Cantidad
         const totalCosto = costoBase * qty;
         const aRecibir = totalVenta - totalCosto;
 
-        // SUMAR AL TOTAL GENERAL
         sumaTotalARecibir += aRecibir;
 
-        // Alerta visual si falta el costo
-        const esAlerta = costoBase === 0;
+        // Estilo de alerta si el costo es 0
+        const borderClass = costoBase === 0 ? 'border-red-500 text-red-500' : 'border-slate-600 text-red-300';
 
+        // --- CAMBIO CLAVE: INPUT EDITABLE EN LUGAR DE TEXTO FIJO ---
         return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalVenta}">
             <td class="p-3"><input type="checkbox" class="chk-conc" value="${p.id}"></td>
             <td class="p-3 text-xs text-slate-400">${p.orden_dia || '---'}</td>
             <td class="p-3 font-bold text-white">
                 ${p.producto}
                 <div class="text-[10px] text-amber-500 uppercase">${p.proveedor || 'General'}</div>
             </td>
-            <td class="p-3 text-slate-300">$${totalVenta}</td>
-            <td class="p-3 font-mono">
-                 ${esAlerta ? `<span class="text-red-500 font-bold">$0 (Alerta)</span>` : `<span class="text-red-300">$${totalCosto}</span>`}
+            <td class="p-3 text-slate-300 font-mono">$${totalVenta}</td>
+            
+            <!-- CASILLA EDITABLE DE COSTO -->
+            <td class="p-3">
+                <input type="number" 
+                       value="${totalCosto}" 
+                       oninput="recalcRow('${p.id}', ${totalVenta}, this)"
+                       class="input-costo-conciliacion bg-slate-900 border ${borderClass} rounded px-2 py-1 w-24 text-right font-mono text-sm focus:outline-none focus:border-blue-500">
             </td>
-            <td class="p-3 font-black text-emerald-400 text-lg">+$${aRecibir.toFixed(2)}</td>
+
+            <!-- CELDA DE GANANCIA (CON ID PARA ACTUALIZAR) -->
+            <td id="cell-ganancia-${p.id}" class="p-3 font-black text-emerald-400 text-lg val-ganancia" data-val="${aRecibir}">
+                +$${aRecibir.toFixed(2)}
+            </td>
         </tr>
         `;
     }).join('');
 
-    // --- INYECTAR EL PANEL DE TOTALES (NUEVO) ---
-    // Buscamos dónde poner el total (Antes de la tabla)
-    const container = document.getElementById('list-conciliacion').parentElement; // La tabla
+    // --- PANEL DE TOTALES ---
+    const container = document.getElementById('list-conciliacion').parentElement;
     let totalPanel = document.getElementById('panel-total-conciliacion');
     
-    // Si no existe el panel, lo creamos dinámicamente
     if (!totalPanel) {
         totalPanel = document.createElement('div');
         totalPanel.id = 'panel-total-conciliacion';
         totalPanel.className = "bg-gradient-to-r from-slate-800 to-slate-900 p-4 rounded-xl mb-4 border border-slate-700 flex justify-between items-center shadow-lg";
-        // Lo insertamos antes de la tabla
         container.parentElement.insertBefore(totalPanel, container);
     }
 
-    // Actualizamos el contenido del panel
     const nombreProveedor = valorActual === 'TODOS' ? 'TOTAL GLOBAL' : `PROVEEDOR: ${valorActual}`;
     
-    totalPanel.innerHTML = `
-        <div class="flex items-center gap-3">
-            <div class="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
-                <span class="material-symbols-outlined text-2xl">payments</span>
-            </div>
-            <div>
-                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">MONTO A RECOGER (${nombreProveedor})</p>
-                <p class="text-[10px] text-slate-500">Suma de ${pedidosFiltrados.length} pedidos seleccionados</p>
-            </div>
-        </div>
-        <div class="text-right">
-            <span class="block text-3xl font-black text-white tracking-tight">$${sumaTotalARecibir.toFixed(2)}</span>
-            <span class="text-xs text-emerald-400 font-bold">Disponible para traer</span>
-        </div>
-    `;
+    // Guardamos la estructura del panel en una variable global o lo actualizamos directo
+    updateTotalPanelHTML(nombreProveedor, pedidosFiltrados.length, sumaTotalARecibir);
 
-    // --- RENDERIZAR LA TABLA ---
+    // --- RENDERIZAR TABLA ---
     const list = document.getElementById('list-conciliacion');
     
-    // Arreglar encabezado si es necesario
     const thFinal = document.querySelector('#sec-conciliacion thead th:last-child');
-    if(thFinal) thFinal.innerHTML = "A RECIBIR";
+    if(thFinal) thFinal.innerHTML = "A RECIBIR (Utilidad)";
 
     if (pedidosFiltrados.length === 0) {
         list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">Nada pendiente.</td></tr>`;
-        // Si no hay datos, ocultamos el panel de totales o lo ponemos en 0
         if(totalPanel) totalPanel.innerHTML = `<div class="text-center w-full text-slate-500 text-xs">Sin montos pendientes</div>`;
     } else {
         list.innerHTML = filasHTML;
