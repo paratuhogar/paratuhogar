@@ -1742,7 +1742,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1202"; 
+const versionActual = "1802"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3198,6 +3198,8 @@ async function loadProducts() {
 
 // --- FUNCIONES DE APOYO PARA EL RASTREO IP ---
 
+// --- PEGAR ESTO EN index.html (Reemplaza la función antigua) ---
+
 async function registrarRastroIP(nombreGestor) {
     if (!nombreGestor) return;
 
@@ -3205,36 +3207,33 @@ async function registrarRastroIP(nombreGestor) {
     let pais = "Desconocido";
 
     try {
-        // INTENTO 1: Obtener IP + PAÍS (Servicio ipapi)
-        const res = await fetch('https://ipapi.co/json/');
+        // INTENTO MEJORADO: Usar ipwho.is (Gratis, sin API Key, devuelve País)
+        const res = await fetch('https://ipwho.is/');
         if (res.ok) {
             const data = await res.json();
-            ip = data.ip;
-            pais = data.country_name || "Desconocido";
-        } else {
-            throw new Error("Fallo ipapi");
+            if (data.success) {
+                ip = data.ip;
+                pais = data.country || "Desconocido"; // Capturamos el país real
+            } else {
+                // Fallback a ipify si falla
+                const res2 = await fetch('https://api.ipify.org?format=json');
+                const data2 = await res2.json();
+                ip = data2.ip;
+            }
         }
     } catch (e) {
-        // PLAN B: Si falla el país, usamos el método antiguo (solo IP)
-        try {
-            const res2 = await fetch('https://api.ipify.org?format=json');
-            const data2 = await res2.json();
-            ip = data2.ip;
-        } catch (e2) {
-            console.error("No se pudo obtener la IP");
-            return; // Si todo falla, salimos
-        }
+        console.error("Error obteniendo IP:", e);
+        return; 
     }
 
     try {
-        // 1. Definir Huella Digital
+        // 1. Huella Digital
         const fingerprint = navigator.userAgent + "|" + screen.width;
-
-        // 2. Definir Cooldown (30 min)
+        // 2. Cooldown (30 min)
         const margenTiempo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
-        // 3. Verificar duplicado reciente
-        const { data: existente, error: errCheck } = await supabaseClient
+        // 3. Verificar duplicado
+        const { data: existente } = await supabaseClient
             .from('link_analytics')
             .select('id')
             .eq('agent_name', nombreGestor)
@@ -3242,27 +3241,22 @@ async function registrarRastroIP(nombreGestor) {
             .gte('timestamp', margenTiempo) 
             .limit(1);
 
-        if (errCheck) throw errCheck;
-
-        // 4. Si NO existe reciente, guardamos
+        // 4. Guardar si es nuevo
         if (!existente || existente.length === 0) {
             const ua = navigator.userAgent;
             const tipoDispositivo = /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio';
             const sistemaOperativo = ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil";
 
-            // Guardamos en Supabase (Asegúrate de haber creado la columna 'pais')
             await supabaseClient.from('link_analytics').insert([{
                 agent_name: nombreGestor,
                 ip_address: ip,
-                pais: pais, // <--- CAMPO NUEVO
+                pais: pais, // <--- AHORA SÍ SE GUARDARÁ EL PAÍS REAL
                 device_type: tipoDispositivo,
                 os: sistemaOperativo,
                 browser: fingerprint,
                 timestamp: new Date().toISOString()
             }]);
             console.log(`📍 Rastro registrado: ${ip} (${pais})`);
-        } else {
-            console.log("⏩ Rastro duplicado omitido.");
         }
     } catch (e) { 
         console.error("Error guardando rastro:", e); 
@@ -8719,21 +8713,40 @@ async function checkCustomerOwnership(phone) {
 }
 
 // Función para dejar rastro de IP al usar un link
+// --- COPIA ESTO EN index.html (Reemplaza la función antigua) ---
+
 async function registrarRastroIP(nombreGestor) {
     if (!nombreGestor) return;
 
-    try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const { ip } = await res.json();
-        
-        // 1. Definir Huella Digital (UserAgent + Ancho Pantalla)
-        const fingerprint = navigator.userAgent + "|" + screen.width;
+    let ip = "";
+    let pais = "Desconocido";
 
-        // 2. Definir Cooldown (30 min) para no saturar la base de datos
+    try {
+        // USAMOS ESTA API QUE ES MÁS FIABLE Y GRATUITA
+        const res = await fetch('https://ipwho.is/');
+        const data = await res.json();
+
+        if (data.success) {
+            ip = data.ip;
+            pais = data.country || "Desconocido"; // Aquí obtenemos el país real
+        } else {
+            // Si falla, intentamos solo obtener la IP
+            const res2 = await fetch('https://api.ipify.org?format=json');
+            const data2 = await res2.json();
+            ip = data2.ip;
+        }
+    } catch (e) {
+        console.error("Error obteniendo ubicación:", e);
+        return; 
+    }
+
+    try {
+        const fingerprint = navigator.userAgent + "|" + screen.width;
+        // Cooldown de 30 minutos para no saturar
         const margenTiempo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
-        // 3. Verificar si ya existe este rastro reciente
-        const { data: existente, error: errCheck } = await supabaseClient
+        // Verificar si ya existe reciente
+        const { data: existente } = await supabaseClient
             .from('link_analytics')
             .select('id')
             .eq('agent_name', nombreGestor)
@@ -8741,29 +8754,26 @@ async function registrarRastroIP(nombreGestor) {
             .gte('timestamp', margenTiempo) 
             .limit(1);
 
-        if (errCheck) throw errCheck;
-
-        // 4. Si NO existe reciente, guardamos
+        // Guardar si es nuevo
         if (!existente || existente.length === 0) {
             const ua = navigator.userAgent;
-            // Detectamos Móvil/PC para la gráfica
             const tipoDispositivo = /Mobi|Android/i.test(ua) ? 'Móvil' : 'Escritorio';
             const sistemaOperativo = ua.includes("Win") ? "Windows" : ua.includes("Mac") ? "MacOS" : "Móvil";
 
+            // AQUÍ GUARDAMOS EL PAÍS REAL EN LA BASE DE DATOS
             await supabaseClient.from('link_analytics').insert([{
                 agent_name: nombreGestor,
                 ip_address: ip,
-                device_type: tipoDispositivo, // Mantenemos esto limpio para la gráfica
+                pais: pais, 
+                device_type: tipoDispositivo,
                 os: sistemaOperativo,
-                browser: fingerprint, // <--- AQUÍ GUARDAMOS LA HUELLA ÚNICA
+                browser: fingerprint,
                 timestamp: new Date().toISOString()
             }]);
-            console.log("📍 Rastro Digital guardado (IP + Huella).");
-        } else {
-            console.log("⏩ Rastro duplicado omitido (Cooldown activo).");
+            console.log(`📍 Rastro registrado: ${ip} (${pais})`);
         }
     } catch (e) { 
-        console.error("Error rastro IP:", e); 
+        console.error("Error guardando rastro:", e); 
     }
 }
 

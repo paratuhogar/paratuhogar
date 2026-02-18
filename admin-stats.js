@@ -146,16 +146,60 @@ async function initTrafficDashboard() {
 /**
  * MOTOR DE PROCESAMIENTO DE DATOS
  */
+// --- PEGAR ESTO EN admin-stats.js ---
+
+// --- PEGAR EN admin-stats.js ---
+
+// 1. FUNCIÓN MAESTRA PARA ADIVINAR EL PAÍS (Basada en tu CSV)
+// --- PEGAR EN admin-stats.js (Reemplaza la función inferirPais existente) ---
+
+function inferirPais(ip) {
+    if (!ip) return "Desconocido";
+    
+    // 1. RANGOS CUBA (ETECSA + NAUTA HOGAR)
+    // Agregados: 181.177, 190, 186
+    if (ip.startsWith("152.") || ip.startsWith("153.") || 
+        ip.startsWith("181.") || ip.startsWith("169.159.") ||
+        ip.startsWith("190.") || ip.startsWith("186.")) {
+        return "Cuba";
+    }
+
+    // 2. RANGOS DE LA APP DE FACEBOOK/INSTAGRAM
+    // Estos usuarios probablemente están en Cuba usando la app
+    if (ip.startsWith("173.252.") || ip.startsWith("66.220.") || 
+        ip.startsWith("31.13.") || ip.startsWith("54.") || ip.startsWith("34.")) {
+        return "Facebook App (Posible Cuba)";
+    }
+
+    // 3. RANGOS VPN / PROXY COMUNES
+    // 129.222 es OVH (VPN muy usada), 104 es Cloudflare
+    if (ip.startsWith("129.") || ip.startsWith("174.") || 
+        ip.startsWith("104.") || ip.startsWith("172.") || ip.startsWith("35.")) {
+        return "VPN / Estados Unidos";
+    }
+
+    // 4. EUROPA (Datos sueltos que vi en tu CSV, ej: 83.x, 88.x)
+    if (ip.startsWith("83.") || ip.startsWith("88.") || ip.startsWith("5.") || ip.startsWith("37.")) {
+        return "Europa";
+    }
+
+    return "Internacional";
+}
+
+// 2. PROCESAMIENTO DE DATOS (Arreglado para forzar el cálculo de país)
 function processAndRenderAdvancedStats(data, totalVentas, vistasProd) {
     
-    // --- FILTRO DE LIMPIEZA (EXCLUIRTE A TI) ---
-    // Filtramos los datos crudos antes de calcular nada
-    const cleanData = data.filter(row => !EXCLUDED_AGENTS.includes(row.agent_name));
+    // A. Usamos TODOS los datos (sin filtrar a Marcel ni Admin para que veas movimiento)
+    const cleanData = data; 
     
     const totalClicks = cleanData.length;
-    if(totalClicks === 0) return; // Si solo estabas tú, mostrar vacío
+    if(totalClicks === 0) {
+        // Si está vacío, limpiamos la pantalla
+        document.getElementById('stat-total-clicks').innerText = "0";
+        return;
+    }
 
-    // 1. KPI: CRECIMIENTO (Hoy vs Ayer)
+    // --- CÁLCULO DE KPIS BÁSICOS ---
     const todayStr = new Date().toISOString().split('T')[0];
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -163,7 +207,6 @@ function processAndRenderAdvancedStats(data, totalVentas, vistasProd) {
     const countToday = cleanData.filter(d => d.timestamp.startsWith(todayStr)).length;
     const countYest = cleanData.filter(d => d.timestamp.startsWith(yesterdayStr)).length;
     
-    // Cálculo de porcentaje
     let growthHtml = "";
     if (countYest === 0) {
         growthHtml = `<span class="text-emerald-500">🚀 Primeros datos hoy</span>`;
@@ -177,71 +220,73 @@ function processAndRenderAdvancedStats(data, totalVentas, vistasProd) {
     document.getElementById('stat-total-clicks').innerText = totalClicks.toLocaleString();
     document.getElementById('stat-growth').innerHTML = growthHtml;
 
-    // 2. KPI: TASA DE CONVERSIÓN
-    // (Ventas Totales / Clics Limpios) * 100
-    // Nota: Es una aproximación porque ventas incluye manuales, pero sirve de referencia.
-    const conversionRate = ((totalVentas / totalClicks) * 100).toFixed(1);
+    // Tasa de Conversión
+    const conversionRate = totalClicks > 0 ? ((totalVentas / totalClicks) * 100).toFixed(1) : "0.0";
     document.getElementById('stat-conversion').innerText = `${conversionRate}%`;
 
-    // 3. AGREGACIONES (Mapas de conteo)
+    // --- AGREGACIONES (MAPAS) ---
     const hours = Array(24).fill(0);
     const osMap = {};
     const countryMap = {};
     const agentMap = {};
 
     cleanData.forEach(row => {
-        // Hora (Extraer HH de timestamp)
+        // 1. Hora
         const date = new Date(row.timestamp);
-        // Ajuste horario simple (asumiendo que los usuarios están mayormente en una zona)
-        // O usamos hora local del navegador del jefe
-        hours[date.getHours()]++;
+        let hour = date.getHours(); 
+        hours[hour]++;
 
-        // OS
+        // 2. OS
         const os = row.os || "Otro";
         osMap[os] = (osMap[os] || 0) + 1;
 
-        // País
-        const pais = row.pais || "Desconocido";
-        countryMap[pais] = (countryMap[pais] || 0) + 1;
+        // 3. PAÍS (AQUÍ ESTÁ LA CORRECCIÓN CLAVE)
+        // Ignoramos lo que diga la base de datos si está vacío y calculamos SIEMPRE
+        let paisCalculado = row.pais;
+        
+        // Si viene vacío de la base de datos, usamos la función de emergencia
+        if (!paisCalculado || paisCalculado === "Desconocido" || paisCalculado === null) {
+            paisCalculado = inferirPais(row.ip_address);
+        }
+        
+        countryMap[paisCalculado] = (countryMap[paisCalculado] || 0) + 1;
 
-        // Agente
+        // 4. Agente
         const ag = row.agent_name || "Directo";
         agentMap[ag] = (agentMap[ag] || 0) + 1;
     });
 
-    // 4. KPI: HORA PICO
+    // --- RENDERIZADO DE TARJETAS SUPERIORES ---
+    
+    // Hora Pico
     const maxVisitsHour = Math.max(...hours);
     const peakHourIndex = hours.indexOf(maxVisitsHour);
     const ampm = peakHourIndex >= 12 ? 'PM' : 'AM';
-    const displayHour = peakHourIndex % 12 || 12; // Formato 12h
+    const displayHour = peakHourIndex % 12 || 12; 
     document.getElementById('stat-peak-hour').innerText = `${displayHour}:00 ${ampm}`;
 
-    // 5. KPI: PAÍS TOP
+    // País Top
     const sortedCountries = Object.entries(countryMap).sort((a,b) => b[1] - a[1]);
     if(sortedCountries.length > 0) {
         document.getElementById('stat-top-country').innerText = sortedCountries[0][0];
-        // Barra de dominancia
         const dominance = (sortedCountries[0][1] / totalClicks) * 100;
         document.getElementById('bar-country-dominance').style.width = `${dominance}%`;
     }
 
-    // --- GRÁFICAS ---
+    // --- ACTUALIZAR GRÁFICAS (Chart.js) ---
+    if (window.myChartHours) window.myChartHours.destroy();
+    if (window.myChartOS) window.myChartOS.destroy();
 
-    // A. GRÁFICA DE HORAS (Barras)
+    // Gráfica Horas
     const ctxHours = document.getElementById('chart-hours').getContext('2d');
-    new Chart(ctxHours, {
+    window.myChartHours = new Chart(ctxHours, {
         type: 'bar',
         data: {
-            labels: Array.from({length: 24}, (_, i) => `${i}h`), // 0h, 1h... 23h
+            labels: Array.from({length: 24}, (_, i) => `${i}h`),
             datasets: [{
                 label: 'Visitas',
                 data: hours,
-                backgroundColor: (context) => {
-                    // Gradiente bonito para las barras
-                    const val = context.raw;
-                    const alpha = (val / maxVisitsHour) * 0.8 + 0.2; // Opacidad basada en altura
-                    return `rgba(79, 70, 229, ${alpha})`; // Indigo
-                },
+                backgroundColor: 'rgba(79, 70, 229, 0.6)',
                 borderRadius: 4
             }]
         },
@@ -249,39 +294,35 @@ function processAndRenderAdvancedStats(data, totalVentas, vistasProd) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { 
-                y: { display: false }, 
-                x: { grid: { display: false }, ticks: { font: { size: 9 } } } 
-            }
+            scales: { y: { display: false }, x: { grid: { display: false } } }
         }
     });
 
-    // B. GRÁFICA OS (Dona)
+    // Gráfica OS
     const sortedOS = Object.entries(osMap).sort((a,b) => b[1] - a[1]);
     const ctxOS = document.getElementById('chart-os').getContext('2d');
-    new Chart(ctxOS, {
+    window.myChartOS = new Chart(ctxOS, {
         type: 'doughnut',
         data: {
             labels: sortedOS.map(x => x[0]),
             datasets: [{
                 data: sortedOS.map(x => x[1]),
-                backgroundColor: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#ef4444'], // Colores variados
-                borderWidth: 0,
-                hoverOffset: 10
+                backgroundColor: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b', '#ef4444'],
+                borderWidth: 0
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '70%', // Dona más fina
+            cutout: '70%',
             plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } }
         }
     });
 
-    // --- TABLAS DE DATOS ---
+    // --- TABLAS DE DETALLE ---
 
-    // 1. TABLA AGENTES (Sin ti)
-    const sortedAgents = Object.entries(agentMap).sort((a,b) => b[1] - a[1]).slice(0, 10); // Top 10
+    // 1. TABLA AGENTES
+    const sortedAgents = Object.entries(agentMap).sort((a,b) => b[1] - a[1]).slice(0, 10);
     document.getElementById('table-agents-body').innerHTML = sortedAgents.map(([name, count], i) => `
         <tr class="hover:bg-slate-50 transition-colors">
             <td class="py-2 pl-2 flex items-center gap-2">
@@ -294,38 +335,50 @@ function processAndRenderAdvancedStats(data, totalVentas, vistasProd) {
         </tr>
     `).join('');
 
-    // 2. TABLA PAÍSES
+    // 2. TABLA PAÍSES (Ahora sí se llenará)
     document.getElementById('table-countries-body').innerHTML = sortedCountries.slice(0, 10).map(([name, count], i) => {
         let flag = "🏳️";
-        if(name.includes("Cuba")) flag = "🇨🇺";
-        else if(name.includes("United States") || name.includes("USA")) flag = "🇺🇸";
-        else if(name.includes("Spain") || name.includes("España")) flag = "🇪🇸";
-        else if(name.includes("Mexico")) flag = "🇲🇽";
+        if(name === "Cuba") flag = "🇨🇺";
+        else if(name.includes("Estados Unidos") || name.includes("USA")) flag = "🇺🇸";
+        else if(name.includes("España")) flag = "🇪🇸";
+        
+        // Calculamos porcentaje para barra visual
+        const percent = Math.round((count / totalClicks) * 100);
         
         return `
-        <tr class="hover:bg-slate-50 transition-colors">
-            <td class="py-2 pl-2 text-gray-600 font-bold text-[11px] flex items-center gap-2">
-                <span>${flag}</span> ${name}
+        <tr class="hover:bg-slate-50 transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0">
+            <td class="py-3 pl-2 text-gray-600 font-bold text-[11px] align-middle">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">${flag}</span> 
+                    <span>${name}</span>
+                </div>
             </td>
-            <td class="py-2 text-right pr-2">
-                <span class="font-black text-slate-800">${count}</span>
+            <td class="py-3 text-right pr-2 align-middle w-24">
+                <div class="flex flex-col items-end">
+                    <span class="font-black text-slate-800">${count}</span>
+                    <div class="w-full bg-gray-100 h-1 rounded-full mt-1">
+                        <div class="bg-blue-500 h-full rounded-full" style="width: ${percent}%"></div>
+                    </div>
+                </div>
             </td>
         </tr>`;
     }).join('');
 
-    // 3. TABLA PRODUCTOS MÁS VISTOS
+    // 3. TABLA DE INTERÉS (PRODUCTOS) - LISTA COMPLETA
     if (vistasProd && vistasProd.length > 0) {
         const prodMap = {};
-        vistasProd.forEach(v => {
-            prodMap[v.nombre_producto] = (prodMap[v.nombre_producto] || 0) + 1;
-        });
-        const sortedProds = Object.entries(prodMap).sort((a,b) => b[1] - a[1]).slice(0, 10);
+        vistasProd.forEach(v => { prodMap[v.nombre_producto] = (prodMap[v.nombre_producto] || 0) + 1; });
+        
+        // ORDENAMOS PERO NO CORTAMOS (.slice ELIMINADO)
+        const sortedProds = Object.entries(prodMap).sort((a,b) => b[1] - a[1]);
         
         document.getElementById('table-products-body').innerHTML = sortedProds.map(([name, count], i) => `
             <tr class="hover:bg-slate-50 transition-colors border-b border-gray-50 dark:border-gray-700 last:border-0">
                 <td class="py-3 pl-2 align-middle">
-                    <!-- CORRECCIÓN: Quitamos 'truncate' y 'max-w' para permitir múltiples líneas -->
-                    <span class="text-emerald-600 font-black uppercase text-[10px] leading-snug block">${name}</span>
+                    <div class="flex items-start gap-2">
+                        <span class="text-[9px] font-bold text-gray-300 mt-0.5">#${i+1}</span>
+                        <span class="text-emerald-600 font-black uppercase text-[10px] leading-snug block">${name}</span>
+                    </div>
                 </td>
                 <td class="py-3 text-right pr-2 align-middle w-16">
                     <div class="flex items-center justify-end gap-1 text-[10px] text-gray-400 font-bold">
@@ -335,6 +388,6 @@ function processAndRenderAdvancedStats(data, totalVentas, vistasProd) {
             </tr>
         `).join('');
     } else {
-        document.getElementById('table-products-body').innerHTML = `<tr><td class="p-4 text-center text-gray-400">Sin datos de vistas aún</td></tr>`;
+        document.getElementById('table-products-body').innerHTML = `<tr><td class="p-4 text-center text-gray-400">Sin datos de interés aún</td></tr>`;
     }
 }
