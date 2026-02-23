@@ -1027,29 +1027,31 @@
 </div>
         </div>
 
-        <div>
-            <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Municipio de Entrega</label>
-            <div class="relative">
-                <select id="check-municipio" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 appearance-none focus:bg-white focus:border-primary focus:ring-0 transition-all" required>
-                    <option value="" disabled selected>Seleccionar...</option>
-                    <option value="Playa">Playa</option>
-                    <option value="Plaza de la Revolución">Plaza de la Revolución</option>
-                    <option value="Centro Habana">Centro Habana</option>
-                    <option value="Habana Vieja">Habana Vieja</option>
-                    <option value="Regla">Regla</option>
-                    <option value="Diez de Octubre">Diez de Octubre</option>
-                    <option value="Cerro">Cerro</option>
-                    <option value="Marianao">Marianao</option>
-                    <option value="La Lisa">La Lisa</option>
-                    <option value="Boyeros">Boyeros</option>
-                    <option value="Arroyo Naranjo">Arroyo Naranjo</option>
-                    <option value="Cotorro">Cotorro</option>
-                    <option value="Guanabacoa">Guanabacoa</option>
-                    <option value="San Miguel del Padrón">San Miguel del Padrón</option>
-                    <option value="Habana del Este">Habana del Este</option>
-                </select>
-                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
-                    <span class="material-symbols-outlined">expand_more</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- MUNICIPIO -->
+            <div>
+                <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Municipio</label>
+                <div class="relative">
+                    <select id="check-municipio" onchange="actualizarLocalidades(); recalcularTotalFinal();" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-base font-bold text-slate-800 appearance-none focus:bg-white focus:border-primary focus:ring-0 transition-all" required>
+                        <option value="" disabled selected>Seleccionar Municipio...</option>
+                        <!-- Se llenará con JavaScript -->
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOCALIDAD / REPARTO -->
+            <div>
+                <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Localidad / Reparto</label>
+                <div class="relative">
+                    <select id="check-localidad" onchange="recalcularTotalFinal();" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-base font-bold text-slate-800 appearance-none focus:bg-white focus:border-primary focus:ring-0 transition-all disabled:opacity-50" required disabled>
+                        <option value="" disabled selected>Elige municipio primero</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3614,17 +3616,8 @@ function renderCart() {
         }
 
         // Input de Mensajería (Tu lógica original + El botón nuevo debajo)
-        const shippingInput = `
-            <div class="flex flex-col items-end mt-1">
-                <div class="flex items-center justify-end gap-1">
-                    <span class="text-[9px] font-bold text-gray-400 uppercase">🚚 Envío:</span>
-                    <input type="number" value="${item.shipping_linea}" min="0" 
-                           onchange="updateLineShipping(${index}, this.value)"
-                           class="w-16 text-right font-bold text-slate-600 border-gray-200 bg-gray-50 rounded py-0 px-1 text-[10px] h-6 focus:bg-white focus:border-primary placeholder:text-gray-300">
-                </div>
-                ${botonConsultar} <!-- Aquí se inyecta el botón si es cliente -->
-            </div>
-        `;
+        // Input de Mensajería eliminado de cada línea porque ahora es Global
+        const shippingInput = botonConsultar ? `<div class="mt-2">${botonConsultar}</div>` : '';
 
         // Tu lógica de colores de ganancia intacta
         let colorGanancia = "text-emerald-500";
@@ -3699,15 +3692,26 @@ function changeQty(index, delta) {
 }
 
     function recalcularTotalFinal() {
-    // Solo sumamos USD
-    const totalUSD = cart.reduce((acc, item) => {
-        return acc + (item.precio_venta * item.qty) + (parseFloat(item.shipping_linea) || 0);
+    // 1. Sumar solo el precio de los equipos
+    const totalEquipos = cart.reduce((acc, item) => {
+        return acc + (item.precio_venta * item.qty);
     }, 0);
 
-    // Mostramos solo el total en USD
+    // 2. Obtener el costo de envío global automatizado
+    const costoEnvio = obtenerCostoMensajeriaGlobal();
+
+    // 3. Total Final
+    const totalUSD = totalEquipos + costoEnvio;
+
+    // 4. Mostrar en pantalla
     const elTotal = document.getElementById('total-convertido');
     if(elTotal) {
-        elTotal.innerText = `$ ${totalUSD.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        // Mostramos el desglose para que el cliente lo vea claro
+        let textoMostrar = `$${totalUSD.toLocaleString('en-US', {minimumFractionDigits: 0})}`;
+        if(costoEnvio > 0) {
+            textoMostrar += ` <span class="text-sm text-gray-400 block font-medium">(Incluye $${costoEnvio} de envío)</span>`;
+        }
+        elTotal.innerHTML = textoMostrar;
     }
 }
 
@@ -3721,55 +3725,54 @@ function changeQty(index, delta) {
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
 
-    // === INICIO BLOQUEO DE SEGURIDAD (NUEVO) ===
-    // 1. Verificamos cuánto suma la mensajería de todo el carrito
-    const totalEnvioCheck = cart.reduce((acc, item) => acc + (parseFloat(item.shipping_linea) || 0), 0);
+    // === 1. NUEVO: VALIDAR LOCALIDAD ===
+    const selectLocalidad = document.getElementById('check-localidad');
+    const localidadC = selectLocalidad ? selectLocalidad.value : "";
+    
+    if (!localidadC || localidadC === "") {
+        alert("⚠️ Por favor, selecciona una Localidad/Reparto antes de confirmar el pedido.");
+        return;
+    }
 
-    // 2. Si el envío es 0, lanzamos la alerta bloqueante
-    if (totalEnvioCheck === 0) {
-        const confirmarGratis = confirm("⚠️ ¡ATENCIÓN: ENVÍO $0! ⚠️\n\nEl costo de mensajería está marcado como GRATIS.\n\n¿Estás seguro de procesar el pedido sin cobrar envío?\n\n[Aceptar] = Sí, es correcto. Enviar.\n[Cancelar] = ¡Me olvidé! Volver para corregir.");
-        
-        // Si el usuario cancela, detenemos la función inmediatamente.
+    // === 2. NUEVO: CÁLCULO GLOBAL DE ENVÍO ===
+    const envioTotalGlobal = typeof obtenerCostoMensajeriaGlobal === 'function' ? obtenerCostoMensajeriaGlobal() : 0;
+
+    if (envioTotalGlobal === 0) {
+        const confirmarGratis = confirm("⚠️ ¡ATENCIÓN: ENVÍO $0! ⚠️\n\nEl costo de mensajería para esta zona está en $0.\n\n¿Estás seguro de procesar el pedido sin cobrar envío?\n\n[Aceptar] = Sí, es correcto. Enviar.\n[Cancelar] = ¡Me olvidé! Volver para corregir.");
         if (!confirmarGratis) return;
     }
-    // === FIN BLOQUEO DE SEGURIDAD ===
 
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
     btn.innerText = "PROCESANDO...";
 
     const session = localStorage.getItem('pth_session');
-    const isLogged = !!session; // Verdadero si es un Gestor Logueado
+    const isLogged = !!session; 
 
-    // 1. Captura de datos del Formulario
+    // Captura de datos del Formulario
     const nombreC = document.getElementById('check-nombre').value;
     const municipioC = document.getElementById('check-municipio').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
     const dirC = document.getElementById('check-dir').value;
     
-    // --- NUEVO: CAPTURAMOS LA NOTA (Si no existe, queda vacío) ---
     const notasInput = document.getElementById('check-notas');
     const notasC = notasInput ? notasInput.value.trim() : "";
-    // -------------------------------------------------------------
 
     const valVuelto = document.getElementById('check-vuelto').value;
     const metodoPagoSeleccionado = document.getElementById('check-moneda-pago').value;
-
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
-    // --- 2. EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN ---
+    // EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN
     const activeGestor = await obtenerDuenoReal(telC);
     
-    // --- 3. DETERMINAR A QUÉ WHATSAPP SE ENVÍA EL PEDIDO ---
-    const PHONE_DUENO_TIENDA = "5356071095"; // Número Central
+    // DETERMINAR A QUÉ WHATSAPP SE ENVÍA EL PEDIDO
+    const PHONE_DUENO_TIENDA = "5356071095"; 
     let whatsappDestino = PHONE_DUENO_TIENDA; 
 
     if (isLogged) {
-        // CASO A: GESTOR HACIENDO PEDIDO MANUAL
         whatsappDestino = PHONE_DUENO_TIENDA; 
     } else {
-        // CASO B: CLIENTE COMPRANDO POR ENLACE
         if (activeGestor !== "Venta Directa") {
             const { data: gDB } = await supabaseClient
                 .from('gestores')
@@ -3785,7 +3788,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
 
-    // --- 4. LÓGICA DE BINDEO (MODO DIOS) ---
+    // LÓGICA DE BINDEO (MODO DIOS)
     if (activeGestor !== "Venta Directa") {
         const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
         if (activeGestor === "Marcel Montano" || lvl >= 5) {
@@ -3798,7 +3801,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
 
-    // --- 5. DEFINIR ORIGEN ---
     let origenPedido = "Directo/Web";
     if (isLogged) {
         origenPedido = "Manual (Panel)";
@@ -3806,7 +3808,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         origenPedido = "Enlace Compartido";
     }
 
-    // --- 6. AGRUPAR CARRITO ---
+    // AGRUPAR CARRITO
     const gruposPorProveedor = cart.reduce((acc, item) => {
         const prov = item.proveedor || 'General';
         if (!acc[prov]) acc[prov] = [];
@@ -3817,100 +3819,75 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     let mensajeRaw = ""; 
     const promesas = [];
     const agentPhone = getAgentPhone(); 
+    
+    // Bandera para asignar el envío global SOLO a un vale (por si hay múltiples proveedores)
+    let envioYaCobrado = false;
 
-    // --- 7. GENERAR VALES Y MENSAJE ---
+    // GENERAR VALES Y MENSAJE
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
                 
-        // --- NUEVA LÓGICA ROBUSTA (SERVIDOR) ---
-       // --- LÓGICA DE CÁLCULO MANUAL (BYPASS SUPABASE RPC) ---
-       // --- LÓGICA DE CÁLCULO MANUAL (CORREGIDA: COLUMNA FECHA) ---
-        // --- LÓGICA DE CÁLCULO DE CONSECUTIVO MEJORADA (v4) ---
-        // --- LÓGICA DE CÁLCULO MATEMÁTICO BLINDADA (v6 - Final) ---
         let codPedido = "";
-        
         try {
-            // 1. Buscamos los últimos 20 pedidos ESPECÍFICOS DE ESTE PROVEEDOR
-            // Al usar .eq('proveedor', prov), ignoramos todos los demás (CA, A, B...)
             const { data: ultimosPedidos, error: errLast } = await supabaseClient
                 .from('pedidos')
                 .select('orden_dia')
-                .eq('proveedor', prov) // <--- ESTO GARANTIZA QUE SOLO MIRE LOS DE 'S' (o el que sea)
+                .eq('proveedor', prov) 
                 .not('orden_dia', 'like', '%TEMP%') 
-                .order('fecha', { ascending: false }) // Usamos 'fecha' según tu base de datos
+                .order('fecha', { ascending: false }) 
                 .limit(20); 
 
             if (errLast) throw errLast;
 
             let maximoNumero = 0;
-
-            // 2. Extraemos los números y buscamos el mayor matemáticamente
             if (ultimosPedidos && ultimosPedidos.length > 0) {
                 const numeros = ultimosPedidos.map(p => {
                     if (!p.orden_dia) return 0;
-                    // Rompemos el texto "CA-239" por el guion
                     const partes = p.orden_dia.split('-');
-                    // Tomamos la última parte y la convertimos en NÚMERO REAL
                     const num = parseInt(partes[partes.length - 1]);
                     return isNaN(num) ? 0 : num;
                 });
-
-                // Math.max encuentra el número más alto real (239 es mayor que 74)
                 if (numeros.length > 0) {
                     maximoNumero = Math.max(...numeros);
                 }
             }
-
-            // 3. Sumamos 1 al mayor encontrado
-            // Si maximoNumero es 0 (porque no hay pedidos de S), empezará en 1.
-            // Si el último era 23, el nuevo será 24.
-            const siguienteNumero = maximoNumero + 1;
-
-            // 4. Creamos el código final
-            codPedido = `${prov}-${siguienteNumero}`;
-
-            console.log(`Cálculo ID para ${prov}: Último mayor ${maximoNumero} -> Nuevo ${codPedido}`);
-
+            codPedido = `${prov}-${maximoNumero + 1}`;
         } catch (e) {
-            console.error("Fallo cálculo manual, usando emergencia:", e);
             const random = Math.floor(1000 + Math.random() * 9000);
             codPedido = `${prov}-TEMP-${random}`;
         }
-        // ------------------------------------------------------
-        // ------------------------------------------------------------------------------------------------------
-        // ------------------------------------------------------
-        // ---------------------------------------
-        // ---------------------------
-
 
         let detalleCuerpo = "";
         let subtotalProductos = 0; 
-        let envioTotalVale = 0;    
         let comisionTotalVale = 0; 
+        
+        // Asignación inteligente del costo de envío
+        let envioTotalVale = 0;
+        if (!envioYaCobrado) {
+            envioTotalVale = envioTotalGlobal;
+            envioYaCobrado = true;
+        }
 
         productos.forEach(item => {
             const costoEquipo = Number(item.precio_venta) * Number(item.qty);
             subtotalProductos += costoEquipo;
-            const costoEnvio = parseFloat(item.shipping_linea) || 0;
-            envioTotalVale += costoEnvio;
             
             if (activeGestor !== "Venta Directa") {
                 comisionTotalVale += (item.comision_actual * item.qty);
             }
             
-            detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Equipo: $${item.precio_venta} | 🚚 Envío: $${costoEnvio}\n`;
+            // Ya no mostramos el envío individual aquí, solo el equipo
+            detalleCuerpo += `📦 ${item.qty}x ${item.nombre}\n💵 Equipo: $${item.precio_venta}\n`;
         });
 
         let totalUSDVale = subtotalProductos + envioTotalVale;
 
-        // --- CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP ---
+        // CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP (Añadido Reparto)
         mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
-        mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
+        mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}\n📍 Zona: ${localidadC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
         
-        // --- NUEVO: AGREGAR NOTAS AL MENSAJE SI EXISTEN ---
         if (notasC) {
             mensajeRaw += `📝 *NOTAS / OBSERVACIONES:*\n${notasC}\n\n`;
         }
-        // --------------------------------------------------
 
         mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
         mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
@@ -3924,18 +3901,17 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         
         mensajeRaw += `\n------------------------------------\n\n`;
 
-        // GUARDAR EN BASE DE DATOS
-        const direccionFinalDB = notasC ? `${dirC} [NOTA: ${notasC}]` : dirC;
+        // GUARDAR EN BASE DE DATOS (Incluyendo Localidad)
+        const direccionFinalDB = notasC ? `${dirC} (${localidadC}) [NOTA: ${notasC}]` : `${dirC} (${localidadC})`;
 
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, 
             cliente: nombreC, 
             ci: ciC, 
             telefono: telC, 
-            direccion: direccionFinalDB, // Usamos la variable con la nota incluida
+            direccion: direccionFinalDB, 
             municipio: municipioC,
             producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
-            
             total: totalUSDVale,              
             costo_mensajeria: envioTotalVale, 
             comision_total: comisionTotalVale, 
@@ -3948,7 +3924,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         promesas.push(insertPromise);
     }
 
-    // 8. FINALIZAR
     await Promise.all(promesas);
 
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
@@ -3961,14 +3936,12 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // Generar PDF para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
-    const totalGlobalEnvio = cart.reduce((acc, i) => acc + (parseFloat(i.shipping_linea) || 0), 0);
     
-    // Agregamos la nota al PDF también
-    const dirPDF = notasC ? `${dirC} (${municipioC}) - NOTA: ${notasC}` : `${dirC} (${municipioC})`;
+    const dirPDF = notasC ? `${dirC} (${localidadC}, ${municipioC}) - NOTA: ${notasC}` : `${dirC} (${localidadC}, ${municipioC})`;
 
     const datosParaPDF = {
         cliente: nombreC, ci: ciC, direccion: dirPDF,
-        totalUSD: totalGlobalProductos + totalGlobalEnvio, mensajeria: totalGlobalEnvio,
+        totalUSD: totalGlobalProductos + envioTotalGlobal, mensajeria: envioTotalGlobal,
         items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
     };
     
@@ -10117,6 +10090,167 @@ function previewGithubImage(index) {
         icon.classList.remove('text-red-400');
     }
 }
+
+// ==========================================
+// 🚚 MOTOR DE MENSAJERÍA AUTOMÁTICA
+// ==========================================
+
+const tarifasMensajeria = {
+    "Arroyo Naranjo": {
+        "Poey": { pq: 6, gr: 10 }, "Santa Amalia": { pq: 6, gr: 10 }, "Mantilla": { pq: 6, gr: 10 },
+        "La Palma": { pq: 6, gr: 10 }, "Víbora Park": { pq: 6, gr: 10 }, "Los Pinos": { pq: 6, gr: 10 },
+        "Managua": { pq: 10, gr: 15 }, "Calvario": { pq: 10, gr: 15 }, "Guinera": { pq: 6, gr: 10 },
+        "Eléctrico": { pq: 6, gr: 10 }, "Párraga": { pq: 6, gr: 10 }, "Arroyo Polo": { pq: 6, gr: 10 },
+        "Porvenir": { pq: 6, gr: 10 }, "Montejo": { pq: 6, gr: 10 }, "Callejas": { pq: 6, gr: 10 },
+        "Vieja Linda": { pq: 6, gr: 10 }, "Rosario": { pq: 6, gr: 10 }, "Capri": { pq: 6, gr: 10 },
+        "Comodoro": { pq: 10, gr: 15 }, "El Retiro": { pq: 10, gr: 15 }, "Parcelación Moderna": { pq: 10, gr: 15 },
+        "Gavilán": { pq: 10, gr: 15 }, "El Moro": { pq: 6, gr: 10 }, "Reparto Solita": { pq: 10, gr: 15 }, "Las Guásimas": { pq: 10, gr: 15 }
+    },
+    "Boyeros": {
+        "Santiago de las Vegas": { pq: 10, gr: 15 }, "Rancho Boyeros": { pq: 10, gr: 15 }, "Calabazar": { pq: 10, gr: 15 },
+        "Abel Santamaría": { pq: 10, gr: 15 }, "Fontanar": { pq: 10, gr: 15 }, "Wajay": { pq: 10, gr: 15 },
+        "Altahabana": { pq: 6, gr: 10 }, "Capdevila": { pq: 6, gr: 10 }, "Aldabo": { pq: 6, gr: 10 },
+        "Trébol": { pq: 6, gr: 10 }, "Mulgoba": { pq: 10, gr: 15 }, "Los Cocos": { pq: 10, gr: 15 },
+        "Lidice": { pq: 10, gr: 15 }, "El Chico": { pq: 10, gr: 15 }, "Juan Manuel Márquez": { pq: 10, gr: 15 },
+        "Sierra Maestra": { pq: 10, gr: 15 }, "El Globo": { pq: 10, gr: 15 }, "Nuevo Santiago": { pq: 10, gr: 15 },
+        "La Fortuna": { pq: 6, gr: 10 }, "Miraflores Viejo": { pq: 6, gr: 10 }, "El Trigal": { pq: 6, gr: 10 },
+        "Ampliación de Mulgoba": { pq: 10, gr: 15 }, "Villa Nueva": { pq: 10, gr: 15 }, "Aurora": { pq: 10, gr: 15 },
+        "Embil": { pq: 6, gr: 6 }, "Rio Verde": { pq: 10, gr: 15 }, "Mazorra": { pq: 10, gr: 15 },
+        "Panamericana": { pq: 10, gr: 15 }, "Baluarte": { pq: 10, gr: 15 }, "Berenguer": { pq: 10, gr: 15 },
+        "Nazareno": { pq: 10, gr: 15 }, "Las Cañas": { pq: 10, gr: 15 }, "El Rincón": { pq: 10, gr: 15 }, "Bejucal": { pq: 10, gr: 15 }
+    },
+    "Centro Habana": { "Todo el municipio": { pq: 6, gr: 10 } },
+    "Cerro": {
+        "Cerro": { pq: 6, gr: 10 }, "Casino Deportivo": { pq: 6, gr: 10 }, "Las Cañas": { pq: 6, gr: 10 },
+        "Palatino": { pq: 6, gr: 10 }, "El Canal": { pq: 6, gr: 10 }, "Esquina de Tejas": { pq: 6, gr: 10 }, "Reparto Martí": { pq: 6, gr: 10 }
+    },
+    "Cotorro": {
+        "Santa María del Rosario": { pq: 10, gr: 15 }, "Cotorro": { pq: 10, gr: 15 }, "Cuatro Caminos": { pq: 15, gr: 20 },
+        "Alberto": { pq: 10, gr: 15 }, "Magdalena": { pq: 10, gr: 15 }, "Vedado Cotorro": { pq: 10, gr: 15 },
+        "Residencial Paraíso": { pq: 10, gr: 15 }, "Bello Palmar": { pq: 10, gr: 15 }, "Lotería": { pq: 10, gr: 15 },
+        "La Portada": { pq: 10, gr: 15 }, "La Gomera": { pq: 10, gr: 15 }, "San José de las Lajas": { pq: 20, gr: 30 }
+    },
+    "Diez de Octubre": {
+        "Víbora": { pq: 6, gr: 10 }, "Santo Suárez": { pq: 6, gr: 10 }, "Lawton": { pq: 6, gr: 10 },
+        "Luyanó": { pq: 6, gr: 10 }, "Sevillano": { pq: 6, gr: 10 }, "Vista Alegre": { pq: 6, gr: 10 },
+        "Tamarindo": { pq: 6, gr: 10 }, "Mónaco": { pq: 6, gr: 10 }, "La Lira": { pq: 6, gr: 10 }
+    },
+    "Guanabacoa": {
+        "Chivas": { pq: 6, gr: 10 }, "Dbeche": { pq: 6, gr: 10 }, "Minas": { pq: 10, gr: 15 },
+        "Barreras": { pq: 10, gr: 15 }, "La Hata": { pq: 10, gr: 15 }, "El Repollo": { pq: 10, gr: 15 },
+        "Villa María": { pq: 10, gr: 15 }, "Bacuranao": { pq: 10, gr: 15 }, "La Gallega": { pq: 10, gr: 15 },
+        "Aranguito": { pq: 6, gr: 10 }, "Arango": { pq: 6, gr: 10 }, "La Sepultura": { pq: 10, gr: 15 },
+        "Naranjo": { pq: 10, gr: 15 }, "Santa Fé": { pq: 10, gr: 15 }, "El Roble": { pq: 6, gr: 10 },
+        "Reparto Mañana": { pq: 6, gr: 10 }, "Nalón": { pq: 6, gr: 10 }, "Cruz de Piedra": { pq: 6, gr: 10 }
+    },
+    "Habana del Este": {
+        "Alamar": { pq: 10, gr: 15 }, "Camilo Cienfuegos": { pq: 10, gr: 15 }, "Guiteras": { pq: 10, gr: 15 },
+        "Villa Panamericana": { pq: 10, gr: 15 }, "Cojímar": { pq: 10, gr: 15 }, "Guayabo": { pq: 10, gr: 15 },
+        "Boca Ciega": { pq: 10, gr: 15 }, "Celimar": { pq: 10, gr: 15 }, "Campo Florido": { pq: 10, gr: 15 },
+        "Tarará": { pq: 10, gr: 15 }, "Bahía": { pq: 10, gr: 15 }, "Bajurayabo": { pq: 15, gr: 15 },
+        "Peñas Altas": { pq: 15, gr: 20 }, "Santa María": { pq: 10, gr: 15 }
+    },
+    "Habana Vieja": { "Todo el municipio": { pq: 6, gr: 10 } },
+    "La Lisa": {
+        "Alturas de La Lisa": { pq: 10, gr: 15 }, "Arroyo Arenas": { pq: 10, gr: 15 }, "Punta Brava": { pq: 10, gr: 15 },
+        "Arimao": { pq: 10, gr: 15 }, "El Cano": { pq: 10, gr: 15 }, "San Agustín": { pq: 10, gr: 15 },
+        "La Coronela": { pq: 10, gr: 15 }, "El Hueco": { pq: 10, gr: 15 }, "El Pedregal": { pq: 10, gr: 15 },
+        "Valle Grande": { pq: 15, gr: 15 }, "El Guatao": { pq: 15, gr: 15 }, "UCI": { pq: 15, gr: 15 }
+    },
+    "Marianao": {
+        "Los Quemados": { pq: 6, gr: 10 }, "Pogolotti": { pq: 4, gr: 10 }, "Los Pocitos": { pq: 4, gr: 10 },
+        "Santa Felicia": { pq: 6, gr: 10 }, "El Palmar": { pq: 6, gr: 10 }, "Belén": { pq: 6, gr: 10 },
+        "Zamora": { pq: 4, gr: 10 }, "Coco Solo": { pq: 4, gr: 10 }, "Finlay": { pq: 4, gr: 10 },
+        "Los Ángeles": { pq: 6, gr: 10 }, "Puentes Grandes": { pq: 6, gr: 10 }, "CUJAE": { pq: 6, gr: 10 }
+    },
+    "Playa": {
+        "Miramar": { pq: 6, gr: 10 }, "Buenavista": { pq: 6, gr: 10 }, "La Ceiba": { pq: 6, gr: 10 },
+        "La Sierra": { pq: 6, gr: 10 }, "Kholi": { pq: 4, gr: 10 }, "Siboney": { pq: 4, gr: 10 },
+        "Atabey": { pq: 6, gr: 10 }, "Santa Fé": { pq: 10, gr: 15 }, "Jaimanitas": { pq: 10, gr: 15 },
+        "Flores": { pq: 6, gr: 10 }, "Almendares": { pq: 4, gr: 10 }, "El Bosque": { pq: 6, gr: 10 },
+        "Paradero": { pq: 6, gr: 10 }, "Náutico": { pq: 6, gr: 10 }, "Puente Grande": { pq: 6, gr: 10 },
+        "La ELAM": { pq: 6, gr: 10 }, "Barbosa": { pq: 6, gr: 10 }, "Cubanacan": { pq: 6, gr: 10 }, "Romerillo": { pq: 6, gr: 10 }
+    },
+    "Plaza de la Revolución": {
+        "Vedado": { pq: 4, gr: 10 }, "Nuevo Vedado": { pq: 4, gr: 10 }, "Príncipe": { pq: 4, gr: 10 },
+        "Plaza": { pq: 4, gr: 10 }, "Puentes Grandes": { pq: 4, gr: 10 }
+    },
+    "Regla": { "Regla / Casablanca": { pq: 6, gr: 10 } },
+    "San Miguel del Padrón": {
+        "Diezmero": { pq: 6, gr: 10 }, "Alturas de Luyanó": { pq: 6, gr: 10 }, "San Francisco de Paula": { pq: 6, gr: 10 },
+        "California": { pq: 6, gr: 10 }, "La Cuevita": { pq: 6, gr: 10 }, "Virgen del Camino": { pq: 6, gr: 10 },
+        "Barrio Obrero": { pq: 6, gr: 10 }
+    }
+};
+
+// 1. Inicializar los municipios en el select
+window.addEventListener('load', () => {
+    const muniSelect = document.getElementById('check-municipio');
+    if(muniSelect) {
+        muniSelect.innerHTML = '<option value="" disabled selected>Seleccionar Municipio...</option>';
+        Object.keys(tarifasMensajeria).forEach(muni => {
+            muniSelect.innerHTML += `<option value="${muni}">${muni}</option>`;
+        });
+    }
+});
+
+// 2. Función para actualizar repartos
+window.actualizarLocalidades = function() {
+    const municipio = document.getElementById('check-municipio').value;
+    const locSelect = document.getElementById('check-localidad');
+    
+    locSelect.innerHTML = '<option value="" disabled selected>Seleccionar Reparto...</option>';
+    
+    if(municipio && tarifasMensajeria[municipio]) {
+        locSelect.disabled = false;
+        Object.keys(tarifasMensajeria[municipio]).forEach(loc => {
+            locSelect.innerHTML += `<option value="${loc}">${loc}</option>`;
+        });
+    } else {
+        locSelect.disabled = true;
+    }
+};
+
+// 3. Inteligencia Artificial: Detectar si hay un equipo grande en el carrito
+function carritoTieneEquipoGrande() {
+    return cart.some(item => {
+        const cat = (item.categoria || "").toUpperCase();
+        const nom = (item.nombre || "").toLowerCase();
+
+        // Reglas basadas en tu CSV
+        if (cat === 'LAVADORAS') return true;
+        if (cat === 'REFRIGERADORES') return true;
+        if (cat === 'NEVERAS' && !nom.includes('3.5')) return true; // Todo menos la de 3.5
+        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; // Plantas y estaciones
+        if (nom.includes('colchón') || nom.includes('colchon')) return true;
+        if (cat === 'COCINA' && (nom.includes('horno') || nom.includes('cocina 20') || nom.includes('cocina 24'))) return true;
+        if (cat === 'SMART TV' && (nom.includes('43') || nom.includes('50') || nom.includes('55') || nom.includes('60') || nom.includes('75'))) return true;
+
+        return false; // Si no cumple nada de lo anterior, es pequeño.
+    });
+}
+
+// 4. Calcular el precio final de la mensajería
+window.obtenerCostoMensajeriaGlobal = function() {
+    const municipio = document.getElementById('check-municipio')?.value;
+    const localidad = document.getElementById('check-localidad')?.value;
+    
+    if (!municipio || !localidad) return 0; // Si no han elegido, es 0
+
+    const tarifa = tarifasMensajeria[municipio][localidad];
+    if(!tarifa) return 0;
+
+    // A. Determinar Precio Base (¿Hay equipo grande?)
+    let costoBase = carritoTieneEquipoGrande() ? tarifa.gr : tarifa.pq;
+
+    // B. Regla: Si hay 3 o más equipos en total, aumenta un 50%
+    const totalEquipos = cart.reduce((acc, item) => acc + item.qty, 0);
+    if (totalEquipos >= 3) {
+        costoBase = costoBase * 1.5;
+    }
+
+    return costoBase;
+};
 
 </script>
 
