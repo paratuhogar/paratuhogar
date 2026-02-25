@@ -1834,7 +1834,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2302"; 
+const versionActual = "2402"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4138,9 +4138,7 @@ async function initAgentFloatingButton() {
         renderFloatingWA(referrer.nombre, referrer.telefono);
     }
 
-    // Renderizar Botón VIP (Siempre visible para clientes anónimos)
-    const vipBtn = document.getElementById('vip-club-trigger');
-    if (vipBtn) vipBtn.classList.remove('hidden');
+    
 }
 
 // 2. Función para pintar el botón con el teléfono del gestor
@@ -9758,50 +9756,35 @@ async function checkCustomerOwnership(phone) {
 // --- FUNCIÓN PARA MOSTRAR BOTÓN SOLO SI EL GESTOR ES NIVEL 10 O MARCEL ---
 // --- FUNCIÓN CORREGIDA: SOLO MUESTRA BOTÓN VIP SI HAY GESTOR NIVEL 10 O MARCEL ---
 async function checkVipButtonVisibility() {
-    // 1. Ocultar por defecto (Seguridad absoluta al inicio)
+    // 1. Capturamos el botón y lo ocultamos por defecto por seguridad
     const btn = document.getElementById('vip-club-trigger');
-    if(btn) btn.classList.add('hidden');
+    if(!btn) return;
+    btn.classList.add('hidden');
 
-    // 2. VERIFICACIÓN CRÍTICA: ¿Hay un gestor guardado en memoria?
-    const referrerRaw = localStorage.getItem('pth_referrer_smart');
-    
-    // SI NO HAY REFERIDO (Cliente Orgánico), PARAMOS AQUÍ. EL BOTÓN SE QUEDA OCULTO.
-    if (!referrerRaw) return; 
-
-    const referrer = JSON.parse(referrerRaw);
-    if (!referrer || !referrer.nombre) return;
-
-    const agentName = referrer.nombre;
-
-    // 3. MODO DIOS: Si el enlace es tuyo, se muestra.
-    if (agentName === "Marcel Montano") {
-        if(btn) btn.classList.remove('hidden');
-        console.log("🌟 Club VIP Activado: Modo Dios (Marcel).");
+    // 2. CONDICIÓN A: Estás dentro de tu panel de administración como Marcel
+    if (window.gestorName === "Marcel Montano") {
+        btn.classList.remove('hidden');
+        console.log("🌟 Club VIP: Visible para Admin (Marcel)");
         return;
     }
 
-    // 4. VERIFICAR NIVEL EN BASE DE DATOS (Solo si no es Marcel)
-    try {
-        const { count, error } = await supabaseClient
-            .from('pedidos')
-            .select('id', { count: 'exact', head: true })
-            .eq('gestor', agentName)
-            .eq('estado', 'Entregado');
-
-        if (error) throw error;
-
-        // SI TIENE 200+ VENTAS (Nivel 10), MOSTRAR BOTÓN
-        if (count >= 200) {
-            if(btn) btn.classList.remove('hidden');
-            console.log(`🌟 Club VIP Activado: El gestor ${agentName} es Nivel 10.`);
-        } else {
-            // Si es un gestor de nivel bajo, nos aseguramos que siga oculto
-            if(btn) btn.classList.add('hidden');
+    // 3. CONDICIÓN B: Es un cliente que entró por tu enlace de afiliado
+    const referrerRaw = localStorage.getItem('pth_referrer_smart');
+    if (referrerRaw) {
+        try {
+            const referrer = JSON.parse(referrerRaw);
+            if (referrer && referrer.nombre === "Marcel Montano") {
+                btn.classList.remove('hidden');
+                console.log("🌟 Club VIP: Visible para cliente de Marcel");
+                return;
+            }
+        } catch(e) {
+            console.error("Error leyendo referrer", e);
         }
-
-    } catch (e) {
-        console.error("Error verificando nivel VIP:", e);
     }
+
+    // Si entra cualquier otro cliente orgánico, o con el link de otro agente,
+    // el código llega hasta aquí y el botón se mantiene oculto.
 }
 
 // EJECUTAR AL CARGAR
