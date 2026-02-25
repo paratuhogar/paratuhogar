@@ -280,30 +280,40 @@
     .text-glow-blue { text-shadow: 0 0 5px #22d3ee; }
     .text-glow-purple { text-shadow: 0 0 5px #a855f7; }
 
-    /* === ANIMACIÓN SPLASH SCREEN === */
-/* 1. La pantalla oscura se desvanece */
+/* === ANIMACIÓN SPLASH SCREEN PERFECCIONADA === */
+/* 1. La pantalla oscura y el logo se desvanecen JUNTOS */
 @keyframes fadeOutSplash {
-    0% { opacity: 1; }
-    70% { opacity: 1; }
-    100% { opacity: 0; visibility: hidden; }
+    0% { opacity: 1; background-color: rgba(2, 6, 23, 1); }
+    100% { opacity: 0; background-color: rgba(2, 6, 23, 0); visibility: hidden; }
 }
 
-/* 2. El logo vuela hacia la esquina izquierda (donde está el menú) y se achica */
+/* 2. Viaje exacto a la esquina (-45vw es un estándar más seguro) */
 @keyframes flyToCorner {
-    0% { transform: scale(1) translate(0, 0); opacity: 1; }
-    30% { transform: scale(1.1) translate(0, 10px); opacity: 1; } /* Pequeño rebote inicial */
-    100% { transform: scale(0.15) translate(-300vw, -150vh); opacity: 0; } /* Vuela y desaparece */
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    20% { transform: translate(0, 10px) scale(1.05); opacity: 1; } /* Micro rebote */
+    100% { transform: translate(-45vw, -45vh) scale(0.15); opacity: 0; } 
 }
 
-/* Clases que activaremos con JavaScript */
+/* 3. El texto y el brillo se apagan rápido para no estorbar */
+@keyframes hideTextFast {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(20px); }
+}
+
+/* Clases activadoras (Todo dura 1 segundo exacto) */
 .splash-active {
-    animation: fadeOutSplash 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    pointer-events: none; /* Deja hacer clics abajo */
+    animation: fadeOutSplash 1s ease-in-out forwards;
+    pointer-events: none;
 }
 
-.splash-active #splash-logo,
-.splash-active #splash-text {
-    animation: flyToCorner 1.5s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+.splash-active #splash-logo {
+    animation: flyToCorner 1s ease-in-out forwards;
+}
+
+/* Aplicamos la desaparición rápida al texto y al brillo azul de atrás */
+.splash-active #splash-text,
+.splash-active div.animate-pulse { 
+    animation: hideTextFast 0.5s ease-in-out forwards;
 }
 </style>
 </style>
@@ -1951,22 +1961,19 @@ checkShortLinks();
     // === INICIO LÓGICA SPLASH SCREEN ===
     const splash = document.getElementById('splash-screen');
     if (splash) {
-        // Verifica si ya vio la animación en esta sesión
         if (!sessionStorage.getItem('pth_intro_vista')) {
-            // Le damos un pequeño tiempo (500ms) para que vea el logo gigante
+            // Espera solo 800 milisegundos para que el cliente lea el logo
             setTimeout(() => {
-                splash.classList.add('splash-active'); // Dispara la animación
+                splash.classList.add('splash-active'); 
                 
-                // Lo borramos del HTML a los 2 segundos para liberar memoria
+                // Lo borramos del HTML después de 1 segundo (lo que dura la animación)
                 setTimeout(() => {
                     splash.remove();
-                }, 2000);
+                }, 1000);
                 
-                // Guardamos que ya lo vio
                 sessionStorage.setItem('pth_intro_vista', 'true');
-            }, 500);
+            }, 800); // <-- Cambiado a 800 (antes 500) para que se aprecie mejor
         } else {
-            // Si ya lo había visto, lo borramos de golpe sin animación
             splash.remove();
         }
     }
