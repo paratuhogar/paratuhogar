@@ -1015,7 +1015,8 @@
 
     <!-- MODAL CARRITO / FORMULARIO -->
     <div id="cart-modal" class="fixed inset-0 z-[110] hidden bg-black/80 flex justify-end">
-        <div class="bg-white dark:bg-background-dark w-full max-w-md h-full shadow-2xl flex flex-col p-6 animate-slide-left overflow-y-auto pb-24">
+        <!-- CAMBIO: Padding ajustado y flex completo -->
+<div class="bg-white dark:bg-background-dark w-full max-w-md h-full shadow-2xl flex flex-col p-4 animate-slide-left overflow-y-auto pb-6">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-xl font-black uppercase italic text-primary">Mi Pedido</h2>
                 <button onclick="toggleCartModal(false)" class="p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
@@ -1027,7 +1028,8 @@
 
                 <!-- Reemplaza todo el <form id="checkout-form"> ... </form> con esto: -->
 
-<form id="checkout-form" class="flex flex-col h-full">
+<!-- CAMBIO: flex-1 en lugar de h-full para que el form se expanda sin romperse -->
+<form id="checkout-form" class="flex-1 flex flex-col mt-4">
     
     <!-- 1. HERRAMIENTAS GESTOR (Buscador grande) -->
     <div id="gestor-checkout-tools" class="hidden mb-6 space-y-4"> 
@@ -1049,7 +1051,8 @@
     </div>
 
     <!-- 2. CAMPOS DE TEXTO (Estilo Gigante - Imágenes 2, 3, 4) -->
-    <div class="space-y-5 flex-1 overflow-y-auto pb-4 px-1">
+    <!-- CAMBIO: Quitamos overflow-y-auto y flex-1, ahora crece libremente -->
+<div class="space-y-5 pb-4 px-1 mb-8">
         
         <div>
             <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Nombre del Cliente</label>
@@ -1172,8 +1175,9 @@
         </div>
 
     <!-- BOTÓN FINAL GIGANTE -->
-    <div class="pt-4 mt-auto">
-        <button type="submit" id="final-submit-btn" class="w-full bg-[#1a4789] text-white py-5 rounded-2xl font-black text-lg uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-[#2c6fb5] transition-all active:scale-95 flex items-center justify-center gap-3">
+    <!-- CAMBIO: Añadimos mt-6 (margen top) y quitamos mt-auto para que no se pegue -->
+<div class="pt-4 mt-6">
+    <button type="submit" id="final-submit-btn" class="w-full bg-[#1a4789] text-white py-5 rounded-2xl font-black text-lg uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-[#2c6fb5] transition-all active:scale-95 flex items-center justify-center gap-3">
             <span>Confirmar Pedido</span>
             <span class="material-symbols-outlined">arrow_forward</span>
         </button>
@@ -1834,7 +1838,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2402"; 
+const versionActual = "2502"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
