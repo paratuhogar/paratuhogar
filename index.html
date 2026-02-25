@@ -245,6 +245,7 @@
     .br { bottom: -2px; right: -2px; border-top: 0; border-left: 0; }
 
     <style>
+        
     /* === ESTILOS RANKING SOLO LEVELING === */
     
     /* Fondo de rejilla tecnológica */
@@ -278,11 +279,51 @@
     /* Texto brillante */
     .text-glow-blue { text-shadow: 0 0 5px #22d3ee; }
     .text-glow-purple { text-shadow: 0 0 5px #a855f7; }
+
+    /* === ANIMACIÓN SPLASH SCREEN === */
+/* 1. La pantalla oscura se desvanece */
+@keyframes fadeOutSplash {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
+/* 2. El logo vuela hacia la esquina izquierda (donde está el menú) y se achica */
+@keyframes flyToCorner {
+    0% { transform: scale(1) translate(0, 0); opacity: 1; }
+    30% { transform: scale(1.1) translate(0, 10px); opacity: 1; } /* Pequeño rebote inicial */
+    100% { transform: scale(0.15) translate(-300vw, -150vh); opacity: 0; } /* Vuela y desaparece */
+}
+
+/* Clases que activaremos con JavaScript */
+.splash-active {
+    animation: fadeOutSplash 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none; /* Deja hacer clics abajo */
+}
+
+.splash-active #splash-logo,
+.splash-active #splash-text {
+    animation: flyToCorner 1.5s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}
 </style>
 </style>
 </head>
 
 <body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
+
+    <!-- === PANTALLA DE CARGA (SPLASH SCREEN) === -->
+<div id="splash-screen" class="fixed inset-0 z-[999999] bg-[#020617] flex items-center justify-center transition-opacity">
+    <div class="relative flex flex-col items-center">
+        <!-- Brillo de fondo -->
+        <div class="absolute inset-0 bg-blue-500 blur-[80px] opacity-20 rounded-full w-48 h-48 animate-pulse"></div>
+        <!-- Logo Gigante -->
+        <img id="splash-logo" src="log.jpeg" alt="Cargando..." class="w-48 h-48 rounded-full border-4 border-white/10 shadow-[0_0_50px_rgba(26,71,137,0.5)] object-cover relative z-10">
+        <!-- Texto opcional -->
+        <h1 id="splash-text" class="text-white text-3xl font-black italic mt-6 tracking-widest relative z-10">
+            para<span class="text-[#2c6fb5]">tuhogar</span>
+        </h1>
+    </div>
+</div>
 
     <!-- Header / Navbar -->
     <!-- Header con Diseño Wave -->
@@ -1906,6 +1947,32 @@ checkShortLinks();
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
    window.addEventListener('load', async () => {
+    
+    // === INICIO LÓGICA SPLASH SCREEN ===
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+        // Verifica si ya vio la animación en esta sesión
+        if (!sessionStorage.getItem('pth_intro_vista')) {
+            // Le damos un pequeño tiempo (500ms) para que vea el logo gigante
+            setTimeout(() => {
+                splash.classList.add('splash-active'); // Dispara la animación
+                
+                // Lo borramos del HTML a los 2 segundos para liberar memoria
+                setTimeout(() => {
+                    splash.remove();
+                }, 2000);
+                
+                // Guardamos que ya lo vio
+                sessionStorage.setItem('pth_intro_vista', 'true');
+            }, 500);
+        } else {
+            // Si ya lo había visto, lo borramos de golpe sin animación
+            splash.remove();
+        }
+    }
+    // === FIN LÓGICA SPLASH SCREEN ===
+
+    // ... aquí sigue tu código original (await checkShortLinks(); etc...)
     // 1. Procesar identificación (Link corto y Referral) primero
     await checkShortLinks();
     await initSmartReferral();
