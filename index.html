@@ -292,7 +292,7 @@
         <!-- Logo -->
         <div class="flex items-center gap-8">
             <div class="flex items-center gap-2">
-                <div class="text-white"><span class="material-symbols-outlined text-3xl">home_iot_device</span></div>
+                <img src="log.jpeg" alt="Logo Paratuhogar" class="h-8 w-8 rounded-full border border-white/20 shadow-sm object-cover">
                 <h1 class="text-white text-xl font-extrabold tracking-tight">para<span class="text-slate-200">tuhogar</span></h1>
             </div>
             
@@ -972,13 +972,7 @@
             
             <div id="cart-items" class="space-y-4 mb-6"></div>
 
-            <div class="border-t pt-6 mb-6">
-                <div class="flex justify-between items-end mb-4">
-                    <span class="text-gray-400 font-bold uppercase text-xs">Total a Pagar</span>
-                    <div class="text-right">
-                        <p id="total-convertido" class="text-3xl font-black text-primary">$0.00</p>
-                    </div>
-                </div>
+            
 
                 <!-- Reemplaza todo el <form id="checkout-form"> ... </form> con esto: -->
 
@@ -1026,6 +1020,14 @@
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
 </div>
         </div>
+
+        <!-- CHECKBOX RECOGIDA EN ALMACÉN -->
+<div class="mb-4 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-200 flex items-center gap-3 cursor-pointer">
+    <input type="checkbox" id="check-recogida" onchange="toggleRecogidaEnAlmacen()" class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer">
+    <label for="check-recogida" class="text-sm font-black text-emerald-800 dark:text-emerald-400 uppercase cursor-pointer">
+        Lo recojo en el almacén (Envío $0)
+    </label>
+</div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- MUNICIPIO -->
@@ -1077,7 +1079,7 @@
             <option value="USD (Efectivo)" selected>💵 USD (Efectivo)</option>
             <option value="EUR (Efectivo)">💶 EUR (Efectivo)</option>
             <option value="Zelle">📱 Zelle (USA)</option>
-            <option value="CUP (Al cambio)">🇨🇺 CUP (Al cambio del día)</option>
+            <option value="CUP (Al cambio)">🇨🇺 CUP (Al cambio del día +10)</option>
         </select>
         <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
             <span class="material-symbols-outlined">payments</span>
@@ -1095,6 +1097,28 @@
         </div>
 
     </div>
+
+    <!-- === RESUMEN FINANCIERO (NUEVO DISEÑO) === -->
+        <div class="bg-gray-900 rounded-2xl p-5 mb-4 shadow-xl">
+            <h4 class="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-3 border-b border-gray-700 pb-2">Resumen de Cuenta</h4>
+            
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-300 text-sm font-bold">Equipos:</span>
+                <span id="resumen-equipos" class="text-white text-sm font-black">$0</span>
+            </div>
+            
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-gray-300 text-sm font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">local_shipping</span> Mensajería:</span>
+                <span id="resumen-envio" class="text-amber-400 text-sm font-black">$0</span>
+            </div>
+
+            <div class="flex justify-between items-end border-t border-gray-700 pt-3">
+                <span class="text-white font-black uppercase text-sm">Total a Pagar:</span>
+                <div class="text-right">
+                    <p id="total-convertido" class="text-3xl font-black text-emerald-400 leading-none">$0</p>
+                </div>
+            </div>
+        </div>
 
     <!-- BOTÓN FINAL GIGANTE -->
     <div class="pt-4 mt-auto">
@@ -1182,6 +1206,16 @@
             <h3 id="m-stat-gestores" class="text-3xl font-black text-blue-500">0</h3>
         </div>
     </div>
+
+    <!-- NUEVO: ESTADÍSTICAS POR MUNICIPIO -->
+<div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm mb-8">
+    <h3 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">map</span> Entregas por Municipio
+    </h3>
+    <div id="m-stat-municipios" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Se llena con JS -->
+    </div>
+</div>
 
     <!-- Pestañas del Master Control (LOGÍSTICA, PAGOS, INVENTARIO, ANÁLISIS, TRÁFICO, APROBACIONES) -->
 <div class="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide whitespace-nowrap">
@@ -1694,7 +1728,12 @@
             <!-- FORMULARIO LOGIN -->
             <div id="form-login" class="space-y-4">
                 <input type="text" id="log-user" placeholder="Tu Nombre de Usuario" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
-                <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <div class="relative w-full">
+    <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3 pr-10">
+    <button type="button" onclick="togglePassword('log-pass', 'eye-log')" class="absolute right-3 top-3.5 text-gray-400 hover:text-primary">
+        <span id="eye-log" class="material-symbols-outlined text-xl">visibility</span>
+    </button>
+</div>
                 <button onclick="processLogin()" class="w-full bg-primary text-white py-4 rounded-xl font-black uppercase shadow-lg shadow-primary/30">Iniciar Sesión</button>
                 
                 <!-- BOTÓN NUEVO: OLVIDÉ CONTRASEÑA -->
@@ -3603,17 +3642,7 @@ function renderCart() {
 
         // --- NUEVO: Lógica del botón de consulta (Solo para clientes) ---
         let botonConsultar = '';
-        if (!isGestor) {
-            // Escapamos el nombre para evitar errores con comillas
-            const nombreSeguro = item.nombre.replace(/'/g, "\\'");
-            botonConsultar = `
-                <button type="button" onclick="consultarMensajeria('${nombreSeguro}')" 
-                    class="mt-1 text-[9px] font-bold text-blue-500 hover:text-blue-700 underline cursor-pointer flex items-center justify-end gap-1 w-full bg-transparent border-none p-0 transition-colors">
-                    <span class="material-symbols-outlined text-[10px]">chat</span>
-                    <span>Consultar costo</span>
-                </button>
-            `;
-        }
+        
 
         // Input de Mensajería (Tu lógica original + El botón nuevo debajo)
         // Input de Mensajería eliminado de cada línea porque ahora es Global
@@ -3692,27 +3721,16 @@ function changeQty(index, delta) {
 }
 
     function recalcularTotalFinal() {
-    // 1. Sumar solo el precio de los equipos
-    const totalEquipos = cart.reduce((acc, item) => {
-        return acc + (item.precio_venta * item.qty);
-    }, 0);
-
-    // 2. Obtener el costo de envío global automatizado
+    const totalEquipos = cart.reduce((acc, item) => acc + (item.precio_venta * item.qty), 0);
     const costoEnvio = obtenerCostoMensajeriaGlobal();
-
-    // 3. Total Final
     const totalUSD = totalEquipos + costoEnvio;
 
-    // 4. Mostrar en pantalla
+    // Actualizar cajas nuevas
+    if(document.getElementById('resumen-equipos')) document.getElementById('resumen-equipos').innerText = `$${totalEquipos.toLocaleString()}`;
+    if(document.getElementById('resumen-envio')) document.getElementById('resumen-envio').innerText = costoEnvio === 0 ? "GRATIS" : `$${costoEnvio.toLocaleString()}`;
+    
     const elTotal = document.getElementById('total-convertido');
-    if(elTotal) {
-        // Mostramos el desglose para que el cliente lo vea claro
-        let textoMostrar = `$${totalUSD.toLocaleString('en-US', {minimumFractionDigits: 0})}`;
-        if(costoEnvio > 0) {
-            textoMostrar += ` <span class="text-sm text-gray-400 block font-medium">(Incluye $${costoEnvio} de envío)</span>`;
-        }
-        elTotal.innerHTML = textoMostrar;
-    }
+    if(elTotal) elTotal.innerText = `$${totalUSD.toLocaleString()}`;
 }
 
     
@@ -3725,11 +3743,16 @@ function changeQty(index, delta) {
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
 
+    // === NUEVO: SABER SI ES RECOGIDA EN ALMACÉN ===
+    const isRecogida = document.getElementById('check-recogida') ? document.getElementById('check-recogida').checked : false;
+
     // === 1. NUEVO: VALIDAR LOCALIDAD ===
     const selectLocalidad = document.getElementById('check-localidad');
-    const localidadC = selectLocalidad ? selectLocalidad.value : "";
+    // Si es recogida, forzamos texto. Si no, tomamos el del select
+    const localidadC = isRecogida ? "Centro de Entrega" : (selectLocalidad ? selectLocalidad.value : "");
     
-    if (!localidadC || localidadC === "") {
+    // Solo validamos que no esté vacío si NO es recogida
+    if (!isRecogida && (!localidadC || localidadC === "")) {
         alert("⚠️ Por favor, selecciona una Localidad/Reparto antes de confirmar el pedido.");
         return;
     }
@@ -3737,7 +3760,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // === 2. NUEVO: CÁLCULO GLOBAL DE ENVÍO ===
     const envioTotalGlobal = typeof obtenerCostoMensajeriaGlobal === 'function' ? obtenerCostoMensajeriaGlobal() : 0;
 
-    if (envioTotalGlobal === 0) {
+    // Solo alertamos de envío $0 si NO es recogida en almacén
+    if (!isRecogida && envioTotalGlobal === 0) {
         const confirmarGratis = confirm("⚠️ ¡ATENCIÓN: ENVÍO $0! ⚠️\n\nEl costo de mensajería para esta zona está en $0.\n\n¿Estás seguro de procesar el pedido sin cobrar envío?\n\n[Aceptar] = Sí, es correcto. Enviar.\n[Cancelar] = ¡Me olvidé! Volver para corregir.");
         if (!confirmarGratis) return;
     }
@@ -3749,12 +3773,14 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session; 
 
-    // Captura de datos del Formulario
+    // === CAPTURA DE DATOS DEL FORMULARIO ===
     const nombreC = document.getElementById('check-nombre').value;
-    const municipioC = document.getElementById('check-municipio').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
-    const dirC = document.getElementById('check-dir').value;
+    
+    // Si marcó recogida, sobrescribimos Municipio y Dirección automáticamente
+    const municipioC = isRecogida ? "Almacén" : document.getElementById('check-municipio').value;
+    const dirC = isRecogida ? "Recogida presencial en almacén" : document.getElementById('check-dir').value;
     
     const notasInput = document.getElementById('check-notas');
     const notasC = notasInput ? notasInput.value.trim() : "";
@@ -3787,6 +3813,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             }
         }
     }
+
+    // ... (El resto de tu código de la línea: // LÓGICA DE BINDEO (MODO DIOS) hacia abajo se queda exactamente igual)
 
     // LÓGICA DE BINDEO (MODO DIOS)
     if (activeGestor !== "Venta Directa") {
@@ -4494,6 +4522,30 @@ function updateAdminStats(pedidos) {
     document.getElementById('m-stat-pendientes').innerText = pendientes;
     document.getElementById('m-stat-deuda').innerText = `$${deuda.toLocaleString()}`;
     document.getElementById('m-stat-gestores').innerText = new Set(pedidos.map(p => p.gestor)).size;
+
+    // --- NUEVO: CALCULAR POR MUNICIPIO ---
+    const muniCounts = {};
+    pedidos.forEach(p => {
+        if(p.estado !== 'Cancelado' && p.municipio && p.municipio !== "Almacén") {
+            muniCounts[p.municipio] = (muniCounts[p.municipio] || 0) + 1;
+        }
+    });
+
+    const muniSorted = Object.entries(muniCounts).sort((a, b) => b[1] - a[1]); // Ordenar de mayor a menor
+    
+    const containerMuni = document.getElementById('m-stat-municipios');
+    if (containerMuni) {
+        if (muniSorted.length === 0) {
+            containerMuni.innerHTML = "<p class='text-xs text-gray-400'>No hay datos de municipios aún.</p>";
+        } else {
+            containerMuni.innerHTML = muniSorted.map(([muni, count]) => `
+                <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-900 p-2 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <span class="text-[10px] font-bold text-gray-600 uppercase truncate pr-2" title="${muni}">${muni}</span>
+                    <span class="text-xs font-black text-primary bg-blue-100 px-2 rounded-md">${count}</span>
+                </div>
+            `).join('');
+        }
+    }
 }
 
 // --- FUNCIÓN DE LOGÍSTICA MAESTRA CON FILTROS AVANZADOS ---
@@ -6281,6 +6333,18 @@ async function processLogin() {
         alert("Error de conexión.");
     }
 }
+
+window.togglePassword = function(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (input.type === "password") {
+        input.type = "text";
+        icon.innerText = "visibility_off";
+    } else {
+        input.type = "password";
+        icon.innerText = "visibility";
+    }
+};
 
     // 3. Proceso de Registro
     
@@ -10232,24 +10296,45 @@ function carritoTieneEquipoGrande() {
 
 // 4. Calcular el precio final de la mensajería
 window.obtenerCostoMensajeriaGlobal = function() {
+    // Si marcó recogida, el envío es 0
+    const isRecogida = document.getElementById('check-recogida')?.checked;
+    if (isRecogida) return 0;
+
     const municipio = document.getElementById('check-municipio')?.value;
     const localidad = document.getElementById('check-localidad')?.value;
     
-    if (!municipio || !localidad) return 0; // Si no han elegido, es 0
+    if (!municipio || !localidad) return 0;
 
     const tarifa = tarifasMensajeria[municipio][localidad];
     if(!tarifa) return 0;
 
-    // A. Determinar Precio Base (¿Hay equipo grande?)
     let costoBase = carritoTieneEquipoGrande() ? tarifa.gr : tarifa.pq;
 
-    // B. Regla: Si hay 3 o más equipos en total, aumenta un 50%
     const totalEquipos = cart.reduce((acc, item) => acc + item.qty, 0);
     if (totalEquipos >= 3) {
         costoBase = costoBase * 1.5;
     }
 
     return costoBase;
+};
+
+window.toggleRecogidaEnAlmacen = function() {
+    const isChecked = document.getElementById('check-recogida').checked;
+    
+    const muni = document.getElementById('check-municipio');
+    const loc = document.getElementById('check-localidad');
+    const dir = document.getElementById('check-dir');
+
+    if (isChecked) {
+        muni.disabled = true; muni.required = false; muni.value = "";
+        loc.disabled = true; loc.required = false; loc.innerHTML = '<option value="" disabled selected>No aplica</option>';
+        dir.disabled = true; dir.required = false; dir.value = "Recogida en Almacén";
+    } else {
+        muni.disabled = false; muni.required = true;
+        dir.disabled = false; dir.required = true; dir.value = "";
+        actualizarLocalidades();
+    }
+    recalcularTotalFinal(); // Actualiza el precio al instante
 };
 
 </script>
