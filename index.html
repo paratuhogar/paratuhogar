@@ -1281,6 +1281,10 @@
     <button onclick="changeAdminTab('ventas-prod')" id="tab-ventas-prod" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
     🏆 Top Productos
 </button>
+
+<button onclick="changeAdminTab('buzon')" id="tab-buzon" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
+    📢 Buzón Gestores
+    </button>
     
 </div>
 
@@ -1545,6 +1549,29 @@
                 <!-- Se llena con JS -->
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- === NUEVA SECCIÓN: BUZÓN DE REPORTES === -->
+<div id="cnt-buzon" class="tab-cnt hidden space-y-6">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm flex justify-between items-center">
+        <div>
+            <h3 class="text-lg font-black uppercase text-indigo-600 flex items-center gap-2">
+                <span class="material-symbols-outlined">campaign</span> Buzón de Inteligencia
+            </h3>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Solicitudes y reportes de tu equipo</p>
+        </div>
+        <button onclick="loadAdminReports()" class="bg-indigo-50 text-indigo-600 p-2 rounded-xl hover:bg-indigo-100 transition-colors">
+            <span class="material-symbols-outlined">refresh</span>
+        </button>
+    </div>
+
+    <!-- Lista de Reportes -->
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm p-6">
+        <div id="list-admin-reportes" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Los reportes se cargarán aquí por JS -->
+            <p class="text-center text-gray-400 text-xs py-4 col-span-full">Cargando buzón...</p>
+        </div>
     </div>
 </div>
 
@@ -4002,7 +4029,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vueltoC}\n`;
 
         if (isLogged) {
-            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nAgente: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Agente: ${agentPhone}\n`;
+            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
         }
         
         mensajeRaw += `\n------------------------------------\n\n`;
@@ -4436,6 +4463,7 @@ async function loadAdminData() {
         } catch(e) { console.log("Cruce de datos pendiente"); }
     }
     loadPendingGestores();
+    loadAdminReports();
 }
 
 // --- NUEVA LÓGICA DE EDICIÓN TOTAL (ADMIN MASTER) ---
@@ -10007,7 +10035,7 @@ function reenviarPedidoAdmin(id) {
     mensaje += `\n🛒 *DETALLE*\n📦 ${p.producto}\n\n💰 *TOTAL A COBRAR: $${total} USD*\n(Equipos: $${equipo} + Envío: $${envio})\n`;
 
     const miTel = getAgentPhone(); 
-    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nAgente: ${p.gestor}\nComisión: $${p.comision_total}\nTel Agente: ${miTel}\n`;
+    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
     
     window.open(`https://api.whatsapp.com/send?phone=${PHONE_DUENO}&text=${encodeURIComponent(mensaje)}`, '_blank');
 }
@@ -10049,7 +10077,7 @@ function reenviarValeAdmin(id) {
     // Datos internos para que el almacén sepa de quién es
     mensaje += `\n------------------------------------\n`;
     mensaje += `👮‍♂️ *DATOS INTERNOS*\n`;
-    mensaje += `Agente Original: ${p.gestor}\n`;
+    mensaje += `Comercial: ${p.gestor}\n`;
     mensaje += `Comisión: $${p.comision_total}\n`;
     
     // 5. Enviar
@@ -10397,6 +10425,81 @@ window.toggleRecogidaEnAlmacen = function() {
     }
     recalcularTotalFinal(); // Actualiza el precio al instante
 };
+
+// ==========================================
+// LÓGICA DEL BUZÓN DE INTELIGENCIA (ADMIN)
+// ==========================================
+let reportesAdminRaw = [];
+
+async function loadAdminReports() {
+    const container = document.getElementById('list-admin-reportes');
+    if(container) container.innerHTML = `<p class="text-center text-gray-400 text-xs py-4 col-span-full"><span class="loader w-4 h-4 border-indigo-500"></span> Buscando reportes...</p>`;
+
+    try {
+        // Buscamos en la tabla donde se guardan los reportes
+        const { data, error } = await supabaseClient
+            .from('reportes_gestor')
+            .select('*')
+            .order('id', { ascending: false }); // Los más nuevos primero
+
+        if (error) throw error;
+        
+        reportesAdminRaw = data;
+        renderAdminReports();
+    } catch (e) {
+        console.error("Error cargando reportes:", e);
+        if(container) container.innerHTML = `<p class="text-center text-red-400 text-xs py-4 col-span-full">Error al conectar con la base de datos.</p>`;
+    }
+}
+
+function renderAdminReports() {
+    const container = document.getElementById('list-admin-reportes');
+    if (!container) return;
+
+    if (!reportesAdminRaw || reportesAdminRaw.length === 0) {
+        container.innerHTML = `<p class="text-center text-gray-400 font-bold text-xs py-10 col-span-full">El buzón está vacío. No hay reportes nuevos.</p>`;
+        return;
+    }
+
+    container.innerHTML = reportesAdminRaw.map(r => {
+        // Colores según el tipo de reporte
+        let colorTag = "bg-gray-100 text-gray-600 border-gray-200";
+        let icon = "info";
+        if(r.categoria === 'Problema') { colorTag = "bg-red-50 text-red-600 border-red-200"; icon = "warning"; }
+        if(r.categoria === 'Competencia') { colorTag = "bg-orange-50 text-orange-600 border-orange-200"; icon = "query_stats"; }
+        if(r.categoria === 'Solicitud') { colorTag = "bg-blue-50 text-blue-600 border-blue-200"; icon = "inventory_2"; }
+        if(r.categoria === 'Sugerencia') { colorTag = "bg-emerald-50 text-emerald-600 border-emerald-200"; icon = "lightbulb"; }
+
+        // Botón para ver foto si adjuntaron una
+        let imgHtml = '';
+        if (r.imagen_url) {
+            // Reconstruimos la URL pública de Supabase
+            const urlFoto = `https://ljqwaovevfatkiigirhf.supabase.co/storage/v1/object/public/productos/${r.imagen_url}`;
+            imgHtml = `
+            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <a href="${urlFoto}" target="_blank" class="inline-flex items-center gap-1 text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-indigo-100 transition-colors">
+                    <span class="material-symbols-outlined text-[14px]">image</span> Ver Foto Adjunta
+                </a>
+            </div>`;
+        }
+
+        return `
+        <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-start mb-3">
+                    <span class="px-2 py-1 rounded text-[9px] font-black uppercase border flex items-center gap-1 ${colorTag}">
+                        <span class="material-symbols-outlined text-[12px]">${icon}</span> ${r.categoria}
+                    </span>
+                    <span class="text-[9px] font-black text-gray-400 uppercase bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm border border-gray-100 dark:border-gray-700">
+                        Por: <span class="text-indigo-500">${r.gestor}</span>
+                    </span>
+                </div>
+                <p class="text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-pre-wrap leading-relaxed">${r.mensaje}</p>
+            </div>
+            ${imgHtml}
+        </div>`;
+    }).join('');
+}
 
 </script>
 
