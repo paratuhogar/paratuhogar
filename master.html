@@ -702,10 +702,16 @@ async function loadConciliacion() {
         if(match) qty = parseInt(match[1]);
 
         const totalVenta = parseFloat(p.total);
+        const costoMensajeria = parseFloat(p.costo_mensajeria || 0); // <--- EXTRAEMOS LA MENSAJERÍA
+        
+        // El precio real de los equipos vendidos (sin el envío)
+        const totalEquipos = totalVenta - costoMensajeria; 
         
         // Total Costo = Costo unitario * Cantidad
         const totalCosto = costoBase * qty;
-        const aRecibir = totalVenta - totalCosto;
+        
+        // La utilidad real es lo que quedó de los equipos menos lo que cobra el proveedor
+        const aRecibir = totalEquipos - totalCosto;
 
         sumaTotalARecibir += aRecibir;
 
