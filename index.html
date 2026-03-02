@@ -1083,6 +1083,14 @@
     </label>
 </div>
 
+<!-- NUEVO: BOTÓN CONTACTO ALMACÉN (Oculto por defecto) -->
+<div id="btn-coordinar-almacen" class="hidden mb-4 animate-fade-in">
+    <a href="https://wa.me/5356071095?text=Hola%2C%20estoy%20en%20la%20tienda%20y%20quiero%20hacer%20un%20pedido%20con%20recogida%20en%20almac%C3%A9n." target="_blank" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-3 rounded-xl font-black text-xs uppercase flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 transition-all">
+        <i class="fab fa-whatsapp text-lg"></i>
+        Escribir a Administración para Coordinar
+    </a>
+</div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- MUNICIPIO -->
             <div>
@@ -1455,23 +1463,30 @@
             <span class="material-symbols-outlined text-sm">verified_user</span> Gestores Activos (Equipo)
         </h4>
 
-        <!-- FILTROS DE EQUIPO (NUEVO) -->
-<div class="flex flex-wrap gap-2 mb-4">
-    <button onclick="filterAgents('TODOS', this)" class="btn-agent-filter active px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-800 text-white shadow-lg transition-all border border-slate-700">
-        Todos
-    </button>
-    <button onclick="filterAgents('TOP', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-amber-50 hover:text-amber-600 transition-all">
-        🏆 Top Ventas
-    </button>
-    <button onclick="filterAgents('ONLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-600 transition-all">
-        🟢 Conectados
-    </button>
-    <button onclick="filterAgents('OFFLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-600 transition-all">
-        💤 Inactivos
-    </button>
-    <button onclick="filterAgents('PELIGRO', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-600 transition-all">
-        🔴 En Peligro (+30 días)
-    </button>
+        <!-- FILTROS DE EQUIPO (ACTUALIZADO CON FECHAS) -->
+<div class="flex flex-col md:flex-row justify-between gap-4 mb-4 bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-200 dark:border-gray-700">
+    <div class="flex flex-wrap gap-2">
+        <button onclick="filterAgents('TODOS', this)" class="btn-agent-filter active px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-slate-800 text-white shadow-lg transition-all border border-slate-700">Todos</button>
+        <button onclick="filterAgents('TOP', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-amber-50 hover:text-amber-600 transition-all">🏆 Top Ventas</button>
+        <button onclick="filterAgents('ONLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-emerald-50 hover:text-emerald-600 transition-all">🟢 Conectados</button>
+        <button onclick="filterAgents('OFFLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-600 transition-all">💤 Inactivos</button>
+        <button onclick="filterAgents('PELIGRO', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-600 transition-all">🔴 En Peligro</button>
+    </div>
+    
+    <!-- NUEVO: Selector de Fechas (Fecha de Registro del Gestor) -->
+    <div class="flex items-center gap-2">
+        <div class="flex flex-col">
+            <span class="text-[8px] font-black text-gray-400 uppercase ml-1">Fecha Registro (Desde)</span>
+            <input type="date" id="f-agent-desde" onchange="renderAgentTeamTable()" class="text-[10px] font-bold border-gray-200 rounded-lg p-1.5 focus:ring-0 dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
+        </div>
+        <div class="flex flex-col">
+            <span class="text-[8px] font-black text-gray-400 uppercase ml-1">Hasta</span>
+            <input type="date" id="f-agent-hasta" onchange="renderAgentTeamTable()" class="text-[10px] font-bold border-gray-200 rounded-lg p-1.5 focus:ring-0 dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
+        </div>
+        <button onclick="clearAgentDateFilters()" class="mt-4 p-1.5 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-lg transition-colors" title="Limpiar Fechas">
+            <span class="material-symbols-outlined text-[14px]">close</span>
+        </button>
+    </div>
 </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
@@ -1865,7 +1880,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "103a"; 
+const versionActual = "203"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8517,7 +8532,8 @@ async function loadPendingGestores() {
             conversion: misClics.length > 0 ? ((misVentas.length / misClics.length) * 100).toFixed(1) : "0.0",
             ultimaVenta: fechaUltimaVenta,
             ultimoAcceso: fechaUltimoAcceso,
-            diasInactivo: diasInactivo
+            diasInactivo: diasInactivo,
+            fechaRegistro: g.created_at
         };
     });
 
@@ -8547,9 +8563,29 @@ function renderAgentTeamTable() {
     const container = document.getElementById('list-admin-activos');
     if (!container) return;
 
+    // --- NUEVO: Capturar fechas de los inputs ---
+    const dateDesde = document.getElementById('f-agent-desde')?.value;
+    const dateHasta = document.getElementById('f-agent-hasta')?.value;
+
     // 1. APLICAR FILTROS SOBRE LA LISTA GLOBAL
     let listaFiltrada = [...globalAgentsList];
 
+    // --- NUEVO: Aplicar Filtro de Fecha de Registro ---
+    if (dateDesde || dateHasta) {
+        listaFiltrada = listaFiltrada.filter(g => {
+            // Asegurarnos de que existe la fecha (requiere el cambio en loadPendingGestores)
+            const fReg = g.fechaRegistro ? new Date(g.fechaRegistro).toISOString().split('T')[0] : null;
+            let pasaDesde = true;
+            let pasaHasta = true;
+
+            if (dateDesde && fReg) pasaDesde = fReg >= dateDesde;
+            if (dateHasta && fReg) pasaHasta = fReg <= dateHasta;
+
+            return pasaDesde && pasaHasta;
+        });
+    }
+
+    // --- LO QUE YA TENÍAS INTACTO (Filtros de estado) ---
     if (currentAgentFilter === 'TOP') {
         // Ordenar por número de ventas (Mayor a menor)
         listaFiltrada.sort((a,b) => b.ventas - a.ventas);
@@ -8577,7 +8613,7 @@ function renderAgentTeamTable() {
         return;
     }
 
-    // 2. GENERAR HTML (Con las fechas y contadores nuevos)
+    // 2. GENERAR HTML (Con las fechas y contadores nuevos - INTACTO A TU DISEÑO)
     container.innerHTML = listaFiltrada.map(g => {
         // Semáforo de Colores
         let semaforo = "bg-gray-400";
@@ -10413,15 +10449,31 @@ window.toggleRecogidaEnAlmacen = function() {
     const muni = document.getElementById('check-municipio');
     const loc = document.getElementById('check-localidad');
     const dir = document.getElementById('check-dir');
+    const btnCoordinar = document.getElementById('btn-coordinar-almacen');
+
+    // Inteligencia: Detectar si es cliente orgánico (sin gestor asignado)
+    const isLogged = !!localStorage.getItem('pth_session'); // ¿Es un admin logueado?
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart')); // ¿Viene por link?
+    const esClienteOrganico = !isLogged && (!referrer || !referrer.nombre || referrer.nombre === 'Venta Directa');
 
     if (isChecked) {
         muni.disabled = true; muni.required = false; muni.value = "";
         loc.disabled = true; loc.required = false; loc.innerHTML = '<option value="" disabled selected>No aplica</option>';
         dir.disabled = true; dir.required = false; dir.value = "Recogida en Almacén";
+        
+        // Si no tiene gestor, le mostramos el botón directo al administrador
+        if (esClienteOrganico && btnCoordinar) {
+            btnCoordinar.classList.remove('hidden');
+        }
     } else {
         muni.disabled = false; muni.required = true;
         dir.disabled = false; dir.required = true; dir.value = "";
         actualizarLocalidades();
+        
+        // Ocultar botón si desmarca la casilla
+        if (btnCoordinar) {
+            btnCoordinar.classList.add('hidden');
+        }
     }
     recalcularTotalFinal(); // Actualiza el precio al instante
 };
