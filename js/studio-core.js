@@ -5,7 +5,7 @@ const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allProducts = [];
-let filteredProducts = [];
+let filteredProducts =[];
 let gestorData = {};
 let visibleCount = 12;
 
@@ -50,7 +50,7 @@ window.addEventListener('load', async () => {
     });
     
     // El toggle de IA debe regenerar la vista
-    const switches = ['toggle-format', 'toggle-ai-bg', 'toggle-price', 'toggle-phone', 'toggle-delivery', 'toggle-warranty'];
+    const switches =['toggle-format', 'toggle-ai-bg', 'toggle-price', 'toggle-phone', 'toggle-delivery', 'toggle-warranty'];
     switches.forEach(id => document.getElementById(id).addEventListener('change', refreshPreviews));
 });
 
@@ -59,7 +59,7 @@ async function loadInventory() {
     if (error) return;
     allProducts = data;
     
-    const cats = [...new Set(data.map(p => p.categoria ? p.categoria.toUpperCase() : 'VARIOS'))].sort();
+    const cats =[...new Set(data.map(p => p.categoria ? p.categoria.toUpperCase() : 'VARIOS'))].sort();
     const select = document.getElementById('ctrl-category');
     select.innerHTML = '<option value="TODOS">Todas las Categorías</option>';
     cats.forEach(c => {
@@ -81,7 +81,6 @@ function applyFilters() {
     refreshPreviews();
 }
 
-// --- REEMPLAZA LA FUNCIÓN fixImageUrl CON ESTO ---
 function fixImageUrl(url) {
     // 1. Si no hay dato, devolver imagen por defecto
     if (!url || url === 'null' || url === 'undefined' || url.trim() === '') {
@@ -93,7 +92,7 @@ function fixImageUrl(url) {
     if (url.includes('/')) nombreArchivo = url.split('/').pop(); 
     nombreArchivo = nombreArchivo.split('?')[0]; 
 
-    // 3. Limpieza de caracteres (Igual que en tu index.html)
+    // 3. Limpieza de caracteres
     try { nombreArchivo = decodeURIComponent(nombreArchivo); } catch(e) {}
     nombreArchivo = nombreArchivo.trim().replace(/['"]/g, '');
     nombreArchivo = nombreArchivo.replace(/\s+/g, ''); // Quita espacios
@@ -112,7 +111,7 @@ async function refreshPreviews() {
 
     const options = {
         theme: document.getElementById('ctrl-theme').value,
-        useAI: document.getElementById('toggle-ai-bg').checked, // NUEVO
+        useAI: document.getElementById('toggle-ai-bg').checked,
         isStory: document.getElementById('toggle-format').checked,
         showPrice: document.getElementById('toggle-price').checked,
         showPhone: document.getElementById('toggle-phone').checked,
@@ -171,14 +170,12 @@ window.loadMoreItems = function() { visibleCount += 12; refreshPreviews(); };
 
 // --- FUNCIÓN INTELIGENTE DE CARGA DE IMAGEN ---
 async function getSmartImage(product, useAI) {
-    // 1. Si ya tenemos la imagen limpia en caché, devolverla
     if (useAI && imageCache[product.id]) {
         return imageCache[product.id];
     }
 
     const originalUrl = fixImageUrl(product.thumbnail);
     
-    // 2. Si NO piden IA, devolver la original
     if (!useAI) {
         const img = new Image();
         img.crossOrigin = "Anonymous";
@@ -189,10 +186,8 @@ async function getSmartImage(product, useAI) {
         });
     }
 
-    // 3. SI PIDEN IA y no está en caché: PROCESAR
     try {
         console.log("🤖 Procesando IA para: " + product.nombre);
-        // Usamos la librería imgly que ya importamos en el HTML
         const blob = await imgly.removeBackground(originalUrl);
         const urlLimpia = URL.createObjectURL(blob);
         
@@ -201,13 +196,11 @@ async function getSmartImage(product, useAI) {
         
         await new Promise(r => imgLimpia.onload = r);
         
-        // Guardar en caché para no volver a gastar CPU
         imageCache[product.id] = imgLimpia;
         return imgLimpia;
 
     } catch (e) {
         console.warn("Fallo IA, usando original:", e);
-        // Fallback a original si falla la IA
         const img = new Image();
         img.crossOrigin = "Anonymous";
         img.src = originalUrl;
@@ -260,7 +253,6 @@ async function drawProductCard(canvas, product, opt) {
     let imgH = availableH * 0.65;
     let imgY = headerH + (availableH - imgH) / 2 - 100;
 
-    // --- CARGA DE IMAGEN INTELIGENTE (IA o NORMAL) ---
     const img = await getSmartImage(product, opt.useAI);
 
     if (img) {
@@ -271,8 +263,6 @@ async function drawProductCard(canvas, product, opt) {
             ctx.shadowOffsetY = 30;
         }
 
-        // Si NO estamos usando IA y NO es Minimal, ponemos la tarjeta blanca de fondo
-        // para que no se vea feo el recorte cuadrado de la foto original
         if (!opt.useAI && !isMinimal && !isDark && !isImpact) {
             ctx.fillStyle = "white";
             const cardSize = Math.min(W - 100, imgH + 100);
@@ -280,7 +270,6 @@ async function drawProductCard(canvas, product, opt) {
             ctx.fillRect(cardX, imgY, cardSize, cardSize);
         }
 
-        // DIBUJO
         const targetSize = isMinimal ? W - 100 : Math.min(W - 150, imgH);
         const scale = Math.min(targetSize / img.width, targetSize / img.height);
         const drawW = img.width * scale;
@@ -325,46 +314,87 @@ async function drawProductCard(canvas, product, opt) {
         }
     }
 
-    // 5. NOMBRE
+    // 5. NOMBRE (CORREGIDO PARA TEXTOS LARGOS)
     const nameY = imgY + imgH + (opt.isStory ? 280 : 180);
     ctx.fillStyle = t.textMain;
-    ctx.font = `800 ${opt.isStory ? 55 : 45}px ${t.font}`;
-    const nameText = product.nombre.length > 40 ? product.nombre.substring(0, 37) + "..." : product.nombre;
-    ctx.fillText(nameText, W/2, nameY);
+    ctx.font = `800 ${opt.isStory ? 50 : 40}px ${t.font}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    // Parámetros para el Word Wrap
+    let maxWidth = W - 120; // Deja un margen de 60px de cada lado
+    let lineHeight = opt.isStory ? 60 : 50; // Altura entre líneas de texto
+    
+    // Llamamos a la función global para dividir el texto sin cortarlo
+    window.wrapText(ctx, product.nombre, W/2, nameY, maxWidth, lineHeight);
 
-    // 6. GARANTÍA
+
+    // 6. GARANTÍA Y FACTURA (DISEÑO PREMIUM)
     if (opt.showWarranty) {
-        const badgeX = W - (opt.isStory ? 160 : 120);
-        const badgeY = headerH + (opt.isStory ? 80 : 60);
-        const r = opt.isStory ? 75 : 60;
+        const badgeW = 340;
+        const badgeH = 60;
+        const badgeX = W - badgeW - 40; // Pegado a la derecha
+        const badgeY = headerH + 30; // Debajo del header
+        
+        // Sombra premium naranja
+        ctx.shadowColor = "rgba(245, 158, 11, 0.4)";
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetY = 5;
 
-        ctx.fillStyle = isMinimal ? "#000000" : "#d97706";
-        ctx.beginPath(); ctx.arc(badgeX, badgeY, r, 0, 2*Math.PI); ctx.fill();
-        ctx.fillStyle = isMinimal ? "#ffffff" : "#fbbf24";
-        ctx.beginPath(); ctx.arc(badgeX, badgeY, r - 5, 0, 2*Math.PI); ctx.fill();
+        // Degradado dorado
+        let gradGarantia = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY);
+        gradGarantia.addColorStop(0, isMinimal ? "#000000" : "#d97706"); // Naranja oscuro o Negro
+        gradGarantia.addColorStop(1, isMinimal ? "#333333" : "#f59e0b"); // Naranja claro o Gris
+        
+        ctx.fillStyle = gradGarantia;
+        window.roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 30); // Forma de pastilla
+        ctx.fill();
 
-        ctx.fillStyle = isMinimal ? "#000000" : "#78350f";
-        ctx.font = `bold ${opt.isStory ? 22 : 18}px Arial`;
-        ctx.fillText("GARANTÍA", badgeX, badgeY - 10);
-        ctx.font = `900 ${opt.isStory ? 32 : 26}px Arial`;
-        ctx.fillText("REAL", badgeX, badgeY + 20);
+        // Resetear sombra
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Texto de Garantía
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 22px 'Manrope', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🛡️ GARANTÍA Y FACTURA", badgeX + (badgeW / 2), badgeY + (badgeH / 2) + 2); 
     }
 
-    // 7. ENTREGA 24H
+    // 7. ENTREGA 24H (DISEÑO PREMIUM)
     if (opt.showDelivery) {
-        const delX = (opt.isStory ? 160 : 120);
-        const delY = headerH + (opt.isStory ? 80 : 60);
+        const badgeW = 260;
+        const badgeH = 60;
+        const badgeX = 40; // Pegado a la izquierda
+        const badgeY = headerH + 30; // Debajo del header
         
-        ctx.fillStyle = isMinimal ? "#e5e5e5" : "#22c55e";
-        ctx.shadowColor = "rgba(0,0,0,0.2)";
-        ctx.shadowBlur = 10;
-        const pillW = 220; const pillH = 60;
-        ctx.beginPath(); ctx.roundRect(delX - pillW/2, delY - pillH/2, pillW, pillH, 50); ctx.fill();
-        ctx.shadowColor = "transparent";
+        // Sombra premium verde
+        ctx.shadowColor = "rgba(16, 185, 129, 0.4)"; 
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetY = 5;
 
+        // Degradado esmeralda
+        let grad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY);
+        grad.addColorStop(0, isMinimal ? "#e5e5e5" : "#059669"); // Verde oscuro o gris
+        grad.addColorStop(1, isMinimal ? "#ffffff" : "#10b981"); // Verde brillante o blanco
+        
+        ctx.fillStyle = grad;
+        window.roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 30); // Forma de pastilla
+        ctx.fill();
+
+        // Resetear sombra
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Texto de Entrega
         ctx.fillStyle = isMinimal ? "#000000" : "#ffffff";
-        ctx.font = "bold 24px 'Manrope', sans-serif";
-        ctx.fillText("🚀 ENTREGA 24H", delX, delY + 8);
+        ctx.font = "bold 22px 'Manrope', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🚀 ENTREGA 24H", badgeX + (badgeW / 2), badgeY + (badgeH / 2) + 2);
     }
 
     // 8. FOOTER
@@ -386,7 +416,7 @@ async function drawProductCard(canvas, product, opt) {
         ctx.fillText(`PEDIDOS: ${opt.gestorPhone}`, iconX + 80, centerY + 15);
         ctx.font = `500 ${opt.isStory ? 30 : 25}px 'Manrope', sans-serif`;
         ctx.fillStyle = isMinimal ? "#86868b" : "#94a3b8";
-        ctx.fillText(`Agente Autorizado: ${opt.gestorName}`, iconX + 80, centerY - 45);
+        ctx.fillText(`Comercial: ${opt.gestorName}`, iconX + 80, centerY - 45);
     }
 }
 
@@ -410,14 +440,21 @@ async function downloadAllImages() {
             gestorPhone: gestorData.telefono || "5356071095"
         };
 
+        let index = 1; // <-- AGREGAMOS UN CONTADOR
+
         for (const prod of filteredProducts) {
             const canvas = document.createElement('canvas');
             canvas.width = 1080;
             canvas.height = options.isStory ? 1920 : 1080;
             await drawProductCard(canvas, prod, options);
+            
             const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.95));
             const cleanName = prod.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 30);
-            zip.file(`${cleanName}.jpg`, blob);
+            
+            // <-- LE AÑADIMOS EL NÚMERO AL NOMBRE DEL ARCHIVO
+            zip.file(`${index}_${cleanName}.jpg`, blob); 
+            
+            index++; // <-- SUBIMOS EL CONTADOR PARA EL PRÓXIMO PRODUCTO
         }
 
         const content = await zip.generateAsync({type:"blob"});
