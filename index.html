@@ -10456,19 +10456,23 @@ window.actualizarLocalidades = function() {
 };
 
 // 3. Inteligencia Artificial: Detectar si hay un equipo grande en el carrito
+// 3. Inteligencia Artificial: Detectar si hay un equipo grande en el carrito
 function carritoTieneEquipoGrande() {
     return cart.some(item => {
         const cat = (item.categoria || "").toUpperCase();
         const nom = (item.nombre || "").toLowerCase();
 
-        // Reglas basadas en tu CSV
+        // Reglas de equipos grandes
         if (cat === 'LAVADORAS') return true;
         if (cat === 'REFRIGERADORES') return true;
         if (cat === 'NEVERAS' && !nom.includes('3.5')) return true; // Todo menos la de 3.5
-        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; // Plantas y estaciones
+        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; 
         if (nom.includes('colchón') || nom.includes('colchon')) return true;
         if (cat === 'COCINA' && (nom.includes('horno') || nom.includes('cocina 20') || nom.includes('cocina 24'))) return true;
         if (cat === 'SMART TV' && (nom.includes('43') || nom.includes('50') || nom.includes('55') || nom.includes('60') || nom.includes('75'))) return true;
+
+        // 👇👇 AQUÍ ESTÁ LA SOLUCIÓN: REGLA PARA SPLITS Y AIRES 👇👇
+        if (nom.includes('split') || nom.includes('aire') || cat === 'CLIMATIZACIÓN') return true;
 
         return false; // Si no cumple nada de lo anterior, es pequeño.
     });
