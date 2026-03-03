@@ -1288,6 +1288,9 @@
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
     <button onclick="changeAdminTab('ventas-prod')" id="tab-ventas-prod" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
     🏆 Top Productos
+    <button onclick="changeAdminTab('categorias')" id="tab-categorias" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
+    📑 Categorías
+</button>
 </button>
 
 <button onclick="changeAdminTab('buzon')" id="tab-buzon" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
@@ -1587,6 +1590,38 @@
             <!-- Los reportes se cargarán aquí por JS -->
             <p class="text-center text-gray-400 text-xs py-4 col-span-full">Cargando buzón...</p>
         </div>
+    </div>
+</div>
+
+<!-- === NUEVA SECCIÓN: GESTIÓN DE CATEGORÍAS === -->
+<div id="cnt-categorias" class="tab-cnt hidden space-y-6">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm flex justify-between items-center">
+        <div>
+            <h3 class="text-lg font-black uppercase text-indigo-600 flex items-center gap-2">
+                <span class="material-symbols-outlined">category</span> Gestor de Categorías
+            </h3>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Crea, edita, elimina y ordena el menú de la tienda</p>
+        </div>
+        <button onclick="adminAddCategoria()" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">add</span> Nueva Categoría
+        </button>
+    </div>
+
+    <!-- Lista de Categorías -->
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
+                <tr>
+                    <th class="p-4 w-20 text-center">Orden</th>
+                    <th class="p-4">Nombre de la Categoría</th>
+                    <th class="p-4 text-center">Equipos dentro</th>
+                    <th class="p-4 text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-categorias" class="divide-y dark:divide-gray-700">
+                <!-- Se llena con JS -->
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -3479,26 +3514,42 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     generarComprobanteVenta(datosParaPDF, accion);
 }
 
-    // NUEVA FUNCIÓN: DIBUJAR PESTAÑAS DE CATEGORÍA
-    function renderCategories() {
-        // 1. Extraer categorías únicas de la base de datos
-        // Convertimos a Mayúsculas para evitar duplicados tipo "Cocina" vs "cocina"
-        const uniqueCats = [...new Set(productosRaw.map(p => p.categoria ? p.categoria.toUpperCase().trim() : 'VARIOS'))].sort();
-        
-        // 2. Crear lista con "TODOS" al principio
-        const allCats = ['TODOS', ...uniqueCats];
-        
-        const container = document.getElementById('category-list');
-        container.innerHTML = allCats.map(cat => {
-            // Estilo activo o inactivo
-            const isActive = activeCategory === cat;
-            const styleClass = isActive 
-                ? "category-tab active py-4 text-sm font-black border-b-4 border-primary text-primary transition-all px-2" 
-                : "category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all px-2 border-b-4 border-transparent hover:border-gray-200";
-                
-            return `<button onclick="filterByCategory('${cat}')" class="${styleClass}">${cat}</button>`;
-        }).join('');
+    // Variable global para guardar las categorías de la tienda
+let categoriasPúblicas = [];
+
+// REEMPLAZAR LA ACTUAL renderCategories() POR ESTA:
+async function renderCategories() {
+    // 1. Si no las hemos cargado de Supabase, las cargamos
+    if (categoriasPúblicas.length === 0) {
+        const { data } = await supabaseClient
+            .from('categorias')
+            .select('nombre')
+            .order('orden', { ascending: true });
+            
+        if (data) {
+            // Extraemos solo los nombres
+            categoriasPúblicas = data.map(c => c.nombre);
+        } else {
+            // Fallback por si falla la BD
+            categoriasPúblicas = ['REFRIGERACIÓN', 'COCINA', 'CLIMATIZACIÓN', 'VARIOS'];
+        }
     }
+
+    // 2. Crear lista con "TODOS" al principio
+    const allCats = ['TODOS', ...categoriasPúblicas];
+    
+    const container = document.getElementById('category-list');
+    if (!container) return;
+
+    container.innerHTML = allCats.map(cat => {
+        const isActive = activeCategory === cat;
+        const styleClass = isActive 
+            ? "category-tab active py-4 text-sm font-black border-b-4 border-primary text-primary transition-all px-2" 
+            : "category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all px-2 border-b-4 border-transparent hover:border-gray-200";
+            
+        return `<button onclick="filterByCategory('${cat}')" class="${styleClass}">${cat}</button>`;
+    }).join('');
+}
 
     function renderProducts() {
     // 1. OBTENCIÓN SEGURA DE ELEMENTOS
@@ -4479,6 +4530,7 @@ async function loadAdminData() {
     }
     loadPendingGestores();
     loadAdminReports();
+    loadAdminCategorias();
 }
 
 // --- NUEVA LÓGICA DE EDICIÓN TOTAL (ADMIN MASTER) ---
@@ -6561,23 +6613,20 @@ function exportInventoryExcel() {
 }
 
 // FUNCIÓN PARA ACTUALIZAR CATEGORÍAS EN EL FORMULARIO
-    function updateFormCategories() {
-        // Usamos la lista de inventario o la de productos, la que tenga datos
-        const source = (typeof inventoryRawAdmin !== 'undefined' && inventoryRawAdmin.length > 0) 
-                       ? inventoryRawAdmin 
-                       : productosRaw;
-        
-        if (!source || source.length === 0) return;
+    // REEMPLAZAR LA ACTUAL updateFormCategories() POR ESTA:
+async function updateFormCategories() {
+    const datalist = document.getElementById('lista-categorias');
+    if (!datalist) return;
 
-        // Extraer categorías únicas y ordenarlas
-        const uniqueCats = [...new Set(source.map(p => p.categoria ? p.categoria.toUpperCase().trim() : 'VARIOS'))].sort();
-        
-        // Llenar el datalist
-        const datalist = document.getElementById('lista-categorias');
-        if (datalist) {
-            datalist.innerHTML = uniqueCats.map(cat => `<option value="${cat}">`).join('');
-        }
+    const { data } = await supabaseClient
+            .from('categorias')
+            .select('nombre')
+            .order('orden', { ascending: true });
+            
+    if (data) {
+        datalist.innerHTML = data.map(c => `<option value="${c.nombre}">`).join('');
     }
+}
     // --- FUNCIÓN DE EXPORTACIÓN EXCEL AVANZADA (LOGÍSTICA) ---
 function exportLogisticaExcel() {
     // 1. Validar que haya datos
@@ -10551,6 +10600,139 @@ function renderAdminReports() {
             ${imgHtml}
         </div>`;
     }).join('');
+}
+
+let categoriasAdminBD = [];
+
+// 1. CARGAR CATEGORÍAS (Llama a esta función dentro de tu 'loadAdminData()')
+async function loadAdminCategorias() {
+    const { data, error } = await supabaseClient
+        .from('categorias')
+        .select('*')
+        .order('orden', { ascending: true });
+
+    if (!error && data) {
+        categoriasAdminBD = data;
+        renderAdminCategorias();
+    }
+}
+
+// 2. DIBUJAR LA TABLA DE CATEGORÍAS
+function renderAdminCategorias() {
+    const container = document.getElementById('list-admin-categorias');
+    if (!container) return;
+
+    // Usamos inventoryRawAdmin (tu variable global de productos) para contar cuántos equipos hay en cada una
+    const conteo = {};
+    if (typeof inventoryRawAdmin !== 'undefined') {
+        inventoryRawAdmin.forEach(p => {
+            const cat = p.categoria ? p.categoria.toUpperCase() : 'VARIOS';
+            conteo[cat] = (conteo[cat] || 0) + 1;
+        });
+    }
+
+    container.innerHTML = categoriasAdminBD.map((c, index) => {
+        const cantidad = conteo[c.nombre] || 0;
+        const esUltimo = index === categoriasAdminBD.length - 1;
+        const esPrimero = index === 0;
+
+        return `
+        <tr class="hover:bg-slate-50 dark:hover:bg-gray-900/50 transition-colors">
+            <td class="p-4 text-center align-middle">
+                <div class="flex flex-col items-center gap-1">
+                    <button onclick="moverCategoria('${c.id}', -1, ${c.orden})" class="text-gray-400 hover:text-indigo-500 disabled:opacity-30" ${esPrimero ? 'disabled' : ''}><span class="material-symbols-outlined text-lg">keyboard_arrow_up</span></button>
+                    <span class="text-xs font-black text-gray-700 dark:text-gray-300">${c.orden}</span>
+                    <button onclick="moverCategoria('${c.id}', 1, ${c.orden})" class="text-gray-400 hover:text-indigo-500 disabled:opacity-30" ${esUltimo ? 'disabled' : ''}><span class="material-symbols-outlined text-lg">keyboard_arrow_down</span></button>
+                </div>
+            </td>
+            <td class="p-4 align-middle">
+                <p class="text-sm font-black text-slate-700 dark:text-white uppercase">${c.nombre}</p>
+            </td>
+            <td class="p-4 text-center align-middle">
+                <span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">${cantidad} equipos</span>
+            </td>
+            <td class="p-4 text-right align-middle">
+                <button onclick="adminEditCategoria('${c.id}', '${c.nombre}')" class="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors shadow-sm ml-1" title="Renombrar">
+                    <span class="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button onclick="adminDeleteCategoria('${c.id}', '${c.nombre}', ${cantidad})" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors shadow-sm ml-1" title="Eliminar">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// 3. AGREGAR NUEVA
+async function adminAddCategoria() {
+    let nombre = prompt("Nombre de la nueva categoría:");
+    if (!nombre) return;
+    nombre = nombre.trim().toUpperCase();
+
+    // Orden: Al final
+    const nuevoOrden = categoriasAdminBD.length > 0 ? categoriasAdminBD[categoriasAdminBD.length - 1].orden + 1 : 1;
+
+    const { error } = await supabaseClient.from('categorias').insert([{ nombre: nombre, orden: nuevoOrden }]);
+    if (error) return alert("Error: Posiblemente ya existe una categoría con ese nombre.");
+    
+    loadAdminCategorias();
+}
+
+// 4. EDITAR / RENOMBRAR (¡Mágia! Cambia la categoría de los productos automáticamente)
+async function adminEditCategoria(id, nombreViejo) {
+    let nuevoNombre = prompt(`Renombrar categoría "${nombreViejo}" a:`, nombreViejo);
+    if (!nuevoNombre || nuevoNombre.trim().toUpperCase() === nombreViejo) return;
+    nuevoNombre = nuevoNombre.trim().toUpperCase();
+
+    // 1. Actualizar el nombre en la tabla Categorías
+    await supabaseClient.from('categorias').update({ nombre: nuevoNombre }).eq('id', id);
+
+    // 2. Actualizar TODOS los productos que tenían ese nombre viejo
+    await supabaseClient.from('productos').update({ categoria: nuevoNombre }).eq('categoria', nombreViejo);
+
+    alert(`✅ Categoría renombrada a ${nuevoNombre} y productos actualizados.`);
+    loadAdminData(); // Recargamos todo para actualizar inventario
+    loadAdminCategorias();
+}
+
+// 5. ELIMINAR CATEGORÍA
+async function adminDeleteCategoria(id, nombre, cantidadEquipos) {
+    if (cantidadEquipos > 0) {
+        const confirmar = confirm(`⚠️ CUIDADO: Hay ${cantidadEquipos} equipos en "${nombre}".\n\nSi eliminas esta categoría, esos equipos pasarán automáticamente a "VARIOS".\n\n¿Estás seguro?`);
+        if (!confirmar) return;
+
+        // Pasar los equipos a "VARIOS"
+        await supabaseClient.from('productos').update({ categoria: 'VARIOS' }).eq('categoria', nombre);
+    } else {
+        if (!confirm(`¿Eliminar la categoría "${nombre}"?`)) return;
+    }
+
+    await supabaseClient.from('categorias').delete().eq('id', id);
+    loadAdminData();
+    loadAdminCategorias();
+}
+
+// 6. REORDENAR (Subir o Bajar)
+async function moverCategoria(idActual, direccion, ordenActual) {
+    // direccion: -1 (subir), 1 (bajar)
+    const indexActual = categoriasAdminBD.findIndex(c => c.id === idActual);
+    const indexVecino = indexActual + direccion;
+
+    if (indexVecino < 0 || indexVecino >= categoriasAdminBD.length) return;
+
+    const catActual = categoriasAdminBD[indexActual];
+    const catVecina = categoriasAdminBD[indexVecino];
+
+    // Intercambiamos los valores de 'orden'
+    const ordenTemp = catActual.orden;
+    const nuevoOrdenParaActual = catVecina.orden;
+    const nuevoOrdenParaVecina = ordenTemp;
+
+    // Actualizamos en base de datos
+    await supabaseClient.from('categorias').update({ orden: nuevoOrdenParaActual }).eq('id', catActual.id);
+    await supabaseClient.from('categorias').update({ orden: nuevoOrdenParaVecina }).eq('id', catVecina.id);
+
+    loadAdminCategorias();
 }
 
 </script>

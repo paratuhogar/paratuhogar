@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
     
-    <!-- LIBRERÍAS (AQUÍ ESTABA EL ERROR, FALTABA LA DE IA) -->
+    <!-- LIBRERÍAS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -52,7 +52,6 @@
     </button>
 
     <!-- 1. BARRA LATERAL (CONTROLES) -->
-    <!-- Agregamos clases para comportamiento móvil: absolute, w-80, z-40 -->
     <aside id="sidebar" class="sidebar closed md:block absolute md:static top-0 left-0 h-full w-80 bg-[#0f172a] text-white border-r border-white/10 z-40 flex flex-col p-6 shadow-2xl overflow-y-auto">
         
         <!-- Header -->
@@ -92,7 +91,7 @@
                 </select>
             </div>
 
-            <!-- IA TOGGLE (IMPORTANTE) -->
+            <!-- IA TOGGLE -->
             <div class="bg-indigo-600/10 p-3 rounded-xl border border-indigo-500/30">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-2">
@@ -114,7 +113,7 @@
             <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Formato Story</span><label class="switch"><input type="checkbox" id="toggle-format" checked><span class="slider"></span></label></div>
             <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Mostrar Precio</span><label class="switch"><input type="checkbox" id="toggle-price" checked><span class="slider"></span></label></div>
             <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Entrega 24h</span><label class="switch"><input type="checkbox" id="toggle-delivery" checked><span class="slider"></span></label></div>
-            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Garantía Real</span><label class="switch"><input type="checkbox" id="toggle-warranty" checked><span class="slider"></span></label></div>
+            <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Garantía y Factura</span><label class="switch"><input type="checkbox" id="toggle-warranty" checked><span class="slider"></span></label></div>
             <div class="flex justify-between items-center"><span class="text-sm text-slate-300">Mis Datos</span><label class="switch"><input type="checkbox" id="toggle-phone" checked><span class="slider"></span></label></div>
         </div>
 
@@ -144,13 +143,49 @@
 
     <script src="js/studio-core.js"></script>
     <script>
+        // Funciones de ayuda globales para el Canvas
+        window.wrapText = function(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let currentY = y;
+
+            for(let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                let metrics = ctx.measureText(testLine);
+                let testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, currentY);
+            return currentY;
+        };
+
+        window.roundRect = function(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        };
+
         // Función simple para el menú móvil
         function toggleSidebar() {
             const sb = document.getElementById('sidebar');
             sb.classList.toggle('closed');
         }
         function closeSidebarMobile() {
-            // Solo cierra si estamos en móvil y está abierto
             if(window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('closed');
             }
