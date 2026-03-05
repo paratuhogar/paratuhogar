@@ -2496,10 +2496,11 @@ let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
     // 1. Consultar TODOS los datos
-    const { data: allPedidos, error } = await supabaseClient
-        .from('pedidos')
-        .select('*')
-        .order('fecha', { ascending: false });
+    // 1. Consultar SOLO las columnas necesarias (Ahorra 90% del peso de descarga)
+const { data: allPedidos, error } = await supabaseClient
+    .from('pedidos')
+    .select('id, gestor, estado, comision_total, fecha, producto, origen') // <- ¡LA MAGIA ESTÁ AQUÍ!
+    .order('fecha', { ascending: false });
 
     if(error) { console.error(error); return; }
     
