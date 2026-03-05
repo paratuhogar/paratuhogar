@@ -4501,7 +4501,8 @@ async function loadAdminData() {
     
 
     // 2. Cargamos los datos masivos
-    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
+    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false}).limit(1500);
+
     const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
     const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
 
