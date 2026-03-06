@@ -1915,7 +1915,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "203"; 
+const versionActual = "603"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4923,18 +4923,34 @@ function renderAdminLogistica() {
 }
 
 // FUNCION PARA LLENAR LOS SELECTS CON DATA REAL
+// FUNCION PARA LLENAR LOS SELECTS CON DATA REAL (CORREGIDA)
 function populateLogisticaFilters() {
-    const proveedores = [...new Set(pedidosRawAdmin.map(p => p.proveedor || 'General'))].sort();
-    const gestores = [...new Set(pedidosRawAdmin.map(p => p.gestor))].sort();
-
     const selectProv = document.getElementById('f-proveedor');
     const selectGest = document.getElementById('f-gestor');
 
+    // 1. GUARDAR LA SELECCIÓN ACTUAL ANTES DE RECONSTRUIR
+    const currentProv = selectProv ? selectProv.value : 'TODOS';
+    const currentGest = selectGest ? selectGest.value : 'TODOS';
+
+    // Obtener listas únicas
+    const proveedores = [...new Set(pedidosRawAdmin.map(p => p.proveedor || 'General'))].sort();
+    const gestores = [...new Set(pedidosRawAdmin.map(p => p.gestor))].sort();
+
+    // 2. RECONSTRUIR EL HTML DE LOS SELECTS
     selectProv.innerHTML = '<option value="TODOS">Todos los Proveedores</option>' + 
                           proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
     
     selectGest.innerHTML = '<option value="TODOS">Todos los Gestores</option>' + 
                           gestores.map(g => `<option value="${g}">${g}</option>`).join('');
+
+    // 3. DEVOLVERLE LA SELECCIÓN QUE TENÍAS (Si la opción sigue existiendo)
+    if (selectProv && currentProv) {
+        // Intenta asignar el valor, si no existe, el navegador por defecto dejará 'TODOS'
+        selectProv.value = currentProv; 
+    }
+    if (selectGest && currentGest) {
+        selectGest.value = currentGest;
+    }
 }
 
 function resetLogisticaFilters() {
