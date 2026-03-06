@@ -1915,7 +1915,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "603"; 
+const versionActual = "203"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2496,11 +2496,10 @@ let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
     // 1. Consultar TODOS los datos
-    // 1. Consultar SOLO las columnas necesarias (Ahorra 90% del peso de descarga)
-const { data: allPedidos, error } = await supabaseClient
-    .from('pedidos')
-    .select('id, gestor, estado, comision_total, fecha, producto, origen') // <- ¡LA MAGIA ESTÁ AQUÍ!
-    .order('fecha', { ascending: false });
+    const { data: allPedidos, error } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .order('fecha', { ascending: false });
 
     if(error) { console.error(error); return; }
     
@@ -4501,8 +4500,7 @@ async function loadAdminData() {
     
 
     // 2. Cargamos los datos masivos
-    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false}).limit(1500);
-
+    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
     const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
     const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
 
@@ -4923,34 +4921,18 @@ function renderAdminLogistica() {
 }
 
 // FUNCION PARA LLENAR LOS SELECTS CON DATA REAL
-// FUNCION PARA LLENAR LOS SELECTS CON DATA REAL (CORREGIDA)
 function populateLogisticaFilters() {
-    const selectProv = document.getElementById('f-proveedor');
-    const selectGest = document.getElementById('f-gestor');
-
-    // 1. GUARDAR LA SELECCIÓN ACTUAL ANTES DE RECONSTRUIR
-    const currentProv = selectProv ? selectProv.value : 'TODOS';
-    const currentGest = selectGest ? selectGest.value : 'TODOS';
-
-    // Obtener listas únicas
     const proveedores = [...new Set(pedidosRawAdmin.map(p => p.proveedor || 'General'))].sort();
     const gestores = [...new Set(pedidosRawAdmin.map(p => p.gestor))].sort();
 
-    // 2. RECONSTRUIR EL HTML DE LOS SELECTS
+    const selectProv = document.getElementById('f-proveedor');
+    const selectGest = document.getElementById('f-gestor');
+
     selectProv.innerHTML = '<option value="TODOS">Todos los Proveedores</option>' + 
                           proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
     
     selectGest.innerHTML = '<option value="TODOS">Todos los Gestores</option>' + 
                           gestores.map(g => `<option value="${g}">${g}</option>`).join('');
-
-    // 3. DEVOLVERLE LA SELECCIÓN QUE TENÍAS (Si la opción sigue existiendo)
-    if (selectProv && currentProv) {
-        // Intenta asignar el valor, si no existe, el navegador por defecto dejará 'TODOS'
-        selectProv.value = currentProv; 
-    }
-    if (selectGest && currentGest) {
-        selectGest.value = currentGest;
-    }
 }
 
 function resetLogisticaFilters() {
@@ -10474,23 +10456,19 @@ window.actualizarLocalidades = function() {
 };
 
 // 3. Inteligencia Artificial: Detectar si hay un equipo grande en el carrito
-// 3. Inteligencia Artificial: Detectar si hay un equipo grande en el carrito
 function carritoTieneEquipoGrande() {
     return cart.some(item => {
         const cat = (item.categoria || "").toUpperCase();
         const nom = (item.nombre || "").toLowerCase();
 
-        // Reglas de equipos grandes
+        // Reglas basadas en tu CSV
         if (cat === 'LAVADORAS') return true;
         if (cat === 'REFRIGERADORES') return true;
         if (cat === 'NEVERAS' && !nom.includes('3.5')) return true; // Todo menos la de 3.5
-        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; 
+        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; // Plantas y estaciones
         if (nom.includes('colchón') || nom.includes('colchon')) return true;
         if (cat === 'COCINA' && (nom.includes('horno') || nom.includes('cocina 20') || nom.includes('cocina 24'))) return true;
         if (cat === 'SMART TV' && (nom.includes('43') || nom.includes('50') || nom.includes('55') || nom.includes('60') || nom.includes('75'))) return true;
-
-        // 👇👇 AQUÍ ESTÁ LA SOLUCIÓN: REGLA PARA SPLITS Y AIRES 👇👇
-        if (nom.includes('split') || nom.includes('aire') || cat === 'CLIMATIZACIÓN') return true;
 
         return false; // Si no cumple nada de lo anterior, es pequeño.
     });
