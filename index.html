@@ -3278,6 +3278,7 @@ function renderMyOrdersList(lista) {
 }
 
     async function injectLinksSection(nombre) {
+    // 1. Eliminar si ya existe para evitar duplicados
     if(document.getElementById('sec-links-gestor')) document.getElementById('sec-links-gestor').remove();
 
     const userData = window.currentUserData || {};
@@ -3301,9 +3302,10 @@ function renderMyOrdersList(lista) {
 
     window.gestorSalesCount = sales;
     const lvlData = getLevelData(sales);
+    
     // Si es 365 días o más, mostramos "1 AÑO" para que se vea más poderoso
-let diasDuracion = lvlData.duration / 24;
-if (diasDuracion >= 365) diasDuracion = "1 AÑO";
+    let diasDuracion = lvlData.duration / 24;
+    if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 
     const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
     
@@ -3340,36 +3342,56 @@ if (diasDuracion >= 365) diasDuracion = "1 AÑO";
         console.error("Error obteniendo link corto:", e);
     }
 
+    // CAMBIO VISUAL: Quitamos mt-6 (margen arriba) y pusimos mb-8 (margen abajo)
     const html = `
-    <div id="sec-links-gestor" class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 shadow-sm mt-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-black uppercase text-primary italic">🔗 Mi Enlace Inteligente</h3>
-            <span class="text-[10px] font-bold text-emerald-500 uppercase">
-                ⚡ LINK CORTO PRO ACTIVO
-            </span>
-        </div>
-        <p class="text-xs text-gray-400 mb-4">
-            Este enlace guarda tu comisión por <span class="font-black text-primary">${diasDuracion} días</span> en el navegador del cliente.
-        </p>
+    <div id="sec-links-gestor" class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 shadow-sm mb-8 relative overflow-hidden">
         
-        <div class="flex gap-2 mb-4">
-            <!-- AQUÍ USAMOS LA VARIABLE linkParaMostrar -->
-            <input type="text" id="my-link-input" value="${linkParaMostrar}" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-none font-bold text-gray-500">
-            <button onclick="copy('my-link-input')" class="bg-primary text-white px-4 rounded-xl font-bold text-xs uppercase">Copiar</button>
+        <!-- Decoración Sutil de Fondo -->
+        <div class="absolute -right-4 -top-4 opacity-5 pointer-events-none">
+            <span class="material-symbols-outlined text-[100px] text-primary">link</span>
         </div>
-        
-        <div class="grid grid-cols-2 gap-2">
-            <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('Catálogo: ' + linkParaMostrar)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                <i class="fab fa-whatsapp"></i> WhatsApp
-            </button>
-            <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkParaMostrar)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                <i class="fab fa-facebook"></i> Facebook
-            </button>
+
+        <div class="relative z-10">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-black uppercase text-primary italic">🔗 Mi Enlace Inteligente</h3>
+                <span class="text-[10px] font-bold text-emerald-500 uppercase bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                    ⚡ LINK PRO ACTIVO
+                </span>
+            </div>
+            <p class="text-xs text-gray-400 mb-4">
+                Este enlace guarda tu comisión por <span class="font-black text-primary">${diasDuracion} días</span> en el navegador del cliente.
+            </p>
+            
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="my-link-input" value="${linkParaMostrar}" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-gray-200 font-bold text-gray-500 shadow-inner focus:ring-0">
+                <button onclick="copy('my-link-input')" class="bg-primary hover:bg-[#2c6fb5] text-white px-6 rounded-xl font-black text-xs uppercase shadow-md transition-colors active:scale-95">Copiar</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('Catálogo: ' + linkParaMostrar)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-transform">
+                    <i class="fab fa-whatsapp text-lg"></i> Enviar por WhatsApp
+                </button>
+                <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkParaMostrar)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-transform">
+                    <i class="fab fa-facebook text-lg"></i> Compartir Facebook
+                </button>
+            </div>
         </div>
     </div>`;
     
-    const rankingDiv = document.getElementById('ranking-list').parentElement;
-    if(rankingDiv) rankingDiv.insertAdjacentHTML('afterend', html);
+    // ============================================================
+    // CAMBIO MAESTRO: INSERCIÓN AL PRINCIPIO DEL DASHBOARD
+    // ============================================================
+    // Buscamos el contenedor principal de la vista de resumen
+    const dashboardTop = document.getElementById('sub-dash-resumen');
+    
+    if(dashboardTop) {
+        // 'afterbegin' lo inserta como el PRIMER hijo de ese div
+        dashboardTop.insertAdjacentHTML('afterbegin', html);
+    } else {
+        // Fallback de seguridad
+        const fallbackDiv = document.getElementById('sec-dashboard');
+        if(fallbackDiv) fallbackDiv.insertAdjacentHTML('afterbegin', html);
+    }
 }
 
 
@@ -7610,47 +7632,45 @@ function applyLockedFeatures() {
     // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
-    const btnAi = document.getElementById('btn-ai-post'); // <--- NUEVO
+    const btnAi = document.getElementById('btn-ai-post'); 
     const btnPdf = document.getElementById('btn-pdf-bulk');
     const btnStudio = document.getElementById('btn-magic-studio');
 
     // Estilo base para botones desbloqueados
     const baseStyle = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold cursor-pointer hover:scale-105 active:scale-95 shadow-sm whitespace-nowrap";
 
+    // ======================================================
+    // SIEMPRE DESBLOQUEADO (FRICCIÓN CERO PARA COMPARTIR)
+    // ======================================================
+    if (btnCopy) {
+        btnCopy.className = `${baseStyle} bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50`;
+        btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span>Texto</span>`;
+        btnCopy.title = "Copiado Masivo";
+        btnCopy.onclick = function() { copyCategoryOffers(); };
+    }
+
     // ------------------------------------------------------
-    // NIVEL 2 (10 Ventas): TEXTO Y FOTOS
+    // NIVEL 2 (10 Ventas): PACK DE FOTOS
     // ------------------------------------------------------
     const TARGET_LVL_2 = 10;
     
     if (level >= 2 || isGodMode) {
-        // === BOTÓN TEXTO (DESBLOQUEADO) ===
-        if (btnCopy) {
-            btnCopy.className = `${baseStyle} bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50`;
-            btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span>Texto</span>`;
-            btnCopy.title = "Copiado Masivo";
-            btnCopy.onclick = function() { copyCategoryOffers(); };
-        }
-
-        // === BOTÓN FOTOS (DESBLOQUEADO) ===
         if (btnZip) {
             btnZip.className = `${baseStyle} bg-white text-blue-600 border-blue-100 hover:bg-blue-50`;
             btnZip.innerHTML = `<span class="material-symbols-outlined text-lg">folder_zip</span> <span>Fotos</span>`;
             btnZip.title = "Descargar Pack Fotos";
             btnZip.onclick = function() { downloadCategoryPhotos(); };
         }
-
     } else {
-        lockButtonWithMath(btnCopy, "Texto Masivo", "Copia descripciones de 20 productos a la vez.", sales, TARGET_LVL_2, 2);
         lockButtonWithMath(btnZip, "Pack Fotos", "Descarga 50 fotos en un click.", sales, TARGET_LVL_2, 2);
     }
 
     // ------------------------------------------------------
-    // NIVEL 3 (20 Ventas): AI POST (NUEVO)
+    // NIVEL 3 (20 Ventas): AI POST
     // ------------------------------------------------------
     const TARGET_LVL_3 = 20;
 
     if (level >= 3 || isGodMode) {
-        // === BOTÓN AI POST (DESBLOQUEADO) ===
         if (btnAi) {
             btnAi.className = `${baseStyle} bg-gradient-to-r from-pink-600 to-orange-500 text-white border-pink-400 shadow-lg shadow-pink-500/20 group`;
             btnAi.innerHTML = `<span class="material-symbols-outlined text-xl group-hover:animate-spin">smart_toy</span> <span class="font-black">AI Post</span>`;
@@ -7667,7 +7687,6 @@ function applyLockedFeatures() {
     const TARGET_LVL_4 = 40;
     
     if (level >= 4 || isGodMode) {
-        // === BOTÓN PDF (DESBLOQUEADO) ===
         if (btnPdf) {
             btnPdf.className = `${baseStyle} bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white`;
             btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>`;
@@ -7684,7 +7703,6 @@ function applyLockedFeatures() {
     const TARGET_LVL_5 = 70;
     
     if (level >= 5 || isGodMode) {
-        // === BOTÓN STUDIO (DESBLOQUEADO) ===
         if(btnStudio) {
             btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
             btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
@@ -7694,36 +7712,6 @@ function applyLockedFeatures() {
     } else {
         lockButtonWithMath(btnStudio, "Magic Studio", "Genera imágenes de marketing con IA.", sales, TARGET_LVL_5, 5);
     }
-}
-
-// Helper: Bloquea el botón y calcula cuántas ventas faltan
-function lockButtonWithMath(btn, toolName, description, currentSales, targetSales, levelReq) {
-    if (!btn) return;
-    
-    // 1. Estilo Visual (Gris y Candado)
-    btn.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold transition-all";
-    btn.innerHTML = `<span class="material-symbols-outlined text-lg">lock</span> <span class="hidden sm:inline">${toolName}</span>`;
-    
-    // 2. Cálculo de Ventas Faltantes
-    const missing = targetSales - currentSales;
-    const missingText = missing > 0 ? missing : 0;
-
-    // 3. Mensaje de Alerta al hacer Click
-    btn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        alert(
-            `🔒 HERRAMIENTA BLOQUEADA: ${toolName}\n\n` +
-            `ℹ️ ${description}\n\n` +
-            `🎯 META: Nivel ${levelReq} (${targetSales} ventas)\n` +
-            `📉 TE FALTAN: ${missingText} ventas para desbloquearla.\n\n` +
-            `¡Sigue vendiendo para acceder!`
-        );
-    };
-    
-    // Eliminamos el onclick original para que no ejecute la función real
-    btn.removeAttribute("onclick");
-    btn.title = `Bloqueado - Faltan ${missingText} ventas`;
 }
 
 
@@ -8126,28 +8114,42 @@ async function initSmartReferral() {
             if (data) urlTel = data.telefono;
         }
 
+        // --- MAGIA: VERIFICAR SI EL GESTOR TIENE MÁS DE 500 CLICS ---
+        let diasDuracion = 30; // Por defecto 30 días
+        try {
+            // Contar cuántos clics tiene este gestor en la base de datos
+            const { count } = await supabaseClient
+                .from('link_analytics')
+                .select('id', { count: 'exact', head: true })
+                .eq('agent_name', urlGestor);
+            
+            // Si tiene más de 500 clics, le premiamos con 6 meses (180 días)
+            if (count && count >= 500) {
+                diasDuracion = 180;
+                console.log("🌟 Enlace VIP (6 Meses) aplicado para:", urlGestor);
+            }
+        } catch (e) { console.error("Error verificando clics", e); }
+
         const dataGuardar = {
             nombre: urlGestor,
             telefono: urlTel || "",
             timestamp: new Date().getTime(),
-            // Amarre de 30 días renovado
-            expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
+            // Aplicar la duración calculada
+            expiresAt: new Date().getTime() + (diasDuracion * 24 * 60 * 60 * 1000)
         };
         localStorage.setItem('pth_referrer_smart', JSON.stringify(dataGuardar));
-        localStorage.setItem('pth_referrer', JSON.stringify(dataGuardar)); // Backup compatibilidad
+        localStorage.setItem('pth_referrer', JSON.stringify(dataGuardar)); 
         
         // Rastro IP
         registrarRastroIP(urlGestor);
     } 
     // CASO 2: URL LIMPIA (Mantener lo que había)
     else {
-        // Verificar si hay algo guardado y si sigue vigente
         const stored = localStorage.getItem('pth_referrer_smart');
         if (stored) {
             const data = JSON.parse(stored);
             const now = new Date().getTime();
             
-            // Solo borramos si REALMENTE expiró el tiempo (30 días)
             if (now > data.expiresAt) {
                 console.log("Amarre expirado por tiempo.");
                 localStorage.removeItem('pth_referrer_smart');
@@ -11847,6 +11849,8 @@ async function saveFinancialChanges() {
 
 <!-- Script de Estadísticas -->
     <script src="admin-stats.js"></script>
+    <!-- Script de Campaña de Tráfico -->
+<script src="traffic-campaign.js"></script>
 </body>
 
 </body>
