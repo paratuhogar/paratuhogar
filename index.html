@@ -1983,7 +1983,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "903"; 
+const versionActual = "903a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -5039,18 +5039,35 @@ function renderAdminLogistica() {
 }
 
 // FUNCION PARA LLENAR LOS SELECTS CON DATA REAL
+// FUNCION PARA LLENAR LOS SELECTS CON DATA REAL (CORREGIDA PARA NO PERDER EL FILTRO)
 function populateLogisticaFilters() {
-    const proveedores = [...new Set(pedidosRawAdmin.map(p => p.proveedor || 'General'))].sort();
-    const gestores = [...new Set(pedidosRawAdmin.map(p => p.gestor))].sort();
-
     const selectProv = document.getElementById('f-proveedor');
     const selectGest = document.getElementById('f-gestor');
 
+    // 1. MEMORIA: Guardar qué estaba seleccionado antes de recargar
+    const provActual = selectProv ? selectProv.value : 'TODOS';
+    const gestActual = selectGest ? selectGest.value : 'TODOS';
+
+    // 2. Extraer listas únicas de la base de datos
+    const proveedores = [...new Set(pedidosRawAdmin.map(p => p.proveedor || 'General'))].sort();
+    const gestores = [...new Set(pedidosRawAdmin.map(p => p.gestor))].sort();
+
+    // 3. Volver a dibujar las opciones
     selectProv.innerHTML = '<option value="TODOS">Todos los Proveedores</option>' + 
                           proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
     
     selectGest.innerHTML = '<option value="TODOS">Todos los Gestores</option>' + 
                           gestores.map(g => `<option value="${g}">${g}</option>`).join('');
+
+    // 4. RESTAURAR: Volver a seleccionar lo que el usuario tenía puesto
+    // (Solo si ese proveedor sigue existiendo en la lista, por seguridad)
+    if (provActual === 'TODOS' || proveedores.includes(provActual)) {
+        selectProv.value = provActual;
+    }
+    
+    if (gestActual === 'TODOS' || gestores.includes(gestActual)) {
+        selectGest.value = gestActual;
+    }
 }
 
 function resetLogisticaFilters() {
