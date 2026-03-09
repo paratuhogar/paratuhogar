@@ -1983,7 +1983,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "803"; 
+const versionActual = "903"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3359,7 +3359,7 @@ function renderMyOrdersList(lista) {
                 </span>
             </div>
             <p class="text-xs text-gray-400 mb-4">
-                Este enlace guarda tu comisión por <span class="font-black text-primary">${diasDuracion} días</span> en el navegador del cliente.
+                Este enlace dura <span class="font-black text-primary">${diasDuracion} días</span> en el navegador del cliente.
             </p>
             
             <div class="flex gap-2 mb-4">
