@@ -6568,41 +6568,34 @@ async function processLogin() {
     const user = userInput ? userInput.value.trim() : "";
     const pass = passInput ? passInput.value.trim() : "";
 
-    // --- CLAVES MAESTRAS ---
-    // 1. Clave de Logística (Solo ve pedidos)
+    // CLAVES MAESTRAS
     const KEY_LOGISTICA = "PRO_ADMIN_2025"; 
-    
-    // 2. Clave del DUEÑO (Ve el Dinero) - ¡CAMBIA ESTA SI QUIERES!
     const KEY_DUENO = "ANGEL_ORO"; 
 
-    // --- CASO A: NIVEL DUEÑO (SUPERADMIN) ---
+    // CASO A: NIVEL DUEÑO (SUPERADMIN)
     if (pass === KEY_DUENO) { 
         closeLogin();
-        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin' }; // Rol clave
+        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin' };
         window.currentUserData = bossData;
-        
         saveSessionToMemory("Administrador Supremo", true, bossData); 
         setupSession("Administrador Supremo", true);
         alert("🔓 BÓVEDA FINANCIERA DESBLOQUEADA");
         return;
     }
 
-    // --- CASO B: NIVEL LOGÍSTICA (ADMIN SIMPLE) ---
+    // CASO B: NIVEL LOGÍSTICA
     if (pass === KEY_LOGISTICA) { 
         closeLogin();
-        // Nota: El rol es 'logistica', NO 'superadmin'. Esto le prohíbe entrar al master.html
         const adminData = { nombre: "Encargado Logística", telefono: "5356071095", rol: 'logistica' }; 
         window.currentUserData = adminData;
-        
         saveSessionToMemory("Logística", true, adminData); 
         setupSession("Logística", true);
         return;
     }
 
-    // --- CASO C: GESTOR (Validación Normal) ---
-    if (!user || !pass) {
-        return alert("Por favor ingresa usuario y contraseña.");
-    }
+    if (!user || !pass) return alert("Por favor ingresa usuario y contraseña.");
+
+    let gestorAprobado = null;
 
     try {
         const { data, error } = await supabaseClient
@@ -6613,19 +6606,30 @@ async function processLogin() {
             .single();
 
         if (error || !data) {
-            alert("❌ Usuario o contraseña incorrectos.");
-        } else {
-            if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
-            if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
+            return alert("❌ Usuario o contraseña incorrectos.");
+        } 
+        
+        if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
+        if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
 
-            closeLogin();
-            window.currentUserData = data; 
-            saveSessionToMemory(data.nombre, false, data); 
-            setupSession(data.nombre, false);
-        }
+        gestorAprobado = data;
+
     } catch (e) {
-        console.error(e);
-        alert("Error de conexión.");
+        console.error("Error de Base de Datos:", e);
+        return alert("Error de conexión con el servidor. Revisa tu internet.");
+    }
+
+    // Si pasó las validaciones de BD, construimos la interfaz:
+    if (gestorAprobado) {
+        try {
+            closeLogin();
+            window.currentUserData = gestorAprobado; 
+            saveSessionToMemory(gestorAprobado.nombre, false, gestorAprobado); 
+            setupSession(gestorAprobado.nombre, false);
+        } catch (uiError) {
+            console.error("Error al construir la pantalla del gestor:", uiError);
+            alert("Iniciaste sesión, pero hubo un error visual. Recarga la página.");
+        }
     }
 }
 
@@ -7627,7 +7631,7 @@ function applyLockedFeatures() {
     const sales = window.gestorSalesCount || 0;
     
     // VALIDACIÓN MODO DIOS: Si eres tú, todo se desbloquea
-    const isGodMode = window.gestorName === "Marcel Montano";
+    const isGodMode = window.gestorName === "Marcel Montano" || window.isAdmin;
 
     // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
@@ -7652,8 +7656,6 @@ function applyLockedFeatures() {
     // ------------------------------------------------------
     // NIVEL 2 (10 Ventas): PACK DE FOTOS
     // ------------------------------------------------------
-    const TARGET_LVL_2 = 10;
-    
     if (level >= 2 || isGodMode) {
         if (btnZip) {
             btnZip.className = `${baseStyle} bg-white text-blue-600 border-blue-100 hover:bg-blue-50`;
@@ -7662,14 +7664,12 @@ function applyLockedFeatures() {
             btnZip.onclick = function() { downloadCategoryPhotos(); };
         }
     } else {
-        lockButtonWithMath(btnZip, "Pack Fotos", "Descarga 50 fotos en un click.", sales, TARGET_LVL_2, 2);
+        lockButton(btnZip, "Pack Fotos", 2, "Descarga 50 fotos en un clic.");
     }
 
     // ------------------------------------------------------
     // NIVEL 3 (20 Ventas): AI POST
     // ------------------------------------------------------
-    const TARGET_LVL_3 = 20;
-
     if (level >= 3 || isGodMode) {
         if (btnAi) {
             btnAi.className = `${baseStyle} bg-gradient-to-r from-pink-600 to-orange-500 text-white border-pink-400 shadow-lg shadow-pink-500/20 group`;
@@ -7678,14 +7678,12 @@ function applyLockedFeatures() {
             btnAi.title = "Redactor IA Viral - Activo";
         }
     } else {
-        lockButtonWithMath(btnAi, "AI Post", "Redacta posts virales con Inteligencia Artificial.", sales, TARGET_LVL_3, 3);
+        lockButton(btnAi, "AI Post", 3, "Redacta posts virales con Inteligencia Artificial.");
     }
 
     // ------------------------------------------------------
     // NIVEL 4 (40 Ventas): PDF PRO
     // ------------------------------------------------------
-    const TARGET_LVL_4 = 40;
-    
     if (level >= 4 || isGodMode) {
         if (btnPdf) {
             btnPdf.className = `${baseStyle} bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white`;
@@ -7694,14 +7692,12 @@ function applyLockedFeatures() {
             btnPdf.onclick = function() { downloadCatalogPDF(); };
         }
     } else {
-        lockButtonWithMath(btnPdf, "Catálogo PDF", "Crea catálogos profesionales con tu nombre.", sales, TARGET_LVL_4, 4);
+        lockButton(btnPdf, "Catálogo PDF", 4, "Crea catálogos profesionales con tu nombre.");
     }
 
     // ------------------------------------------------------
     // NIVEL 5 (70 Ventas): MAGIC STUDIO
     // ------------------------------------------------------
-    const TARGET_LVL_5 = 70;
-    
     if (level >= 5 || isGodMode) {
         if(btnStudio) {
             btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
@@ -7710,7 +7706,7 @@ function applyLockedFeatures() {
             btnStudio.onclick = function() { goToStudio(); };
         }
     } else {
-        lockButtonWithMath(btnStudio, "Magic Studio", "Genera imágenes de marketing con IA.", sales, TARGET_LVL_5, 5);
+        lockButton(btnStudio, "Magic Studio", 5, "Genera imágenes de marketing con IA.");
     }
 }
 
