@@ -950,21 +950,21 @@ async function loadNomina() {
             adelantos: 0, 
             pedidosIds: [], 
             ventasCount: 0,
-            listaProductos: [] // <--- NUEVO: Array para guardar nombres
+            listaProductos: [] 
         };
         
         nomina[g].comision += Number(p.comision_total || 0);
         nomina[g].ventasCount++;
         nomina[g].pedidosIds.push(p.id);
 
-        // Limpieza del nombre del producto para que se vea bonito
-        let nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
+        // --- SOLUCIÓN: MOSTRAR TODOS LOS PRODUCTOS DEL VALE ---
+        // Ahora no corta el texto, muestra todo lo que hay en el pedido
+        let nombreLimpio = p.producto.split('+').map(i => i.replace(/\[.*?\]/g, '').trim()).join(' + ');
         
-        // AHORA GUARDAMOS UN OBJETO COMPLETO: ID, Nombre, Orden y Comisión individual
         nomina[g].listaProductos.push({
             id: p.id,
             producto: nombreLimpio,
-            orden_dia: p.orden_dia || 'S/N', // Aquí entra el número de orden/proveedor
+            orden_dia: p.orden_dia || 'S/N', 
             comision: Number(p.comision_total || 0)
         });
     });
@@ -989,59 +989,59 @@ async function loadNomina() {
     const todosGestores = Object.keys(nomina).sort();
     selectGestor.innerHTML = todosGestores.map(g => `<option value="${g}">${g}</option>`).join('');
 
-    // MODIFICADO: Filtramos para que "Venta Directa" no aparezca en la lista de pagos
-tbody.innerHTML = Object.entries(nomina)
-    .filter(([gestor]) => gestor !== "Venta Directa") // <--- ESTA ES LA LÍNEA MÁGICA
-    .map(([gestor, datos]) => {
-        const totalPagar = datos.comision - datos.adelantos;
-        const idsString = datos.pedidosIds.join(',');
+    // Filtramos para que "Venta Directa" no aparezca en la lista de pagos
+    tbody.innerHTML = Object.entries(nomina)
+        .filter(([gestor]) => gestor !== "Venta Directa") 
+        .map(([gestor, datos]) => {
+            const totalPagar = datos.comision - datos.adelantos;
+            const idsString = datos.pedidosIds.join(',');
 
-        if(totalPagar === 0 && datos.ventasCount === 0) return '';
+            if(totalPagar === 0 && datos.ventasCount === 0) return '';
 
-        // Generar HTML de la lista de productos CON BOTÓN DE PAGO INDIVIDUAL
-        const productosHTML = datos.listaProductos.map(item => `
-            <div class="flex justify-between items-center text-[10px] text-slate-300 border-b border-slate-700/50 py-1.5 last:border-0 w-full gap-3">
-                <div class="text-left flex-1 truncate" title="${item.producto}">
-                    <span class="text-amber-500 font-bold">[#${item.orden_dia}]</span> 
-                    ${item.producto} 
-                    <span class="text-emerald-400 font-mono inline-block ml-1">($${item.comision})</span>
+            // Generar HTML de la lista de productos CON BOTÓN DE PAGO INDIVIDUAL
+            const productosHTML = datos.listaProductos.map(item => `
+                <div class="flex justify-between items-center text-[10px] text-slate-300 border-b border-slate-700/50 py-1.5 last:border-0 w-full gap-3">
+                    <div class="text-left flex-1 truncate" title="${item.producto}">
+                        <span class="text-amber-500 font-bold">[#${item.orden_dia}]</span> 
+                        ${item.producto} 
+                        <span class="text-emerald-400 font-mono inline-block ml-1">($${item.comision})</span>
+                    </div>
+                    <!-- AQUÍ PASAMOS EL NÚMERO DE ORDEN PARA SEGURIDAD -->
+                    <button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')" 
+                        class="bg-slate-700 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[9px] font-bold uppercase transition-colors shadow-sm">
+                        Liquidar
+                    </button>
                 </div>
-                <button onclick="liquidarUnicoPedido('${item.id}', '${item.comision}', '${gestor}')" 
-                    class="bg-slate-700 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[9px] font-bold uppercase transition-colors shadow-sm">
-                    Liquidar
-                </button>
-            </div>
-        `).join('');
+            `).join('');
 
-        return `
-        <tr class="hover:bg-slate-800 transition-all border-b border-slate-700">
-            <td class="p-3 align-top font-bold text-white text-sm">${gestor}</td>
-            
-            <!-- COLUMNA MODIFICADA: Muestra Cantidad + Lista con Orden y Botones -->
-            <td class="p-3 align-top">
-                <div class="text-xs text-slate-400 mb-1 text-right">Total pedidos: <span class="font-black text-white">${datos.ventasCount}</span></div>
-                <div class="flex flex-col w-full bg-slate-900/60 p-2 rounded-lg border border-slate-700/50">
-                    ${productosHTML}
-                </div>
-            </td>
+            return `
+            <tr class="hover:bg-slate-800 transition-all border-b border-slate-700">
+                <td class="p-3 align-top font-bold text-white text-sm">${gestor}</td>
+                
+                <td class="p-3 align-top">
+                    <div class="text-xs text-slate-400 mb-1 text-right">Total pedidos: <span class="font-black text-white">${datos.ventasCount}</span></div>
+                    <div class="flex flex-col w-full bg-slate-900/60 p-2 rounded-lg border border-slate-700/50">
+                        ${productosHTML}
+                    </div>
+                </td>
 
-            <td class="p-3 align-top text-right text-emerald-400 font-mono text-sm">+$${datos.comision.toFixed(2)}</td>
-            <td class="p-3 align-top text-right text-red-400 font-mono text-sm">-$${datos.adelantos.toFixed(2)}</td>
-            <td class="p-3 align-top text-right font-black text-xl ${totalPagar < 0 ? 'text-red-500' : 'text-white'}">
-                $${totalPagar.toFixed(2)}
-            </td>
-            <td class="p-3 align-top text-center">
-                ${totalPagar > 0 ? 
-                    `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all">
-                        PAGAR
-                    </button>` : 
-                    `<span class="text-xs text-slate-500 font-bold">Sin Saldo</span>`
-                }
-            </td>
-        </tr>
-        `;
-    }).join('');
+                <td class="p-3 align-top text-right text-emerald-400 font-mono text-sm">+$${datos.comision.toFixed(2)}</td>
+                <td class="p-3 align-top text-right text-red-400 font-mono text-sm">-$${datos.adelantos.toFixed(2)}</td>
+                <td class="p-3 align-top text-right font-black text-xl ${totalPagar < 0 ? 'text-red-500' : 'text-white'}">
+                    $${totalPagar.toFixed(2)}
+                </td>
+                <td class="p-3 align-top text-center">
+                    ${totalPagar > 0 ? 
+                        `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
+                            class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all">
+                            PAGAR
+                        </button>` : 
+                        `<span class="text-xs text-slate-500 font-bold">Sin Saldo</span>`
+                    }
+                </td>
+            </tr>
+            `;
+        }).join('');
 }
 
         // GUARDAR ADELANTO
@@ -1100,28 +1100,29 @@ tbody.innerHTML = Object.entries(nomina)
         }
 
         // NUEVA FUNCIÓN: LIQUIDAR (PAGAR) UN SOLO PEDIDO DE LA LISTA
-        async function liquidarUnicoPedido(idPedido, comision, gestor) {
-            // Nota de seguridad para el jefe: Los adelantos NO se descuentan en pagos parciales,
-            // se descuentan cuando se hace la liquidación total con el botón verde grande.
-            if(!confirm(`¿Deseas pagar SOLO este pedido a ${gestor} por el valor de $${comision}?\n\nOJO: Si el gestor tiene adelantos de caja pendientes, NO se le descontarán en este pago parcial. Solo se descuentan al usar el botón de pago general.`)) return;
+        // NUEVA FUNCIÓN: LIQUIDAR (PAGAR) UN SOLO PEDIDO DE LA LISTA
+async function liquidarUnicoPedido(idPedido, ordenDia, comision, gestor) {
+    
+    // Alerta de confirmación específica con el número de pedido
+    if(!confirm(`¿Deseas pagar SOLO el pedido #${ordenDia} a ${gestor} por el valor de $${comision}?\n\nOJO: Si este pedido incluía varios equipos, se marcarán todos como pagados. Los adelantos de caja NO se descuentan en pagos parciales.`)) return;
 
-            // Marcar SOLO ese pedido como pagado en la base de datos
-            const { error } = await supabaseClient
-                .from('pedidos')
-                .update({ 
-                    pago_gestor: 'Pagado', 
-                    estado_financiero: 'Liquidado_Gestor' 
-                })
-                .eq('id', idPedido);
+    // Marcar SOLO ese pedido exacto (por su ID único) como pagado en la base de datos
+    const { error } = await supabaseClient
+        .from('pedidos')
+        .update({ 
+            pago_gestor: 'Pagado', 
+            estado_financiero: 'Liquidado_Gestor' 
+        })
+        .eq('id', idPedido); // <-- Esto garantiza que es imposible que actualice otro pedido
 
-            if(error) {
-                alert("Error actualizando el pedido: " + error.message);
-                return;
-            }
+    if(error) {
+        alert("Error actualizando el pedido: " + error.message);
+        return;
+    }
 
-            alert(`✅ Pago parcial de $${comision} registrado a favor de ${gestor}.`);
-            loadNomina(); // Recargar la vista de la nómina
-        }
+    alert(`✅ Pedido #${ordenDia} liquidado correctamente a favor de ${gestor}.`);
+    loadNomina(); // Recargar la vista de la nómina
+}
 
         // Asegúrate de llamar a loadNomina si cambian de pestaña
         // (Ya está en la función switchTab del código anterior)
