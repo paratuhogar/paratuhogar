@@ -1984,7 +1984,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1003a"; 
+const versionActual = "1003b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4818,8 +4818,16 @@ Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (inclu
         alert(`✅ Gestor activado. Se abrirá WhatsApp para enviar el mensaje.`);
         loadPendingGestores(); // Recarga la lista para que desaparezca de "Pendientes"
         
-        const url = `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`;
-        window.open(url, '_blank');
+        // --- LÓGICA INTELIGENTE PARA ABRIR WHATSAPP DIRECTO ---
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+if (isMobile) {
+    // Si está en celular o tablet, fuerza abrir la APP directamente (mantiene emojis intactos)
+    window.location.href = `whatsapp://send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
+} else {
+    // Si está en PC, abre WhatsApp Web directamente
+    window.open(`https://web.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
+}
 
     } catch (e) {
         console.error("Error al aprobar gestor:", e);
@@ -11803,8 +11811,14 @@ Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (inclu
 
     alert(`⏳ Contador activado.\n\nSi ${nombre} no entra a su enlace en 3 días, será movido a la lista de "Zombies" automáticamente.`);
     
-    const url = `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
+    // --- LÓGICA INTELIGENTE PARA ABRIR WHATSAPP DIRECTO ---
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+if (isMobile) {
+    window.location.href = `whatsapp://send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
+} else {
+    window.open(`https://web.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
+}
     
     loadPendingGestores();
 }
