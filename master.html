@@ -271,14 +271,26 @@ function calculateDevFee(precioVenta) {
         
 
         <!-- COLUMNA DERECHA: TABLA DE PAGOS (Corte Sábado) -->
-        <div class="lg:col-span-2">
-            <div class="glass-panel p-6 rounded-2xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold text-xl text-white">Nómina de Pago (Sábado)</h3>
-                    <button onclick="loadNomina()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded text-white flex items-center gap-1">
-                        <span class="material-symbols-outlined text-sm">refresh</span> Actualizar
-                    </button>
+<div class="lg:col-span-2">
+    <div class="glass-panel p-6 rounded-2xl">
+        
+        <!-- NUEVO HEADER CON EL GRAN TOTAL -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div>
+                <h3 class="font-bold text-xl text-white">Nómina de Pago</h3>
+                <p class="text-xs text-slate-400 mt-1">Dinero pendiente a entregar a los gestores.</p>
+            </div>
+            
+            <div class="flex items-stretch gap-3">
+                <div class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-xl text-right shadow-inner">
+                    <p class="text-[9px] font-black uppercase text-slate-500 tracking-widest">GRAN TOTAL A PAGAR</p>
+                    <p id="total-global-nomina" class="text-2xl font-black text-emerald-400 leading-none">$0.00</p>
                 </div>
+                <button onclick="loadNomina()" class="bg-slate-700 hover:bg-slate-600 px-3 rounded-xl text-white flex items-center justify-center transition-all shadow-md" title="Actualizar">
+                    <span class="material-symbols-outlined text-lg">refresh</span>
+                </button>
+            </div>
+        </div>
 
                 
 
@@ -989,12 +1001,19 @@ async function loadNomina() {
     const todosGestores = Object.keys(nomina).sort();
     selectGestor.innerHTML = todosGestores.map(g => `<option value="${g}">${g}</option>`).join('');
 
+    let granTotalNomina = 0; // <--- VARIABLE PARA SUMAR TODO EL DINERO
+
     // Filtramos para que "Venta Directa" no aparezca en la lista de pagos
     tbody.innerHTML = Object.entries(nomina)
         .filter(([gestor]) => gestor !== "Venta Directa") 
         .map(([gestor, datos]) => {
             const totalPagar = datos.comision - datos.adelantos;
             const idsString = datos.pedidosIds.join(',');
+
+            // Solo sumamos al Gran Total si el saldo es positivo (no le vas a pagar a alguien que te debe plata)
+            if (totalPagar > 0) {
+                granTotalNomina += totalPagar;
+            }
 
             if(totalPagar === 0 && datos.ventasCount === 0) return '';
 
@@ -1013,6 +1032,7 @@ async function loadNomina() {
                     </button>
                 </div>
             `).join('');
+            
 
             return `
             <tr class="hover:bg-slate-800 transition-all border-b border-slate-700">
@@ -1042,6 +1062,12 @@ async function loadNomina() {
             </tr>
             `;
         }).join('');
+        
+    // --- ESTO ERA LO QUE FALTABA: ACTUALIZAR EL GRAN TOTAL EN PANTALLA ---
+    const elTotalGlobal = document.getElementById('total-global-nomina');
+    if (elTotalGlobal) {
+        elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
+    }
 }
 
         // GUARDAR ADELANTO
