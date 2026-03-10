@@ -1984,7 +1984,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1003b"; 
+const versionActual = "1003c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2361,67 +2361,241 @@ async function processRecovery() {
 }
 
     // REGISTRO DE NUEVO GESTOR
-    async function processRegister() {
-    // 1. Capturar elementos y valores
+    // ==============================================================
+// REGISTRO AUTOMÁTICO, ONBOARDING Y AUTO-LOGIN VIP (FRICCIÓN CERO)
+// ==============================================================
+async function processRegister() {
     const btn = document.querySelector('#form-register button');
     const nombre = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const tel = document.getElementById('reg-tel').value.trim();
     const pass = document.getElementById('reg-pass').value.trim();
 
-    // 2. Validaciones básicas
     if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
 
-    // Bloquear botón para evitar múltiples clics
     btn.disabled = true;
     const originalText = btn.innerText;
-    btn.innerText = "PROCESANDO...";
+    btn.innerText = "CREANDO CUENTA VIP...";
 
     try {
-        // 3. VERIFICAR SI YA EXISTE (Duplicados)
-        const { data: existe, error: errCheck } = await supabaseClient
-            .from('gestores')
-            .select('id, estado')
-            .eq('telefono', tel)
-            .maybeSingle();
-
+        // 1. VERIFICAR DUPLICADOS
+        const { data: existe } = await supabaseClient.from('gestores').select('id, estado').eq('telefono', tel).maybeSingle();
         if (existe) {
-            if (existe.estado === 'pendiente') {
-                alert("⏳ Ya tenemos una solicitud con este número en revisión. ¡Ten paciencia, te avisaremos pronto!");
-            } else {
-                alert("✅ Este número ya tiene una cuenta activa. Ve a la pestaña de ENTRAR.");
-            }
+            alert("✅ Este número ya tiene una cuenta. Ve a la pestaña de ENTRAR.");
             btn.disabled = false;
             btn.innerText = originalText;
             return;
         }
 
-        // 4. INSERTAR NUEVO REGISTRO
-        const { error } = await supabaseClient
+        // 2. INSERTAR COMO "ACTIVO" DIRECTAMENTE (Aprobación Automática)
+        const { data: newUser, error } = await supabaseClient
             .from('gestores')
             .insert([{ 
-                nombre: nombre, 
-                email: email, 
-                telefono: tel, 
-                password: pass,
-                estado: 'pendiente' 
-            }]);
+                nombre: nombre, email: email, telefono: tel, password: pass, 
+                estado: 'activo' // <--- MAGIA AQUÍ
+            }])
+            .select().single();
 
         if (error) throw error;
 
-        // 5. ÉXITO
-        alert("✅ Solicitud enviada correctamente. El administrador debe aprobar tu cuenta antes de que puedas entrar. Te avisaremos por WhatsApp.");
+        // 3. GENERAR LINK CORTO DE INMEDIATO
+        let telLimpio = tel.replace(/\D/g, '');
+        if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
         
-        // Limpiar formulario y mandar al login
-        document.getElementById('form-register').querySelectorAll('input').forEach(i => i.value = "");
-        toggleLoginMode('login');
+        const baseUrl = window.location.origin + window.location.pathname;
+        const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+        let finalLink = longLink;
+        
+        try {
+            if(typeof getOrGenerateShortLink === 'function') {
+                finalLink = await getOrGenerateShortLink(nombre, longLink);
+            }
+        } catch(e) {}
+
+        // 4. MOSTRAR PANTALLA DE BIENVENIDA (Y OCULTAR EL LOGIN VIEJO)
+        document.getElementById('login-overlay').classList.add('hidden');
+        showAutoWelcomeModal(nombre, pass, finalLink, newUser);
 
     } catch (e) {
         alert("Error al registrar: " + e.message);
-    } finally {
-        // Reactivar botón por si hubo error
         btn.disabled = false;
         btn.innerText = originalText;
+    }
+}
+
+// --- FUNCIÓN PARA MOSTRAR EL CARTEL DE BIENVENIDA VIP ---
+// --- FUNCIÓN PARA MOSTRAR EL CARTEL DE BIENVENIDA VIP (ACTUALIZADA) ---
+function showAutoWelcomeModal(nombre, pass, link, userData) {
+    const oldModal = document.getElementById('modal-auto-welcome');
+    if (oldModal) oldModal.remove();
+
+    // Guardar los datos temporalmente con el nuevo link del grupo
+    const textoCopia = `¡Hola *${nombre}*! 👋 Te escribo del equipo de *ParaTuHogar*.\n\nTu cuenta ya está activa. Queríamos recordarte que estamos aquí para apoyarte. Si tienes alguna duda sobre cómo vender, cómo hacer los pedidos o sobre los equipos, *¡pregúntanos sin pena ninguna!* Estamos para ayudarte a hacer dinero. 🤝\n\n📌 *TUS DATOS DE ACCESO:*\n👤 *Usuario:* ${nombre}\n🔑 *Contraseña:* ${pass}\n🌐 *Entra a la tienda aquí:* https://paratuhogar.org\n\n🚀 *TU ENLACE DE AFILIADO MÁGICO:*\n🔗 ${link}\n\nCompártelo en tus grupos y estados. Si alguien entra a ese link y compra (incluso si compra días después), el sistema lo detecta y *la comisión te la pagamos a ti automáticamente* sin que tengas que hacer nada.\n\n📱 *ÚNETE A NUESTRO GRUPO DE WHATSAPP:*\nAquí enviamos información importante, nuevas ofertas y material de ventas:\n👉 https://chat.whatsapp.com/GxIrA5GngPVKXQ7DBMDiOL\n\n¡Anímate a probarlo hoy! 😉`;
+
+    const modalHtml = `
+    <div id="modal-auto-welcome" class="fixed inset-0 z-[10000] bg-[#020617]/95 backdrop-blur-md flex items-center justify-center p-4 font-system overflow-y-auto">
+        <div class="bg-[#0f172a] border border-cyan-500/50 w-full max-w-lg rounded-2xl shadow-[0_0_40px_rgba(6,182,212,0.2)] overflow-hidden animate-pop-in my-8 relative">
+            
+            <!-- Deco Header -->
+            <div class="bg-gradient-to-r from-cyan-600 to-blue-600 p-6 text-center relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-20"><span class="material-symbols-outlined text-8xl text-white">verified</span></div>
+                <h2 class="text-white text-3xl font-black uppercase tracking-widest relative z-10">¡CUENTA APROBADA!</h2>
+                <p class="text-cyan-100 font-bold tracking-widest text-xs relative z-10">BIENVENIDO A LA FAMILIA PARATUHOGAR</p>
+            </div>
+
+            <div class="p-6">
+                <p class="text-slate-300 text-sm mb-4 leading-relaxed">
+                    Hola <b class="text-cyan-400">${nombre}</b>, tu cuenta de Gestor ha sido activada automáticamente. Ya tienes acceso al panel de comisiones, pero antes de entrar, <b>guarda tus datos para que no los pierdas:</b>
+                </p>
+
+                <!-- Caja de Datos -->
+                <div class="bg-[#020617] border border-slate-700 rounded-xl p-5 mb-5 shadow-inner">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">Usuario</p>
+                            <p class="text-white font-bold text-lg">${nombre}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">Contraseña</p>
+                            <p class="text-emerald-400 font-bold text-lg">${pass}</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-800 pt-4">
+                        <p class="text-[10px] text-cyan-500 font-black uppercase tracking-widest mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">link</span> Tu Enlace de Ventas</p>
+                        <p class="text-cyan-300 font-mono text-xs break-all bg-cyan-950/30 p-2 rounded border border-cyan-900">${link}</p>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="space-y-3">
+                    
+                    <!-- NUEVO: Botón directo al Grupo de WhatsApp -->
+                    <a href="https://chat.whatsapp.com/GxIrA5GngPVKXQ7DBMDiOL" target="_blank" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(37,211,102,0.3)] transition-all">
+                        <i class="fab fa-whatsapp text-lg"></i> 
+                        Unirme al Grupo Oficial
+                    </a>
+
+                    <button onclick="downloadGestorIDCard('${nombre}', '${pass}', '${link}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all border border-emerald-500">
+                        <span class="material-symbols-outlined text-[18px]">image</span> 
+                        Descargar mis Datos (Foto)
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="navigator.clipboard.writeText(\`${textoCopia}\`); alert('¡Datos copiados al portapapeles!');" class="bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold text-[11px] uppercase flex items-center justify-center gap-2 border border-slate-600 transition-all">
+                            <span class="material-symbols-outlined text-[16px]">content_copy</span> Copiar Todo
+                        </button>
+                        
+                        <button onclick="autoLoginNewGestor(${JSON.stringify(userData).replace(/"/g, '&quot;')})" class="bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-xl font-black text-[11px] uppercase shadow-lg shadow-cyan-500/20 transition-all">
+                            ENTRAR AL PANEL 🚀
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// --- GENERADOR DE FOTO DE CREDENCIALES (TARJETA) ---
+function downloadGestorIDCard(nombre, pass, link) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 800; 
+    canvas.height = 1000;
+    const ctx = canvas.getContext('2d');
+
+    // Fondo Oscuro VIP
+    const grad = ctx.createLinearGradient(0, 0, 0, 1000);
+    grad.addColorStop(0, '#020617'); // Muy oscuro
+    grad.addColorStop(1, '#0f172a'); // Ligeramente más claro abajo
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 800, 1000);
+
+    // Decoración Superior
+    ctx.fillStyle = '#06b6d4'; // Cyan
+    ctx.fillRect(0, 0, 800, 15);
+    ctx.fillStyle = '#3b82f6'; // Azul
+    ctx.fillRect(0, 15, 800, 5);
+
+    // Título
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 50px sans-serif';
+    ctx.fillText('CREDENCIAL DE ACCESO', 400, 150);
+    
+    ctx.fillStyle = '#06b6d4';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('EQUIPO DE VENTAS - PARATUHOGAR', 400, 200);
+
+    // Caja Central
+    ctx.fillStyle = '#1e293b'; // Slate 800
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.roundRect(80, 280, 640, 480, 20); // x, y, width, height, radius
+    ctx.fill();
+    ctx.shadowBlur = 0; // Reset shadow
+
+    // Textos dentro de la caja
+    ctx.textAlign = 'left';
+    
+    // Usuario
+    ctx.fillStyle = '#64748b'; // Slate 500
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('USUARIO (TU NOMBRE):', 130, 360);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 45px sans-serif';
+    ctx.fillText(nombre, 130, 420);
+
+    // Clave
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('CONTRASEÑA:', 130, 510);
+    ctx.fillStyle = '#10b981'; // Emerald
+    ctx.font = 'bold 45px sans-serif';
+    ctx.fillText(pass, 130, 570);
+
+    // Link
+    ctx.fillStyle = '#06b6d4';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('TU ENLACE DE AFILIADO:', 130, 660);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '28px monospace';
+    // Partir el link si es muy largo
+    if (link.length > 35) {
+        ctx.fillText(link.substring(0, 35), 130, 710);
+        ctx.fillText(link.substring(35), 130, 750);
+    } else {
+        ctx.fillText(link, 130, 710);
+    }
+
+    // Footer
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#475569';
+    ctx.font = 'italic 20px sans-serif';
+    ctx.fillText('Guarda esta imagen en tu galería para no perder tu acceso.', 400, 880);
+    ctx.fillText('Página de acceso: https://paratuhogar.org', 400, 920);
+
+    // Descargar
+    const a = document.createElement('a');
+    a.download = `Acceso_ParaTuHogar_${nombre.replace(/\\s+/g,'_')}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+}
+
+// --- FUNCIÓN DE AUTO-LOGIN ---
+function autoLoginNewGestor(userData) {
+    // 1. Quitar el modal
+    document.getElementById('modal-auto-welcome').remove();
+    
+    // 2. Inyectar datos en memoria (Mismo proceso de login normal)
+    window.currentUserData = userData;
+    saveSessionToMemory(userData.nombre, false, userData);
+    setupSession(userData.nombre, false);
+    
+    // 3. Opcional: Mostrar el tutorial del sistema a los 2 segundos
+    if (typeof initSystemTutorial === 'function') {
+        setTimeout(initSystemTutorial, 2000);
     }
 }
 
@@ -4795,7 +4969,7 @@ async function approveAndWelcomeGestor(id, nombre, telefono, password) {
             }
         } catch(e) { console.log("Usando link largo por defecto"); }
 
-        // 4. Construir el mensaje exacto que pediste
+        // 4. Construir el mensaje exacto que pediste (Con Grupo de WA)
         const mensaje = `¡Hola *${nombre}*! 👋 Te escribo del equipo de *ParaTuHogar*.
 
 Vimos que solicitaste unirte como gestor y tu cuenta ya está activa. Queríamos darte la bienvenida y recordarte que estamos aquí para apoyarte. Si tienes alguna duda sobre cómo vender, cómo hacer los pedidos o sobre los equipos, *¡pregúntanos sin pena ninguna!* Estamos para ayudarte a hacer dinero. 🤝
@@ -4811,6 +4985,10 @@ Tenemos muchísimos equipos nuevos en almacén a muy buenos precios. Además, re
 🔗 ${affiliateLink}
 
 Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (incluso si compra días después), el sistema lo detecta y *la comisión te la pagamos a ti automáticamente* sin que tengas que hacer nada.
+
+📱 *ÚNETE A NUESTRO GRUPO DE WHATSAPP:*
+Aquí enviamos información importante, nuevas ofertas y material de ventas:
+👉 https://chat.whatsapp.com/GxIrA5GngPVKXQ7DBMDiOL
 
 ¡Anímate a probarlo hoy! Quedo al pendiente por si necesitas ayuda. 😉`;
 
