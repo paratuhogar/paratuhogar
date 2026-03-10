@@ -2446,14 +2446,32 @@ async function processRecovery() {
     window.isAdmin = adminMode;
     
     const label = document.getElementById('gestor-label');
-    label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
-    document.getElementById('admin-nav').classList.remove('hidden');
+    if(label) label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
+    
+    const adminNav = document.getElementById('admin-nav');
+    if(adminNav) adminNav.classList.remove('hidden');
+
+    // =================================================================
+    // NUEVO: REGISTRAR ACCESO EXACTO DEL GESTOR (PARA EL PANEL MASTER)
+    // =================================================================
+    if (!adminMode && name) {
+        // Enviar una señal silenciosa a Supabase para actualizar su "Última vez visto"
+        supabaseClient.from('link_analytics').insert([{
+            agent_name: name,
+            accion: 'ACCESO_PANEL',
+            detalle: 'El gestor entró a su cuenta',
+            ip_address: '127.0.0.1', // Relleno de seguridad
+            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC',
+            timestamp: new Date().toISOString()
+        }]).then(() => console.log("✅ Acceso real registrado para: " + name)).catch(e => console.log(e));
+    }
+    // =================================================================
 
     if (adminMode) {
         // MODO ADMINISTRADOR (Logística)
         document.getElementById('sec-admin-master').classList.remove('hidden');
         document.getElementById('sec-catalogo').style.display = 'none';
-        document.getElementById('admin-nav').classList.add('hidden');
+        if(adminNav) adminNav.classList.add('hidden');
         loadAdminData();
     } else {
         // MODO GESTOR (Ventas)
@@ -2514,13 +2532,12 @@ async function processRecovery() {
 
     if (esSuperAdmin) {
         // Buscamos dónde poner el botón (en el header, junto al botón de salir)
-        // Usamos parentElement para mayor seguridad
         const headerContainer = btnLogout ? btnLogout.parentElement : document.querySelector('header div.flex.items-center');
 
         // 3. Crear e Inyectar el botón SOLO si no existe ya
         if (headerContainer && !document.getElementById('btn-master-vault')) {
             const btnMaster = document.createElement('button');
-            btnMaster.id = 'btn-master-vault'; // ID único para evitar duplicados
+            btnMaster.id = 'btn-master-vault'; 
             btnMaster.innerHTML = `<span class="material-symbols-outlined text-amber-900 font-bold">shield</span>`;
             
             // Estilos: Dorado, con sombra, pulso suave para destacar
@@ -2530,54 +2547,39 @@ async function processRecovery() {
             // Acción: Ir al archivo secreto
             btnMaster.onclick = () => window.location.href = 'master.html';
             
-            // Insertar ANTES del botón de Salir para que quede a su izquierda
             headerContainer.insertBefore(btnMaster, btnLogout);
-            
-            console.log("✅ Acceso Financiero Habilitado");
         }
     }
-    // --- PUERTA SECRETA AL RADAR (SOLO PARA MARCEL) ---
-if (name === "Marcel Montano") {
-    // Buscamos el contenedor de botones en el header (donde está el carrito y el login)
-    const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
-    
-    if (headerActions && !document.getElementById('btn-radar-secret')) {
-        const btnRadar = document.createElement('button');
-        btnRadar.id = 'btn-radar-secret';
-        btnRadar.title = "SISTEMA RADAR";
-        // Al hacer clic, te lleva a tu archivo secreto
-        btnRadar.onclick = () => window.location.href = 'marcel-radar.html';
-        
-        // Estilo: Púrpura, con brillo y animación de pulso
-        btnRadar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600/20 text-purple-400 border border-purple-500/40 hover:bg-purple-600 hover:text-white transition-all animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.4)]";
-        
-        btnRadar.innerHTML = '<span class="material-symbols-outlined">radar</span>';
-        
-        // Lo ponemos al principio de la lista de botones del header
-        headerActions.prepend(btnRadar);
-        console.log("📡 Radar Online: Puerta secreta abierta.");
-    }
-}
-// ... código anterior de setupSession ...
 
-    // INYECCIÓN DEL BOTÓN MODO DIOS (SALA DE GUERRA)
-    // Solo aparece si el usuario es Marcel Montano
+    // --- PUERTA SECRETA AL RADAR (SOLO PARA MARCEL) ---
     if (name === "Marcel Montano") {
         const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
+        
+        if (headerActions && !document.getElementById('btn-radar-secret')) {
+            const btnRadar = document.createElement('button');
+            btnRadar.id = 'btn-radar-secret';
+            btnRadar.title = "SISTEMA RADAR";
+            btnRadar.onclick = () => window.location.href = 'marcel-radar.html';
+            
+            btnRadar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600/20 text-purple-400 border border-purple-500/40 hover:bg-purple-600 hover:text-white transition-all animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.4)]";
+            btnRadar.innerHTML = '<span class="material-symbols-outlined">radar</span>';
+            
+            headerActions.prepend(btnRadar);
+        }
+        
+        // INYECCIÓN DEL BOTÓN MODO DIOS (SALA DE GUERRA)
         if (headerActions && !document.getElementById('btn-war-room')) {
             const btnWar = document.createElement('button');
             btnWar.id = 'btn-war-room';
             btnWar.onclick = () => window.open('shadow-marketer.html', '_blank');
-            // Estilo Hacker: Púrpura neón
             btnWar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600 text-white hover:bg-purple-500 transition-all shadow-[0_0_15px_rgba(147,51,234,0.6)] animate-pulse border border-purple-400 ml-2";
             btnWar.innerHTML = '<span class="material-symbols-outlined">smart_toy</span>';
             btnWar.title = "SALA DE GUERRA AI";
             
-            // Lo insertamos al principio de los botones
             headerActions.prepend(btnWar);
         }
     }
-} // Fin de setupSession
+}
 
 
     // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
@@ -4764,6 +4766,66 @@ async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
         alert("Error al procesar la solicitud.");
     }
 }
+// --- NUEVA FUNCIÓN: APROBAR Y ENVIAR MENSAJE DE BIENVENIDA ---
+async function approveAndWelcomeGestor(id, nombre, telefono, password) {
+    const confirmacion = confirm(`¿Aprobar a ${nombre} y enviarle el mensaje de bienvenida por WhatsApp?`);
+    if (!confirmacion) return;
+
+    try {
+        // 1. Aprobar en la base de datos
+        const { error } = await supabaseClient
+            .from('gestores')
+            .update({ estado: 'activo' })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        // 2. Preparar el teléfono
+        let telLimpio = telefono.replace(/\D/g, '');
+        if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
+
+        // 3. Generar Link Corto
+        const baseUrl = window.location.origin + window.location.pathname;
+        const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+        let affiliateLink = longLink;
+        
+        try {
+            if(typeof getOrGenerateShortLink === 'function') {
+                affiliateLink = await getOrGenerateShortLink(nombre, longLink);
+            }
+        } catch(e) { console.log("Usando link largo por defecto"); }
+
+        // 4. Construir el mensaje exacto que pediste
+        const mensaje = `¡Hola *${nombre}*! 👋 Te escribo del equipo de *ParaTuHogar*.
+
+Vimos que solicitaste unirte como gestor y tu cuenta ya está activa. Queríamos darte la bienvenida y recordarte que estamos aquí para apoyarte. Si tienes alguna duda sobre cómo vender, cómo hacer los pedidos o sobre los equipos, *¡pregúntanos sin pena ninguna!* Estamos para ayudarte a hacer dinero. 🤝
+
+📌 *TUS DATOS DE ACCESO:*
+👤 *Usuario:* ${nombre}
+🔑 *Contraseña:* ${password}
+🌐 *Entra a la tienda aquí:* https://paratuhogar.org
+
+Tenemos muchísimos equipos nuevos en almacén a muy buenos precios. Además, recuerda que en tu Panel tienes el *Configurador de Precios*: ahí puedes subirle el precio a los equipos y toda esa diferencia es *ganancia extra 100% para ti*. 💸
+
+🚀 *TU ENLACE DE AFILIADO MÁGICO:*
+🔗 ${affiliateLink}
+
+Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (incluso si compra días después), el sistema lo detecta y *la comisión te la pagamos a ti automáticamente* sin que tengas que hacer nada.
+
+¡Anímate a probarlo hoy! Quedo al pendiente por si necesitas ayuda. 😉`;
+
+        // 5. Refrescar la tabla y abrir WhatsApp
+        alert(`✅ Gestor activado. Se abrirá WhatsApp para enviar el mensaje.`);
+        loadPendingGestores(); // Recarga la lista para que desaparezca de "Pendientes"
+        
+        const url = `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+
+    } catch (e) {
+        console.error("Error al aprobar gestor:", e);
+        alert("Ocurrió un error al intentar aprobar al gestor.");
+    }
+}
 
 // --- FUNCIÓN PARA ELIMINAR GESTORES ---
 async function removeGestor(id, nombre) {
@@ -5230,35 +5292,58 @@ function renderAnaliticaGestores(pedidos) {
 }
 
 async function loadTrafficAnalytics() {
+    // 1. Buscamos TODOS los clics directamente en la tabla (sin cruzar tablas raras)
     const { data: analytics, error } = await supabaseClient
         .from('link_analytics')
-        .select('*, short_links(gestor)');
+        .select('agent_name'); // <-- LEEMOS EL NOMBRE DIRECTO
 
-    if (error || !analytics) return;
+    if (error || !analytics) {
+        console.error("Error cargando el tráfico:", error);
+        return;
+    }
 
-    const gClicks = {};
+    const puntosGestor = {};
+
+    // 2. Contamos uno por uno
     analytics.forEach(row => {
-        const name = row.short_links?.gestor || 'Directo/Eliminado';
-        gClicks[name] = (gClicks[name] || 0) + 1;
+        // Tomamos el nombre directamente de la columna
+        const nombre = row.agent_name;
+        
+        // Ignoramos si está vacío o si es tráfico "Directo" (sin gestor)
+        if (nombre && nombre !== 'Directo' && nombre !== 'Venta Directa') {
+            puntosGestor[nombre] = (puntosGestor[nombre] || 0) + 1;
+        }
     });
 
-    document.getElementById('list-trafico-gestores').innerHTML = Object.entries(gClicks)
-        .sort((a,b) => b[1] - a[1])
-        .map(([name, count]) => `
-            <div class="flex justify-between items-center text-[11px] border-b dark:border-gray-700 pb-2">
-                <span class="font-bold text-gray-600 dark:text-gray-300 uppercase">${name}</span>
-                <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-black">${count} CLICS</span>
-            </div>
-        `).join('');
+    // 3. Convertimos los datos en una lista y los ordenamos (El que tiene más clics va primero)
+    const rankingOrdenado = Object.entries(puntosGestor).sort((a, b) => b[1] - a[1]);
 
-    const devices = {};
-    analytics.forEach(row => { devices[row.device_type] = (devices[row.device_type] || 0) + 1; });
-    document.getElementById('list-trafico-dispositivos').innerHTML = Object.entries(devices).map(([dev, count]) => `
-        <div class="flex justify-between items-center text-[11px]">
-            <span class="font-bold text-gray-500 uppercase">${dev}</span>
-            <span class="font-black text-primary">${count}</span>
-        </div>
-    `).join('');
+    // ==========================================
+    // 4. RENDERIZADO (DIBUJAR LA TABLA OSCURA)
+    // ==========================================
+    // Aquí buscas el ID de tu contenedor (asumo que se llama 'list-trafico-gestores' o algo similar en tu HTML)
+    const contenedorHTML = document.getElementById('list-trafico-gestores');
+    
+    if (contenedorHTML) {
+        contenedorHTML.innerHTML = rankingOrdenado.map(([nombre, clics], index) => {
+            
+            // Lógica para censurar el apellido (Ej: "LISET***") para mantener la privacidad
+            const nombreCorto = nombre.split(' ')[0].toUpperCase();
+            const nombreCensurado = nombreCorto.substring(0, 5) + "***";
+
+            return `
+            <div class="flex justify-between items-center text-sm border-b border-gray-800 pb-4 pt-4">
+                <div class="flex items-center gap-4">
+                    <span class="text-gray-500 font-bold">#${index + 1}</span>
+                    <span class="font-black text-white tracking-widest">${nombreCensurado}</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-black text-white">${clics}</span>
+                    <span class="text-[10px] text-gray-500 font-bold">CLICS</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
 }
 
 function changeAdminTab(tab) {
@@ -6629,6 +6714,16 @@ async function processLogin() {
         
         if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
         if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
+
+        // =================================================================
+        // NUEVO: SI EL GESTOR ERA UN "ZOMBIE", LO REVIVIMOS AUTOMÁTICAMENTE
+        // =================================================================
+        if (data.estado === 'ausente_definitivo') {
+            // Actualizamos en la base de datos silenciosamente
+            supabaseClient.from('gestores').update({ estado: 'activo', fecha_rescate: null }).eq('id', data.id).then();
+            data.estado = 'activo'; // Lo corregimos en la memoria local
+            console.log("🧟‍♂️ Gestor Zombie revivido con éxito.");
+        }
 
         gestorAprobado = data;
 
@@ -11500,7 +11595,7 @@ async function loadPendingGestores() {
                     <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
                     <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
                     <td class="p-4 text-right">
-                        <button onclick="approveGestor('${g.id}', 'activo', '${g.nombre}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
+                        <button onclick="approveAndWelcomeGestor('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar y Saludar</button>
                         <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
                     </td>
                 </tr>

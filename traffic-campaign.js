@@ -24,10 +24,12 @@ const TrafficCampaign = {
     },
 
     // --- 1. PROCESAR DATOS DE SUPABASE ---
+    // --- 1. PROCESAR DATOS DE SUPABASE (CORREGIDO) ---
     fetchClickData: async function() {
+        // Traemos solo el nombre para que la descarga sea ultra rápida
         const { data, error } = await supabaseClient
             .from('link_analytics')
-            .select('agent_name, ip_address, browser');
+            .select('agent_name');
 
         if (error || !data) return;
 
@@ -35,32 +37,35 @@ const TrafficCampaign = {
 
         data.forEach(row => {
             const agent = row.agent_name;
+            
             // Filtros: ignorar tráfico vacío, directo o del dueño
             if (!agent || agent === 'Directo' || agent === 'Venta Directa' || agent === 'Marcel Montano') return;
 
-            // Huella Digital Anti-Trampas
-            const uniqueKey = `${row.ip_address}_${row.browser}`;
-
-            // Conteo Total
-            if (!agentClicks[agent]) agentClicks[agent] = new Set();
-            agentClicks[agent].add(uniqueKey);
+            // Simplemente sumamos +1 por cada vez que su nombre aparece en la tabla.
+            // Como el index.html ya bloquea los clics dobles (spam) por 30 minutos, 
+            // cada fila que llega aquí es una visita real y válida.
+            agentClicks[agent] = (agentClicks[agent] || 0) + 1;
         });
 
         // Convertir a Array ordenado de mayor a menor
         this.allAgentsData = Object.entries(agentClicks)
-            .map(([name, set]) => ({ name, clicks: set.size }))
+            .map(([name, clicks]) => ({ name, clicks: clicks }))
             .sort((a, b) => b.clicks - a.clicks);
         
         // El #1 absoluto es el primero de la lista
         if (this.allAgentsData.length > 0) {
             this.topAgent = this.allAgentsData[0];
+        } else {
+            this.topAgent = null;
         }
 
+        // Buscar cuántos clics tiene el gestor que está viendo la pantalla
         const myData = this.allAgentsData.find(a => a.name === window.gestorName);
         this.myClicks = myData ? myData.clicks : 0;
     },
 
     // --- 2. CINTA GLOBAL ESTILO NOTICIAS (DISEÑO SOLO LEVELING / TEXTO ORIGINAL) ---
+    // --- 2. CINTA GLOBAL ESTILO NOTICIAS (CON ROTACIÓN DE MENSAJES) ---
     injectGlobalRibbon: function() {
         const mainContainer = document.querySelector('main');
         if (!mainContainer) return;
@@ -81,19 +86,18 @@ const TrafficCampaign = {
                 white-space: nowrap;
                 display: flex;
                 align-items: center;
-                background-color: #020617; /* Azul Oscuro del Sistema */
-                border: 1px solid #06b6d4; /* Borde Cian */
+                background-color: #020617; 
+                border: 1px solid #06b6d4; 
                 box-shadow: 0 0 15px rgba(6, 182, 212, 0.15), inset 0 0 20px rgba(6, 182, 212, 0.05);
                 border-radius: 4px;
             }
             .sl-ticker-move {
                 display: inline-block;
-                /* Reducimos el padding para que no empiece tan lejos y bajamos el tiempo a 20s */
                 padding-left: 50%; 
                 animation: ticker 20s linear infinite;
             }
             .sl-ticker-move:hover {
-                animation-play-state: paused; /* Se detiene si le ponen el mouse encima */
+                animation-play-state: paused; 
             }
             .sl-ticker-item {
                 display: inline-flex;
@@ -106,14 +110,25 @@ const TrafficCampaign = {
                 text-transform: uppercase;
                 padding: 10px 0;
             }
-            .sl-text-glow {
-                text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
-            }
-            .sl-purple-glow {
-                text-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
-            }
+            .sl-text-glow { text-shadow: 0 0 8px rgba(34, 211, 238, 0.8); }
+            .sl-purple-glow { text-shadow: 0 0 8px rgba(168, 85, 247, 0.8); }
         `;
         document.head.appendChild(style);
+
+        // ==========================================
+        // 2. MAGIA: ROTACIÓN ALEATORIA DE MENSAJES
+        // ==========================================
+        const mensajesFomo = [
+            `<span class="ml-12 text-[13px] font-black tracking-widest text-emerald-400 flex items-center gap-2 bg-emerald-900/30 px-4 py-1 border border-emerald-500/50 rounded shadow-[0_0_15px_rgba(16,185,129,0.2)]"><span class="animate-ping w-2 h-2 bg-emerald-500 rounded-full"></span>PREDICCIÓN DEL SISTEMA: <span class="text-white text-lg drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">+80%</span> DE PROBABILIDAD DE LLEVARSE LAS VENTAS HOY 💰</span>`,
+            
+            `<span class="ml-12 text-[13px] font-black tracking-widest text-amber-400 bg-amber-950/50 px-4 py-1 border border-amber-500/50 rounded flex items-center gap-2">⚠️ <span class="text-white animate-pulse">¡ALERTA AL RESTO!</span> ESTÁ ACAPARANDO EL TRÁFICO Y LAS COMISIONES DEL DÍA 💸</span>`,
+            
+            `<span class="ml-12 text-[14px] font-black tracking-widest text-green-400 flex items-center gap-2">🤑 <span class="bg-green-600 text-white px-2 py-0.5 rounded animate-pulse">VENTA INMINENTE:</span> TIENE LA MAYOR PROBABILIDAD DE COBRAR COMISIONES HOY</span>`
+        ];
+        
+        // Elige uno al azar cada vez que carga la página
+        const mensajeElegido = mensajesFomo[Math.floor(Math.random() * mensajesFomo.length)];
+
 
         let ribbonHTML = '';
         if (this.topAgent && this.topAgent.clicks > 0) {
@@ -122,11 +137,9 @@ const TrafficCampaign = {
             
             ribbonHTML = `
             <div id="traffic-global-ribbon" class="sl-ticker-wrap font-system">
-                <!-- Esquinas Decorativas del HUD -->
                 <div class="absolute top-[-1px] left-[-1px] w-2 h-2 border-t-2 border-l-2 border-cyan-400 z-20"></div>
                 <div class="absolute bottom-[-1px] right-[-1px] w-2 h-2 border-b-2 border-r-2 border-cyan-400 z-20"></div>
                 
-                <!-- Icono Fijo a la izquierda -->
                 <div class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#020617] via-[#020617] to-transparent w-16 z-10 flex items-center pl-4 pointer-events-none">
                     <span class="text-xl animate-pulse">🔥</span>
                 </div>
@@ -137,12 +150,11 @@ const TrafficCampaign = {
                         
                         <span class="text-white">
                             <span class="${isMe ? 'text-purple-400 sl-purple-glow' : 'text-cyan-300 sl-text-glow'} font-black">${name}</span> 
-                            ES QUIÉN MÁS COMPARTE SU LINK, TIENE YA <span class="bg-cyan-950/60 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 ml-1 shadow-[0_0_10px_rgba(6,182,212,0.3)]">${this.topAgent.clicks} CLICS DE CLIENTES INTERESADOS EN COMPRAR</span>
+                            ES QUIÉN MÁS COMPARTE SU LINK, TIENE YA <span class="bg-cyan-950/60 border border-cyan-500/50 px-2 py-0.5 rounded text-cyan-300 ml-1 shadow-[0_0_10px_rgba(6,182,212,0.3)]">${this.topAgent.clicks} CLICS DE CLIENTES</span>
                         </span>
                         
-                        <span class="opacity-70 ml-12 text-[12px] font-mono tracking-widest text-cyan-200">
-                            — 📈 ESTADÍSTICAMENTE TIENE UN 80% MÁS DE PROBABILIDAD DE CERRAR VENTAS HOY —
-                        </span>
+                        <!-- AQUI SE INYECTA EL MENSAJE ROTATIVO -->
+                        ${mensajeElegido}
                         
                         <span class="ml-12 text-purple-400 font-black sl-purple-glow flex items-center gap-1">
                             ¡COMPARTE TU LINK EN GRUPOS PARA QUITARLE EL PUESTO! 🚀
@@ -156,7 +168,6 @@ const TrafficCampaign = {
                 <div class="absolute top-[-1px] left-[-1px] w-2 h-2 border-t-2 border-l-2 border-slate-500 z-20"></div>
                 <div class="absolute bottom-[-1px] right-[-1px] w-2 h-2 border-b-2 border-r-2 border-slate-500 z-20"></div>
                 
-                <!-- Icono Fijo a la izquierda -->
                 <div class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#020617] via-[#020617] to-transparent w-16 z-10 flex items-center pl-4 pointer-events-none">
                     <span class="text-xl">🏆</span>
                 </div>
