@@ -816,33 +816,50 @@ async function loadConciliacion() {
     let sumaTotalARecibir = 0;
     
     const filasHTML = pedidosFiltrados.map(p => {
-        const nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
-        const prod = inventario.find(i => p.producto.includes(i.nombre) || i.nombre === nombreLimpio) || { costo_proveedor: 0 };
         
-        // Costo Base inicial (lo que diga la base de datos hoy)
-        const costoBase = Number(prod.costo_proveedor || 0);
-        
-        let qty = 1;
-        const match = p.producto.match(/^(\d+)x/);
-        if(match) qty = parseInt(match[1]);
+        // --- 1. NUEVA LÓGICA: SEPARAR MULTIPLES PRODUCTOS POR EL SIGNO "+" ---
+        const lineasProductos = p.producto.split('+');
+        let totalCosto = 0; // Aquí acumularemos la suma de todos los costos
+
+        lineasProductos.forEach(linea => {
+            const limpia = linea.trim();
+            
+            // Extraer Cantidad y Nombre (Ej: "2x Lavadora [USD]")
+            const match = limpia.match(/^(\d+)x\s+(.+?)(\[|$)/);
+            
+            let qty = 1;
+            let nombreItem = limpia;
+
+            if (match) {
+                qty = parseInt(match[1]); // Atrapa el número antes de la 'x'
+                nombreItem = match[2].trim(); // Atrapa el nombre del equipo
+            } else {
+                nombreItem = limpia.split('[')[0].trim();
+            }
+
+            // Buscar este producto específico en el inventario
+            const prod = inventario.find(i => i.nombre === nombreItem || limpia.includes(i.nombre));
+            const costoBase = prod ? Number(prod.costo_proveedor || 0) : 0;
+
+            // Sumar al total: Costo del producto * Cantidad de ese producto
+            totalCosto += (costoBase * qty);
+        });
+        // ----------------------------------------------------------------------
 
         const totalVenta = parseFloat(p.total);
-        const costoMensajeria = parseFloat(p.costo_mensajeria || 0); // <--- EXTRAEMOS LA MENSAJERÍA
+        const costoMensajeria = parseFloat(p.costo_mensajeria || 0);
         
         // El precio real de los equipos vendidos (sin el envío)
         const totalEquipos = totalVenta - costoMensajeria; 
         
-        // Total Costo = Costo unitario * Cantidad
-        const totalCosto = costoBase * qty;
-        
-        // La utilidad real es lo que quedó de los equipos menos lo que cobra el proveedor
+        // La utilidad real es lo que quedó de los equipos menos TODOS los costos
         const aRecibir = totalEquipos - totalCosto;
 
         sumaTotalARecibir += aRecibir;
 
         // Estilo de alerta si el costo es 0
-        const borderClass = costoBase === 0 ? 'border-red-500 text-red-500' : 'border-slate-600 text-red-300';
-
+// Estilo de alerta si el costo es 0 (Ahora usa totalCosto)
+const borderClass = totalCosto === 0 ? 'border-red-500 text-red-500' : 'border-slate-600 text-red-300';
         // --- CAMBIO CLAVE: INPUT EDITABLE EN LUGAR DE TEXTO FIJO ---
         return `
         <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalVenta}">
