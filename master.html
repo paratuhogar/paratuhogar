@@ -1101,28 +1101,47 @@ async function loadNomina() {
 
         // NUEVA FUNCIÓN: LIQUIDAR (PAGAR) UN SOLO PEDIDO DE LA LISTA
         // NUEVA FUNCIÓN: LIQUIDAR (PAGAR) UN SOLO PEDIDO DE LA LISTA
-async function liquidarUnicoPedido(idPedido, ordenDia, comision, gestor) {
+// NUEVA FUNCIÓN: LIQUIDAR (PAGAR) UN SOLO PEDIDO (BLINDADA CONTRA ERRORES)
+window.liquidarUnicoPedido = async function(idPedido, ordenDia, comision, gestor) {
     
-    // Alerta de confirmación específica con el número de pedido
-    if(!confirm(`¿Deseas pagar SOLO el pedido #${ordenDia} a ${gestor} por el valor de $${comision}?\n\nOJO: Si este pedido incluía varios equipos, se marcarán todos como pagados. Los adelantos de caja NO se descuentan en pagos parciales.`)) return;
-
-    // Marcar SOLO ese pedido exacto (por su ID único) como pagado en la base de datos
-    const { error } = await supabaseClient
-        .from('pedidos')
-        .update({ 
-            pago_gestor: 'Pagado', 
-            estado_financiero: 'Liquidado_Gestor' 
-        })
-        .eq('id', idPedido); // <-- Esto garantiza que es imposible que actualice otro pedido
-
-    if(error) {
-        alert("Error actualizando el pedido: " + error.message);
-        return;
+    // 1. Seguro Anti-Errores: Verificar que el ID es válido y existe
+    if (!idPedido || idPedido === 'undefined' || idPedido === 'null') {
+        return alert("❌ Error crítico: El sistema no detectó el ID único del pedido. Recarga la página.");
     }
 
-    alert(`✅ Pedido #${ordenDia} liquidado correctamente a favor de ${gestor}.`);
-    loadNomina(); // Recargar la vista de la nómina
-}
+    if(!confirm(`¿Deseas pagar SOLO el pedido #${ordenDia} a ${gestor} por $${comision}?\n\nLos demás pedidos de este gestor seguirán pendientes.`)) return;
+
+    // 2. Bloquear el botón al instante para evitar dobles clics por lag de internet
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Pagando...";
+    btn.disabled = true;
+    btn.classList.add("opacity-50", "cursor-not-allowed");
+
+    try {
+        // 3. Ejecución estricta: Le decimos a la base de datos que busque ÚNICAMENTE ese ID exacto
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update({ 
+                pago_gestor: 'Pagado', 
+                estado_financiero: 'Liquidado_Gestor' 
+            })
+            .eq('id', idPedido); // <-- El candado de seguridad absoluto
+
+        if(error) throw error;
+
+        alert(`✅ Pedido #${ordenDia} liquidado correctamente.`);
+        loadNomina(); // Recarga la tabla para desaparecer ese pedido
+
+    } catch (e) {
+        console.error(e);
+        alert("❌ Error actualizando el pedido: " + e.message);
+        // Si falla, restauramos el botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        btn.classList.remove("opacity-50", "cursor-not-allowed");
+    }
+};
 
         // Asegúrate de llamar a loadNomina si cambian de pestaña
         // (Ya está en la función switchTab del código anterior)
