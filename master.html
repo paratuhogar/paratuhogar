@@ -312,6 +312,27 @@ function calculateDevFee(precioVenta) {
                     </table>
                 </div>
                 <p class="text-xs text-slate-500 mt-4 italic">* Solo aparecen comisiones de pedidos marcados como "Conciliados" el viernes.</p>
+                <!-- NUEVA SECCIÓN: HISTORIAL DE LIQUIDADOS (PARA DESHACER) -->
+                <div class="mt-8 pt-6 border-t border-slate-700">
+                    <h4 class="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined">history</span> Últimos 10 pedidos liquidados (Deshacer Errores)
+                    </h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-400">
+                            <thead class="bg-slate-800 text-[10px] uppercase font-black text-slate-300">
+                                <tr>
+                                    <th class="p-3">Pedido</th>
+                                    <th class="p-3">Gestor</th>
+                                    <th class="p-3 text-right">Comisión</th>
+                                    <th class="p-3 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-nomina-pagados" class="divide-y divide-slate-700/50 bg-slate-900/30">
+                                <!-- JS llenará esto -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1046,6 +1067,29 @@ async function loadNomina() {
         
     const elTotalGlobal = document.getElementById('total-global-nomina');
     if (elTotalGlobal) elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
+    // --- NUEVO: CARGAR LOS ÚLTIMOS 10 PAGADOS PARA PODER DESHACER ---
+    const { data: pagados } = await supabaseClient
+        .from('pedidos')
+        .select('id, orden_dia, gestor, comision_total, producto')
+        .eq('pago_gestor', 'Pagado')
+        .order('id', { ascending: false }) // Trae los últimos procesados
+        .limit(10);
+
+    const tbodyPagados = document.getElementById('list-nomina-pagados');
+    if (tbodyPagados && pagados) {
+        tbodyPagados.innerHTML = pagados.map(p => `
+            <tr class="hover:bg-slate-800/50 transition-colors">
+                <td class="p-2 font-bold text-slate-300 text-xs">#${p.orden_dia || 'S/N'}</td>
+                <td class="p-2 text-xs">${p.gestor}</td>
+                <td class="p-2 text-xs text-emerald-500 font-mono text-right">$${p.comision_total}</td>
+                <td class="p-2 text-right">
+                    <button onclick="revertirPago('${p.id}', '${p.orden_dia}')" class="bg-red-950/50 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm flex items-center gap-1 ml-auto">
+                        <span class="material-symbols-outlined text-[12px]">undo</span> Deshacer
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
 }
 
         // GUARDAR ADELANTO
@@ -1144,6 +1188,37 @@ window.liquidarUnicoPedido = async function(idPedido, ordenDia, comision, gestor
         btn.innerHTML = originalText;
         btn.disabled = false;
         btn.classList.remove("opacity-50", "cursor-not-allowed");
+    }
+};
+
+// NUEVA FUNCIÓN: ECHAR PARA ATRÁS UN PAGO
+window.revertirPago = async function(idPedido, ordenDia) {
+    if(!confirm(`¿Estás seguro de DESHACER el pago del pedido #${ordenDia}?\n\nEsto lo devolverá a la lista de nómina pendiente a pagar.`)) return;
+
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Revirtiendo...";
+    btn.disabled = true;
+
+    try {
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update({ 
+                pago_gestor: 'Pendiente', 
+                estado_financiero: 'Conciliado_Prov' // Lo devuelve a la etapa correcta
+            })
+            .eq('id', idPedido);
+
+        if(error) throw error;
+
+        alert(`✅ Pago del pedido #${ordenDia} revertido con éxito.`);
+        loadNomina(); // Recarga toda la pantalla
+
+    } catch (e) {
+        console.error(e);
+        alert("❌ Error: " + e.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 };
 
