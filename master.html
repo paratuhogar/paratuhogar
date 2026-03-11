@@ -819,13 +819,19 @@ async function loadConciliacion() {
     }
 
     // 2. Obtener datos
-    const { data, error } = await supabaseClient
+    const { data: rawData, error } = await supabaseClient
         .from('pedidos')
         .select('*')
-        .eq('estado', 'Entregado')
-        .neq('estado_financiero', 'Conciliado_Prov');
+        .eq('estado', 'Entregado');
 
     if(error) return console.error(error);
+
+    // --- CORRECCIÓN: FILTRAR CORRECTAMENTE LOS ESTADOS FINANCIEROS ---
+    // Solo dejamos los que NO están conciliados y que NO han sido pagados
+    const data = rawData.filter(p => 
+        p.estado_financiero !== 'Conciliado_Prov' && 
+        p.estado_financiero !== 'Liquidado_Gestor'
+    );
 
     // --- FILTROS ---
     const select = document.getElementById('filter-prov-conc');
