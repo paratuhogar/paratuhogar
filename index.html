@@ -1984,7 +1984,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1003d"; 
+const versionActual = "1103"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -5486,10 +5486,16 @@ function renderAnaliticaGestores(pedidos) {
 }
 
 async function loadTrafficAnalytics() {
-    // 1. Buscamos TODOS los clics directamente en la tabla (sin cruzar tablas raras)
+    // Definimos los últimos 30 días
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
+
+    // 1. Buscamos TODOS los clics rompiendo el límite de 1000
     const { data: analytics, error } = await supabaseClient
         .from('link_analytics')
-        .select('agent_name'); // <-- LEEMOS EL NOMBRE DIRECTO
+        .select('agent_name')
+        .gte('timestamp', hace30Dias.toISOString())
+        .limit(50000); // Límite masivo
 
     if (error || !analytics) {
         console.error("Error cargando el tráfico:", error);
@@ -5500,9 +5506,7 @@ async function loadTrafficAnalytics() {
 
     // 2. Contamos uno por uno
     analytics.forEach(row => {
-        // Tomamos el nombre directamente de la columna
         const nombre = row.agent_name;
-        
         // Ignoramos si está vacío o si es tráfico "Directo" (sin gestor)
         if (nombre && nombre !== 'Directo' && nombre !== 'Venta Directa') {
             puntosGestor[nombre] = (puntosGestor[nombre] || 0) + 1;
@@ -5512,16 +5516,11 @@ async function loadTrafficAnalytics() {
     // 3. Convertimos los datos en una lista y los ordenamos (El que tiene más clics va primero)
     const rankingOrdenado = Object.entries(puntosGestor).sort((a, b) => b[1] - a[1]);
 
-    // ==========================================
-    // 4. RENDERIZADO (DIBUJAR LA TABLA OSCURA)
-    // ==========================================
-    // Aquí buscas el ID de tu contenedor (asumo que se llama 'list-trafico-gestores' o algo similar en tu HTML)
+    // 4. RENDERIZADO
     const contenedorHTML = document.getElementById('list-trafico-gestores');
     
     if (contenedorHTML) {
         contenedorHTML.innerHTML = rankingOrdenado.map(([nombre, clics], index) => {
-            
-            // Lógica para censurar el apellido (Ej: "LISET***") para mantener la privacidad
             const nombreCorto = nombre.split(' ')[0].toUpperCase();
             const nombreCensurado = nombreCorto.substring(0, 5) + "***";
 
@@ -10613,7 +10612,7 @@ const tarifasMensajeria = {
         "La Sierra": { pq: 6, gr: 10 }, "Kholi": { pq: 4, gr: 10 }, "Siboney": { pq: 4, gr: 10 },
         "Atabey": { pq: 6, gr: 10 }, "Santa Fé": { pq: 10, gr: 15 }, "Jaimanitas": { pq: 10, gr: 15 },
         "Flores": { pq: 6, gr: 10 }, "Almendares": { pq: 4, gr: 10 }, "El Bosque": { pq: 6, gr: 10 },
-        "Paradero": { pq: 6, gr: 10 }, "Náutico": { pq: 6, gr: 10 }, "Puente Grande": { pq: 6, gr: 10 },
+        "Paradero": { pq: 6, gr: 10 }, "Náutico": { pq: 6, gr: 10 }, "Puente Grande": { pq: 6, gr: 10 }, "Cangrejera": { pq: 6, gr: 20 },
         "La ELAM": { pq: 6, gr: 10 }, "Barbosa": { pq: 6, gr: 10 }, "Cubanacan": { pq: 6, gr: 10 }, "Romerillo": { pq: 6, gr: 10 }
     },
     "Plaza de la Revolución": {

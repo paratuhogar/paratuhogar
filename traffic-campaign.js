@@ -26,12 +26,22 @@ const TrafficCampaign = {
     // --- 1. PROCESAR DATOS DE SUPABASE ---
     // --- 1. PROCESAR DATOS DE SUPABASE (CORREGIDO) ---
     fetchClickData: async function() {
-        // Traemos solo el nombre para que la descarga sea ultra rápida
+        // 1. Calculamos la fecha de hace 30 días para tener un Ranking Activo
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hace30Dias.getDate() - 30);
+
+        // 2. ROMPEMOS EL LÍMITE DE SUPABASE (de 1000 a 50000) y traemos lo más nuevo
         const { data, error } = await supabaseClient
             .from('link_analytics')
-            .select('agent_name');
+            .select('agent_name')
+            .gte('timestamp', hace30Dias.toISOString()) // Solo últimos 30 días
+            .order('timestamp', { ascending: false })   // Los más nuevos primero
+            .limit(50000);                              // Límite masivo
 
-        if (error || !data) return;
+        if (error || !data) {
+            console.error("Error cargando tráfico:", error);
+            return;
+        }
 
         let agentClicks = {};
 
@@ -41,9 +51,6 @@ const TrafficCampaign = {
             // Filtros: ignorar tráfico vacío, directo o del dueño
             if (!agent || agent === 'Directo' || agent === 'Venta Directa' || agent === 'Marcel Montano') return;
 
-            // Simplemente sumamos +1 por cada vez que su nombre aparece en la tabla.
-            // Como el index.html ya bloquea los clics dobles (spam) por 30 minutos, 
-            // cada fila que llega aquí es una visita real y válida.
             agentClicks[agent] = (agentClicks[agent] || 0) + 1;
         });
 
