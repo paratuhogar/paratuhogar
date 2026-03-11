@@ -952,25 +952,14 @@ async function loadNomina() {
     // C. Agrupar por Gestor
     const nomina = {};
 
-    // 1. Sumar Comisiones y Guardar Nombres de Productos
     pedidos.forEach(p => {
         const g = p.gestor || 'Sin Gestor';
-        
-        // Inicializamos el objeto si no existe
-        if(!nomina[g]) nomina[g] = { 
-            comision: 0, 
-            adelantos: 0, 
-            pedidosIds: [], 
-            ventasCount: 0,
-            listaProductos: [] 
-        };
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] };
         
         nomina[g].comision += Number(p.comision_total || 0);
         nomina[g].ventasCount++;
         nomina[g].pedidosIds.push(p.id);
 
-        // --- SOLUCIÓN: MOSTRAR TODOS LOS PRODUCTOS DEL VALE ---
-        // Ahora no corta el texto, muestra todo lo que hay en el pedido
         let nombreLimpio = p.producto.split('+').map(i => i.replace(/\[.*?\]/g, '').trim()).join(' + ');
         
         nomina[g].listaProductos.push({
@@ -981,93 +970,82 @@ async function loadNomina() {
         });
     });
 
-    // 2. Restar Adelantos / Sumar Bonos
     caja.forEach(c => {
         const g = c.gestor;
         if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] }; 
         
-        if(c.tipo === 'Adelanto' || c.tipo === 'Multa') {
-            nomina[g].adelantos += Number(c.monto);
-        } else if (c.tipo === 'Bono') {
-            nomina[g].comision += Number(c.monto); 
-        }
+        if(c.tipo === 'Adelanto' || c.tipo === 'Multa') nomina[g].adelantos += Number(c.monto);
+        else if (c.tipo === 'Bono') nomina[g].comision += Number(c.monto); 
     });
 
     // D. Renderizar Tabla
     const tbody = document.getElementById('list-nomina');
     const selectGestor = document.getElementById('wallet-gestor');
     
-    // Llenar select de gestores
+    // Llenar select
     const todosGestores = Object.keys(nomina).sort();
-    selectGestor.innerHTML = todosGestores.map(g => `<option value="${g}">${g}</option>`).join('');
+    if(selectGestor) selectGestor.innerHTML = todosGestores.map(g => `<option value="${g}">${g}</option>`).join('');
 
-    let granTotalNomina = 0; // <--- VARIABLE PARA SUMAR TODO EL DINERO
+    let granTotalNomina = 0; 
 
-    // Filtramos para que "Venta Directa" no aparezca en la lista de pagos
-    tbody.innerHTML = Object.entries(nomina)
-        .filter(([gestor]) => gestor !== "Venta Directa") 
-        .map(([gestor, datos]) => {
-            const totalPagar = datos.comision - datos.adelantos;
-            const idsString = datos.pedidosIds.join(',');
+    // ====================================================================
+    // SOLUCIÓN AL SALTO DE PANTALLA: Ordenar estrictamente de la A a la Z
+    // ====================================================================
+    const listaOrdenada = Object.entries(nomina)
+        .filter(([gestor]) => gestor !== "Venta Directa")
+        .sort((a, b) => a[0].localeCompare(b[0])); // Mantiene a los gestores fijos en su lugar
 
-            // Solo sumamos al Gran Total si el saldo es positivo (no le vas a pagar a alguien que te debe plata)
-            if (totalPagar > 0) {
-                granTotalNomina += totalPagar;
-            }
+    // Dibujar la tabla usando la lista ordenada
+    tbody.innerHTML = listaOrdenada.map(([gestor, datos]) => {
+        const totalPagar = datos.comision - datos.adelantos;
+        const idsString = datos.pedidosIds.join(',');
 
-            if(totalPagar === 0 && datos.ventasCount === 0) return '';
+        if (totalPagar > 0) granTotalNomina += totalPagar;
+        if(totalPagar === 0 && datos.ventasCount === 0) return '';
 
-            // Generar HTML de la lista de productos CON BOTÓN DE PAGO INDIVIDUAL
-            const productosHTML = datos.listaProductos.map(item => `
-                <div class="flex justify-between items-center text-[10px] text-slate-300 border-b border-slate-700/50 py-1.5 last:border-0 w-full gap-3">
-                    <div class="text-left flex-1 truncate" title="${item.producto}">
-                        <span class="text-amber-500 font-bold">[#${item.orden_dia}]</span> 
-                        ${item.producto} 
-                        <span class="text-emerald-400 font-mono inline-block ml-1">($${item.comision})</span>
-                    </div>
-                    <!-- AQUÍ PASAMOS EL NÚMERO DE ORDEN PARA SEGURIDAD -->
-                    <button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')" 
-                        class="bg-slate-700 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[9px] font-bold uppercase transition-colors shadow-sm">
-                        Liquidar
-                    </button>
+        const productosHTML = datos.listaProductos.map(item => `
+            <div class="flex justify-between items-center text-[10px] text-slate-300 border-b border-slate-700/50 py-1.5 last:border-0 w-full gap-3 hover:bg-slate-800/50 px-1 rounded transition-colors">
+                <div class="text-left flex-1 truncate" title="${item.producto}">
+                    <span class="text-amber-500 font-bold">[#${item.orden_dia}]</span> 
+                    ${item.producto} 
+                    <span class="text-emerald-400 font-mono inline-block ml-1">($${item.comision})</span>
                 </div>
-            `).join('');
-            
-
-            return `
-            <tr class="hover:bg-slate-800 transition-all border-b border-slate-700">
-                <td class="p-3 align-top font-bold text-white text-sm">${gestor}</td>
-                
-                <td class="p-3 align-top">
-                    <div class="text-xs text-slate-400 mb-1 text-right">Total pedidos: <span class="font-black text-white">${datos.ventasCount}</span></div>
-                    <div class="flex flex-col w-full bg-slate-900/60 p-2 rounded-lg border border-slate-700/50">
-                        ${productosHTML}
-                    </div>
-                </td>
-
-                <td class="p-3 align-top text-right text-emerald-400 font-mono text-sm">+$${datos.comision.toFixed(2)}</td>
-                <td class="p-3 align-top text-right text-red-400 font-mono text-sm">-$${datos.adelantos.toFixed(2)}</td>
-                <td class="p-3 align-top text-right font-black text-xl ${totalPagar < 0 ? 'text-red-500' : 'text-white'}">
-                    $${totalPagar.toFixed(2)}
-                </td>
-                <td class="p-3 align-top text-center">
-                    ${totalPagar > 0 ? 
-                        `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
-                            class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all">
-                            PAGAR
-                        </button>` : 
-                        `<span class="text-xs text-slate-500 font-bold">Sin Saldo</span>`
-                    }
-                </td>
-            </tr>
-            `;
-        }).join('');
+                <button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')" 
+                    class="bg-slate-700 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[9px] font-bold uppercase transition-all shadow-sm active:scale-95 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[10px]">payments</span> Pagar
+                </button>
+            </div>
+        `).join('');
         
-    // --- ESTO ERA LO QUE FALTABA: ACTUALIZAR EL GRAN TOTAL EN PANTALLA ---
+        return `
+        <tr class="hover:bg-slate-800/50 transition-all border-b border-slate-700">
+            <td class="p-3 align-top font-bold text-white text-sm whitespace-nowrap">${gestor}</td>
+            <td class="p-3 align-top">
+                <div class="text-xs text-slate-400 mb-1 text-right">Total pedidos: <span class="font-black text-white">${datos.ventasCount}</span></div>
+                <div class="flex flex-col w-full bg-slate-900/60 p-2 rounded-lg border border-slate-700/50">
+                    ${productosHTML}
+                </div>
+            </td>
+            <td class="p-3 align-top text-right text-emerald-400 font-mono text-sm">+$${datos.comision.toFixed(2)}</td>
+            <td class="p-3 align-top text-right text-red-400 font-mono text-sm">-$${datos.adelantos.toFixed(2)}</td>
+            <td class="p-3 align-top text-right font-black text-xl ${totalPagar < 0 ? 'text-red-500' : 'text-white'}">
+                $${totalPagar.toFixed(2)}
+            </td>
+            <td class="p-3 align-top text-center">
+                ${totalPagar > 0 ? 
+                    `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all w-full mb-1">
+                        PAGAR TODO
+                    </button>` : 
+                    `<span class="text-xs text-slate-500 font-bold bg-slate-800 px-3 py-1 rounded-lg">Sin Saldo</span>`
+                }
+            </td>
+        </tr>
+        `;
+    }).join('');
+        
     const elTotalGlobal = document.getElementById('total-global-nomina');
-    if (elTotalGlobal) {
-        elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
-    }
+    if (elTotalGlobal) elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
 }
 
         // GUARDAR ADELANTO
