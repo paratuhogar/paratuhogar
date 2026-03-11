@@ -3430,7 +3430,7 @@ function renderMyOrdersList(lista) {
                 </div>
             </div>
 
-            <!-- CUERPO COMPACTO (INTACTO) -->
+            <!-- CUERPO COMPACTO Y ESTADO DE PAGO -->
             <div class="flex justify-between items-end gap-2">
                 <div class="flex-1 min-w-0">
                     <h4 class="text-sm font-black text-slate-700 uppercase truncate leading-tight mb-0.5" title="${p.cliente}">${p.cliente}</h4>
@@ -3441,10 +3441,18 @@ function renderMyOrdersList(lista) {
                     </span>
                 </div>
 
-                <!-- PRECIO (INTACTO) -->
-                <div class="text-right flex-shrink-0">
+                <!-- PRECIO Y ETIQUETA -->
+                <div class="text-right flex-shrink-0 flex flex-col items-end justify-end">
                     <p class="text-[10px] font-bold text-slate-400 mb-0.5">$${Number(p.total || 0).toFixed(0)}</p>
                     <p class="text-sm font-black text-emerald-600 whitespace-nowrap">+$${Number(p.comision_total).toFixed(2)}</p>
+                    
+                    <!-- LÓGICA DE ETIQUETA DE PAGO (SOLO SI ESTÁ ENTREGADO) -->
+                    ${p.estado === 'Entregado' ? 
+                        (p.pago_gestor === 'Pagado' 
+                            ? `<p class="text-[8px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded mt-1 text-right uppercase inline-flex items-center gap-1 justify-end w-full border border-emerald-200"><span class="material-symbols-outlined text-[10px]">check_circle</span> Pagado</p>`
+                            : `<p class="text-[8px] font-black text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded mt-1 text-right uppercase inline-flex items-center gap-1 justify-end w-full border border-orange-200"><span class="material-symbols-outlined text-[10px]">hourglass_empty</span> Por Cobrar</p>`
+                        ) 
+                    : ''}
                 </div>
             </div>
         </div>`;

@@ -315,8 +315,8 @@ function calculateDevFee(precioVenta) {
                 <!-- NUEVA SECCIÓN: HISTORIAL DE LIQUIDADOS (PARA DESHACER) -->
                 <div class="mt-8 pt-6 border-t border-slate-700">
                     <h4 class="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined">history</span> Últimos 10 pedidos liquidados (Deshacer Errores)
-                    </h4>
+    <span class="material-symbols-outlined">history</span> Historial Reciente de Pagos (Deshacer Errores)
+</h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm text-slate-400">
                             <thead class="bg-slate-800 text-[10px] uppercase font-black text-slate-300">
@@ -1067,13 +1067,13 @@ async function loadNomina() {
         
     const elTotalGlobal = document.getElementById('total-global-nomina');
     if (elTotalGlobal) elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
-    // --- NUEVO: CARGAR LOS ÚLTIMOS 10 PAGADOS PARA PODER DESHACER ---
+    // --- NUEVO: CARGAR LOS ÚLTIMOS 100 PAGADOS PARA PODER DESHACER ---
     const { data: pagados } = await supabaseClient
         .from('pedidos')
         .select('id, orden_dia, gestor, comision_total, producto')
         .eq('pago_gestor', 'Pagado')
         .order('id', { ascending: false }) // Trae los últimos procesados
-        .limit(10);
+        .limit(100);
 
     const tbodyPagados = document.getElementById('list-nomina-pagados');
     if (tbodyPagados && pagados) {
