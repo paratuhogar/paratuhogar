@@ -238,6 +238,9 @@
             } catch(e) { console.error("Error limpiando objetivo", e); }
         };
 
+        // ======================================================
+        // 1. EL FRANCOTIRADOR (CORREGIDO: FILTRO DE 8 DÍGITOS)
+        // ======================================================
         async function loadSniperTargets() {
             const hace48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
             
@@ -250,18 +253,29 @@
 
             if (error || !leads) return;
 
-            const { data: ventasHoy } = await radarClient
+            // Consultar compras de los últimos 7 días por seguridad
+            const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const { data: ventasRecientes } = await radarClient
                 .from('pedidos')
                 .select('telefono')
-                .gte('fecha', hace48h);
+                .gte('fecha', hace7dias);
 
-            const telefonosVendidos = new Set((ventasHoy || []).map(v => v.telefono.replace(/\D/g, '')));
+            // MAGIA AQUÍ: Guardamos SOLO los últimos 8 dígitos de cada compra
+            const telefonosVendidos = new Set((ventasRecientes || []).map(v => {
+                const numLimpio = v.telefono.replace(/\D/g, '');
+                return numLimpio.slice(-8); // Extrae solo los 8 números de Cuba
+            }));
 
+            // FILTRO DEPREDADOR
             const misLeads = leads.filter(l => {
                 const nombreGestor = l.gestor_atribuido ? l.gestor_atribuido.trim() : 'Directo';
                 const esMioOLibre = (nombreGestor === MY_NAME || nombreGestor === 'Directo' || nombreGestor === 'Venta Directa' || nombreGestor === '');
-                const telLead = l.telefono.replace(/\D/g, '');
-                return esMioOLibre && !telefonosVendidos.has(telLead);
+                
+                // Limpiamos el teléfono del Lead para compararlo
+                const telLead = l.telefono.replace(/\D/g, '').slice(-8);
+                const yaCompro = telefonosVendidos.has(telLead);
+
+                return esMioOLibre && !yaCompro;
             });
 
             document.getElementById('count-targets').innerText = misLeads.length;
@@ -276,7 +290,6 @@
             misLeads.forEach(lead => {
                 const minPasados = Math.floor((new Date() - new Date(lead.timestamp)) / 60000);
                 
-                // MEJORA: Texto de tiempo legible (ej: "Hace 2h")
                 let tiempoAviso = "";
                 if (minPasados < 60) tiempoAviso = `Hace ${minPasados} min`;
                 else {
@@ -300,7 +313,6 @@
                 const msgDescuento = `Hola ${nombre}, soy Marcel de ParaTuHogar. Tenemos el *${prod}* en oferta flash. Si me confirmas el pedido ahora mismo, te regalo la mensajería. ¿Qué me dices?`;
                 const msgAyuda = `Hola ${nombre}, te escribe Marcel de soporte de ParaTuHogar. El sistema me avisó que tuviste problemas al pedir el *${prod}*. Para poder ayudarte rápido: ¿Te estaba atendiendo alguno de nuestros comerciales o entraste directo a la página?`;
 
-                // PASAMOS lead.id A LA FUNCIÓN
                 const html = `
                 <div class="target-card bg-[#0a0f1c] border ${borderHighlight} p-4 rounded-xl relative group">
                     <div class="flex justify-between items-start mb-2">
