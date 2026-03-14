@@ -1990,7 +1990,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1403"; 
+const versionActual = "1403a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10689,7 +10689,7 @@ window.obtenerCostoMensajeriaGlobal = function() {
     let costoBase = carritoTieneEquipoGrande() ? tarifa.gr : tarifa.pq;
 
     const totalEquipos = cart.reduce((acc, item) => acc + item.qty, 0);
-    if (totalEquipos >= 3) {
+    if (totalEquipos > 3) {
         costoBase = costoBase * 1.5;
     }
 
