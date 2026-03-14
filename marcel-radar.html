@@ -170,6 +170,9 @@
         // ======================================================
         // 0. LIVE TICKER (El Ojo de Dios) - VELOCIDAD REDUCIDA
         // ======================================================
+       // ======================================================
+        // 0. LIVE TICKER (El Ojo de Dios) - HORA CORREGIDA
+        // ======================================================
         async function startLiveTicker() {
             const { data: logs } = await radarClient
                 .from('log_espia')
@@ -180,9 +183,8 @@
             if(!logs) return;
 
             const tickerContent = logs.map(l => {
-                // Convertir a Hora Cuba (-4)
+                // ELIMINADA LA DOBLE CONVERSIÓN. AHORA DA LA HORA EXACTA.
                 let date = new Date(l.timestamp);
-                date.setHours(date.getHours() - 4);
                 const time = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
                 let actionColor = "text-cyan-300";
@@ -205,16 +207,16 @@
         }
 
         // ======================================================
-        // 1. EL FRANCOTIRADOR (TUS LEADS + HUÉRFANOS) - BORRADO INSTANTÁNEO
+        // 1. EL FRANCOTIRADOR - BORRADO INFALIBLE POR ID
         // ======================================================
         
-        // FUNCIÓN MÁGICA: Abre WhatsApp Y borra el lead del sistema
-        window.shootTarget = async function(telefono, mensaje, btnElement) {
+        // FUNCIÓN MÁGICA ACTUALIZADA (Ahora recibe el ID)
+        window.shootTarget = async function(id, telefono, mensaje, btnElement) {
             // 1. Abrir WhatsApp (En nueva pestaña)
             const urlWA = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
             window.open(urlWA, '_blank');
 
-            // 2. Desaparecer la tarjeta visualmente (Efecto francotirador)
+            // 2. Desaparecer la tarjeta visualmente de inmediato
             const card = btnElement.closest('.target-card');
             if (card) {
                 card.style.transition = "all 0.4s ease";
@@ -227,16 +229,12 @@
             const countEl = document.getElementById('count-targets');
             if (countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
 
-            // 4. Actualizar Base de Datos para que no vuelva a salir
+            // 4. ACTUALIZACIÓN INFALIBLE: Buscamos por el ID único
             try {
-                // Limpiamos el teléfono tal como se guardó
-                const telLimpio = telefono.replace(/\D/g, '').slice(-8); 
-                
-                // Usamos 'ilike' por si se guardó con o sin 53
                 await radarClient
                     .from('leads_fantasma')
                     .update({ completado: true })
-                    .ilike('telefono', `%${telLimpio}%`);
+                    .eq('id', id); // <--- ESTO GARANTIZA QUE SE BORRE PARA SIEMPRE
             } catch(e) { console.error("Error limpiando objetivo", e); }
         };
 
@@ -277,11 +275,20 @@
 
             misLeads.forEach(lead => {
                 const minPasados = Math.floor((new Date() - new Date(lead.timestamp)) / 60000);
-                let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO (${minPasados}m)</span>`;
+                
+                // MEJORA: Texto de tiempo legible (ej: "Hace 2h")
+                let tiempoAviso = "";
+                if (minPasados < 60) tiempoAviso = `Hace ${minPasados} min`;
+                else {
+                    const horas = Math.floor(minPasados / 60);
+                    tiempoAviso = `Hace ${horas}h`;
+                }
+
+                let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO (${tiempoAviso})</span>`;
                 let borderHighlight = "border-slate-700";
 
-                if (minPasados < 120) { badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO (${minPasados}m)</span>`; borderHighlight = "border-orange-500/30"; }
-                if (minPasados < 30) { badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 URGENTE (${minPasados}m)</span>`; borderHighlight = "border-red-500 shadow-[0_0_15px_#ef444430]"; }
+                if (minPasados < 120) { badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO (${tiempoAviso})</span>`; borderHighlight = "border-orange-500/30"; }
+                if (minPasados < 30) { badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 URGENTE (${tiempoAviso})</span>`; borderHighlight = "border-red-500 shadow-[0_0_15px_#ef444430]"; }
 
                 const prod = lead.producto_en_carrito || "un equipo";
                 const nombre = lead.nombre || "Cliente";
@@ -289,12 +296,11 @@
                 const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
                 const origenText = lead.gestor_atribuido === MY_NAME ? '<span class="text-blue-400">Tuyo</span>' : '<span class="text-emerald-400">Orgánico (Libre)</span>';
 
-                // Gatillos de WhatsApp (Escapados correctamente)
                 const msgCierre = `Hola ${nombre}, soy Marcel de ParaTuHogar. Veo que intentaste comprar el *${prod}*. Me queda el último en el almacén, te lo tengo aguantado. ¿Dime a qué dirección te lo mando?`;
                 const msgDescuento = `Hola ${nombre}, soy Marcel de ParaTuHogar. Tenemos el *${prod}* en oferta flash. Si me confirmas el pedido ahora mismo, te regalo la mensajería. ¿Qué me dices?`;
                 const msgAyuda = `Hola ${nombre}, te escribe Marcel de soporte de ParaTuHogar. El sistema me avisó que tuviste problemas al pedir el *${prod}*. Para poder ayudarte rápido: ¿Te estaba atendiendo alguno de nuestros comerciales o entraste directo a la página?`;
 
-                // Construcción HTML
+                // PASAMOS lead.id A LA FUNCIÓN
                 const html = `
                 <div class="target-card bg-[#0a0f1c] border ${borderHighlight} p-4 rounded-xl relative group">
                     <div class="flex justify-between items-start mb-2">
@@ -313,13 +319,13 @@
                     </div>
 
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="shootTarget('${finalTel}', \`${msgCierre}\`, this)" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
+                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgCierre}\`, this)" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
                            <span class="material-symbols-outlined text-[14px]">my_location</span> Cierre Directo
                         </button>
-                        <button onclick="shootTarget('${finalTel}', \`${msgDescuento}\`, this)" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
+                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgDescuento}\`, this)" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
                            <span class="material-symbols-outlined text-[14px]">local_shipping</span> Oferta (Envío $0)
                         </button>
-                        <button onclick="shootTarget('${finalTel}', \`${msgAyuda}\`, this)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 border border-slate-600 active:scale-95 transition-all">
+                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgAyuda}\`, this)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 border border-slate-600 active:scale-95 transition-all">
                            <span class="material-symbols-outlined text-[14px]">support_agent</span> Asistencia
                         </button>
                     </div>
