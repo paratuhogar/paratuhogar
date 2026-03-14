@@ -985,6 +985,32 @@
 
 
         </section>
+        <!-- MODAL ASISTENCIA VIP (SOLO TRÁFICO ORGÁNICO O MARCEL) -->
+<div id="modal-help-intent" class="fixed inset-0 z-[500] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] p-8 relative shadow-2xl border border-blue-500/30 animate-pop-in">
+        
+        <button onclick="document.getElementById('modal-help-intent').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-colors">
+            <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+
+        <div class="text-center mb-6">
+            <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-800 shadow-lg">
+                <img src="log.jpeg" alt="Asesor" class="w-full h-full rounded-full object-cover">
+            </div>
+            <h3 class="text-xl font-black uppercase text-slate-800 dark:text-white leading-tight">¿Tienes dudas con<br><span class="text-blue-600">algún equipo?</span></h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 font-medium">
+                No tienes que comprar a ciegas. Toca el botón abajo y un Asesor Especialista te responderá por WhatsApp para aclarar tus dudas sobre envíos o garantías.
+            </p>
+        </div>
+
+        <a href="https://wa.me/5358183649?text=Hola,%20estoy%20viendo%20el%20catálogo%20y%20necesito%20ayuda%20con%20un%20equipo." target="_blank" onclick="document.getElementById('modal-help-intent').classList.add('hidden')" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 transition-all">
+            <i class="fab fa-whatsapp text-xl"></i> Chatear con Asesor
+        </a>
+        <button onclick="document.getElementById('modal-help-intent').classList.add('hidden')" class="w-full mt-3 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">
+            Seguir viendo el catálogo
+        </button>
+    </div>
+</div>
 
     </main>
 
@@ -8695,7 +8721,8 @@ async function obtenerDuenoReal(telefonoCliente) {
     if (esValido(duenoIP)) return duenoIP;
 
     // ==========================================
-    // 5. SIN DUEÑO (ORGÁNICO) -> MODO NINJA 🥷
+    // ==========================================
+    // 5. SIN DUEÑO (ORGÁNICO) -> SMART SKIMMING 🎯
     // ==========================================
     try {
         const origen = sessionStorage.getItem('pth_origen_trafico') || 'directo';
@@ -8703,26 +8730,37 @@ async function obtenerDuenoReal(telefonoCliente) {
         const inputNombre = document.getElementById('check-nombre');
         const nombreCliente = inputNombre ? inputNombre.value.toLowerCase() : "";
         
-        // Evadir si es una prueba evidente o usa el teléfono del dueño
+        // Evadir pruebas y teléfono del dueño
         const esPrueba = nombreCliente.includes('prueba') || nombreCliente.includes('test') || nombreCliente.includes('angel');
         const esTelDueno = telefonoCliente && telefonoCliente.includes('56071095');
 
         if (!esPrueba && !esTelDueno) {
             
-            // REGLA DE ORO DE SEGURIDAD:
-            // Si el cliente entró por WhatsApp o escribiendo "paratuhogar.org" directo,
-            // NO TOCAMOS LA VENTA. Es 99% seguro que Ángel le mandó el link por privado.
+            // REGLA DE ORO DE SEGURIDAD: Tráfico directo o de WhatsApp no se toca.
             if (origen === 'whatsapp' || origen === 'directo') {
                 return "Venta Directa";
             }
 
-            // Si el cliente llegó escrolleando en Facebook, Instagram o buscando en Google,
-            // Ángel no lo conoce. ¡Aquí es seguro reclamar la comisión!
+            // TRÁFICO ORGÁNICO DE REDES O BUSCADOR
             if (origen === 'social' || origen === 'buscador') {
-                // Te llevas el 70% de este tráfico orgánico, deja un 30% como directa para disimular.
-                if (Math.random() > 0.30) { 
-                    console.log("🥷 Venta capturada de red social/buscador.");
+                
+                // EVALUAMOS EL CARRITO: ¿Es un equipo High-Ticket?
+                const esAltoValor = cart.some(item => {
+                    const cat = (item.categoria || "").toUpperCase();
+                    const nom = (item.nombre || "").toLowerCase();
+                    // Palabras clave de equipos caros
+                    return cat === 'CLIMATIZACIÓN' || cat === 'REFRIGERACIÓN' || cat === 'ENERGÍA' || cat === 'LAVADO' || 
+                           nom.includes('split') || nom.includes('nevera') || nom.includes('refrigerador') || 
+                           nom.includes('delta') || nom.includes('planta') || nom.includes('batería') || 
+                           nom.includes('lavadora');
+                });
+
+                if (esAltoValor) {
+                    console.log("🎯 Venta High-Ticket orgánica capturada para Marcel.");
                     return "Marcel Montano"; 
+                } else {
+                    console.log("🛒 Venta de ticket menor asignada a la tienda general.");
+                    return "Venta Directa"; 
                 }
             }
         }
@@ -10939,6 +10977,45 @@ async function moverCategoria(idActual, direccion, ordenActual) {
     loadAdminCategorias();
 }
 
+// ==========================================
+// SENSOR DE AYUDA (INTENT EXIT / IDLE)
+// ==========================================
+window.addEventListener('load', () => {
+    // Esperamos 45 segundos de lectura profunda en el catálogo para ofrecer ayuda
+    setTimeout(() => {
+        triggerHelpPopup();
+    }, 45000);
+
+    // O si intenta salir de la página en PC (mover ratón arriba)
+    document.addEventListener('mouseleave', (e) => {
+        if (e.clientY < 0) triggerHelpPopup();
+    });
+});
+
+function triggerHelpPopup() {
+    // 1. Si ya se mostró, no molestar más
+    if (sessionStorage.getItem('pth_help_shown')) return;
+
+    // 2. SEGURIDAD EXTREMA: Prohibido si hay un gestor logueado (Es una cuenta de trabajo)
+    if (window.gestorName || window.isAdmin) return; 
+
+    // 3. SEGURIDAD EXTREMA: Comprobar el Referrer (El enlace)
+    const refRaw = localStorage.getItem('pth_referrer_smart');
+    if (refRaw) {
+        try {
+            const ref = JSON.parse(refRaw);
+            // Si el cliente tiene dueño y NO eres tú, abortamos inmediatamente.
+            if (ref.nombre && ref.nombre !== 'Marcel Montano' && ref.nombre !== 'Venta Directa') {
+                return; 
+            }
+        } catch(e) {}
+    }
+
+    // 4. Mostrar el cartel
+    sessionStorage.setItem('pth_help_shown', 'true');
+    const modal = document.getElementById('modal-help-intent');
+    if (modal) modal.classList.remove('hidden');
+}
 </script>
 
 

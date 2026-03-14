@@ -287,38 +287,60 @@
                 return;
             }
 
+            // Objeto global para no repetir el sonido de leads viejos
+            if (!window.alertedLeads) window.alertedLeads = new Set();
+            let sonidoReproducido = false;
+
             misLeads.forEach(lead => {
                 const minPasados = Math.floor((new Date() - new Date(lead.timestamp)) / 60000);
-                
-                let tiempoAviso = "";
-                if (minPasados < 60) tiempoAviso = `Hace ${minPasados} min`;
-                else {
-                    const horas = Math.floor(minPasados / 60);
-                    tiempoAviso = `Hace ${horas}h`;
-                }
-
-                let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO (${tiempoAviso})</span>`;
-                let borderHighlight = "border-slate-700";
-
-                if (minPasados < 120) { badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO (${tiempoAviso})</span>`; borderHighlight = "border-orange-500/30"; }
-                if (minPasados < 30) { badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 URGENTE (${tiempoAviso})</span>`; borderHighlight = "border-red-500 shadow-[0_0_15px_#ef444430]"; }
-
                 const prod = lead.producto_en_carrito || "un equipo";
                 const nombre = lead.nombre || "Cliente";
                 const cleanTel = lead.telefono.replace(/\D/g, '');
                 const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
                 const origenText = lead.gestor_atribuido === MY_NAME ? '<span class="text-blue-400">Tuyo</span>' : '<span class="text-emerald-400">Orgánico (Libre)</span>';
 
-                const msgCierre = `Hola ${nombre}, soy Marcel de ParaTuHogar. Veo que intentaste comprar el *${prod}*. Me queda el último en el almacén, te lo tengo aguantado. ¿Dime a qué dirección te lo mando?`;
-                const msgDescuento = `Hola ${nombre}, soy Marcel de ParaTuHogar. Tenemos el *${prod}* en oferta flash. Si me confirmas el pedido ahora mismo, te regalo la mensajería. ¿Qué me dices?`;
-                const msgAyuda = `Hola ${nombre}, te escribe Marcel de soporte de ParaTuHogar. El sistema me avisó que tuviste problemas al pedir el *${prod}*. Para poder ayudarte rápido: ¿Te estaba atendiendo alguno de nuestros comerciales o entraste directo a la página?`;
+                // ==========================================
+                // EVALUADOR HIGH-TICKET EN EL RADAR
+                // ==========================================
+                const p = prod.toLowerCase();
+                const esHighTicket = p.includes('split') || p.includes('nevera') || p.includes('refrigerador') || p.includes('delta') || p.includes('planta') || p.includes('lavadora');
+
+                // Si es High-Ticket y entró hace menos de 5 minutos, suena alarma
+                if (esHighTicket && minPasados < 5 && !window.alertedLeads.has(lead.id)) {
+                    window.alertedLeads.add(lead.id);
+                    if (!sonidoReproducido) {
+                        // Sonido de radar (bip sutil)
+                        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                        audio.volume = 0.5;
+                        audio.play().catch(e => console.log("Audio bloqueado por navegador hasta interacción"));
+                        sonidoReproducido = true;
+                    }
+                }
+
+                // ==========================================
+                // ETIQUETAS Y COLORES
+                // ==========================================
+                let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO (${timeAgoL(minPasados)})</span>`;
+                let borderHighlight = "border-slate-700";
+                let glowEffect = "";
+
+                if (minPasados < 120) { badge = `<span class="text-[9px] font-bold text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded border border-orange-500/30">🟠 TIBIO (${timeAgoL(minPasados)})</span>`; borderHighlight = "border-orange-500/30"; }
+                if (minPasados < 30) { badge = `<span class="text-[9px] font-bold text-red-500 bg-red-900/20 px-2 py-0.5 rounded border border-red-500/50 animate-pulse">🔥 URGENTE (${timeAgoL(minPasados)})</span>`; borderHighlight = "border-red-500"; glowEffect = "shadow-[0_0_15px_#ef444430]"; }
+
+                // Etiqueta Diamante para Alto Valor
+                let highTicketBadge = esHighTicket ? `<span class="mt-1 inline-block bg-purple-600/20 text-purple-400 border border-purple-500/50 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest animate-pulse shadow-[0_0_10px_#9333ea50]"><span class="material-symbols-outlined text-[10px] align-middle">diamond</span> Alto Valor</span>` : '';
+                if (esHighTicket) borderHighlight = "border-purple-500";
+
+                const msgCierre = `Hola ${nombre}, soy Marcel de ParaTuHogar. Veo que intentaste comprar ${prod}. Me queda el último en el almacén, te lo tengo aguantado. ¿Dime a qué dirección te lo mando?`;
+                const msgAyuda = `Hola ${nombre}, te escribe Marcel de soporte de ParaTuHogar. El sistema me avisó que estabas mirando ${prod}. ¿Te dio algún error la página al intentar hacer el pedido?`;
 
                 const html = `
-                <div class="target-card bg-[#0a0f1c] border ${borderHighlight} p-4 rounded-xl relative group">
+                <div class="target-card bg-[#0a0f1c] border ${borderHighlight} ${glowEffect} p-4 rounded-xl relative group transition-all">
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <p class="text-white font-black uppercase text-sm leading-tight">${nombre}</p>
                             <p class="text-slate-400 font-mono text-xs font-bold">${finalTel}</p>
+                            ${highTicketBadge}
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             ${badge}
@@ -330,21 +352,24 @@
                         <p class="text-xs text-cyan-300 font-bold truncate">🛒 ${prod}</p>
                     </div>
 
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgCierre}\`, this)" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
-                           <span class="material-symbols-outlined text-[14px]">my_location</span> Cierre Directo
+                    <div class="flex gap-2">
+                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgCierre}\`, this)" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex items-center justify-center gap-1 shadow-lg active:scale-95 transition-all">
+                           <span class="material-symbols-outlined text-[14px]">my_location</span> Cierre
                         </button>
-                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgDescuento}\`, this)" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
-                           <span class="material-symbols-outlined text-[14px]">local_shipping</span> Oferta (Envío $0)
-                        </button>
-                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgAyuda}\`, this)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 border border-slate-600 active:scale-95 transition-all">
-                           <span class="material-symbols-outlined text-[14px]">support_agent</span> Asistencia
+                        <button onclick="shootTarget('${lead.id}', '${finalTel}', \`${msgAyuda}\`, this)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2 rounded text-center flex items-center justify-center gap-1 border border-slate-600 active:scale-95 transition-all">
+                           <span class="material-symbols-outlined text-[14px]">support_agent</span> Asistir
                         </button>
                     </div>
                 </div>`;
                 
                 container.insertAdjacentHTML('beforeend', html);
             });
+
+            // Helper de tiempo para que se vea más limpio
+            function timeAgoL(min) {
+                if (min < 60) return `${min}m`;
+                return `${Math.floor(min/60)}h`;
+            }
         }
 
         // ======================================================
