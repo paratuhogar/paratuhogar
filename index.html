@@ -592,6 +592,12 @@
 <!-- Reemplaza el bloque de botones de acción en el gestor-command-center con esto -->
 <div class="w-full xl:w-auto overflow-x-auto pb-2 md:pb-0">
     <div class="flex items-center gap-2 min-w-max"> <!-- min-w-max evita que se encojan -->
+
+        <!-- BOTÓN GAMIFICACIÓN: LEADS PREMIUM -->
+<button onclick="reclamarLeadsPremium()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-yellow-900 border border-yellow-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/30 whitespace-nowrap active:scale-95 transition-transform font-black" title="Premio: Cartera de Clientes">
+    <span class="material-symbols-outlined text-xl animate-bounce">contact_phone</span>
+    <span>Leads VIP</span>
+</button>
         
         <!-- 1. Botón Flash -->
         <div id="container-flash-btn" class="h-10"></div>
@@ -1984,7 +1990,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1303"; 
+const versionActual = "1403"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2663,22 +2669,17 @@ function autoLoginNewGestor(userData) {
         if (commandCenter) commandCenter.classList.remove('hidden');
 
         // === INICIO DE SISTEMA DE NIVELES ===
-        
-        // A. Aplicar CANDADOS inmediatamente
-        if (typeof applyLockedFeatures === "function") {
-            applyLockedFeatures();
-        }
-
-        // B. Dibujar el botón Flash
-        if (typeof renderFlashButton === "function") {
-            renderFlashButton();
-        }
-        
-        // C. Consultar nivel y Coordinar Carteles
+        if (typeof applyLockedFeatures === "function") applyLockedFeatures();
+        if (typeof renderFlashButton === "function") renderFlashButton();
         if (typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
             showAgentWelcomeModal(name);
         }
+
+        // ===============================================
+        // 👉 AÑADE ESTA LÍNEA AQUÍ:
+        // ===============================================
+
     }
 
     // FORZAR QUE SE VEA EL BOTÓN ROJO DE SALIR
@@ -9546,30 +9547,27 @@ function calcGainUI(id, basePrice, baseComm) {
 const CURRENT_CAMPAIGN = 'info_precios_v1'; 
 
 function showPriceIntro() {
-    // Verificamos si el usuario ya vio ESTA campaña específica
-    const yaVisto = localStorage.getItem(CURRENT_CAMPAIGN);
+    const yaVisto = localStorage.getItem(CURRENT_CAMPAIGN); // 'info_precios_v1'
     
     if (!yaVisto) {
-        console.log("Mostrando cartel de información: " + CURRENT_CAMPAIGN);
+        // Muestra el de precios si es nuevo
         const modal = document.getElementById('modal-intro-precios');
-        if (modal) {
-            modal.classList.remove('hidden');
-        } else {
-            console.error("No se encontró el modal-intro-precios en el HTML");
-        }
+        if (modal) modal.classList.remove('hidden');
     } else {
-        console.log("El usuario ya vio la campaña: " + CURRENT_CAMPAIGN);
+        // Si ya vio el de precios, salta automáticamente al de Leads
+        if (typeof anunciarPromoLeads === "function") anunciarPromoLeads();
     }
 }
 
 function closePriceIntro() {
     document.getElementById('modal-intro-precios').classList.add('hidden');
-    
-    // Guardamos que ya vio ESTA versión del cartel
     localStorage.setItem(CURRENT_CAMPAIGN, 'true');
-    
-    // Opcional: Llevarlo a la sección correspondiente
     showDashSection('precios'); 
+
+    // EFECTO DOMINÓ: Al cerrar Precios, abrimos Leads
+    setTimeout(() => {
+        if (typeof anunciarPromoLeads === "function") anunciarPromoLeads();
+    }, 500);
 }
 
 // Función para saltar al Studio con los filtros actuales
@@ -12200,6 +12198,8 @@ if (isMobile) {
     <script src="admin-stats.js"></script>
     <!-- Script de Campaña de Tráfico -->
 <script src="traffic-campaign.js"></script>
+<!-- Módulo de Recompensa Leads -->
+<script src="leads-premium.js"></script>
 </body>
 
 </body>

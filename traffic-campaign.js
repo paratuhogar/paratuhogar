@@ -20,7 +20,6 @@ const TrafficCampaign = {
         this.injectProgressBar();   // La barra en el dashboard
         this.overrideRanking();     // El ranking por defecto
         this.applyRewards();        // Desbloqueo de botones
-        this.showMissionModal();    // El súper cartel explicativo
     },
 
     // --- 1. PROCESAR DATOS DE SUPABASE ---
