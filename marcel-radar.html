@@ -12,27 +12,27 @@
         body { font-family: 'Rajdhani', sans-serif; background: #020617; color: #94a3b8; overflow-x: hidden; }
         .radar-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
         .neon-text { text-shadow: 0 0 15px #22d3ee; color: #a5f3fc; }
-        .neon-red { text-shadow: 0 0 15px #ef4444; color: #fca5a5; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .item-anim { animation: slideIn 0.3s ease-out forwards; }
-        /* Ticker Animation */
+        
+        /* Ticker Animación LENTA y PAUSABLE */
         .ticker-wrap { width: 100%; overflow: hidden; background-color: rgba(15, 23, 42, 0.9); border-bottom: 1px solid #1e293b; }
-        .ticker { display: inline-block; white-space: nowrap; padding-right: 100%; box-sizing: content-box; animation: ticker 30s linear infinite; }
-        .ticker:hover { animation-play-state: paused; }
+        .ticker { display: inline-block; white-space: nowrap; padding-right: 100%; box-sizing: content-box; animation: ticker 80s linear infinite; }
+        .ticker:hover { animation-play-state: paused; cursor: crosshair; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     </style>
 </head>
 <body class="radar-grid min-h-screen flex flex-col">
 
-    <!-- LIVE TICKER (EL OJO DE DIOS) -->
+    <!-- LIVE TICKER (EL OJO DE DIOS - Lento y con pausa) -->
     <div class="ticker-wrap h-8 flex items-center shadow-[0_0_15px_#22d3ee20]">
-        <div class="px-4 bg-cyan-600 text-black font-black text-[10px] uppercase tracking-widest h-full flex items-center z-10 shadow-[5px_0_15px_black]">
-            <span class="material-symbols-outlined text-sm mr-1 animate-spin">radar</span> INTERCEPCIONES EN VIVO
+        <div class="px-4 bg-cyan-600 text-black font-black text-[10px] uppercase tracking-widest h-full flex items-center z-10 shadow-[5px_0_15px_black]" title="Pasa el ratón por la cinta para detenerla y leer">
+            <span class="material-symbols-outlined text-sm mr-1 animate-spin">radar</span> PULSO EN VIVO
         </div>
         <div id="live-ticker" class="ticker text-[11px] font-bold text-cyan-300 tracking-wider flex gap-8 items-center h-full pt-1.5">
-            Cargando transmisiones...
+            Escaneando movimientos de clientes...
         </div>
     </div>
 
@@ -53,31 +53,29 @@
 
     <main class="flex-1 max-w-[1800px] mx-auto w-full p-4 md:p-6 space-y-6">
     
-        <!-- 1. DASHBOARD DE MÉTRICAS (HEADS UP DISPLAY) -->
+        <!-- 1. DASHBOARD DE MÉTRICAS -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <!-- Contador Targets -->
+            
             <div class="bg-gradient-to-br from-slate-900 to-red-950/30 p-4 rounded-2xl border border-red-500/30 shadow-[0_0_20px_#ef444420] relative overflow-hidden group">
                 <div class="absolute right-[-10px] top-[-10px] p-3 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all"><span class="material-symbols-outlined text-8xl text-red-500">crisis_alert</span></div>
                 <p class="text-[10px] font-black text-red-500 uppercase tracking-widest flex items-center gap-1"><span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> Objetivos de Caza</p>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Carritos Abandonados (Tuyos + Libres)</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Carritos Abandonados (Vivos)</p>
                 <p id="count-targets" class="text-5xl font-black text-white mt-1 font-mono">0</p>
             </div>
 
-            <!-- Contador Mina -->
             <div class="bg-gradient-to-br from-slate-900 to-amber-950/30 p-4 rounded-2xl border border-amber-500/30 shadow-[0_0_20px_#f59e0b20] relative overflow-hidden group">
                 <div class="absolute right-[-10px] top-[-10px] p-3 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all"><span class="material-symbols-outlined text-8xl text-amber-500">diamond</span></div>
                 <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">monetization_on</span> Cartera VIP</p>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Clientes Antiguos de Alto Valor</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Clientes de Alto Valor</p>
                 <p id="count-goldmine" class="text-5xl font-black text-white mt-1 font-mono">0</p>
             </div>
             
-            <!-- Estado Actual -->
             <div class="col-span-2 bg-[#0a0f1c] p-4 rounded-2xl border border-slate-800 flex items-center justify-between shadow-inner">
                 <div>
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">MÓDULO DE INTERCEPCIÓN</p>
                     <p class="text-sm md:text-base text-cyan-400 font-black uppercase tracking-widest flex items-center gap-2">
                         <span class="material-symbols-outlined animate-spin text-cyan-500">settings_backup_restore</span> 
-                        Rastreo de Datos en Tiempo Real
+                        Rastreo en Tiempo Real
                     </p>
                 </div>
                 <button onclick="loadWarRoom()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_#0891b2] active:scale-95 flex items-center gap-2">
@@ -111,7 +109,7 @@
                         <h2 class="text-base font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
                             <span class="material-symbols-outlined text-xl">vault</span> MINA DE ORO
                         </h2>
-                        <p class="text-[9px] font-bold text-amber-300/50 mt-0.5 ml-7 uppercase tracking-widest">Re-marketing a Clientes Ballena</p>
+                        <p class="text-[9px] font-bold text-amber-300/50 mt-0.5 ml-7 uppercase tracking-widest">Re-marketing a Clientes VIP</p>
                     </div>
                 </div>
                 <div id="goldmine-feed" class="flex-1 overflow-y-auto p-4 space-y-3">
@@ -119,16 +117,34 @@
                 </div>
             </div>
 
-            <!-- COLUMNA 3: ORÁCULO (3/12) -->
-            <div class="lg:col-span-3 flex flex-col bg-[#060b14] rounded-3xl border border-purple-500/30 shadow-[0_0_30px_#a855f715] overflow-hidden">
-                <div class="p-4 border-b border-purple-500/20 bg-gradient-to-r from-purple-900/20 to-transparent">
-                    <h2 class="text-base font-black uppercase tracking-widest text-purple-500 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-xl">psychology</span> ORÁCULO IA
-                    </h2>
-                    <p class="text-[9px] font-bold text-purple-300/50 mt-0.5 ml-7 uppercase tracking-widest">Textos Virales para Estados</p>
+            <!-- COLUMNA 3: ORÁCULO INTELIGENTE (3/12) -->
+            <div class="lg:col-span-3 flex flex-col gap-6">
+                
+                <!-- 3A. EL RELOJ DE ORO (Horario de Publicación) -->
+                <div class="bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] rounded-3xl border border-indigo-500/30 shadow-[0_0_30px_#6366f115] overflow-hidden shrink-0">
+                    <div class="p-4 border-b border-indigo-500/20 bg-indigo-900/20">
+                        <h2 class="text-base font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-xl">schedule</span> RELOJ DE ORO
+                        </h2>
+                        <p class="text-[9px] font-bold text-indigo-300/50 mt-0.5 ml-7 uppercase tracking-widest">Mejor Horario para Publicar</p>
+                    </div>
+                    <div id="golden-hour-feed" class="p-5 text-center">
+                        <span class="loader block w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></span>
+                        <p class="text-xs text-indigo-300">Analizando miles de clics...</p>
+                    </div>
                 </div>
-                <div id="oracle-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
-                    <!-- JS INYECTA AQUÍ -->
+
+                <!-- 3B. TEXTOS VIRALES -->
+                <div class="flex-1 flex flex-col bg-[#060b14] rounded-3xl border border-purple-500/30 shadow-[0_0_30px_#a855f715] overflow-hidden">
+                    <div class="p-4 border-b border-purple-500/20 bg-gradient-to-r from-purple-900/20 to-transparent">
+                        <h2 class="text-base font-black uppercase tracking-widest text-purple-500 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-xl">psychology</span> TEXTOS VIRALES
+                        </h2>
+                        <p class="text-[9px] font-bold text-purple-300/50 mt-0.5 ml-7 uppercase tracking-widest">Basado en Tendencias Reales</p>
+                    </div>
+                    <div id="oracle-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- JS INYECTA AQUÍ -->
+                    </div>
                 </div>
             </div>
 
@@ -147,11 +163,12 @@
             startLiveTicker();
             await loadSniperTargets();  
             await loadGoldMine();       
+            await loadGoldenHour(); // Carga el reloj
             await loadOracle();         
         }
 
         // ======================================================
-        // 0. LIVE TICKER (El Ojo de Dios)
+        // 0. LIVE TICKER (El Ojo de Dios) - VELOCIDAD REDUCIDA
         // ======================================================
         async function startLiveTicker() {
             const { data: logs } = await radarClient
@@ -163,7 +180,11 @@
             if(!logs) return;
 
             const tickerContent = logs.map(l => {
-                const time = new Date(l.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                // Convertir a Hora Cuba (-4)
+                let date = new Date(l.timestamp);
+                date.setHours(date.getHours() - 4);
+                const time = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
                 let actionColor = "text-cyan-300";
                 let actionIcon = "visibility";
                 
@@ -184,8 +205,41 @@
         }
 
         // ======================================================
-        // 1. EL FRANCOTIRADOR (TUS LEADS + HUÉRFANOS)
+        // 1. EL FRANCOTIRADOR (TUS LEADS + HUÉRFANOS) - BORRADO INSTANTÁNEO
         // ======================================================
+        
+        // FUNCIÓN MÁGICA: Abre WhatsApp Y borra el lead del sistema
+        window.shootTarget = async function(telefono, mensaje, btnElement) {
+            // 1. Abrir WhatsApp (En nueva pestaña)
+            const urlWA = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+            window.open(urlWA, '_blank');
+
+            // 2. Desaparecer la tarjeta visualmente (Efecto francotirador)
+            const card = btnElement.closest('.target-card');
+            if (card) {
+                card.style.transition = "all 0.4s ease";
+                card.style.transform = "scale(0.9)";
+                card.style.opacity = "0";
+                setTimeout(() => card.remove(), 400);
+            }
+
+            // 3. Restar 1 al contador
+            const countEl = document.getElementById('count-targets');
+            if (countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
+
+            // 4. Actualizar Base de Datos para que no vuelva a salir
+            try {
+                // Limpiamos el teléfono tal como se guardó
+                const telLimpio = telefono.replace(/\D/g, '').slice(-8); 
+                
+                // Usamos 'ilike' por si se guardó con o sin 53
+                await radarClient
+                    .from('leads_fantasma')
+                    .update({ completado: true })
+                    .ilike('telefono', `%${telLimpio}%`);
+            } catch(e) { console.error("Error limpiando objetivo", e); }
+        };
+
         async function loadSniperTargets() {
             const hace48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
             
@@ -198,7 +252,6 @@
 
             if (error || !leads) return;
 
-            // Consultar compras para no disparar a clientes que ya pagaron
             const { data: ventasHoy } = await radarClient
                 .from('pedidos')
                 .select('telefono')
@@ -206,15 +259,11 @@
 
             const telefonosVendidos = new Set((ventasHoy || []).map(v => v.telefono.replace(/\D/g, '')));
 
-            // FILTRO DEPREDADOR: Mis leads + Los Orgánicos (Directo/Venta Directa)
             const misLeads = leads.filter(l => {
                 const nombreGestor = l.gestor_atribuido ? l.gestor_atribuido.trim() : 'Directo';
                 const esMioOLibre = (nombreGestor === MY_NAME || nombreGestor === 'Directo' || nombreGestor === 'Venta Directa' || nombreGestor === '');
-                
                 const telLead = l.telefono.replace(/\D/g, '');
-                const yaCompro = telefonosVendidos.has(telLead);
-
-                return esMioOLibre && !yaCompro;
+                return esMioOLibre && !telefonosVendidos.has(telLead);
             });
 
             document.getElementById('count-targets').innerText = misLeads.length;
@@ -227,7 +276,6 @@
             }
 
             misLeads.forEach(lead => {
-                // Cálculo de urgencia (Si es de hace < 30 mins = 🔥 FUEGO)
                 const minPasados = Math.floor((new Date() - new Date(lead.timestamp)) / 60000);
                 let badge = `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">❄️ FRÍO (${minPasados}m)</span>`;
                 let borderHighlight = "border-slate-700";
@@ -241,13 +289,14 @@
                 const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
                 const origenText = lead.gestor_atribuido === MY_NAME ? '<span class="text-blue-400">Tuyo</span>' : '<span class="text-emerald-400">Orgánico (Libre)</span>';
 
-                // TEXTOS PERSUASIVOS (GATILLOS MENTALES)
+                // Gatillos de WhatsApp (Escapados correctamente)
                 const msgCierre = `Hola ${nombre}, soy Marcel de ParaTuHogar. Veo que intentaste comprar el *${prod}*. Me queda el último en el almacén, te lo tengo aguantado. ¿Dime a qué dirección te lo mando?`;
-                const msgDescuento = `Hola ${nombre}, soy Marcel de ParaTuHogar. Tenemos el *${prod}* en oferta flash. Si me confirmas el pedido ahora mismo en la próxima hora, te regalo la mensajería hasta la puerta de tu casa. ¿Qué me dices?`;
-                const msgAyuda = `Hola ${nombre}, te escribe Marcel de la tienda. El sistema me avisó que tuviste problemas para completar el pedido del *${prod}*. No te preocupes, dime por aquí mismo a dónde va y yo te lo tramito directo.`;
+                const msgDescuento = `Hola ${nombre}, soy Marcel de ParaTuHogar. Tenemos el *${prod}* en oferta flash. Si me confirmas el pedido ahora mismo, te regalo la mensajería. ¿Qué me dices?`;
+                const msgAyuda = `Hola ${nombre}, te escribe Marcel de soporte de ParaTuHogar. El sistema me avisó que tuviste problemas al pedir el *${prod}*. Para poder ayudarte rápido: ¿Te estaba atendiendo alguno de nuestros comerciales o entraste directo a la página?`;
 
+                // Construcción HTML
                 const html = `
-                <div class="bg-[#0a0f1c] border ${borderHighlight} p-4 rounded-xl relative group">
+                <div class="target-card bg-[#0a0f1c] border ${borderHighlight} p-4 rounded-xl relative group">
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <p class="text-white font-black uppercase text-sm leading-tight">${nombre}</p>
@@ -264,18 +313,15 @@
                     </div>
 
                     <div class="flex flex-wrap gap-2">
-                        <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgCierre)}" target="_blank" 
-                           class="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
+                        <button onclick="shootTarget('${finalTel}', \`${msgCierre}\`, this)" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
                            <span class="material-symbols-outlined text-[14px]">my_location</span> Cierre Directo
-                        </a>
-                        <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgDescuento)}" target="_blank"
-                           class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
+                        </button>
+                        <button onclick="shootTarget('${finalTel}', \`${msgDescuento}\`, this)" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 shadow-lg active:scale-95 transition-all">
                            <span class="material-symbols-outlined text-[14px]">local_shipping</span> Oferta (Envío $0)
-                        </a>
-                        <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgAyuda)}" target="_blank"
-                           class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 border border-slate-600 active:scale-95 transition-all">
+                        </button>
+                        <button onclick="shootTarget('${finalTel}', \`${msgAyuda}\`, this)" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold uppercase py-2 rounded text-center flex flex-col items-center justify-center gap-0.5 border border-slate-600 active:scale-95 transition-all">
                            <span class="material-symbols-outlined text-[14px]">support_agent</span> Asistencia
-                        </a>
+                        </button>
                     </div>
                 </div>`;
                 
@@ -284,11 +330,11 @@
         }
 
         // ======================================================
-        // 2. LA MINA DE ORO (CLIENTES VIP POR DINERO)
+        // 2. LA MINA DE ORO (CLIENTES VIP)
         // ======================================================
         async function loadGoldMine() {
             const limitDate = new Date();
-            limitDate.setDate(limitDate.getDate() - 10); // Clientes de hace más de 10 días
+            limitDate.setDate(limitDate.getDate() - 10); 
 
             const { data: pedidos, error } = await radarClient
                 .from('pedidos')
@@ -296,7 +342,7 @@
                 .eq('gestor', MY_NAME)
                 .eq('estado', 'Entregado')
                 .lt('fecha', limitDate.toISOString())
-                .order('total', { ascending: false }) // ORDENAMOS POR LOS QUE MÁS GASTARON (VIPs)
+                .order('total', { ascending: false }) 
                 .limit(20);
 
             const container = document.getElementById('goldmine-feed');
@@ -314,18 +360,16 @@
                 const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
                 const totalUsd = Number(p.total || 0).toLocaleString();
 
-                // LÓGICA DE VENTA CRUZADA INTELIGENTE
-                let sugerencia = "un protector de voltaje o algún electrodoméstico pequeño";
+                let sugerencia = "un protector de voltaje";
                 let icon = "shopping_bag";
                 const prodPrevio = p.producto.toLowerCase();
                 
-                if (prodPrevio.includes('split') || prodPrevio.includes('aire')) { sugerencia = "soportes, tuberías extra o mantenimiento para tu Split"; icon = "ac_unit"; }
-                if (prodPrevio.includes('nevera') || prodPrevio.includes('refrigerador')) { sugerencia = "microwaves o batidoras para completar tu cocina"; icon = "kitchen"; }
-                if (prodPrevio.includes('planta') || prodPrevio.includes('estacion') || prodPrevio.includes('bateria')) { sugerencia = "ventiladores recargables (ideales para los apagones)"; icon = "bolt"; }
+                if (prodPrevio.includes('split') || prodPrevio.includes('aire')) { sugerencia = "soportes o mantenimiento para tu Split"; icon = "ac_unit"; }
+                if (prodPrevio.includes('nevera') || prodPrevio.includes('refrigerador')) { sugerencia = "microwaves para completar tu cocina"; icon = "kitchen"; }
+                if (prodPrevio.includes('planta') || prodPrevio.includes('estacion') || prodPrevio.includes('bateria')) { sugerencia = "ventiladores recargables"; icon = "bolt"; }
 
-                const msgVIP = `Hola ${nombreCliente}, soy Marcel. Hace un tiempo compraste con nosotros un ${p.producto.split('[')[0].trim()} y quería asegurarme de que todo siga funcionando perfecto al 100%.\n\nAprovecho para contarte que por ser cliente VIP de la tienda, tengo precios de costo para ti en *${sugerencia}*. Avísame si necesitas algo para la casa y te lo dejo a precio de amigo. Un abrazo.`;
+                const msgVIP = `Hola ${nombreCliente}, soy Marcel. Hace un tiempo compraste con nosotros un ${p.producto.split('[')[0].trim()} y quería asegurarme de que todo siga funcionando perfecto al 100%.\n\nAprovecho para contarte que por ser cliente VIP, tengo precios de costo para ti en *${sugerencia}*. Avísame si necesitas algo. Un abrazo.`;
 
-                // Badge de "Ballena" si gastó mucho
                 let vipBadge = "";
                 if(Number(p.total) > 500) vipBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/50 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ml-2">🐳 Cliente Ballena</span>`;
 
@@ -351,8 +395,143 @@
         }
 
         // ======================================================
-        // 3. EL ORÁCULO (CREADOR DE ESTADOS VIRALES)
+        // 3A. EL RELOJ DE ORO (PREDICCIÓN DE HORARIO)
         // ======================================================
+         // ======================================================
+        // 3A. EL RELOJ DE ORO (ANÁLISIS DINÁMICO DE EMBUDOS)
+        // ======================================================
+        async function loadGoldenHour() {
+            const container = document.getElementById('golden-hour-feed');
+            // Usaremos 15 días para tener una muestra estadística fuerte y real
+            const hace15dias = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+
+            try {
+                // 1. Obtener Clics (Cuándo la gente vitrinea)
+                const { data: clics } = await radarClient
+                    .from('link_analytics')
+                    .select('timestamp')
+                    .gte('timestamp', hace15dias);
+
+                // 2. Obtener Ventas (Cuándo los gestores cierran el trato)
+                const { data: ventas } = await radarClient
+                    .from('pedidos')
+                    .select('fecha')
+                    .gte('fecha', hace15dias);
+
+                // 3. Agrupar por hora (El navegador ya hace la conversión UTC -> Cuba automáticamente)
+                const countHours = (arr, dateField) => {
+                    const hours = Array(24).fill(0);
+                    arr.forEach(item => {
+                        if(item[dateField]) {
+                            const d = new Date(item[dateField]);
+                            hours[d.getHours()]++;
+                        }
+                    });
+                    return hours;
+                };
+
+                const horasClics = countHours(clics || [], 'timestamp');
+
+                // 4. ALGORITMO: Buscar picos por bloques del día
+                // Un negocio tiene 3 momentos fuertes: Mañana (6-12), Tarde (12-18), Noche (18-23)
+                const findPeakInBlock = (arr, start, end) => {
+                    let maxVal = -1;
+                    let peakHour = start;
+                    for(let i = start; i < end; i++) {
+                        if(arr[i] > maxVal) { maxVal = arr[i]; peakHour = i; }
+                    }
+                    return { hour: peakHour, val: maxVal };
+                };
+
+                const traficoManana = findPeakInBlock(horasClics, 6, 12);
+                const traficoTarde = findPeakInBlock(horasClics, 12, 18);
+                const traficoNoche = findPeakInBlock(horasClics, 18, 24);
+
+                // LA FÓRMULA DE ORO: Se debe publicar 1 hora antes del pico de tráfico
+                // para que cuando la gente entre, el estado de WhatsApp sea el primero en la lista.
+                const recManana = traficoManana.hour - 1;
+                const recTarde = traficoTarde.hour - 1;
+                const recNoche = traficoNoche.hour - 1;
+
+                // Formateador de 12H (AM/PM)
+                const formatH = (h) => {
+                    let calcH = h < 0 ? 23 : h; // Ajuste si la resta da negativo
+                    return calcH === 0 ? "12 AM" : calcH === 12 ? "12 PM" : calcH > 12 ? `${calcH-12} PM` : `${calcH} AM`;
+                };
+
+                // Renderizar la Interfaz Pro
+                container.innerHTML = `
+                <div class="space-y-3">
+                    <!-- TURNO MAÑANA -->
+                    <div class="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center group hover:bg-indigo-900/60 transition-colors">
+                        <div>
+                            <p class="text-[10px] text-indigo-300 font-bold uppercase mb-1">🌅 Turno Mañana</p>
+                            <p class="text-xs text-slate-400 font-medium">Mayor Tráfico: <span class="text-white font-bold">${formatH(traficoManana.hour)}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Publicar a las</p>
+                            <p class="text-xl font-black text-white bg-indigo-600 px-4 py-1.5 rounded-lg shadow-[0_0_15px_#4f46e540] group-hover:scale-105 transition-transform">${formatH(recManana)}</p>
+                        </div>
+                    </div>
+
+                    <!-- TURNO TARDE -->
+                    <div class="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center group hover:bg-indigo-900/60 transition-colors">
+                        <div>
+                            <p class="text-[10px] text-amber-300 font-bold uppercase mb-1">☀️ Turno Tarde</p>
+                            <p class="text-xs text-slate-400 font-medium">Mayor Tráfico: <span class="text-white font-bold">${formatH(traficoTarde.hour)}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Publicar a las</p>
+                            <p class="text-xl font-black text-white bg-amber-600 px-4 py-1.5 rounded-lg shadow-[0_0_15px_#d9770640] group-hover:scale-105 transition-transform">${formatH(recTarde)}</p>
+                        </div>
+                    </div>
+
+                    <!-- TURNO NOCHE -->
+                    <div class="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center group hover:bg-indigo-900/60 transition-colors">
+                        <div>
+                            <p class="text-[10px] text-purple-300 font-bold uppercase mb-1">🌙 Turno Noche</p>
+                            <p class="text-xs text-slate-400 font-medium">Mayor Tráfico: <span class="text-white font-bold">${formatH(traficoNoche.hour)}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Publicar a las</p>
+                            <p class="text-xl font-black text-white bg-purple-600 px-4 py-1.5 rounded-lg shadow-[0_0_15px_#9333ea40] group-hover:scale-105 transition-transform">${formatH(recNoche)}</p>
+                        </div>
+                    </div>
+                    
+                    <p class="text-[9px] text-slate-500 text-center italic mt-3 px-2 leading-tight">
+                        * Este algoritmo se actualiza diariamente cruzando miles de datos de clics de los últimos 15 días.
+                    </p>
+                </div>`;
+
+            } catch (e) {
+                container.innerHTML = `<p class="text-xs text-red-400 p-4 text-center">Error de conexión al analizar métricas.</p>`;
+            }
+        }
+
+        // ======================================================
+        // 3B. EL ORÁCULO IA (TEXTOS VIRALES) - COPIADO CORREGIDO
+        // ======================================================
+        
+        // FUNCIÓN GLOBAL PARA COPIAR SIN ERRORES
+        window.copyOracleText = function(btnElement, textId) {
+            // Obtenemos el texto del dataset oculto para evitar problemas de comillas en HTML
+            const textToCopy = btnElement.getAttribute('data-text');
+            const originalContent = btnElement.innerHTML;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Feedback visual (Botón Verde)
+                btnElement.classList.replace('bg-slate-800', 'bg-emerald-600');
+                btnElement.classList.replace('text-slate-300', 'text-white');
+                btnElement.innerHTML = `✅ ¡COPIADO AL PORTAPAPELES!`;
+                
+                setTimeout(() => {
+                    btnElement.classList.replace('bg-emerald-600', 'bg-slate-800');
+                    btnElement.classList.replace('text-white', 'text-slate-300');
+                    btnElement.innerHTML = originalContent;
+                }, 2000);
+            }).catch(err => alert('Error al copiar: ' + err));
+        };
+
         async function loadOracle() {
             const { data: logs } = await radarClient
                 .from('log_espia')
@@ -367,13 +546,11 @@
             logs.forEach(l => {
                 const item = l.detalle;
                 if(item && item.length > 3) {
-                    conteo[item] = (conteo[item] || 0) + (l.accion === 'BUSQUEDA' ? 2 : 1); // Las búsquedas valen el doble de puntos
+                    conteo[item] = (conteo[item] || 0) + (l.accion === 'BUSQUEDA' ? 2 : 1);
                 }
             });
 
-            // Los 6 más calientes
-            const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 6);
-            
+            const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 5);
             const container = document.getElementById('oracle-feed');
             container.innerHTML = "";
 
@@ -381,7 +558,7 @@
                 const temp = score > 15 ? "🔥 FUEGO" : "📈 SUBIENDO";
                 const tempColor = score > 15 ? "text-red-400" : "text-emerald-400";
 
-                // Generar textos rotativos para no aburrir
+                // Textos preparados sin variables complicadas para el HTML
                 const t1 = `😱 Hoy todo el mundo me está preguntando por el *${prod}*. \nSi de verdad lo necesitas, escríbeme AHORA porque se agotan hoy mismo. 👇`;
                 const t2 = `🚨 ALERTA DE STOCK: Me quedan poquísimas unidades de *${prod}*.\nEl que me escriba primero al privado se lo lleva. (Mensajería disponible) 🚚`;
                 const t3 = `🔥 OFERTA FLASH: *${prod}*.\nEl equipo más buscado de la semana. Lo tengo en almacén listo para entregar hoy. ¿Quién lo quiere? 🙋‍♂️`;
@@ -399,14 +576,14 @@
                     </div>
                     
                     <div class="space-y-1.5">
-                        <button onclick="navigator.clipboard.writeText('${t1}').then(()=>alert('✅ Texto copiado.'))" class="w-full text-left text-[9px] bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2 rounded transition-colors truncate">
-                            💬 "Hoy todo el mundo me pregunta..."
+                        <button onclick="copyOracleText(this)" data-text="${t1}" class="w-full text-left text-[10px] font-bold bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2.5 rounded transition-colors truncate flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[14px]">chat</span> "Hoy todo el mundo me pregunta..."
                         </button>
-                        <button onclick="navigator.clipboard.writeText('${t2}').then(()=>alert('✅ Texto copiado.'))" class="w-full text-left text-[9px] bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2 rounded transition-colors truncate">
-                            🚨 "ALERTA: Me quedan poquísimas..."
+                        <button onclick="copyOracleText(this)" data-text="${t2}" class="w-full text-left text-[10px] font-bold bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2.5 rounded transition-colors truncate flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[14px] text-red-400">emergency</span> "ALERTA: Me quedan poquísimas..."
                         </button>
-                        <button onclick="navigator.clipboard.writeText('${t3}').then(()=>alert('✅ Texto copiado.'))" class="w-full text-left text-[9px] bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2 rounded transition-colors truncate">
-                            🔥 "OFERTA FLASH: El más buscado..."
+                        <button onclick="copyOracleText(this)" data-text="${t3}" class="w-full text-left text-[10px] font-bold bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2.5 rounded transition-colors truncate flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[14px] text-orange-400">local_fire_department</span> "OFERTA FLASH: El más buscado..."
                         </button>
                     </div>
                 </div>`;
@@ -426,7 +603,9 @@
             </div>`;
         } else {
             loadWarRoom();
-            setInterval(loadSniperTargets, 15000); // Francotirador actualiza cada 15 segundos
+            // Actualización automática cada 30 minutos (Para no gastar la base de datos)
+            // 1000 ms * 60 seg * 30 min = 1800000
+            setInterval(loadSniperTargets, 1800000); 
         }
     </script>
 </body>
