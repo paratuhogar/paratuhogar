@@ -445,12 +445,13 @@ function calculateDevFee(precioVenta) {
         </div>
 
         <div class="main">
+            <div class="main">
             <!-- KPIs -->
             <div class="kpis">
                 <div class="kpi blue"><div class="kpi-icon">📋</div><div class="kpi-val" id="bi-total-gest">0</div><div class="kpi-label">Gestores registrados</div><div class="kpi-sub">Total en plataforma</div></div>
-                <div class="kpi green"><div class="kpi-icon">✅</div><div class="kpi-val" id="bi-activos">0</div><div class="kpi-label">Vendiendo activamente</div><div class="kpi-sub">Con al menos 1 pedido entregado</div></div>
-                <div class="kpi red"><div class="kpi-icon">⚠️</div><div class="kpi-val" id="bi-inactivos">0</div><div class="kpi-label">Sin ninguna venta</div><div class="kpi-sub">Registrados pero inactivos</div></div>
-                <div class="kpi yellow"><div class="kpi-icon">📈</div><div class="kpi-val" id="bi-tasa-act">0%</div><div class="kpi-label">Tasa de actividad real</div><div class="kpi-sub">Del total que realmente vende</div></div>
+                <div class="kpi green"><div class="kpi-icon">💰</div><div class="kpi-val" id="bi-activos">0</div><div class="kpi-label">Vendiendo</div><div class="kpi-sub">Con al menos 1 entrega</div></div>
+                <div class="kpi yellow"><div class="kpi-icon">🔥</div><div class="kpi-val" id="bi-intentando">0</div><div class="kpi-label">Generando Tráfico</div><div class="kpi-sub">0 ventas, pero con clics o accesos</div></div>
+                <div class="kpi red"><div class="kpi-icon">🧟</div><div class="kpi-val" id="bi-zombies">0</div><div class="kpi-label">Zombies (Muertos)</div><div class="kpi-sub">0 ventas, 0 clics, 0 accesos</div></div>
             </div>
 
             <!-- ALERTA -->
@@ -467,8 +468,8 @@ function calculateDevFee(precioVenta) {
                     <div class="chart-wrap"><canvas id="chartEntregados" height="320"></canvas></div>
                 </div>
                 <div class="bi-card">
-                    <div class="card-title">¿Quién vende y quién no?</div>
-                    <div class="card-sub">Distribución del total de gestores</div>
+                    <div class="card-title">¿Quién trabaja y quién no?</div>
+                    <div class="card-sub">Distribución real de la fuerza de ventas</div>
                     <div class="chart-wrap"><canvas id="chartDonut" height="220"></canvas></div>
                 </div>
             </div>
@@ -494,15 +495,21 @@ function calculateDevFee(precioVenta) {
                 <div class="chart-wrap"><canvas id="chartComparativa" height="200"></canvas></div>
             </div>
 
-            <!-- TABLA -->
+            <!-- TABLA COMPLETA CON TRÁFICO -->
             <div class="bi-card">
-                <div class="card-title">Ranking Completo de Gestores</div>
-                <div class="card-sub">Ordenado por pedidos entregados</div>
+                <div class="card-title">Análisis de Esfuerzo (Todos los gestores)</div>
+                <div class="card-sub">Descubre quién mueve su enlace aunque no venda</div>
                 <div style="overflow-x: auto;">
                     <table id="tablaGestores">
                         <thead>
                             <tr>
-                                <th>#</th><th>Gestor</th><th style="text-align:right">Pedidos</th><th style="text-align:right">Entregados</th><th style="text-align:right">Cancelados</th><th style="text-align:right">Ventas USD</th><th style="text-align:right">Comisión</th><th style="text-align:right">Éxito</th>
+                                <th>#</th><th>Gestor</th>
+                                <th style="text-align:right">Entregados</th>
+                                <th style="text-align:right">Clics en Link</th>
+                                <th style="text-align:right">Inicios Sesión</th>
+                                <th style="text-align:right">Ventas USD</th>
+                                <th style="text-align:right">Comisión</th>
+                                <th style="text-align:right">Conversión</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyGestores"></tbody>
@@ -1625,39 +1632,44 @@ window.loadAdvancedAnalytics = async function() {
     if (!btn || !container) return alert("Error: No se encontró el contenedor del Dashboard.");
 
     const originalBtnText = btn.innerHTML;
-    btn.innerHTML = `<span class="loader" style="width:16px;height:16px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span> Procesando Datos...`;
+    btn.innerHTML = `<span class="loader" style="width:16px;height:16px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span> Cruzando Bases de Datos...`;
     btn.disabled = true;
 
     try {
-        // 1. Descargar Datos Reales de Supabase
-        const [resPedidos, resGestores] = await Promise.all([
+        // Para no colapsar la BD, analizamos el esfuerzo de los últimos 30 días
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hace30Dias.getDate() - 30);
+        const fechaFiltro = hace30Dias.toISOString();
+
+        // 1. DESCARGA MASIVA PARALELA (4 Tablas a la vez)
+        const [resPedidos, resGestores, resClics, resLogs] = await Promise.all([
             supabaseClient.from('pedidos').select('gestor, estado, total, comision_total'),
-            supabaseClient.from('gestores').select('nombre')
+            supabaseClient.from('gestores').select('nombre'),
+            supabaseClient.from('link_analytics').select('agent_name').gte('timestamp', fechaFiltro).limit(5000),
+            supabaseClient.from('log_espia').select('gestor_atribuido, accion').eq('accion', 'INICIO_SESION').gte('timestamp', fechaFiltro).limit(5000)
         ]);
 
-        if (resPedidos.error) throw resPedidos.error;
-        if (resGestores.error) throw resGestores.error;
+        if (resPedidos.error || resGestores.error) throw new Error("Error leyendo base de datos principal");
 
         const pedidos = resPedidos.data || [];
         const gestoresDB = resGestores.data || [];
+        const clics = resClics.data || [];
+        const logs = resLogs.data || [];
 
-        // 2. Procesamiento
+        // 2. MAPEO Y PROCESAMIENTO
         const gestorMap = {};
 
-        // Inicializamos a todos en 0
+        // Inicializamos a todos los registrados en 0
         gestoresDB.forEach(g => {
-            gestorMap[g.nombre] = { t:0, e:0, c:0, p:0, v:0, com:0 };
+            gestorMap[g.nombre] = { t:0, e:0, c:0, p:0, v:0, com:0, clics:0, logins:0 };
         });
 
-        // Llenamos con la realidad
+        // A. Llenar Ventas
         pedidos.forEach(p => {
             const gName = p.gestor || 'Desconocido';
-            if (gName === 'Venta Directa') return; // Ignoramos ventas orgánicas para este análisis
-
-            if (!gestorMap[gName]) gestorMap[gName] = { t:0, e:0, c:0, p:0, v:0, com:0 };
+            if (gName === 'Venta Directa' || !gestorMap[gName]) return; 
             
             gestorMap[gName].t++; 
-            
             if (p.estado === 'Entregado') {
                 gestorMap[gName].e++;
                 gestorMap[gName].v += parseFloat(p.total || 0);
@@ -1669,94 +1681,117 @@ window.loadAdvancedAnalytics = async function() {
             }
         });
 
-        // 3. Crear el Array Final
+        // B. Llenar Clics (Tráfico de links)
+        clics.forEach(c => {
+            if (c.agent_name && gestorMap[c.agent_name]) {
+                gestorMap[c.agent_name].clics++;
+            }
+        });
+
+        // C. Llenar Logins (Uso de la plataforma)
+        logs.forEach(l => {
+            if (l.gestor_atribuido && gestorMap[l.gestor_atribuido]) {
+                gestorMap[l.gestor_atribuido].logins++;
+            }
+        });
+
+        // 3. SEGMENTACIÓN (LA MAGIA DE LA DISTRIBUCIÓN)
         let arrayGestores = [];
-        let registradosTotal = gestoresDB.length;
-        let activosConVentas = 0;
+        let totalRegistrados = gestoresDB.length;
+        
+        let c_vendiendo = 0;
+        let c_intentando = 0;
+        let c_zombies = 0;
 
         for (const [name, stats] of Object.entries(gestorMap)) {
-            let ex = 0;
-            const resueltos = stats.e + stats.c;
-            if (resueltos > 0) {
-                ex = (stats.e / resueltos) * 100;
+            // Clasificación
+            if (stats.e > 0) {
+                c_vendiendo++;
+            } else if (stats.clics > 0 || stats.logins > 0) {
+                c_intentando++;
+            } else {
+                c_zombies++;
             }
-            
-            if (stats.e > 0) activosConVentas++;
+
+            // Tasa de conversión (Ventas / Clics)
+            let conv = 0;
+            if (stats.clics > 0) conv = (stats.e / stats.clics) * 100;
+            else if (stats.e > 0) conv = 100; // Vendió sin clics registrados (Venta manual pura)
 
             arrayGestores.push({
                 g: name,
                 t: stats.t, e: stats.e, c: stats.c, p: stats.p,
-                v: stats.v, com: stats.com, ex: parseFloat(ex.toFixed(1))
+                v: stats.v, com: stats.com, 
+                clics: stats.clics, logins: stats.logins,
+                conv: parseFloat(conv.toFixed(1))
             });
         }
 
-        // 4. Actualizar UI
-        const inactivos = registradosTotal - activosConVentas;
-        const tasaActividad = registradosTotal > 0 ? ((activosConVentas / registradosTotal) * 100).toFixed(1) : 0;
+        // 4. ACTUALIZAR INTERFAZ (KPIs)
+        const pctZombies = totalRegistrados > 0 ? ((c_zombies / totalRegistrados) * 100).toFixed(1) : 0;
 
         document.getElementById('bi-year').innerText = new Date().getFullYear();
-        document.getElementById('bi-subtitle').innerText = `Análisis en tiempo real · ${pedidos.length} pedidos · ${registradosTotal} gestores`;
+        document.getElementById('bi-subtitle').innerText = `Análisis Bi-Dimensional · Últimos 30 días · ${totalRegistrados} gestores`;
         
-        document.getElementById('bi-total-gest').innerText = registradosTotal;
-        document.getElementById('bi-activos').innerText = activosConVentas;
-        document.getElementById('bi-inactivos').innerText = inactivos;
-        document.getElementById('bi-tasa-act').innerText = `${tasaActividad}%`;
+        document.getElementById('bi-total-gest').innerText = totalRegistrados;
+        document.getElementById('bi-activos').innerText = c_vendiendo;
+        document.getElementById('bi-intentando').innerText = c_intentando;
+        document.getElementById('bi-zombies').innerText = c_zombies;
 
-        document.getElementById('bi-alert-text').innerHTML = `<strong>Atención:</strong> El <strong>${(100 - tasaActividad).toFixed(1)}% de tus gestores (${inactivos} personas)</strong> están registrados pero nunca han entregado una venta.`;
+        document.getElementById('bi-alert-text').innerHTML = `<strong>Acción Requerida:</strong> El <strong>${pctZombies}% de tus gestores (${c_zombies} personas)</strong> son ZOMBIES. No venden, no tienen clics y no inician sesión. Elimínalos para limpiar la base de datos.`;
 
-        // Mostrar contenedor y hacer scroll suave
         container.classList.remove('hidden');
-        setTimeout(() => {
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        setTimeout(() => { container.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
 
-        // 5. Destruir gráficos viejos si existían
-        Object.values(window.biCharts).forEach(chart => {
-            if(chart) chart.destroy();
-        });
+        // 5. DESTRUIR GRÁFICOS VIEJOS
+        Object.values(window.biCharts).forEach(chart => { if(chart) chart.destroy(); });
 
-        // Funciones auxiliares de color
         const getColor = (ex) => ex >= 80 ? '#3fb950' : ex >= 65 ? '#388bfd' : ex >= 50 ? '#d29922' : '#f85149';
-        const getBadgeClass = (ex) => ex >= 80 ? 'badge-green' : ex >= 65 ? 'text-blue-400' : ex >= 50 ? 'badge-yellow' : 'badge-red';
-
         Chart.defaults.color = '#8b949e';
         Chart.defaults.borderColor = '#21262d';
 
-        // GRÁFICO 1
+        // GRÁFICO 1: TOP ENTREGADOS
         const top15e = [...arrayGestores].filter(d=>d.e>0).sort((a,b) => b.e - a.e).slice(0,15);
         window.biCharts.c1 = new Chart(document.getElementById('chartEntregados'), {
             type: 'bar',
             data: {
                 labels: top15e.map(d => d.g.length > 20 ? d.g.slice(0,20)+'…' : d.g),
-                datasets: [{ data: top15e.map(d => d.e), backgroundColor: top15e.map(d => getColor(d.ex)), borderRadius: 6 }]
+                datasets: [{ data: top15e.map(d => d.e), backgroundColor: '#388bfd', borderRadius: 4 }]
             },
-            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#e6edf3' } } } }
+            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x:{ticks:{stepSize:1}}, y: { ticks: { color: '#e6edf3' } } } }
         });
 
-        // GRÁFICO 2
+        // GRÁFICO 2: EL DONUT (AHORA CON 3 REBANADAS)
         window.biCharts.c2 = new Chart(document.getElementById('chartDonut'), {
             type: 'doughnut',
-            data: { labels: ['Vendiendo', 'Inactivos'], datasets: [{ data: [activosConVentas, inactivos], backgroundColor: ['#3fb950', '#f85149'], borderColor: '#0d1117', borderWidth: 2 }] },
-            options: { cutout: '70%', plugins: { legend: { display: false } } }
+            data: { 
+                labels: ['Venden', 'Generan Tráfico', 'Zombies'], 
+                datasets: [{ 
+                    data: [c_vendiendo, c_intentando, c_zombies], 
+                    backgroundColor: ['#3fb950', '#d29922', '#f85149'], 
+                    borderColor: '#0d1117', borderWidth: 2 
+                }] 
+            },
+            options: { cutout: '70%', plugins: { legend: { position: 'bottom', labels: {color: '#e6edf3'} } } }
         });
 
-        // GRÁFICO 3
+        // GRÁFICO 3: VENTAS USD
         const top12v = [...arrayGestores].filter(d=>d.v>0).sort((a,b) => b.v - a.v).slice(0,12);
         window.biCharts.c3 = new Chart(document.getElementById('chartVentas'), {
             type: 'bar',
-            data: { labels: top12v.map(d => d.g.length > 15 ? d.g.slice(0,15)+'…' : d.g), datasets: [{ data: top12v.map(d => d.v), backgroundColor: '#388bfd44', borderColor: '#388bfd', borderWidth: 2, borderRadius: 6 }] },
+            data: { labels: top12v.map(d => d.g.length > 15 ? d.g.slice(0,15)+'…' : d.g), datasets: [{ data: top12v.map(d => d.v), backgroundColor: '#3fb95088', borderColor: '#3fb950', borderWidth: 1, borderRadius: 4 }] },
             options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxRotation: 45 } } } }
         });
 
-        // GRÁFICO 4
-        const tasaData = [...arrayGestores].filter(d => d.t >= 2).sort((a,b) => b.ex - a.ex).slice(0,14);
+        // GRÁFICO 4: TASA DE ÉXITO (Mantenida igual)
+        const tasaData = [...arrayGestores].filter(d => d.t >= 2).sort((a,b) => (b.e/b.t) - (a.e/a.t)).slice(0,14);
         window.biCharts.c4 = new Chart(document.getElementById('chartTasa'), {
             type: 'bar',
-            data: { labels: tasaData.map(d => d.g.length > 15 ? d.g.slice(0,15)+'…' : d.g), datasets: [{ data: tasaData.map(d => d.ex), backgroundColor: tasaData.map(d => getColor(d.ex)+'88'), borderColor: tasaData.map(d => getColor(d.ex)), borderWidth: 2, borderRadius: 6 }] },
+            data: { labels: tasaData.map(d => d.g.length > 15 ? d.g.slice(0,15)+'…' : d.g), datasets: [{ data: tasaData.map(d => ((d.e/d.t)*100).toFixed(1)), backgroundColor: tasaData.map(d => getColor((d.e/d.t)*100)+'88'), borderColor: tasaData.map(d => getColor((d.e/d.t)*100)), borderWidth: 1, borderRadius: 4 }] },
             options: { plugins: { legend: { display: false } }, scales: { y: { max: 100 } } }
         });
 
-        // GRÁFICO 5
+        // GRÁFICO 5: COMPARATIVA (Mantenida igual)
         const top15t = [...arrayGestores].filter(d=>d.t>0).sort((a,b) => b.t - a.t).slice(0,15);
         window.biCharts.c5 = new Chart(document.getElementById('chartComparativa'), {
             type: 'bar',
@@ -1771,21 +1806,46 @@ window.loadAdvancedAnalytics = async function() {
             options: { plugins: { legend: { position: 'top', labels: {color: '#8b949e'} } }, scales: { x: { stacked: true }, y: { stacked: true } } }
         });
 
-        // TABLA
+        // TABLA: AHORA ORDENADA POR TRÁFICO/ESFUERZO TAMBIÉN
         const tbody = document.getElementById('tbodyGestores');
-        const sortedArray = [...arrayGestores].sort((a,b) => b.e - a.e);
-        tbody.innerHTML = sortedArray.map((d, i) => `
+        
+        // Ordenamos por Entregados, si empatan en 0, ordenamos por clics.
+        const sortedArray = [...arrayGestores].sort((a,b) => {
+            if (b.e !== a.e) return b.e - a.e;
+            if (b.clics !== a.clics) return b.clics - a.clics;
+            return b.logins - a.logins;
+        });
+
+        tbody.innerHTML = sortedArray.map((d, i) => {
+            // Estilos para detectar rápidamente zombies vs activos
+            let colorNombre = "color: white;";
+            let statusBadge = "";
+            
+            if (d.e > 0) {
+                statusBadge = '<span class="badge-green">Vende</span>';
+            } else if (d.clics > 0 || d.logins > 0) {
+                statusBadge = '<span class="badge-yellow">Intenta</span>';
+                colorNombre = "color: #d29922;";
+            } else {
+                statusBadge = '<span class="badge-red">Zombie</span>';
+                colorNombre = "color: #8b949e; text-decoration: line-through;";
+            }
+
+            return `
             <tr>
                 <td style="font-family: monospace; color:#8b949e">${i+1}</td>
-                <td style="font-weight: bold; color:white">${d.g}</td>
-                <td style="text-align:right; font-family: monospace">${d.t}</td>
-                <td style="text-align:right; font-family: monospace; color:#3fb950">${d.e}</td>
-                <td style="text-align:right; font-family: monospace; color:#f85149">${d.c}</td>
-                <td style="text-align:right; font-family: monospace; color:#388bfd">$${d.v.toLocaleString()}</td>
+                <td style="font-weight: bold; ${colorNombre}">
+                    ${d.g} <br><div style="margin-top:4px">${statusBadge}</div>
+                </td>
+                <td style="text-align:right; font-family: monospace; color:#3fb950; font-size:16px; font-weight:bold;">${d.e}</td>
+                <td style="text-align:right; font-family: monospace; color:#388bfd">${d.clics}</td>
+                <td style="text-align:right; font-family: monospace; color:#d29922">${d.logins}</td>
+                <td style="text-align:right; font-family: monospace; color:#e6edf3">$${d.v.toLocaleString()}</td>
                 <td style="text-align:right; font-family: monospace; color:#bc8cff">$${d.com.toLocaleString()}</td>
-                <td style="text-align:right"><span class="${getBadgeClass(d.ex)}">${d.ex}%</span></td>
+                <td style="text-align:right"><span style="color:#8b949e">${d.conv}%</span></td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (error) {
         console.error(error);
