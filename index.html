@@ -6381,14 +6381,12 @@ window.doLogout = function() {
     }
 }
 
-    // ==========================================
-    // 4. GENERADOR DE INSTAGRAM STORY (DISEÑO PREMIUM)
-    // ==========================================
-    // ==========================================
+
     // 4. GENERADOR DE INSTAGRAM STORY (DISEÑO PREMIUM 2.0)
     // ==========================================
     async function generateStoryImage() {
         if(!selectedProduct) return;
+        trackSpy('USO_HERRAMIENTA', 'Story Maker');
         
         const btn = event.currentTarget;
         const originalText = btn.innerHTML;
@@ -9419,6 +9417,8 @@ function goToStudio() {
     // 1. Capturar qué está viendo el gestor ahora mismo
     const searchInput = document.getElementById('search-bar');
     const query = searchInput ? searchInput.value.trim() : "";
+    trackSpy('USO_HERRAMIENTA', 'Magic Studio');
+
     
     // 'activeCategory' es la variable global que ya usas en tu código actual
     const category = activeCategory || "TODOS";
@@ -9458,6 +9458,8 @@ window.filterMyOrders = function() {
 async function copyCategoryOffers() {
     const btn = document.getElementById('btn-copy-bulk');
     const originalContent = btn.innerHTML;
+    trackSpy('USO_HERRAMIENTA', 'Copiado Masivo (Texto)');
+
     
     // Feedback visual de carga
     btn.innerHTML = `<span class="loader w-4 h-4 border-indigo-600"></span>`;
@@ -9506,6 +9508,8 @@ async function copyCategoryOffers() {
 // 2. BOTÓN FOTOS: Descargar ZIP
 async function downloadCategoryPhotos() {
     if (typeof JSZip === 'undefined') return alert("Error: Librería JSZip no cargada.");
+    trackSpy('USO_HERRAMIENTA', 'Pack Fotos (ZIP)');
+
     
     const btn = document.getElementById('btn-zip-bulk');
     const originalContent = btn.innerHTML;
@@ -9565,6 +9569,8 @@ async function downloadCatalogPDF() {
 
     const btn = document.getElementById('btn-pdf-bulk');
     const originalText = btn ? btn.innerHTML : "";
+    trackSpy('USO_HERRAMIENTA', 'Catálogo PDF');
+
     
     // Feedback visual
     if(btn) {
@@ -9748,6 +9754,8 @@ function captureGhostLead() {
     async function openMarketingAI() {
     // 1. Validaciones de Acceso (NIVEL 3 o MODO DIOS)
     const level = window.currentGestorLevel || 0;
+    trackSpy('USO_HERRAMIENTA', 'Redactor IA');
+
     
     // Si NO es Marcel Y tiene menos de nivel 3...
     if (window.gestorName !== "Marcel Montano" && level < 3) {

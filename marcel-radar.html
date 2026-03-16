@@ -117,37 +117,46 @@
                 </div>
             </div>
 
-            <!-- COLUMNA 3: ORÁCULO INTELIGENTE (3/12) -->
-            <div class="lg:col-span-3 flex flex-col gap-6">
+            <!-- COLUMNA 3: INTELIGENCIA Y DEMANDA (3/12) -->
+            <div class="lg:col-span-3 flex flex-col gap-4">
                 
-                <!-- 3A. EL RELOJ DE ORO (Horario de Publicación) -->
-                <div class="bg-gradient-to-br from-[#0f172a] to-[#1e1b4b] rounded-3xl border border-indigo-500/30 shadow-[0_0_30px_#6366f115] overflow-hidden shrink-0">
-                    <div class="p-4 border-b border-indigo-500/20 bg-indigo-900/20">
-                        <h2 class="text-base font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-xl">schedule</span> RELOJ DE ORO
+                <!-- 3A. EL RELOJ DE ORO (Algoritmo de Ventas) -->
+                <div class="bg-[#060b14] rounded-3xl border border-indigo-500/30 shadow-[0_0_30px_#6366f115] overflow-hidden shrink-0">
+                    <div class="p-3 border-b border-indigo-500/20 bg-gradient-to-r from-indigo-900/20 to-transparent">
+                        <h2 class="text-sm font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">radar</span> VENTANA DE CAZA
                         </h2>
-                        <p class="text-[9px] font-bold text-indigo-300/50 mt-0.5 ml-7 uppercase tracking-widest">Mejor Horario para Publicar</p>
+                        <p class="text-[8px] font-bold text-indigo-300/50 uppercase tracking-widest ml-7">Basado en Pedidos (Últimos 5 días)</p>
                     </div>
-                    <div id="golden-hour-feed" class="p-5 text-center">
-                        <span class="loader block w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></span>
-                        <p class="text-xs text-indigo-300">Analizando miles de clics...</p>
+                    <div id="golden-hour-feed" class="p-4 space-y-3">
+                        <span class="loader border-indigo-500 mx-auto block"></span>
                     </div>
                 </div>
 
-                <!-- 3B. TEXTOS VIRALES -->
-                <div class="flex-1 flex flex-col bg-[#060b14] rounded-3xl border border-purple-500/30 shadow-[0_0_30px_#a855f715] overflow-hidden">
-                    <div class="p-4 border-b border-purple-500/20 bg-gradient-to-r from-purple-900/20 to-transparent">
-                        <h2 class="text-base font-black uppercase tracking-widest text-purple-500 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-xl">psychology</span> TEXTOS VIRALES
+                <!-- 3B. RADAR DE DEMANDA (Reemplaza Textos Virales) -->
+                <div class="flex-1 flex flex-col bg-[#060b14] rounded-3xl border border-emerald-500/30 shadow-[0_0_30px_#10b98115] overflow-hidden min-h-[300px]">
+                    <div class="p-3 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-900/20 to-transparent">
+                        <h2 class="text-sm font-black uppercase tracking-widest text-emerald-500 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">local_fire_department</span> RADAR DE DEMANDA
                         </h2>
-                        <p class="text-[9px] font-bold text-purple-300/50 mt-0.5 ml-7 uppercase tracking-widest">Basado en Tendencias Reales</p>
+                        <p class="text-[8px] font-bold text-emerald-300/50 mt-0.5 ml-7 uppercase tracking-widest">Lo más buscado HOY + Campaña a 1 Clic</p>
                     </div>
-                    <div id="oracle-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
-                        <!-- JS INYECTA AQUÍ -->
+                    <div id="oracle-feed" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                        <span class="loader border-emerald-500 mx-auto block"></span>
                     </div>
                 </div>
+
+                <!-- 3C. LOG DE ACTIVIDAD GESTORES (Compacto) -->
+                <div class="bg-[#0a0f1c] rounded-2xl border border-slate-800 p-3 h-32 flex flex-col overflow-hidden">
+                    <h3 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">build</span> Herramientas Usadas
+                    </h3>
+                    <div id="tech-adoption-feed" class="overflow-y-auto space-y-1 pr-1 custom-scrollbar text-[10px]">
+                        <!-- JS -->
+                    </div>
+                </div>
+
             </div>
-
         </div>
     </main>
 
@@ -159,12 +168,19 @@
 
         const MY_NAME = "Marcel Montano"; 
         
+        let globalCatalogo = []; // Variable para guardar los precios
+
         async function loadWarRoom() {
+            // 1. Cargar catálogo base para saber precios
+            const { data: prods } = await radarClient.from('productos').select('nombre, precio');
+            if(prods) globalCatalogo = prods;
+
             startLiveTicker();
             await loadSniperTargets();  
             await loadGoldMine();       
-            await loadGoldenHour(); // Carga el reloj
-            await loadOracle();         
+            await loadGoldenHour(); // Reloj de Oro Mejorado
+            await loadDemandRadar(); // Radar de Demanda Nuevo
+            await loadTechAdoption();      
         }
 
         // ======================================================
@@ -443,113 +459,8 @@
          // ======================================================
         // 3A. EL RELOJ DE ORO (ANÁLISIS DINÁMICO DE EMBUDOS)
         // ======================================================
-        async function loadGoldenHour() {
-            const container = document.getElementById('golden-hour-feed');
-            // Usaremos 15 días para tener una muestra estadística fuerte y real
-            const hace15dias = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
-
-            try {
-                // 1. Obtener Clics (Cuándo la gente vitrinea)
-                const { data: clics } = await radarClient
-                    .from('link_analytics')
-                    .select('timestamp')
-                    .gte('timestamp', hace15dias);
-
-                // 2. Obtener Ventas (Cuándo los gestores cierran el trato)
-                const { data: ventas } = await radarClient
-                    .from('pedidos')
-                    .select('fecha')
-                    .gte('fecha', hace15dias);
-
-                // 3. Agrupar por hora (El navegador ya hace la conversión UTC -> Cuba automáticamente)
-                const countHours = (arr, dateField) => {
-                    const hours = Array(24).fill(0);
-                    arr.forEach(item => {
-                        if(item[dateField]) {
-                            const d = new Date(item[dateField]);
-                            hours[d.getHours()]++;
-                        }
-                    });
-                    return hours;
-                };
-
-                const horasClics = countHours(clics || [], 'timestamp');
-
-                // 4. ALGORITMO: Buscar picos por bloques del día
-                // Un negocio tiene 3 momentos fuertes: Mañana (6-12), Tarde (12-18), Noche (18-23)
-                const findPeakInBlock = (arr, start, end) => {
-                    let maxVal = -1;
-                    let peakHour = start;
-                    for(let i = start; i < end; i++) {
-                        if(arr[i] > maxVal) { maxVal = arr[i]; peakHour = i; }
-                    }
-                    return { hour: peakHour, val: maxVal };
-                };
-
-                const traficoManana = findPeakInBlock(horasClics, 6, 12);
-                const traficoTarde = findPeakInBlock(horasClics, 12, 18);
-                const traficoNoche = findPeakInBlock(horasClics, 18, 24);
-
-                // LA FÓRMULA DE ORO: Se debe publicar 1 hora antes del pico de tráfico
-                // para que cuando la gente entre, el estado de WhatsApp sea el primero en la lista.
-                const recManana = traficoManana.hour - 1;
-                const recTarde = traficoTarde.hour - 1;
-                const recNoche = traficoNoche.hour - 1;
-
-                // Formateador de 12H (AM/PM)
-                const formatH = (h) => {
-                    let calcH = h < 0 ? 23 : h; // Ajuste si la resta da negativo
-                    return calcH === 0 ? "12 AM" : calcH === 12 ? "12 PM" : calcH > 12 ? `${calcH-12} PM` : `${calcH} AM`;
-                };
-
-                // Renderizar la Interfaz Pro
-                container.innerHTML = `
-                <div class="space-y-3">
-                    <!-- TURNO MAÑANA -->
-                    <div class="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center group hover:bg-indigo-900/60 transition-colors">
-                        <div>
-                            <p class="text-[10px] text-indigo-300 font-bold uppercase mb-1">🌅 Turno Mañana</p>
-                            <p class="text-xs text-slate-400 font-medium">Mayor Tráfico: <span class="text-white font-bold">${formatH(traficoManana.hour)}</span></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Publicar a las</p>
-                            <p class="text-xl font-black text-white bg-indigo-600 px-4 py-1.5 rounded-lg shadow-[0_0_15px_#4f46e540] group-hover:scale-105 transition-transform">${formatH(recManana)}</p>
-                        </div>
-                    </div>
-
-                    <!-- TURNO TARDE -->
-                    <div class="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center group hover:bg-indigo-900/60 transition-colors">
-                        <div>
-                            <p class="text-[10px] text-amber-300 font-bold uppercase mb-1">☀️ Turno Tarde</p>
-                            <p class="text-xs text-slate-400 font-medium">Mayor Tráfico: <span class="text-white font-bold">${formatH(traficoTarde.hour)}</span></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Publicar a las</p>
-                            <p class="text-xl font-black text-white bg-amber-600 px-4 py-1.5 rounded-lg shadow-[0_0_15px_#d9770640] group-hover:scale-105 transition-transform">${formatH(recTarde)}</p>
-                        </div>
-                    </div>
-
-                    <!-- TURNO NOCHE -->
-                    <div class="bg-indigo-900/40 p-4 rounded-2xl border border-indigo-500/30 flex justify-between items-center group hover:bg-indigo-900/60 transition-colors">
-                        <div>
-                            <p class="text-[10px] text-purple-300 font-bold uppercase mb-1">🌙 Turno Noche</p>
-                            <p class="text-xs text-slate-400 font-medium">Mayor Tráfico: <span class="text-white font-bold">${formatH(traficoNoche.hour)}</span></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Publicar a las</p>
-                            <p class="text-xl font-black text-white bg-purple-600 px-4 py-1.5 rounded-lg shadow-[0_0_15px_#9333ea40] group-hover:scale-105 transition-transform">${formatH(recNoche)}</p>
-                        </div>
-                    </div>
-                    
-                    <p class="text-[9px] text-slate-500 text-center italic mt-3 px-2 leading-tight">
-                        * Este algoritmo se actualiza diariamente cruzando miles de datos de clics de los últimos 15 días.
-                    </p>
-                </div>`;
-
-            } catch (e) {
-                container.innerHTML = `<p class="text-xs text-red-400 p-4 text-center">Error de conexión al analizar métricas.</p>`;
-            }
-        }
+        
+        
 
         // ======================================================
         // 3B. EL ORÁCULO IA (TEXTOS VIRALES) - COPIADO CORREGIDO
@@ -575,64 +486,7 @@
             }).catch(err => alert('Error al copiar: ' + err));
         };
 
-        async function loadOracle() {
-            const { data: logs } = await radarClient
-                .from('log_espia')
-                .select('accion, detalle, timestamp')
-                .in('accion', ['VIO_DETALLE', 'BUSQUEDA'])
-                .order('timestamp', { ascending: false })
-                .limit(200);
-
-            if (!logs) return;
-
-            const conteo = {};
-            logs.forEach(l => {
-                const item = l.detalle;
-                if(item && item.length > 3) {
-                    conteo[item] = (conteo[item] || 0) + (l.accion === 'BUSQUEDA' ? 2 : 1);
-                }
-            });
-
-            const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const container = document.getElementById('oracle-feed');
-            container.innerHTML = "";
-
-            top.forEach(([prod, score], index) => {
-                const temp = score > 15 ? "🔥 FUEGO" : "📈 SUBIENDO";
-                const tempColor = score > 15 ? "text-red-400" : "text-emerald-400";
-
-                // Textos preparados sin variables complicadas para el HTML
-                const t1 = `😱 Hoy todo el mundo me está preguntando por el *${prod}*. \nSi de verdad lo necesitas, escríbeme AHORA porque se agotan hoy mismo. 👇`;
-                const t2 = `🚨 ALERTA DE STOCK: Me quedan poquísimas unidades de *${prod}*.\nEl que me escriba primero al privado se lo lleva. (Mensajería disponible) 🚚`;
-                const t3 = `🔥 OFERTA FLASH: *${prod}*.\nEl equipo más buscado de la semana. Lo tengo en almacén listo para entregar hoy. ¿Quién lo quiere? 🙋‍♂️`;
-
-                const html = `
-                <div class="bg-[#0a0f1c] border border-purple-900/30 p-4 rounded-xl mb-3">
-                    <div class="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-600 font-black text-lg">#${index + 1}</span>
-                            <div>
-                                <p class="text-[11px] font-black uppercase text-purple-200 leading-tight w-40 truncate" title="${prod}">${prod}</p>
-                                <p class="text-[9px] font-bold ${tempColor} tracking-widest uppercase mt-0.5">${temp} (${score} pts)</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-1.5">
-                        <button onclick="copyOracleText(this)" data-text="${t1}" class="w-full text-left text-[10px] font-bold bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2.5 rounded transition-colors truncate flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[14px]">chat</span> "Hoy todo el mundo me pregunta..."
-                        </button>
-                        <button onclick="copyOracleText(this)" data-text="${t2}" class="w-full text-left text-[10px] font-bold bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2.5 rounded transition-colors truncate flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[14px] text-red-400">emergency</span> "ALERTA: Me quedan poquísimas..."
-                        </button>
-                        <button onclick="copyOracleText(this)" data-text="${t3}" class="w-full text-left text-[10px] font-bold bg-slate-800 hover:bg-purple-900 text-slate-300 hover:text-white p-2.5 rounded transition-colors truncate flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[14px] text-orange-400">local_fire_department</span> "OFERTA FLASH: El más buscado..."
-                        </button>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', html);
-            });
-        }
+        
 
         // --- SEGURIDAD Y AUTO-ARRANQUE ---
         const session = JSON.parse(localStorage.getItem('pth_session'));
@@ -649,6 +503,234 @@
             // Actualización automática cada 30 minutos (Para no gastar la base de datos)
             // 1000 ms * 60 seg * 30 min = 1800000
             setInterval(loadSniperTargets, 1800000); 
+        }
+
+        
+        // ======================================================
+        // 3A. EL RELOJ DE ORO 2.0 (ALGORITMO BASADO EN VENTAS)
+        // ======================================================
+        async function loadGoldenHour() {
+            const container = document.getElementById('golden-hour-feed');
+            // REDUCIMOS A 5 DÍAS para que sea reactivo a los cambios de la semana
+            const hace5dias = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+
+            try {
+                // Obtenemos solo PEDIDOS reales
+                const { data: ventas } = await radarClient
+                    .from('pedidos')
+                    .select('fecha')
+                    .gte('fecha', hace5dias);
+
+                // Obtener búsquedas en el radar (Intención de compra alta)
+                const { data: busquedas } = await radarClient
+                    .from('log_espia')
+                    .select('timestamp')
+                    .eq('accion', 'BUSQUEDA')
+                    .gte('timestamp', hace5dias);
+
+                // Llenar mapa de 24 horas
+                const hours = Array(24).fill(0);
+                
+                // Las ventas valen x3 puntos
+                if(ventas) {
+                    ventas.forEach(v => {
+                        if(v.fecha) hours[new Date(v.fecha).getHours()] += 3;
+                    });
+                }
+                // Las búsquedas valen x1 punto
+                if(busquedas) {
+                    busquedas.forEach(b => {
+                        if(b.timestamp) hours[new Date(b.timestamp).getHours()] += 1;
+                    });
+                }
+
+                // Si no hay datos suficientes
+                const totalPoints = hours.reduce((a,b)=>a+b,0);
+                if(totalPoints === 0) {
+                    container.innerHTML = `<p class="text-xs text-slate-500 text-center italic">Recopilando datos...</p>`;
+                    return;
+                }
+
+                // Buscar picos
+                const findPeak = (start, end) => {
+                    let maxVal = -1; let peakH = start;
+                    for(let i = start; i < end; i++) {
+                        if(hours[i] > maxVal) { maxVal = hours[i]; peakH = i; }
+                    }
+                    return { hour: peakH, val: maxVal };
+                };
+
+                const manana = findPeak(7, 12);
+                const tarde = findPeak(12, 18);
+                const noche = findPeak(18, 23);
+
+                // Función visual
+                const formatH = (h) => {
+                    let calcH = h < 0 ? 23 : h; 
+                    return calcH === 0 ? "12 AM" : calcH === 12 ? "12 PM" : calcH > 12 ? `${calcH-12} PM` : `${calcH} AM`;
+                };
+
+                // Calcular % para las barritas
+                const maxGlobal = Math.max(manana.val, tarde.val, noche.val);
+                const getW = (v) => Math.max(10, Math.round((v / maxGlobal) * 100));
+
+                container.innerHTML = `
+                <!-- MAÑANA -->
+                <div class="bg-indigo-950/30 p-3 rounded-xl border border-indigo-500/20">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <p class="text-[9px] text-indigo-400 font-bold uppercase">Pico Mañana: ${formatH(manana.hour)}</p>
+                            <p class="text-[10px] text-white">Publicar a las <span class="font-black text-indigo-300 text-sm ml-1">${formatH(manana.hour - 1)}</span></p>
+                        </div>
+                        <div class="w-16 h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700"><div class="h-full bg-indigo-500" style="width:${getW(manana.val)}%"></div></div>
+                    </div>
+                </div>
+                <!-- TARDE -->
+                <div class="bg-amber-950/30 p-3 rounded-xl border border-amber-500/20 mt-2">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <p class="text-[9px] text-amber-400 font-bold uppercase">Pico Tarde: ${formatH(tarde.hour)}</p>
+                            <p class="text-[10px] text-white">Publicar a las <span class="font-black text-amber-300 text-sm ml-1">${formatH(tarde.hour - 1)}</span></p>
+                        </div>
+                        <div class="w-16 h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700"><div class="h-full bg-amber-500" style="width:${getW(tarde.val)}%"></div></div>
+                    </div>
+                </div>
+                <!-- NOCHE -->
+                <div class="bg-purple-950/30 p-3 rounded-xl border border-purple-500/20 mt-2">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <p class="text-[9px] text-purple-400 font-bold uppercase">Pico Noche: ${formatH(noche.hour)}</p>
+                            <p class="text-[10px] text-white">Publicar a las <span class="font-black text-purple-300 text-sm ml-1">${formatH(noche.hour - 1)}</span></p>
+                        </div>
+                        <div class="w-16 h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700"><div class="h-full bg-purple-500" style="width:${getW(noche.val)}%"></div></div>
+                    </div>
+                </div>
+                `;
+            } catch (e) { console.error(e); }
+        }
+
+        // ======================================================
+        // 3B. RADAR DE DEMANDA (Reemplaza Textos Virales)
+        // ======================================================
+        
+        // Función global para crear post al instante
+        window.createSmartCampaign = function(nombreProd, precio, btn) {
+            const txt = `🔥 ¡ALERTA DE DEMANDA!\nMe están preguntando muchísimo por este equipo hoy y me quedan pocos en el almacén.\n\n📦 *${nombreProd}*\n💰 Precio: *$${precio} USD*\n🚚 Con mensajería a domicilio.\n\n👇 ¡El primero que me escriba se lo lleva!`;
+            
+            navigator.clipboard.writeText(txt).then(() => {
+                const original = btn.innerHTML;
+                btn.innerHTML = `✅ COPIADO`;
+                btn.classList.replace('bg-emerald-900', 'bg-emerald-500');
+                btn.classList.replace('text-emerald-400', 'text-white');
+                setTimeout(() => {
+                    btn.innerHTML = original;
+                    btn.classList.replace('bg-emerald-500', 'bg-emerald-900');
+                    btn.classList.replace('text-white', 'text-emerald-400');
+                }, 2000);
+            });
+        };
+
+        async function loadDemandRadar() {
+            // Solo miramos las ÚLTIMAS 24 HORAS para ver calentamiento real
+            const ayer = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+            const { data: logs } = await radarClient
+                .from('log_espia')
+                .select('detalle')
+                .eq('accion', 'BUSQUEDA')
+                .gte('timestamp', ayer)
+                .limit(200);
+
+            const container = document.getElementById('oracle-feed');
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-emerald-900 text-center py-4">Sin búsquedas hoy.</p>`;
+                return;
+            }
+
+            // Contar búsquedas
+            const conteo = {};
+            logs.forEach(l => {
+                if(l.detalle && l.detalle.length > 3) {
+                    const termino = l.detalle.toUpperCase();
+                    conteo[termino] = (conteo[termino] || 0) + 1;
+                }
+            });
+
+            const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 4);
+            container.innerHTML = "";
+
+            top.forEach(([termino, score], i) => {
+                // Intentar encontrar el precio en el catálogo base (Fuzzy match simple)
+                let precioReal = "??";
+                let nombreOficial = termino;
+                
+                const match = globalCatalogo.find(p => p.nombre.toUpperCase().includes(termino) || termino.includes(p.nombre.toUpperCase().split(' ')[0]));
+                if(match) {
+                    precioReal = match.precio;
+                    nombreOficial = match.nombre;
+                }
+
+                const html = `
+                <div class="bg-black/40 border border-emerald-900/30 p-3 rounded-xl relative group">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0 pr-2">
+                            <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[12px]">trending_up</span> Top ${i+1} Búsqueda
+                            </p>
+                            <p class="text-xs text-white font-bold truncate" title="${nombreOficial}">${nombreOficial}</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">La gente buscó "${termino}" <span class="text-emerald-400 font-bold">${score} veces</span> hoy.</p>
+                        </div>
+                        <div class="bg-emerald-950/50 px-2 py-1 rounded border border-emerald-900/50">
+                            <span class="text-xs font-black text-emerald-400">$${precioReal}</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="createSmartCampaign('${nombreOficial.replace(/'/g, "")}', '${precioReal}', this)" 
+                            class="w-full mt-1 bg-emerald-900/40 hover:bg-emerald-600 border border-emerald-800 text-emerald-400 hover:text-white py-1.5 rounded transition-colors text-[9px] font-black uppercase flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">campaign</span> Copiar Post para Facebook
+                    </button>
+                </div>`;
+                
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // ======================================================
+        // 3C. ADOPCIÓN TECH (MINIMIZADO)
+        // ======================================================
+        async function loadTechAdoption() {
+            const container = document.getElementById('tech-adoption-feed');
+            const ayer = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+            
+            const { data: logs } = await radarClient
+                .from('log_espia')
+                .select('gestor_atribuido, detalle')
+                .eq('accion', 'USO_HERRAMIENTA')
+                .gte('timestamp', ayer);
+
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `<p class="text-slate-600 italic">Nadie ha usado herramientas hoy.</p>`;
+                return;
+            }
+
+            const uso = {};
+            logs.forEach(l => {
+                if(l.gestor_atribuido !== 'Directo') {
+                    const key = `${l.gestor_atribuido} - ${l.detalle}`;
+                    uso[key] = (uso[key] || 0) + 1;
+                }
+            });
+
+            const top = Object.entries(uso).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            container.innerHTML = top.map(([str, num]) => {
+                const [gestor, tool] = str.split(' - ');
+                return `
+                <div class="flex justify-between items-center bg-slate-900/50 p-1.5 rounded">
+                    <span class="text-slate-400 font-bold truncate max-w-[100px]">${gestor}</span>
+                    <span class="text-slate-500 truncate text-[9px]">${tool}</span>
+                    <span class="text-cyan-500 font-mono font-bold">${num}x</span>
+                </div>`;
+            }).join('');
         }
     </script>
 </body>
