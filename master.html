@@ -865,31 +865,37 @@ async function loadConciliacion() {
         
         // --- 1. NUEVA LÓGICA: SEPARAR MULTIPLES PRODUCTOS POR EL SIGNO "+" ---
         const lineasProductos = p.producto.split('+');
-        let totalCosto = 0; // Aquí acumularemos la suma de todos los costos
+        // --- CÁLCULO MEJORADO DE COSTO (Anti-error de signo +) ---
+// --- CÁLCULO ULTRA-FLEXIBLE DE COSTO (Limpia acentos y espacios) ---
+let totalCosto = 0;
 
-        lineasProductos.forEach(linea => {
-            const limpia = linea.trim();
-            
-            // Extraer Cantidad y Nombre (Ej: "2x Lavadora [USD]")
-            const match = limpia.match(/^(\d+)x\s+(.+?)(\[|$)/);
-            
-            let qty = 1;
-            let nombreItem = limpia;
+// Función interna para normalizar el texto (quita acentos y espacios raros)
+const normalizarTexto = (txt) => {
+    return txt.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos (Lámpara -> lampara)
+        .replace(/\s+/g, ' ') // Convierte múltiples espacios o saltos de línea en uno solo
+        .trim();
+};
 
-            if (match) {
-                qty = parseInt(match[1]); // Atrapa el número antes de la 'x'
-                nombreItem = match[2].trim(); // Atrapa el nombre del equipo
-            } else {
-                nombreItem = limpia.split('[')[0].trim();
-            }
+const pedidoLimpio = normalizarTexto(p.producto);
 
-            // Buscar este producto específico en el inventario
-            const prod = inventario.find(i => i.nombre === nombreItem || limpia.includes(i.nombre));
-            const costoBase = prod ? Number(prod.costo_proveedor || 0) : 0;
-
-            // Sumar al total: Costo del producto * Cantidad de ese producto
-            totalCosto += (costoBase * qty);
-        });
+inventario.forEach(itemInv => {
+    const nombreInvLimpio = normalizarTexto(itemInv.nombre);
+    
+    // Si el nombre del inventario (limpio) está dentro del pedido (limpio)
+    if (pedidoLimpio.includes(nombreInvLimpio)) {
+        
+        // Buscamos la cantidad (ej: "1x")
+        const escapedName = itemInv.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regexQty = new RegExp(`(\\d+)x\\s*`, 'i');
+        const matchQty = p.producto.match(regexQty);
+        
+        let qty = matchQty ? parseInt(matchQty[1]) : 1;
+        
+        totalCosto += (Number(itemInv.costo_proveedor || 0) * qty);
+    }
+});
+// -----------------------------------------------------------------
         // ----------------------------------------------------------------------
 
         const totalVenta = parseFloat(p.total);
