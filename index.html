@@ -7609,13 +7609,13 @@ function getLevelData(sales) {
         power: "Dueño de Clientes (Amarre)" 
     };
     
-    // --- NIVEL 5: EMPERADOR (Magic Studio) ---
-    if (sales >= 70) return { 
-        lvl: 5, name: "Emperador", next: 200, color: "text-purple-600", 
-        duration: 8760, // 6 Meses
-        hasShortLink: true,
-        power: "Magic Studio"
-    };
+    // --- NIVEL 5: EMPERADOR ---
+if (sales >= 70) return { 
+    lvl: 5, name: "Emperador", next: 200, color: "text-purple-600", 
+    duration: 8760,
+    hasShortLink: true,
+    power: "Amarre Total" // <--- Cambiado aquí
+};
 
     // --- NIVEL 4: MONARCA (PDF) ---
     if (sales >= 40) return { 
@@ -7632,12 +7632,13 @@ function getLevelData(sales) {
         power: "Redactor IA" // <--- Aquí movimos la IA
     };
 
-    // --- NIVEL 2: EXPERTO (Fotos) ---
-    if (sales >= 10) return { 
-        lvl: 2, name: "Experto", next: 20, color: "text-blue-500", 
-        duration: 720, 
-        hasShortLink: true 
-    };
+    // --- NIVEL 2: EXPERTO ---
+if (sales >= 10) return { 
+    lvl: 2, name: "Experto", next: 20, color: "text-blue-500", 
+    duration: 720, 
+    hasShortLink: true,
+    power: "Magic Studio" // <--- Agregado aquí
+};
 
     // --- NIVEL 1: NOVATO (Flash) ---
     if (sales >= 3)  return { 
@@ -7697,7 +7698,7 @@ async function showAgentWelcomeModal(nombre) {
         // (El resto de tu código para dibujar el cartel azul sigue aquí igual...)
         const tiers = [
             { lvl: 1, name: "Novato", tool: "Flash & Story Maker", boost: 1.5, phrase: "Cerrarás clientes en segundos con las respuestas automáticas." },
-            { lvl: 2, name: "Experto", tool: "Pack Fotos & Texto Masivo", boost: 2.2, phrase: "Inundarás los grupos de compra/venta con un solo clic." },
+            { lvl: 2, name: "Experto", tool: "Magic Studio AI & Fotos", boost: 2.2, phrase: "Tu publicidad ahora será creada por Inteligencia Artificial." },
             { lvl: 3, name: "Élite", tool: "Radar de Tendencias", boost: 2.8, phrase: "Publicarás exactamente lo que los clientes están buscando hoy." },
             { lvl: 4, name: "Monarca", tool: "Catálogo PDF Pro", boost: 3.5, phrase: "Tu imagen profesional será irresistible para clientes de alto valor." },
             { lvl: 5, name: "Emperador", tool: "Amarre Total", boost: 5.0, phrase: "Has alcanzado el poder máximo. Tu red de clientes es ahora un activo eterno." }
@@ -7833,18 +7834,16 @@ function applyLockedFeatures() {
     }
 
     // ------------------------------------------------------
-    // NIVEL 5 (70 Ventas): MAGIC STUDIO
-    // ------------------------------------------------------
-    if (level >= 5 || isGodMode) {
-        if(btnStudio) {
-            btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
-            btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
-            btnStudio.title = "Magic Studio AI - Activo";
-            btnStudio.onclick = function() { goToStudio(); };
-        }
-    } else {
-        lockButton(btnStudio, "Magic Studio", 5, "Genera imágenes de marketing con IA.");
+    if (level >= 2 || isGodMode) { 
+    if(btnStudio) {
+        btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
+        btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
+        btnStudio.title = "Magic Studio AI - Activo";
+        btnStudio.onclick = function() { goToStudio(); };
     }
+} else {
+    lockButton(btnStudio, "Magic Studio", 2, "Genera imágenes de marketing con IA."); 
+}
 }
 
 
@@ -8087,13 +8086,13 @@ if (slName) {
             ]
         },
         {
-            lvl: 2, name: "EXPERTO", req: "10 Ventas",
-            color: "blue",
-            features: [
-                { icon: "folder_zip", title: "Pack de Fotos", desc: "Descarga todo en 1 clic." },
-                { icon: "content_copy", title: "Copiado Masivo", desc: "Textos listos para grupos." }
-            ]
-        },
+    lvl: 2, name: "EXPERTO", req: "10 Ventas",
+    color: "blue",
+    features: [
+        { icon: "auto_fix", title: "Magic Studio", desc: "Generador de anuncios IA." }, // Añadido aquí
+        { icon: "folder_zip", title: "Pack de Fotos", desc: "Descarga todo en 1 clic." }
+    ]
+},
         {
             lvl: 3, name: "ÉLITE", req: "20 Ventas",
             color: "indigo",
@@ -8111,13 +8110,13 @@ if (slName) {
             ]
         },
         {
-            lvl: 5, name: "EMPERADOR", req: "70+ Ventas",
-            color: "purple",
-            features: [
-                { icon: "auto_fix", title: "Magic Studio", desc: "Publicidad automática." },
-                { icon: "lock_person", title: "Cliente Eterno", desc: "Comisión de por vida." }
-            ]
-        }
+    lvl: 5, name: "EMPERADOR", req: "70+ Ventas",
+    color: "purple",
+    features: [
+        { icon: "workspace_premium", title: "Soporte VIP", desc: "Atención prioritaria 24/7." },
+        { icon: "lock_person", title: "Cliente Eterno", desc: "Comisión de por vida." }
+    ]
+}
     ];
 
     const grid = document.getElementById('gamification-grid');
