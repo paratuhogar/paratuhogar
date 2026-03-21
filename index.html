@@ -7834,16 +7834,31 @@ function applyLockedFeatures() {
     }
 
     // ------------------------------------------------------
-    if (level >= 2 || isGodMode) { 
-    if(btnStudio) {
-        btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
-        btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
-        btnStudio.title = "Magic Studio AI - Activo";
-        btnStudio.onclick = function() { goToStudio(); };
+    // ------------------------------------------------------
+    // LÓGICA MAGIC STUDIO (PROMO SEMANA SANTA - HASTA EL 28 MARZO 2026)
+    // ------------------------------------------------------
+    const fechaFinPromo = new Date('2026-03-29'); // Expira al iniciar el 29
+    const esPromoActiva = new Date() < fechaFinPromo;
+
+    if (level >= 2 || isGodMode || esPromoActiva) { 
+        if(btnStudio) {
+            btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
+            
+            // Si es nivel bajo, le avisamos que es una promo
+            const textoBoton = (esPromoActiva && level < 2) ? "Studio (PROMO)" : "Magic Studio";
+            
+            btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">${textoBoton}</span>`;
+            btnStudio.title = esPromoActiva && level < 2 ? "¡ACCESO LIBRE POR ESTA SEMANA!" : "Magic Studio AI - Activo";
+            btnStudio.onclick = function() { goToStudio(); };
+
+            // Efecto especial animado solo para los que están recibiendo el regalo
+            if(esPromoActiva && level < 2) {
+                btnStudio.classList.add('animate-pulse');
+            }
+        }
+    } else {
+        lockButton(btnStudio, "Magic Studio", 2, "Genera imágenes de marketing con IA."); 
     }
-} else {
-    lockButton(btnStudio, "Magic Studio", 2, "Genera imágenes de marketing con IA."); 
-}
 }
 
 
