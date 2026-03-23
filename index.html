@@ -1573,6 +1573,13 @@
         <button onclick="filterAgents('OFFLINE', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-600 transition-all">💤 Inactivos</button>
         <button onclick="filterAgents('PELIGRO', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-red-50 hover:text-red-600 transition-all">🔴 En Peligro</button>
         <button onclick="filterAgents('ZOMBIES', this)" class="btn-agent-filter px-4 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-gray-500 border border-gray-200 hover:bg-slate-800 hover:text-white transition-all">👻 Sin Respuesta (Limpieza)</button>
+        <!-- BUSCADOR RÁPIDO DE GESTOR -->
+<div class="w-full md:w-80 relative mt-4 md:mt-0">
+    <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
+    <input type="text" id="search-agent-input" oninput="renderAgentTeamTable()" 
+        placeholder="Buscar por nombre o teléfono..." 
+        class="w-full pl-9 pr-4 py-2 rounded-xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-xs font-bold shadow-sm focus:ring-primary">
+</div>
     </div>
     
     <!-- NUEVO: Selector de Fechas (Fecha de Registro del Gestor) -->
@@ -2016,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2103a"; 
+const versionActual = "2303a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -11752,10 +11759,25 @@ function renderAgentTeamTable() {
 
     const dateDesde = document.getElementById('f-agent-desde')?.value;
     const dateHasta = document.getElementById('f-agent-hasta')?.value;
+    const searchText = document.getElementById('search-agent-input')?.value.toLowerCase() || "";
 
     let listaFiltrada = [...globalAgentsList];
 
-    // Filtro de Fechas
+    // 1. FILTRO DE SEGURIDAD: OCULTAR A MARCEL MONTANO
+    listaFiltrada = listaFiltrada.filter(g => 
+        g.nombre !== 'Marcel Montano' && 
+        !g.telefono.includes('58183649')
+    );
+
+    // 2. FILTRO POR TEXTO (Nombre o Teléfono)
+    if (searchText) {
+        listaFiltrada = listaFiltrada.filter(g => 
+            g.nombre.toLowerCase().includes(searchText) || 
+            g.telefono.includes(searchText)
+        );
+    }
+
+    // 3. Filtro de Fechas
     if (dateDesde || dateHasta) {
         listaFiltrada = listaFiltrada.filter(g => {
             const fReg = g.fechaRegistro ? new Date(g.fechaRegistro).toISOString().split('T')[0] : null;
@@ -11766,12 +11788,11 @@ function renderAgentTeamTable() {
         });
     }
 
-    // Filtro Principal (Zombies vs Activos)
+    // 4. Filtro por botones de estado
     if (currentAgentFilter === 'ZOMBIES') {
         listaFiltrada = listaFiltrada.filter(g => g.estado_db === 'ausente_definitivo');
     } else {
         listaFiltrada = listaFiltrada.filter(g => g.estado_db !== 'ausente_definitivo');
-
         if (currentAgentFilter === 'TOP') listaFiltrada.sort((a,b) => b.ventas - a.ventas);
         else if (currentAgentFilter === 'ONLINE') listaFiltrada = listaFiltrada.filter(g => g.diasInactivo <= 3);
         else if (currentAgentFilter === 'OFFLINE') listaFiltrada = listaFiltrada.filter(g => g.diasInactivo > 3 && g.diasInactivo <= 30);
@@ -11784,14 +11805,12 @@ function renderAgentTeamTable() {
         return;
     }
 
+    // 5. RENDERIZADO CON DISEÑO RESPONSIVO
     container.innerHTML = listaFiltrada.map(g => {
         let semaforo = "bg-gray-400";
         let estadoTexto = "💤 Inactivo";
-        
-        // Estilo Zombies
         if (g.estado_db === 'ausente_definitivo') {
-            semaforo = "bg-slate-700";
-            estadoTexto = "👻 Sin Respuesta";
+            semaforo = "bg-slate-700"; estadoTexto = "👻 Sin Respuesta";
         } else {
             if (g.diasInactivo <= 2) { semaforo = "bg-emerald-500 shadow-[0_0_8px_#10b981]"; estadoTexto = "🟢 Online"; } 
             else if (g.diasInactivo <= 7) { semaforo = "bg-emerald-400"; estadoTexto = "Hace días"; } 
@@ -11801,52 +11820,67 @@ function renderAgentTeamTable() {
 
         const txtVenta = g.ultimaVenta ? timeAgo(g.ultimaVenta) : "Nunca";
         const txtAcceso = g.diasInactivo === 0 ? "Hoy" : `Hace ${g.diasInactivo} días`;
-        
-        // Apariencia gris para zombies
         const filaClase = g.estado_db === 'ausente_definitivo' ? 'opacity-50 grayscale' : '';
 
         return `
-        <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-slate-50 transition-all group ${filaClase}">
-            <td class="p-4 align-middle w-1/4">
+        <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-slate-50 transition-all group ${filaClase} flex flex-col md:table-row p-4 md:p-0">
+            
+            <!-- NOMBRE Y AVATAR -->
+            <td class="md:p-4 align-middle w-full md:w-1/4 mb-2 md:mb-0">
                 <div class="flex items-center gap-3">
-                    <div class="relative">
+                    <div class="relative flex-shrink-0">
                         <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 border border-slate-200 uppercase">${g.nombre.charAt(0)}</div>
                         <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${semaforo}"></div>
                     </div>
-                    <div>
-                        <p class="font-black text-slate-700 dark:text-white uppercase text-[11px] truncate max-w-[120px]">${g.nombre}</p>
+                    <div class="min-w-0">
+                        <p class="font-black text-slate-700 dark:text-white uppercase text-[11px] truncate">${g.nombre}</p>
                         <span class="text-[9px] text-gray-400 font-bold bg-gray-50 px-1.5 rounded border border-gray-100">${estadoTexto}</span>
                     </div>
                 </div>
             </td>
-            <td class="p-4 align-middle">
-                <a href="https://wa.me/${g.telefono.replace(/\D/g,'')}" target="_blank" class="flex items-center gap-1 text-slate-500 hover:text-[#25D366] transition-colors">
+
+            <!-- WHATSAPP -->
+            <td class="md:p-4 align-middle mb-2 md:mb-0">
+                <a href="https://wa.me/${g.telefono.replace(/\D/g,'')}" target="_blank" class="flex items-center gap-2 text-slate-500 hover:text-[#25D366] transition-colors bg-gray-50 md:bg-transparent p-2 md:p-0 rounded-lg">
                     <span class="material-symbols-outlined text-lg">chat</span>
-                    <span class="font-bold text-[10px] hidden md:inline">${g.telefono}</span>
+                    <span class="font-bold text-[10px]">${g.telefono}</span>
                 </a>
             </td>
-            <td class="p-4 align-middle">
-                <div class="flex flex-col gap-1 w-32">
-                    <div class="flex justify-between items-center text-[9px] bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                        <span class="text-slate-400 font-bold uppercase">Web:</span><span class="text-slate-700 font-black">${txtAcceso}</span>
+
+            <!-- ACTIVIDAD (TIEMPOS) -->
+            <td class="md:p-4 align-middle mb-2 md:mb-0">
+                <div class="flex flex-row md:flex-col gap-2 md:gap-1">
+                    <div class="flex-1 flex justify-between items-center text-[9px] bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                        <span class="text-slate-400 font-bold uppercase mr-2">Web:</span><span class="text-slate-700 font-black">${txtAcceso}</span>
                     </div>
-                    <div class="flex justify-between items-center text-[9px] bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
-                        <span class="text-emerald-400 font-bold uppercase">Venta:</span><span class="text-emerald-700 font-black">${txtVenta}</span>
+                    <div class="flex-1 flex justify-between items-center text-[9px] bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
+                        <span class="text-emerald-400 font-bold uppercase mr-2">Venta:</span><span class="text-emerald-700 font-black">${txtVenta}</span>
                     </div>
                 </div>
             </td>
-            <td class="p-4 align-middle text-center">
-                <div class="inline-block">
-                    <span class="block text-xl font-black text-slate-800 leading-none">${g.ventas}</span>
-                    <span class="text-[8px] font-black text-gray-400 uppercase">Ventas</span>
+
+            <!-- VENTAS TOTALES -->
+            <td class="md:p-4 align-middle text-left md:text-center mb-3 md:mb-0 border-b md:border-none pb-2 md:pb-0">
+                <div class="flex items-center md:flex-col gap-2 md:gap-0">
+                    <span class="text-xl font-black text-slate-800 leading-none">${g.ventas}</span>
+                    <span class="text-[8px] font-black text-gray-400 uppercase">Ventas Totales</span>
                 </div>
             </td>
-            <td class="p-4 align-middle text-right">
-                <div class="flex justify-end items-center gap-1">
-                    <button onclick="sendWelcomeBackMsg('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded-full transition-all border border-transparent hover:border-emerald-200" title="Enviar Mensaje de Rescate">
-                        <span class="material-symbols-outlined text-lg">campaign</span>
+
+            <!-- ACCIONES -->
+            <td class="md:p-4 align-middle md:text-right">
+                <div class="flex justify-start md:justify-end items-center gap-3">
+                    <button onclick="sendCredentialsWA('${g.id}')" class="flex items-center gap-1 bg-amber-100 text-amber-600 px-3 py-2 rounded-xl font-black uppercase text-[9px] md:bg-transparent md:p-2 md:rounded-full md:text-amber-500 hover:bg-amber-50 transition-all border border-amber-200 md:border-transparent">
+                        <span class="material-symbols-outlined text-lg">key</span>
+                        <span class="md:hidden">Enviar Clave</span>
                     </button>
-                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-all" title="Bloquear Acceso">
+                    
+                    <button onclick="sendWelcomeBackMsg('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="flex items-center gap-1 bg-emerald-100 text-emerald-600 px-3 py-2 rounded-xl font-black uppercase text-[9px] md:bg-transparent md:p-2 md:rounded-full md:text-emerald-500 hover:bg-emerald-50 transition-all border border-emerald-200 md:border-transparent">
+                        <span class="material-symbols-outlined text-lg">campaign</span>
+                        <span class="md:hidden">Rescatar</span>
+                    </button>
+
+                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="p-2 text-gray-300 hover:text-red-500 transition-all ml-auto md:ml-0">
                         <span class="material-symbols-outlined text-lg">block</span>
                     </button>
                 </div>
@@ -11907,6 +11941,36 @@ if (isMobile) {
 }
     
     loadPendingGestores();
+}
+
+function sendCredentialsWA(agentId) {
+    // 1. Buscar al gestor en la lista global que ya tenemos cargada
+    const gestor = globalAgentsList.find(g => g.id === agentId);
+
+    if (!gestor) {
+        alert("❌ No se encontró la información del gestor.");
+        return;
+    }
+
+    // 2. Limpiar el teléfono para WhatsApp
+    let telLimpio = gestor.telefono.replace(/\D/g, '');
+    if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
+
+    // 3. Preparar el mensaje con sus datos reales
+    const mensaje = `Hola *${gestor.nombre}* 👋, aquí tienes tus datos de acceso para la tienda ParaTuHogar:
+
+👤 *Usuario:* ${gestor.nombre}
+🔑 *Contraseña:* ${gestor.password}
+
+🌐 *Entra aquí:* https://paratuhogar.org
+
+_Recuerda guardar estos datos en un lugar seguro para que no se te olviden._ 😉`;
+
+    // 4. Abrir WhatsApp (Detectando si es móvil o PC)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const urlBase = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/send";
+    
+    window.open(`${urlBase}?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
 
