@@ -4739,13 +4739,13 @@ async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
         alert("Error al procesar la solicitud.");
     }
 }
-// --- NUEVA FUNCIÓN: APROBAR Y ENVIAR MENSAJE DE BIENVENIDA ---
+// --- FUNCIÓN ACTUALIZADA: SOLO ACTIVA EN BASE DE DATOS (SIN WHATSAPP) ---
 async function approveAndWelcomeGestor(id, nombre, telefono, password) {
-    const confirmacion = confirm(`¿Aprobar a ${nombre} y enviarle el mensaje de bienvenida por WhatsApp?`);
+    const confirmacion = confirm(`¿Confirmas la activación de ${nombre}?`);
     if (!confirmacion) return;
 
     try {
-        // 1. Aprobar en la base de datos
+        // 1. Solo actualizamos el estado en la base de datos
         const { error } = await supabaseClient
             .from('gestores')
             .update({ estado: 'activo' })
@@ -4753,62 +4753,15 @@ async function approveAndWelcomeGestor(id, nombre, telefono, password) {
 
         if (error) throw error;
 
-        // 2. Preparar el teléfono
-        let telLimpio = telefono.replace(/\D/g, '');
-        if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
-
-        // 3. Generar Link Corto
-        const baseUrl = window.location.origin + window.location.pathname;
-        const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
-        let affiliateLink = longLink;
+        // 2. Mensaje de éxito simple en pantalla
+        alert(`✅ Cuenta de ${nombre} activada con éxito.`);
         
-        try {
-            if(typeof getOrGenerateShortLink === 'function') {
-                affiliateLink = await getOrGenerateShortLink(nombre, longLink);
-            }
-        } catch(e) { console.log("Usando link largo por defecto"); }
-
-        // 4. Construir el mensaje exacto que pediste (Con Grupo de WA)
-        const mensaje = `¡Hola *${nombre}*! 👋 Te escribo del equipo de *ParaTuHogar*.
-
-Vimos que solicitaste unirte como gestor y tu cuenta ya está activa. Queríamos darte la bienvenida y recordarte que estamos aquí para apoyarte. Si tienes alguna duda sobre cómo vender, cómo hacer los pedidos o sobre los equipos, *¡pregúntanos sin pena ninguna!* Estamos para ayudarte a hacer dinero. 🤝
-
-📌 *TUS DATOS DE ACCESO:*
-👤 *Usuario:* ${nombre}
-🔑 *Contraseña:* ${password}
-🌐 *Entra a la tienda aquí:* https://paratuhogar.org
-
-Tenemos muchísimos equipos nuevos en almacén a muy buenos precios. Además, recuerda que en tu Panel tienes el *Configurador de Precios*: ahí puedes subirle el precio a los equipos y toda esa diferencia es *ganancia extra 100% para ti*. 💸
-
-🚀 *TU ENLACE DE AFILIADO MÁGICO:*
-🔗 ${affiliateLink}
-
-Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (incluso si compra días después), el sistema lo detecta y *la comisión te la pagamos a ti automáticamente* sin que tengas que hacer nada.
-
-📱 *ÚNETE A NUESTRO GRUPO DE WHATSAPP:*
-Aquí enviamos información importante, nuevas ofertas y material de ventas:
-👉 https://chat.whatsapp.com/GxIrA5GngPVKXQ7DBMDiOL
-
-¡Anímate a probarlo hoy! Quedo al pendiente por si necesitas ayuda. 😉`;
-
-        // 5. Refrescar la tabla y abrir WhatsApp
-        alert(`✅ Gestor activado. Se abrirá WhatsApp para enviar el mensaje.`);
-        loadPendingGestores(); // Recarga la lista para que desaparezca de "Pendientes"
-        
-        // --- LÓGICA INTELIGENTE PARA ABRIR WHATSAPP DIRECTO ---
-const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-if (isMobile) {
-    // Si está en celular o tablet, fuerza abrir la APP directamente (mantiene emojis intactos)
-    window.location.href = `whatsapp://send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
-} else {
-    // Si está en PC, abre WhatsApp Web directamente
-    window.open(`https://web.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
-}
+        // 3. Refrescar la tabla para que desaparezca de pendientes
+        loadPendingGestores(); 
 
     } catch (e) {
-        console.error("Error al aprobar gestor:", e);
-        alert("Ocurrió un error al intentar aprobar al gestor.");
+        console.error("Error al activar gestor:", e);
+        alert("Ocurrió un error al intentar activar al gestor.");
     }
 }
 
@@ -11628,8 +11581,7 @@ async function loadPendingGestores() {
                     <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
                     <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
                     <td class="p-4 text-right">
-                        <button onclick="approveAndWelcomeGestor('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar y Saludar</button>
-                        <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
+                        <button onclick="approveAndWelcomeGestor('${g.id}', '${g.nombre}')" class="bg-emerald-500 text-white px-6 py-2 rounded-lg font-black uppercase text-[10px] hover:bg-emerald-600 shadow-sm">Activar Cuenta</button>
                     </td>
                 </tr>
             `).join('');
