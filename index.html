@@ -421,7 +421,7 @@
                         <div class="text-white/80 flex items-center justify-center pl-4">
                             <span class="material-symbols-outlined text-xl">search</span>
                         </div>
-                        <input id="search-bar" oninput="filterProducts()" type="text" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
+                        <input id="search-bar" name="buscar_tienda" type="search" autocomplete="off" data-lpignore="true" oninput="filterProducts()" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
                     </div>
                 </label>
             </div>
@@ -6876,6 +6876,7 @@ async function processLogin() {
     if (gestorAprobado) {
         try {
             closeLogin();
+            document.getElementById('search-bar').value = '';
             window.currentUserData = gestorAprobado; 
             saveSessionToMemory(gestorAprobado.nombre, false, gestorAprobado); 
             setupSession(gestorAprobado.nombre, false);
