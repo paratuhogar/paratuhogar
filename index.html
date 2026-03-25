@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2403v"; 
+const versionActual = "2503"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4814,6 +4814,31 @@ async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
     } catch (e) {
         console.error("Error al actualizar gestor:", e);
         alert("Error al procesar la solicitud.");
+    }
+}
+// Función para activar gestor SIN abrir WhatsApp
+async function approveGestorOnly(id, nombre) {
+    const confirmacion = confirm(`¿Estás seguro de que quieres activar oficialmente a ${nombre}?`);
+    if (!confirmacion) return;
+
+    try {
+        // 1. Actualizar el estado en Supabase a 'activo'
+        const { error } = await supabaseClient
+            .from('gestores')
+            .update({ estado: 'activo' })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        // 2. Avisar que se activó correctamente
+        alert(`✅ El gestor ${nombre} ha sido activado. Ahora ya puede entrar con sus datos.`);
+        
+        // 3. Refrescar la lista de pendientes para que desaparezca de ahí
+        loadPendingGestores(); 
+
+    } catch (e) {
+        console.error("Error al activar gestor:", e);
+        alert("Ocurrió un error al intentar activar al gestor en la base de datos.");
     }
 }
 // --- NUEVA FUNCIÓN: APROBAR Y ENVIAR MENSAJE DE BIENVENIDA ---
@@ -11724,7 +11749,7 @@ async function loadPendingGestores() {
                     <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
                     <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
                     <td class="p-4 text-right">
-                        <button onclick="approveAndWelcomeGestor('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar y Saludar</button>
+                        <button onclick="approveGestorOnly('${g.id}', '${g.nombre}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
                         <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
                     </td>
                 </tr>
