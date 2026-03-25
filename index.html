@@ -2135,6 +2135,7 @@ checkShortLinks();
 
     
     let productosRaw = [], cart = [], selectedProduct = null;
+    let customPricesMap = {};
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
     
     
@@ -3442,42 +3443,45 @@ function renderMyOrdersList(lista) {
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
 // --- FUNCIÓN MAESTRA DE CARGA Y FUSIÓN DE PRECIOS ---
 async function loadProducts() {
-    // Configuración: 10 minutos de caché (600,000 ms)
+    // 1. Determinar quién es el gestor dueño de esta vista
+    const session = JSON.parse(localStorage.getItem('pth_session'));
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    const activeGestor = session?.name || referrer?.nombre || null;
+
+    // 2. Cargar productos base (usando tu lógica de caché actual)
     const CACHE_TIME = 600000; 
     const cachedData = localStorage.getItem('pth_cache_productos');
     const lastFetch = localStorage.getItem('pth_cache_timestamp');
 
-    // 1. ¿TENEMOS CACHÉ VÁLIDA?
     if (cachedData && lastFetch && (Date.now() - lastFetch < CACHE_TIME)) {
-        console.log("🚀 Cargando catálogo desde caché local (0 Egress)");
         productosRaw = JSON.parse(cachedData);
-        renderCategories();
-        renderProducts();
-        if (window.gestorName) renderGestorPricing();
-        return;
-    }
-
-    // 2. SI NO HAY CACHÉ, PEDIMOS A SUPABASE
-    try {
-        const { data: productos, error } = await supabaseClient
-            .from('productos')
-            .select('*')
-            .order('nombre', { ascending: true });
-
-        if (error) throw error;
-
-        // Guardar en caché para la próxima vez
-        localStorage.setItem('pth_cache_productos', JSON.stringify(productos));
+    } else {
+        const { data, error } = await supabaseClient.from('productos').select('*').order('nombre');
+        if (error) return console.error(error);
+        productosRaw = data;
+        localStorage.setItem('pth_cache_productos', JSON.stringify(data));
         localStorage.setItem('pth_cache_timestamp', Date.now().toString());
-
-        productosRaw = productos;
-        renderCategories();
-        renderProducts();
-        if (window.gestorName) renderGestorPricing();
-
-    } catch (e) { 
-        console.error("Error:", e);
     }
+
+    // 3. --- EL PASO QUE FALTABA: Cargar precios personalizados del gestor ---
+    if (activeGestor) {
+        const { data: mPrecios } = await supabaseClient
+            .from('precios_personalizados')
+            .select('producto_id, nuevo_precio')
+            .eq('gestor', activeGestor);
+        
+        if (mPrecios) {
+            // Convertimos la lista en un mapa rápido para consultar
+            customPricesMap = {};
+            mPrecios.forEach(item => {
+                customPricesMap[item.producto_id] = item.nuevo_precio;
+            });
+        }
+    }
+
+    renderCategories();
+    renderProducts();
+    if (window.gestorName) renderGestorPricing();
 }
 
 // --- FUNCIONES DE APOYO PARA EL RASTREO IP ---
@@ -3716,7 +3720,8 @@ async function renderCategories() {
     // 5. RENDERIZADO DE TARJETAS
     // 5. RENDERIZADO DE TARJETAS
     container.innerHTML = filtered.map(p => {
-        const precio = parseFloat(p.precio) || 0;
+        const precioFinal = customPricesMap[p.id] ? parseFloat(customPricesMap[p.id]) : parseFloat(p.precio);
+const precio = precioFinal || 0;
         
         // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE ---
         let pDisplay = `$${precio}`; 
@@ -5948,7 +5953,8 @@ function renderProductsCustom(lista) {
     const isGestor = window.gestorName ? true : false;
     
     container.innerHTML = lista.map(p => {
-        const precio = parseFloat(p.precio) || 0;
+        const precioFinal = customPricesMap[p.id] ? parseFloat(customPricesMap[p.id]) : parseFloat(p.precio);
+const precio = precioFinal || 0;
         
         // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE (IGUAL QUE EN RENDERPRODUCTS) ---
         let pDisplay = `$${precio}`; // Valor por defecto
@@ -9276,6 +9282,12 @@ window.saveMyPrice = async function(prodId, basePrice) {
         }
 
         if (errorGuardado) throw errorGuardado;
+        // === ESTO ES LO NUEVO QUE DEBES PEGAR ===
+        // Borrar timestamp de caché para forzar recarga de precios en el catálogo
+        localStorage.removeItem('pth_cache_timestamp'); 
+        // Actualizar el mapa local inmediatamente para que el cambio sea instantáneo
+        customPricesMap[prodId] = newPrice; 
+        // =========================================
 
         // ÉXITO
         btn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
