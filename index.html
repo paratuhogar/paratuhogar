@@ -3618,44 +3618,48 @@ async function buscarDuenoPorIP() {
 }
 
 function prepararPDFDesdeHistorial(pedidoId, accion) {
-    const p = myOrdersData.find(item => item.id === pedidoId);
+    // Si estamos en el panel admin, usamos pedidosRawAdmin. Si estamos en gestor, usamos myOrdersData
+    const p = (typeof pedidosRawAdmin !== 'undefined' ? pedidosRawAdmin.find(item => item.id === pedidoId) : null) || 
+              (typeof myOrdersData !== 'undefined' ? myOrdersData.find(item => item.id === pedidoId) : null);
+              
     if (!p) return alert("Error: No se encontró el registro del pedido.");
 
     const totalVentaRegistrado = Number(p.total);
     const mensajeria = Number(p.costo_mensajeria || 0);
     const totalEquiposEnPedido = totalVentaRegistrado - mensajeria;
 
-    // 1. Separamos los productos por el signo "+"
     const partes = p.producto.split(' + ');
     const itemsProcesados = [];
+    let esPedidoB2B = false; // Bandera para saber qué PDF generar
     
-    // 2. Procesamos cada parte buscando en el catálogo real
     partes.forEach(parte => {
-        // Extraer cantidad (ej: de "2x Exhibidor..." saca el 2)
         let qty = 1;
         const qtyMatch = parte.match(/^(\d+)x/);
         if (qtyMatch) qty = parseInt(qtyMatch[1]);
 
-        // Limpiar el nombre (quitar el "1x " y el "[USD]")
         let nombreLimpio = parte.replace(/^\d+x\s+/, '').split('[')[0].trim();
 
-        // --- EL CAMBIO CLAVE: BUSCAR EL PRECIO EN EL CATÁLOGO ---
-        // Buscamos el equipo en la lista de productos cargada en la tienda
         const productoEnCatalogo = productosRaw.find(prod => prod.nombre === nombreLimpio);
-        
         let precioUnitario = 0;
 
         if (productoEnCatalogo) {
-            // Si lo encuentra, usa el precio del catálogo
             precioUnitario = Number(productoEnCatalogo.precio);
+            // Comprobar si pertenece a categoría B2B
+            const cat = (productoEnCatalogo.categoria || "").toUpperCase();
+            if (cat.includes('MAYORISTA') || cat.includes('B2B') || cat.includes('MIPYME')) {
+                esPedidoB2B = true;
+            }
         } else {
-            // Si NO lo encuentra (porque se borró o cambió de nombre), 
-            // hace el cálculo proporcional basado en el total para que el PDF no de error
             const totalUnidades = partes.reduce((acc, cur) => {
                 const m = cur.match(/^(\d+)x/);
                 return acc + (m ? parseInt(m[1]) : 1);
             }, 0);
             precioUnitario = totalEquiposEnPedido / totalUnidades;
+            
+            // Fallback: Si el producto fue borrado, buscamos por el nombre
+            if(nombreLimpio.toUpperCase().includes('LOTE') || nombreLimpio.toUpperCase().includes('MAYORISTA')) {
+                esPedidoB2B = true;
+            }
         }
 
         itemsProcesados.push({
@@ -3666,17 +3670,22 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
         });
     });
 
-    // 3. Preparar los datos finales para el generador de PDF
     const datosParaPDF = {
         cliente: p.cliente,
         ci: p.ci || "---",
+        telefono: p.telefono,
         direccion: p.direccion,
         totalUSD: totalVentaRegistrado,
         mensajeria: mensajeria,
         items: itemsProcesados
     };
 
-    generarComprobanteVenta(datosParaPDF, accion);
+    // === ELEGIR EL GENERADOR CORRECTO ===
+    if (esPedidoB2B) {
+        generarComprobanteB2B(datosParaPDF, accion);
+    } else {
+        generarComprobanteVenta(datosParaPDF, accion);
+    }
 }
 
     // Variable global para guardar las categorías de la tienda
@@ -3919,11 +3928,25 @@ async function renderCategories() {
 }
 
     // 4. CARRITO Y PAGOS
-    function addItemToCart() {
+   function addItemToCart() {
+    // === NUEVO: LÓGICA DE BLOQUEO B2B ===
+    const catActual = (selectedProduct.categoria || "").toUpperCase();
+    const esB2B = catActual.includes('MAYORISTA') || catActual.includes('B2B') || catActual.includes('MIPYME');
+    
+    if (cart.length > 0) {
+        const cartTieneB2B = cart.some(item => (item.categoria || "").toUpperCase().includes('MAYORISTA') || (item.categoria || "").toUpperCase().includes('B2B') || (item.categoria || "").toUpperCase().includes('MIPYME'));
+        
+        if (esB2B && !cartTieneB2B) {
+            return alert("⛔ No puedes agregar un Lote Mayorista si ya tienes productos normales en el carrito. Vacía el carrito primero.");
+        }
+        if (!esB2B && cartTieneB2B) {
+            return alert("⛔ No puedes agregar productos normales a un pedido Mayorista. Vacía el carrito primero.");
+        }
+    }
+    // ====================================
+
     const existing = cart.find(item => item.nombre === selectedProduct.nombre);
     
-    // Detectamos si el producto traía un costo de mensajería por defecto en la BD
-    // Si dice "Gratis" o texto, ponemos 0. Si tiene número, ponemos ese número.
     let defaultShipping = 0;
     if(selectedProduct.mensajeria && !isNaN(parseFloat(selectedProduct.mensajeria))) {
         defaultShipping = parseFloat(selectedProduct.mensajeria);
@@ -3931,7 +3954,6 @@ async function renderCategories() {
 
     if(existing) {
         existing.qty++;
-        // Al aumentar cantidad, sumamos otro costo de envío base
         existing.shipping_linea += defaultShipping; 
     } else {
         cart.push({
@@ -3939,14 +3961,12 @@ async function renderCategories() {
             qty: 1,
             precio_venta: Number(selectedProduct.precio),
             comision_actual: Number(selectedProduct.comision || 0),
-            shipping_linea: defaultShipping, // NUEVO CAMPO: Envío específico para esta línea
+            shipping_linea: defaultShipping,
             cup_extra: selectedProduct.cup_extra || 0
-            
         });
-        // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
-    if (typeof captureGhostLead === "function") {
-        captureGhostLead(); 
-    }
+        if (typeof captureGhostLead === "function") {
+            captureGhostLead(); 
+        }
     }
     
     document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
@@ -4035,6 +4055,26 @@ function renderCart() {
 
     container.innerHTML = htmlItems;
     recalcularTotalFinal(); 
+    // === NUEVO: OCULTAR MENSAJERÍA SI ES B2B ===
+    const isB2BOrder = cart.some(item => (item.categoria || "").toUpperCase().includes('MAYORISTA') || (item.categoria || "").toUpperCase().includes('B2B') || (item.categoria || "").toUpperCase().includes('MIPYME'));
+    
+    const checkRecogida = document.getElementById('check-recogida');
+    const containerRecogida = checkRecogida ? checkRecogida.parentElement : null;
+    const containerDireccion = document.getElementById('check-dir') ? document.getElementById('check-dir').parentElement : null;
+
+    if(isB2BOrder && checkRecogida) {
+        // Forzar recogida en almacén y ocultar opciones
+        checkRecogida.checked = true;
+        toggleRecogidaEnAlmacen();
+        if(containerRecogida) containerRecogida.style.display = 'none';
+        if(containerDireccion) containerDireccion.style.display = 'none';
+        document.getElementById('check-dir').value = "Almacén Inbond (Mayorista B2B)";
+    } else if (checkRecogida) {
+        // Restaurar si es cliente normal
+        if(containerRecogida) containerRecogida.style.display = 'flex';
+        if(containerDireccion) containerDireccion.style.display = 'block';
+    }
+    // ============================================
 }
 
 // Función para sumar o restar cantidad
@@ -4307,17 +4347,27 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // Generar PDF para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
-    
     const dirPDF = notasC ? `${dirC} (${localidadC}, ${municipioC}) - NOTA: ${notasC}` : `${dirC} (${localidadC}, ${municipioC})`;
 
     const datosParaPDF = {
-        cliente: nombreC, ci: ciC, direccion: dirPDF,
-        totalUSD: totalGlobalProductos + envioTotalGlobal, mensajeria: envioTotalGlobal,
+        cliente: nombreC, 
+        ci: ciC, 
+        telefono: telC, 
+        direccion: dirPDF,
+        totalUSD: totalGlobalProductos + envioTotalGlobal, 
+        mensajeria: envioTotalGlobal,
         items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
     };
     
+    // === NUEVO: VERIFICAR SI DEBE GENERAR PDF MAYORISTA ===
+    const isB2BOrder = cart.some(item => (item.categoria || "").toUpperCase().includes('MAYORISTA') || (item.categoria || "").toUpperCase().includes('B2B') || (item.categoria || "").toUpperCase().includes('MIPYME'));
+
     setTimeout(() => { 
-        generarComprobanteVenta(datosParaPDF, 'descargar'); 
+        if(isB2BOrder) {
+            generarComprobanteB2B(datosParaPDF, 'descargar'); 
+        } else {
+            generarComprobanteVenta(datosParaPDF, 'descargar'); 
+        }
         
         setTimeout(() => {
             cart = [];
@@ -5145,10 +5195,16 @@ function renderAdminLogistica() {
                         <i class="fab fa-whatsapp"></i> Contactar
                     </button>
 
-                    <!-- === NUEVO BOTÓN: REENVIAR VALE === -->
-                    <button onclick="reenviarValeAdmin('${p.id}')" class="flex items-center justify-center gap-1 bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1.5 rounded-lg shadow-sm hover:bg-teal-100 transition-all active:scale-95 group" title="Generar Vale de Pedido (Rescate)">
+                    <!-- Botón Reenviar Vale WhatsApp -->
+                    <button onclick="reenviarValeAdmin('${p.id}')" class="flex items-center justify-center gap-1 bg-teal-50 text-teal-700 border border-teal-200 px-2 py-1.5 rounded-lg shadow-sm hover:bg-teal-100 transition-all active:scale-95 group" title="Generar Vale de Pedido en WhatsApp">
                         <span class="material-symbols-outlined text-[14px] group-hover:rotate-180 transition-transform duration-500">receipt_long</span>
                         <span class="text-[9px] font-black uppercase">Generar Vale</span>
+                    </button>
+
+                    <!-- === NUEVO BOTÓN: DESCARGAR PDF === -->
+                    <button onclick="prepararPDFDesdeHistorial('${p.id}', 'descargar')" class="flex items-center justify-center gap-1 bg-red-50 text-red-600 border border-red-200 px-2 py-1.5 rounded-lg shadow-sm hover:bg-red-100 transition-all active:scale-95 group" title="Descargar Documento PDF">
+                        <span class="material-symbols-outlined text-[14px] group-hover:scale-110 transition-transform">picture_as_pdf</span>
+                        <span class="text-[9px] font-black uppercase">Descargar PDF</span>
                     </button>
 
                 </div>
@@ -12026,6 +12082,176 @@ _Recuerda guardar estos datos en un lugar seguro para que no se te olviden._ �
     window.open(`${urlBase}?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
+async function generarComprobanteB2B(datosPedido, accion) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Generar código
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const numOferta = `#REF-${randomCode}`;
+
+    // Paleta de Colores (Estilo Imagen 2)
+    const cBlack = [17, 17, 17];
+    const cGold = [184, 142, 84]; // Color bronce/dorado
+    const cGray = [100, 116, 139];
+    const cLightBox = [245, 245, 245];
+
+    // --- PÁGINA 1: LA PRE-OFERTA ---
+    
+    // Título Principal
+    doc.setTextColor(...cBlack);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(26);
+    doc.text("OFERTA MAYORISTA", 15, 22);
+    
+    // Cuadrito Dorado al lado del título
+    let textWidth = doc.getTextWidth("OFERTA MAYORISTA");
+    doc.setFillColor(...cGold);
+    doc.rect(15 + textWidth + 4, 14, 6, 8, 'F');
+
+    // Subtítulo
+    doc.setTextColor(...cGray);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Distribución B2B", 15, 29);
+
+    // Obtener Gestor Dinámicamente
+    const session = JSON.parse(localStorage.getItem('pth_session'));
+    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+    let agentName = "EQUIPO DE VENTAS";
+    if (session && session.name) agentName = session.name;
+    else if (referrer && referrer.nombre) agentName = referrer.nombre;
+
+    doc.setTextColor(...cGold);
+    doc.setFont("helvetica", "bold");
+    doc.text(`ATENDIDO POR: ${agentName.toUpperCase()}`, 15, 38);
+
+    // Recuadro superior derecho (ORDEN DE DESPACHO)
+    doc.setFillColor(...cGold);
+    doc.rect(125, 12, 70, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.text("ORDEN DE DESPACHO", 160, 19, { align: "center" });
+
+    // Dirección Almacén
+    doc.setTextColor(...cBlack);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Almacén Inbond: Reparto Eléctrico\nLa Habana, Cuba", 195, 28, { align: "right" });
+
+    // Línea Divisoria
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.5);
+    doc.line(15, 45, 195, 45);
+
+    // DATOS DEL CLIENTE (Izquierda)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("DATOS PARA RESERVA / DESPACHO:", 15, 55);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`CLIENTE: ${datosPedido.cliente.toUpperCase()}`, 15, 62);
+    doc.text(`ID REGISTRO: ${datosPedido.ci || '---'}`, 15, 68);
+    // AQUÍ SALE EL TELÉFONO FINALMENTE
+    doc.text(`CONTACTO: ${datosPedido.telefono || '---'}`, 15, 74);
+
+    // CAJA GRIS DE REFERENCIA (Derecha)
+    doc.setFillColor(...cLightBox);
+    doc.rect(125, 50, 70, 26, 'F');
+    doc.setFontSize(11);
+    doc.text("Nº Referencia:", 130, 59);
+    doc.text("Fecha Emisión:", 130, 69);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(numOferta, 190, 59, { align: "right" });
+    const fechaActual = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    doc.text(fechaActual, 190, 69, { align: "right" });
+
+    // TABLA DE PRODUCTOS
+    const filasTabla = datosPedido.items.map(i => [
+        i.nombre, 
+        i.qty.toString(), 
+        `$ ${i.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 
+        `$ ${(i.price * i.qty).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+    ]);
+
+    doc.autoTable({
+        startY: 85,
+        head: [['DESCRIPCIÓN', 'CANTIDAD', 'PRECIO UNIT.', 'TOTAL']],
+        body: filasTabla,
+        theme: 'plain',
+        headStyles: { fillColor: cBlack, textColor: 255, fontStyle: 'bold', fontSize: 10 },
+        bodyStyles: { textColor: cBlack, fontSize: 10 },
+        columnStyles: {
+            0: { cellWidth: 'auto' },
+            1: { halign: 'center', cellWidth: 25 },
+            2: { halign: 'left', cellWidth: 35 },
+            3: { halign: 'right', cellWidth: 35, fontStyle: 'bold' } // Total alineado a la derecha
+        },
+        willDrawCell: function(data) {
+            // Dibuja una línea fina gris debajo de cada fila del cuerpo
+            if (data.section === 'body') {
+                doc.setDrawColor(220, 220, 220);
+                doc.setLineWidth(0.1);
+                doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+            }
+        }
+    });
+
+    // TOTAL FINAL
+    const finalY = doc.lastAutoTable.finalY + 20;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...cGold);
+    doc.text("TOTAL A PAGAR (USD):", 150, finalY, { align: "right" });
+    doc.setFontSize(14);
+    doc.text(`$ ${datosPedido.totalUSD.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 195, finalY, { align: "right" });
+
+    // --- PÁGINA 2: ANEXO LEGAL (ARREGLADO POR PÁRRAFOS) ---
+    doc.addPage();
+    doc.setTextColor(...cBlack);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("ANEXO LEGAL: CONDICIONES DE IMPORTACIÓN ACEPTADAS", 15, 20);
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 25, 195, 25);
+
+    // Texto legal procesado párrafo por párrafo para evitar los huecos extraños
+    const parrafosLegal = [
+        `Por medio del presente documento generado de forma electrónica, el ciudadano(a) ${datosPedido.cliente.toUpperCase()}, en representación de la entidad adquirente (Licencia: MIPYME / TCP), certifica haber LEÍDO y ACEPTADO íntegramente los siguientes términos operativos para la adquisición de la mercancía descrita en la Página 1:`,
+        `1. NATURALEZA DE LA OPERACIÓN: El cliente comprende que esta operación constituye un proceso de Importación y Nacionalización de mercancías ubicadas en Almacén Inbond (Reparto Eléctrico, La Habana) bajo el régimen y custodia de la Aduana General de la República.`,
+        `2. IDENTIDAD JURÍDICA: El Contrato Comercial se establece obligatoriamente a nombre de su licencia de TCP o MIPYME a través de una Importadora Estatal (frecuentemente CUBAELECTRONICA). Si es cliente nuevo, deberá cumplir con el proceso de acreditación.`,
+        `3. CONDICIÓN DE ENTREGA: Modalidad DAP (Delivered At Place). La mercancía se entrega exclusivamente en el Almacén Inbond mencionado.`,
+        `4. FORMAS DE PAGO: El cliente comprende que la vía preferente es la transferencia bancaria internacional. Sin embargo, se acepta la liquidación en efectivo físico (USD/EUR) de todos los productos en plaza descritos en la factura. El pago en efectivo se realiza en nuestras oficinas a nuestra Asistente Ejecutiva.`,
+        `5. PROCEDIMIENTO ADUANAL Y ACOMPAÑAMIENTO: Tras emitirse la Factura Comercial (evidencia de pago), el Ejecutivo Comercial gestiona personalmente la Declaración de Mercancía (DM) y el permiso de extracción de almacén. Este proceso toma habitualmente entre 1 y 2 días hábiles (24h a 48h). Una vez listo, se avisa al cliente para la extracción.`,
+        `6. ARANCELES DE LEY: El cliente asume los aranceles aduanales y operativos aplicados por la Importadora estatal, reconociendo que responden a normativas oficiales del MINCEX y no son impuestos arbitrarios ni sobrecargos ocultos.`,
+        `CERTIFICACIÓN DIGITAL: La generación y descarga de esta Pre-Oferta equivale a la aceptación de las condiciones preliminares descritas, dando el consentimiento necesario para dar paso a la firma del Contrato Comercial oficial que rige la transacción.`
+    ];
+
+    let cursorY = 35; 
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    parrafosLegal.forEach(parrafo => {
+        const lineasDelParrafo = doc.splitTextToSize(parrafo, 180);
+        doc.text(lineasDelParrafo, 15, cursorY); 
+        cursorY += (lineasDelParrafo.length * 4.5) + 3; 
+    });
+
+    // --- SALIDA DEL PDF ---
+    const nombreArchivo = `OFERTA_${datosPedido.cliente.replace(/\s+/g, '_')}.pdf`;
+
+    if (accion === 'compartir' && navigator.share) {
+        const pdfBlob = doc.output('blob');
+        const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
+        try {
+            await navigator.share({ files: [file], title: 'Oferta Comercial' });
+        } catch (err) { doc.save(nombreArchivo); }
+    } else {
+        doc.save(nombreArchivo);
+    }
+}
 
 </script>
 
@@ -12220,6 +12446,7 @@ _Recuerda guardar estos datos en un lugar seguro para que no se te olviden._ �
 <script src="traffic-campaign.js"></script>
 <!-- Módulo de Recompensa Leads -->
 <script src="leads-premium.js"></script>
+
 </body>
 
 </body>
