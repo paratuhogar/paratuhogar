@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2403a"; 
+const versionActual = "2303a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2135,7 +2135,6 @@ checkShortLinks();
 
     
     let productosRaw = [], cart = [], selectedProduct = null;
-    let customPricesMap = {};
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
     
     
@@ -2618,39 +2617,23 @@ async function processRegister() {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // 1. Definir ventana de tiempo (Solo últimos 30 días para la lista)
-    const hace30dias = new Date();
-    hace30dias.setDate(hace30dias.getDate() - 30);
-
-    // 2. PEDIR SOLO MIS PEDIDOS (Filtro desde el servidor)
-    // Esto reduce el Egress en un 90% si tienes muchos gestores
-    const { data: misVentas, error } = await supabaseClient
+    // 1. Consultar DATOS (Aumentamos límite para evitar que Supabase corte en 1000)
+    const { data: allPedidos, error } = await supabaseClient
         .from('pedidos')
         .select('*')
-        .eq('gestor', nombreGestor)
-        .gte('fecha', hace30dias.toISOString()) // Solo el último mes
-        .order('fecha', { ascending: false });
+        .order('fecha', { ascending: false })
+        .limit(5000);
 
-    if(error) return;
+    if(error) { console.error(error); return; }
     
+    // 2. Filtrar y preparar datos
+    const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
     myOrdersData = misVentas; 
 
-    // 3. PEDIR CONTEOS POR SEPARADO (Consumen casi 0 bytes de Egress)
-    const { count: countEntregados } = await supabaseClient
-        .from('pedidos')
-        .select('*', { count: 'exact', head: true })
-        .eq('gestor', nombreGestor)
-        .eq('estado', 'Entregado');
-
-    const { count: countPendientes } = await supabaseClient
-        .from('pedidos')
-        .select('*', { count: 'exact', head: true })
-        .eq('gestor', nombreGestor)
-        .neq('estado', 'Entregado')
-        .neq('estado', 'Cancelado');
-
-    // 4. CÁLCULOS FINANCIEROS (Sobre los datos ya filtrados en misVentas)
+    // 3. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
+    const misPendientes = misVentas.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
+
     const porCobrar = misEntregados
         .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
         .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
@@ -2659,24 +2642,23 @@ async function loadProDashboard(nombreGestor) {
         .filter(p => p.pago_gestor === 'Pagado')
         .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
 
-    // Actualizar HTML
+    // Actualizar HTML Financiero
     if(document.getElementById('dash-money-pending')) document.getElementById('dash-money-pending').innerText = `$${porCobrar.toFixed(2)}`;
     if(document.getElementById('dash-money-paid')) document.getElementById('dash-money-paid').innerText = `$${cobrado.toFixed(2)}`;
-    if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = countEntregados || 0;
-    if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = countPendientes || 0;
+    if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
+    if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
 
+    // 4. RENDERIZAR TABLA DE MIS PEDIDOS
     renderMyOrdersList(misVentas);
+
+    // 5. GRÁFICA DE FUENTES
     renderSourceChart(misVentas);
+
+    // 6. ENLACES (Link corto)
     await injectLinksSection(nombreGestor);
 
-    // Para el Ranking, pedimos solo lo necesario de los últimos 30 días
-    const { data: dataRanking } = await supabaseClient
-        .from('pedidos')
-        .select('gestor, comision_total, estado, fecha')
-        .eq('estado', 'Entregado')
-        .gte('fecha', hace30dias.toISOString());
-    
-    renderLockedRanking(dataRanking || [], nombreGestor);
+    // 7. RENDERIZAR RANKING (Llamamos al bloqueado para aplicar la regla del Nivel 4)
+    renderLockedRanking(allPedidos, nombreGestor);
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
@@ -3443,45 +3425,108 @@ function renderMyOrdersList(lista) {
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
 // --- FUNCIÓN MAESTRA DE CARGA Y FUSIÓN DE PRECIOS ---
 async function loadProducts() {
-    // 1. Determinar quién es el gestor dueño de esta vista
-    const session = JSON.parse(localStorage.getItem('pth_session'));
-    const referrer = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-    const activeGestor = session?.name || referrer?.nombre || null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('s');
+    let urlGestor = urlParams.get('gestor'); // Gestor en URL (Link nuevo)
+    const sessionGestor = window.gestorName; // Gestor Logueado (Tú editando)
 
-    // 2. Cargar productos base (usando tu lógica de caché actual)
-    const CACHE_TIME = 600000; 
-    const cachedData = localStorage.getItem('pth_cache_productos');
-    const lastFetch = localStorage.getItem('pth_cache_timestamp');
+    // --- NUEVO: BUSCAR EN MEMORIA (El arreglo para Beatriz) ---
+    let memoriaGestor = null;
+    try {
+        // Buscamos si ya hay un "Botón Verde" activo en este teléfono
+        const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        if (stored && stored.nombre) {
+            memoriaGestor = stored.nombre;
+        }
+    } catch(e) {}
 
-    if (cachedData && lastFetch && (Date.now() - lastFetch < CACHE_TIME)) {
-        productosRaw = JSON.parse(cachedData);
-    } else {
-        const { data, error } = await supabaseClient.from('productos').select('*').order('nombre');
-        if (error) return console.error(error);
-        productosRaw = data;
-        localStorage.setItem('pth_cache_productos', JSON.stringify(data));
-        localStorage.setItem('pth_cache_timestamp', Date.now().toString());
-    }
+    // 1. PRIORIDAD DE GESTOR (CORREGIDA)
+    // A. Si estás logueado (Tú) -> Mandas tú.
+    // B. Si hay link nuevo (?gestor=Beatriz) -> Manda el Link.
+    // C. Si no hay link, pero el teléfono recuerda a Beatriz -> Manda la Memoria.
+    const activeGestor = sessionGestor || urlGestor || memoriaGestor;
 
-    // 3. --- EL PASO QUE FALTABA: Cargar precios personalizados del gestor ---
-    if (activeGestor) {
-        const { data: mPrecios } = await supabaseClient
-            .from('precios_personalizados')
-            .select('producto_id, nuevo_precio')
-            .eq('gestor', activeGestor);
-        
-        if (mPrecios) {
-            // Convertimos la lista en un mapa rápido para consultar
-            customPricesMap = {};
-            mPrecios.forEach(item => {
-                customPricesMap[item.producto_id] = item.nuevo_precio;
-            });
+    // --- LOGICA LINK CORTO (Mantenida Intacta) ---
+    if (slug) {
+        const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
+        if (data) {
+            await registrarRastroIP(data.gestor);
+            window.location.href = data.original_url;
+            return;
         }
     }
+    
+    // Solo registramos el rastro si es un clic NUEVO (viene por URL)
+    if (urlGestor) await registrarRastroIP(urlGestor);
 
-    renderCategories();
-    renderProducts();
-    if (window.gestorName) renderGestorPricing();
+    // --- CARGA DE DATOS (Mantenida Intacta) ---
+    try {
+        // A. Cargar Productos Base
+        const { data: productos, error } = await supabaseClient
+            .from('productos')
+            .select('*')
+            .order('nombre', { ascending: true });
+
+        if (error) throw error;
+        productosRaw = productos; // Guardamos copia original cruda
+
+        // B. FUSIÓN DE PRECIOS (LA MAGIA)
+        // Ahora 'activeGestor' puede venir de la memoria, arreglando el problema de Beatriz
+        if (activeGestor) {
+            // Buscamos si este gestor tiene precios personalizados
+            const { data: preciosCustom } = await supabaseClient
+                .from('precios_personalizados')
+                .select('producto_id, nuevo_precio')
+                .eq('gestor', activeGestor);
+
+            if (preciosCustom && preciosCustom.length > 0) {
+                // Recorremos los productos y aplicamos la máscara
+                productosRaw.forEach(p => {
+                    const custom = preciosCustom.find(c => c.producto_id === p.id);
+                    if (custom) {
+                        const precioBase = parseFloat(p.precio);
+                        const precioNuevo = parseFloat(custom.nuevo_precio);
+                        
+                        // Solo aplicamos si el nuevo es mayor (seguridad)
+                        if (precioNuevo >= precioBase) {
+                            // 1. Calculamos la ganancia extra
+                            const extra = precioNuevo - precioBase;
+                            
+                            // 2. SOBRESCRIBIMOS EN MEMORIA (El cliente ve esto)
+                            p.precio = precioNuevo; 
+                            
+                            // 3. SUMAMOS A LA COMISIÓN (El sistema sabe cuánto pagarte)
+                            p.comision = (parseFloat(p.comision) + extra).toFixed(2);
+                            
+                            // Marca interna para saber que está modificado
+                            p.is_custom = true; 
+                        }
+                    }
+                });
+                console.log("✅ Precios personalizados aplicados para: " + activeGestor);
+            }
+        }
+
+        // --- RENDERIZADO FINAL ---
+        renderCategories();
+        renderProducts();
+        
+        // Si estoy logueado, cargo mi configurador de precios
+        if (sessionGestor) {
+            renderGestorPricing(); 
+        }
+
+        // Abrir producto si viene en URL
+        const searchParam = urlParams.get('search');
+        if (searchParam) {
+            const existe = productosRaw.find(p => p.nombre === searchParam);
+            if (existe) setTimeout(() => { openDetail(searchParam); }, 500);
+        }
+
+    } catch (e) { 
+        console.error("Error cargando catálogo:", e);
+        document.getElementById('productos-container').innerHTML = `<div class="col-span-full py-10 text-center text-gray-400">Error de conexión.</div>`;
+    }
 }
 
 // --- FUNCIONES DE APOYO PARA EL RASTREO IP ---
@@ -3576,59 +3621,31 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
     const p = myOrdersData.find(item => item.id === pedidoId);
     if (!p) return alert("Error: No se encontró el registro del pedido.");
 
-    const totalVentaRegistrado = Number(p.total);
-    const mensajeria = Number(p.costo_mensajeria || 0);
-    const totalEquiposEnPedido = totalVentaRegistrado - mensajeria;
-
-    // 1. Separamos los productos por el signo "+"
-    const partes = p.producto.split(' + ');
-    const itemsProcesados = [];
+    // 1. Extraer el nombre limpio del producto
+    let nombreLimpio = p.producto.split('[')[0].replace(/^\d+x\s+/, '').trim();
     
-    // 2. Procesamos cada parte buscando en el catálogo real
-    partes.forEach(parte => {
-        // Extraer cantidad (ej: de "2x Exhibidor..." saca el 2)
-        let qty = 1;
-        const qtyMatch = parte.match(/^(\d+)x/);
-        if (qtyMatch) qty = parseInt(qtyMatch[1]);
+    // 2. Extraer cantidades si existen (ej: "2x Arrocera")
+    let cantidad = 1;
+    const qtyMatch = p.producto.match(/^(\d+)x/);
+    if(qtyMatch) cantidad = parseInt(qtyMatch[1]);
 
-        // Limpiar el nombre (quitar el "1x " y el "[USD]")
-        let nombreLimpio = parte.replace(/^\d+x\s+/, '').split('[')[0].trim();
+    // 3. Cálculo de precios para el desglose
+    const totalVenta = Number(p.total);
+    const mensajeria = Number(p.costo_mensajeria || 0);
+    const precioUnitario = (totalVenta - mensajeria) / cantidad;
 
-        // --- EL CAMBIO CLAVE: BUSCAR EL PRECIO EN EL CATÁLOGO ---
-        // Buscamos el equipo en la lista de productos cargada en la tienda
-        const productoEnCatalogo = productosRaw.find(prod => prod.nombre === nombreLimpio);
-        
-        let precioUnitario = 0;
-
-        if (productoEnCatalogo) {
-            // Si lo encuentra, usa el precio del catálogo
-            precioUnitario = Number(productoEnCatalogo.precio);
-        } else {
-            // Si NO lo encuentra (porque se borró o cambió de nombre), 
-            // hace el cálculo proporcional basado en el total para que el PDF no de error
-            const totalUnidades = partes.reduce((acc, cur) => {
-                const m = cur.match(/^(\d+)x/);
-                return acc + (m ? parseInt(m[1]) : 1);
-            }, 0);
-            precioUnitario = totalEquiposEnPedido / totalUnidades;
-        }
-
-        itemsProcesados.push({
-            nombre: nombreLimpio,
-            qty: qty,
-            price: precioUnitario,
-            total: precioUnitario * qty
-        });
-    });
-
-    // 3. Preparar los datos finales para el generador de PDF
     const datosParaPDF = {
         cliente: p.cliente,
         ci: p.ci || "---",
         direccion: p.direccion,
-        totalUSD: totalVentaRegistrado,
+        totalUSD: totalVenta,
         mensajeria: mensajeria,
-        items: itemsProcesados
+        items: [{
+            nombre: nombreLimpio,
+            qty: cantidad,
+            price: precioUnitario,
+            total: totalVenta - mensajeria
+        }]
     };
 
     generarComprobanteVenta(datosParaPDF, accion);
@@ -3720,8 +3737,7 @@ async function renderCategories() {
     // 5. RENDERIZADO DE TARJETAS
     // 5. RENDERIZADO DE TARJETAS
     container.innerHTML = filtered.map(p => {
-        const precioFinal = customPricesMap[p.id] ? parseFloat(customPricesMap[p.id]) : parseFloat(p.precio);
-const precio = precioFinal || 0;
+        const precio = parseFloat(p.precio) || 0;
         
         // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE ---
         let pDisplay = `$${precio}`; 
@@ -4772,13 +4788,13 @@ async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
         alert("Error al procesar la solicitud.");
     }
 }
-// --- FUNCIÓN ACTUALIZADA: SOLO ACTIVA EN BASE DE DATOS (SIN WHATSAPP) ---
+// --- NUEVA FUNCIÓN: APROBAR Y ENVIAR MENSAJE DE BIENVENIDA ---
 async function approveAndWelcomeGestor(id, nombre, telefono, password) {
-    const confirmacion = confirm(`¿Confirmas la activación de ${nombre}?`);
+    const confirmacion = confirm(`¿Aprobar a ${nombre} y enviarle el mensaje de bienvenida por WhatsApp?`);
     if (!confirmacion) return;
 
     try {
-        // 1. Solo actualizamos el estado en la base de datos
+        // 1. Aprobar en la base de datos
         const { error } = await supabaseClient
             .from('gestores')
             .update({ estado: 'activo' })
@@ -4786,15 +4802,62 @@ async function approveAndWelcomeGestor(id, nombre, telefono, password) {
 
         if (error) throw error;
 
-        // 2. Mensaje de éxito simple en pantalla
-        alert(`✅ Cuenta de ${nombre} activada con éxito.`);
+        // 2. Preparar el teléfono
+        let telLimpio = telefono.replace(/\D/g, '');
+        if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
+
+        // 3. Generar Link Corto
+        const baseUrl = window.location.origin + window.location.pathname;
+        const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+        let affiliateLink = longLink;
         
-        // 3. Refrescar la tabla para que desaparezca de pendientes
-        loadPendingGestores(); 
+        try {
+            if(typeof getOrGenerateShortLink === 'function') {
+                affiliateLink = await getOrGenerateShortLink(nombre, longLink);
+            }
+        } catch(e) { console.log("Usando link largo por defecto"); }
+
+        // 4. Construir el mensaje exacto que pediste (Con Grupo de WA)
+        const mensaje = `¡Hola *${nombre}*! 👋 Te escribo del equipo de *ParaTuHogar*.
+
+Vimos que solicitaste unirte como gestor y tu cuenta ya está activa. Queríamos darte la bienvenida y recordarte que estamos aquí para apoyarte. Si tienes alguna duda sobre cómo vender, cómo hacer los pedidos o sobre los equipos, *¡pregúntanos sin pena ninguna!* Estamos para ayudarte a hacer dinero. 🤝
+
+📌 *TUS DATOS DE ACCESO:*
+👤 *Usuario:* ${nombre}
+🔑 *Contraseña:* ${password}
+🌐 *Entra a la tienda aquí:* https://paratuhogar.org
+
+Tenemos muchísimos equipos nuevos en almacén a muy buenos precios. Además, recuerda que en tu Panel tienes el *Configurador de Precios*: ahí puedes subirle el precio a los equipos y toda esa diferencia es *ganancia extra 100% para ti*. 💸
+
+🚀 *TU ENLACE DE AFILIADO MÁGICO:*
+🔗 ${affiliateLink}
+
+Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (incluso si compra días después), el sistema lo detecta y *la comisión te la pagamos a ti automáticamente* sin que tengas que hacer nada.
+
+📱 *ÚNETE A NUESTRO GRUPO DE WHATSAPP:*
+Aquí enviamos información importante, nuevas ofertas y material de ventas:
+👉 https://chat.whatsapp.com/GxIrA5GngPVKXQ7DBMDiOL
+
+¡Anímate a probarlo hoy! Quedo al pendiente por si necesitas ayuda. 😉`;
+
+        // 5. Refrescar la tabla y abrir WhatsApp
+        alert(`✅ Gestor activado. Se abrirá WhatsApp para enviar el mensaje.`);
+        loadPendingGestores(); // Recarga la lista para que desaparezca de "Pendientes"
+        
+        // --- LÓGICA INTELIGENTE PARA ABRIR WHATSAPP DIRECTO ---
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+if (isMobile) {
+    // Si está en celular o tablet, fuerza abrir la APP directamente (mantiene emojis intactos)
+    window.location.href = `whatsapp://send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
+} else {
+    // Si está en PC, abre WhatsApp Web directamente
+    window.open(`https://web.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
+}
 
     } catch (e) {
-        console.error("Error al activar gestor:", e);
-        alert("Ocurrió un error al intentar activar al gestor.");
+        console.error("Error al aprobar gestor:", e);
+        alert("Ocurrió un error al intentar aprobar al gestor.");
     }
 }
 
@@ -5237,8 +5300,6 @@ function renderAdminInventario(productosArg) {
 
 async function toggleStockAdmin(id, actual) {
     await supabaseClient.from('productos').update({ disponible: actual === 'SI' ? 'NO' : 'SI' }).eq('id', id);
-        localStorage.removeItem('pth_cache_timestamp'); 
-
     loadAdminData();
 }
 
@@ -5265,32 +5326,55 @@ function renderAnaliticaGestores(pedidos) {
 }
 
 async function loadTrafficAnalytics() {
-    const hace7Dias = new Date();
-    hace7Dias.setDate(hace7Dias.getDate() - 7); // Reducimos a 7 días para analítica rápida
+    // Definimos los últimos 30 días
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
 
+    // 1. Buscamos TODOS los clics rompiendo el límite de 1000
     const { data: analytics, error } = await supabaseClient
         .from('link_analytics')
         .select('agent_name')
-        .gte('timestamp', hace7Dias.toISOString()) // FILTRO CRUCIAL
-        .limit(5000); // Bajamos el límite de 50k a 5k (suficiente para tendencia)
+        .gte('timestamp', hace30Dias.toISOString())
+        .limit(50000); // Límite masivo
 
-    if (error || !analytics) return;
+    if (error || !analytics) {
+        console.error("Error cargando el tráfico:", error);
+        return;
+    }
 
     const puntosGestor = {};
+
+    // 2. Contamos uno por uno
     analytics.forEach(row => {
         const nombre = row.agent_name;
-        if (nombre && nombre !== 'Directo') {
+        // Ignoramos si está vacío o si es tráfico "Directo" (sin gestor)
+        if (nombre && nombre !== 'Directo' && nombre !== 'Venta Directa') {
             puntosGestor[nombre] = (puntosGestor[nombre] || 0) + 1;
         }
     });
 
+    // 3. Convertimos los datos en una lista y los ordenamos (El que tiene más clics va primero)
     const rankingOrdenado = Object.entries(puntosGestor).sort((a, b) => b[1] - a[1]);
+
+    // 4. RENDERIZADO
     const contenedorHTML = document.getElementById('list-trafico-gestores');
     
     if (contenedorHTML) {
         contenedorHTML.innerHTML = rankingOrdenado.map(([nombre, clics], index) => {
-            const nombreCensurado = nombre.substring(0, 5) + "***";
-            return `... tu HTML de la lista ...`;
+            const nombreCorto = nombre.split(' ')[0].toUpperCase();
+            const nombreCensurado = nombreCorto.substring(0, 5) + "***";
+
+            return `
+            <div class="flex justify-between items-center text-sm border-b border-gray-800 pb-4 pt-4">
+                <div class="flex items-center gap-4">
+                    <span class="text-gray-500 font-bold">#${index + 1}</span>
+                    <span class="font-black text-white tracking-widest">${nombreCensurado}</span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-black text-white">${clics}</span>
+                    <span class="text-[10px] text-gray-500 font-bold">CLICS</span>
+                </div>
+            </div>`;
         }).join('');
     }
 }
@@ -5588,8 +5672,6 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
 
     if (!error) {
         alert("✅ ¡Guardado correctamente!");
-            localStorage.removeItem('pth_cache_timestamp'); 
-
         
         // 1. Cerramos el modal
         closeModalProd();
@@ -5953,8 +6035,7 @@ function renderProductsCustom(lista) {
     const isGestor = window.gestorName ? true : false;
     
     container.innerHTML = lista.map(p => {
-        const precioFinal = customPricesMap[p.id] ? parseFloat(customPricesMap[p.id]) : parseFloat(p.precio);
-const precio = precioFinal || 0;
+        const precio = parseFloat(p.precio) || 0;
         
         // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE (IGUAL QUE EN RENDERPRODUCTS) ---
         let pDisplay = `$${precio}`; // Valor por defecto
@@ -9282,12 +9363,6 @@ window.saveMyPrice = async function(prodId, basePrice) {
         }
 
         if (errorGuardado) throw errorGuardado;
-        // === ESTO ES LO NUEVO QUE DEBES PEGAR ===
-        // Borrar timestamp de caché para forzar recarga de precios en el catálogo
-        localStorage.removeItem('pth_cache_timestamp'); 
-        // Actualizar el mapa local inmediatamente para que el cambio sea instantáneo
-        customPricesMap[prodId] = newPrice; 
-        // =========================================
 
         // ÉXITO
         btn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
@@ -11621,7 +11696,8 @@ async function loadPendingGestores() {
                     <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
                     <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
                     <td class="p-4 text-right">
-                        <button onclick="approveAndWelcomeGestor('${g.id}', '${g.nombre}')" class="bg-emerald-500 text-white px-6 py-2 rounded-lg font-black uppercase text-[10px] hover:bg-emerald-600 shadow-sm">Activar Cuenta</button>
+                        <button onclick="approveAndWelcomeGestor('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar y Saludar</button>
+                        <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
                     </td>
                 </tr>
             `).join('');
