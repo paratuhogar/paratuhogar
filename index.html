@@ -421,7 +421,7 @@
                         <div class="text-white/80 flex items-center justify-center pl-4">
                             <span class="material-symbols-outlined text-xl">search</span>
                         </div>
-                        <input id="search-bar" name="buscar_tienda" type="search" autocomplete="off" data-lpignore="true" oninput="filterProducts()" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
+                        <input id="search-bar" name="search_query_hidden" type="search" autocomplete="new-password" role="presentation" data-lpignore="true" oninput="filterProducts()" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
                     </div>
                 </label>
             </div>
@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2503b"; 
+const versionActual = "2503c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2479,6 +2479,11 @@ async function processRegister() {
     window.gestorName = name;
     window.isAdmin = adminMode;
     
+    // 👇 NUEVA LÍNEA AÑADIDA: Forzar limpieza del buscador para eliminar el autocompletado del navegador
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) searchBar.value = '';
+    // 👆 FIN DE LÍNEA AÑADIDA
+
     const label = document.getElementById('gestor-label');
     if(label) label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
     
