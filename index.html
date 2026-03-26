@@ -3728,6 +3728,30 @@ async function renderCategories() {
 
     container.innerHTML = allCats.map(cat => {
         const isActive = activeCategory === cat;
+        
+        // --- 🚀 LA MAGIA AQUÍ: Detectar si es la categoría Mayorista ---
+        const esMayorista = cat.toUpperCase().includes('MAYORISTA') || cat.toUpperCase().includes('B2B') || cat.toUpperCase().includes('MIPYME');
+
+        if (esMayorista) {
+            // DISEÑO VIP EXCLUSIVO PARA MAYORISTA
+            const bgClass = isActive 
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.6)]' // Activo: Dorado brillante
+                : 'bg-slate-900 text-amber-400 border border-amber-500 shadow-md hover:bg-slate-800'; // Inactivo: Negro elegante con borde dorado
+            
+            const iconColor = isActive ? 'text-slate-900' : 'text-amber-400';
+
+            return `
+            <div class="py-2 px-1 flex items-center"> <!-- Contenedor para alinear con el resto -->
+                <button onclick="filterByCategory('${cat}')" class="relative group flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all transform hover:scale-105 active:scale-95 ${bgClass}">
+                    <span class="material-symbols-outlined ${iconColor} text-lg">local_shipping</span>
+                    ${cat}
+                    <!-- Etiqueta flotante HOT que rebota -->
+                    <span class="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black animate-bounce shadow-lg border border-white">B2B</span>
+                </button>
+            </div>`;
+        }
+
+        // --- DISEÑO NORMAL PARA LAS DEMÁS CATEGORÍAS ---
         const styleClass = isActive 
             ? "category-tab active py-4 text-sm font-black border-b-4 border-primary text-primary transition-all px-2" 
             : "category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all px-2 border-b-4 border-transparent hover:border-gray-200";
