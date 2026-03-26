@@ -543,9 +543,13 @@
         // ======================================================
         // 2. LA MINA DE ORO (CLIENTES VIP)
         // ======================================================
+        // ======================================================
+        // LA MINA DE ORO (VENTA CRUZADA IA BASADA EN INVENTARIO)
+        // ======================================================
         async function loadGoldMine() {
+            // Buscamos clientes que compraron hace más de 15 días (ya tienen confianza y dinero de nuevo)
             const limitDate = new Date();
-            limitDate.setDate(limitDate.getDate() - 10); 
+            limitDate.setDate(limitDate.getDate() - 15); 
 
             const { data: pedidos, error } = await radarClient
                 .from('pedidos')
@@ -553,12 +557,12 @@
                 .eq('gestor', MY_NAME)
                 .eq('estado', 'Entregado')
                 .lt('fecha', limitDate.toISOString())
-                .order('total', { ascending: false }) 
-                .limit(20);
+                .order('fecha', { ascending: false }) 
+                .limit(15);
 
             const container = document.getElementById('goldmine-feed');
             if (!pedidos || pedidos.length === 0) {
-                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-600 opacity-50"><p class="text-xs uppercase font-bold">Sin clientes antiguos</p></div>`;
+                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-600 opacity-50"><p class="text-xs uppercase font-bold">Sin clientes para re-marketing hoy</p></div>`;
                 return;
             }
 
@@ -571,34 +575,66 @@
                 const finalTel = cleanTel.length === 8 ? '53' + cleanTel : cleanTel;
                 const totalUsd = Number(p.total || 0).toLocaleString();
 
-                let sugerencia = "un protector de voltaje";
-                let icon = "shopping_bag";
-                const prodPrevio = p.producto.toLowerCase();
-                
-                if (prodPrevio.includes('split') || prodPrevio.includes('aire')) { sugerencia = "soportes o mantenimiento para tu Split"; icon = "ac_unit"; }
-                if (prodPrevio.includes('nevera') || prodPrevio.includes('refrigerador')) { sugerencia = "microwaves para completar tu cocina"; icon = "kitchen"; }
-                if (prodPrevio.includes('planta') || prodPrevio.includes('estacion') || prodPrevio.includes('bateria')) { sugerencia = "ventiladores recargables"; icon = "bolt"; }
+                // --- 🧠 MOTOR LÓGICO DE VENTA CRUZADA ---
+                const prodComprado = p.producto.toLowerCase();
+                let categoriaBuscada = "VARIOS";
+                let palabraClave = "";
 
-                const msgVIP = `Hola ${nombreCliente}, soy Marcel. Hace un tiempo compraste con nosotros un ${p.producto.split('[')[0].trim()} y quería asegurarme de que todo siga funcionando perfecto al 100%.\n\nAprovecho para contarte que por ser cliente VIP, tengo precios de costo para ti en *${sugerencia}*. Avísame si necesitas algo. Un abrazo.`;
+                // Lógica de Complementos
+                if (prodComprado.includes('split') || prodComprado.includes('aire')) { 
+                    categoriaBuscada = "SMART TV"; palabraClave = "Televisor";
+                } else if (prodComprado.includes('nevera') || prodComprado.includes('refrigerador') || prodComprado.includes('freezer')) { 
+                    categoriaBuscada = "COCINA"; palabraClave = "Olla";
+                } else if (prodComprado.includes('lavadora')) { 
+                    categoriaBuscada = "CLIMATIZACIÓN"; palabraClave = "Ventilador";
+                } else if (prodComprado.includes('planta') || prodComprado.includes('bateria')) { 
+                    categoriaBuscada = "CLIMATIZACIÓN"; palabraClave = "Ventilador Recargable";
+                } else {
+                    categoriaBuscada = "REFRIGERACIÓN"; palabraClave = "Nevera";
+                }
+
+                // Buscar el producto ideal en el catálogo actual (que esté disponible)
+                let sugerencia = null;
+                if (globalCatalogo && globalCatalogo.length > 0) {
+                    // Intentamos buscar por palabra clave primero
+                    sugerencia = globalCatalogo.find(prod => prod.nombre.toLowerCase().includes(palabraClave.toLowerCase()));
+                    // Si no hay, buscamos cualquiera de esa categoría
+                    if (!sugerencia) {
+                        sugerencia = globalCatalogo.find(prod => prod.categoria && prod.categoria.toUpperCase().includes(categoriaBuscada));
+                    }
+                }
+
+                // Fallback de seguridad por si el inventario está vacío
+                if (!sugerencia) {
+                    sugerencia = { nombre: "nuestras nuevas ofertas", precio: "muy buenos" };
+                }
+
+                // Armar el mensaje persuasivo
+                const msgVIP = `¡Hola ${nombreCliente}! 👋 Soy Marcel de ParaTuHogar.\n\nHace un tiempo te entregamos un *${p.producto.split('[')[0].trim()}* y quería asegurarme de que todo siga funcionando al 100%.\n\nPor ser cliente de confianza, quería avisarte antes de publicarlo en redes que me acaba de entrar: *${sugerencia.nombre}* en $${sugerencia.precio}.\n\nSi necesitas algo para la casa, avísame y te hago un trato VIP. ¡Un abrazo!`;
 
                 let vipBadge = "";
-                if(Number(p.total) > 500) vipBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/50 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ml-2">🐳 Cliente Ballena</span>`;
+                if(Number(p.total) > 500) vipBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/50 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest uppercase ml-2">🐳 BALLENA VIP</span>`;
 
                 const html = `
-                <div class="bg-[#0a0f1c] border border-slate-800 p-3 rounded-xl hover:border-amber-500/50 transition-all relative group">
+                <div class="bg-[#0a0f1c] border border-slate-800 p-3 rounded-xl hover:border-amber-500/50 transition-all relative group mb-3">
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex-1 min-w-0 pr-2">
                             <p class="text-xs font-black text-white uppercase flex items-center">${nombreCliente} ${vipBadge}</p>
-                            <p class="text-[10px] text-slate-500 truncate mt-0.5">Compró: ${p.producto.split('[')[0]}</p>
+                            <p class="text-[9px] text-slate-500 truncate mt-0.5">Compró: ${p.producto.split('[')[0]}</p>
                         </div>
                         <div class="text-right shrink-0">
-                            <p class="text-sm font-black text-emerald-400">$${totalUsd}</p>
+                            <p class="text-xs font-black text-emerald-400">Pagó: $${totalUsd}</p>
                         </div>
+                    </div>
+
+                    <div class="bg-black/40 p-2 rounded-lg border border-amber-900/30 mb-2">
+                        <p class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">auto_awesome</span> Sugerencia IA:</p>
+                        <p class="text-[10px] text-amber-100 font-bold truncate">${sugerencia.nombre} <span class="text-emerald-400">($${sugerencia.precio})</span></p>
                     </div>
                     
                     <a href="https://wa.me/${finalTel}?text=${encodeURIComponent(msgVIP)}" target="_blank"
                        class="w-full bg-slate-800 hover:bg-amber-600 text-amber-500 hover:text-white border border-amber-900/50 hover:border-amber-500 py-2 rounded-lg font-bold text-[10px] uppercase flex items-center justify-center gap-2 transition-all">
-                        <span class="material-symbols-outlined text-[14px]">${icon}</span> Vender: ${sugerencia.split(' ')[0]}...
+                        <i class="fab fa-whatsapp text-sm"></i> Enviar Sugerencia VIP
                     </a>
                 </div>`;
                 container.insertAdjacentHTML('beforeend', html);
@@ -654,7 +690,7 @@
             loadWarRoom();
             // Actualización automática cada 30 minutos (Para no gastar la base de datos)
             // 1000 ms * 60 seg * 30 min = 1800000
-            setInterval(loadSniperTargets, 1800000); 
+            setInterval(loadWarRoom, 900000);
         }
 
         
