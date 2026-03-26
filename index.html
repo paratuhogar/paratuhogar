@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2603"; 
+const versionActual = "2603a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4600,6 +4600,7 @@ function renderFloatingWA(nombre, telefono) {
     
     function filterByCategory(cat) { 
         activeCategory = cat; 
+        trackSpy('VIO_CATEGORIA', cat);
         
         // Re-renderizar categorías para mover la clase 'active'
         renderCategories(); 
@@ -6087,6 +6088,7 @@ async function getOrGenerateShortLink(gestor, longLink) {
     // Función para copiar texto de venta profesional con enlace de afiliado
  async function copySmartOffer(btnElement) {
     if(!selectedProduct) return;
+    trackSpy('COPIO_OFERTA', selectedProduct.nombre);
     
     const gestor = window.gestorName || 'Ventas';
     const miTelefono = getAgentPhone(); // Usamos tu función inteligente
@@ -8617,6 +8619,7 @@ window.addEventListener('load', () => {
 // Ahora recibimos el botón (btnElement) como parámetro
 function copySimpleDesc(btnElement) {
     if(!selectedProduct) return;
+    trackSpy('COPIO_INFO', selectedProduct.nombre);
 
     // --- 1. LÓGICA DE LIMPIEZA INTELIGENTE ---
     let rawHtml = selectedProduct.descripcion || "Sin descripción detallada.";
