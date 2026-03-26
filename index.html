@@ -2622,17 +2622,16 @@ async function processRegister() {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // 1. Consultar DATOS (Aumentamos límite para evitar que Supabase corte en 1000)
-    const { data: allPedidos, error } = await supabaseClient
+    // CORRECCIÓN DE EGRESS: Pedir a Supabase SOLO los pedidos de este gestor
+    const { data: misVentas, error } = await supabaseClient
         .from('pedidos')
         .select('*')
+        .eq('gestor', nombreGestor) // <-- LA MAGIA ESTÁ AQUÍ
         .order('fecha', { ascending: false })
-        .limit(5000);
+        .limit(500); // 500 es más que suficiente para el historial de un gestor
 
     if(error) { console.error(error); return; }
     
-    // 2. Filtrar y preparar datos
-    const misVentas = allPedidos.filter(p => p.gestor === nombreGestor);
     myOrdersData = misVentas; 
 
     // 3. Cálculos Financieros
@@ -3446,9 +3445,6 @@ async function loadProducts() {
     } catch(e) {}
 
     // 1. PRIORIDAD DE GESTOR (CORREGIDA)
-    // A. Si estás logueado (Tú) -> Mandas tú.
-    // B. Si hay link nuevo (?gestor=Beatriz) -> Manda el Link.
-    // C. Si no hay link, pero el teléfono recuerda a Beatriz -> Manda la Memoria.
     const activeGestor = sessionGestor || urlGestor || memoriaGestor;
 
     // --- LOGICA LINK CORTO (Mantenida Intacta) ---
@@ -3464,21 +3460,39 @@ async function loadProducts() {
     // Solo registramos el rastro si es un clic NUEVO (viene por URL)
     if (urlGestor) await registrarRastroIP(urlGestor);
 
-    // --- CARGA DE DATOS (Mantenida Intacta) ---
+    // --- CARGA DE DATOS OPTIMIZADA ---
     try {
-        // A. Cargar Productos Base
-        const { data: productos, error } = await supabaseClient
-            .from('productos')
-            .select('*')
-            .order('nombre', { ascending: true });
+        // =========================================================
+        // A. Cargar Productos Base (AHORRO MASIVO DE EGRESS CON CACHÉ)
+        // =========================================================
+        let productos = [];
+        const catalogoCacheado = sessionStorage.getItem('pth_catalogo_cache');
+        
+        if (catalogoCacheado) {
+            // Si ya lo descargó en esta sesión, lo lee de la memoria del celular/PC
+            productos = JSON.parse(catalogoCacheado);
+            console.log("📦 Catálogo cargado desde Caché (0 Egress consumido)");
+        } else {
+            // Si es la primera vez que entra, lo descarga de Supabase
+            const { data, error } = await supabaseClient
+                .from('productos')
+                .select('*')
+                .order('nombre', { ascending: true });
 
-        if (error) throw error;
-        productosRaw = productos; // Guardamos copia original cruda
+            if (error) throw error;
+            productos = data;
+            
+            // Lo guarda en la sesión para las próximas recargas
+            sessionStorage.setItem('pth_catalogo_cache', JSON.stringify(productos));
+            console.log("☁️ Catálogo descargado desde Supabase y guardado en Caché");
+        }
+
+        productosRaw = productos; // Guardamos copia original para trabajar
+        // =========================================================
 
         // B. FUSIÓN DE PRECIOS (LA MAGIA)
-        // Ahora 'activeGestor' puede venir de la memoria, arreglando el problema de Beatriz
         if (activeGestor) {
-            // Buscamos si este gestor tiene precios personalizados
+            // Esta consulta es muy ligera, no necesita caché estricto
             const { data: preciosCustom } = await supabaseClient
                 .from('precios_personalizados')
                 .select('producto_id, nuevo_precio')
@@ -3494,13 +3508,12 @@ async function loadProducts() {
                         
                         // Solo aplicamos si el nuevo es mayor (seguridad)
                         if (precioNuevo >= precioBase) {
-                            // 1. Calculamos la ganancia extra
                             const extra = precioNuevo - precioBase;
                             
-                            // 2. SOBRESCRIBIMOS EN MEMORIA (El cliente ve esto)
+                            // SOBRESCRIBIMOS EN MEMORIA (El cliente ve esto)
                             p.precio = precioNuevo; 
                             
-                            // 3. SUMAMOS A LA COMISIÓN (El sistema sabe cuánto pagarte)
+                            // SUMAMOS A LA COMISIÓN
                             p.comision = (parseFloat(p.comision) + extra).toFixed(2);
                             
                             // Marca interna para saber que está modificado

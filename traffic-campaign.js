@@ -25,50 +25,51 @@ const TrafficCampaign = {
     // --- 1. PROCESAR DATOS DE SUPABASE ---
     // --- 1. PROCESAR DATOS DE SUPABASE (CORREGIDO) ---
     fetchClickData: async function() {
-        // 1. Calculamos la fecha de hace 30 días para tener un Ranking Activo
-        const hace30Dias = new Date();
-        hace30Dias.setDate(hace30Dias.getDate() - 30);
-
-        // 2. ROMPEMOS EL LÍMITE DE SUPABASE (de 1000 a 50000) y traemos lo más nuevo
-        const { data, error } = await supabaseClient
-            .from('link_analytics')
-            .select('agent_name')
-            .gte('timestamp', hace30Dias.toISOString()) // Solo últimos 30 días
-            .order('timestamp', { ascending: false })   // Los más nuevos primero
-            .limit(50000);                              // Límite masivo
-
-        if (error || !data) {
-            console.error("Error cargando tráfico:", error);
-            return;
-        }
-
-        let agentClicks = {};
-
-        data.forEach(row => {
-            const agent = row.agent_name;
-            
-            // Filtros: ignorar tráfico vacío, directo o del dueño
-            if (!agent || agent === 'Directo' || agent === 'Venta Directa' || agent === 'Marcel Montano') return;
-
-            agentClicks[agent] = (agentClicks[agent] || 0) + 1;
-        });
-
-        // Convertir a Array ordenado de mayor a menor
-        this.allAgentsData = Object.entries(agentClicks)
-            .map(([name, clicks]) => ({ name, clicks: clicks }))
-            .sort((a, b) => b.clicks - a.clicks);
-        
-        // El #1 absoluto es el primero de la lista
-        if (this.allAgentsData.length > 0) {
-            this.topAgent = this.allAgentsData[0];
-        } else {
-            this.topAgent = null;
-        }
-
-        // Buscar cuántos clics tiene el gestor que está viendo la pantalla
+    // 1. REVISAR CACHÉ: Evita consultar Supabase si ya lo hizo hace menos de 1 hora
+    const cachedData = sessionStorage.getItem('pth_traffic_ranking');
+    const cachedTime = sessionStorage.getItem('pth_traffic_ranking_time');
+    
+    if (cachedData && cachedTime && (Date.now() - parseInt(cachedTime)) < 3600000) {
+        this.allAgentsData = JSON.parse(cachedData);
+        if (this.allAgentsData.length > 0) this.topAgent = this.allAgentsData[0];
         const myData = this.allAgentsData.find(a => a.name === window.gestorName);
         this.myClicks = myData ? myData.clicks : 0;
-    },
+        return; // Salimos sin gastar Egress
+    }
+
+    // 2. CONSULTA OPTIMIZADA: Solo últimos 7 días y límite bajado a 2000 (suficiente para ranking)
+    const hace7Dias = new Date();
+    hace7Dias.setDate(hace7Dias.getDate() - 7);
+
+    const { data, error } = await supabaseClient
+        .from('link_analytics')
+        .select('agent_name')
+        .gte('timestamp', hace7Dias.toISOString())
+        .limit(2000); // <-- BAJAMOS DE 50000 a 2000
+
+    if (error || !data) return;
+
+    let agentClicks = {};
+    data.forEach(row => {
+        const agent = row.agent_name;
+        if (!agent || agent === 'Directo' || agent === 'Venta Directa' || agent === 'Marcel Montano') return;
+        agentClicks[agent] = (agentClicks[agent] || 0) + 1;
+    });
+
+    this.allAgentsData = Object.entries(agentClicks)
+        .map(([name, clicks]) => ({ name, clicks: clicks }))
+        .sort((a, b) => b.clicks - a.clicks);
+    
+    if (this.allAgentsData.length > 0) this.topAgent = this.allAgentsData[0];
+    else this.topAgent = null;
+
+    const myData = this.allAgentsData.find(a => a.name === window.gestorName);
+    this.myClicks = myData ? myData.clicks : 0;
+
+    // GUARDAR EN CACHÉ PARA LAS SIGUIENTES RECARGAS
+    sessionStorage.setItem('pth_traffic_ranking', JSON.stringify(this.allAgentsData));
+    sessionStorage.setItem('pth_traffic_ranking_time', Date.now().toString());
+},
 
     // --- 2. CINTA GLOBAL ESTILO NOTICIAS (DISEÑO SOLO LEVELING / TEXTO ORIGINAL) ---
     // --- 2. CINTA GLOBAL ESTILO NOTICIAS (CON ROTACIÓN DE MENSAJES) ---
