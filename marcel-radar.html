@@ -265,7 +265,7 @@
             const apiKey = checkApiKey();
             if (!apiKey) throw new Error("Falta API Key");
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
             
             const response = await fetch(url, {
                 method: 'POST',
