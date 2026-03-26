@@ -634,12 +634,13 @@
             // Solo miramos las ÚLTIMAS 24 HORAS para ver calentamiento real
             const ayer = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
+            // Aumentamos a 500 para asegurarnos de capturar búsquedas reales aunque haya mucha basura
             const { data: logs } = await radarClient
                 .from('log_espia')
                 .select('detalle')
                 .eq('accion', 'BUSQUEDA')
                 .gte('timestamp', ayer)
-                .limit(200);
+                .limit(500); 
 
             const container = document.getElementById('oracle-feed');
             if (!logs || logs.length === 0) {
@@ -647,17 +648,36 @@
                 return;
             }
 
-            // Contar búsquedas
+            // --- 🛡️ FILTRO ANTI-BASURA (LISTA NEGRA) ---
+            // Pon aquí los nombres de tus gestores, palabras clave de links, etc.
+            const palabrasProhibidas = [
+                'MARCEL', 'ADMIN', 'RONNY', 'HTTP', 'HTTPS', 'WWW', '.ORG', '.COM', 'PRUEBA', 'TEST', '?S=', 'PÉREZ', 'PEREZ', 'MONTANO'
+            ];
+
+            // Contar búsquedas filtradas
             const conteo = {};
             logs.forEach(l => {
                 if(l.detalle && l.detalle.length > 3) {
-                    const termino = l.detalle.toUpperCase();
-                    conteo[termino] = (conteo[termino] || 0) + 1;
+                    const termino = l.detalle.toUpperCase().trim();
+                    
+                    // Verificamos si el término contiene alguna de las palabras prohibidas
+                    const esBasura = palabrasProhibidas.some(palabra => termino.includes(palabra));
+
+                    // Solo lo contamos si NO es basura
+                    if (!esBasura) {
+                        conteo[termino] = (conteo[termino] || 0) + 1;
+                    }
                 }
             });
 
+            // Ordenar el Top 4
             const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 4);
             container.innerHTML = "";
+
+            if (top.length === 0) {
+                container.innerHTML = `<p class="text-xs text-emerald-900 text-center py-4">Solo hubo búsquedas del equipo hoy.</p>`;
+                return;
+            }
 
             top.forEach(([termino, score], i) => {
                 // Intentar encontrar el precio en el catálogo base (Fuzzy match simple)
@@ -694,7 +714,6 @@
                 container.insertAdjacentHTML('beforeend', html);
             });
         }
-
         // ======================================================
         // 3C. ADOPCIÓN TECH (MINIMIZADO)
         // ======================================================
