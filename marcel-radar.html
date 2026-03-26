@@ -105,17 +105,19 @@
                 <p id="count-clones" class="text-5xl font-black text-white mt-1 font-mono">0</p>
             </div>
             
-            <div class="col-span-2 bg-[#0a0f1c] p-4 rounded-2xl border border-slate-800 flex items-center justify-between shadow-inner">
+            <!-- TARJETA 3: ARBITRAJE DE PRECIOS (OPCIÓN 4) -->
+            <div class="col-span-2 bg-gradient-to-br from-[#0a0f1c] to-emerald-950/20 p-4 rounded-2xl border border-emerald-500/30 shadow-[0_0_20px_#10b98115] flex items-center justify-between group">
                 <div>
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">MÓDULO IA ACTIVADO</p>
-                    <p class="text-sm md:text-base text-purple-400 font-black uppercase tracking-widest flex items-center gap-2">
-                        <span class="material-symbols-outlined animate-spin text-purple-500">memory</span> 
-                        Gemini 3.1 Pro Preview
+                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">price_check</span> ARBITRAJE DE PRECIOS (DINERO OCULTO)
+                    </p>
+                    <p class="text-xs md:text-sm text-slate-300 font-bold uppercase tracking-wide mt-1">
+                        Equipos que el mercado está pagando <span class="text-emerald-400 font-black">MÁS CAROS</span> que el precio base.
                     </p>
                 </div>
-                <button onclick="loadWarRoom()" class="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_#9333ea] active:scale-95 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">sync</span> ACTUALIZAR DATOS
-                </button>
+                <div id="arbitrage-feed" class="flex flex-col items-end text-right">
+                    <span class="loader border-emerald-500"></span>
+                </div>
             </div>
         </div>
 
@@ -216,16 +218,18 @@
                     </div>
                 </div>
 
-                <!-- RELOJ DE ORO -->
-                <div class="bg-[#060b14] rounded-3xl border border-indigo-500/30 shadow-[0_0_30px_#6366f115] overflow-hidden shrink-0">
-                    <div class="p-3 border-b border-indigo-500/20 bg-gradient-to-r from-indigo-900/20 to-transparent">
-                        <h2 class="text-sm font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-lg">radar</span> VENTANA DE CAZA
-                        </h2>
-                        <p class="text-[8px] font-bold text-indigo-300/50 uppercase tracking-widest ml-7">Basado en Pedidos (Últimos 5 días)</p>
+                <!-- MAPA DE CALOR GEOGRÁFICO (OPCIÓN 2) -->
+                <div class="bg-[#060b14] rounded-3xl border border-blue-500/30 shadow-[0_0_30px_#3b82f615] overflow-hidden shrink-0">
+                    <div class="p-3 border-b border-blue-500/20 bg-gradient-to-r from-blue-900/20 to-transparent flex justify-between items-center">
+                        <div>
+                            <h2 class="text-sm font-black uppercase tracking-widest text-blue-400 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-lg">map</span> MAPA DE CALOR
+                            </h2>
+                            <p class="text-[8px] font-bold text-blue-300/50 mt-0.5 ml-7 uppercase tracking-widest">¿Dónde publicar en Facebook hoy?</p>
+                        </div>
                     </div>
-                    <div id="golden-hour-feed" class="p-4 space-y-3">
-                        <span class="loader border-indigo-500 mx-auto block"></span>
+                    <div id="heatmap-feed" class="p-4 space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                        <span class="loader border-blue-500 mx-auto block"></span>
                     </div>
                 </div>
             </div>
@@ -290,23 +294,224 @@
         async function loadWarRoom() {
             if (!checkApiKey()) return;
 
-            // 1. Cargar catálogo base para saber precios y alimentar IA
-            const { data: prods } = await radarClient.from('productos').select('nombre, precio, categoria').eq('disponible', 'SI');
+            const { data: prods } = await radarClient.from('productos').select('id, nombre, precio, categoria').eq('disponible', 'SI');
             if (prods) {
                 globalCatalogo = prods;
-                
-                // Llenar selector del Destructor de Objeciones
                 const selectObj = document.getElementById('obj-product');
-                selectObj.innerHTML = `<option value="">-- Selecciona el equipo que intentas vender --</option>` + 
-                    globalCatalogo.map(p => `<option value="${p.nombre}">$${p.precio} - ${p.nombre}</option>`).join('');
+                if (selectObj) {
+                    selectObj.innerHTML = `<option value="">-- Selecciona el equipo que intentas vender --</option>` + 
+                        globalCatalogo.map(p => `<option value="${p.nombre}">$${p.precio} - ${p.nombre}</option>`).join('');
+                }
             }
 
             startLiveTicker();
             await loadB2BRadar();          
             await loadStrategyCloner();    
-            await loadGoldMine(); // <--- Ahora con IA
-            await loadGoldenHour(); 
+            await loadGoldMine(); 
             await loadDemandRadar(); 
+            // NUEVAS FUNCIONES:
+            await loadHeatmap();           
+            await loadPriceArbitrage();    
+        }
+
+        // ======================================================
+        // OPCIÓN 2: MAPA DE CALOR GEOGRÁFICO
+        // ======================================================
+        // ======================================================
+        // OPCIÓN 2: MAPA DE CALOR GEOGRÁFICO (CON IA LOCAL)
+        // ======================================================
+        async function loadHeatmap() {
+            const hace15dias = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+            
+            const { data: pedidos } = await radarClient
+                .from('pedidos')
+                .select('municipio, producto')
+                .eq('estado', 'Entregado')
+                .gte('fecha', hace15dias);
+
+            const container = document.getElementById('heatmap-feed');
+            if (!pedidos || pedidos.length === 0) return container.innerHTML = `<p class="text-xs text-slate-500 text-center">Sin datos de zonas.</p>`;
+
+            const zonas = {};
+            pedidos.forEach(p => {
+                const muni = p.municipio || "La Habana";
+                if (muni === "Almacén") return; 
+                
+                let prod = p.producto.replace(/^\d+x\s+/, '').split('[')[0].trim();
+                
+                if (!zonas[muni]) zonas[muni] = { total: 0, productos: {} };
+                zonas[muni].total++;
+                zonas[muni].productos[prod] = (zonas[muni].productos[prod] || 0) + 1;
+            });
+
+            const topZonas = Object.entries(zonas).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+
+            container.innerHTML = topZonas.map(([muni, data], index) => {
+                const topProd = Object.entries(data.productos).sort((a, b) => b[1] - a[1])[0][0];
+                const idSeguro = muni.replace(/[^a-zA-Z0-9]/g, ''); // Para IDs HTML sin espacios
+                const nombreProdSeguro = topProd.replace(/'/g, "\\'"); // Evitar errores con comillas
+                
+                return `
+                <div class="bg-blue-950/20 border border-blue-900/50 p-3 rounded-xl flex flex-col gap-2 group hover:border-blue-500 transition-colors mb-3">
+                    <div class="flex justify-between items-start">
+                        <div class="w-3/4 pr-2">
+                            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">location_on</span> ${muni}
+                            </p>
+                            <p class="text-[10px] text-slate-300 mt-0.5 leading-tight" title="${topProd}">🔥 Demanda: <span class="font-bold text-white">${topProd}</span></p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-xs font-black text-blue-500 bg-blue-900/30 px-2 py-1 rounded border border-blue-800">${data.total} Ventas</span>
+                        </div>
+                    </div>
+
+                    <!-- Botón IA -->
+                    <button id="btn-hm-${idSeguro}" onclick="generateHeatmapAd('${muni}', '${nombreProdSeguro}', this, '${idSeguro}')" class="w-full mt-1 bg-blue-900/40 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-800 py-2 rounded-lg transition-colors text-[9px] font-black uppercase flex items-center justify-center gap-1 shadow-sm active:scale-95">
+                        <span class="material-symbols-outlined text-[14px]">auto_awesome</span> Crear Anuncio para ${muni}
+                    </button>
+
+                    <!-- Resultado de la IA -->
+                    <div id="res-hm-${idSeguro}" class="hidden mt-2">
+                        <div id="text-hm-${idSeguro}" class="bg-black border border-blue-900/50 p-2 rounded text-[10px] text-blue-100 font-mono whitespace-pre-wrap mb-2 max-h-40 overflow-y-auto custom-scrollbar leading-relaxed"></div>
+                        <button onclick="copyToClipboard('text-hm-${idSeguro}', this)" class="w-full bg-slate-800 hover:bg-emerald-600 text-white font-black text-[10px] uppercase py-2 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-colors">
+                            <span class="material-symbols-outlined text-sm">content_copy</span> Copiar Post para FB
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ======================================================
+        // CREADOR DE ANUNCIOS GEOLOCALIZADOS (MAPA DE CALOR)
+        // ======================================================
+        async function generateHeatmapAd(municipio, producto, btnElement, idCaja) {
+            // 1. Buscamos el precio en el catálogo base cargado
+            let precioReal = "Consultar";
+            const prodMatch = globalCatalogo.find(p => p.nombre.toLowerCase().includes(producto.toLowerCase()) || producto.toLowerCase().includes(p.nombre.toLowerCase()));
+            if (prodMatch) {
+                precioReal = `$${prodMatch.precio} USD`;
+            }
+
+            // 2. Construimos tus enlaces personalizados
+            // Obtenemos la URL base (ej: https://paratuhogar.org) limpiando el final
+            const baseUrl = window.location.href.split('marcel-radar.html')[0] + 'index.html';
+            const linkAfiliado = `${baseUrl}?search=${encodeURIComponent(producto)}&gestor=${encodeURIComponent(MY_NAME)}&tel=5358183649`;
+            
+            // Link directo de WhatsApp
+            const textoWa = `Hola Marcel, soy de ${municipio} y me interesa el equipo: ${producto}`;
+            const linkWa = `https://wa.me/5358183649?text=${encodeURIComponent(textoWa)}`;
+
+            // 3. UX: Cambiar botón a estado de carga
+            const oldHtml = btnElement.innerHTML;
+            btnElement.innerHTML = `<span class="ai-loader border-blue-500 border-t-blue-200"></span> REDACTANDO...`;
+            btnElement.disabled = true;
+
+            // 4. EL PROMPT (Instrucciones para Gemini)
+            const prompt = `Actúa como un experto en ventas de Facebook en Cuba.
+            Voy a publicar en un grupo de compra/venta específico del municipio: "${municipio}" en La Habana.
+            El producto que más se está vendiendo ahí es: "${producto}".
+            El precio es: ${precioReal}.
+
+            Redacta un post para Facebook corto, magnético y que parezca natural, no robótico.
+            
+            REGLAS ESTRICTAS:
+            1. El gancho inicial debe mencionar obligatoriamente al municipio (Ej: "¡Atención mi gente de ${municipio}!" o "¡Oferta especial para los vecinos de ${municipio}!").
+            2. Menciona que hay poco stock y que la entrega es rapidísima en esa zona.
+            3. Inserta EXACTAMENTE estos dos enlaces al final, con estos mismos textos:
+               👇 Ver fotos y detalles en la tienda:
+               ${linkAfiliado}
+               📲 Escríbeme directo al WhatsApp:
+               ${linkWa}
+            4. Al final, agrega de 5 a 8 hashtags. Deben simular lo que un cubano escribiría en el buscador de Facebook para encontrar esto. Incluye #Revolico${municipio.replace(/\s+/g, '')} y hashtags del producto.
+            
+            Devuelve solo el texto del post, listo para copiar y pegar.`;
+
+            try {
+                const respuesta = await askGemini(prompt);
+                
+                // Mostrar el resultado
+                const cajaResultado = document.getElementById(`res-hm-${idCaja}`);
+                document.getElementById(`text-hm-${idCaja}`).innerText = respuesta;
+                
+                btnElement.classList.add('hidden'); // Ocultar botón original
+                cajaResultado.classList.remove('hidden'); // Mostrar texto y botón de copiar
+
+            } catch (e) {
+                alert("Error de la IA: " + e.message);
+                btnElement.innerHTML = oldHtml;
+                btnElement.disabled = false;
+            }
+        }
+
+        // ======================================================
+        // OPCIÓN 4: ARBITRAJE DE PRECIOS FLEXIBLES
+        // ======================================================
+        async function loadPriceArbitrage() {
+            const container = document.getElementById('arbitrage-feed');
+            
+            // 1. Traer todos los precios personalizados de los gestores
+            const { data: customPrices } = await radarClient
+                .from('precios_personalizados')
+                .select('producto_id, nuevo_precio, gestor');
+
+            if (!customPrices || customPrices.length === 0) return container.innerHTML = `<p class="text-xs text-emerald-600">Nadie ha subido precios aún.</p>`;
+
+            // 2. Traer ventas de los últimos 15 días para confirmar si esos precios se venden
+            const hace15dias = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+            const { data: ventas } = await radarClient
+                .from('pedidos')
+                .select('gestor, total, producto')
+                .eq('estado', 'Entregado')
+                .gte('fecha', hace15dias);
+
+            const sobrepreciosExitosos = {};
+
+            customPrices.forEach(cp => {
+                // Buscar el producto en nuestro catálogo base
+                const prodBase = globalCatalogo.find(p => p.id === cp.producto_id);
+                if (!prodBase) return;
+
+                const precioBase = parseFloat(prodBase.precio);
+                const precioCustom = parseFloat(cp.nuevo_precio);
+                const margenExtra = precioCustom - precioBase;
+
+                // Si el gestor le subió el precio (al menos $10 de diferencia para que valga la pena)
+                if (margenExtra >= 10) {
+                    // ¿Ese gestor logró vender ese producto a ese precio en los últimos 15 días?
+                    // Buscamos en la tabla de pedidos
+                    const ventaConfirmada = ventas.find(v => v.gestor === cp.gestor && v.producto.includes(prodBase.nombre));
+                    
+                    if (ventaConfirmada) {
+                        if (!sobrepreciosExitosos[prodBase.nombre] || sobrepreciosExitosos[prodBase.nombre].margen < margenExtra) {
+                            sobrepreciosExitosos[prodBase.nombre] = {
+                                base: precioBase,
+                                mercadoPaga: precioCustom,
+                                margen: margenExtra
+                            };
+                        }
+                    }
+                }
+            });
+
+            const topArbitraje = Object.entries(sobrepreciosExitosos).sort((a,b) => b[1].margen - a[1].margen).slice(0, 1);
+
+            if (topArbitraje.length === 0) {
+                container.innerHTML = `<p class="text-xs font-bold text-emerald-600 uppercase">Sin oportunidades claras hoy.</p>`;
+                return;
+            }
+
+            const [nombreProd, datos] = topArbitraje[0];
+            
+            container.innerHTML = `
+                <div class="bg-black/40 border border-emerald-500/50 px-3 py-1.5 rounded-lg flex flex-col items-end">
+                    <p class="text-[9px] text-slate-400 font-bold uppercase">${nombreProd.substring(0,25)}...</p>
+                    <p class="text-sm font-black text-white">
+                        Base: <span class="text-slate-500 line-through">$${datos.base}</span> 
+                        <span class="text-emerald-400 ml-1">Pagan: $${datos.mercadoPaga}</span>
+                    </p>
+                    <p class="text-[9px] text-emerald-500 font-black animate-pulse mt-0.5">¡SÚBELE EL PRECIO EN TU PANEL (+ $${datos.margen})!</p>
+                </div>
+            `;
         }
 
         // ======================================================
