@@ -4599,6 +4599,16 @@ function renderFloatingWA(nombre, telefono) {
 }
     
     function filterByCategory(cat) { 
+        // 1. Detectar si es categoría Mayorista
+        const esMayorista = cat.toUpperCase().includes('MAYORISTA') || cat.toUpperCase().includes('B2B') || cat.toUpperCase().includes('MIPYME');
+
+        // 2. Si es mayorista y NO ha aceptado los términos en esta sesión, mostramos el modal
+        if (esMayorista && !sessionStorage.getItem('pth_b2b_accepted')) {
+            openB2BModal(cat);
+            return; // Detenemos la ejecución aquí hasta que acepte
+        }
+
+        // 3. Ejecución normal si no es mayorista o si ya aceptó
         activeCategory = cat; 
         trackSpy('VIO_CATEGORIA', cat);
         
@@ -11004,6 +11014,164 @@ function triggerHelpPopup() {
     const modal = document.getElementById('modal-help-intent');
     if (modal) modal.classList.remove('hidden');
 }
+
+// ==========================================
+// SISTEMA DE ADVERTENCIAS B2B / MAYORISTA
+// ==========================================
+
+const b2bSteps = [
+    {
+        icon: "domain",
+        title: "SOLO EMPRESAS",
+        html: `
+            <p class="text-lg font-bold text-center leading-relaxed">
+                Esta categoría es <span class="text-amber-500 font-black">EXCLUSIVA para MIPYMES y TCP</span> que puedan nacionalizar la mercancía.
+            </p>
+            <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 mt-4 rounded-r-lg">
+                <p class="text-sm font-bold text-red-700 dark:text-red-400">
+                    🚫 NO se vende a personas naturales bajo ninguna circunstancia. Es estrictamente para negocios formales.
+                </p>
+            </div>`
+    },
+    {
+        icon: "gavel",
+        title: "PROCESO DE COMPRA",
+        html: `
+            <p class="text-base font-medium leading-relaxed mb-3">
+                ⚠️ <span class="font-black text-slate-900 dark:text-white">NO es "llegar, pagar y recoger".</span> El proceso lleva un trámite legal:
+            </p>
+            <ul class="space-y-3 text-sm">
+                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-amber-500 text-lg">1</span> <b>Pago Adelantado:</b> Es obligatorio el pago por adelantado del total de la mercancía.</li>
+                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-amber-500 text-lg">2</span> <b>Facturación:</b> Se emite la factura comercial.</li>
+                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-amber-500 text-lg">3</span> <b>Aduana:</b> Se hace el trámite para que el cliente pague los impuestos (Nacionalización).</li>
+                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-red-500 text-lg">4</span> <b>Recogida:</b> Una vez liberado, el cliente debe ir OBLIGATORIAMENTE a recogerlo. <b class="text-red-500">NO HAY TRANSPORTE.</b></li>
+            </ul>`
+    },
+    {
+        icon: "location_on",
+        title: "UBICACIÓN",
+        html: `
+            <div class="flex flex-col items-center justify-center py-6 text-center">
+                <span class="material-symbols-outlined text-6xl text-amber-500 mb-4 animate-bounce">warehouse</span>
+                <p class="text-xl font-bold leading-relaxed">
+                    Todos los productos de esta categoría se encuentran físicamente en el <br><span class="text-2xl font-black text-slate-900 dark:text-white">Reparto Eléctrico</span>.
+                </p>
+            </div>`
+    },
+    {
+        icon: "solar_power",
+        title: "PANELES SOLARES",
+        html: `
+            <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl border border-blue-200 dark:border-blue-800">
+                <h4 class="font-black text-blue-800 dark:text-blue-300 uppercase mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined">lightbulb</span> Reglas para Paneles Solares
+                </h4>
+                <ul class="space-y-3 text-sm text-blue-900 dark:text-blue-100">
+                    <li>📦 Solo se venden por <b>CONTENEDOR COMPLETO</b> (No por pallet, ni por unidad).</li>
+                    <li>💰 Requiere un <b>30% de pago por adelantado</b>.</li>
+                    <li>🚢 Llegan en <b>Abril</b> al puerto del Mariel.</li>
+                    <li>🚛 El cliente debe buscar su contenedor directamente en el Mariel.</li>
+                </ul>
+            </div>`
+    },
+    {
+        icon: "contract",
+        title: "TÉRMINOS LEGALES",
+        html: `
+            <div class="text-xs space-y-3 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 h-64 overflow-y-auto custom-scrollbar">
+                <p class="font-black text-slate-900 dark:text-white text-sm">📥 PROCESO DE COMPRA Y CONDICIONES DE IMPORTACIÓN</p>
+                <p>Guía detallada para la adquisición de mercancía bajo el régimen de importación vigente.</p>
+                
+                <p class="font-bold text-slate-800 dark:text-slate-200 mt-2">1. Identificación Jurídica y Contratación</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><b>Requisito Obligatorio:</b> El cliente debe poseer una licencia activa de MIPYME o TCP.</li>
+                    <li><b>Intermediación:</b> El Contrato Comercial se formaliza obligatoriamente a través de una Importadora Estatal acreditada.</li>
+                    <li><b>Acreditación:</b> Si es la primera operación, deberá completar el registro ante la entidad importadora.</li>
+                </ul>
+
+                <p class="font-bold text-slate-800 dark:text-slate-200 mt-2">2. Modalidades de Pago</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><b>Transferencia Bancaria:</b> Es la vía preferente (transferencia internacional).</li>
+                    <li><b>Efectivo en Plaza:</b> Se acepta USD / EUR físico en oficinas corporativas autorizadas.</li>
+                </ul>
+
+                <p class="font-bold text-slate-800 dark:text-slate-200 mt-2">3. Estado y Ubicación de la Mercancía</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><b>Régimen de Importación:</b> La mercancía es necesario nacionalizarla dentro del Almacén Inbond (Reparto Eléctrico).</li>
+                    <li><b>Custodia:</b> Los equipos permanecen bajo custodia de la Aduana General de la República hasta la liberación.</li>
+                </ul>
+
+                <p class="font-bold text-slate-800 dark:text-slate-200 mt-2">4. Gestión Aduanal y Plazos</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><b>Trámites:</b> El equipo gestiona la Declaración de Mercancía (DM) y el permiso de extracción.</li>
+                    <li><b>Tiempos:</b> Este proceso toma habitualmente entre 24 y 48 horas hábiles.</li>
+                </ul>
+
+                <p class="font-bold text-slate-800 dark:text-slate-200 mt-2">5. Entrega y Aranceles</p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><b>Condición de Entrega:</b> Modalidad DAP. Entrega exclusiva en puerta del Almacén Inbond.</li>
+                    <li><b>Costos Tributarios:</b> El cliente asume aranceles aduanales y gastos operativos del MINCEX. No son sobrecargos comerciales.</li>
+                </ul>
+            </div>`
+    }
+];
+
+let currentB2BStep = 0;
+let pendingB2BCategory = "";
+
+function openB2BModal(categoriaDestino) {
+    currentB2BStep = 0;
+    pendingB2BCategory = categoriaDestino;
+    document.getElementById('modal-b2b-warnings').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    renderB2BStep();
+}
+
+function closeB2BModal() {
+    document.getElementById('modal-b2b-warnings').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function renderB2BStep() {
+    const step = b2bSteps[currentB2BStep];
+    
+    document.getElementById('b2b-icon').innerText = step.icon;
+    document.getElementById('b2b-title').innerText = step.title;
+    document.getElementById('b2b-content').innerHTML = step.html;
+    
+    // Dibujar los punticos de progreso
+    const dotsHtml = b2bSteps.map((_, i) => `
+        <div class="w-2.5 h-2.5 rounded-full transition-all ${i === currentB2BStep ? 'bg-white scale-125' : 'bg-white/30'}"></div>
+    `).join('');
+    document.getElementById('b2b-dots').innerHTML = dotsHtml;
+
+    // Actualizar el texto del botón
+    const btnText = document.getElementById('b2b-btn-text');
+    if (currentB2BStep === b2bSteps.length - 1) {
+        btnText.innerText = "Acepto las condiciones";
+        document.getElementById('btn-b2b-next').classList.replace('text-amber-400', 'text-emerald-400');
+    } else {
+        btnText.innerText = "De acuerdo, continuar";
+        document.getElementById('btn-b2b-next').classList.replace('text-emerald-400', 'text-amber-400');
+    }
+}
+
+function nextB2BStep() {
+    if (currentB2BStep < b2bSteps.length - 1) {
+        currentB2BStep++;
+        renderB2BStep();
+    } else {
+        // Al finalizar el último paso:
+        // 1. Guardar en sesión para no volver a molestar
+        sessionStorage.setItem('pth_b2b_accepted', 'true');
+        
+        // 2. Cerrar Modal
+        closeB2BModal();
+        
+        // 3. Ejecutar la entrada a la categoría (llamando la función original con flag limpia)
+        filterByCategory(pendingB2BCategory);
+    }
+}
 </script>
 
 
@@ -12492,6 +12660,41 @@ async function generarComprobanteB2B(datosPedido, accion) {
 <script src="traffic-campaign.js"></script>
 <!-- Módulo de Recompensa Leads -->
 <script src="leads-premium.js"></script>
+
+<!-- === MODAL DE ADVERTENCIAS B2B / MAYORISTA === -->
+<div id="modal-b2b-warnings" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.3)] relative border border-amber-500/30 animate-pop-in flex flex-col max-h-[90vh]">
+        
+        <!-- Header Decorativo -->
+        <div class="bg-gradient-to-r from-amber-500 to-yellow-600 p-6 text-center relative shrink-0">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+            <button onclick="closeB2BModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 p-1 rounded-full backdrop-blur-sm transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <span class="material-symbols-outlined text-5xl text-white drop-shadow-md mb-2" id="b2b-icon">warning</span>
+            <h2 class="text-2xl font-black text-white uppercase tracking-widest italic" id="b2b-title">Atención</h2>
+            <div class="flex justify-center gap-1 mt-3" id="b2b-dots">
+                <!-- Los punticos de progreso se llenan con JS -->
+            </div>
+        </div>
+
+        <!-- Contenedor de Texto (Scrollable) -->
+        <div class="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1">
+            <div id="b2b-content" class="text-slate-700 dark:text-slate-300 space-y-4">
+                <!-- El contenido cambia dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Footer / Botón de Acción -->
+        <div class="p-6 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shrink-0">
+            <button id="btn-b2b-next" onclick="nextB2BStep()" class="w-full bg-slate-900 hover:bg-black text-amber-400 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 border border-amber-500/50">
+                <span id="b2b-btn-text">Lo entiendo</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+        </div>
+
+    </div>
+</div>
 
 </body>
 
