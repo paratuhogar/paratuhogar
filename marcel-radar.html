@@ -105,23 +105,62 @@
                 <p id="count-clones" class="text-5xl font-black text-white mt-1 font-mono">0</p>
             </div>
             
-            <!-- TARJETA 3: ARBITRAJE DE PRECIOS (OPCIÓN 4) -->
-            <div class="col-span-2 bg-gradient-to-br from-[#0a0f1c] to-emerald-950/20 p-4 rounded-2xl border border-emerald-500/30 shadow-[0_0_20px_#10b98115] flex items-center justify-between group">
-                <div>
-                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">price_check</span> ARBITRAJE DE PRECIOS (DINERO OCULTO)
-                    </p>
-                    <p class="text-xs md:text-sm text-slate-300 font-bold uppercase tracking-wide mt-1">
-                        Equipos que el mercado está pagando <span class="text-emerald-400 font-black">MÁS CAROS</span> que el precio base.
-                    </p>
+            <!-- TARJETA 3: ARBITRAJE DE PRECIOS (DINERO OCULTO) -->
+            <div class="col-span-2 md:col-span-4 bg-[#0a0f1c] p-4 rounded-2xl border border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col">
+                <div class="flex justify-between items-center mb-3 border-b border-emerald-900/50 pb-2">
+                    <div>
+                        <p class="text-[12px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px] animate-pulse">price_check</span> ARBITRAJE DE PRECIOS (DINERO OCULTO)
+                        </p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">Equipos vendidos exitosamente por encima del precio base (Últimos 15 días)</p>
+                    </div>
                 </div>
-                <div id="arbitrage-feed" class="flex flex-col items-end text-right">
-                    <span class="loader border-emerald-500"></span>
+                
+                <!-- Lista de Oportunidades -->
+                <div id="arbitrage-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <span class="loader border-emerald-500 ml-4"></span>
                 </div>
             </div>
         </div>
 
-        <!-- 2. TABLERO DE COMANDO (3 COLUMNAS BALANCEADAS) -->
+        <!-- BOVEDA FINANCIERA MARCEL -->
+            <div class="col-span-2 md:col-span-4 bg-gradient-to-r from-emerald-950 to-slate-900 border border-emerald-500/50 p-4 rounded-2xl flex justify-between items-center shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                <div>
+                    <h3 class="text-[10px] text-emerald-500 font-black uppercase tracking-widest flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">account_balance</span> Bóveda Personal (Pendiente de Cobro)
+                    </h3>
+                    <div class="flex gap-6 mt-2">
+                        <div>
+                            <p class="text-[9px] text-slate-400 uppercase font-bold">Mis Ventas</p>
+                            <p id="money-personal" class="text-xl font-black text-white">$0</p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-slate-400 uppercase font-bold">Por el Sistema</p>
+                            <p id="money-system" class="text-xl font-black text-emerald-400">$0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-slate-500 uppercase font-bold">Gran Total a Cobrar</p>
+                    <p id="money-total" class="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">$0</p>
+                </div>
+            </div>
+
+        <!-- GRÁFICO DE FLUJO DE PEDIDOS -->
+                <div class="bg-[#060b14] rounded-3xl border border-emerald-500/30 shadow-[0_0_30px_#10b98115] p-4 shrink-0 flex flex-col h-48">
+                    <div class="flex justify-between items-center mb-2 border-b border-emerald-500/20 pb-2 shrink-0">
+                        <h2 class="text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">bar_chart</span> Volumen (7 Días)
+                        </h2>
+                        <span id="chart-total-week" class="bg-emerald-900/30 text-emerald-400 px-2 py-1 rounded text-[10px] font-black border border-emerald-800">0 Pedidos</span>
+                    </div>
+                    <!-- El gráfico se dibuja aquí -->
+                    <div id="sales-chart-feed" class="flex-1 flex items-end justify-between gap-2 pt-4 pb-2">
+                        <span class="loader border-emerald-500 mx-auto block"></span>
+                    </div>
+                </div>
+                
+            <!-- 2. TABLERO DE COMANDO (3 COLUMNAS BALANCEADAS) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto">
             
             <!-- ================= COLUMNA 1 ================= -->
@@ -202,6 +241,8 @@
                     </div>
                 </div>
             </div>
+
+            
 
             <!-- ================= COLUMNA 3 ================= -->
             <div class="flex flex-col gap-6">
@@ -311,7 +352,9 @@
             await loadDemandRadar(); 
             // NUEVAS FUNCIONES:
             await loadHeatmap();           
-            await loadPriceArbitrage();    
+            await loadPriceArbitrage();   
+            await loadMyFinances(); 
+            await loadSalesChart(); 
         }
 
         // ======================================================
@@ -381,61 +424,159 @@
             }).join('');
         }
 
+        async function loadMyFinances() {
+            // Función para calcular tu tarifa de sistema (copiada del master)
+            const calcFee = (precio) => {
+                if (precio <= 60) return 0.50;
+                if (precio <= 150) return 1.00;
+                if (precio <= 399) return 2.00;
+                if (precio <= 999) return 3.00;
+                return 5.00;
+            };
+
+            const { data: pedidos } = await radarClient
+                .from('pedidos')
+                .select('*')
+                .eq('estado', 'Entregado');
+
+            if (!pedidos) return;
+
+            let misVentas = 0;
+            let miSistema = 0;
+
+            pedidos.forEach(p => {
+                // 1. MIS VENTAS PERSONALES PENDIENTES DE PAGO
+                if (p.gestor === MY_NAME && p.pago_gestor !== 'Pagado') {
+                    misVentas += Number(p.comision_total || 0);
+                }
+
+                // 2. MI DINERO POR EL SISTEMA (DE TODOS LOS GESTORES)
+                if (p.pago_sistema !== 'Pagado') {
+                    let qty = 1;
+                    const match = p.producto.match(/^(\d+)x/);
+                    if (match) qty = parseInt(match[1]);
+
+                    const totalVenta = parseFloat(p.total) || 0;
+                    const mensajeria = parseFloat(p.costo_mensajeria) || 0;
+                    const precioUnitario = (totalVenta - mensajeria) / qty;
+                    
+                    miSistema += (calcFee(precioUnitario) * qty);
+                }
+            });
+
+            document.getElementById('money-personal').innerText = `$${misVentas.toFixed(2)}`;
+            document.getElementById('money-system').innerText = `$${miSistema.toFixed(2)}`;
+            document.getElementById('money-total').innerText = `$${(misVentas + miSistema).toFixed(2)}`;
+        }
+        async function loadSalesChart() {
+            const container = document.getElementById('sales-chart-feed');
+            
+            const hoy = new Date();
+            const hace7dias = new Date(hoy);
+            hace7dias.setDate(hoy.getDate() - 6); 
+            hace7dias.setHours(0,0,0,0);
+
+            const { data: pedidos } = await radarClient
+                .from('pedidos')
+                .select('fecha, estado')
+                .gte('fecha', hace7dias.toISOString());
+
+            if (!pedidos || pedidos.length === 0) return container.innerHTML = '<p class="text-xs text-slate-500 w-full text-center">Sin datos en los últimos 7 días.</p>';
+
+            const ultimos7Dias = {};
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(hoy);
+                d.setDate(hoy.getDate() - i);
+                const diaStr = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+                ultimos7Dias[diaStr] = { total: 0, entregados: 0 };
+            }
+
+            pedidos.forEach(p => {
+                if(!p.fecha) return;
+                const d = new Date(p.fecha);
+                const diaStr = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+                if(ultimos7Dias[diaStr] !== undefined) {
+                    ultimos7Dias[diaStr].total++;
+                    if(p.estado === 'Entregado') ultimos7Dias[diaStr].entregados++;
+                }
+            });
+
+            const valores = Object.values(ultimos7Dias).map(v => v.total);
+            const maxVentas = Math.max(...valores, 1); 
+            
+            const totalSemana = valores.reduce((a,b)=>a+b,0);
+            document.getElementById('chart-total-week').innerText = `${totalSemana} Pedidos`;
+
+            container.innerHTML = Object.entries(ultimos7Dias).map(([dia, data]) => {
+                // Cálculo de altura forzado para que no desaparezca
+                let alturaPorcentaje = (data.total / maxVentas) * 100;
+                if(alturaPorcentaje === 0) alturaPorcentaje = 2; // Mínimo visible
+                
+                return `
+                <div class="flex flex-col items-center flex-1 h-full justify-end group">
+                    <div class="text-[10px] font-black text-emerald-400 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">${data.total}</div>
+                    <div class="w-full max-w-[24px] bg-slate-800 rounded-t-md relative flex items-end" style="height: 100%;">
+                        <div class="w-full bg-gradient-to-t from-emerald-800 to-emerald-400 rounded-t-md transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.2)]" style="height: ${alturaPorcentaje}%;"></div>
+                    </div>
+                    <div class="text-[9px] text-slate-500 font-bold uppercase mt-2 text-center truncate w-full">${dia.split(' ')[0]}</div>
+                </div>`;
+            }).join('');
+        }
+
         // ======================================================
         // CREADOR DE ANUNCIOS GEOLOCALIZADOS (MAPA DE CALOR)
         // ======================================================
         async function generateHeatmapAd(municipio, producto, btnElement, idCaja) {
-            // 1. Buscamos el precio en el catálogo base cargado
             let precioReal = "Consultar";
             const prodMatch = globalCatalogo.find(p => p.nombre.toLowerCase().includes(producto.toLowerCase()) || producto.toLowerCase().includes(p.nombre.toLowerCase()));
-            if (prodMatch) {
-                precioReal = `$${prodMatch.precio} USD`;
-            }
+            if (prodMatch) precioReal = `$${prodMatch.precio} USD`;
 
-            // 2. Construimos tus enlaces personalizados
-            // Obtenemos la URL base (ej: https://paratuhogar.org) limpiando el final
-            const baseUrl = window.location.href.split('marcel-radar.html')[0] + 'index.html';
-            const linkAfiliado = `${baseUrl}?search=${encodeURIComponent(producto)}&gestor=${encodeURIComponent(MY_NAME)}&tel=5358183649`;
-            
-            // Link directo de WhatsApp
-            const textoWa = `Hola Marcel, soy de ${municipio} y me interesa el equipo: ${producto}`;
+            // 1. LINK DE WHATSAPP SIN TU NOMBRE
+            const textoWa = `Hola, soy de ${municipio} y me interesa la oferta de: ${producto}`;
             const linkWa = `https://wa.me/5358183649?text=${encodeURIComponent(textoWa)}`;
 
-            // 3. UX: Cambiar botón a estado de carga
+            // 2. GENERAR LINK CORTO DE AFILIADO
+            const baseUrl = window.location.href.split('marcel-radar.html')[0] + 'index.html';
+            const longLink = `${baseUrl}?search=${encodeURIComponent(producto)}&gestor=${encodeURIComponent(MY_NAME)}&tel=5358183649`;
+            
+            let linkFinal = longLink;
+            try {
+                // Creamos un link corto en la base de datos
+                const newSlug = Math.random().toString(36).substring(2, 7);
+                const { error } = await radarClient.from('short_links').insert([{ slug: newSlug, original_url: longLink, gestor: MY_NAME }]);
+                if (!error) linkFinal = `${baseUrl}?s=${newSlug}`;
+            } catch (e) { console.log("Fallo link corto, usando largo"); }
+
             const oldHtml = btnElement.innerHTML;
             btnElement.innerHTML = `<span class="ai-loader border-blue-500 border-t-blue-200"></span> REDACTANDO...`;
             btnElement.disabled = true;
 
-            // 4. EL PROMPT (Instrucciones para Gemini)
-            const prompt = `Actúa como un experto en ventas de Facebook en Cuba.
-            Voy a publicar en un grupo de compra/venta específico del municipio: "${municipio}" en La Habana.
-            El producto que más se está vendiendo ahí es: "${producto}".
-            El precio es: ${precioReal}.
+            // 3. EL NUEVO PROMPT (Tono Profesional y Corporativo)
+            const prompt = `Actúa como el Community Manager de una empresa importadora seria y profesional de electrodomésticos en Cuba.
+            Vamos a publicar en un grupo de Facebook del municipio: "${municipio}".
+            Producto: "${producto}". Precio: ${precioReal}.
 
-            Redacta un post para Facebook corto, magnético y que parezca natural, no robótico.
+            Redacta un post corto y directo.
             
             REGLAS ESTRICTAS:
-            1. El gancho inicial debe mencionar obligatoriamente al municipio (Ej: "¡Atención mi gente de ${municipio}!" o "¡Oferta especial para los vecinos de ${municipio}!").
-            2. Menciona que hay poco stock y que la entrega es rapidísima en esa zona.
-            3. Inserta EXACTAMENTE estos dos enlaces al final, con estos mismos textos:
-               👇 Ver fotos y detalles en la tienda:
-               ${linkAfiliado}
-               📲 Escríbeme directo al WhatsApp:
+            1. Tono: Profesional, respetuoso y seguro. CERO lenguaje callejero, informal o desesperado. No digas "están volando" ni "me acaban de entrar".
+            2. Menciona que somos una tienda especializada en este producto.
+            3. Beneficios a destacar: Garantía real, entrega de factura, y mensajería el mismo día (con costo adicional según zona).
+            4. Inserta EXACTAMENTE estos enlaces al final:
+               🛒 Catálogo y detalles:
+               ${linkFinal}
+               💬 Contacto Asesor:
                ${linkWa}
-            4. Al final, agrega de 5 a 8 hashtags. Deben simular lo que un cubano escribiría en el buscador de Facebook para encontrar esto. Incluye #Revolico${municipio.replace(/\s+/g, '')} y hashtags del producto.
+            5. Agrega 5 hashtags simulando búsquedas reales.
             
-            Devuelve solo el texto del post, listo para copiar y pegar.`;
+            Devuelve solo el texto del post, sin introducciones.`;
 
             try {
                 const respuesta = await askGemini(prompt);
-                
-                // Mostrar el resultado
                 const cajaResultado = document.getElementById(`res-hm-${idCaja}`);
                 document.getElementById(`text-hm-${idCaja}`).innerText = respuesta;
-                
-                btnElement.classList.add('hidden'); // Ocultar botón original
-                cajaResultado.classList.remove('hidden'); // Mostrar texto y botón de copiar
-
+                btnElement.classList.add('hidden'); 
+                cajaResultado.classList.remove('hidden'); 
             } catch (e) {
                 alert("Error de la IA: " + e.message);
                 btnElement.innerHTML = oldHtml;
@@ -446,72 +587,117 @@
         // ======================================================
         // OPCIÓN 4: ARBITRAJE DE PRECIOS FLEXIBLES
         // ======================================================
+        // ======================================================
+        // ARBITRAJE DE PRECIOS: MATEMÁTICA INVERSA
+        // ======================================================
+        // ======================================================
+        // ARBITRAJE DE PRECIOS: CRUCE DE BD (PERSONALIZADOS vs VENTAS)
+        // ======================================================
         async function loadPriceArbitrage() {
             const container = document.getElementById('arbitrage-feed');
             
-            // 1. Traer todos los precios personalizados de los gestores
+            if (!globalCatalogo || globalCatalogo.length === 0) return;
+
+            // 1. Traer TODOS los precios que los gestores han modificado
             const { data: customPrices } = await radarClient
                 .from('precios_personalizados')
                 .select('producto_id, nuevo_precio, gestor');
 
-            if (!customPrices || customPrices.length === 0) return container.innerHTML = `<p class="text-xs text-emerald-600">Nadie ha subido precios aún.</p>`;
+            if (!customPrices || customPrices.length === 0) {
+                return container.innerHTML = `<p class="text-[11px] font-bold text-emerald-600 uppercase w-full">Nadie ha configurado precios flexibles aún.</p>`;
+            }
 
-            // 2. Traer ventas de los últimos 15 días para confirmar si esos precios se venden
+            // 2. Traer TODAS las ventas exitosas (últimos 15 días)
             const hace15dias = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
             const { data: ventas } = await radarClient
                 .from('pedidos')
-                .select('gestor, total, producto')
+                .select('producto, gestor')
                 .eq('estado', 'Entregado')
                 .gte('fecha', hace15dias);
 
-            const sobrepreciosExitosos = {};
+            const sobrepreciosValidados = {};
 
+            // 3. El Cruce de Datos (La Inteligencia Real)
             customPrices.forEach(cp => {
-                // Buscar el producto en nuestro catálogo base
+                // Buscamos el nombre del producto base usando el ID
                 const prodBase = globalCatalogo.find(p => p.id === cp.producto_id);
                 if (!prodBase) return;
 
                 const precioBase = parseFloat(prodBase.precio);
-                const precioCustom = parseFloat(cp.nuevo_precio);
-                const margenExtra = precioCustom - precioBase;
+                const precioConfigurado = parseFloat(cp.nuevo_precio);
+                const margenExtra = precioConfigurado - precioBase;
 
-                // Si el gestor le subió el precio (al menos $10 de diferencia para que valga la pena)
-                if (margenExtra >= 10) {
-                    // ¿Ese gestor logró vender ese producto a ese precio en los últimos 15 días?
-                    // Buscamos en la tabla de pedidos
-                    const ventaConfirmada = ventas.find(v => v.gestor === cp.gestor && v.producto.includes(prodBase.nombre));
+                // Solo nos interesan los que le subieron al menos $5 dólares
+                if (margenExtra >= 5) {
                     
-                    if (ventaConfirmada) {
-                        if (!sobrepreciosExitosos[prodBase.nombre] || sobrepreciosExitosos[prodBase.nombre].margen < margenExtra) {
-                            sobrepreciosExitosos[prodBase.nombre] = {
+                    // ¿Este gestor específico logró vender este equipo específico?
+                    // Filtramos sus ventas exitosas donde el nombre del producto aparece en la factura
+                    const ventasExitosas = ventas.filter(v => v.gestor === cp.gestor && v.producto.includes(prodBase.nombre));
+
+                    if (ventasExitosas.length > 0) {
+                        // Si lo vendió, el precio modificado está VALIDADO por el mercado.
+                        // Guardamos el que tenga mayor margen por si varios gestores lo venden caro
+                        if (!sobrepreciosValidados[prodBase.nombre] || sobrepreciosValidados[prodBase.nombre].margen < margenExtra) {
+                            sobrepreciosValidados[prodBase.nombre] = {
                                 base: precioBase,
-                                mercadoPaga: precioCustom,
-                                margen: margenExtra
+                                precioMax: precioConfigurado,
+                                margen: margenExtra,
+                                gestor: cp.gestor,
+                                vecesVendido: ventasExitosas.length // Cuántas facturas logró cerrar con este precio
                             };
                         }
                     }
                 }
             });
 
-            const topArbitraje = Object.entries(sobrepreciosExitosos).sort((a,b) => b[1].margen - a[1].margen).slice(0, 1);
+            // 4. Ordenar y Renderizar
+            const topArbitraje = Object.entries(sobrepreciosValidados)
+                .sort((a,b) => b[1].margen - a[1].margen)
+                .slice(0, 6);
 
             if (topArbitraje.length === 0) {
-                container.innerHTML = `<p class="text-xs font-bold text-emerald-600 uppercase">Sin oportunidades claras hoy.</p>`;
+                container.innerHTML = `<p class="text-[11px] font-bold text-emerald-600 uppercase w-full">Se han subido precios, pero aún no hay ventas entregadas con esos montos.</p>`;
                 return;
             }
 
-            const [nombreProd, datos] = topArbitraje[0];
-            
-            container.innerHTML = `
-                <div class="bg-black/40 border border-emerald-500/50 px-3 py-1.5 rounded-lg flex flex-col items-end">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase">${nombreProd.substring(0,25)}...</p>
-                    <p class="text-sm font-black text-white">
-                        Base: <span class="text-slate-500 line-through">$${datos.base}</span> 
-                        <span class="text-emerald-400 ml-1">Pagan: $${datos.mercadoPaga}</span>
-                    </p>
-                    <p class="text-[9px] text-emerald-500 font-black animate-pulse mt-0.5">¡SÚBELE EL PRECIO EN TU PANEL (+ $${datos.margen})!</p>
+            container.innerHTML = topArbitraje.map(([nombreProd, datos]) => {
+                const tagVentas = datos.vecesVendido > 1 
+                    ? `<span class="bg-emerald-900/30 text-emerald-400 border border-emerald-800/50 px-1.5 rounded text-[8px] ml-2" title="Logró venderlo ${datos.vecesVendido} veces a este precio">🔥 ${datos.vecesVendido} Ventas</span>` 
+                    : '';
+
+                return `
+                <div class="bg-emerald-950/20 border border-emerald-900/50 p-3 rounded-xl flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500 transition-colors">
+                    
+                    <!-- Fondo Decorativo -->
+                    <div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <span class="material-symbols-outlined text-6xl text-emerald-500">attach_money</span>
+                    </div>
+
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-bold text-slate-300 uppercase truncate mb-2 flex items-center" title="${nombreProd}">
+                            ${nombreProd} ${tagVentas}
+                        </p>
+                        
+                        <div class="flex justify-between items-end mb-2">
+                            <div class="flex flex-col">
+                                <span class="text-[9px] text-slate-500 uppercase font-bold">Precio Base</span>
+                                <span class="text-sm font-black text-slate-400 line-through">$${datos.base}</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[9px] text-emerald-500 uppercase font-black">Validado En</span>
+                                <span class="text-xl font-black text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">$${datos.precioMax.toFixed(0)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-black/50 p-2 rounded-lg border border-emerald-900/50 flex justify-between items-center mt-auto">
+                            <span class="text-[9px] text-slate-400 font-bold truncate pr-2">Por: ${datos.gestor.split(' ')[0]}</span>
+                            <span class="text-[10px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(16,185,129,0.4)] animate-pulse shrink-0">
+                                MARGEN: +$${datos.margen.toFixed(0)}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-            `;
+            `}).join('');
         }
 
         // ======================================================
@@ -695,23 +881,45 @@
             btn.innerHTML = `<span class="ai-loader"></span> ANALIZANDO...`;
             btn.disabled = true;
 
-            const listado = currentClonedProducts.join(", ");
-            const prompt = `Eres el Director de Marketing Estratégico de una tienda de electrodomésticos en Cuba (ParaTuHogar).
-            Mis competidores (otros gestores de ventas) han estado promocionando masivamente estos equipos en las últimas 24h: [${listado}].
-            
-            Analiza brevemente qué necesidad en Cuba está impulsando esto (Ej: apagones, calor, etc.).
-            Dame 1 estrategia de 'Océano Azul' para diferenciarme (vender otra cosa o venderlo distinto).
-            Finalmente, redacta un Post de Facebook altamente viral y persuasivo usando jerga cubana profesional para ejecutar esta estrategia.
+            // 1. PREPARAR LOS LINKS ANTES DE LLAMAR A LA IA
+            let productosContexto = "";
+            const baseUrl = window.location.href.split('marcel-radar.html')[0] + 'index.html';
 
-            Formato deseado:
-            [ANÁLISIS DE MERCADO]
-            (tu análisis)
+            for (let prod of currentClonedProducts) {
+                const longLink = `${baseUrl}?search=${encodeURIComponent(prod)}&gestor=${encodeURIComponent(MY_NAME)}&tel=5358183649`;
+                let linkFinal = longLink;
+                
+                // Intentar buscar o crear link corto
+                try {
+                    const newSlug = Math.random().toString(36).substring(2, 7);
+                    const { error } = await radarClient.from('short_links').insert([{ slug: newSlug, original_url: longLink, gestor: MY_NAME }]);
+                    if (!error) linkFinal = `${baseUrl}?s=${newSlug}`;
+                } catch(e) { /* Si falla usa el largo */ }
+
+                productosContexto += `- ${prod} (Link de compra: ${linkFinal})\n`;
+            }
+
+            // 2. EL PROMPT MEJORADO
+            const prompt = `Eres el Director de Marketing Estratégico de ParaTuHogar en Cuba.
+            Mis competidores han estado promocionando masivamente estos equipos hoy:
+            ${productosContexto}
             
-            [TU ESTRATEGIA]
-            (tu estrategia)
+            Analiza brevemente qué necesidad en Cuba está impulsando esto (Ej: apagones, calor).
+            Dame 1 estrategia para diferenciarme de ellos.
             
-            [POST RECOMENDADO]
-            (el post listo para copiar y pegar)`;
+            Finalmente, redacta un Post de Facebook ALTAMENTE VIRAL para vender estos equipos.
+            
+            REGLAS DEL POST:
+            1. Inserta EXACTAMENTE el "Link de compra" que te di arriba debajo del nombre de cada producto en el post.
+            2. Al final del post, debes poner obligatoriamente este contacto:
+               "📲 Escríbeme directo aquí para pedir el tuyo: https://wa.me/5358183649"
+            3. Agrega 5 hashtags que la gente usaría en el buscador de Facebook para encontrar esto.
+            4. Usa un tono muy profesional, vendedor, pero con chispa cubana. No uses mi nombre.
+
+            Formato:
+            [ANÁLISIS]...
+            [ESTRATEGIA]...
+            [POST RECOMENDADO]...`;
 
             try {
                 const res = await askGemini(prompt);
@@ -839,14 +1047,16 @@
             btn.innerHTML = `<span class="ai-loader border-white border-t-white"></span> ROMPIENDO OBJECIÓN...`;
             btn.disabled = true;
 
-            const prompt = `Actúa como un maestro cerrador de ventas en Cuba. 
-            Estoy intentando vender este producto: "${producto}".
-            El cliente me ha puesto esta objeción/excusa: "${objecion}".
+            const prompt = `Actúa como un Asesor de Ventas Corporativo y Profesional en Cuba. 
+            Producto a vender: "${producto}".
+            El cliente ha expresado esta duda/objeción: "${objecion}".
             
-            Redacta una respuesta persuasiva para WhatsApp para rebatir esta objeción.
-            Usa la técnica de "Aislar la objeción y aumentar el valor".
-            Menciona sutilmente ventajas como la garantía o el envío a la puerta de la casa, y crea urgencia.
-            Debe sonar empático y natural, en tono cubano respetuoso.
+            Redacta una respuesta breve para WhatsApp. 
+            REGLAS:
+            1. Tono: Respetuoso, formal, transparente y sin presión de compra. NO uses lenguaje coloquial extremo.
+            2. Estrategia: Valida su preocupación amablemente, luego explica la ventaja técnica o comercial de nuestro equipo.
+            3. Menciona las garantías de nuestra empresa: Factura, garantía por escrito y pago seguro al recibir mediante nuestra mensajería.
+            4. Sé muy conciso (máximo 2 párrafos cortos).
             Devuelve SOLO el texto exacto de la respuesta.`;
 
             try {
