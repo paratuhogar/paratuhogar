@@ -9962,12 +9962,10 @@ function captureGhostLead() {
     const level = window.currentGestorLevel || 0;
     trackSpy('USO_HERRAMIENTA', 'Redactor IA');
 
-    
     // Si NO es Marcel Y tiene menos de nivel 3...
     if (window.gestorName !== "Marcel Montano" && level < 3) {
         return alert("🔒 HERRAMIENTA BLOQUEADA\n\nNecesitas ser Nivel 3 (Élite - 20 Ventas) para usar el Redactor IA.");
     }
-
 
     const btn = event.currentTarget;
     const oldHtml = btn.innerHTML;
@@ -10031,12 +10029,13 @@ function captureGhostLead() {
         }
         
         // =========================================================
-        // FIN DE LA PARTE MODIFICADA
+        // AÑADIMOS EL TELÉFONO AQUÍ PARA QUE LA IA LO LEA
         // =========================================================
 
         const payload = {
             timestamp: Date.now(),
             agent: gestor,
+            phone: tel,            // <---- ESTA ES LA MAGIA NUEVA AÑADIDA
             category: activeCategory,
             products: preparedProducts
         };
