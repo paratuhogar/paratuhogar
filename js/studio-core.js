@@ -233,22 +233,21 @@ async function drawProductCard(canvas, product, opt) {
     // =======================================================
     // 🌟 INTERCEPTOR: TEMA TECHNO RETAIL
     // =======================================================
-    // =======================================================
-    // 🌟 INTERCEPTOR: TEMA TECHNO RETAIL (NOMBRE + GARANTÍA VISIBLE)
-    // =======================================================
     if (opt.theme === 'techno') {
-        const bgColor = '#002b5e'; // Azul corporativo
-        const yellowAccent = '#fdf84c'; // Amarillo limón
+        const bgColor = '#002b5e'; // Azul corporativo (Confianza)
+        const yellowAccent = '#fdf84c'; // Amarillo limón (Llamada a la acción)
+        const redAlert = '#ef4444'; // Rojo (Urgencia)
         
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, W, H);
 
         // ---------------------------------------------------
-        // 1. CARGAR TU LOGO REAL (log.jpeg) CIRCULAR
+        // 1. CARGAR TU LOGO REAL CIRCULAR
         // ---------------------------------------------------
         const logoImg = new Image();
         logoImg.crossOrigin = "Anonymous";
-        logoImg.src = "log.jpeg"; 
+        // URL ABSOLUTA PARA EVITAR PROBLEMAS DE RUTAS
+        logoImg.src = "https://paratuhogar.org/log.jpeg"; 
         
         await new Promise((resolve) => {
             logoImg.onload = resolve;
@@ -294,10 +293,11 @@ async function drawProductCard(canvas, product, opt) {
         ctx.fillText("Tienda Online", 210, 115);
 
         // ---------------------------------------------------
-        // 2. TÍTULOS INCLINADOS (Categoría General)
+        // 2. TÍTULOS INCLINADOS
         // ---------------------------------------------------
         ctx.save();
-        ctx.translate(isStory ? W/2 + 20 : 580, isStory ? 230 : 120); 
+        // MOVIDO HACIA ARRIBA para que no quede totalmente oculto por el producto
+        ctx.translate(isStory ? W/2 : 580, isStory ? 170 : 120); 
         ctx.rotate(-7 * Math.PI / 180); 
         
         ctx.fillStyle = '#ffffff';
@@ -311,13 +311,17 @@ async function drawProductCard(canvas, product, opt) {
         if(mainTitle === "CLIMATIZACIÓN") mainTitle = "SPLITS";
         if(mainTitle === "SMART") mainTitle = "TELEVISORES";
         
-        ctx.font = 'italic 900 120px Impact, sans-serif'; 
-        ctx.fillText(mainTitle, 0, 125); 
+        // TAMAÑO DE FUENTE LIGERAMENTE REDUCIDO
+        ctx.font = 'italic 900 110px Impact, sans-serif'; 
+        ctx.fillText(mainTitle, 0, 110); 
         ctx.restore();
 
         // ---------------------------------------------------
         // 3. IMAGEN DEL PRODUCTO
         // ---------------------------------------------------
+        let imgH_base = isStory ? 800 : 700;
+        let imgY = isStory ? 320 : 250; 
+        
         const img = await getSmartImage(product, opt.useAI);
         if (img) {
             ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
@@ -325,62 +329,55 @@ async function drawProductCard(canvas, product, opt) {
             ctx.shadowOffsetY = 25;
             
             let imgW = isStory ? 900 : 550;
-            let imgH = isStory ? 800 : 700;
             let imgX = isStory ? (W - imgW) / 2 : 20;
-            let imgY = isStory ? 350 : 250; 
             
-            const scale = Math.min(imgW / img.width, imgH / img.height);
+            const scale = Math.min(imgW / img.width, imgH_base / img.height);
             const w = img.width * scale;
             const h = img.height * scale;
             const x = imgX + (imgW - w) / 2;
-            const y = imgY + (imgH - h) / 2;
+            const y = imgY + (imgH_base - h) / 2;
             
             ctx.drawImage(img, x, y, w, h);
             ctx.shadowColor = "transparent";
         }
 
         // ---------------------------------------------------
-        // 4. NOMBRE EXACTO DEL EQUIPO (NUEVO Y PROMINENTE)
+        // 4. NOMBRE EXACTO DEL EQUIPO
         // ---------------------------------------------------
         ctx.fillStyle = '#ffffff';
         ctx.font = '900 36px Arial, sans-serif'; 
         ctx.textAlign = 'left';
         
         let textStartX = isStory ? 100 : 600;
-        let textStartY = isStory ? 1200 : 350;
+        let textStartY = isStory ? 1160 : 350; 
         
-        // window.wrapText devuelve la coordenada Y donde terminó de escribir
-        // Así sabemos exactamente dónde empezar a dibujar las viñetas debajo
         let nextY = window.wrapText(ctx, product.nombre.toUpperCase(), textStartX, textStartY, isStory ? W - 200 : 450, 42);
 
         // ---------------------------------------------------
-        // 5. VIÑETAS DE BENEFICIOS (Garantía y Entrega OBLIGATORIOS)
+        // 5. VIÑETAS DE BENEFICIOS
         // ---------------------------------------------------
         let features = [];
         
-        // 1ro: Prioridades Innegociables
         if(opt.showDelivery) features.push('ENTREGA INMEDIATA EN LA HABANA');
         if(opt.showWarranty) features.push(`GARANTÍA: ${product.garantia || '1 MES'}`.toUpperCase());
-        features.push('EQUIPO NUEVO EN CAJA SELLADA');
+        features.push('NUEVO EN CAJA SELLADA');
 
-        // 2do: Detalles técnicos (Extraídos limpiamente)
-        const extractedSpecs = extractTechSpecs(product.descripcion, 3); // Max 3 para no saturar
+        const extractedSpecs = extractTechSpecs(product.descripcion, 2); 
         extractedSpecs.forEach(f => {
             let cleanFeat = f.replace(/MARCA:|CARACTERÍSTICAS:/gi, '').trim();
             if(cleanFeat.length > 2) features.push(cleanFeat);
         });
 
-        // Dibujar viñetas debajo del nombre
-        let bulletY = nextY + 35; // Dejamos 35px de respiración después del nombre
+        let bulletY = nextY + 35; 
         
-        features.slice(0, 6).forEach((feat, index) => {
+        features.slice(0, 5).forEach((feat, index) => {
             ctx.fillStyle = yellowAccent; 
             ctx.font = '400 35px Arial, sans-serif'; 
             ctx.fillText("•", textStartX, bulletY + (index * 45));
             
             ctx.fillStyle = '#d7f2a5'; 
-            ctx.font = '600 28px Arial, sans-serif'; // Letra clara y fuerte
-            ctx.fillText(feat.substring(0, 42), textStartX + 35, bulletY + (index * 45));
+            ctx.font = '600 28px Arial, sans-serif'; 
+            ctx.fillText(feat.substring(0, 40), textStartX + 35, bulletY + (index * 45));
         });
 
         // ---------------------------------------------------
@@ -389,54 +386,98 @@ async function drawProductCard(canvas, product, opt) {
         ctx.fillStyle = yellowAccent;
         ctx.beginPath();
         if (isStory) {
+            // Ajustado para dar espacio al precio tachado sin chocar con las viñetas
             ctx.moveTo(0, H - 420);    
-            ctx.lineTo(W, H - 520);    
+            ctx.lineTo(W, H - 500);    
             ctx.lineTo(W, H); 
             ctx.lineTo(0, H); 
         } else {
-            // Bajamos un poco el corte para que las viñetas nuevas quepan bien
-            ctx.moveTo(600, 660);   
-            ctx.lineTo(W, 620);     
-            ctx.lineTo(W, 850);     
-            ctx.lineTo(950, 850);   
+            ctx.moveTo(550, 680);   
+            ctx.lineTo(W, 600);     
+            ctx.lineTo(W, 880);     
+            ctx.lineTo(950, 880);   
             ctx.lineTo(880, H);     
-            ctx.lineTo(550, H);     
+            ctx.lineTo(450, H);     
         }
         ctx.closePath();
         ctx.fill();
 
         // ---------------------------------------------------
-        // 7. PRECIO GIGANTE CON USD MATEMÁTICAMENTE SEPARADO
+        // 7. PRECIO GIGANTE Y ESCASEZ (Neuromarketing Aleatorio)
         // ---------------------------------------------------
         if (opt.showPrice) {
-            ctx.fillStyle = bgColor; 
-            
             let pX = isStory ? W/2 : 820;
-            let pY = isStory ? H - 180 : 800; // Ajustado para Post
+            let pY = isStory ? H - 120 : 830; 
             let priceStr = `$${product.precio}`;
 
-            // Calculamos anchos para evitar que choquen
-            ctx.font = '900 240px Impact, sans-serif'; 
+            // DECISIÓN DETERMINISTA: ¿Aplica escasez? (~33% de probabilidad basada en el nombre)
+            const isHotSale = (product.nombre.length + Number(product.precio)) % 3 === 0;
+
+            if (isHotSale) {
+                // PRECIO TACHADO (Efecto Anclaje - 15% más caro, no tan exagerado)
+                let oldPrice = Math.round(product.precio * 1.15);
+                let oldY = pY - (isStory ? 240 : 180); // Posición Y del precio viejo
+                
+                ctx.fillStyle = '#94a3b8'; // Gris
+                ctx.font = '700 50px Impact, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`$${oldPrice}`, pX, oldY);
+                
+                // Línea roja tachando el precio viejo
+                let oldW = ctx.measureText(`$${oldPrice}`).width;
+                ctx.strokeStyle = redAlert;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(pX - (oldW/2) - 10, oldY - 15);
+                ctx.lineTo(pX + (oldW/2) + 10, oldY - 15);
+                ctx.stroke();
+
+                // ETIQUETA ROJA DE STOCK LIMITADO (Justo encima del precio viejo)
+                let badgeY = oldY - 55;
+                let badgeW = 200;
+                let badgeH = 34;
+                
+                ctx.fillStyle = redAlert;
+                ctx.beginPath();
+                // Si existe ctx.roundRect nativo se usa, sino el polyfill fallback no es estricto aquí, pero ctx.roundRect es estándar en navegadores modernos.
+                if (ctx.roundRect) {
+                    ctx.roundRect(pX - (badgeW/2), badgeY - (badgeH/2), badgeW, badgeH, 17);
+                } else {
+                    window.roundRect(ctx, pX - (badgeW/2), badgeY - (badgeH/2), badgeW, badgeH, 17);
+                }
+                ctx.fill();
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '900 15px Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText("🔥 STOCK LIMITADO", pX, badgeY + 1);
+                ctx.textBaseline = 'alphabetic'; // Resetear baseline
+            }
+
+            // PRECIO REAL
+            let mainPriceSize = isStory ? 240 : 180;
+            ctx.fillStyle = bgColor; 
+            ctx.font = `900 ${mainPriceSize}px Impact, sans-serif`; 
             let priceWidth = ctx.measureText(priceStr).width;
             
-            ctx.font = '900 60px Impact, sans-serif';
+            let usdSize = isStory ? 60 : 45;
+            ctx.font = `900 ${usdSize}px Impact, sans-serif`;
             let usdWidth = ctx.measureText("USD").width;
 
             let totalWidth = priceWidth + 15 + usdWidth;
             let startX = pX - (totalWidth / 2);
 
-            // Dibujar Precio
             ctx.textAlign = 'left';
-            ctx.font = '900 240px Impact, sans-serif'; 
+            ctx.font = `900 ${mainPriceSize}px Impact, sans-serif`; 
             ctx.fillText(priceStr, startX, pY);
             
-            // Dibujar USD (Nunca chocará)
-            ctx.font = '900 60px Impact, sans-serif';
-            ctx.fillText("USD", startX + priceWidth + 15, pY - 30);
+            ctx.font = `900 ${usdSize}px Impact, sans-serif`;
+            ctx.fillText("USD", startX + priceWidth + 15, pY - (isStory ? 30 : 20));
         }
 
         // ---------------------------------------------------
-        // 8. DATOS DE CONTACTO (Anti-Duplicado)
+        // 8. DATOS DE CONTACTO
         // ---------------------------------------------------
         if (opt.showPhone) {
             let cleanPhone = opt.gestorPhone.replace(/\D/g, '');
@@ -449,7 +490,7 @@ async function drawProductCard(canvas, product, opt) {
                 ctx.fillStyle = bgColor;
                 ctx.font = '900 40px Arial, sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillText(`WhatsApp: ${phoneFormat}`, W/2, H - 50);
+                ctx.fillText(`WhatsApp: ${phoneFormat}`, W/2, H - 35);
             } else {
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '400 22px Arial, sans-serif';
