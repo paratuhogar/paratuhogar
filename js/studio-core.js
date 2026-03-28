@@ -234,7 +234,7 @@ async function drawProductCard(canvas, product, opt) {
     // 🌟 INTERCEPTOR: TEMA TECHNO RETAIL
     // =======================================================
     // =======================================================
-    // 🌟 INTERCEPTOR: TEMA TECHNO RETAIL (DISEÑO PERFECTO)
+    // 🌟 INTERCEPTOR: TEMA TECHNO RETAIL (NOMBRE + GARANTÍA VISIBLE)
     // =======================================================
     if (opt.theme === 'techno') {
         const bgColor = '#002b5e'; // Azul corporativo
@@ -244,35 +244,32 @@ async function drawProductCard(canvas, product, opt) {
         ctx.fillRect(0, 0, W, H);
 
         // ---------------------------------------------------
-        // 1. CARGAR TU LOGO REAL (log.jpeg)
+        // 1. CARGAR TU LOGO REAL (log.jpeg) CIRCULAR
         // ---------------------------------------------------
         const logoImg = new Image();
         logoImg.crossOrigin = "Anonymous";
-        logoImg.src = "log.jpeg"; // El logo de tu index.html
+        logoImg.src = "log.jpeg"; 
         
         await new Promise((resolve) => {
             logoImg.onload = resolve;
-            logoImg.onerror = resolve; // Si falla, sigue de largo
+            logoImg.onerror = resolve; 
         });
 
         if (logoImg.complete && logoImg.naturalWidth > 0) {
-            // Dibujar el logo en un círculo perfecto
             ctx.save();
             ctx.beginPath();
-            ctx.arc(105, 105, 55, 0, Math.PI * 2, true); // Centro X:105, Y:105, Radio: 55
+            ctx.arc(105, 105, 55, 0, Math.PI * 2, true); 
             ctx.closePath();
-            ctx.clip(); // Recortar en círculo
+            ctx.clip(); 
             ctx.drawImage(logoImg, 50, 50, 110, 110);
             ctx.restore();
             
-            // Borde blanco sutil alrededor del logo
             ctx.beginPath();
             ctx.arc(105, 105, 55, 0, Math.PI * 2, true);
             ctx.lineWidth = 3;
             ctx.strokeStyle = 'rgba(255,255,255,0.3)';
             ctx.stroke();
         } else {
-            // Si por alguna razón la imagen no carga, dibuja la caja punteada de emergencia
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 6]);
@@ -285,7 +282,6 @@ async function drawProductCard(canvas, product, opt) {
             ctx.fillText("LOGO", 105, 125);
         }
 
-        // Línea divisoria y texto "Tienda Online"
         ctx.beginPath();
         ctx.moveTo(190, 70);
         ctx.lineTo(190, 140);
@@ -298,11 +294,11 @@ async function drawProductCard(canvas, product, opt) {
         ctx.fillText("Tienda Online", 210, 115);
 
         // ---------------------------------------------------
-        // 2. TÍTULOS INCLINADOS (Más separados y ajustados)
+        // 2. TÍTULOS INCLINADOS (Categoría General)
         // ---------------------------------------------------
         ctx.save();
         ctx.translate(isStory ? W/2 + 20 : 580, isStory ? 230 : 120); 
-        ctx.rotate(-7 * Math.PI / 180); // Inclinación de -7 grados
+        ctx.rotate(-7 * Math.PI / 180); 
         
         ctx.fillStyle = '#ffffff';
         ctx.font = 'italic 700 35px Arial, sans-serif';
@@ -316,12 +312,11 @@ async function drawProductCard(canvas, product, opt) {
         if(mainTitle === "SMART") mainTitle = "TELEVISORES";
         
         ctx.font = 'italic 900 120px Impact, sans-serif'; 
-        // AUMENTAMOS LA SEPARACIÓN A 125 (Antes era 100)
         ctx.fillText(mainTitle, 0, 125); 
         ctx.restore();
 
         // ---------------------------------------------------
-        // 3. IMAGEN DEL PRODUCTO (GIGANTE Y CENTRADA)
+        // 3. IMAGEN DEL PRODUCTO
         // ---------------------------------------------------
         const img = await getSmartImage(product, opt.useAI);
         if (img) {
@@ -330,7 +325,7 @@ async function drawProductCard(canvas, product, opt) {
             ctx.shadowOffsetY = 25;
             
             let imgW = isStory ? 900 : 550;
-            let imgH = isStory ? 850 : 700;
+            let imgH = isStory ? 800 : 700;
             let imgX = isStory ? (W - imgW) / 2 : 20;
             let imgY = isStory ? 350 : 250; 
             
@@ -345,31 +340,51 @@ async function drawProductCard(canvas, product, opt) {
         }
 
         // ---------------------------------------------------
-        // 4. VIÑETAS DE BENEFICIOS (Limpias y Grandes)
+        // 4. NOMBRE EXACTO DEL EQUIPO (NUEVO Y PROMINENTE)
         // ---------------------------------------------------
-        const extractedSpecs = extractTechSpecs(product.descripcion, 4);
-        let features = extractedSpecs.map(f => f.replace(/MARCA:|CARACTERÍSTICAS:/gi, '').trim());
-        features = features.filter(f => f.length > 2); 
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 36px Arial, sans-serif'; 
+        ctx.textAlign = 'left';
         
-        if(opt.showWarranty && features.length < 5) features.push((product.garantia || '1 AÑO DE GARANTÍA').toUpperCase());
-        if(opt.showDelivery && features.length < 6) features.push('ENTREGA RÁPIDA EN LA HABANA');
-        if(features.length < 6) features.push('EQUIPO NUEVO EN CAJA SELLADA');
+        let textStartX = isStory ? 100 : 600;
+        let textStartY = isStory ? 1200 : 350;
+        
+        // window.wrapText devuelve la coordenada Y donde terminó de escribir
+        // Así sabemos exactamente dónde empezar a dibujar las viñetas debajo
+        let nextY = window.wrapText(ctx, product.nombre.toUpperCase(), textStartX, textStartY, isStory ? W - 200 : 450, 42);
 
-        let startY = isStory ? 1280 : 350;
-        let startX = isStory ? 100 : 600;
+        // ---------------------------------------------------
+        // 5. VIÑETAS DE BENEFICIOS (Garantía y Entrega OBLIGATORIOS)
+        // ---------------------------------------------------
+        let features = [];
+        
+        // 1ro: Prioridades Innegociables
+        if(opt.showDelivery) features.push('ENTREGA INMEDIATA EN LA HABANA');
+        if(opt.showWarranty) features.push(`GARANTÍA: ${product.garantia || '1 MES'}`.toUpperCase());
+        features.push('EQUIPO NUEVO EN CAJA SELLADA');
+
+        // 2do: Detalles técnicos (Extraídos limpiamente)
+        const extractedSpecs = extractTechSpecs(product.descripcion, 3); // Max 3 para no saturar
+        extractedSpecs.forEach(f => {
+            let cleanFeat = f.replace(/MARCA:|CARACTERÍSTICAS:/gi, '').trim();
+            if(cleanFeat.length > 2) features.push(cleanFeat);
+        });
+
+        // Dibujar viñetas debajo del nombre
+        let bulletY = nextY + 35; // Dejamos 35px de respiración después del nombre
         
         features.slice(0, 6).forEach((feat, index) => {
             ctx.fillStyle = yellowAccent; 
             ctx.font = '400 35px Arial, sans-serif'; 
-            ctx.fillText("•", startX, startY + (index * 50));
+            ctx.fillText("•", textStartX, bulletY + (index * 45));
             
             ctx.fillStyle = '#d7f2a5'; 
-            ctx.font = '400 32px Arial, sans-serif'; 
-            ctx.fillText(feat.substring(0, 40), startX + 35, startY + (index * 50));
+            ctx.font = '600 28px Arial, sans-serif'; // Letra clara y fuerte
+            ctx.fillText(feat.substring(0, 42), textStartX + 35, bulletY + (index * 45));
         });
 
         // ---------------------------------------------------
-        // 5. CAJA AMARILLA (Corte Diagonal Agresivo)
+        // 6. CAJA AMARILLA DEL PRECIO
         // ---------------------------------------------------
         ctx.fillStyle = yellowAccent;
         ctx.beginPath();
@@ -379,8 +394,9 @@ async function drawProductCard(canvas, product, opt) {
             ctx.lineTo(W, H); 
             ctx.lineTo(0, H); 
         } else {
-            ctx.moveTo(600, 620);   
-            ctx.lineTo(W, 580);     
+            // Bajamos un poco el corte para que las viñetas nuevas quepan bien
+            ctx.moveTo(600, 660);   
+            ctx.lineTo(W, 620);     
             ctx.lineTo(W, 850);     
             ctx.lineTo(950, 850);   
             ctx.lineTo(880, H);     
@@ -390,38 +406,37 @@ async function drawProductCard(canvas, product, opt) {
         ctx.fill();
 
         // ---------------------------------------------------
-        // 6. PRECIO GIGANTE (Con USD Dinámico al lado)
+        // 7. PRECIO GIGANTE CON USD MATEMÁTICAMENTE SEPARADO
         // ---------------------------------------------------
         if (opt.showPrice) {
             ctx.fillStyle = bgColor; 
             
             let pX = isStory ? W/2 : 820;
-            let pY = isStory ? H - 180 : 770;
+            let pY = isStory ? H - 180 : 800; // Ajustado para Post
             let priceStr = `$${product.precio}`;
 
-            // Medimos el ancho del número para colocar el USD dinámicamente
+            // Calculamos anchos para evitar que choquen
             ctx.font = '900 240px Impact, sans-serif'; 
             let priceWidth = ctx.measureText(priceStr).width;
             
             ctx.font = '900 60px Impact, sans-serif';
             let usdWidth = ctx.measureText("USD").width;
 
-            // Calculamos el inicio para que TODO el bloque quede centrado
             let totalWidth = priceWidth + 15 + usdWidth;
             let startX = pX - (totalWidth / 2);
 
-            // Dibujamos el Precio
+            // Dibujar Precio
             ctx.textAlign = 'left';
             ctx.font = '900 240px Impact, sans-serif'; 
             ctx.fillText(priceStr, startX, pY);
             
-            // Dibujamos el USD justo pegado a la derecha del número
+            // Dibujar USD (Nunca chocará)
             ctx.font = '900 60px Impact, sans-serif';
             ctx.fillText("USD", startX + priceWidth + 15, pY - 30);
         }
 
         // ---------------------------------------------------
-        // 7. DATOS DE CONTACTO (Anti-Duplicado y Centrado)
+        // 8. DATOS DE CONTACTO (Anti-Duplicado)
         // ---------------------------------------------------
         if (opt.showPhone) {
             let cleanPhone = opt.gestorPhone.replace(/\D/g, '');
@@ -439,14 +454,14 @@ async function drawProductCard(canvas, product, opt) {
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '400 22px Arial, sans-serif';
                 ctx.textAlign = 'left';
-                ctx.fillText("Dirección de envíos:", 620, 920);
+                ctx.fillText("Dirección de envíos:", 620, 930);
                 
                 ctx.font = '900 35px Arial, sans-serif';
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText(phoneFormat, 620, 960);
+                ctx.fillText(phoneFormat, 620, 970);
                 
                 ctx.font = '700 20px Arial, sans-serif';
-                ctx.fillText("www.paratuhogar.org", 620, 1000);
+                ctx.fillText("www.paratuhogar.org", 620, 1010);
             }
         }
 
