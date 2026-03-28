@@ -57,8 +57,35 @@ window.addEventListener('load', async () => {
 async function loadInventory() {
     const { data, error } = await supabaseClient.from('productos').select('*').eq('disponible', 'SI').order('nombre');
     if (error) return;
+    
     allProducts = data;
     
+    // === NUEVO: FUSIÓN DE PRECIOS PERSONALIZADOS PARA EL STUDIO ===
+    if (gestorData && gestorData.nombre) {
+        const { data: preciosCustom } = await supabaseClient
+            .from('precios_personalizados')
+            .select('producto_id, nuevo_precio')
+            .eq('gestor', gestorData.nombre);
+
+        if (preciosCustom && preciosCustom.length > 0) {
+            allProducts.forEach(p => {
+                // Buscamos si este producto tiene un precio modificado por este gestor
+                const custom = preciosCustom.find(c => c.producto_id === p.id);
+                if (custom) {
+                    const precioBase = parseFloat(p.precio);
+                    const precioNuevo = parseFloat(custom.nuevo_precio);
+                    
+                    // Solo lo aplicamos si el precio nuevo es mayor o igual al base
+                    if (precioNuevo >= precioBase) {
+                        p.precio = precioNuevo; // Sobrescribimos el precio para que la IA pinte este
+                    }
+                }
+            });
+            console.log("✅ Precios de gestor aplicados correctamente en el Studio.");
+        }
+    }
+    // ==============================================================
+
     const cats =[...new Set(data.map(p => p.categoria ? p.categoria.toUpperCase() : 'VARIOS'))].sort();
     const select = document.getElementById('ctrl-category');
     select.innerHTML = '<option value="TODOS">Todas las Categorías</option>';
