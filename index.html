@@ -10721,11 +10721,14 @@ function carritoTieneEquipoGrande() {
         // Reglas basadas en tu CSV
         if (cat === 'LAVADORAS') return true;
         if (cat === 'REFRIGERADORES') return true;
-        if (cat === 'NEVERAS' && !nom.includes('3.5')) return true; // Todo menos la de 3.5
-        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; // Plantas y estaciones
+        if (cat === 'NEVERAS' && !nom.includes('3.5')) return true; 
+        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; 
         if (nom.includes('colchón') || nom.includes('colchon')) return true;
         if (cat === 'COCINA' && (nom.includes('horno') || nom.includes('cocina 20') || nom.includes('cocina 24'))) return true;
         if (cat === 'SMART TV' && (nom.includes('43') || nom.includes('50') || nom.includes('55') || nom.includes('60') || nom.includes('75'))) return true;
+        
+        // 👇 ESTA ES LA LÍNEA NUEVA QUE SOLUCIONA TU PROBLEMA 👇
+        if (cat === 'CLIMATIZACIÓN' || nom.includes('split') || nom.includes('aire')) return true;
 
         return false; // Si no cumple nada de lo anterior, es pequeño.
     });
