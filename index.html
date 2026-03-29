@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2603a"; 
+const versionActual = "2903a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8028,21 +8028,25 @@ function applyLockedFeatures() {
     // ------------------------------------------------------
     // LÓGICA MAGIC STUDIO (PROMO SEMANA SANTA - HASTA EL 28 MARZO 2026)
     // ------------------------------------------------------
-    const fechaFinPromo = new Date('2026-03-29'); // Expira al iniciar el 29
+    // ------------------------------------------------------
+    // LÓGICA MAGIC STUDIO (PROMO DE 1 MES)
+    // ------------------------------------------------------
+    // 👇 CAMBIA ESTA FECHA por el día exacto en que quieres que se acabe el mes de promo (Formato: AÑO-MES-DÍA)
+    const fechaFinPromo = new Date('2026-04-29'); 
     const esPromoActiva = new Date() < fechaFinPromo;
 
     if (level >= 2 || isGodMode || esPromoActiva) { 
         if(btnStudio) {
             btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
             
-            // Si es nivel bajo, le avisamos que es una promo
+            // Si es nivel bajo y la promo está activa, le avisamos que es un regalo temporal
             const textoBoton = (esPromoActiva && level < 2) ? "Studio (PROMO)" : "Magic Studio";
             
             btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">${textoBoton}</span>`;
-            btnStudio.title = esPromoActiva && level < 2 ? "¡ACCESO LIBRE POR ESTA SEMANA!" : "Magic Studio AI - Activo";
+            btnStudio.title = esPromoActiva && level < 2 ? "¡ACCESO LIBRE POR 1 MES!" : "Magic Studio AI - Activo";
             btnStudio.onclick = function() { goToStudio(); };
 
-            // Efecto especial animado solo para los que están recibiendo el regalo
+            // Efecto especial animado de latido solo para los que están aprovechando la promo
             if(esPromoActiva && level < 2) {
                 btnStudio.classList.add('animate-pulse');
             }
