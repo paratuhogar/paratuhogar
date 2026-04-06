@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2903a"; 
+const versionActual = "604"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3318,14 +3318,13 @@ function renderMyOrdersList(lista) {
     if (nombre === "Marcel Montano") {
         sales = 800; 
     } else {
-        const today = new Date();
-        today.setDate(today.getDate() - 30);
+        // CORRECCIÓN: Contar TODAS las ventas entregadas sin límite de 30 días
+        // Esto asegura que el botón VIP lea el historial correcto (Ej: las 8 ventas de Elías)
         const { count } = await supabaseClient
             .from('pedidos')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('gestor', nombre)
-            .eq('estado', 'Entregado')
-            .gte('created_at', today.toISOString());
+            .eq('estado', 'Entregado');
         sales = count || 0;
     }
 
