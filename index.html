@@ -613,6 +613,11 @@
             <span class="material-symbols-outlined text-xl">auto_fix</span>
             <span class="text-xs font-black">Studio</span>
         </button>
+        <!-- BOTÓN RADAR DE RIESGOS -->
+<button id="btn-radar-riesgos" onclick="window.open('radar-riesgos.html', '_blank')" class="h-10 px-4 rounded-xl bg-gradient-to-r from-red-700 to-red-900 text-white border border-red-500 flex items-center justify-center gap-2 shadow-lg shadow-red-900/30 whitespace-nowrap transition-transform hover:scale-105 active:scale-95" title="Lista Negra de Clientes">
+    <span class="material-symbols-outlined text-xl">gavel</span>
+    <span class="text-xs font-black">Radar Riesgos</span>
+</button>
 
         <!-- 4. Fotos -->
         <button id="btn-zip-bulk" class="h-10 px-4 rounded-xl border border-blue-100 bg-white text-blue-600 flex items-center justify-center gap-2 shadow-sm whitespace-nowrap" title="Pack Fotos">
@@ -2023,7 +2028,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "704a"; 
+const versionActual = "704b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2613,6 +2618,19 @@ async function processRegister() {
             headerActions.prepend(btnWar);
         }
     }
+
+    // ============================================================
+    // AÑADIR ESTO AL FINAL DE LA FUNCIÓN setupSession()
+    // ============================================================
+    
+    // Disparar los carteles de noticias/actualizaciones en orden.
+    // Esperamos 2 segundos para que primero cargue el catálogo visualmente.
+    setTimeout(() => {
+        // Solo mostramos el Radar si es un gestor (no admin maestro)
+        if (!adminMode) {
+            showRadarIntro();
+        }
+    }, 2000);
 }
 
 
@@ -4205,10 +4223,33 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session; 
 
+
     // === CAPTURA DE DATOS DEL FORMULARIO ===
     const nombreC = document.getElementById('check-nombre').value;
     const ciC = document.getElementById('check-ci').value || "No especificado";
     const telC = document.getElementById('check-tel').value;
+
+    // 👇 INICIO DEL ESCUDO PROTECTOR (LISTA NEGRA) 👇
+    let telLimpioCheck = telC.replace(/\D/g, '');
+    if (telLimpioCheck.startsWith('53') && telLimpioCheck.length === 10) {
+        telLimpioCheck = telLimpioCheck.substring(2);
+    }
+
+    const { data: isBlocked } = await supabaseClient
+        .from('blacklist')
+        .select('tipo, motivo')
+        .eq('telefono', telLimpioCheck)
+        .maybeSingle();
+
+    if (isBlocked) {
+        alert(`🚨 ALERTA DE SEGURIDAD 🚨\n\nEste número de teléfono está registrado en nuestra base de datos como Cliente ${isBlocked.tipo.toUpperCase()}.\n\nMotivo del reporte: ${isBlocked.motivo}\n\nPor seguridad del equipo, este pedido no puede ser procesado.`);
+        
+        const btnF = document.getElementById('final-submit-btn');
+        btnF.disabled = false; 
+        btnF.innerText = "Confirmar Pedido";
+        return; // 🛑 ESTO DETIENE LA COMPRA TOTALMENTE
+    }
+    // 👆 FIN DEL ESCUDO PROTECTOR 👆
     
     // Si marcó recogida, sobrescribimos Municipio y Dirección automáticamente
     const municipioC = isRecogida ? "Almacén" : document.getElementById('check-municipio').value;
@@ -9593,6 +9634,32 @@ function showPriceIntro() {
     }
 }
 
+// --- LÓGICA DEL CARTEL RADAR DE RIESGOS ---
+const RADAR_CAMPAIGN_KEY = 'info_radar_riesgos_v1';
+
+function showRadarIntro() {
+    // Verificamos si ya lo vio antes
+    const yaVisto = localStorage.getItem(RADAR_CAMPAIGN_KEY);
+    
+    if (!yaVisto) {
+        const modal = document.getElementById('modal-intro-radar');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Quitamos el scroll del fondo para que preste atención
+            document.body.style.overflow = 'hidden';
+        }
+    }
+}
+
+function closeRadarIntro() {
+    // Cerramos el modal y restauramos el scroll
+    document.getElementById('modal-intro-radar').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    
+    // Lo guardamos en memoria para que NUNCA MÁS le vuelva a salir
+    localStorage.setItem(RADAR_CAMPAIGN_KEY, 'true');
+}
+
 function closePriceIntro() {
     document.getElementById('modal-intro-precios').classList.add('hidden');
     localStorage.setItem(CURRENT_CAMPAIGN, 'true');
@@ -12837,6 +12904,82 @@ async function generarComprobanteB2B(datosPedido, accion) {
         <button onclick="goToMayoristaFromReminder()" class="w-full py-4 rounded-xl font-black text-sm uppercase text-amber-900 bg-white hover:bg-gray-50 shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
             <span class="material-symbols-outlined">local_shipping</span> Ver Mayorista Ahora
         </button>
+    </div>
+</div>
+
+<!-- === MODAL INTRODUCCIÓN: RADAR DE RIESGOS === -->
+<div id="modal-intro-radar" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
+    
+    <div class="bg-[#090e17] w-full max-w-lg rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)] relative animate-pop-in border border-red-900/50">
+        
+        <!-- Decoración de Fondo -->
+        <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-red-900/40 to-black"></div>
+        <div class="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
+
+        <!-- Contenido -->
+        <div class="relative pt-10 px-6 md:px-8 pb-8">
+            
+            <!-- Icono Principal Flotante -->
+            <div class="relative w-20 h-20 mx-auto mb-6">
+                <div class="absolute inset-0 bg-red-600 rounded-2xl blur-lg opacity-40 animate-pulse"></div>
+                <div class="bg-slate-900 w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center border border-red-500/50 relative z-10">
+                    <span class="material-symbols-outlined text-4xl text-red-500">radar</span>
+                </div>
+            </div>
+
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-black text-white uppercase italic tracking-tight mb-2">
+                    NUEVO: <span class="text-red-500">Radar de Riesgos</span>
+                </h3>
+                <p class="text-sm text-slate-400 font-medium leading-relaxed">
+                    Hemos activado el Escudo Anti-Fraude. Una herramienta colaborativa para proteger tu tiempo, tu esfuerzo y tus comisiones.
+                </p>
+            </div>
+
+            <!-- Lista de Beneficios -->
+            <div class="space-y-3 mb-8">
+                
+                <!-- Punto 1 -->
+                <div class="flex items-start gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                    <span class="material-symbols-outlined text-red-500 bg-red-500/10 p-2 rounded-lg text-xl border border-red-500/20">shield_lock</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-200">Bloqueo Automático en la Web</p>
+                        <p class="text-[11px] text-slate-400 leading-relaxed mt-1">
+                            Si un número de la <b>Lista Negra</b> intenta hacer un pedido con TU enlace, la web lo detectará y bloqueará el carrito al instante.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Punto 2 -->
+                <div class="flex items-start gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                    <span class="material-symbols-outlined text-emerald-500 bg-emerald-500/10 p-2 rounded-lg text-xl border border-emerald-500/20">contacts</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-200">Sincronización con WhatsApp</p>
+                        <p class="text-[11px] text-slate-400 leading-relaxed mt-1">
+                            Descarga el archivo a tu celular. Los estafadores se guardarán en tu agenda con <span class="text-red-400 font-bold">alertas visuales (🛑)</span> para que no les respondas.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Punto 3 -->
+                <div class="flex items-start gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                    <span class="material-symbols-outlined text-blue-500 bg-blue-500/10 p-2 rounded-lg text-xl border border-blue-500/20">group</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-200">Protección Colaborativa</p>
+                        <p class="text-[11px] text-slate-400 leading-relaxed mt-1">
+                            Si un gestor reporta a un cliente conflictivo, <b>todo el equipo queda protegido</b> automáticamente de esa persona.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón de Acción -->
+            <button onclick="closeRadarIntro()" class="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white py-4 rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all active:scale-95 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">gavel</span>
+                Entendido, proteger mis ventas
+            </button>
+
+        </div>
     </div>
 </div>
 

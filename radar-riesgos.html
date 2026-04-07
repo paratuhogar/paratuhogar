@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Radar de Riesgos | ParaTuHogar</title>
+    
+    <!-- Librerías base -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #090e17; color: #f8fafc; }
+        .material-symbols-outlined { vertical-align: middle; }
+        
+        /* Efecto Radar de fondo */
+        .scanline {
+            width: 100%; height: 100px; position: fixed; z-index: 10; pointer-events: none;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(239, 68, 68, 0.05) 50%, rgba(0,0,0,0) 100%);
+            animation: scan 8s linear infinite;
+        }
+        @keyframes scan { 0% { top: -100px; } 100% { top: 100vh; } }
+        
+        /* Scrollbar elegante para la tabla en móvil */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#090e17] to-black">
+    <div class="scanline"></div>
+
+    <div class="max-w-5xl mx-auto p-4 md:p-8 relative z-20">
+        
+        <!-- HEADER -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-800/80 pb-6 pt-2">
+            <div class="flex items-center gap-4">
+                <div class="relative h-12 w-12 shrink-0">
+                    <div class="absolute inset-0 bg-red-500 rounded-xl blur-lg opacity-30 animate-pulse"></div>
+                    <div class="relative h-full w-full bg-slate-900 border border-red-500/50 rounded-xl flex items-center justify-center text-red-500 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">radar</span>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-3xl font-black text-white uppercase tracking-widest italic leading-tight">Radar de Riesgos</h1>
+                    <p class="text-[10px] md:text-xs font-bold text-red-400 uppercase tracking-[0.2em]">Sistema Anti-Fraude / Lista Negra</p>
+                </div>
+            </div>
+            <button onclick="window.close()" class="h-10 w-10 bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700/50 hover:border-red-500/50 rounded-full flex items-center justify-center transition-all absolute md:static top-4 right-4">
+                <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+        </div>
+
+        <!-- PANEL SUPERIOR -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- BLOQUE 1: REPORTAR CON SELECTOR DE PAÍS -->
+            <div class="bg-slate-900/60 backdrop-blur-md border border-red-900/30 p-5 md:p-8 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+                <h2 class="text-sm font-black text-white uppercase mb-5 flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <span class="material-symbols-outlined text-red-500">add_alert</span> Reportar Nuevo Número
+                </h2>
+                
+                <form id="form-report" class="space-y-4">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-1">País y Teléfono</label>
+                        <div class="flex gap-2">
+                            <!-- Selector de País -->
+                            <select id="r-pais" onchange="updatePlaceholder()" class="w-1/3 bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all appearance-none cursor-pointer">
+                                <option value="53">🇨🇺 +53</option>
+                                <option value="1">🇺🇸 +1</option>
+                                <option value="34">🇪🇸 +34</option>
+                                <option value="52">🇲🇽 +52</option>
+                                <option value="otro">🌐 Otro</option>
+                            </select>
+                            
+                            <!-- Input Teléfono -->
+                            <input type="tel" id="r-tel" placeholder="8 dígitos (Ej: 5xxxxxxx)" class="w-2/3 bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 placeholder:text-slate-600 transition-all" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-1">Gravedad</label>
+                        <select id="r-tipo" class="w-full bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all appearance-none cursor-pointer">
+                            <option value="Estafador">🛑 ESTAFADOR / Falso Comprador</option>
+                            <option value="Complicado">⚠️ COMPLICADO / Problemático</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-1">¿Qué sucedió?</label>
+                        <textarea id="r-motivo" rows="2" placeholder="Breve descripción del problema..." class="w-full bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 placeholder:text-slate-600 transition-all resize-none" required></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] active:scale-95 mt-2">
+                        Añadir a Lista Negra
+                    </button>
+                </form>
+            </div>
+
+            <!-- BLOQUE 2: SINCRONIZACIÓN -->
+            <div class="bg-slate-900/60 backdrop-blur-md border border-emerald-900/30 p-5 md:p-8 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] flex flex-col justify-center gap-5">
+                <div class="text-center mb-2">
+                    <div class="inline-flex items-center justify-center h-16 w-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl mb-4">
+                        <span class="material-symbols-outlined text-4xl text-emerald-400">import_contacts</span>
+                    </div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-widest">Sincronizar Agenda</h3>
+                    <p class="text-xs text-slate-400 mt-2 leading-relaxed px-4">
+                        Descarga el archivo e impórtalo en tu celular. Los números de la lista negra se guardarán con alertas visuales en tus contactos para que los detectes antes de responder.
+                    </p>
+                </div>
+
+                <div class="space-y-3 mt-auto">
+                    <button onclick="downloadVCard()" class="w-full bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 text-white py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all active:scale-95 border border-emerald-500/50">
+                        <span class="material-symbols-outlined">download</span>
+                        Descargar Contactos (.VCF)
+                    </button>
+
+                    <button onclick="shareAlertToGroup()" class="w-full bg-slate-800 hover:bg-slate-700 text-[#25D366] py-3.5 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 border border-slate-700 hover:border-[#25D366]/50">
+                        <i class="fab fa-whatsapp text-lg"></i>
+                        Avisar al Grupo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL INFERIOR: TABLA -->
+        <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h3 class="font-black text-white uppercase text-sm tracking-widest flex items-center gap-2">
+                    <span class="material-symbols-outlined text-slate-500 text-lg">database</span>
+                    Base de Datos Restringida
+                </h3>
+                <span id="total-count" class="bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                    0 Registros
+                </span>
+            </div>
+            
+            <!-- CONTENEDOR CON SCROLL HORIZONTAL PARA MÓVIL -->
+            <div class="overflow-x-auto max-h-[500px] custom-scrollbar">
+                <table class="w-full text-left border-collapse min-w-[700px]">
+                    <thead class="bg-slate-950 text-[9px] font-black uppercase text-slate-500 sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="p-4 w-32">Teléfono</th>
+                            <th class="p-4 w-40">Gravedad</th>
+                            <th class="p-4">Motivo / Incidencia</th>
+                            <th class="p-4 w-32">Reportado Por</th>
+                            <th class="p-4 text-right w-24">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blacklist-table" class="divide-y divide-slate-800/50 text-xs">
+                        <tr><td colspan="5" class="p-10 text-center text-slate-500 font-bold tracking-widest uppercase">Cargando base de datos... <span class="animate-pulse">_</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script para iconos de WhatsApp -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script>
+        // CONFIGURACIÓN DE SUPABASE
+        const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let blacklistData = [];
+        let gestorActivo = "Anónimo";
+
+        window.onload = async () => {
+            const sessionData = localStorage.getItem('pth_session');
+            if (sessionData) {
+                const s = JSON.parse(sessionData);
+                gestorActivo = s.name || "Agente";
+            }
+            await loadBlacklist();
+        };
+
+        // Cambiar Placeholder según el país
+        function updatePlaceholder() {
+            const pais = document.getElementById('r-pais').value;
+            const telInput = document.getElementById('r-tel');
+            
+            if (pais === '53') telInput.placeholder = "8 dígitos (Ej: 5xxxxxxx)";
+            else if (pais === '1') telInput.placeholder = "10 dígitos (Ej: 305xxxxxxx)";
+            else if (pais === '34') telInput.placeholder = "9 dígitos (Ej: 6xxxxxxxx)";
+            else if (pais === '52') telInput.placeholder = "10 dígitos (Ej: 55xxxxxxxx)";
+            else telInput.placeholder = "Número con código de área";
+        }
+
+        // Cargar Base de Datos
+        async function loadBlacklist() {
+            const { data, error } = await supabaseClient
+                .from('blacklist')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) { console.error(error); return; }
+
+            blacklistData = data;
+            document.getElementById('total-count').innerText = `${data.length} REGISTROS`;
+            
+            const tbody = document.getElementById('blacklist-table');
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-600 font-bold uppercase tracking-widest">No hay registros aún.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(row => {
+                const isEstafador = row.tipo === 'Estafador';
+                const colorBadge = isEstafador ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                const icon = isEstafador ? '🛑' : '⚠️';
+                
+                // Formateo visual del teléfono
+                let displayPhone = row.telefono;
+                if (displayPhone.length === 8) displayPhone = "+53 " + displayPhone; // Si son 8 digitos, seguro es Cuba
+                else displayPhone = "+" + displayPhone; // Cualquier otro, le ponemos el +
+
+                return `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                    <td class="p-4 font-mono font-bold text-white text-sm whitespace-nowrap">${displayPhone}</td>
+                    <td class="p-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-black uppercase border ${colorBadge} whitespace-nowrap">
+                            ${icon} ${row.tipo}
+                        </span>
+                    </td>
+                    <td class="p-4 text-slate-300 font-medium leading-relaxed max-w-xs break-words">${row.motivo}</td>
+                    <td class="p-4 text-slate-500 font-bold text-[10px] uppercase tracking-wider">${row.reportado_por}</td>
+                    <td class="p-4 text-right text-slate-600 font-bold text-[10px]">${new Date(row.created_at).toLocaleDateString()}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // GUARDAR REPORTE (Con Validaciones Exactas por País)
+        document.getElementById('form-report').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "PROCESANDO...";
+            btn.disabled = true;
+
+            const prefijo = document.getElementById('r-pais').value;
+            let telRaw = document.getElementById('r-tel').value.replace(/\D/g, ''); // Quitamos espacios, guiones, etc.
+
+            // Lógica auto-correctora por si pegan el número con todo y código de país en el input
+            if (prefijo === '53' && telRaw.startsWith('53') && telRaw.length === 10) telRaw = telRaw.substring(2);
+            if (prefijo === '1' && telRaw.startsWith('1') && telRaw.length === 11) telRaw = telRaw.substring(1);
+            if (prefijo === '34' && telRaw.startsWith('34') && telRaw.length === 11) telRaw = telRaw.substring(2);
+            if (prefijo === '52' && telRaw.startsWith('52') && telRaw.length === 12) telRaw = telRaw.substring(2);
+
+            let numeroFinal_BD = "";
+
+            // VALIDACIONES ESTRICTAS SEGÚN EL PAÍS
+            if (prefijo === '53') {
+                if (telRaw.length !== 8) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    return alert("❌ Cuba: El número debe tener exactamente 8 dígitos.");
+                }
+                numeroFinal_BD = telRaw; // Cuba se guarda SIN 53 para encajar con la lógica del Carrito
+            } 
+            else if (prefijo === '1') {
+                if (telRaw.length !== 10) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    return alert("❌ EE.UU: El número debe tener exactamente 10 dígitos (Ej: 3051234567).");
+                }
+                numeroFinal_BD = "1" + telRaw; // Se guarda con prefijo
+            } 
+            else if (prefijo === '34') {
+                if (telRaw.length !== 9) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    return alert("❌ España: El número debe tener exactamente 9 dígitos.");
+                }
+                numeroFinal_BD = "34" + telRaw;
+            } 
+            else if (prefijo === '52') {
+                if (telRaw.length !== 10) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    return alert("❌ México: El número debe tener exactamente 10 dígitos.");
+                }
+                numeroFinal_BD = "52" + telRaw;
+            } 
+            else { // Caso "Otro"
+                if (telRaw.length < 7) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    return alert("❌ Ingresa un número válido con código de país.");
+                }
+                numeroFinal_BD = telRaw; // Se guarda tal cual lo puso
+            }
+
+            const tipo = document.getElementById('r-tipo').value;
+            const motivo = document.getElementById('r-motivo').value;
+
+            // ENVIAR A SUPABASE
+            const { error } = await supabaseClient.from('blacklist').insert([{
+                telefono: numeroFinal_BD,
+                tipo: tipo,
+                motivo: motivo,
+                reportado_por: gestorActivo
+            }]);
+
+            if (error) {
+                if (error.code === '23505') alert("⚠️ Este número ya estaba reportado en la lista negra.");
+                else alert("Error guardando el dato: " + error.message);
+            } else {
+                alert("✅ Número bloqueado exitosamente.\n\nEse cliente ya no podrá confirmar pedidos en la tienda.");
+                document.getElementById('form-report').reset();
+                loadBlacklist();
+            }
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+
+        // DESCARGAR CONTACTOS VCF
+        function downloadVCard() {
+            if (blacklistData.length === 0) return alert("La lista está vacía.");
+
+            let vcfContent = "";
+            let contadorE = 1;
+            let contadorC = 1;
+
+            blacklistData.forEach(row => {
+                const prefix = row.tipo === 'Estafador' ? '🛑 ESTAFADOR' : '⚠️ COMPLICADO';
+                const count = row.tipo === 'Estafador' ? contadorE++ : contadorC++;
+                const contactName = `${prefix} PTH ${count}`; 
+                
+                // Si tiene 8 dígitos, aseguramos el +53. Si no, solo le ponemos +
+                const phoneVCF = row.telefono.length === 8 ? `+53${row.telefono}` : `+${row.telefono}`;
+
+                vcfContent += `BEGIN:VCARD\nVERSION:3.0\nN:;${contactName};;;\nFN:${contactName}\nTEL;TYPE=CELL:${phoneVCF}\nNOTE:Motivo: ${row.motivo} (Reportado por ${row.reportado_por})\nEND:VCARD\n`;
+            });
+
+            const blob = new Blob([vcfContent], { type: 'text/vcard' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = `Seguridad_ParaTuHogar_${new Date().toISOString().split('T')[0]}.vcf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert("✅ Archivo de contactos descargado.\n\nÁbrelo en tu teléfono y selecciona 'Guardar todos' para que tu agenda registre a estas personas.");
+        }
+
+        // COMPARTIR ALERTA A WHATSAPP
+        function shareAlertToGroup() {
+            if (blacklistData.length === 0) return alert("Añade primero a alguien a la lista para generar una alerta.");
+            const ultimo = blacklistData[0]; 
+            
+            const displayPhone = ultimo.telefono.length === 8 ? `+53 ${ultimo.telefono}` : `+${ultimo.telefono}`;
+
+            const texto = `🚨 *ALERTA DE SEGURIDAD (RADAR)* 🚨\n\nAcabo de agregar un número a la Lista Negra:\n\n📱 *Número:* ${displayPhone}\n🏷️ *Tipo:* ${ultimo.tipo.toUpperCase()}\n📝 *Motivo:* ${ultimo.motivo}\n\n_Recomendación: Entren al Radar de Riesgos en la web y descarguen el archivo de Contactos actualizado._`;
+            
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
