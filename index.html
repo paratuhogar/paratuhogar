@@ -2023,7 +2023,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "704"; 
+const versionActual = "704a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2586,8 +2586,8 @@ async function processRegister() {
     }
 
     // --- PUERTA SECRETA AL RADAR (SOLO PARA MARCEL) ---
-    if (name === "Marcel Montano") {
-        const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
+    if (name === "Marcel Montano" || name === "Diana") {
+    const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
         
         if (headerActions && !document.getElementById('btn-radar-secret')) {
             const btnRadar = document.createElement('button');
@@ -2760,24 +2760,7 @@ async function renderRankingAnonimo(allPedidos, nombreGestor) {
         `;
     }
 
-    html += `
-    <div class="mb-8 bg-[#020617] border border-slate-800 rounded-lg p-1 shadow-lg font-system">
-        <div class="flex justify-between items-center bg-slate-900/50 px-4 py-2 rounded-t mb-1 border-b border-slate-800/50">
-            <span class="text-[10px] text-slate-500 font-bold tracking-widest uppercase">LIGA: ÚLTIMOS 30 DÍAS</span>
-            <div class="flex items-center gap-2">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span class="text-[10px] font-black text-green-400 tracking-widest uppercase">${gestoresActivos} LEYENDAS ACTIVAS</span>
-            </div>
-        </div>
-        <div class="px-4 py-2 overflow-hidden whitespace-nowrap">
-            <div class="text-xs md:text-sm text-slate-300 font-mono tracking-wide animate-pulse">
-                ${tickerContent}
-            </div>
-        </div>
-    </div>`;
+    
 
     html += `<div class="flex flex-col md:flex-row items-end justify-center gap-6 mb-10 px-2 relative z-10 font-system">`;
     const [p1, p2, p3] = [rankingArray[0], rankingArray[1], rankingArray[2]];
@@ -3315,9 +3298,9 @@ function renderMyOrdersList(lista) {
     
     // --- BYPASS MODO DIOS (Marcel siempre Nivel 5) ---
     let sales = 0;
-    if (nombre === "Marcel Montano") {
-        sales = 800; 
-    } else {
+    if (nombre === "Marcel Montano" || nombre === "Diana") {
+    sales = 800; 
+} else {
         // CORRECCIÓN: Contar TODAS las ventas entregadas sin límite de 30 días
         // Esto asegura que el botón VIP lea el historial correcto (Ej: las 8 ventas de Elías)
         const { count } = await supabaseClient
@@ -7959,7 +7942,7 @@ function applyLockedFeatures() {
     const sales = window.gestorSalesCount || 0;
     
     // VALIDACIÓN MODO DIOS: Si eres tú, todo se desbloquea
-    const isGodMode = window.gestorName === "Marcel Montano" || window.isAdmin;
+    const isGodMode = window.gestorName === "Marcel Montano" || window.gestorName === "Diana" || window.isAdmin;
 
     // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
@@ -8151,9 +8134,9 @@ async function checkGamificationStatus() {
     if (!gestor) return;
 
     // --- MODO DIOS (Para ti) ---
-    if (gestor === "Marcel Montano") {
-        window.currentGestorLevel = 5;
-        updateGamificationUI(80);
+    if (gestor === "Marcel Montano" || gestor === "Diana") {
+    window.currentGestorLevel = 5;
+    updateGamificationUI(80);
         renderFlashButton();
         applyLockedFeatures();
         return;
@@ -9966,8 +9949,8 @@ function captureGhostLead() {
     trackSpy('USO_HERRAMIENTA', 'Redactor IA');
 
     // Si NO es Marcel Y tiene menos de nivel 3...
-    if (window.gestorName !== "Marcel Montano" && level < 3) {
-        return alert("🔒 HERRAMIENTA BLOQUEADA\n\nNecesitas ser Nivel 3 (Élite - 20 Ventas) para usar el Redactor IA.");
+    if (window.gestorName !== "Marcel Montano" && window.gestorName !== "Diana" && level < 3) {
+    return alert("🔒 HERRAMIENTA BLOQUEADA\n\nNecesitas ser Nivel 3 (Élite - 20 Ventas) para usar el Redactor IA.");
     }
 
     const btn = event.currentTarget;
@@ -10075,9 +10058,9 @@ async function registerVIPClient() {
     // 2. VERIFICAR SI EL GESTOR MERECE EL AMARRE (Nivel 10 o Marcel)
     let mereceAmarre = false;
     
-    if (gestorDueño === "Marcel Montano") {
-        mereceAmarre = true;
-    } else if (gestorDueño !== "Venta Directa") {
+    if (gestorDueño === "Marcel Montano" || gestorDueño === "Diana") {
+    mereceAmarre = true;
+} else if (gestorDueño !== "Venta Directa") {
         // Consultar nivel en base de datos (para no confiar en el navegador)
         const { count } = await supabaseClient
             .from('pedidos')
@@ -10143,8 +10126,8 @@ async function checkVipButtonVisibility() {
     btn.classList.add('hidden');
 
     // 2. CONDICIÓN A: Estás dentro de tu panel de administración como Marcel
-    if (window.gestorName === "Marcel Montano") {
-        btn.classList.remove('hidden');
+    if (window.gestorName === "Marcel Montano" || window.gestorName === "Diana") {
+    btn.classList.remove('hidden');
         console.log("🌟 Club VIP: Visible para Admin (Marcel)");
         return;
     }
@@ -10154,7 +10137,8 @@ async function checkVipButtonVisibility() {
     if (referrerRaw) {
         try {
             const referrer = JSON.parse(referrerRaw);
-            if (referrer && referrer.nombre === "Marcel Montano") {
+            if (referrer && (referrer.nombre === "Marcel Montano" || referrer.nombre === "Diana")) {
+
                 btn.classList.remove('hidden');
                 console.log("🌟 Club VIP: Visible para cliente de Marcel");
                 return;
@@ -11241,6 +11225,8 @@ loadProducts = async function() {
 let idleB2BTimer;
 
 function startB2BIdleTimer() {
+        return; // <--- AÑADE ESTO PARA DESACTIVARLO
+
     clearTimeout(idleB2BTimer);
     
     // 1. Validar que sea un gestor (Si es cliente normal, no lo molestamos)
