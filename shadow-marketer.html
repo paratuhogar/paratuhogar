@@ -8,24 +8,28 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&family=DM+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;800&family=DM+Sans:wght@500;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
     <style>
         body { font-family: 'Rajdhani', sans-serif; background-color: #050505; color: #e2e8f0; }
-        .neon-border { box-shadow: 0 0 10px rgba(139, 92, 246, 0.3); border: 1px solid rgba(139, 92, 246, 0.5); }
         .loader { width: 20px; height: 20px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #generator-canvas { display: none; }
         
-        /* Checkbox personalizado */
-        .custom-checkbox input:checked + div { background-color: #9333ea; border-color: #9333ea; }
+        .custom-checkbox input:checked + div { background-color: #22c55e; border-color: #22c55e; }
         .custom-checkbox input:checked + div:after { content: '✔'; display: flex; align-items: center; justify-content: center; height: 100%; color: white; font-size: 14px; font-weight: bold; }
-        
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        
-        /* Ocultar barra de scroll en chips */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+        /* Estilos panel diseño */
+        .cfg-group { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; }
+        .cfg-label { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 8px; display: block; border-bottom: 1px solid #333; padding-bottom: 4px;}
+        .cfg-input { width: 100%; background: #000; border: 1px solid #444; color: #fff; font-size: 12px; padding: 8px; border-radius: 6px; outline: none; transition: border-color 0.2s;}
+        .cfg-input:focus { border-color: #22c55e; }
+        
+        .cfg-row { margin-bottom: 8px; }
+        .cfg-row-title { font-size: 10px; color: #aaa; margin-bottom: 2px; display: block; font-weight: bold;}
     </style>
 </head>
 <body class="min-h-screen p-6 pb-20">
@@ -40,59 +44,129 @@
                 <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Comando Central de Inventario</p>
             </div>
             
-            <!-- Buscador y Botón Master -->
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 <div class="relative flex-1 md:flex-none">
                     <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-500 text-sm">search</span>
                     <input type="text" id="search-filter" oninput="applyFilters()" placeholder="Buscar equipo..." 
-                        class="bg-gray-900 border border-gray-700 text-white text-sm rounded-lg block w-full pl-10 p-2.5 focus:border-green-500 focus:ring-1 outline-none uppercase font-bold placeholder:normal-case w-64">
+                        class="bg-gray-900 border border-gray-700 text-white text-sm rounded-lg block w-full pl-10 p-2.5 focus:border-green-500 focus:ring-1 outline-none font-bold w-64">
                 </div>
 
                 <button onclick="selectAllVisible()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-xs font-bold uppercase border border-gray-700">
                     ☑️ Todos
                 </button>
                 
-                <button id="btn-nuke" onclick="startBatchGeneration()" class="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all flex items-center gap-2">
+                <button onclick="toggleConfig()" class="px-5 py-2 bg-blue-900/40 text-blue-400 hover:bg-blue-600 hover:text-white rounded text-xs font-black uppercase border border-blue-500 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">palette</span> PANEL DE DISEÑO
+                </button>
+
+                <button id="btn-nuke" onclick="startBatchGeneration()" class="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded font-black uppercase tracking-widest shadow-lg shadow-green-900/50 hover:scale-105 transition-all flex items-center gap-2">
                     <span class="material-symbols-outlined">auto_fix_high</span> 
                     <span id="btn-nuke-text">Generar (0)</span>
                 </button>
             </div>
         </div>
         
-        <!-- BARRA DE CONFIGURACIÓN DE TARJETAS -->
-        <div class="mt-4 bg-gray-900/50 border border-gray-800 rounded-lg p-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <!-- PANEL DE DISEÑO AVANZADO -->
+        <div id="cfg-panel" class="hidden mt-4 bg-gray-900 border border-gray-700 rounded-xl p-5 grid grid-cols-1 md:grid-cols-4 gap-5 shadow-2xl relative">
             
-            <!-- Checkbox IA -->
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm text-purple-400">robot_2</span>
-                <label class="cursor-pointer flex items-center gap-2 text-xs font-bold text-gray-300">
-                    <input type="checkbox" id="cfg-use-ai" checked class="w-4 h-4 accent-purple-500 cursor-pointer">
-                    GENERAR TEXTO CON IA (FB/WA)
-                </label>
+            <!-- Estructura y Color -->
+            <div class="cfg-group border-blue-900/50">
+                <span class="cfg-label text-blue-400">1. Formato y Colores</span>
+                
+                <div class="cfg-row flex items-center gap-3 mb-4 text-xs font-bold text-gray-300 bg-black/50 p-2 rounded">
+                    <label class="cursor-pointer flex items-center gap-1"><input type="radio" name="cfg-format" value="square" onchange="updatePreviewIfOpen()" class="accent-blue-500"> Cuadrado</label>
+                    <label class="cursor-pointer flex items-center gap-1"><input type="radio" name="cfg-format" value="vertical" onchange="updatePreviewIfOpen()" checked class="accent-blue-500"> Móvil</label>
+                </div>
+
+                <div class="cfg-row flex items-center justify-between gap-2">
+                    <span class="cfg-row-title mb-0">Color Pie de Tarjeta:</span>
+                    <input type="color" id="cfg-color" value="#347a46" oninput="updatePreviewIfOpen()" class="w-10 h-8 rounded cursor-pointer border-none bg-transparent">
+                </div>
+
+                <div class="cfg-row flex items-center gap-2 border-t border-gray-700 pt-3 mt-3">
+                    <input type="checkbox" id="cfg-use-ai" checked class="w-5 h-5 accent-purple-500 cursor-pointer">
+                    <span class="text-[10px] font-black text-purple-400">ACTIVAR IA TEXTOS (FB/WA)</span>
+                </div>
             </div>
 
-            <div class="w-px h-6 bg-gray-700 hidden md:block"></div>
+            <!-- Etiquetas e Insignias -->
+            <div class="cfg-group border-orange-900/50">
+                <span class="cfg-label text-orange-400">2. Etiquetas Visuales</span>
+                
+                <div class="cfg-row">
+                    <span class="cfg-row-title">Insignia Superior (Esquina):</span>
+                    <select id="cfg-badge" onchange="updatePreviewIfOpen()" class="cfg-input">
+                        <option value="NINGUNO">Ninguno</option>
+                        <option value="NUEVO">NUEVO</option>
+                        <option value="OFERTA">OFERTA</option>
+                        <option value="AGOTÁNDOSE">AGOTÁNDOSE</option>
+                    </select>
+                </div>
 
-            <!-- Formato -->
-            <div class="flex items-center gap-3 text-xs font-bold text-gray-300">
-                <span class="material-symbols-outlined text-sm text-blue-400">aspect_ratio</span> FORMATO:
-                <label class="cursor-pointer flex items-center gap-1"><input type="radio" name="cfg-format" value="square" checked class="accent-blue-500"> Cuadrado</label>
-                <label class="cursor-pointer flex items-center gap-1"><input type="radio" name="cfg-format" value="vertical" class="accent-blue-500"> Móvil</label>
+                <div class="cfg-row border-t border-gray-800 pt-2 mt-2">
+                    <span class="cfg-row-title text-orange-300">Mensaje de Urgencia (Ej: ¡Últimas 4!):</span>
+                    <input type="text" id="cfg-urgency" placeholder="Dejar vacío para omitir..." oninput="updatePreviewIfOpen()" class="cfg-input">
+                    
+                    <div class="flex items-center gap-2 mt-2 bg-black/50 p-2 rounded">
+                        <span class="cfg-row-title mb-0">Color:</span>
+                        <input type="color" id="cfg-urgency-color" value="#e11d48" oninput="updatePreviewIfOpen()" class="w-6 h-6 rounded cursor-pointer border-none bg-transparent">
+                        <span class="cfg-row-title mb-0 ml-2">Tamaño:</span>
+                        <input type="number" id="cfg-urgency-size" value="22" oninput="updatePreviewIfOpen()" class="cfg-input w-16 !p-1 text-center">
+                    </div>
+                </div>
             </div>
 
-            <div class="w-px h-6 bg-gray-700 hidden md:block"></div>
+            <!-- Textos Extras -->
+            <div class="cfg-group border-green-900/50">
+                <span class="cfg-label text-green-400">3. Textos Personalizados</span>
+                
+                <div class="cfg-row">
+                    <span class="cfg-row-title">Texto Garantía:</span>
+                    <input type="text" id="cfg-warranty" value="Con Factura y Garantía" oninput="updatePreviewIfOpen()" class="cfg-input">
+                </div>
+                
+                <div class="cfg-row">
+                    <span class="cfg-row-title">Texto Mensajería:</span>
+                    <input type="text" id="cfg-delivery" value="Mensajería por costo adicional" oninput="updatePreviewIfOpen()" class="cfg-input">
+                </div>
 
-            <!-- Color Base -->
-            <div class="flex items-center gap-2 text-xs font-bold text-gray-300">
-                <span class="material-symbols-outlined text-sm">palette</span> COLOR PIE:
-                <input type="color" id="cfg-color" value="#347a46" class="w-6 h-6 border-none cursor-pointer rounded bg-transparent">
+                <div class="cfg-row border-t border-gray-800 pt-2 mt-2">
+                    <span class="cfg-row-title text-green-300">Texto Acción (Botón/Footer):</span>
+                    <input type="text" id="cfg-cta-text" value="¡Escríbeme por WhatsApp!" oninput="updatePreviewIfOpen()" class="cfg-input">
+                </div>
             </div>
 
-            <!-- Campos Textos Extras -->
-            <div class="flex-1 flex gap-2 min-w-[300px]">
-                <input type="text" id="cfg-warranty" value="Con Factura y Garantía" placeholder="Texto Garantía" class="bg-black border border-gray-700 text-xs px-2 py-1 rounded w-full outline-none focus:border-green-500">
-                <input type="text" id="cfg-delivery" value="Mensajería por costo adicional" placeholder="Texto Mensajería" class="bg-black border border-gray-700 text-xs px-2 py-1 rounded w-full outline-none focus:border-green-500">
+            <!-- Ajustes de Fuente -->
+            <div class="cfg-group border-yellow-900/50">
+                <span class="cfg-label text-yellow-400">4. Ajuste de Tamaños</span>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="cfg-row">
+                        <span class="cfg-row-title">Título:</span>
+                        <input type="number" id="cfg-szT" value="32" oninput="updatePreviewIfOpen()" class="cfg-input text-center">
+                    </div>
+                    <div class="cfg-row">
+                        <span class="cfg-row-title">Precio:</span>
+                        <input type="number" id="cfg-szP" value="95" oninput="updatePreviewIfOpen()" class="cfg-input text-center">
+                    </div>
+                    <div class="cfg-row">
+                        <span class="cfg-row-title">Teléfono:</span>
+                        <input type="number" id="cfg-szPh" value="42" oninput="updatePreviewIfOpen()" class="cfg-input text-center">
+                    </div>
+                    <div class="cfg-row">
+                        <span class="cfg-row-title">Acción (CTA):</span>
+                        <input type="number" id="cfg-szCta" value="22" oninput="updatePreviewIfOpen()" class="cfg-input text-center">
+                    </div>
+                </div>
             </div>
+
+            <!-- BOTÓN GIGANTE VISTA PREVIA -->
+            <div class="col-span-1 md:col-span-4 mt-2">
+                <button onclick="openGlobalPreview()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-lg uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] flex justify-center items-center gap-2 transition-all">
+                    <span class="material-symbols-outlined text-2xl">visibility</span> ¡VER VISTA PREVIA DEL DISEÑO!
+                </button>
+            </div>
+
         </div>
 
         <!-- Filtros Rápidos -->
@@ -102,7 +176,7 @@
     <!-- GRID DE PRODUCTOS -->
     <main class="max-w-7xl mx-auto">
         <!-- RESUMEN MASIVO -->
-        <div id="batch-summary-box" class="hidden bg-gray-900 border border-green-500/50 p-6 rounded-xl mb-8 shadow-2xl relative animate-fade-in">
+        <div id="batch-summary-box" class="hidden bg-gray-900 border border-green-500/50 p-6 rounded-xl mb-8 shadow-2xl relative">
             <h3 class="text-green-400 font-black uppercase tracking-widest mb-2 flex items-center gap-2">
                 <span class="material-symbols-outlined">campaign</span> TEXTO PARA REDES SOCIALES
             </h3>
@@ -120,52 +194,26 @@
         </div>
     </main>
 
-    <!-- MODAL IA INDIVIDUAL -->
-    <div id="revolico-modal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-[#0a0a0a] w-full max-w-2xl rounded-2xl border border-gray-700 shadow-2xl relative flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 rounded-t-2xl">
-                <div>
-                    <h2 class="text-lg font-black text-white uppercase flex items-center gap-2">
-                        <span class="text-purple-500 text-xl">R</span> GENERADOR IA
-                    </h2>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest" id="rev-product-name">...</p>
-                </div>
-                <button onclick="closeRevolico()" class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+    <!-- MODAL VISTA PREVIA GIGANTE -->
+    <div id="preview-modal" class="fixed inset-0 z-[100] hidden bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#0a0a0a] w-full max-w-lg rounded-2xl border border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.3)] relative flex flex-col">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/80 rounded-t-2xl">
+                <h2 class="text-xl font-black text-white uppercase flex items-center gap-2">
+                    <span class="material-symbols-outlined text-blue-400">visibility</span> VISTA PREVIA EN VIVO
+                </h2>
+                <button onclick="closePreview()" class="text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"><span class="material-symbols-outlined">close</span></button>
             </div>
-
-            <div class="p-6 overflow-y-auto space-y-4">
-                <div id="rev-loader" class="hidden text-center py-10">
-                    <span class="loader border-purple-500"></span>
-                    <p class="mt-4 text-purple-400 text-xs font-bold uppercase animate-pulse">La IA está redactando...</p>
-                </div>
-
-                <div id="rev-content" class="space-y-4 hidden">
-                    <div>
-                        <div class="flex justify-between items-end mb-1">
-                            <label class="text-[10px] font-black text-gray-500 uppercase">Título</label>
-                            <button onclick="copyToClipboard('rev-title-input', this)" class="text-[9px] text-purple-400 hover:text-white">Copiar</button>
-                        </div>
-                        <input type="text" id="rev-title-input" class="w-full bg-black border border-gray-700 rounded-lg p-2 text-white font-bold text-sm outline-none">
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-end mb-1">
-                            <label class="text-[10px] font-black text-gray-500 uppercase">Cuerpo del Anuncio</label>
-                            <button onclick="copyToClipboard('rev-body-input', this)" class="text-[9px] text-purple-400 hover:text-white">Copiar</button>
-                        </div>
-                        <textarea id="rev-body-input" class="w-full h-48 bg-black border border-gray-700 rounded-lg p-3 text-gray-300 text-xs font-mono resize-none outline-none"></textarea>
-                    </div>
-                </div>
+            <div class="p-4 flex items-center justify-center bg-black/80 overflow-hidden relative min-h-[400px]">
+                <img id="preview-img" class="max-h-[70vh] w-auto rounded border border-gray-800 shadow-xl object-contain transition-all">
             </div>
-            
-            <div class="p-3 border-t border-gray-800 bg-gray-900/30 rounded-b-2xl flex justify-end">
-                <button onclick="regenerateRevolico()" class="text-[10px] font-bold text-gray-400 hover:text-white uppercase flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">refresh</span> Regenerar
-                </button>
+            <div class="p-4 border-t border-gray-800 text-center text-sm text-blue-400 font-bold bg-blue-900/20 rounded-b-2xl flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">info</span>
+                Modifica los valores en el Panel de Diseño y los verás cambiar aquí.
             </div>
         </div>
     </div>
 
-    <!-- CANVAS OCULTO PARA GENERAR IMÁGENES -->
+    <!-- CANVAS OCULTO -->
     <canvas id="generator-canvas"></canvas>
 
 <script>
@@ -182,7 +230,7 @@
     let filteredProducts = [];
     let selectedIds = new Set();
     let processing = false;
-    let currentRevolicoProduct = null;
+    let currentPreviewProduct = null;
 
     // --- INICIO ---
     window.onload = async () => {
@@ -190,7 +238,7 @@
         if(pass !== "marcel/6") { document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:20%'>DENEGADO</h1>"; return; }
         
         if(!localStorage.getItem('pth_gemini_api_key')) {
-            const key = prompt("🔑 API Key Gemini (Opcional, pero necesaria para IA):");
+            const key = prompt("🔑 API Key Gemini (Opcional, necesaria para IA Textos):");
             if(key) localStorage.setItem('pth_gemini_api_key', key);
         }
         await loadAllProducts();
@@ -250,7 +298,7 @@
                     </label>
                 </div>
 
-                <div class="absolute top-2 right-2 z-20 bg-green-600 text-white text-[9px] font-black px-2 py-1 rounded uppercase shadow-md">ParaTuHogar</div>
+                <div class="absolute top-2 right-2 z-20 bg-green-600 text-white text-[9px] font-black px-2 py-1 rounded uppercase shadow-md">PTH</div>
 
                 <div class="w-full h-48 bg-white/5 flex items-center justify-center p-4 relative cursor-pointer" onclick="toggleSelection('${p.id}')">
                     <img src="${fixDriveUrl(p.thumbnail)}" class="max-w-full max-h-full object-contain drop-shadow-lg" loading="lazy">
@@ -261,8 +309,8 @@
                     <div class="text-lg font-black text-yellow-500 mt-auto">$${p.precio} USD</div>
 
                     <div class="flex gap-2 mt-3 pt-3 border-t border-gray-800">
-                        <button onclick="openRevolicoModal('${p.id}')" class="w-full bg-purple-900/30 border border-purple-800/50 hover:bg-purple-800 text-purple-400 py-1.5 rounded text-[9px] font-black uppercase transition-all flex items-center justify-center gap-1">
-                            <span class="font-serif">R</span> IA Individual
+                        <button onclick="openPreview('${p.id}')" class="w-full bg-blue-900/30 border border-blue-800/50 hover:bg-blue-600 hover:text-white text-blue-400 py-1.5 rounded text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">visibility</span> Previa
                         </button>
                     </div>
 
@@ -270,77 +318,255 @@
                     <div id="result-${p.id}" class="hidden mt-2 pt-2 border-t border-gray-800">
                         <img id="img-result-${p.id}" class="w-full h-auto rounded border border-gray-700 hidden">
                         <textarea id="text-result-${p.id}" class="w-full h-12 bg-black text-[9px] text-gray-400 p-2 rounded mb-1 resize-none border border-gray-800 hidden"></textarea>
-                        <div class="flex gap-1">
-                            <button onclick="downloadImageById('${p.id}', '${p.nombre}')" class="flex-1 bg-green-700 text-white text-[9px] py-1 rounded font-bold hover:bg-green-600">FOTO</button>
-                        </div>
                     </div>
                 </div>
             </div>`;
         }).join('');
     }
 
-    function toggleSelection(id) {
-        selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id);
-        renderGrid();
-    }
-
+    function toggleSelection(id) { selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id); renderGrid(); }
     function selectAllVisible() {
         const allSel = filteredProducts.every(p => selectedIds.has(p.id));
         filteredProducts.forEach(p => allSel ? selectedIds.delete(p.id) : selectedIds.add(p.id));
         renderGrid();
     }
+    function toggleConfig() {
+        const panel = document.getElementById('cfg-panel');
+        panel.classList.toggle('hidden');
+    }
 
-    // --- IA INDIVIDUAL (MODAL) ---
-    function openRevolicoModal(id) {
+    // --- VISTA PREVIA GLOBAL E INDIVIDUAL ---
+    async function openGlobalPreview() {
+        if(filteredProducts.length === 0 && allProducts.length === 0) return alert("No hay productos cargados para probar.");
+        // Toma el primer producto de la lista actual como ejemplo
+        const sampleProduct = filteredProducts.length > 0 ? filteredProducts[0] : allProducts[0];
+        openPreview(sampleProduct.id);
+    }
+
+    async function openPreview(id) {
         const p = allProducts.find(x => x.id === id);
         if(!p) return;
-        currentRevolicoProduct = p;
-        
-        document.getElementById('rev-product-name').innerText = p.nombre;
-        document.getElementById('rev-loader').classList.remove('hidden');
-        document.getElementById('rev-content').classList.add('hidden');
-        document.getElementById('revolico-modal').classList.remove('hidden');
-
-        generateRevolicoText(p);
+        currentPreviewProduct = p;
+        document.getElementById('preview-modal').classList.remove('hidden');
+        await renderPreview();
     }
-    function closeRevolico() { document.getElementById('revolico-modal').classList.add('hidden'); }
-    function regenerateRevolico() { if(currentRevolicoProduct) { document.getElementById('rev-loader').classList.remove('hidden'); document.getElementById('rev-content').classList.add('hidden'); generateRevolicoText(currentRevolicoProduct); } }
-
-    async function generateRevolicoText(p) {
-        const apiKey = localStorage.getItem('pth_gemini_api_key');
-        if(!apiKey) return alert("Falta API Key de Gemini.");
-
-        const prompt = `Actúa como un experto en ventas para Facebook/Revolico en Cuba.
-        PRODUCTO: "${p.nombre}"
-        PRECIO: $${p.precio} USD
-        DESCRIPCIÓN: "${p.descripcion || 'Garantía y Transporte'}"
-        
-        Genera un JSON:
-        {"titulo": "TÍTULO LLAMATIVO SIN PRECIO", "cuerpo": "Descripción con viñetas, emojis y que es Nuevo en caja. Menciona garantía y mensajería."}
-        
-        Responde SOLO JSON.`;
-
-        try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-            const response = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-            if (!response.ok) throw new Error("Error API");
-            
-            const data = await response.json();
-            let rawText = data.candidates[0].content.parts[0].text.trim().replace(/^```json/i, '').replace(/```$/i, '').trim();
-            const result = JSON.parse(rawText);
-
-            document.getElementById('rev-title-input').value = result.titulo || p.nombre;
-            document.getElementById('rev-body-input').value = result.cuerpo || p.descripcion;
-        } catch(e) {
-            document.getElementById('rev-title-input').value = `🔥 ${p.nombre} - Nuevo 📦`;
-            document.getElementById('rev-body-input').value = `✅ ESTADO: Nuevo en caja\n💲 PRECIO: $${p.precio} USD\n\n🚚 Mensajería Disponible\n📲 Contactar al WhatsApp: +53 ${AGENT_PHONE}`;
+    function closePreview() {
+        document.getElementById('preview-modal').classList.add('hidden');
+        currentPreviewProduct = null;
+    }
+    async function updatePreviewIfOpen() {
+        if(currentPreviewProduct && !document.getElementById('preview-modal').classList.contains('hidden')) {
+            await renderPreview();
         }
-        
-        document.getElementById('rev-loader').classList.add('hidden');
-        document.getElementById('rev-content').classList.remove('hidden');
+    }
+    async function renderPreview() {
+        if(!currentPreviewProduct) return;
+        const cfg = getCanvasConfig();
+        const base64 = await drawCardCanvas(currentPreviewProduct, cfg);
+        document.getElementById('preview-img').src = base64;
     }
 
-    // --- GENERACIÓN MASIVA (MOTOR GRÁFICO RECONSTRUIDO) ---
+    // --- LEER CONFIGURACIÓN ---
+    function getCanvasConfig() {
+        return {
+            format: document.querySelector('input[name="cfg-format"]:checked').value,
+            color: document.getElementById('cfg-color').value,
+            badge: document.getElementById('cfg-badge').value,
+            urgencyTxt: document.getElementById('cfg-urgency').value.trim(),
+            urgencyCol: document.getElementById('cfg-urgency-color').value,
+            urgencySz: parseInt(document.getElementById('cfg-urgency-size').value) || 22,
+            warranty: document.getElementById('cfg-warranty').value,
+            delivery: document.getElementById('cfg-delivery').value,
+            ctaTxt: document.getElementById('cfg-cta-text').value,
+            szT: parseInt(document.getElementById('cfg-szT').value) || 32,
+            szP: parseInt(document.getElementById('cfg-szP').value) || 95,
+            szPh: parseInt(document.getElementById('cfg-szPh').value) || 42,
+            szCta: parseInt(document.getElementById('cfg-szCta').value) || 22
+        };
+    }
+
+    // --- MOTOR GRÁFICO (Canvas Builder) ---
+    async function drawCardCanvas(p, cfg) {
+        const canvas = document.getElementById('generator-canvas');
+        const ctx = canvas.getContext('2d');
+        const isSquare = (cfg.format === 'square');
+        
+        const cW = isSquare ? 1080 : 720;
+        const cH = isSquare ? 1080 : 1280;
+        const s = isSquare ? 50 : 40; 
+        
+        canvas.width = cW; canvas.height = cH;
+        const ff = "'DM Sans', sans-serif";
+
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cW, cH);
+
+        const img = new Image(); 
+        img.crossOrigin = "Anonymous"; 
+        img.src = fixDriveUrl(p.thumbnail);
+        await new Promise((r) => { img.onload = r; img.onerror = r; }); 
+
+        if (!isSquare) {
+            // ================= FORMATO VERTICAL =================
+            ctx.fillStyle = '#f8f8f8'; ctx.fillRect(0, 0, cW, 70);
+            ctx.fillStyle = '#111'; ctx.font = `800 24px ${ff}`; ctx.textBaseline = 'middle';
+            ctx.fillText((p.categoria || 'PRODUCTO').toUpperCase(), s, 35);
+
+            const imgTop = 70, imgH = 680, imgW = cW - s * 2;
+            ctx.fillStyle = '#f4f4f4'; ctx.fillRect(0, imgTop, cW, imgH);
+            
+            if (img.width) {
+                const r = Math.min(imgW / img.width, (imgH - 40) / img.height);
+                const iw = img.width * r, ih = img.height * r;
+                ctx.drawImage(img, s + (imgW - iw) / 2, imgTop + 20 + (imgH - 40 - ih) / 2, iw, ih);
+            }
+
+            if (cfg.badge && cfg.badge !== 'NINGUNO') {
+                ctx.font = `800 18px ${ff}`;
+                const bw = ctx.measureText(cfg.badge).width + 30;
+                ctx.fillStyle = '#e07b00'; roundRect(ctx, cW - s - bw, imgTop + 20, bw, 36, 6);
+                ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(cfg.badge, cW - s - bw/2, imgTop + 38);
+                ctx.textAlign = 'left';
+            }
+
+            const sepY = imgTop + imgH + 20;
+            ctx.textBaseline = 'top'; 
+            let curY = sepY;
+            
+            ctx.fillStyle = '#111'; ctx.font = `800 ${cfg.szT}px ${ff}`;
+            wrapText(ctx, p.nombre, cW - s * 2).slice(0, 2).forEach(l => { ctx.fillText(l, s, curY); curY += (cfg.szT * 1.2); });
+            curY += 10;
+
+            ctx.font = `900 ${cfg.szP}px ${ff}`; ctx.fillStyle = '#111'; 
+            ctx.fillText(`${p.precio} USD`, s, curY);
+            curY += (cfg.szP + 10);
+
+            if (cfg.urgencyTxt) {
+                const uH = drawUrgencyPill(ctx, cfg.urgencyTxt, s, curY, cfg.urgencySz, cfg.urgencyCol, ff);
+                curY += (uH + 15);
+            }
+
+            ctx.font = `600 20px ${ff}`; ctx.fillStyle = '#555';
+            ctx.fillText(`🛡️ Garantía: ${cfg.warranty}`, s, curY); curY += 30;
+            ctx.fillText(`🚚 ${cfg.delivery}`, s, curY);
+
+            const banH = 160, banY = cH - banH;
+            ctx.fillStyle = cfg.color; ctx.fillRect(0, banY, cW, banH);
+            
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+            ctx.font = `800 ${cfg.szPh}px ${ff}`;
+            ctx.fillText(`+53 ${AGENT_PHONE}`, s, banY + banH * 0.4);
+            
+            ctx.font = `600 ${cfg.szCta}px ${ff}`; ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fillText(cfg.ctaTxt, s, banY + banH * 0.7);
+
+        } else {
+            // ================= FORMATO CUADRADO =================
+            ctx.fillStyle = '#f8f8f8'; ctx.fillRect(0, 0, cW, 85);
+            ctx.fillStyle = '#111'; ctx.font = `900 32px ${ff}`; ctx.textBaseline = 'middle';
+            ctx.fillText((p.categoria || 'PRODUCTO').toUpperCase(), s, 42);
+
+            const imgTop = 85, imgH = 650, imgW = cW - s * 2;
+            ctx.fillStyle = '#f4f4f4'; ctx.fillRect(0, imgTop, cW, imgH);
+
+            if (img.width) {
+                const r = Math.min(imgW / img.width, (imgH-40) / img.height);
+                const iw = img.width * r, ih = img.height * r;
+                ctx.drawImage(img, s + (imgW - iw) / 2, imgTop + 20 + (imgH - 40 - ih) / 2, iw, ih);
+            }
+
+            if (cfg.badge && cfg.badge !== 'NINGUNO') {
+                ctx.font = `800 20px ${ff}`;
+                const bw = ctx.measureText(cfg.badge).width + 36;
+                ctx.fillStyle = '#e07b00'; roundRect(ctx, cW - s - bw, imgTop + 25, bw, 40, 6);
+                ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(cfg.badge, cW - s - bw/2, imgTop + 45);
+                ctx.textAlign = 'left';
+            }
+
+            const sepY = imgTop + imgH + 20;
+            let curY = sepY;
+
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = '#111'; ctx.font = `800 ${cfg.szT}px ${ff}`;
+            const maxW = cW - s * 2 - 400; 
+            wrapText(ctx, p.nombre, maxW).slice(0, 2).forEach(l => { ctx.fillText(l, s, curY); curY += (cfg.szT * 1.2); });
+            
+            curY += 15;
+            ctx.font = `600 20px ${ff}`; ctx.fillStyle = '#555';
+            ctx.fillText(`🛡️ Garantía: ${cfg.warranty}`, s, curY); curY += 28;
+            ctx.fillText(`🚚 ${cfg.delivery}`, s, curY);
+
+            // Bloque Derecha
+            let rightY = sepY;
+            ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+            ctx.font = `900 ${cfg.szP}px ${ff}`; ctx.fillStyle = '#111';
+            ctx.fillText(`${p.precio} USD`, cW - s, rightY);
+            rightY += (cfg.szP + 10);
+            ctx.textAlign = 'left';
+
+            if (cfg.urgencyTxt) {
+                ctx.font = `800 ${cfg.urgencySz}px ${ff}`;
+                const uw = ctx.measureText(cfg.urgencyTxt).width + 24; 
+                const uX = cW - s - uw; 
+                drawUrgencyPill(ctx, cfg.urgencyTxt, uX, rightY, cfg.urgencySz, cfg.urgencyCol, ff);
+            }
+
+            // Footer
+            const banH = 120, banY = cH - banH;
+            ctx.fillStyle = cfg.color; ctx.fillRect(0, banY, cW, banH);
+            
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+            
+            const isz = 54, iy = banY + (banH - isz) / 2;
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath(); ctx.arc(s + isz / 2, iy + isz / 2, isz / 2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = `${isz * 0.6}px serif`; ctx.textAlign = 'center';
+            ctx.fillText('✆', s + isz / 2, iy + isz / 2 + 2);
+            
+            ctx.textAlign = 'left'; ctx.font = `800 ${cfg.szPh}px ${ff}`;
+            ctx.fillText(`+53 ${AGENT_PHONE}`, s + isz + 15, banY + banH / 2);
+
+            ctx.textAlign = 'right'; ctx.font = `800 ${cfg.szCta}px ${ff}`;
+            ctx.fillText(cfg.ctaTxt, cW - s, banY + banH / 2);
+            ctx.textAlign = 'left';
+        }
+
+        return canvas.toDataURL('image/jpeg', 0.95);
+    }
+
+    function drawUrgencyPill(ctx, text, x, y, size, color, font) {
+        ctx.font = `800 ${size}px ${font}`;
+        const w = ctx.measureText(text).width + (size * 1.5); 
+        const h = size * 1.6; 
+        
+        ctx.fillStyle = color;
+        roundRect(ctx, x, y, w, h, 6);
+        
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x + w/2, y + h/2 + (size*0.05)); 
+        
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top'; 
+        return h;
+    }
+
+    function wrapText(ctx, text, maxW) {
+        const words = (text||'').split(' '), lines = []; let line = '';
+        for (const w of words) {
+            const t = line + (line ? ' ' : '') + w;
+            if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+        }
+        if (line) lines.push(line);
+        return lines;
+    }
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath(); ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+        ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h); ctx.lineTo(x+r, y+h);
+        ctx.quadraticCurveTo(x, y+h, x, y+h-r); ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+        ctx.closePath(); ctx.fill();
+    }
+
+    // --- GENERACIÓN MASIVA ---
     async function startBatchGeneration() {
         if(selectedIds.size === 0) return alert("Selecciona productos.");
         if(processing) return;
@@ -351,14 +577,11 @@
         btn.innerHTML = `<span class="loader"></span> GENERANDO...`;
 
         const useAI = document.getElementById('cfg-use-ai').checked;
-        const format = document.querySelector('input[name="cfg-format"]:checked').value;
-        const footerColor = document.getElementById('cfg-color').value;
-        const warrantyTxt = document.getElementById('cfg-warranty').value;
-        const deliveryTxt = document.getElementById('cfg-delivery').value;
-
         const targets = allProducts.filter(p => selectedIds.has(p.id));
+        const cfg = getCanvasConfig(); 
+        
         const zip = new JSZip();
-        let summaryContent = `🚨 *¡NUEVO CATÁLOGO DISPONIBLE!* 🚨\nEntrega rápida en La Habana. 🚚💨\n\n`;
+        let summaryContent = `🚨 *¡CATÁLOGO ACTUALIZADO!* 🚨\nEntrega rápida en La Habana. 🚚💨\n\n`;
 
         for (const p of targets) {
             const statusDiv = document.getElementById(`status-${p.id}`);
@@ -366,24 +589,19 @@
 
             try {
                 const link = await getOrGenerateShortLink(p.nombre);
+                const imgBase64 = await drawCardCanvas(p, cfg);
                 
-                // 1. DIBUJAR IMAGEN (NUEVO MOTOR)
-                const imgBase64 = await drawCardCanvas(p, format, footerColor, warrantyTxt, deliveryTxt);
-                
-                // 2. IA TEXTO (SI ESTÁ ACTIVO)
                 let aiText = "";
                 if (useAI) {
-                    if(statusDiv) statusDiv.innerHTML = `<span class="text-[9px] text-purple-400 font-bold">IA Pensando...</span>`;
+                    if(statusDiv) statusDiv.innerHTML = `<span class="text-[9px] text-purple-400 font-bold">IA Redactando...</span>`;
                     aiText = await generateSimpleAI(p);
                 } else {
                     aiText = `🔥 *${p.nombre}*\n💰 Precio: *$${p.precio} USD*`;
                 }
 
-                // Guardar en ZIP
                 const imgData = imgBase64.split(',')[1];
                 zip.file(`${p.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 40)}.jpg`, imgData, {base64: true});
 
-                // Update UI
                 const resDiv = document.getElementById(`result-${p.id}`);
                 const imgEl = document.getElementById(`img-result-${p.id}`);
                 const txtEl = document.getElementById(`text-result-${p.id}`);
@@ -407,7 +625,7 @@
             document.getElementById('batch-summary-box').classList.remove('hidden');
         }
 
-        btn.innerHTML = `📦 ZIP...`;
+        btn.innerHTML = `📦 COMPRIMIENDO...`;
         try {
             const content = await zip.generateAsync({type:"blob"});
             saveAs(content, `Catalogo_${new Date().toLocaleDateString().replace(/\//g,'-')}.zip`);
@@ -417,161 +635,6 @@
         processing = false;
     }
 
-    // --- NUEVO MOTOR GRÁFICO (Clon exacto de tu popup.js) ---
-    async function drawCardCanvas(p, format, color, warrantyTxt, deliveryTxt) {
-        const canvas = document.getElementById('generator-canvas');
-        const ctx = canvas.getContext('2d');
-        const isSquare = (format === 'square');
-        
-        const cW = isSquare ? 1080 : 720;
-        const cH = isSquare ? 1080 : 1280;
-        const s = isSquare ? 50 : 40; 
-        
-        canvas.width = cW; canvas.height = cH;
-        const ff = "'DM Sans', sans-serif";
-
-        // Fondo Blanco
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cW, cH);
-
-        // Cargar Imagen del producto
-        const img = new Image(); 
-        img.crossOrigin = "Anonymous"; 
-        img.src = fixDriveUrl(p.thumbnail);
-        await new Promise((r) => { img.onload = r; img.onerror = r; }); // Esperar carga
-
-        if (!isSquare) {
-            // --- FORMATO VERTICAL (Historias) ---
-            ctx.fillStyle = '#f8f8f8'; ctx.fillRect(0, 0, cW, 70);
-            ctx.fillStyle = '#111'; ctx.font = `800 24px ${ff}`; ctx.textBaseline = 'middle';
-            ctx.fillText((p.categoria || 'PRODUCTO').toUpperCase(), s, 35);
-
-            const imgTop = 70, imgH = 680, imgW = cW - s * 2;
-            ctx.fillStyle = '#f4f4f4'; ctx.fillRect(0, imgTop, cW, imgH);
-            
-            if (img.width) {
-                const r = Math.min(imgW / img.width, (imgH - 40) / img.height);
-                const iw = img.width * r, ih = img.height * r;
-                ctx.drawImage(img, s + (imgW - iw) / 2, imgTop + 20 + (imgH - 40 - ih) / 2, iw, ih);
-            }
-
-            // Badge
-            ctx.font = `800 18px ${ff}`;
-            const bw = ctx.measureText('AGOTÁNDOSE').width + 30;
-            ctx.fillStyle = '#e07b00'; roundRect(ctx, cW - s - bw, imgTop + 20, bw, 36, 6);
-            ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText('AGOTÁNDOSE', cW - s - bw/2, imgTop + 38);
-            ctx.textAlign = 'left';
-
-            const sepY = imgTop + imgH + 20;
-            ctx.textBaseline = 'top'; ctx.fillStyle = '#111'; ctx.font = `800 32px ${ff}`;
-            let curY = sepY;
-            
-            wrapText(ctx, p.nombre, cW - s * 2).slice(0, 2).forEach(l => { ctx.fillText(l, s, curY); curY += 38; });
-            curY += 10;
-
-            // Precio
-            ctx.font = `900 85px ${ff}`; ctx.fillStyle = '#111'; 
-            ctx.fillText(`${p.precio} USD`, s, curY);
-            curY += 100;
-
-            // Detalles
-            ctx.font = `600 20px ${ff}`; ctx.fillStyle = '#555';
-            ctx.fillText(`🛡️ Garantía: ${warrantyTxt}`, s, curY); curY += 30;
-            ctx.fillText(`🚚 ${deliveryTxt}`, s, curY);
-
-            // Footer
-            const banH = 160, banY = cH - banH;
-            ctx.fillStyle = color; ctx.fillRect(0, banY, cW, banH);
-            
-            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
-            ctx.font = `800 38px ${ff}`;
-            ctx.fillText(`+53 ${AGENT_PHONE}`, s, banY + banH * 0.4);
-            ctx.font = `600 22px ${ff}`; ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.fillText("¡Escríbeme por WhatsApp!", s, banY + banH * 0.7);
-
-        } else {
-            // --- FORMATO CUADRADO (Facebook) ---
-            ctx.fillStyle = '#f8f8f8'; ctx.fillRect(0, 0, cW, 85);
-            ctx.fillStyle = '#111'; ctx.font = `900 32px ${ff}`; ctx.textBaseline = 'middle';
-            ctx.fillText((p.categoria || 'PRODUCTO').toUpperCase(), s, 42);
-
-            const imgTop = 85, imgH = 650, imgW = cW - s * 2;
-            ctx.fillStyle = '#f4f4f4'; ctx.fillRect(0, imgTop, cW, imgH);
-
-            if (img.width) {
-                const r = Math.min(imgW / img.width, (imgH-40) / img.height);
-                const iw = img.width * r, ih = img.height * r;
-                ctx.drawImage(img, s + (imgW - iw) / 2, imgTop + 20 + (imgH - 40 - ih) / 2, iw, ih);
-            }
-
-            // Badge
-            ctx.font = `800 20px ${ff}`;
-            const bw = ctx.measureText('AGOTÁNDOSE').width + 36;
-            ctx.fillStyle = '#e07b00'; roundRect(ctx, cW - s - bw, imgTop + 25, bw, 40, 6);
-            ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText('AGOTÁNDOSE', cW - s - bw/2, imgTop + 45);
-            ctx.textAlign = 'left';
-
-            const sepY = imgTop + imgH + 20;
-            let curY = sepY;
-
-            // Precio (Derecha)
-            ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-            ctx.font = `900 100px ${ff}`; ctx.fillStyle = '#111';
-            ctx.fillText(`${p.precio} USD`, cW - s, curY);
-            ctx.textAlign = 'left';
-
-            // Título (Izquierda)
-            ctx.fillStyle = '#111'; ctx.font = `800 36px ${ff}`;
-            const maxW = cW - s * 2 - 450; // Dejar espacio para precio
-            wrapText(ctx, p.nombre, maxW).slice(0, 2).forEach(l => { ctx.fillText(l, s, curY); curY += 42; });
-            
-            curY += 15;
-            ctx.font = `600 22px ${ff}`; ctx.fillStyle = '#555';
-            ctx.fillText(`🛡️ Garantía: ${warrantyTxt}`, s, curY); curY += 32;
-            ctx.fillText(`🚚 ${deliveryTxt}`, s, curY);
-
-            // Footer
-            const banH = 120, banY = cH - banH;
-            ctx.fillStyle = color; ctx.fillRect(0, banY, cW, banH);
-            
-            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
-            
-            // Teléfono Izquierda
-            const isz = 54, iy = banY + (banH - isz) / 2;
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.beginPath(); ctx.arc(s + isz / 2, iy + isz / 2, isz / 2, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.font = `${isz * 0.6}px serif`; ctx.textAlign = 'center';
-            ctx.fillText('✆', s + isz / 2, iy + isz / 2 + 2);
-            
-            ctx.textAlign = 'left'; ctx.font = `800 42px ${ff}`;
-            ctx.fillText(`+53 ${AGENT_PHONE}`, s + isz + 15, banY + banH / 2);
-
-            // CTA Derecha
-            ctx.textAlign = 'right'; ctx.font = `800 36px ${ff}`;
-            ctx.fillText("¡Whastapp!", cW - s, banY + banH / 2);
-            ctx.textAlign = 'left';
-        }
-
-        return canvas.toDataURL('image/jpeg', 0.95);
-    }
-
-    // Funciones Canvas Auxiliares
-    function wrapText(ctx, text, maxW) {
-        const words = (text||'').split(' '), lines = []; let line = '';
-        for (const w of words) {
-            const t = line + (line ? ' ' : '') + w;
-            if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
-        }
-        if (line) lines.push(line);
-        return lines;
-    }
-    function roundRect(ctx, x, y, w, h, r) {
-        ctx.beginPath(); ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-        ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h); ctx.lineTo(x+r, y+h);
-        ctx.quadraticCurveTo(x, y+h, x, y+h-r); ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-        ctx.closePath(); ctx.fill();
-    }
-
-    // --- IA CORTA PARA BATCH ---
     async function generateSimpleAI(p) {
         const apiKey = localStorage.getItem('pth_gemini_api_key');
         if(!apiKey) return `🔥 *${p.nombre}*\n💰 *$${p.precio} USD*`;
@@ -612,10 +675,6 @@
         const el = document.getElementById(id); el.select(); document.execCommand('copy');
         const orig = btn.innerText; btn.innerText = "¡COPIADO!";
         setTimeout(() => { btn.innerText = orig; }, 2000);
-    }
-    function downloadImageById(id, name) {
-        const img = document.getElementById(`img-result-${id}`);
-        if(img) { const a = document.createElement('a'); a.href = img.src; a.download = `Post_${name.replace(/\s+/g, '_')}.jpg`; a.click(); }
     }
 </script>
 </body>
