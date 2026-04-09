@@ -34,8 +34,8 @@
 </head>
 <body class="min-h-screen p-6 pb-20">
 
-    <!-- HEADER DE CONTROL -->
-    <header class="max-w-7xl mx-auto mb-6 border-b border-gray-800 pb-4 sticky top-0 bg-[#050505]/95 z-40 backdrop-blur-md pt-2">
+    <!-- HEADER DE CONTROL (Solo controles principales, pegajoso) -->
+    <header class="max-w-7xl mx-auto mb-4 border-b border-gray-800 pb-4 sticky top-0 bg-[#050505]/95 z-40 backdrop-blur-md pt-2">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 uppercase tracking-widest">
@@ -65,9 +65,13 @@
                 </button>
             </div>
         </div>
+    </header>
+    
+    <!-- PANELES Y FILTROS (Fuera del header para permitir scroll en móvil) -->
+    <div class="max-w-7xl mx-auto mb-6">
         
         <!-- PANEL DE DISEÑO AVANZADO -->
-        <div id="cfg-panel" class="hidden mt-4 bg-gray-900 border border-gray-700 rounded-xl p-5 grid grid-cols-1 md:grid-cols-4 gap-5 shadow-2xl relative">
+        <div id="cfg-panel" class="hidden mb-6 bg-gray-900 border border-gray-700 rounded-xl p-5 grid grid-cols-1 md:grid-cols-4 gap-5 shadow-2xl relative">
             
             <!-- Estructura y Color -->
             <div class="cfg-group border-blue-900/50">
@@ -170,8 +174,8 @@
         </div>
 
         <!-- Filtros Rápidos -->
-        <div id="category-chips" class="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide"></div>
-    </header>
+        <div id="category-chips" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+    </div>
 
     <!-- GRID DE PRODUCTOS -->
     <main class="max-w-7xl mx-auto">
@@ -338,7 +342,6 @@
     // --- VISTA PREVIA GLOBAL E INDIVIDUAL ---
     async function openGlobalPreview() {
         if(filteredProducts.length === 0 && allProducts.length === 0) return alert("No hay productos cargados para probar.");
-        // Toma el primer producto de la lista actual como ejemplo
         const sampleProduct = filteredProducts.length > 0 ? filteredProducts[0] : allProducts[0];
         openPreview(sampleProduct.id);
     }
