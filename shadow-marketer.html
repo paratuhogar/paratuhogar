@@ -121,9 +121,21 @@
             </div>
 
             <!-- Textos Extras -->
+            <!-- Textos Extras + Datos del Gestor -->
             <div class="cfg-group border-green-900/50">
-                <span class="cfg-label text-green-400">3. Textos Personalizados</span>
+                <span class="cfg-label text-green-400">3. Datos y Textos Extras</span>
                 
+                <div class="cfg-row flex gap-2 mb-2">
+                    <div class="w-1/2">
+                        <span class="cfg-row-title text-green-300">Tu Nombre:</span>
+                        <input type="text" id="cfg-agent-name" oninput="updatePreviewIfOpen()" class="cfg-input font-bold text-white bg-gray-800">
+                    </div>
+                    <div class="w-1/2">
+                        <span class="cfg-row-title text-green-300">Tu Teléfono:</span>
+                        <input type="text" id="cfg-agent-phone" oninput="updatePreviewIfOpen()" class="cfg-input font-bold text-white bg-gray-800">
+                    </div>
+                </div>
+
                 <div class="cfg-row">
                     <span class="cfg-row-title">Texto Garantía:</span>
                     <input type="text" id="cfg-warranty" value="Con Factura y Garantía" oninput="updatePreviewIfOpen()" class="cfg-input">
@@ -284,24 +296,28 @@
     let currentRevolicoProduct = null;
 
     // --- INICIO ---
+    // --- INICIO ---
     window.onload = async () => {
         const pass = prompt("🛡️ SALA DE GUERRA\nClave de Mando:");
         
-        // Detectar si es Marcel
+        let initialName = "Marcel Montano";
+        let initialPhone = "58183649";
+
+        // Detectar quién es según la clave
         if (pass === "marcel/6") {
-            AGENT_NAME = "Marcel Montano";
-            AGENT_PHONE = "58183649";
-            
-        // Detectar si es Diana
+            initialName = "Marcel Montano";
+            initialPhone = "58183649";
         } else if (pass === "diana/god") { 
-            AGENT_NAME = "Diana";
-            AGENT_PHONE = "50000000"; // <--- CAMBIA ESTO POR EL TELÉFONO DE DIANA
-            
-        // Si ponen mal la clave
+            initialName = "Diana";
+            initialPhone = "50000000"; // <--- CAMBIA ESTO POR SU NÚMERO
         } else { 
             document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:20%'>DENEGADO</h1>"; 
             return; 
         }
+
+        // Llenar las casillas visuales con los datos
+        document.getElementById('cfg-agent-name').value = initialName;
+        document.getElementById('cfg-agent-phone').value = initialPhone;
         
         if(!localStorage.getItem('pth_gemini_api_key')) {
             const key = prompt("🔑 API Key Gemini (Opcional, necesaria para IA Textos):");
@@ -522,6 +538,8 @@
     // --- LEER CONFIGURACIÓN (MOTOR GRÁFICO) ---
     function getCanvasConfig() {
         return {
+            agentName: document.getElementById('cfg-agent-name').value.trim(),
+            agentPhone: document.getElementById('cfg-agent-phone').value.trim(),
             format: document.querySelector('input[name="cfg-format"]:checked').value,
             color: document.getElementById('cfg-color').value,
             badge: document.getElementById('cfg-badge').value,
@@ -607,7 +625,7 @@
             
             ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
             ctx.font = `800 ${cfg.szPh}px ${ff}`;
-            ctx.fillText(`+53 ${AGENT_PHONE}`, s, banY + banH * 0.4);
+            ctx.fillText(`+53 ${cfg.agentPhone}`, s, banY + banH * 0.4);
             
             ctx.font = `600 ${cfg.szCta}px ${ff}`; ctx.fillStyle = 'rgba(255,255,255,0.9)';
             ctx.fillText(cfg.ctaTxt, s, banY + banH * 0.7);
@@ -741,7 +759,7 @@
             if(statusDiv) { statusDiv.innerHTML = `<span class="text-[9px] text-blue-400 font-bold">Dibujando...</span>`; statusDiv.classList.remove('hidden'); }
 
             try {
-                const link = await getOrGenerateShortLink(p.nombre);
+                const link = await getOrGenerateShortLink(p.nombre, cfg.agentName, cfg.agentPhone);
                 const imgBase64 = await drawCardCanvas(p, cfg);
                 
                 let aiText = "";
@@ -812,14 +830,14 @@
         return `https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/${n}`;
     }
 
-    async function getOrGenerateShortLink(name) {
+    async function getOrGenerateShortLink(name, agentName, agentPhone) {
         const c = encodeURIComponent(name.trim());
-        const l = `${BASE_WEB_URL}/index.html?search=${c}&gestor=${encodeURIComponent(AGENT_NAME)}&tel=${AGENT_PHONE}`;
+        const l = `${BASE_WEB_URL}/index.html?search=${c}&gestor=${encodeURIComponent(agentName)}&tel=${agentPhone}`;
         try {
             const { data } = await supabaseClient.from('short_links').select('slug').eq('original_url', l).maybeSingle();
             if (data && data.slug) return `${BASE_WEB_URL}/index.html?s=${data.slug}`;
             const s = Math.random().toString(36).substring(2, 7);
-            await supabaseClient.from('short_links').insert([{ slug: s, original_url: l, gestor: AGENT_NAME }]);
+            await supabaseClient.from('short_links').insert([{ slug: s, original_url: l, gestor: agentName }]);
             return `${BASE_WEB_URL}/index.html?s=${s}`;
         } catch (e) { return l; }
     }
