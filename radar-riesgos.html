@@ -314,7 +314,8 @@
         });
 
         // DESCARGAR CONTACTOS VCF
-        function downloadVCard() {
+        // DESCARGAR CONTACTOS VCF (CORREGIDO PARA MÓVILES)
+        async function downloadVCard() {
             if (blacklistData.length === 0) return alert("La lista está vacía.");
 
             let vcfContent = "";
@@ -326,21 +327,51 @@
                 const count = row.tipo === 'Estafador' ? contadorE++ : contadorC++;
                 const contactName = `${prefix} PTH ${count}`; 
                 
-                // Si tiene 8 dígitos, aseguramos el +53. Si no, solo le ponemos +
+                // Aseguramos el +53 para Cuba, o el + para otros
                 const phoneVCF = row.telefono.length === 8 ? `+53${row.telefono}` : `+${row.telefono}`;
 
-                vcfContent += `BEGIN:VCARD\nVERSION:3.0\nN:;${contactName};;;\nFN:${contactName}\nTEL;TYPE=CELL:${phoneVCF}\nNOTE:Motivo: ${row.motivo} (Reportado por ${row.reportado_por})\nEND:VCARD\n`;
+                // LIMPIEZA CRÍTICA: Quitar saltos de línea reales del texto que escribió el gestor
+                // porque rompen el archivo VCF en los teléfonos.
+                let motivoLimpio = row.motivo ? row.motivo.replace(/\r?\n|\r/g, " / ") : "Sin motivo";
+
+                // CONSTUCCIÓN DEL VCF CON FORMATO ESTRICTO (\r\n) Y UTF-8
+                vcfContent += "BEGIN:VCARD\r\n";
+                vcfContent += "VERSION:3.0\r\n";
+                vcfContent += `N;CHARSET=UTF-8:;${contactName};;;\r\n`;
+                vcfContent += `FN;CHARSET=UTF-8:${contactName}\r\n`;
+                vcfContent += `TEL;TYPE=CELL:${phoneVCF}\r\n`;
+                vcfContent += `NOTE;CHARSET=UTF-8:Motivo: ${motivoLimpio} (Reportado por ${row.reportado_por})\r\n`;
+                vcfContent += "END:VCARD\r\n";
             });
 
-            const blob = new Blob([vcfContent], { type: 'text/vcard' });
+            // Crear el archivo con codificación estricta
+            const blob = new Blob([vcfContent], { type: 'text/vcard;charset=utf-8' });
+            const fileName = `Lista_Negra_PTH_${new Date().toISOString().split('T')[0]}.vcf`;
+            const file = new File([blob], fileName, { type: 'text/vcard' });
+
+            // INTENTO 1: Usar el menú de compartir nativo del celular (Abre "Contactos" directo)
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Radar de Riesgos PTH',
+                        text: 'Importa esta lista de estafadores a tus contactos.'
+                    });
+                    return; // Si funcionó el menú de compartir, terminamos aquí.
+                } catch (e) {
+                    console.log("El usuario canceló el menú de compartir.", e);
+                }
+            }
+
+            // INTENTO 2: Descarga clásica (Para PC o navegadores viejos)
             const link = document.createElement('a');
             link.href = window.URL.createObjectURL(blob);
-            link.download = `Seguridad_ParaTuHogar_${new Date().toISOString().split('T')[0]}.vcf`;
+            link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            alert("✅ Archivo de contactos descargado.\n\nÁbrelo en tu teléfono y selecciona 'Guardar todos' para que tu agenda registre a estas personas.");
+            alert("✅ Archivo descargado.\n\nÁbrelo desde tu carpeta de Descargas para importar los contactos.");
         }
 
         // COMPARTIR ALERTA A WHATSAPP
