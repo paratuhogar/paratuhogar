@@ -271,8 +271,8 @@
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const AGENT_NAME = "Marcel Montano";
-    const AGENT_PHONE = "58183649"; 
+    const AGENT_NAME = "";
+    const AGENT_PHONE = ""; 
     const BASE_WEB_URL = "https://paratuhogar.github.io/paratuhogar"; 
 
     let allProducts = [];
@@ -285,7 +285,22 @@
     // --- INICIO ---
     window.onload = async () => {
         const pass = prompt("🛡️ SALA DE GUERRA\nClave de Mando:");
-        if(pass !== "marcel/6") { document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:20%'>DENEGADO</h1>"; return; }
+        
+        // Detectar si es Marcel
+        if (pass === "marcel/6") {
+            AGENT_NAME = "Marcel Montano";
+            AGENT_PHONE = "58183649";
+            
+        // Detectar si es Diana (PON AQUÍ LA CONTRASEÑA, NOMBRE Y TELÉFONO DE ELLA)
+        } else if (pass === "diana/god") { 
+            AGENT_NAME = "Diana";
+            AGENT_PHONE = "50000000"; // <--- CAMBIA ESTO POR SU TELÉFONO REAL SIN EL +53
+            
+        // Si ponen mal la contraseña
+        } else { 
+            document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:20%'>DENEGADO</h1>"; 
+            return; 
+        }
         
         if(!localStorage.getItem('pth_gemini_api_key')) {
             const key = prompt("🔑 API Key Gemini (Opcional, necesaria para IA Textos):");
