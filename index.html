@@ -2028,7 +2028,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "704b"; 
+const versionActual = "1004b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -9638,17 +9638,11 @@ function showPriceIntro() {
 const RADAR_CAMPAIGN_KEY = 'info_radar_riesgos_v1';
 
 function showRadarIntro() {
-    // Verificamos si ya lo vio antes
-    const yaVisto = localStorage.getItem(RADAR_CAMPAIGN_KEY);
-    
-    if (!yaVisto) {
-        const modal = document.getElementById('modal-intro-radar');
-        if (modal) {
-            modal.classList.remove('hidden');
-            // Quitamos el scroll del fondo para que preste atención
-            document.body.style.overflow = 'hidden';
-        }
-    }
+    // 🚫 DESACTIVADO: 
+    // Simulamos que el cartel ya fue visto para que el sistema nunca lo abra 
+    // y evitamos que las gestoras se queden con la pantalla bloqueada.
+    localStorage.setItem(RADAR_CAMPAIGN_KEY, 'true');
+    return; 
 }
 
 function closeRadarIntro() {
