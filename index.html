@@ -1435,9 +1435,10 @@
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
     <button onclick="changeAdminTab('ventas-prod')" id="tab-ventas-prod" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
     🏆 Top Productos
-    <button onclick="changeAdminTab('categorias')" id="tab-categorias" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
-    📑 Categorías
 </button>
+
+<button onclick="changeAdminTab('categorias')" id="tab-categorias" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
+    📑 Categorías
 </button>
 
 <button onclick="changeAdminTab('buzon')" id="tab-buzon" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
@@ -12180,9 +12181,10 @@ async function loadPendingGestores() {
     if (error) return console.error("Error cargando gestores:", error);
 
     const { data: clicsDB } = await supabaseClient
-        .from('link_analytics')
-        .select('agent_name, timestamp')
-        .order('timestamp', { ascending: false });
+    .from('link_analytics')
+    .select('agent_name, timestamp')
+    .order('timestamp', { ascending: false })
+    .limit(10000); // <-- AGREGAR LÍMITE EVITA EL ERROR 400
 
     const now = new Date();
     const zombiesUpdate = [];
@@ -12220,16 +12222,21 @@ async function loadPendingGestores() {
         if (pendientes.length === 0) {
             containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
         } else {
-            containerPendientes.innerHTML = pendientes.map(g => `
-                <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-                    <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
-                    <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="approveGestorOnly('${g.id}', '${g.nombre}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
-                        <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
-                    </td>
-                </tr>
-            `).join('');
+            containerPendientes.innerHTML = pendientes.map(g => {
+    // LIMPIEZA DE COMILLAS PARA EVITAR ERROR JS
+    const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    
+    return `
+    <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+        <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
+        <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+        <td class="p-4 text-right">
+            <button onclick="approveGestorOnly('${g.id}', '${safeName}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
+            <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
+        </td>
+    </tr>
+    `;
+}).join('');
         }
     }
 
@@ -12336,6 +12343,10 @@ function renderAgentTeamTable() {
 
     // 5. RENDERIZADO CON DISEÑO RESPONSIVO
     container.innerHTML = listaFiltrada.map(g => {
+        // --- 1. LIMPIEZA DE VARIABLES PARA EVITAR ERRORES EN BOTONES ---
+        const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safePass = (g.password || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
         let semaforo = "bg-gray-400";
         let estadoTexto = "💤 Inactivo";
         if (g.estado_db === 'ausente_definitivo') {
@@ -12396,7 +12407,7 @@ function renderAgentTeamTable() {
                 </div>
             </td>
 
-            <!-- ACCIONES -->
+            <!-- ACCIONES (AQUÍ SE APLICÓ LA CORRECCIÓN) -->
             <td class="md:p-4 align-middle md:text-right">
                 <div class="flex justify-start md:justify-end items-center gap-3">
                     <button onclick="sendCredentialsWA('${g.id}')" class="flex items-center gap-1 bg-amber-100 text-amber-600 px-3 py-2 rounded-xl font-black uppercase text-[9px] md:bg-transparent md:p-2 md:rounded-full md:text-amber-500 hover:bg-amber-50 transition-all border border-amber-200 md:border-transparent">
@@ -12404,12 +12415,12 @@ function renderAgentTeamTable() {
                         <span class="md:hidden">Enviar Clave</span>
                     </button>
                     
-                    <button onclick="sendWelcomeBackMsg('${g.id}', '${g.nombre}', '${g.telefono}', '${g.password}')" class="flex items-center gap-1 bg-emerald-100 text-emerald-600 px-3 py-2 rounded-xl font-black uppercase text-[9px] md:bg-transparent md:p-2 md:rounded-full md:text-emerald-500 hover:bg-emerald-50 transition-all border border-emerald-200 md:border-transparent">
+                    <button onclick="sendWelcomeBackMsg('${g.id}', '${safeName}', '${g.telefono}', '${safePass}')" class="flex items-center gap-1 bg-emerald-100 text-emerald-600 px-3 py-2 rounded-xl font-black uppercase text-[9px] md:bg-transparent md:p-2 md:rounded-full md:text-emerald-500 hover:bg-emerald-50 transition-all border border-emerald-200 md:border-transparent">
                         <span class="material-symbols-outlined text-lg">campaign</span>
                         <span class="md:hidden">Rescatar</span>
                     </button>
 
-                    <button onclick="removeGestor('${g.id}', '${g.nombre}')" class="p-2 text-gray-300 hover:text-red-500 transition-all ml-auto md:ml-0">
+                    <button onclick="removeGestor('${g.id}', '${safeName}')" class="p-2 text-gray-300 hover:text-red-500 transition-all ml-auto md:ml-0">
                         <span class="material-symbols-outlined text-lg">block</span>
                     </button>
                 </div>
