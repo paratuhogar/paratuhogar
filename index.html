@@ -2073,7 +2073,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1004b"; 
+const versionActual = "1604b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10839,7 +10839,21 @@ window.obtenerCostoMensajeriaGlobal = function() {
 
     let costoBase = carritoTieneEquipoGrande() ? tarifa.gr : tarifa.pq;
 
+    // === NUEVA REGLA: EXCEPCIÓN ASPIRADORA ROYAL PARA PLAYA ===
+    // Detectamos si el carrito contiene la aspiradora
+    const tieneAspiradora = cart.some(item => (item.nombre || "").toUpperCase().includes('ASPIRADORA MULTIFUNCIONAL 30L'));
+    
+    if (tieneAspiradora && municipio === 'Playa') {
+        // Forzamos el costo a 10 USD si el sistema estaba calculando un precio menor (ej: 4 o 6)
+        if (costoBase < 10) {
+            costoBase = 10;
+        }
+    }
+    // ============================================================
+
     const totalEquipos = cart.reduce((acc, item) => acc + item.qty, 0);
+    
+    // Si llevan más de 3 equipos, el envío sube un 50%
     if (totalEquipos > 3) {
         costoBase = costoBase * 1.5;
     }
