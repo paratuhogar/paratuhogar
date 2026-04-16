@@ -2073,7 +2073,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1604b"; 
+const versionActual = "1604c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10839,17 +10839,43 @@ window.obtenerCostoMensajeriaGlobal = function() {
 
     let costoBase = carritoTieneEquipoGrande() ? tarifa.gr : tarifa.pq;
 
-    // === NUEVA REGLA: EXCEPCIÓN ASPIRADORA ROYAL PARA PLAYA ===
-    // Detectamos si el carrito contiene la aspiradora
-    const tieneAspiradora = cart.some(item => (item.nombre || "").toUpperCase().includes('ASPIRADORA MULTIFUNCIONAL 30L'));
+    // =====================================================================
+    // --- INICIO REGLAS ESPECÍFICAS PARA EL PROVEEDOR A ---
+    // (Asegúrate de que 'A' coincida con cómo guardas el nombre en tu base de datos, ej: 'Importadora A')
+    const esProveedorA = cart.some(item => (item.proveedor || "").toUpperCase() === 'A' || (item.proveedor || "").toUpperCase().includes('PROVEEDOR A'));
     
-    if (tieneAspiradora && municipio === 'Playa') {
-        // Forzamos el costo a 10 USD si el sistema estaba calculando un precio menor (ej: 4 o 6)
-        if (costoBase < 10) {
-            costoBase = 10;
+    if (esProveedorA) {
+        
+        // 🛑 ESPACIO PARA DECIDIR EL PRECIO DE EQUIPOS GRANDES (PROVEEDOR A)
+        // Cambia el 'null' por el precio que decidas (ej: 15). 
+        // Si lo dejas en 'null', el sistema usará la tarifa normal grande que ya tenías.
+        const PRECIO_EQUIPOS_GRANDES_PROVEEDOR_A = null; 
+
+        if (carritoTieneEquipoGrande()) {
+            // Aplicar tarifa personalizada para equipos grandes si la definiste arriba
+            if (PRECIO_EQUIPOS_GRANDES_PROVEEDOR_A !== null) {
+                costoBase = PRECIO_EQUIPOS_GRANDES_PROVEEDOR_A;
+            }
+        } else {
+            // LÓGICA PARA EQUIPOS PEQUEÑOS Y MEDIANOS (Aspiradoras)
+            const tieneAspiradora = cart.some(item => (item.nombre || "").toUpperCase().includes('ASPIRADORA'));
+            const municipiosLejos =['Plaza de la Revolución', 'Playa', 'Cotorro', 'Habana del Este']; 
+            // Nota: Vedado pertenece a Plaza de la Revolución; Miramar y Santa Fe pertenecen a Playa.
+
+            if (tieneAspiradora && municipiosLejos.includes(municipio)) {
+                // Aspiradoras hacia lugares lejos (Vedado, Playa, Cotorro, Habana del Este)
+                costoBase = 10;
+            } else if (municipio === 'Cotorro' || municipio === 'Habana del Este') {
+                // Cotorro y Habana del Este base general en 10
+                costoBase = 10;
+            } else {
+                // Equipos pequeños y aspiradoras a lugares cerca (San Miguel, Cerro, Centro Habana, etc.)
+                costoBase = 6;
+            }
         }
     }
-    // ============================================================
+    // --- FIN REGLAS PROVEEDOR A ---
+    // =====================================================================
 
     const totalEquipos = cart.reduce((acc, item) => acc + item.qty, 0);
     
