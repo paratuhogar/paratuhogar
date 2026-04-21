@@ -826,7 +826,7 @@
     function fixDriveUrl(url) {
         if (!url || url === 'null' || url.trim() === '') return 'https://placehold.co/400x400/f4f4f4/cccccc?text=Sin+Foto';
         let n = url.includes('/') ? url.split('/').pop() : url;
-        n = n.split('?')[0].trim().replace(/['"]/g, '').replace(/\s+/g, '');
+        n = n.split('?')[0].trim().replace(/['"]/g, '').replace(/%20/g, '').replace(/\s+/g, '');
         return `https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/${n}`;
     }
 
