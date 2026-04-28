@@ -219,13 +219,19 @@ function calculateDevFee(precioVenta) {
             <p id="sys-debt-count" class="text-slate-500 text-xs font-mono mt-1">0 pedidos pendientes de liquidar</p>
         </div>
 
-        <!-- Botón de Cobrar -->
-        <button onclick="liquidarSystemFee()" id="btn-pay-sys" class="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined">payments</span>
-                <span>LIQUIDAR AHORA</span>
-            </div>
-        </button>
+        <!-- Contenedor Botones (Cobrar y Desglose) -->
+        <div class="flex flex-col items-center justify-center gap-3">
+            <button onclick="liquidarSystemFee()" id="btn-pay-sys" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                <div class="flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">payments</span>
+                    <span>LIQUIDAR AHORA</span>
+                </div>
+            </button>
+            <!-- BOTÓN DE DESGLOSE AÑADIDO AQUÍ -->
+            <button onclick="showSystemDebtDetails()" id="btn-details-sys" class="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 cursor-pointer hidden">
+                <span class="material-symbols-outlined text-[14px]">visibility</span> Ver desglose de pedidos
+            </button>
+        </div>
     </div>
 </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1397,6 +1403,7 @@ function calculateMetrics(orders) {
 
 // 1. CALCULAR Y MOSTRAR DEUDA DEL SISTEMA
 // --- VERSIÓN CORREGIDA: DETECTA CANTIDADES (5x, 2x...) ---
+// --- VERSIÓN MEJORADA: CALCULA Y GENERA EL DESGLOSE ---
 function renderSystemDebt() {
     if (!pedidosRawAdmin) return;
 
@@ -1407,7 +1414,8 @@ function renderSystemDebt() {
     );
 
     let totalDeuda = 0;
-    const idsDeuda = [];
+    const idsDeuda =[];
+    let htmlDetalles = ''; // <-- NUEVO: Variable para armar la tabla
 
     deudaOrders.forEach(p => {
         // 1. Detectar Cantidad (Qty)
@@ -1420,7 +1428,6 @@ function renderSystemDebt() {
         const mensajeria = parseFloat(p.costo_mensajeria) || 0;
 
         // 3. Calcular Precio Unitario Real del Equipo
-        // (Total - Envio) / Cantidad
         const precioUnitario = (totalVenta - mensajeria) / qty;
 
         // 4. Calcular Tarifa Unitaria
@@ -1429,29 +1436,77 @@ function renderSystemDebt() {
         // 5. Calcular Tarifa Total del Pedido
         const feeTotalPedido = feeUnitario * qty;
         
-        totalDeuda += feeTotalPedido;
-        idsDeuda.push(p.id);
+        if (feeTotalPedido > 0) { // Solo sumamos y mostramos si la tarifa es mayor a 0
+            totalDeuda += feeTotalPedido;
+            idsDeuda.push(p.id);
+
+            // <-- NUEVO: Vamos dibujando la fila para el Modal
+            const fecha = new Date(p.fecha).toLocaleDateString();
+            htmlDetalles += `
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    <td class="p-3 align-middle">
+                        <span class="font-black text-slate-200">#${p.orden_dia || 'S/N'}</span><br>
+                        <span class="text-[9px] text-slate-500">${fecha}</span>
+                    </td>
+                    <td class="p-3 align-middle font-bold text-xs truncate max-w-[200px]" title="${p.producto}">${p.producto}</td>
+                    <td class="p-3 align-middle text-right font-mono text-slate-400">$${precioUnitario.toFixed(2)}</td>
+                    <td class="p-3 align-middle text-right font-mono text-indigo-400">$${feeUnitario.toFixed(2)}</td>
+                    <td class="p-3 align-middle text-center font-bold text-slate-300">x${qty}</td>
+                    <td class="p-3 align-middle text-right font-mono font-black text-emerald-400">$${feeTotalPedido.toFixed(2)}</td>
+                </tr>
+            `;
+        }
     });
 
-    // Actualizar UI
+    // Actualizar UI de la Tarjeta Principal
     const elAmount = document.getElementById('sys-debt-amount');
     const elCount = document.getElementById('sys-debt-count');
     const btn = document.getElementById('btn-pay-sys');
+    const btnDetails = document.getElementById('btn-details-sys');
 
     if(elAmount) elAmount.innerText = `$${totalDeuda.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     if(elCount) elCount.innerText = `${idsDeuda.length} pedidos por procesar`;
+
+    // Actualizar UI del Modal de Desglose
+    const listContainer = document.getElementById('list-sys-details');
+    const modalTotal = document.getElementById('modal-sys-total');
+    if (listContainer) {
+        listContainer.innerHTML = htmlDetalles || `<tr><td colspan="6" class="text-center p-6 text-slate-500 italic font-bold">No hay pedidos pendientes de cobro de sistema.</td></tr>`;
+    }
+    if (modalTotal) {
+        modalTotal.innerText = `$${totalDeuda.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    }
 
     if(btn) {
         btn.dataset.ids = JSON.stringify(idsDeuda);
         if (totalDeuda === 0) {
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
-            btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> <span>AL DÍA</span>`;
+            btn.innerHTML = `<div class="flex items-center justify-center gap-2"><span class="material-symbols-outlined">check_circle</span> <span>AL DÍA</span></div>`;
+            if(btnDetails) btnDetails.classList.add('hidden'); // Ocultar desglose si debe 0
         } else {
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btn.innerHTML = `<div class="flex items-center gap-2"><span class="material-symbols-outlined">payments</span><span>LIQUIDAR ($${totalDeuda.toFixed(2)})</span></div>`;
+            btn.innerHTML = `<div class="flex items-center justify-center gap-2"><span class="material-symbols-outlined">payments</span><span>LIQUIDAR ($${totalDeuda.toFixed(2)})</span></div>`;
+            if(btnDetails) btnDetails.classList.remove('hidden'); // Mostrar desglose
         }
+    }
+}
+
+// --- NUEVAS FUNCIONES PARA CONTROLAR EL MODAL ---
+function showSystemDebtDetails() {
+    const modal = document.getElementById('modal-sys-details');
+    if(modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Evita que hagan scroll en el fondo oscuro
+    }
+}
+
+function closeSystemDebtDetails() {
+    const modal = document.getElementById('modal-sys-details');
+    if(modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto'; // Restaura el scroll
     }
 }
 
@@ -1866,5 +1921,54 @@ window.loadAdvancedAnalytics = async function() {
         initMaster();
 
     </script>
+
+
+<!-- === MODAL DE DESGLOSE DE TARIFA DEL SISTEMA === -->
+<div id="modal-sys-details" class="fixed inset-0 z-[700] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-indigo-500/30 overflow-hidden flex flex-col max-h-[90vh]">
+        
+        <!-- Header -->
+        <div class="bg-indigo-600 p-4 flex justify-between items-center shrink-0">
+            <h3 class="text-white font-black uppercase text-sm tracking-widest flex items-center gap-2">
+                <span class="material-symbols-outlined">receipt_long</span> Desglose de Mantenimiento por Equipo
+            </h3>
+            <button onclick="closeSystemDebtDetails()" class="text-white/70 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Resumen Total Superior -->
+        <div class="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shrink-0">
+            <span class="text-slate-400 text-xs font-black uppercase tracking-widest">Total Acumulado a Liquidar:</span>
+            <span id="modal-sys-total" class="text-2xl font-black text-emerald-400 leading-none">$0.00</span>
+        </div>
+
+        <!-- Tabla Desglose con Scroll -->
+        <div class="overflow-y-auto custom-scrollbar flex-1 p-0">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-950 text-[10px] uppercase font-black text-slate-400 sticky top-0 shadow-md">
+                    <tr>
+                        <th class="p-4 w-28">Orden / Fecha</th>
+                        <th class="p-4">Producto</th>
+                        <th class="p-4 text-right">Precio Unit.</th>
+                        <th class="p-4 text-right text-indigo-400">Tarifa Base</th>
+                        <th class="p-4 text-center">Cant.</th>
+                        <th class="p-4 text-right text-emerald-400">Total (USD)</th>
+                    </tr>
+                </thead>
+                <tbody id="list-sys-details" class="divide-y divide-slate-800/80 bg-slate-900/50">
+                    <!-- Se llena automáticamente con JS -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-4 bg-slate-800 border-t border-slate-700 shrink-0 text-center">
+            <button onclick="closeSystemDebtDetails()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg font-bold text-xs uppercase transition-all shadow-sm">
+                Cerrar Desglose
+            </button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
