@@ -2073,7 +2073,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2904"; 
+const versionActual = "2904a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4448,7 +4448,13 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         mensajeRaw += `\n------------------------------------\n\n`;
 
         // GUARDAR EN BASE DE DATOS (Incluyendo Localidad)
-        const direccionFinalDB = notasC ? `${dirC} (${localidadC}) [NOTA: ${notasC}]` : `${dirC} (${localidadC})`;
+        
+        // ANIDAMOS EL MÉTODO DE PAGO Y VUELTO EN LAS NOTAS PARA PODER EXTRAERLO DESPUÉS EN EL REENVÍO
+        let notasExtended = notasC;
+        if (metodoPagoSeleccionado) notasExtended += (notasExtended ? ` ` : ``) + `[PAGO: ${metodoPagoSeleccionado}]`;
+        if (vueltoC !== "no") notasExtended += (notasExtended ? ` ` : ``) + `[VUELTO: ${vueltoC}]`;
+
+        const direccionFinalDB = notasExtended ? `${dirC} (${localidadC}) [NOTA: ${notasExtended}]` : `${dirC} (${localidadC})`;
 
         const insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, 
@@ -10453,6 +10459,7 @@ async function deleteMyOrder(id) {
     }
 }
 
+<<<<
 // --- FUNCIÓN PARA REENVIAR PEDIDO AL ALMACÉN (MANUAL) ---
 function reenviarPedidoAdmin(id) {
     const p = myOrdersData.find(item => item.id === id);
@@ -10519,6 +10526,217 @@ function reenviarValeAdmin(id) {
     
     // 5. Enviar
     // Usamos api.whatsapp.com para asegurar que abra en PC y Móvil
+    const url = `https://api.whatsapp.com/send?phone=${PHONE_CENTRAL}&text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
+====
+async function obtenerTelefonoGestor(gestorName) {
+    if (!gestorName || gestorName === 'Venta Directa') return null;
+    try {
+        const { data } = await supabaseClient
+            .from('gestores')
+            .select('telefono')
+            .eq('nombre', gestorName)
+            .maybeSingle();
+        if (data) return data.telefono;
+    } catch(e) {}
+    return null;
+}
+
+// --- FUNCIÓN PARA REENVIAR PEDIDO AL ALMACÉN (MANUAL) ---
+async function reenviarPedidoAdmin(id) {
+    const p = myOrdersData.find(item => item.id === id);
+    if (!p) return alert("Error: No se encuentran los datos del pedido.");
+
+    const PHONE_DUENO = "5356071095"; 
+    const fecha = new Date(p.fecha).toLocaleDateString();
+    
+    // Cálculo inverso seguro
+    const envio = parseFloat(p.costo_mensajeria) || 0;
+    const total = parseFloat(p.total) || 0;
+    const precioEquipos = total - envio;
+
+    // PARSEO DE LA DIRECCIÓN PARA EXTRAER NOTAS Y LOCALIDAD
+    let dir = p.direccion || "";
+    let localidad = "";
+    let notas = "";
+    let metodoPago = "";
+    let vuelto = "";
+
+    const notaMatch = dir.match(/\[NOTA:\s*(.*?)\]/i);
+    if (notaMatch) {
+        notas = notaMatch[1];
+        dir = dir.replace(notaMatch[0], "").trim();
+    }
+    
+    const locMatch = dir.match(/\((.*?)\)$/);
+    if (locMatch) {
+        localidad = locMatch[1];
+        dir = dir.replace(locMatch[0], "").trim();
+    }
+
+    const pagoMatch = notas.match(/\[PAGO:\s*(.*?)\]/i);
+    if (pagoMatch) {
+        metodoPago = pagoMatch[1];
+        notas = notas.replace(pagoMatch[0], "").trim();
+    }
+
+    const vueltoMatch = notas.match(/\[VUELTO:\s*(.*?)\]/i);
+    if (vueltoMatch) {
+        vuelto = vueltoMatch[1];
+        notas = notas.replace(vueltoMatch[0], "").trim();
+    }
+
+    let mensaje = `🧾 *REENVÍO PEDIDO #${p.orden_dia || '---'}*\n📅 Fecha: ${fecha}\n\n`;
+    mensaje += `👤 *CLIENTE*\nNombre: ${p.cliente}\nTel: ${p.telefono}\nDirección: ${dir}\n`;
+    
+    if (localidad) {
+        mensaje += `📍 Zona: ${localidad}, ${p.municipio || ''}\n`;
+    } else {
+        mensaje += `📍 Zona: ${p.municipio || ''}\n`;
+    }
+
+    if(p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
+    mensaje += `\n`;
+
+    if (notas) {
+        mensaje += `📝 *NOTAS / OBSERVACIONES:*\n${notas}\n\n`;
+    }
+    
+    mensaje += `🛒 *DETALLE*\n`;
+    
+    const productosLineas = p.producto.split(' + ');
+    productosLineas.forEach(prod => {
+        mensaje += `📦 ${prod}\n`;
+    });
+    
+    if (productosLineas.length === 1) {
+         mensaje += `💵 Equipo: $${precioEquipos}\n\n`;
+    } else {
+         mensaje += `💵 Equipos (Subtotal): $${precioEquipos}\n\n`;
+    }
+    
+    mensaje += `💰 *TOTAL A PAGAR: $${total} USD*\n`;
+    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+    
+    if (metodoPago) {
+        mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
+    }
+    if (vuelto) {
+        mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
+    }
+
+    const miTel = getAgentPhone(); 
+    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
+    
+    window.open(`https://api.whatsapp.com/send?phone=${PHONE_DUENO}&text=${encodeURIComponent(mensaje)}`, '_blank');
+}
+
+// --- FUNCIÓN PARA REENVIAR VALE (DESDE ADMIN) ---
+async function reenviarValeAdmin(id) {
+    // 1. Buscar el pedido en la lista maestra del Admin
+    const p = pedidosRawAdmin.find(item => item.id === id);
+    
+    if (!p) return alert("Error: No se encuentran los datos del pedido en memoria.");
+
+    // 2. Definir el número destino (La Central / Tu número)
+    const PHONE_CENTRAL = "5356071095"; 
+
+    // 3. Cálculos matemáticos inversos (Para desglosar el total)
+    const totalCobrar = parseFloat(p.total) || 0;
+    const envio = parseFloat(p.costo_mensajeria) || 0;
+    const precioEquipos = totalCobrar - envio;
+
+    // PARSEO DE LA DIRECCIÓN PARA EXTRAER NOTAS Y LOCALIDAD
+    let dir = p.direccion || "";
+    let localidad = "";
+    let notas = "";
+    let metodoPago = "";
+    let vuelto = "";
+
+    const notaMatch = dir.match(/\[NOTA:\s*(.*?)\]/i);
+    if (notaMatch) {
+        notas = notaMatch[1];
+        dir = dir.replace(notaMatch[0], "").trim();
+    }
+    
+    const locMatch = dir.match(/\((.*?)\)$/);
+    if (locMatch) {
+        localidad = locMatch[1];
+        dir = dir.replace(locMatch[0], "").trim();
+    }
+
+    const pagoMatch = notas.match(/\[PAGO:\s*(.*?)\]/i);
+    if (pagoMatch) {
+        metodoPago = pagoMatch[1];
+        notas = notas.replace(pagoMatch[0], "").trim();
+    }
+
+    const vueltoMatch = notas.match(/\[VUELTO:\s*(.*?)\]/i);
+    if (vueltoMatch) {
+        vuelto = vueltoMatch[1];
+        notas = notas.replace(vueltoMatch[0], "").trim();
+    }
+
+    // 4. Construir el mensaje
+    let mensaje = `🧾 *REENVÍO MANUAL (ADMIN) #${p.orden_dia || '---'}*\n`;
+    mensaje += `📅 Fecha: ${new Date(p.fecha).toLocaleDateString()}\n\n`;
+    
+    mensaje += `👤 *CLIENTE*\n`;
+    mensaje += `Nombre: ${p.cliente}\n`;
+    mensaje += `Tel: ${p.telefono}\n`;
+    mensaje += `Dirección: ${dir}\n`;
+    
+    if (localidad) {
+        mensaje += `📍 Zona: ${localidad}, ${p.municipio || ''}\n`;
+    } else {
+        mensaje += `📍 Zona: ${p.municipio || ''}\n`;
+    }
+    
+    if(p.ci && p.ci !== "No especificado") {
+        mensaje += `CI: ${p.ci}\n`;
+    }
+    mensaje += `\n`;
+
+    if (notas) {
+        mensaje += `📝 *NOTAS / OBSERVACIONES:*\n${notas}\n\n`;
+    }
+
+    mensaje += `🛒 *DETALLE*\n`;
+    
+    const productosLineas = p.producto.split(' + ');
+    productosLineas.forEach(prod => {
+        mensaje += `📦 ${prod}\n`;
+    });
+    
+    if (productosLineas.length === 1) {
+         mensaje += `💵 Equipo: $${precioEquipos}\n\n`;
+    } else {
+         mensaje += `💵 Equipos (Subtotal): $${precioEquipos}\n\n`;
+    }
+    
+    mensaje += `💰 *TOTAL A PAGAR: $${totalCobrar} USD*\n`;
+    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+    
+    if (metodoPago) {
+        mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
+    }
+    if (vuelto) {
+        mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
+    }
+
+    // Datos internos para que el almacén sepa de quién es
+    mensaje += `\n------------------------------------\n`;
+    mensaje += `👮‍♂️ *DATOS INTERNOS*\n`;
+    mensaje += `Comercial: ${p.gestor}\n`;
+    mensaje += `Comisión: $${p.comision_total}\n`;
+    
+    const telGestor = await obtenerTelefonoGestor(p.gestor);
+    if (telGestor) {
+        mensaje += `Tel Comercial: ${telGestor}\n`;
+    }
+    
+    // 5. Enviar
     const url = `https://api.whatsapp.com/send?phone=${PHONE_CENTRAL}&text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
 }
