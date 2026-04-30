@@ -1816,7 +1816,7 @@
             <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Información</h3>
             <ul class="flex flex-col gap-3 text-sm text-slate-600 dark:text-gray-400">
                 <li><a class="hover:text-primary transition-colors" href="#">Cómo comprar</a></li>
-                <li><a class="hover:text-primary transition-colors" href="#">Términos de Garantía</a></li>
+                <li><a class="hover:text-primary transition-colors cursor-pointer" onclick="document.getElementById('modal-garantia').classList.remove('hidden')">Términos de Garantía</a></li>
                 <li><a class="hover:text-primary transition-colors" href="#">WhatsApp</a></li>
             </ul>
         </div>
@@ -9221,20 +9221,36 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.setFont("helvetica", "bold");
     doc.text("NOTAS E INSTRUCCIONES DE PAGO:", 15, finalY + 10);
     doc.setFont("helvetica", "normal");
-    const notas = [
+    const notas =[
         "• El pago se realiza en efectivo o transferencia al momento de recibir el equipo.",
         "• Verifique el estado del producto antes de que el mensajero se retire.",
         "• Esta prefactura reserva el producto por un periodo de 24 horas."
     ];
     doc.text(notas, 15, finalY + 16);
 
+    // NUEVO: TÉRMINOS Y CONDICIONES DE GARANTÍA
+    const yGarantia = finalY + 16 + (notas.length * 3.5) + 3;
+    doc.setFont("helvetica", "bold");
+    doc.text("TÉRMINOS Y CONDICIONES DE LA GARANTÍA:", 15, yGarantia);
+    doc.setFont("helvetica", "normal");
+    
+    const terminosText = "1- La Garantía del producto solo contempla la reposición por desperfectos de fábrica, en caso de que el producto se encuentre agotado, se le reintegra el monto total pagado.\n2- No CUBRE Roturas o Quemaduras por MALA MANIPULACIÓN.\n3- Antes de abrir el Producto el cliente debe revisar las características y compatibilidad del mismo, una vez abierto el producto no se aceptan devoluciones.\n4- Los productos que presenten problemas son revisados en nuestras instalaciones, a excepción de aquellos que sea preferible revisar en el domicilio para determinar las causas (Ej: split) y los que determine la empresa.";
+    
+    // Auto-ajustar texto para que no se salga de los bordes (180 es el ancho)
+    const terminosLimpio = doc.splitTextToSize(terminosText, 180);
+    doc.text(terminosLimpio, 15, yGarantia + 5);
+
+    // Calcular la posición final (Footer Y) para que no choque el texto de gracias
+    const footerY = yGarantia + 5 + (terminosLimpio.length * 3.5) + 12;
+
     doc.setFontSize(22);
     doc.setTextColor(...cPrimary);
     doc.setFont("helvetica", "bold");
-    doc.text("¡Gracias por elegirnos!", 195, finalY + 45, { align: "right" });
+    doc.text("¡Gracias por elegirnos!", 195, footerY, { align: "right" });
     
     doc.setFontSize(8);
     doc.setTextColor(...cLight);
+    doc.setFont("helvetica", "normal");
     doc.text("Generado automáticamente por el Sistema de Gestión paratuhogar.cu", 105, 285, { align: "center" });
 
     // --- 6. SALIDA ---
@@ -13285,6 +13301,54 @@ async function generarComprobanteB2B(datosPedido, accion) {
                 Entendido, proteger mis ventas
             </button>
 
+        </div>
+    </div>
+</div>
+
+<!-- === MODAL TÉRMINOS DE GARANTÍA === -->
+<div id="modal-garantia" class="fixed inset-0 z-[600] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] p-6 md:p-8 border border-blue-500/30 shadow-2xl relative animate-pop-in max-h-[90vh] flex flex-col">
+        
+        <button onclick="document.getElementById('modal-garantia').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-colors">
+            <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+
+        <!-- Cabecera -->
+        <div class="flex items-center gap-3 mb-6 shrink-0">
+            <div class="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-2xl border border-blue-100 dark:border-blue-800">
+                <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">verified_user</span>
+            </div>
+            <div>
+                <h3 class="text-xl font-black uppercase text-slate-800 dark:text-white leading-tight">Garantía</h3>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Términos y Condiciones</p>
+            </div>
+        </div>
+
+        <!-- Lista (Con Scroll interno si es necesario) -->
+        <div class="overflow-y-auto custom-scrollbar pr-2 space-y-4 text-sm text-slate-600 dark:text-slate-300 font-medium">
+            <div class="flex gap-3 items-start">
+                <span class="bg-blue-100 text-blue-600 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs">1</span>
+                <p>La Garantía del producto solo contempla la reposición por <b>desperfectos de fábrica</b>, en caso de que el producto se encuentre agotado, se le reintegra el monto total pagado.</p>
+            </div>
+            <div class="flex gap-3 items-start">
+                <span class="bg-blue-100 text-blue-600 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs">2</span>
+                <p>No CUBRE Roturas o Quemaduras por <b>MALA MANIPULACIÓN</b>.</p>
+            </div>
+            <div class="flex gap-3 items-start">
+                <span class="bg-blue-100 text-blue-600 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs">3</span>
+                <p>Antes de abrir el Producto el cliente debe <b>revisar las características y compatibilidad</b> del mismo, una vez abierto el producto no se aceptan devoluciones.</p>
+            </div>
+            <div class="flex gap-3 items-start">
+                <span class="bg-blue-100 text-blue-600 font-black rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs">4</span>
+                <p>Los productos que presenten problemas son <b>revisados en nuestras instalaciones</b>, a excepción de aquellos que sea preferible revisar en el domicilio para determinar las causas (Ej: split) y los que determine la empresa.</p>
+            </div>
+        </div>
+
+        <!-- Botón Aceptar -->
+        <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 shrink-0">
+            <button onclick="document.getElementById('modal-garantia').classList.add('hidden')" class="w-full bg-slate-900 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-500 text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-widest shadow-lg transition-all active:scale-95">
+                Entendido
+            </button>
         </div>
     </div>
 </div>
