@@ -1034,32 +1034,7 @@
 
 
         </section>
-        <!-- MODAL ASISTENCIA VIP (SOLO TRÁFICO ORGÁNICO O MARCEL) -->
-<div id="modal-help-intent" class="fixed inset-0 z-[500] hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] p-8 relative shadow-2xl border border-blue-500/30 animate-pop-in">
         
-        <button onclick="document.getElementById('modal-help-intent').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-colors">
-            <span class="material-symbols-outlined text-xl">close</span>
-        </button>
-
-        <div class="text-center mb-6">
-            <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-800 shadow-lg">
-                <img src="log.jpeg" alt="Asesor" class="w-full h-full rounded-full object-cover">
-            </div>
-            <h3 class="text-xl font-black uppercase text-slate-800 dark:text-white leading-tight">¿Tienes dudas con<br><span class="text-blue-600">algún equipo?</span></h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 font-medium">
-                No tienes que comprar a ciegas. Toca el botón abajo y un Asesor Especialista te responderá por WhatsApp para aclarar tus dudas sobre envíos o garantías.
-            </p>
-        </div>
-
-        <a href="https://wa.me/5358183649?text=Hola,%20estoy%20viendo%20el%20catálogo%20y%20necesito%20ayuda%20con%20un%20equipo." target="_blank" onclick="document.getElementById('modal-help-intent').classList.add('hidden')" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 transition-all">
-            <i class="fab fa-whatsapp text-xl"></i> Chatear con Asesor
-        </a>
-        <button onclick="document.getElementById('modal-help-intent').classList.add('hidden')" class="w-full mt-3 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">
-            Seguir viendo el catálogo
-        </button>
-    </div>
-</div>
 
     </main>
 
@@ -1804,14 +1779,7 @@
     <p class="text-xs">Garantizamos entregas rápidas (24-48h) en todos los municipios, con opciones de pago seguras al recibir en USD, EURO, Zelle o CUP.</p>
 </div>
         </div>
-        <div>
-            <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Categorías</h3>
-            <ul class="flex flex-col gap-3 text-sm text-slate-600 dark:text-gray-400">
-                <li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#" onclick="filterByCategory('REFRIGERACIÓN')"><span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>Refrigeración</a></li>
-                <li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#" onclick="filterByCategory('COCINA')"><span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>Cocina</a></li>
-                <li><a class="hover:text-primary transition-colors flex items-center gap-2" href="#" onclick="filterByCategory('CLIMATIZACIÓN')"><span class="w-1.5 h-1.5 rounded-full bg-primary/30"></span>Climatización</a></li>
-            </ul>
-        </div>
+        
         <div>
             <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Información</h3>
             <ul class="flex flex-col gap-3 text-sm text-slate-600 dark:text-gray-400">
@@ -1823,7 +1791,7 @@
         <div>
             <h3 class="text-primary dark:text-white text-sm font-black uppercase tracking-widest mb-6">Contacto</h3>
             <ul class="flex flex-col gap-4 text-sm text-slate-600 dark:text-gray-400">
-                <li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">mail</span> info@paratuhogar.cu</li>
+                <li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">mail</span> paratuhogar.org@gmail.com</li>
                 <li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">location_on</span> La Habana, Cuba</li>
             </ul>
         </div>
@@ -1831,10 +1799,7 @@
     
     <div class="max-w-[1200px] mx-auto mt-16 pt-8 border-t border-slate-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-6">
         <p class="text-slate-500 dark:text-gray-500 text-xs font-medium">© 2026 paratuhogar. Todos los derechos reservados.</p>
-        <div class="flex gap-3">
-             <div class="h-8 w-12 bg-white border border-slate-200 rounded-md flex items-center justify-center text-[10px] font-bold text-slate-400">CUP</div>
-             <div class="h-8 w-12 bg-white border border-slate-200 rounded-md flex items-center justify-center text-[10px] font-bold text-slate-400">USD</div>
-        </div>
+        
     </div>
 </footer>
 
@@ -2073,7 +2038,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2904a"; 
+const versionActual = "505a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -11363,45 +11328,7 @@ async function moverCategoria(idActual, direccion, ordenActual) {
     loadAdminCategorias();
 }
 
-// ==========================================
-// SENSOR DE AYUDA (INTENT EXIT / IDLE)
-// ==========================================
-window.addEventListener('load', () => {
-    // Esperamos 45 segundos de lectura profunda en el catálogo para ofrecer ayuda
-    setTimeout(() => {
-        triggerHelpPopup();
-    }, 45000);
 
-    // O si intenta salir de la página en PC (mover ratón arriba)
-    document.addEventListener('mouseleave', (e) => {
-        if (e.clientY < 0) triggerHelpPopup();
-    });
-});
-
-function triggerHelpPopup() {
-    // 1. Si ya se mostró, no molestar más
-    if (sessionStorage.getItem('pth_help_shown')) return;
-
-    // 2. SEGURIDAD EXTREMA: Prohibido si hay un gestor logueado (Es una cuenta de trabajo)
-    if (window.gestorName || window.isAdmin) return; 
-
-    // 3. SEGURIDAD EXTREMA: Comprobar el Referrer (El enlace)
-    const refRaw = localStorage.getItem('pth_referrer_smart');
-    if (refRaw) {
-        try {
-            const ref = JSON.parse(refRaw);
-            // Si el cliente tiene dueño y NO eres tú, abortamos inmediatamente.
-            if (ref.nombre && ref.nombre !== 'Marcel Montano' && ref.nombre !== 'Venta Directa') {
-                return; 
-            }
-        } catch(e) {}
-    }
-
-    // 4. Mostrar el cartel
-    sessionStorage.setItem('pth_help_shown', 'true');
-    const modal = document.getElementById('modal-help-intent');
-    if (modal) modal.classList.remove('hidden');
-}
 
 // ==========================================
 // SISTEMA DE ADVERTENCIAS B2B / MAYORISTA
