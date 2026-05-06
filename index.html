@@ -1419,6 +1419,7 @@
     <!-- Pestañas del Master Control (LOGÍSTICA, PAGOS, INVENTARIO, ANÁLISIS, TRÁFICO, APROBACIONES) -->
 <div class="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-2xl border shadow-sm overflow-x-auto scrollbar-hide whitespace-nowrap">
     <button onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all">Logística</button>
+    <button onclick="changeAdminTab('mensajeria')" id="tab-mensajeria" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">🚚 Mensajería</button>
     <button onclick="changeAdminTab('inventario')" id="tab-inventario" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Inventario</button>
     <button onclick="changeAdminTab('trafico')" id="tab-trafico" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Tráfico</button>
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
@@ -1567,6 +1568,76 @@
         </div>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="list-admin-inventario"></div>
     </div>
+
+    <!-- === NUEVA SECCIÓN: GESTIÓN DE MENSAJERÍA === -->
+<div id="cnt-mensajeria" class="tab-cnt hidden space-y-6">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h3 class="text-lg font-black uppercase text-indigo-600 flex items-center gap-2">
+                <span class="material-symbols-outlined">two_wheeler</span> Tarifas de Mensajería
+            </h3>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Configura el costo de envío por municipio y localidad</p>
+        </div>
+        
+        <!-- Buscador -->
+        <div class="relative w-full md:w-64">
+            <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
+            <input type="text" id="search-mensajeria" oninput="renderAdminMensajeria()" placeholder="Buscar municipio..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-bold focus:ring-indigo-500">
+        </div>
+    </div>
+
+    <!-- Formulario para Agregar/Editar -->
+    <div class="bg-indigo-50 dark:bg-gray-800/50 p-4 rounded-3xl border border-indigo-100 dark:border-gray-700">
+        <h4 class="text-xs font-black uppercase text-indigo-800 dark:text-indigo-400 mb-3" id="mensajeria-form-title">Añadir Nueva Tarifa</h4>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+            <input type="hidden" id="m-id-edit">
+            
+            <div class="md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-gray-500">Municipio</label>
+                <input type="text" id="m-municipio" list="list-municipios" placeholder="Ej: Playa" class="w-full rounded-xl border-gray-200 text-xs font-bold">
+                <datalist id="list-municipios"></datalist>
+            </div>
+            
+            <div class="md:col-span-2">
+                <label class="text-[9px] font-black uppercase text-gray-500">Localidad / Reparto</label>
+                <input type="text" id="m-localidad" placeholder="Ej: Miramar o Todo el municipio" class="w-full rounded-xl border-gray-200 text-xs font-bold">
+            </div>
+
+            <div class="md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Pequeño ($)</label>
+                <input type="number" id="m-precio-pq" placeholder="Ej: 6" class="w-full rounded-xl border-gray-200 text-sm font-black text-emerald-600">
+            </div>
+
+            <div class="md:col-span-1">
+                <label class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Grande ($)</label>
+                <input type="number" id="m-precio-gr" placeholder="Ej: 10" class="w-full rounded-xl border-gray-200 text-sm font-black text-amber-600">
+            </div>
+        </div>
+        
+        <div class="mt-3 flex gap-2 justify-end">
+            <button type="button" onclick="limpiarFormMensajeria()" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-[10px] font-black uppercase border border-gray-200 shadow-sm hover:bg-gray-50">Cancelar</button>
+            <button type="button" onclick="adminSaveMensajeria()" id="btn-save-mensajeria" class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all">Guardar Tarifa</button>
+        </div>
+    </div>
+
+    <!-- Lista/Tabla de Tarifas -->
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
+                <tr>
+                    <th class="p-4">Municipio</th>
+                    <th class="p-4">Localidad</th>
+                    <th class="p-4 text-center">Eq. Pequeño (Olla)</th>
+                    <th class="p-4 text-center">Eq. Grande (Refrigerador)</th>
+                    <th class="p-4 text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-mensajeria" class="divide-y dark:divide-gray-700">
+                <!-- Se llena con JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
 
     
 
@@ -1908,8 +1979,8 @@
         <div>
             <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Tamaño para el Envío</label>
             <select id="p-tamano-envio" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
-                <option value="Pequeño">📦 Pequeño (Moto)</option>
-                <option value="Grande">🚚 Grande (Carro/Camión)</option>
+                <option value="Pequeño">📦 Pequeño (Olla)</option>
+                <option value="Grande">🚚 Grande (Refrigerador)</option>
             </select>
         </div>
         <div>
@@ -10921,95 +10992,182 @@ function previewGithubImage(index) {
 // 🚚 MOTOR DE MENSAJERÍA AUTOMÁTICA
 // ==========================================
 
-const tarifasMensajeria = {
-    "Arroyo Naranjo": {
-        "Poey": { pq: 6, gr: 10 }, "Santa Amalia": { pq: 6, gr: 10 }, "Mantilla": { pq: 6, gr: 10 },
-        "La Palma": { pq: 6, gr: 10 }, "Víbora Park": { pq: 6, gr: 10 }, "Los Pinos": { pq: 6, gr: 10 },
-        "Managua": { pq: 10, gr: 15 }, "Calvario": { pq: 10, gr: 15 }, "Guinera": { pq: 6, gr: 10 },
-        "Eléctrico": { pq: 6, gr: 10 }, "Párraga": { pq: 6, gr: 10 }, "Arroyo Polo": { pq: 6, gr: 10 },
-        "Porvenir": { pq: 6, gr: 10 }, "Montejo": { pq: 6, gr: 10 }, "Callejas": { pq: 6, gr: 10 },
-        "Vieja Linda": { pq: 6, gr: 10 }, "Rosario": { pq: 6, gr: 10 }, "Capri": { pq: 6, gr: 10 },
-        "Comodoro": { pq: 10, gr: 15 }, "El Retiro": { pq: 10, gr: 15 }, "Parcelación Moderna": { pq: 10, gr: 15 },
-        "Gavilán": { pq: 10, gr: 15 }, "El Moro": { pq: 6, gr: 10 }, "Reparto Solita": { pq: 10, gr: 15 }, "Las Guásimas": { pq: 10, gr: 15 }
-    },
-    "Boyeros": {
-        "Santiago de las Vegas": { pq: 10, gr: 15 }, "Rancho Boyeros": { pq: 10, gr: 15 }, "Calabazar": { pq: 10, gr: 15 },
-        "Abel Santamaría": { pq: 10, gr: 15 }, "Fontanar": { pq: 10, gr: 15 }, "Wajay": { pq: 10, gr: 15 },
-        "Altahabana": { pq: 6, gr: 10 }, "Capdevila": { pq: 6, gr: 10 }, "Aldabo": { pq: 6, gr: 10 },
-        "Trébol": { pq: 6, gr: 10 }, "Mulgoba": { pq: 10, gr: 15 }, "Los Cocos": { pq: 10, gr: 15 },
-        "Lidice": { pq: 10, gr: 15 }, "El Chico": { pq: 10, gr: 15 }, "Juan Manuel Márquez": { pq: 10, gr: 15 },
-        "Sierra Maestra": { pq: 10, gr: 15 }, "El Globo": { pq: 10, gr: 15 }, "Nuevo Santiago": { pq: 10, gr: 15 },
-        "La Fortuna": { pq: 6, gr: 10 }, "Miraflores Viejo": { pq: 6, gr: 10 }, "El Trigal": { pq: 6, gr: 10 },
-        "Ampliación de Mulgoba": { pq: 10, gr: 15 }, "Villa Nueva": { pq: 10, gr: 15 }, "Aurora": { pq: 10, gr: 15 },
-        "Embil": { pq: 6, gr: 6 }, "Rio Verde": { pq: 10, gr: 15 }, "Mazorra": { pq: 10, gr: 15 },
-        "Panamericana": { pq: 10, gr: 15 }, "Baluarte": { pq: 10, gr: 15 }, "Berenguer": { pq: 10, gr: 15 },
-        "Nazareno": { pq: 10, gr: 15 }, "Las Cañas": { pq: 10, gr: 15 }, "El Rincón": { pq: 10, gr: 15 }, "Bejucal": { pq: 10, gr: 15 }
-    },
-    "Centro Habana": { "Todo el municipio": { pq: 6, gr: 10 } },
-    "Cerro": {
-        "Cerro": { pq: 6, gr: 10 }, "Casino Deportivo": { pq: 6, gr: 10 }, "Las Cañas": { pq: 6, gr: 10 },
-        "Palatino": { pq: 6, gr: 10 }, "Ataré": { pq: 6, gr: 10 },"El Canal": { pq: 6, gr: 10 }, "Esquina de Tejas": { pq: 6, gr: 10 }, "Reparto Martí": { pq: 6, gr: 10 }
-    },
-    "Cotorro": {
-        "Santa María del Rosario": { pq: 10, gr: 15 }, "Cotorro": { pq: 10, gr: 15 }, "La Caridad": { pq: 10, gr: 15 }, "Cuatro Caminos": { pq: 15, gr: 20 },
-        "Alberro": { pq: 10, gr: 15 }, "Magdalena": { pq: 10, gr: 15 }, "Vedado Cotorro": { pq: 10, gr: 15 },
-        "Residencial Paraíso": { pq: 10, gr: 15 }, "Bello Palmar": { pq: 10, gr: 15 }, "Lotería": { pq: 10, gr: 15 },
-        "La Portada": { pq: 10, gr: 15 }, "La Gomera": { pq: 10, gr: 15 }, "San José de las Lajas": { pq: 20, gr: 30 }
-    },
-    "Diez de Octubre": {
-        "Víbora": { pq: 6, gr: 10 }, "Santo Suárez": { pq: 6, gr: 10 }, "Lawton": { pq: 6, gr: 10 },
-        "Luyanó": { pq: 6, gr: 10 }, "Sevillano": { pq: 6, gr: 10 }, "Vista Alegre": { pq: 6, gr: 10 },
-        "Tamarindo": { pq: 6, gr: 10 }, "Mónaco": { pq: 6, gr: 10 }, "La Lira": { pq: 6, gr: 10 }
-    },
-    "Guanabacoa": {
-        "Chivas": { pq: 6, gr: 10 }, "Dbeche": { pq: 6, gr: 10 }, "Minas": { pq: 10, gr: 15 },
-        "Barreras": { pq: 10, gr: 15 }, "La Hata": { pq: 10, gr: 15 }, "El Repollo": { pq: 10, gr: 15 },
-        "Villa María": { pq: 10, gr: 15 }, "Bacuranao": { pq: 10, gr: 15 }, "La Gallega": { pq: 10, gr: 15 },
-        "Aranguito": { pq: 6, gr: 10 }, "Arango": { pq: 6, gr: 10 }, "La Sepultura": { pq: 10, gr: 15 },
-        "Naranjo": { pq: 10, gr: 15 }, "Santa Fé": { pq: 10, gr: 15 }, "El Roble": { pq: 6, gr: 10 },
-        "Reparto Mañana": { pq: 6, gr: 10 }, "Nalón": { pq: 6, gr: 10 }, "Cruz de Piedra": { pq: 6, gr: 10 }
-    },
-    "Habana del Este": {
-        "Alamar": { pq: 10, gr: 15 }, "Camilo Cienfuegos": { pq: 10, gr: 15 }, "Guiteras": { pq: 10, gr: 15 },
-        "Villa Panamericana": { pq: 10, gr: 15 }, "Cojímar": { pq: 10, gr: 15 }, "Guanabo": { pq: 10, gr: 20 },
-        "Boca Ciega": { pq: 10, gr: 15 }, "Celimar": { pq: 10, gr: 15 }, "Campo Florido": { pq: 10, gr: 25 },
-        "Tarará": { pq: 10, gr: 15 }, "Bahía": { pq: 10, gr: 15 }, "Bajurayabo": { pq: 15, gr: 15 },
-        "Peñas Altas": { pq: 15, gr: 20 }, "Santa María": { pq: 10, gr: 15 }
-    },
-    "Habana Vieja": { "Todo el municipio": { pq: 6, gr: 10 } },
-    "La Lisa": {
-        "Alturas de La Lisa": { pq: 10, gr: 15 }, "Arroyo Arenas": { pq: 10, gr: 15 }, "Punta Brava": { pq: 10, gr: 15 },
-        "Arimao": { pq: 10, gr: 15 }, "El Cano": { pq: 10, gr: 15 }, "San Agustín": { pq: 10, gr: 15 },
-        "La Coronela": { pq: 10, gr: 15 }, "El Hueco": { pq: 10, gr: 15 }, "El Pedregal": { pq: 10, gr: 15 },
-        "Valle Grande": { pq: 15, gr: 15 }, "El Guatao": { pq: 15, gr: 15 }, "UCI": { pq: 15, gr: 15 }
-    },
-    "Marianao": {
-        "Los Quemados": { pq: 6, gr: 10 }, "Pogolotti": { pq: 4, gr: 10 }, "Los Pocitos": { pq: 4, gr: 10 },
-        "Santa Felicia": { pq: 6, gr: 10 }, "El Palmar": { pq: 6, gr: 10 }, "Belén": { pq: 6, gr: 10 },
-        "Zamora": { pq: 4, gr: 10 }, "Coco Solo": { pq: 4, gr: 10 }, "Finlay": { pq: 4, gr: 10 },
-        "Los Ángeles": { pq: 6, gr: 10 }, "Puentes Grandes": { pq: 6, gr: 10 }, "CUJAE": { pq: 6, gr: 10 }
-    },
-    "Playa": {
-        "Miramar": { pq: 6, gr: 10 }, "Buenavista": { pq: 6, gr: 10 }, "La Ceiba": { pq: 6, gr: 10 },
-        "La Sierra": { pq: 6, gr: 10 }, "Kholi": { pq: 4, gr: 10 }, "Siboney": { pq: 4, gr: 10 },
-        "Atabey": { pq: 6, gr: 10 }, "Santa Fé": { pq: 10, gr: 15 }, "Jaimanitas": { pq: 10, gr: 15 },
-        "Flores": { pq: 6, gr: 10 }, "Quejereta": { pq: 6, gr: 10 }, "Almendares": { pq: 4, gr: 10 }, "El Bosque": { pq: 6, gr: 10 },
-        "Paradero": { pq: 6, gr: 10 }, "Náutico": { pq: 6, gr: 10 }, "Puente Grande": { pq: 6, gr: 10 }, "Cangrejera": { pq: 6, gr: 20 },
-        "La ELAM": { pq: 6, gr: 10 }, "Barbosa": { pq: 6, gr: 10 }, "Cubanacan": { pq: 6, gr: 10 }, "Romerillo": { pq: 6, gr: 10 }
-    },
-    "Plaza de la Revolución": {
-        "Vedado": { pq: 4, gr: 10 }, "Nuevo Vedado": { pq: 4, gr: 10 }, "Príncipe": { pq: 4, gr: 10 }, "Avenida Paseo": { pq: 6, gr: 10 },
-        "Plaza": { pq: 4, gr: 10 }, "Puentes Grandes": { pq: 4, gr: 10 }
-    },
-    "Regla": { "Regla / Casablanca": { pq: 6, gr: 15 } },
-    "San Miguel del Padrón": {
-        "Diezmero": { pq: 6, gr: 10 }, "Alturas de Luyanó": { pq: 6, gr: 10 }, "San Francisco de Paula": { pq: 6, gr: 15 },
-        "California": { pq: 6, gr: 10 }, "Florida": { pq: 6, gr: 10 }, "La Cuevita": { pq: 6, gr: 10 }, "Virgen del Camino": { pq: 6, gr: 10 },
-        "Barrio Obrero": { pq: 6, gr: 10 } , "Rocafort": { pq: 6, gr: 10 }, "Jacomino": { pq: 6, gr: 10 }
-    }
-};
+// Variable global que ahora se llenará desde Supabase
+let tarifasMensajeria = {};
+let tarifasMensajeriaAdminRaw =[]; // Para el panel de administrador
 
-// 1. Inicializar los municipios en el select
+// ==========================================
+// MÓDULO DE MENSAJERÍA (CONECTADO A SUPABASE)
+// ==========================================
+
+// 1. CARGAR DATOS (Se llama al cargar la página)
+async function loadTarifasMensajeria() {
+    const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
+    
+    if (error || !data) return console.error("Error cargando tarifas");
+
+    tarifasMensajeriaAdminRaw = data;
+    tarifasMensajeria = {}; // Reseteamos el objeto
+
+    // Reconstruimos el objeto para que la lógica del Carrito siga funcionando igual que antes
+    const listaMunicipiosUnicos = new Set();
+    
+    data.forEach(item => {
+        if (!tarifasMensajeria[item.municipio]) {
+            tarifasMensajeria[item.municipio] = {};
+        }
+        // Creamos la estructura { pq: 6, gr: 10 }
+        tarifasMensajeria[item.municipio][item.localidad] = {
+            pq: parseFloat(item.precio_pequeno) || 0,
+            gr: parseFloat(item.precio_grande) || 0,
+            id: item.id
+        };
+        listaMunicipiosUnicos.add(item.municipio);
+    });
+
+    // Actualizamos el desplegable (Select) de Municipios en el Checkout
+    const muniSelect = document.getElementById('check-municipio');
+    if (muniSelect) {
+        muniSelect.innerHTML = '<option value="" disabled selected>Seleccionar Municipio...</option>';
+        Array.from(listaMunicipiosUnicos).sort().forEach(muni => {
+            muniSelect.innerHTML += `<option value="${muni}">${muni}</option>`;
+        });
+    }
+
+    // Actualizamos Datalist del Admin para sugerir municipios existentes
+    const datalistMuni = document.getElementById('list-municipios');
+    if (datalistMuni) {
+        datalistMuni.innerHTML = Array.from(listaMunicipiosUnicos).sort().map(m => `<option value="${m}">`).join('');
+    }
+
+    // Si el admin está logueado, dibujamos la tabla
+    renderAdminMensajeria();
+}
+
+// Para asegurarnos de que cargue siempre al entrar a la web:
+window.addEventListener('load', () => {
+    loadTarifasMensajeria();
+});
+
+
+// 2. DIBUJAR LA TABLA EN EL PANEL ADMIN
+function renderAdminMensajeria() {
+    const container = document.getElementById('list-admin-mensajeria');
+    const searchInput = document.getElementById('search-mensajeria');
+    if (!container) return;
+
+    const query = searchInput ? searchInput.value.toLowerCase() : "";
+
+    const filtradas = tarifasMensajeriaAdminRaw.filter(t => 
+        t.municipio.toLowerCase().includes(query) || 
+        t.localidad.toLowerCase().includes(query)
+    );
+
+    container.innerHTML = filtradas.map(t => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-gray-900/50 transition-colors">
+            <td class="p-4 align-middle">
+                <span class="text-xs font-black text-gray-700 dark:text-gray-300 uppercase">${t.municipio}</span>
+            </td>
+            <td class="p-4 align-middle">
+                <span class="text-[10px] font-bold text-gray-500">${t.localidad}</span>
+            </td>
+            <td class="p-4 text-center align-middle">
+                <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">$${t.precio_pequeno}</span>
+            </td>
+            <td class="p-4 text-center align-middle">
+                <span class="text-xs font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">$${t.precio_grande}</span>
+            </td>
+            <td class="p-4 text-right align-middle">
+                <button onclick="adminEditMensajeria('${t.id}')" class="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm" title="Editar Precio">
+                    <span class="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button onclick="adminDeleteMensajeria('${t.id}', '${t.localidad}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors shadow-sm ml-1" title="Eliminar Localidad">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 3. AGREGAR O EDITAR TARIFA
+async function adminSaveMensajeria() {
+    const id = document.getElementById('m-id-edit').value;
+    const municipio = document.getElementById('m-municipio').value.trim();
+    const localidad = document.getElementById('m-localidad').value.trim();
+    const precio_pq = parseFloat(document.getElementById('m-precio-pq').value);
+    const precio_gr = parseFloat(document.getElementById('m-precio-gr').value);
+
+    if (!municipio || !localidad || isNaN(precio_pq) || isNaN(precio_gr)) {
+        return alert("⚠️ Por favor completa todos los campos correctamente.");
+    }
+
+    const btn = document.getElementById('btn-save-mensajeria');
+    const originalText = btn.innerText;
+    btn.innerText = "Guardando...";
+    btn.disabled = true;
+
+    try {
+        if (id) {
+            // EDITAR
+            await supabaseClient.from('tarifas_mensajeria').update({
+                municipio, localidad, precio_pequeno: precio_pq, precio_grande: precio_gr
+            }).eq('id', id);
+        } else {
+            // CREAR NUEVO
+            await supabaseClient.from('tarifas_mensajeria').insert([{
+                municipio, localidad, precio_pequeno: precio_pq, precio_grande: precio_gr
+            }]);
+        }
+
+        limpiarFormMensajeria();
+        await loadTarifasMensajeria(); // Recargar datos desde la nube
+
+    } catch(e) {
+        alert("Error al guardar: " + e.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
+// 4. ELIMINAR TARIFA
+async function adminDeleteMensajeria(id, localidad) {
+    if (!confirm(`¿Estás seguro de eliminar el costo de envío para "${localidad}"?`)) return;
+
+    await supabaseClient.from('tarifas_mensajeria').delete().eq('id', id);
+    loadTarifasMensajeria(); // Recargar de la nube
+}
+
+// 5. PREPARAR FORMULARIO PARA EDICIÓN
+function adminEditMensajeria(id) {
+    const tarifa = tarifasMensajeriaAdminRaw.find(t => t.id === id);
+    if (!tarifa) return;
+
+    document.getElementById('m-id-edit').value = tarifa.id;
+    document.getElementById('m-municipio').value = tarifa.municipio;
+    document.getElementById('m-localidad').value = tarifa.localidad;
+    document.getElementById('m-precio-pq').value = tarifa.precio_pequeno;
+    document.getElementById('m-precio-gr').value = tarifa.precio_grande;
+
+    document.getElementById('mensajeria-form-title').innerText = "Editando Tarifa";
+    document.getElementById('btn-save-mensajeria').innerText = "Actualizar Tarifa";
+}
+
+// 6. LIMPIAR FORMULARIO
+function limpiarFormMensajeria() {
+    document.getElementById('m-id-edit').value = "";
+    document.getElementById('m-municipio').value = "";
+    document.getElementById('m-localidad').value = "";
+    document.getElementById('m-precio-pq').value = "";
+    document.getElementById('m-precio-gr').value = "";
+    
+    document.getElementById('mensajeria-form-title').innerText = "Añadir Nueva Tarifa";
+    document.getElementById('btn-save-mensajeria').innerText = "Guardar Tarifa";
+}
+
+// 7. BORRAR EL EVENTO VIEJO QUE INICIABA LOS MUNICIPIOS
+// (Asegúrate de eliminar este bloque viejo de tu código para evitar duplicados):
+/*
 window.addEventListener('load', () => {
     const muniSelect = document.getElementById('check-municipio');
     if(muniSelect) {
@@ -11019,6 +11177,8 @@ window.addEventListener('load', () => {
         });
     }
 });
+*/
+
 
 // 2. Función para actualizar repartos
 window.actualizarLocalidades = function() {
