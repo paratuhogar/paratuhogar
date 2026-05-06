@@ -588,6 +588,20 @@
                     <span class="py-4 text-xs text-gray-400">Cargando categorías...</span>
                 </div>
 
+                <!-- === BARRA DE FILTROS PÚBLICA (Para Clientes) === -->
+<div id="public-filters-bar" class="px-6 py-3 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm sticky top-[130px] z-30">
+    <span class="text-xs font-bold text-gray-500 hidden md:block">Explora nuestro catálogo</span>
+    <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+        <span class="text-[10px] font-black uppercase text-gray-400">Ordenar por:</span>
+        <select id="sort-selector-public" onchange="applySort()" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-primary p-2 cursor-pointer w-full md:w-auto">
+            <option value="nuevo">🆕 Lo Más Nuevo</option>
+            <option value="demandados">🔥 Más Demandados</option>
+            <option value="precio_asc">💲 Precio: Menor a Mayor</option>
+            <option value="precio_desc">💲 Precio: Mayor a Menor</option>
+        </select>
+    </div>
+</div>
+
                 <!-- 2. BARRA DE MARKETING (Solo para Gestores) -->
                 <!-- Esta barra aparecerá debajo de las categorías cuando entres como gestor -->
                 <!-- 2. BARRA DE MARKETING PRO (Solo para Gestores) -->
@@ -1889,10 +1903,19 @@
         </datalist>
     </div>
     <input type="text" id="p-garantia" placeholder="Garantía" class="rounded-xl border-gray-100 font-bold">
-    <!-- CAMPO VISIBLE PARA MENSAJERÍA -->
-    <div class="md:col-span-2">
-        <label class="text-[10px] font-black uppercase text-gray-400 ml-1">🚚 Detalles de Mensajería</label>
-        <input type="text" id="p-mensajeria" placeholder="Ej: Gratis en La Habana, 5 USD periferia..." class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
+    <!-- TAMAÑO DE ENVÍO Y MENSAJERÍA -->
+    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Tamaño para el Envío</label>
+            <select id="p-tamano-envio" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
+                <option value="Pequeño">📦 Pequeño (Moto)</option>
+                <option value="Grande">🚚 Grande (Carro/Camión)</option>
+            </select>
+        </div>
+        <div>
+            <label class="text-[10px] font-black uppercase text-gray-400 ml-1">🚚 Detalles de Mensajería</label>
+            <input type="text" id="p-mensajeria" placeholder="Ej: Gratis en La Habana..." class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
+        </div>
     </div>
     
 
@@ -2038,7 +2061,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "505a"; 
+const versionActual = "605a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2541,6 +2564,10 @@ async function processRegister() {
         // 3. MOSTRAR EL NUEVO CENTRO DE MANDO
         const commandCenter = document.getElementById('gestor-command-center');
         if (commandCenter) commandCenter.classList.remove('hidden');
+
+        // 👇 AÑADIR ESTA LÍNEA (Oculta la barra pública para los gestores)
+        const publicFilters = document.getElementById('public-filters-bar');
+        if (publicFilters) publicFilters.classList.add('hidden');
 
         // === INICIO DE SISTEMA DE NIVELES ===
         if (typeof applyLockedFeatures === "function") applyLockedFeatures();
@@ -5700,6 +5727,10 @@ function openModalProd() {
     const inputMensajeria = document.getElementById('p-mensajeria');
     if (inputMensajeria) inputMensajeria.value = "";
 
+    // 👇 AÑADIR ESTO:
+    const inputTamano = document.getElementById('p-tamano-envio');
+    if (inputTamano) inputTamano.value = "Pequeño";
+
     // 5. Asegurar que el botón diga "Guardar Cambios" y no "Actualizar"
     const btnSave = document.getElementById('btn-save-prod');
     if(btnSave) btnSave.innerText = "Guardar Cambios";
@@ -5873,6 +5904,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         image3: document.getElementById('img-path-3').value,
         
         mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
+        tamaño_envio: document.getElementById('p-tamano-envio').value,
         disponible: document.getElementById('p-disponible').value || 'SI',
         proveedor: document.getElementById('p-proveedor').value || 'General',
         precio_flexible: document.getElementById('p-flexible').value || 'NO',
@@ -6033,7 +6065,8 @@ function clearImageSlot(event, index) {
         'p-proveedor': p.proveedor,
         'p-flexible': p.precio_flexible || 'NO',
         'p-mensajeria': p.mensajeria || "", // <--- ESTO LIMPIA EL RASTRO DEL EQUIPO ANTERIOR
-        'p-disponible': p.disponible || "SI"
+        'p-disponible': p.disponible || "SI",
+        'p-tamano-envio': p.tamaño_envio || "Pequeño"
     };
 
     for (const [key, value] of Object.entries(inputs)) {
@@ -6198,57 +6231,62 @@ https://wa.me/${miTelefono}?text=${encodeURIComponent('Hola, me interesa el equi
 // --- PEGAR ESTO EN index.html (Reemplaza la función applySort antigua) ---
 
 function applySort() {
-    // 1. Obtener el criterio de ordenamiento
-    const selector = document.getElementById('sort-selector');
-    const criteria = selector ? selector.value : 'defecto';
+    // 1. Determinar quién está viendo y qué selector leer
+    const isGestor = window.gestorName ? true : false;
+    let selector = isGestor ? document.getElementById('sort-selector') : document.getElementById('sort-selector-public');
+    
+    // Si por error no encuentra el selector, usamos 'nuevo' por defecto
+    let criteria = selector ? selector.value : 'nuevo';
 
-    // 2. Obtener el término de búsqueda actual
+    // 2. Obtener el término de búsqueda actual y filtros de Tiburón
     const searchInput = document.getElementById('search-bar');
     const query = searchInput ? searchInput.value.toLowerCase() : "";
-
-    // 3. Verificar filtro de "Ganancia Alta" (Modo Tiburón)
     const filterCheckbox = document.getElementById('filter-high-comm');
     const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
 
-    // 4. FILTRAR PRIMERO (Crucial: Aplicar las mismas reglas que la carga inicial)
+    // 3. FILTRAR LOS PRODUCTOS VISIBLES
     let listaProcesada = productosRaw.filter(p => {
-        // A. Coincidencia de texto
         const matchSearch = p.nombre.toLowerCase().includes(query) || 
                             (p.categoria && p.categoria.toLowerCase().includes(query));
-        
-        // B. Coincidencia de Categoría (Aquí estaba el error, antes se ignoraba esto)
         const matchCat = activeCategory === 'TODOS' || 
                          (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-        
-        // C. Coincidencia de Ganancia
         const matchComm = !filterHighComm || (Number(p.comision || 0) > 10);
-
-        // D. Solo productos disponibles
+        
         return matchSearch && matchCat && matchComm && p.disponible === "SI";
     });
 
-    // 5. APLICAR ORDENAMIENTO
-    switch (criteria) {
-        case 'comision_desc':
-            // Mayor Ganancia primero
-            listaProcesada.sort((a, b) => (parseFloat(b.comision) || 0) - (parseFloat(a.comision) || 0));
-            break;
-        case 'precio_asc':
-            // Precio de menor a mayor
-            listaProcesada.sort((a, b) => parseFloat(a.precio) - parseFloat(b.precio));
-            break;
-        case 'nuevo':
-            // Lo más reciente primero
-            listaProcesada.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            break;
-        case 'defecto':
-        default:
-            // Relevancia (Orden Alfabético o por defecto de la base de datos)
-            listaProcesada.sort((a, b) => a.nombre.localeCompare(b.nombre));
-            break;
-    }
+    // 4. APLICAR EL ORDENAMIENTO (NÚCLEO DEL CAMBIO)
+    listaProcesada.sort((a, b) => {
+        // REGLA MAESTRA: B2B/Mayorista SIEMPRE al final (Si el cliente está viendo "TODOS")
+        const catA = (a.categoria || "").toUpperCase();
+        const catB = (b.categoria || "").toUpperCase();
+        const isB2bA = catA.includes('MAYORISTA') || catA.includes('B2B') || catA.includes('MIPYME');
+        const isB2bB = catB.includes('MAYORISTA') || catB.includes('B2B') || catB.includes('MIPYME');
+
+        if (activeCategory === 'TODOS') {
+            if (isB2bA && !isB2bB) return 1;   // Envía A al final
+            if (!isB2bA && isB2bB) return -1;  // Envía B al final
+        }
+
+        // Si pasan la regla del mayorista, ordenamos según lo que eligió el usuario
+        if (criteria === 'comision_desc') {
+            return (parseFloat(b.comision) || 0) - (parseFloat(a.comision) || 0);
+        } else if (criteria === 'precio_asc') {
+            return (parseFloat(a.precio) || 0) - (parseFloat(b.precio) || 0);
+        } else if (criteria === 'precio_desc') {
+            return (parseFloat(b.precio) || 0) - (parseFloat(a.precio) || 0);
+        } else if (criteria === 'demandados') {
+            // Ordenar por vistas (De mayor a menor)
+            return (parseFloat(b.vistas) || 0) - (parseFloat(a.vistas) || 0);
+        } else {
+            // 'nuevo' o defecto -> Más reciente primero (Fechas más nuevas)
+            const dateA = new Date(a.created_at || 0).getTime();
+            const dateB = new Date(b.created_at || 0).getTime();
+            return dateB - dateA; 
+        }
+    });
     
-    // 6. RENDERIZAR LA LISTA FINAL
+    // 5. RENDERIZAR LA LISTA FINAL
     renderProductsCustom(listaProcesada);
 }
 
@@ -10999,25 +11037,11 @@ window.actualizarLocalidades = function() {
     }
 };
 
-// 3. Inteligencia Artificial: Detectar si hay un equipo grande en el carrito
+// 3. Detectar si hay un equipo grande en el carrito (Lee directo de Supabase)
 function carritoTieneEquipoGrande() {
     return cart.some(item => {
-        const cat = (item.categoria || "").toUpperCase();
-        const nom = (item.nombre || "").toLowerCase();
-
-        // Reglas basadas en tu CSV
-        if (cat === 'LAVADORAS') return true;
-        if (cat === 'REFRIGERADORES') return true;
-        if (cat === 'NEVERAS' && !nom.includes('3.5')) return true; 
-        if (cat === 'ENERGIA' && !nom.includes('lámpara')) return true; 
-        if (nom.includes('colchón') || nom.includes('colchon')) return true;
-        if (cat === 'COCINA' && (nom.includes('horno') || nom.includes('cocina 20') || nom.includes('cocina 24'))) return true;
-        if (cat === 'SMART TV' && (nom.includes('43') || nom.includes('50') || nom.includes('55') || nom.includes('60') || nom.includes('75'))) return true;
-        
-        // 👇 ESTA ES LA LÍNEA NUEVA QUE SOLUCIONA TU PROBLEMA 👇
-        if (cat === 'CLIMATIZACIÓN' || nom.includes('split') || nom.includes('aire')) return true;
-
-        return false; // Si no cumple nada de lo anterior, es pequeño.
+        // Lee la etiqueta exacta de la base de datos. Si dice Grande, cobra como Grande.
+        return item.tamaño_envio === 'Grande';
     });
 }
 
@@ -11508,17 +11532,22 @@ function acceptSolarWarning() {
 
 
 // ==========================================
-// ORDENAR PRODUCTOS POR COMISIÓN POR DEFECTO
+// ORDENAMIENTO POR DEFECTO (CLIENTES VS GESTORES)
 // ==========================================
-// Sobrescribimos el final de la función loadProducts original
 const loadProductsOriginal = loadProducts;
 loadProducts = async function() {
     await loadProductsOriginal(); // Carga todos los productos
     
-    // Una vez cargados, forzamos los selects HTML para que digan "Mayor Ganancia"
-    document.querySelectorAll('#sort-selector').forEach(sel => sel.value = 'comision_desc');
+    if (window.gestorName) {
+        // Si es GESTOR: Forzar que vea los equipos con Mayor Ganancia por defecto
+        document.querySelectorAll('#sort-selector').forEach(sel => sel.value = 'comision_desc');
+    } else {
+        // Si es CLIENTE: Forzar que vea "Lo Más Nuevo" por defecto
+        const publicSel = document.getElementById('sort-selector-public');
+        if(publicSel) publicSel.value = 'nuevo';
+    }
     
-    // Ejecutamos el ordenamiento (que pintará la cuadrícula automáticamente)
+    // Ejecutamos el ordenamiento
     if (typeof applySort === "function") {
         applySort();
     }
