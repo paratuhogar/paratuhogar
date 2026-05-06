@@ -2132,7 +2132,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "605a"; 
+const versionActual = "605c"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8882,55 +8882,8 @@ async function obtenerDuenoReal(telefonoCliente) {
     const duenoIP = await buscarDuenoPorIP();
     if (esValido(duenoIP)) return duenoIP;
 
-    // ==========================================
-    // ==========================================
-    // 5. SIN DUEÑO (ORGÁNICO) -> SMART SKIMMING 🎯
-    // ==========================================
-    try {
-        const origen = sessionStorage.getItem('pth_origen_trafico') || 'directo';
-        
-        const inputNombre = document.getElementById('check-nombre');
-        const nombreCliente = inputNombre ? inputNombre.value.toLowerCase() : "";
-        
-        // Evadir pruebas y teléfono del dueño
-        const esPrueba = nombreCliente.includes('prueba') || nombreCliente.includes('test') || nombreCliente.includes('angel');
-        const esTelDueno = telefonoCliente && telefonoCliente.includes('56071095');
-
-        if (!esPrueba && !esTelDueno) {
-            
-            // REGLA DE ORO DE SEGURIDAD: Tráfico directo o de WhatsApp no se toca.
-            if (origen === 'whatsapp' || origen === 'directo') {
-                return "Venta Directa";
-            }
-
-            // TRÁFICO ORGÁNICO DE REDES O BUSCADOR
-            if (origen === 'social' || origen === 'buscador') {
-                
-                // EVALUAMOS EL CARRITO: ¿Es un equipo High-Ticket?
-                const esAltoValor = cart.some(item => {
-                    const cat = (item.categoria || "").toUpperCase();
-                    const nom = (item.nombre || "").toLowerCase();
-                    // Palabras clave de equipos caros
-                    return cat === 'CLIMATIZACIÓN' || cat === 'REFRIGERACIÓN' || cat === 'ENERGÍA' || cat === 'LAVADO' || 
-                           nom.includes('split') || nom.includes('nevera') || nom.includes('refrigerador') || 
-                           nom.includes('delta') || nom.includes('planta') || nom.includes('batería') || 
-                           nom.includes('lavadora');
-                });
-
-                if (esAltoValor) {
-                    console.log("🎯 Venta High-Ticket orgánica capturada para Marcel.");
-                    return "Marcel Montano"; 
-                } else {
-                    console.log("🛒 Venta de ticket menor asignada a la tienda general.");
-                    return "Venta Directa"; 
-                }
-            }
-        }
-    } catch(e) {
-        // Silencio en caso de error
-    }
-
-    // 6. FALLBACK SEGURO
+    // 5. SIN DUEÑO (TRÁFICO ORGÁNICO)
+    // Si nadie trajo a este cliente, la venta va directamente a la tienda.
     return "Venta Directa";
 }
 
