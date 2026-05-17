@@ -2132,7 +2132,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "605c"; 
+const versionActual = "1705"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10788,55 +10788,56 @@ async function reenviarValeAdmin(id) {
 let productSalesStats = []; // Variable para guardar el cálculo
 
 function calculateProductSales() {
-    // Usamos la variable global de pedidos que ya tienes cargada
-    if (!pedidosRawAdmin) return;
-
+    // 1. Validamos que existan los datos
+    if (!pedidosRawAdmin || !productosRaw) return;
+    
     const conteo = {};
 
-    // 1. Recorrer todos los pedidos NO cancelados
     pedidosRawAdmin.forEach(p => {
-        if (p.estado === 'Cancelado') return;
+        // REGLA DE NEGOCIO: Solo contamos lo que ya se entregó con éxito
+        if (p.estado !== 'Entregado') return; 
 
-        // El formato suele ser "1x Nombre del Producto [USD]"
-        // A veces hay varios productos unidos por "+"
+        // Separamos si hay varios productos en un mismo pedido (unidos por +)
         const lineas = p.producto.split('+');
-
+        
         lineas.forEach(linea => {
             const limpia = linea.trim();
-            
-            // Expresión regular para sacar Cantidad y Nombre
-            // Busca números al inicio, seguidos de 'x', y luego el resto
+            // El Regex extrae: [1] la cantidad y [2] el nombre del producto
             const match = limpia.match(/^(\d+)x\s+(.+?)(\[|$)/);
 
-            let qty = 1;
-            let name = limpia;
-
             if (match) {
-                qty = parseInt(match[1]); // Captura el número (ej: 2)
-                name = match[2].trim();   // Captura el nombre (ej: Split 1T)
-            } else {
-                // Si no tiene el formato "1x", intentamos limpiar corchetes
-                name = limpia.split('[')[0].trim();
-            }
+                const qty = parseInt(match[1]);
+                const nombreExtraido = match[2].trim();
+                const nameKey = nombreExtraido.toUpperCase(); // Para agrupar sin importar mayúsculas
 
-            // Normalizar nombre (Mayúsculas) para evitar duplicados por error
-            const nameKey = name.toUpperCase();
+                // === AQUÍ VA EL BLOQUE EXACTO QUE PREGUNTASTE ===
+                
+                // Buscamos el precio real en tu catálogo maestro (productosRaw)
+                const prodInfo = productosRaw.find(pr => pr.nombre.trim() === nombreExtraido);
+                const precioUnitario = prodInfo ? parseFloat(prodInfo.precio) : 0;
 
-            if (!conteo[nameKey]) {
-                conteo[nameKey] = {
-                    nombreReal: name, // Guardamos el nombre bonito
-                    cantidad: 0
-                };
+                if (!conteo[nameKey]) {
+                    conteo[nameKey] = {
+                        nombreReal: nombreExtraido, 
+                        cantidad: 0,
+                        ingresos: 0 // Inicializamos la nueva métrica de dinero
+                    };
+                }
+                
+                // Sumamos unidades
+                conteo[nameKey].cantidad += qty;
+                // Sumamos dinero (Cantidad x Precio del catálogo)
+                conteo[nameKey].ingresos += (qty * precioUnitario);
+                
+                // === FIN DEL BLOQUE ===
             }
-            
-            conteo[nameKey].cantidad += qty;
         });
     });
 
-    // 2. Convertir a Array y Ordenar por Cantidad (Mayor a menor)
+    // Convertimos el objeto a un Array y ordenamos (de mayor a menor cantidad)
     productSalesStats = Object.values(conteo).sort((a, b) => b.cantidad - a.cantidad);
-
-    // 3. Renderizar
+    
+    // Dibujamos la tabla
     renderProductSalesTable();
 }
 
