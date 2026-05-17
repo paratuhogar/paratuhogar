@@ -1766,6 +1766,23 @@
                     class="w-full pl-10 pr-4 py-2 rounded-xl border-gray-200 bg-gray-50 dark:bg-gray-900 text-xs font-bold focus:ring-indigo-500 focus:border-indigo-500">
             </div>
         </div>
+
+        <!-- Cerca de donde dice "Filtrar Producto" -->
+        <div class="flex flex-wrap gap-4 mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            <div class="flex flex-col">
+                <label class="text-[9px] font-black uppercase text-gray-400 ml-1">Desde</label>
+                <input type="date" id="vp-fecha-desde" onchange="calculateProductSales()" class="rounded-xl border-gray-200 text-xs font-bold p-2">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[9px] font-black uppercase text-gray-400 ml-1">Hasta</label>
+                <input type="date" id="vp-fecha-hasta" onchange="calculateProductSales()" class="rounded-xl border-gray-200 text-xs font-bold p-2">
+            </div>
+            <div class="flex items-end gap-2">
+                <button onclick="setVPQuickFilter(7)" class="px-3 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase hover:bg-primary hover:text-white transition-all">Últimos 7 días</button>
+                <button onclick="setVPQuickFilter(30)" class="px-3 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase hover:bg-primary hover:text-white transition-all">Este Mes</button>
+                <button onclick="resetVPFilters()" class="px-3 py-2 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase">Limpiar</button>
+            </div>
+        </div>
     </div>
 
     <!-- Tabla de Ranking -->
@@ -2132,7 +2149,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1705"; 
+const versionActual = "1705a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10788,31 +10805,33 @@ async function reenviarValeAdmin(id) {
 let productSalesStats = []; // Variable para guardar el cálculo
 
 function calculateProductSales() {
-    // 1. Validamos que existan los datos
     if (!pedidosRawAdmin || !productosRaw) return;
     
     const conteo = {};
+    
+    // Obtener valores de los filtros de fecha
+    const desde = document.getElementById('vp-fecha-desde').value;
+    const hasta = document.getElementById('vp-fecha-hasta').value;
 
     pedidosRawAdmin.forEach(p => {
-        // REGLA DE NEGOCIO: Solo contamos lo que ya se entregó con éxito
+        // 1. Filtro de Estado: Solo entregados
         if (p.estado !== 'Entregado') return; 
 
-        // Separamos si hay varios productos en un mismo pedido (unidos por +)
+        // 2. FILTRO DE TIEMPO
+        const fechaPedido = p.fecha.split(' ')[0]; // Extrae solo YYYY-MM-DD del string de fecha
+        if (desde && fechaPedido < desde) return;
+        if (hasta && fechaPedido > hasta) return;
+
         const lineas = p.producto.split('+');
-        
         lineas.forEach(linea => {
             const limpia = linea.trim();
-            // El Regex extrae: [1] la cantidad y [2] el nombre del producto
             const match = limpia.match(/^(\d+)x\s+(.+?)(\[|$)/);
 
             if (match) {
                 const qty = parseInt(match[1]);
                 const nombreExtraido = match[2].trim();
-                const nameKey = nombreExtraido.toUpperCase(); // Para agrupar sin importar mayúsculas
+                const nameKey = nombreExtraido.toUpperCase();
 
-                // === AQUÍ VA EL BLOQUE EXACTO QUE PREGUNTASTE ===
-                
-                // Buscamos el precio real en tu catálogo maestro (productosRaw)
                 const prodInfo = productosRaw.find(pr => pr.nombre.trim() === nombreExtraido);
                 const precioUnitario = prodInfo ? parseFloat(prodInfo.precio) : 0;
 
@@ -10820,24 +10839,17 @@ function calculateProductSales() {
                     conteo[nameKey] = {
                         nombreReal: nombreExtraido, 
                         cantidad: 0,
-                        ingresos: 0 // Inicializamos la nueva métrica de dinero
+                        ingresos: 0 
                     };
                 }
                 
-                // Sumamos unidades
                 conteo[nameKey].cantidad += qty;
-                // Sumamos dinero (Cantidad x Precio del catálogo)
                 conteo[nameKey].ingresos += (qty * precioUnitario);
-                
-                // === FIN DEL BLOQUE ===
             }
         });
     });
 
-    // Convertimos el objeto a un Array y ordenamos (de mayor a menor cantidad)
     productSalesStats = Object.values(conteo).sort((a, b) => b.cantidad - a.cantidad);
-    
-    // Dibujamos la tabla
     renderProductSalesTable();
 }
 
@@ -11722,7 +11734,31 @@ filterByCategory = function(cat) {
 window.addEventListener('load', () => {
     setTimeout(startB2BIdleTimer, 5000); 
 });
+
+function setVPQuickFilter(days) {
+    const hoy = new Date();
+    const fechaInicio = new Date();
+    fechaInicio.setDate(hoy.getDate() - days);
+    
+    // Formatear a YYYY-MM-DD para los inputs
+    const isoHoy = hoy.toISOString().split('T')[0];
+    const isoInicio = fechaInicio.toISOString().split('T')[0];
+    
+    document.getElementById('vp-fecha-desde').value = isoInicio;
+    document.getElementById('vp-fecha-hasta').value = isoHoy;
+    
+    calculateProductSales();
+}
+
+function resetVPFilters() {
+    document.getElementById('vp-fecha-desde').value = "";
+    document.getElementById('vp-fecha-hasta').value = "";
+    calculateProductSales();
+}
+
 </script>
+
+
 
 
 
