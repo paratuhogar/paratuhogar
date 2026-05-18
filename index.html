@@ -2149,7 +2149,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1705a"; 
+const versionActual = "1805a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4020,32 +4020,7 @@ function openDetail(name, skipSolarCheck = false) {
     
     if(!selectedProduct) return; 
 
-    // ===================================================
-    // INTERCEPTOR 1: PRODUCTOS B2B (Manda al modal de 5 pasos)
-    // ===================================================
-    const cat = (selectedProduct.categoria || "").toUpperCase();
-    const esB2B = cat.includes('MAYORISTA') || cat.includes('B2B') || cat.includes('MIPYME');
-    
-    if (esB2B && !sessionStorage.getItem('pth_b2b_accepted')) {
-        openB2BModal('product', name);
-        return; 
-    }
-
-    // ===================================================
-    // INTERCEPTOR 2: PANELES SOLARES (Manda al modal del 30%)
-    // ===================================================
-    const nLower = selectedProduct.nombre.toLowerCase();
-    const esContenedorPanel = nLower.includes('panel') && nLower.includes('contenedor');
-
-    if (!skipSolarCheck && esContenedorPanel) {
-        document.getElementById('solar-product-name').value = name;
-        document.getElementById('modal-solar-warning').classList.remove('hidden');
-        return; 
-    }
-
-    // ===================================================
-    // EJECUCIÓN NORMAL
-    // ===================================================
+    // === EJECUCIÓN NORMAL (BLOQUEOS ELIMINADOS) ===
     tiempoInicioLectura = Date.now();
     productoActualLectura = name;
     trackSpy('VIO_DETALLE', name);
@@ -4055,6 +4030,8 @@ function openDetail(name, skipSolarCheck = false) {
     }
 
     const p = selectedProduct;
+    const detailModal = document.getElementById('detail-modal');
+    
     document.getElementById('detail-name').innerText = p.nombre;
     document.getElementById('detail-desc').innerHTML = p.descripcion || ''; 
 
@@ -4083,39 +4060,15 @@ function openDetail(name, skipSolarCheck = false) {
         <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
     `).join('');
 
-    // ===================================================
-    // 🔴 BLOQUE RESTAURADO: HERRAMIENTAS DE MARKETING Y STORY
-    // ===================================================
-    const btnStory = document.getElementById('btn-story-maker');
-    const currentLevel = window.currentGestorLevel || 0;
-
-    // 1. Lógica del candado del Story Maker
-    if (btnStory) {
-        if (currentLevel < 1) {
-            btnStory.onclick = () => alert("🔒 BLOQUEADO: Story Maker\n\nNecesitas Nivel 1 (3 ventas) para crear diseños automáticos.");
-            btnStory.className = "flex-1 min-w-[80px] py-3 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center cursor-not-allowed gap-1 shadow-sm";
-            btnStory.innerHTML = `<span class="material-symbols-outlined text-xl">lock</span>Story Bloq.`;
-        } else {
-            btnStory.onclick = generateStoryImage;
-            btnStory.className = "flex-1 min-w-[80px] py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20 cursor-pointer";
-            btnStory.innerHTML = `<span class="material-symbols-outlined text-xl">fit_screen</span>Crear Story`;
-        }
-    }
-
-    // 2. Visibilidad de toda la fila de botones (SOLO PARA GESTORES)
-    const session = localStorage.getItem('pth_session');
+    // Herramientas de marketing
     const toolsContainer = document.getElementById('marketing-tools-container');
     if (toolsContainer) {
-        if (session) {
-            toolsContainer.classList.remove('hidden'); // Mostrar si es gestor
-        } else {
-            toolsContainer.classList.add('hidden');    // Ocultar si es cliente
-        }
+        const session = localStorage.getItem('pth_session');
+        if (session) toolsContainer.classList.remove('hidden');
+        else toolsContainer.classList.add('hidden');
     }
-    // ===================================================
 
-    // Mostrar Modal Final
-    document.getElementById('detail-modal').classList.remove('hidden');
+    detailModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
 
@@ -4778,16 +4731,7 @@ function renderFloatingWA(nombre, telefono) {
 }
     
     function filterByCategory(cat) { 
-    // 1. Detectar si es categoría Mayorista
-    const esMayorista = cat.toUpperCase().includes('MAYORISTA') || cat.toUpperCase().includes('B2B') || cat.toUpperCase().includes('MIPYME');
-
-    // 2. Si es mayorista y NO ha aceptado los términos, lanzamos el modal en modo 'category'
-    if (esMayorista && !sessionStorage.getItem('pth_b2b_accepted')) {
-        openB2BModal('category', cat);
-        return; 
-    }
-
-    // Ejecución normal
+    // Eliminamos el bloqueo de los 5 pasos
     activeCategory = cat; 
     trackSpy('VIO_CATEGORIA', cat);
     renderCategories(); 
@@ -4796,6 +4740,8 @@ function renderFloatingWA(nombre, telefono) {
     const label = document.getElementById('marketing-cat-label');
     if(label) label.innerText = cat;
 }
+
+
     function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
     if (typeof captureGhostLead === "function") {
         captureGhostLead(); 
@@ -11686,7 +11632,7 @@ loadProducts = async function() {
 let idleB2BTimer;
 
 function startB2BIdleTimer() {
-        return; // <--- AÑADE ESTO PARA DESACTIVARLO
+    return; // <--- AÑADE ESTO PARA DESACTIVARLO
 
     clearTimeout(idleB2BTimer);
     
@@ -13257,83 +13203,7 @@ async function generarComprobanteB2B(datosPedido, accion) {
 <!-- Módulo de Recompensa Leads -->
 <script src="leads-premium.js"></script>
 
-<!-- === MODAL DE ADVERTENCIAS B2B / MAYORISTA === -->
-<div id="modal-b2b-warnings" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.3)] relative border border-amber-500/30 animate-pop-in flex flex-col max-h-[90vh]">
-        
-        <!-- Header Decorativo -->
-        <div class="bg-gradient-to-r from-amber-500 to-yellow-600 p-6 text-center relative shrink-0">
-            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-            <button onclick="closeB2BModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 p-1 rounded-full backdrop-blur-sm transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-            <span class="material-symbols-outlined text-5xl text-white drop-shadow-md mb-2" id="b2b-icon">warning</span>
-            <h2 class="text-2xl font-black text-white uppercase tracking-widest italic" id="b2b-title">Atención</h2>
-            <div class="flex justify-center gap-1 mt-3" id="b2b-dots">
-                <!-- Los punticos de progreso se llenan con JS -->
-            </div>
-        </div>
 
-        <!-- Contenedor de Texto (Scrollable) -->
-        <div class="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1">
-            <div id="b2b-content" class="text-slate-700 dark:text-slate-300 space-y-4">
-                <!-- El contenido cambia dinámicamente -->
-            </div>
-        </div>
-
-        <!-- Footer / Botón de Acción -->
-        <div class="p-6 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shrink-0">
-            <button id="btn-b2b-next" onclick="nextB2BStep()" class="w-full bg-slate-900 hover:bg-black text-amber-400 py-4 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 border border-amber-500/50">
-                <span id="b2b-btn-text">Lo entiendo</span>
-                <span class="material-symbols-outlined">arrow_forward</span>
-            </button>
-        </div>
-
-    </div>
-</div>
-
-<!-- === MODAL 1: AVISO CONTENEDORES PANELES SOLARES === -->
-<div id="modal-solar-warning" class="fixed inset-0 z-[600] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] p-8 text-center border border-blue-500/30 shadow-2xl relative animate-pop-in">
-        <span class="material-symbols-outlined text-6xl text-blue-500 mb-4 animate-bounce">directions_boat</span>
-        <h3 class="text-2xl font-black text-slate-800 dark:text-white uppercase italic mb-3 leading-tight">Reserva de<br>Contenedor</h3>
-        
-        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 mb-6">
-            <p class="text-sm text-blue-800 dark:text-blue-300 font-medium">
-                Disponible para <span class="font-black">finales de abril</span>.<br><br>
-                Requiere un <span class="bg-blue-200 dark:bg-blue-800 px-2 py-0.5 rounded font-black">pago obligatorio del 30%</span> por adelantado para asegurar su reserva.
-            </p>
-        </div>
-
-        <input type="hidden" id="solar-product-name">
-        <div class="flex gap-3">
-            <button onclick="document.getElementById('modal-solar-warning').classList.add('hidden')" class="flex-1 py-3 rounded-xl font-bold text-xs uppercase text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
-            <button onclick="acceptSolarWarning()" class="flex-1 py-3 rounded-xl font-black text-xs uppercase text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors">De acuerdo</button>
-        </div>
-    </div>
-</div>
-
-<!-- === MODAL 2: RECORDATORIO GESTOR INACTIVO (OPORTUNIDAD B2B) === -->
-<div id="modal-b2b-reminder" class="fixed inset-0 z-[600] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
-    <div class="bg-gradient-to-br from-amber-500 to-yellow-600 w-full max-w-sm rounded-[2rem] p-8 text-center shadow-[0_0_40px_rgba(245,158,11,0.4)] relative border border-amber-400 animate-pop-in">
-        
-        <button onclick="document.getElementById('modal-b2b-reminder').classList.add('hidden')" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 p-1 rounded-full backdrop-blur-sm transition-colors">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-
-        <span class="material-symbols-outlined text-6xl text-white mb-4 drop-shadow-md animate-pulse">radar</span>
-        <h3 class="text-3xl font-black text-white uppercase italic mb-2 drop-shadow-md">¡Atención!</h3>
-        
-        <p class="text-sm text-yellow-100 mb-6 font-medium leading-relaxed">
-            Llevas un rato revisando el catálogo... No olvides pasar por la categoría <span class="font-black text-white bg-black/20 px-2 py-0.5 rounded border border-white/20 shadow-sm">MAYORISTA / B2B</span>.<br><br>
-            Allí hay equipos por lote con <span class="font-black text-white underline decoration-2">EXCELENTES COMISIONES</span> que te harán subir de nivel más rápido. 💸
-        </p>
-
-        <button onclick="goToMayoristaFromReminder()" class="w-full py-4 rounded-xl font-black text-sm uppercase text-amber-900 bg-white hover:bg-gray-50 shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
-            <span class="material-symbols-outlined">local_shipping</span> Ver Mayorista Ahora
-        </button>
-    </div>
-</div>
 
 <!-- === MODAL INTRODUCCIÓN: RADAR DE RIESGOS === -->
 <div id="modal-intro-radar" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
