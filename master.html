@@ -122,6 +122,9 @@ function calculateDevFee(precioVenta) {
             <button onclick="switchTab('conciliacion')" id="btn-conciliacion" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">2. Conciliación (Viernes)</button>
             <button onclick="switchTab('nomina')" id="btn-nomina" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">3. Nómina Gestores (Sábado)</button>
             <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">4. Inteligencia (BI)</button>
+            <button onclick="window.location.href='estadisticas.html'" class="tab-btn px-4 py-2 text-blue-400 text-sm font-bold hover:text-white border border-blue-500/30 rounded-lg hover:bg-blue-900/30 transition-all">
+                📊 Intel Center
+            </button>
         </div>
 
         <!-- 1. VISTA GESTIÓN DE COSTOS (Estilo Excel) -->
@@ -354,17 +357,20 @@ function calculateDevFee(precioVenta) {
 <section id="sec-dashboard" class="tab-content hidden">
     
     <!-- 1. BARRA DE CONTROL (FILTROS DE TIEMPO) -->
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-slate-800 p-4 rounded-xl border border-slate-700">
-        <h3 class="text-white font-bold flex items-center gap-2">
-            <span class="material-symbols-outlined text-amber-500">monitoring</span>
-            Tablero de Mando
-        </h3>
-        <div class="flex gap-2">
-            <button onclick="filterDash('semana')" id="btn-d-semana" class="dash-filter px-4 py-1 rounded-lg text-xs font-bold bg-slate-700 text-slate-300 hover:text-white transition-all">Esta Semana</button>
-            <button onclick="filterDash('mes')" id="btn-d-mes" class="dash-filter px-4 py-1 rounded-lg text-xs font-bold bg-slate-700 text-slate-300 hover:text-white transition-all">Este Mes</button>
-            <button onclick="filterDash('total')" id="btn-d-total" class="dash-filter px-4 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-lg">Histórico Total</button>
-        </div>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-slate-800 p-4 rounded-xl border border-slate-700 gap-4">
+    <h3 class="text-white font-bold flex items-center gap-2">
+        <span class="material-symbols-outlined text-amber-500">monitoring</span>
+        Tablero de Inteligencia Financiera
+    </h3>
+    <div class="flex flex-wrap items-center gap-3">
+        <input type="date" id="vp-fecha-desde" onchange="filterDash('custom')" class="bg-slate-900 border-slate-700 rounded-lg text-xs p-2 text-white">
+        <input type="date" id="vp-fecha-hasta" onchange="filterDash('custom')" class="bg-slate-900 border-slate-700 rounded-lg text-xs p-2 text-white">
+        <div class="h-6 w-[1px] bg-slate-600 hidden md:block"></div>
+        <button onclick="filterDash('semana')" id="btn-d-semana" class="dash-filter px-3 py-1 rounded-lg text-[10px] font-bold bg-slate-700 text-slate-300 transition-all">7 DÍAS</button>
+        <button onclick="filterDash('mes')" id="btn-d-mes" class="dash-filter px-3 py-1 rounded-lg text-[10px] font-bold bg-slate-700 text-slate-300 transition-all">MES</button>
+        <button onclick="filterDash('total')" id="btn-d-total" class="dash-filter px-3 py-1 rounded-lg text-[10px] font-bold bg-emerald-600 text-white shadow-lg">TOTAL</button>
     </div>
+</div>
 
     <!-- 2. KPIs FINANCIEROS (LO QUE LE IMPORTA: SU BOLSILLO) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -1280,26 +1286,34 @@ async function loadDashboard() {
 
 // FUNCIÓN DE FILTRADO Y CÁLCULO
 function filterDash(periodo) {
-    // 1. Actualizar botones visualmente
+    // 1. UI: Resetear estilos de botones
     document.querySelectorAll('.dash-filter').forEach(b => {
         b.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg');
         b.classList.add('bg-slate-700', 'text-slate-300');
     });
-    document.getElementById(`btn-d-${periodo}`).classList.add('bg-emerald-600', 'text-white', 'shadow-lg');
-    document.getElementById(`btn-d-${periodo}`).classList.remove('bg-slate-700', 'text-slate-300');
 
-    // 2. Filtrar Datos por Fecha
     const now = new Date();
     let filteredOrders = allOrdersCache;
 
     if (periodo === 'semana') {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(now.getDate() - 7);
-        filteredOrders = allOrdersCache.filter(p => new Date(p.fecha) >= oneWeekAgo);
+        document.getElementById('btn-d-semana').classList.replace('bg-slate-700', 'bg-emerald-600');
+        const start = new Date();
+        start.setDate(now.getDate() - 7);
+        filteredOrders = allOrdersCache.filter(p => new Date(p.fecha) >= start);
     } else if (periodo === 'mes') {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(now.getMonth() - 1);
-        filteredOrders = allOrdersCache.filter(p => new Date(p.fecha) >= oneMonthAgo);
+        document.getElementById('btn-d-mes').classList.replace('bg-slate-700', 'bg-emerald-600');
+        const start = new Date();
+        start.setMonth(now.getMonth() - 1);
+        filteredOrders = allOrdersCache.filter(p => new Date(p.fecha) >= start);
+    } else if (periodo === 'total') {
+        document.getElementById('btn-d-total').classList.replace('bg-slate-700', 'bg-emerald-600');
+    } else if (periodo === 'custom') {
+        const desde = document.getElementById('vp-fecha-desde').value;
+        const hasta = document.getElementById('vp-fecha-hasta').value;
+        filteredOrders = allOrdersCache.filter(p => {
+            const f = p.fecha.split('T')[0];
+            return (!desde || f >= desde) && (!hasta || f <= hasta);
+        });
     }
 
     calculateMetrics(filteredOrders);
@@ -1308,97 +1322,133 @@ function filterDash(periodo) {
 function calculateMetrics(orders) {
     let netProfit = 0;
     let totalSales = 0;
-    
     const prodStats = {}; 
-    const gestorStats = {}; // Ahora guardará { sales: 0, profit: 0 }
+    const gestorStats = {}; 
     const trendData = {}; 
 
     orders.forEach(p => {
-        const nombreLimpio = p.producto.replace(/^\d+x\s*/, '').split('[')[0].trim();
-        
-        const prodInv = inventario.find(i => p.producto.includes(i.nombre) || i.nombre === nombreLimpio) || { costo_proveedor: 0 };
-        const costoBase = Number(prodInv.costo_proveedor || 0);
+        if (p.estado !== 'Entregado') return;
 
-        let qty = 1;
-        const match = p.producto.match(/^(\d+)x/);
-        if(match) qty = parseInt(match[1]);
-
-        const venta = parseFloat(p.total || 0);
-        const comision = parseFloat(p.comision_total || 0);
-        const costoTotal = costoBase * qty;
+        const ventaTotalPedido = parseFloat(p.total || 0);
+        const comisionGestor = parseFloat(p.comision_total || 0);
         const mensajeria = parseFloat(p.costo_mensajeria || 0);
-
-        // --- NUEVO: RESTAR TU FEE POR CADA UNIDAD VENDIDA ---
-        // (Asumimos que el fee se cobra por unidad vendida, igual que la comisión)
-        const unitFee = calculateDevFee(venta / qty); // Calculamos fee unitario basado en precio unitario
-        const totalDevFee = unitFee * qty;
-
-        // GANANCIA LÍQUIDA DE ÁNGEL
-        const gananciaBoss = venta - costoTotal - comision - mensajeria - totalDevFee;
-
-        // Sumatorias Generales
-        netProfit += gananciaBoss;
-        totalSales += venta;
-
-        // Estadísticas Producto
-        if(!prodStats[nombreLimpio]) prodStats[nombreLimpio] = { qty: 0, profit: 0 };
-        prodStats[nombreLimpio].qty += qty;
-        prodStats[nombreLimpio].profit += gananciaBoss;
-
-        // --- CORRECCIÓN AQUÍ (Para que el gráfico funcione) ---
-        const g = p.gestor || 'Directo';
-        if(!gestorStats[g]) gestorStats[g] = { sales: 0, profit: 0 };
         
-        gestorStats[g].sales += venta;       // Barra Azul (Volumen)
-        gestorStats[g].profit += gananciaBoss; // Barra Verde (Tu Ganancia)
-        // -----------------------------------------------------
+        totalSales += ventaTotalPedido;
 
-        // Tendencia
+        const lineas = p.producto.split('+');
+        
+        // 1. Calculamos el COSTO TOTAL de todos los productos en este pedido
+        let costoTotalProductos = 0;
+        let totalUnidadesPedido = 0;
+        
+        lineas.forEach(linea => {
+            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
+            if (match) {
+                const qty = parseInt(match[1]);
+                const nombre = match[2].trim();
+                const prodInv = inventario.find(i => i.nombre.trim() === nombre);
+                costoTotalProductos += (prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0) * qty;
+                totalUnidadesPedido += qty;
+            }
+        });
+
+        // 2. TARIFA TECNOLÓGICA (Basada en el precio neto del equipo)
+        const precioUnitarioPromedio = (ventaTotalPedido - mensajeria) / (totalUnidadesPedido || 1);
+        const feePorUnidad = calculateDevFee(precioUnitarioPromedio);
+        const totalFeePedido = feePorUnidad * totalUnidadesPedido;
+
+        // 3. UTILIDAD NETA REAL DEL PEDIDO (La verdad absoluta)
+        // Lo que pagó el cliente - Lo que costó - Lo que se llevó el gestor - El envío - Tu Fee
+        const utilidadRealPedido = ventaTotalPedido - costoTotalProductos - comisionGestor - mensajeria - totalFeePedido;
+        
+        netProfit += utilidadRealPedido;
+
+        // 4. DISTRIBUIR UTILIDAD POR PRODUCTO (Para el Ranking)
+        lineas.forEach(linea => {
+            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
+            if (match) {
+                const qty = parseInt(match[1]);
+                const nombre = match[2].trim();
+                
+                if (!prodStats[nombre]) prodStats[nombre] = { qty: 0, profit: 0 };
+                prodStats[nombre].qty += qty;
+                
+                // Prorrateamos la utilidad del pedido entre los productos
+                prodStats[nombre].profit += (utilidadRealPedido / totalUnidadesPedido) * qty;
+            }
+        });
+
+        // Gráficos
+        const g = p.gestor || 'Directo';
+        if (!gestorStats[g]) gestorStats[g] = { sales: 0, profit: 0 };
+        gestorStats[g].sales += ventaTotalPedido;
+        gestorStats[g].profit += utilidadRealPedido;
+
         const fechaKey = new Date(p.fecha).toLocaleDateString();
         if(!trendData[fechaKey]) trendData[fechaKey] = 0;
-        trendData[fechaKey] += gananciaBoss;
+        trendData[fechaKey] += utilidadRealPedido;
     });
 
-    // Actualizar KPIs en pantalla
+    // Actualizar UI
     document.getElementById('kpi-net-profit').innerText = `$${netProfit.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
     document.getElementById('kpi-total-sales').innerText = `$${totalSales.toLocaleString()}`;
-    document.getElementById('kpi-orders-count').innerText = `${orders.length} Pedidos`;
+    document.getElementById('kpi-orders-count').innerText = `${orders.length} Entregas`;
     
     const margin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0;
     document.getElementById('kpi-margin').innerText = `${margin.toFixed(1)}%`;
-    
-    // Rankings
-    const sortedProds = Object.entries(prodStats).sort(([,a], [,b]) => b.profit - a.profit);
-    
-    const topList = document.getElementById('list-top-products');
-    topList.innerHTML = sortedProds.slice(0, 3).map(([name, data], i) => `
-        <div class="flex justify-between items-center text-xs border-b border-slate-700/50 pb-2">
-            <div class="flex items-center gap-2">
-                <span class="font-black text-emerald-500">#${i+1}</span>
-                <span class="text-slate-300 font-bold">${name}</span>
-            </div>
-            <div class="text-right">
-                <span class="block font-black text-white">+$${data.profit.toFixed(0)}</span>
-                <span class="text-[9px] text-slate-500">${data.qty} vendidos</span>
-            </div>
-        </div>
-    `).join('') || '<p class="text-xs text-slate-500">Sin datos.</p>';
 
-    const lowList = document.getElementById('list-low-products');
-    const bottomProds = sortedProds.slice(-3).reverse();
-    
-    lowList.innerHTML = bottomProds.map(([name, data]) => `
-        <div class="flex justify-between items-center text-xs border-b border-slate-700/50 pb-2">
-            <span class="text-slate-400">${name}</span>
-            <div class="text-right">
-                <span class="block font-bold ${data.profit < 0 ? 'text-red-500' : 'text-amber-500'}">$${data.profit.toFixed(0)}</span>
-            </div>
-        </div>
-    `).join('') || '<p class="text-xs text-slate-500">Sin datos.</p>';
-
-    // Renderizar Gráficos
+    renderRankingLists(prodStats); 
     renderChartGestor(gestorStats);
     renderChartTrend(trendData);
+}
+
+// Función para dibujar la lista de estrellas con ganancia real
+function renderRankingLists(stats) {
+    // Convertimos el objeto en array y ordenamos por Ganancia Neta (Profit)
+    const sortedProds = Object.entries(stats).sort(([,a], [,b]) => b.profit - a.profit);
+    
+    // --- 1. LLENAR PRODUCTOS ESTRELLA (Los 5 mejores) ---
+    const topList = document.getElementById('list-top-products');
+    const stars = sortedProds.slice(0, 5);
+    
+    topList.innerHTML = stars.map(([name, data], i) => `
+        <div class="flex justify-between items-center text-xs border-b border-slate-700/50 py-3">
+            <div class="flex items-center gap-3">
+                <span class="font-black text-emerald-500 text-sm">#${i+1}</span>
+                <span class="text-slate-200 font-bold">${name}</span>
+            </div>
+            <div class="text-right">
+                <span class="block font-black text-emerald-400">+$${data.profit.toFixed(2)}</span>
+                <span class="text-[9px] text-slate-500 font-bold uppercase">${data.qty} vendidos</span>
+            </div>
+        </div>
+    `).join('') || '<p class="text-xs text-slate-500 py-4 text-center">No hay ventas suficientes.</p>';
+
+    // --- 2. LLENAR PRODUCTOS LENTOS / BAJO MARGEN (Los 5 peores) ---
+    const lowList = document.getElementById('list-low-products');
+    
+    // Tomamos los últimos 5, pero les damos la vuelta para que el "peor" salga primero
+    // Y nos aseguramos de no repetir productos que ya están en el Top si hay pocos items
+    const losers = sortedProds.length > 5 ? sortedProds.slice(-5).reverse() : [];
+    
+    lowList.innerHTML = losers.map(([name, data]) => {
+        // Alerta visual si la ganancia es negativa (pérdida)
+        const isLoss = data.profit < 0;
+        const colorClass = isLoss ? 'text-red-500' : 'text-orange-400';
+        const icon = isLoss ? 'priority_high' : 'trending_down';
+
+        return `
+        <div class="flex justify-between items-center text-xs border-b border-slate-700/50 py-3 group hover:bg-slate-800/30 transition-all px-2 rounded-lg">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-sm ${colorClass}">${icon}</span>
+                <span class="text-slate-400 group-hover:text-slate-200 transition-colors">${name}</span>
+            </div>
+            <div class="text-right">
+                <span class="block font-black ${colorClass}">$${data.profit.toFixed(2)}</span>
+                <span class="text-[9px] text-slate-500 uppercase">${data.qty} movidos</span>
+            </div>
+        </div>
+    `}).join('') || '<p class="text-xs text-slate-500 py-4 text-center">Buen rendimiento general.</p>';
 }
 
 // 1. CALCULAR Y MOSTRAR DEUDA DEL SISTEMA
