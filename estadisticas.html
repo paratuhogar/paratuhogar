@@ -635,7 +635,7 @@
     <div class="section-title">Evolución Temporal</div>
     <div class="chart-grid-3" style="margin-bottom:2rem;">
         <div class="chart-card">
-            <div class="chart-card-title">Ingresos vs Ganancia Neta</div>
+            <div class="chart-card-title">Ingresos vs Utilidad Real Boss</div>
             <div class="chart-card-sub">Ventas entregadas en el período filtrado</div>
             <div class="chart-wrap-tall">
                 <canvas id="chart-revenue"></canvas>
@@ -672,8 +672,8 @@
     <!-- TABLA TOP PRODUCTOS CON MARGEN -->
     <div class="section-title">Rentabilidad por Producto</div>
     <div class="chart-card" style="margin-bottom:2rem;">
-        <div class="chart-card-title">Ranking de Productos — Mayor a Menor Ganancia Neta Estimada</div>
-        <div class="chart-card-sub">Ingresos menos comisión gestores, mensajería y tarifa sistema. <span style="color:var(--amber)">⚠ Margen estimado — costo proveedor no incluido aquí (ver Bóveda).</span></div>
+        <div class="chart-card-title">Ranking de Productos — Mayor a Menor Utilidad Boss Real</div>
+        <div class="chart-card-sub">Ingresos menos costo de proveedor, comisiones gestores y tarifa del sistema. <span style="color:var(--green)">✓ Utilidad real calculada en base a costos de Bóveda.</span></div>
         <div style="overflow-x:auto;">
             <table class="data-table" id="table-products"></table>
         </div>
@@ -725,7 +725,7 @@
     <div class="section-title">Detalle de Gestores</div>
     <div class="chart-card" style="margin-bottom:2rem;">
         <div class="chart-card-title">Tabla de Performance — Gestores</div>
-        <div class="chart-card-sub">Ventas, comisiones, mensajería y efectividad de entrega</div>
+        <div class="chart-card-sub">Ventas, comisiones, mensajería, costo real de proveedor y utilidad de Ángel</div>
         <div style="overflow-x:auto;margin-top:16px;">
             <table class="data-table" id="table-gestores"></table>
         </div>
@@ -747,6 +747,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let ALL_DATA = [];
 let FILTERED_DATA = [];
+let ALL_PRODUCTS = [];
 let charts = {};
 
 // Tarifa del sistema (igual que en master.html)
@@ -767,6 +768,11 @@ async function init() {
     const d7 = new Date(today); d7.setDate(today.getDate() - 7);
     document.getElementById('f-desde').value = d7.toISOString().split('T')[0];
     document.getElementById('f-hasta').value = today.toISOString().split('T')[0];
+
+    // Cargar productos para mapear los costos reales de proveedor
+    let { data: productsData, error: prodError } = await sb.from('productos').select('*');
+    if (prodError) { console.error(prodError); }
+    ALL_PRODUCTS = productsData || [];
 
     // Cargar todos los pedidos
     let { data, error } = await sb.from('pedidos').select('*').order('fecha', { ascending: false });
@@ -840,6 +846,56 @@ function parseProducto(prod) {
 }
 
 // =====================================================
+// CÁLCULO DE COSTOS, FEES Y GANANCIA REAL DE ÁNGEL
+// =====================================================
+function calculateOrderFinancials(r) {
+    const ventaTotal = parseFloat(r.total) || 0;
+    const comision = parseFloat(r.comision_total) || 0;
+    const mensajeria = parseFloat(r.costo_mensajeria) || 0;
+    
+    let costoTotal = 0;
+    let feeTotal = 0;
+    let totalQty = 0;
+
+    if (r.producto) {
+        const lineas = r.producto.split('+');
+        lineas.forEach(linea => {
+            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
+            if (match) {
+                const qty = parseInt(match[1]) || 1;
+                const nombre = match[2].trim();
+                const prodInv = ALL_PRODUCTS.find(i => i.nombre.trim() === nombre);
+                const costoUnitario = prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0;
+                costoTotal += costoUnitario * qty;
+                totalQty += qty;
+            } else {
+                const nombre = linea.replace(/\[.*?\]/g, '').trim();
+                const prodInv = ALL_PRODUCTS.find(i => i.nombre.trim() === nombre);
+                const costoUnitario = prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0;
+                costoTotal += costoUnitario;
+                totalQty += 1;
+            }
+        });
+    }
+
+    // El fee del sistema se prorratea por el precio de equipos neto unitario
+    const precioUnitarioPromedio = (ventaTotal - mensajeria) / (totalQty || 1);
+    const feePorUnidad = devFee(precioUnitarioPromedio);
+    feeTotal = feePorUnidad * totalQty;
+
+    // Utilidad real de Ángel: El cliente paga mensajería, por ende se cancela en la cuenta del jefe (entra y sale)
+    // Utilidad Real Boss = (Venta Total - Mensajería) - Costo Real Proveedor - Comisión Gestor - Fee del Sistema
+    const gananciaNeta = (ventaTotal - mensajeria) - costoTotal - comision - feeTotal;
+
+    return {
+        costoTotal,
+        feeTotal,
+        gananciaNeta,
+        totalQty
+    };
+}
+
+// =====================================================
 // RENDER DASHBOARD
 // =====================================================
 function renderDashboard() {
@@ -865,24 +921,34 @@ function renderKPIs() {
     const cancelados = FILTERED_DATA.filter(r => r.estado === 'Cancelado');
     const pendientes = FILTERED_DATA.filter(r => r.estado === 'Pendiente');
 
-    const totalIngresos = entregados.reduce((s, r) => s + (parseFloat(r.total) || 0), 0);
-    const totalComisiones = entregados.reduce((s, r) => s + (parseFloat(r.comision_total) || 0), 0);
-    const totalMensajeria = entregados.reduce((s, r) => s + (parseFloat(r.costo_mensajeria) || 0), 0);
-    const totalSistema = entregados.reduce((s, r) => s + devFee(r.total), 0);
-    const gananciaNeta = totalIngresos - totalComisiones - totalMensajeria - totalSistema;
+    let totalIngresos = 0;
+    let totalComisiones = 0;
+    let totalMensajeria = 0;
+    let totalSistema = 0;
+    let totalCostosProveedor = 0;
+    let gananciaNeta = 0;
+
+    entregados.forEach(r => {
+        const financials = calculateOrderFinancials(r);
+        totalIngresos += parseFloat(r.total) || 0;
+        totalComisiones += parseFloat(r.comision_total) || 0;
+        totalMensajeria += parseFloat(r.costo_mensajeria) || 0;
+        totalSistema += financials.feeTotal;
+        totalCostosProveedor += financials.costoTotal;
+        gananciaNeta += financials.gananciaNeta;
+    });
+
     const tasaExito = FILTERED_DATA.length > 0 ? (entregados.length / FILTERED_DATA.length * 100) : 0;
     const ticketPromedio = entregados.length > 0 ? totalIngresos / entregados.length : 0;
     const margenBruto = totalIngresos > 0 ? (gananciaNeta / totalIngresos * 100) : 0;
 
-    // Ingresos cancelados perdidos
     const perdido = cancelados.reduce((s, r) => s + (parseFloat(r.total) || 0), 0);
-    const pendienteMonto = pendientes.reduce((s, r) => s + (parseFloat(r.total) || 0), 0);
 
     const kpis = [
         { color: 'green', icon: '💰', label: 'Ingresos Totales', value: '$' + fmt(totalIngresos), sub: `${entregados.length} pedidos entregados` },
-        { color: 'blue', icon: '📈', label: 'Ganancia Neta Est.', value: '$' + fmt(gananciaNeta), sub: `Tras comis. + mensa. + sistema` },
+        { color: 'blue', icon: '📈', label: 'Ganancia Neta Boss', value: '$' + fmt(gananciaNeta), sub: `Tras costo + comis + mensa + sistema` },
         { color: 'amber', icon: '🎯', label: 'Ticket Promedio', value: '$' + fmt(ticketPromedio), sub: `Por pedido entregado` },
-        { color: 'purple', icon: '📊', label: 'Margen Operativo', value: fmt(margenBruto, 1) + '%', sub: `Sobre ingresos totales` },
+        { color: 'purple', icon: '📊', label: 'Margen Neto Boss', value: fmt(margenBruto, 1) + '%', sub: `Sobre ingresos totales` },
         { color: 'cyan', icon: '✅', label: 'Tasa de Éxito', value: fmt(tasaExito, 1) + '%', sub: `${entregados.length} de ${FILTERED_DATA.length} pedidos` },
         { color: 'red', icon: '❌', label: 'Ingresos Perdidos', value: '$' + fmt(perdido), sub: `${cancelados.length} pedidos cancelados` },
     ];
@@ -909,12 +975,12 @@ function renderChartRevenue() {
     entregados.forEach(r => {
         const m = r.fecha ? r.fecha.substring(0, 7) : 'N/A';
         if (!byMonth[m]) byMonth[m] = { ingresos: 0, ganancia: 0 };
+        
         const total = parseFloat(r.total) || 0;
-        const comis = parseFloat(r.comision_total) || 0;
-        const mensa = parseFloat(r.costo_mensajeria) || 0;
-        const sistema = devFee(total);
+        const financials = calculateOrderFinancials(r);
+        
         byMonth[m].ingresos += total;
-        byMonth[m].ganancia += total - comis - mensa - sistema;
+        byMonth[m].ganancia += financials.gananciaNeta;
     });
 
     const labels = Object.keys(byMonth).sort();
@@ -936,7 +1002,7 @@ function renderChartRevenue() {
                     borderWidth: 1, borderRadius: 6,
                 },
                 {
-                    label: 'Ganancia Neta',
+                    label: 'Ganancia Neta Boss',
                     data: ganancia,
                     backgroundColor: 'rgba(16,185,129,0.6)',
                     borderColor: 'rgba(16,185,129,1)',
@@ -1167,25 +1233,60 @@ function renderChartMensajeria() {
 function renderTableProducts() {
     const prodMap = {};
     FILTERED_DATA.filter(r => r.estado === 'Entregado').forEach(r => {
-        const { name, qty } = parseProducto(r.producto);
-        const key = name.substring(0, 60);
-        if (!prodMap[key]) prodMap[key] = { revenue: 0, qty: 0, comis: 0, mensa: 0, sistema: 0 };
-        const total = parseFloat(r.total) || 0;
-        prodMap[key].revenue += total;
-        prodMap[key].qty += qty;
-        prodMap[key].comis += parseFloat(r.comision_total) || 0;
-        prodMap[key].mensa += parseFloat(r.costo_mensajeria) || 0;
-        prodMap[key].sistema += devFee(total);
+        if (!r.producto) return;
+        const lineas = r.producto.split('+');
+        
+        let totalQtyInOrder = 0;
+        const lineasProcesadas = lineas.map(linea => {
+            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
+            let qty = 1;
+            let nombre = linea.replace(/\[.*?\]/g, '').trim();
+            if (match) {
+                qty = parseInt(match[1]) || 1;
+                nombre = match[2].trim();
+            }
+            totalQtyInOrder += qty;
+            return { nombre, qty };
+        });
+
+        const totalVenta = parseFloat(r.total) || 0;
+        const comisionTotal = parseFloat(r.comision_total) || 0;
+        const mensajeria = parseFloat(r.costo_mensajeria) || 0;
+        
+        const precioUnitarioPromedio = (totalVenta - mensajeria) / (totalQtyInOrder || 1);
+        const feePorUnidad = devFee(precioUnitarioPromedio);
+
+        lineasProcesadas.forEach(item => {
+            const key = item.nombre.substring(0, 60);
+            if (!prodMap[key]) prodMap[key] = { revenue: 0, qty: 0, comis: 0, mensa: 0, sistema: 0, costoProv: 0 };
+            
+            const prodInv = ALL_PRODUCTS.find(i => i.nombre.trim() === item.nombre);
+            const costoUnitario = prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0;
+            
+            const itemVenta = precioUnitarioPromedio * item.qty;
+            const itemComis = (comisionTotal / (totalQtyInOrder || 1)) * item.qty;
+            const itemMensa = (mensajeria / (totalQtyInOrder || 1)) * item.qty;
+            const itemSistema = feePorUnidad * item.qty;
+            const itemCostoProv = costoUnitario * item.qty;
+
+            prodMap[key].revenue += itemVenta;
+            prodMap[key].qty += item.qty;
+            prodMap[key].comis += itemComis;
+            prodMap[key].mensa += itemMensa;
+            prodMap[key].sistema += itemSistema;
+            prodMap[key].costoProv += itemCostoProv;
+        });
     });
 
-    const sorted = Object.entries(prodMap).map(([name, d]) => ({
-        name,
-        ...d,
-        neta: d.revenue - d.comis - d.mensa - d.sistema,
-        margen: d.revenue > 0 ? ((d.revenue - d.comis - d.mensa - d.sistema) / d.revenue * 100) : 0
-    })).sort((a, b) => b.neta - a.neta);
-
-    const maxNeta = sorted[0]?.neta || 1;
+    const sorted = Object.entries(prodMap).map(([name, d]) => {
+        const neta = d.revenue - d.comis - d.sistema - d.costoProv;
+        return {
+            name,
+            ...d,
+            neta,
+            margen: d.revenue > 0 ? (neta / d.revenue * 100) : 0
+        };
+    }).sort((a, b) => b.neta - a.neta);
 
     const table = document.getElementById('table-products');
     table.innerHTML = `
@@ -1195,10 +1296,10 @@ function renderTableProducts() {
                 <th>Producto</th>
                 <th style="text-align:right">Uds</th>
                 <th style="text-align:right">Ingresos</th>
+                <th style="text-align:right">Costo Prov.</th>
                 <th style="text-align:right">Comisiones</th>
-                <th style="text-align:right">Mensajería</th>
                 <th style="text-align:right">Sistema</th>
-                <th style="text-align:right;color:var(--green)">Neta Est.</th>
+                <th style="text-align:right;color:var(--green)">Utilidad Boss</th>
                 <th>Margen</th>
             </tr>
         </thead>
@@ -1213,8 +1314,8 @@ function renderTableProducts() {
                     <td style="max-width:240px;font-size:12px;">${p.name}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;">${p.qty}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;">$${fmt(p.revenue)}</td>
+                    <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted)">$${fmt(p.costoProv)}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--red)">-$${fmt(p.comis)}</td>
-                    <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber)">-$${fmt(p.mensa)}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--purple)">-$${fmt(p.sistema)}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--green);font-weight:700;">$${fmt(p.neta)}</td>
                     <td style="min-width:100px;">
@@ -1234,14 +1335,15 @@ function renderTableGestores() {
     const gMap = {};
     FILTERED_DATA.forEach(r => {
         const g = r.gestor || 'Sin Gestor';
-        if (!gMap[g]) gMap[g] = { revenue: 0, comis: 0, mensa: 0, sistema: 0, entregados: 0, cancelados: 0, total: 0 };
+        if (!gMap[g]) gMap[g] = { revenue: 0, comis: 0, mensa: 0, sistema: 0, costoProv: 0, entregados: 0, cancelados: 0, total: 0 };
         gMap[g].total++;
         if (r.estado === 'Entregado') {
-            const t = parseFloat(r.total) || 0;
-            gMap[g].revenue += t;
+            const financials = calculateOrderFinancials(r);
+            gMap[g].revenue += (parseFloat(r.total) || 0) - (parseFloat(r.costo_mensajeria) || 0); // Venta de equipos
             gMap[g].comis += parseFloat(r.comision_total) || 0;
             gMap[g].mensa += parseFloat(r.costo_mensajeria) || 0;
-            gMap[g].sistema += devFee(t);
+            gMap[g].sistema += financials.feeTotal;
+            gMap[g].costoProv += financials.costoTotal;
             gMap[g].entregados++;
         } else if (r.estado === 'Cancelado') {
             gMap[g].cancelados++;
@@ -1251,7 +1353,7 @@ function renderTableGestores() {
     const sorted = Object.entries(gMap).map(([name, d]) => ({
         name,
         ...d,
-        neta: d.revenue - d.comis - d.mensa - d.sistema,
+        neta: d.revenue - d.comis - d.sistema - d.costoProv,
         efec: d.total > 0 ? (d.entregados / d.total * 100) : 0
     })).sort((a, b) => b.revenue - a.revenue);
 
@@ -1265,9 +1367,10 @@ function renderTableGestores() {
                 <th style="text-align:center">Entregados</th>
                 <th style="text-align:center">Cancelados</th>
                 <th style="text-align:center">Efectividad</th>
-                <th style="text-align:right">Ingresos</th>
+                <th style="text-align:right">Venta Equipos</th>
+                <th style="text-align:right">Costo Prov.</th>
                 <th style="text-align:right">Comisiones</th>
-                <th style="text-align:right;color:var(--green)">Neta Est.</th>
+                <th style="text-align:right;color:var(--green)">Utilidad Boss</th>
             </tr>
         </thead>
         <tbody>
@@ -1285,6 +1388,7 @@ function renderTableGestores() {
                         <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:${efecColor};font-weight:600;">${fmt(g.efec, 1)}%</span>
                     </td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;">$${fmt(g.revenue)}</td>
+                    <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted)">$${fmt(g.costoProv)}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--red);">-$${fmt(g.comis)}</td>
                     <td style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--green);font-weight:700;">$${fmt(g.neta)}</td>
                 </tr>`;
@@ -1303,13 +1407,44 @@ function renderInsights() {
     // Producto más rentable
     const prodMap = {};
     entregados.forEach(r => {
-        const { name, qty } = parseProducto(r.producto);
-        const key = name.substring(0, 50);
-        if (!prodMap[key]) prodMap[key] = { neta: 0, qty: 0, revenue: 0 };
-        const t = parseFloat(r.total) || 0;
-        prodMap[key].neta += t - (parseFloat(r.comision_total) || 0) - (parseFloat(r.costo_mensajeria) || 0) - devFee(t);
-        prodMap[key].qty += qty;
-        prodMap[key].revenue += t;
+        if (!r.producto) return;
+        const lineas = r.producto.split('+');
+        let totalQtyInOrder = 0;
+        const lineasProcesadas = lineas.map(linea => {
+            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
+            let qty = 1;
+            let nombre = linea.replace(/\[.*?\]/g, '').trim();
+            if (match) {
+                qty = parseInt(match[1]) || 1;
+                nombre = match[2].trim();
+            }
+            totalQtyInOrder += qty;
+            return { nombre, qty };
+        });
+
+        const totalVenta = parseFloat(r.total) || 0;
+        const comisionTotal = parseFloat(r.comision_total) || 0;
+        const mensajeria = parseFloat(r.costo_mensajeria) || 0;
+        
+        const precioUnitarioPromedio = (totalVenta - mensajeria) / (totalQtyInOrder || 1);
+        const feePorUnidad = devFee(precioUnitarioPromedio);
+
+        lineasProcesadas.forEach(item => {
+            const key = item.nombre.substring(0, 50);
+            if (!prodMap[key]) prodMap[key] = { neta: 0, qty: 0, revenue: 0 };
+            
+            const prodInv = ALL_PRODUCTS.find(i => i.nombre.trim() === item.nombre);
+            const costoUnitario = prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0;
+            
+            const itemVenta = precioUnitarioPromedio * item.qty;
+            const itemComis = (comisionTotal / (totalQtyInOrder || 1)) * item.qty;
+            const itemSistema = feePorUnidad * item.qty;
+            const itemCostoProv = costoUnitario * item.qty;
+
+            prodMap[key].neta += itemVenta - itemCostoProv - itemComis - itemSistema;
+            prodMap[key].qty += item.qty;
+            prodMap[key].revenue += itemVenta;
+        });
     });
 
     const topProd = Object.entries(prodMap).sort((a, b) => b[1].neta - a[1].neta)[0];
@@ -1330,7 +1465,7 @@ function renderInsights() {
     entregados.forEach(r => {
         const m = r.municipio || '?';
         if (!munMap[m]) munMap[m] = 0;
-        munMap[m]++;
+        mMap[m]++;
     });
     const topMun = Object.entries(munMap).sort((a, b) => b[1] - a[1])[0];
 
@@ -1346,37 +1481,37 @@ function renderInsights() {
         topProd ? {
             color: '#10b981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)',
             icon: 'emoji_events', iconColor: '#10b981',
-            label: '🏆 Producto Más Rentable',
+            label: '🏆 Producto Más Rentable (Boss)',
             value: topProd[0].substring(0, 35),
-            desc: `Genera $${fmt(topProd[1].neta)} neto estimado en el período. Este es tu producto estrella — prioriza su stock y disponibilidad.`
+            desc: `Genera $${fmt(topProd[1].neta)} neto real para Ángel en el período (restando costo proveedor, comisión y fee de sistema).`
         } : null,
         topVol ? {
             color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.2)',
             icon: 'trending_up', iconColor: '#3b82f6',
             label: '📦 Producto Más Vendido (Volumen)',
             value: topVol[0].substring(0, 35),
-            desc: `Con ${topVol[1].qty} unidades vendidas. Alta demanda = buena base de clientes. Revisa si el margen justifica el volumen.`
+            desc: `Con ${topVol[1].qty} unidades vendidas. Alta demanda = buena base de clientes.`
         } : null,
         topMargen && topMargen[1] > 0 ? {
             color: '#a855f7', bg: 'rgba(168,85,247,0.1)', border: 'rgba(168,85,247,0.2)',
             icon: 'percent', iconColor: '#a855f7',
-            label: '💎 Mejor Margen Operativo',
+            label: '💎 Mejor Margen Neto (Boss)',
             value: topMargen[0].substring(0, 35),
-            desc: `${fmt(topMargen[1] * 100, 1)}% de margen. Es el producto donde Ángel gana más por cada dólar vendido. ¡Invertir más aquí!`
+            desc: `${fmt(topMargen[1] * 100, 1)}% de margen neto real. Es el producto donde Ángel gana más limpio por cada dólar vendido.`
         } : null,
         topGestor ? {
             color: '#06b6d4', bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.2)',
             icon: 'person_check', iconColor: '#06b6d4',
             label: '⭐ Gestor Top del Período',
             value: topGestor[0],
-            desc: `Responsable de $${fmt(topGestor[1])} en ingresos. Considera incentivos o darle más leads de alto valor.`
+            desc: `Responsable de $${fmt(topGestor[1])} en ingresos totales. Considera incentivarlo.`
         } : null,
         topMun ? {
             color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)',
             icon: 'location_city', iconColor: '#f59e0b',
             label: '📍 Zona Más Activa',
             value: topMun[0],
-            desc: `${topMun[1]} pedidos entregados. Esta zona tiene alta demanda — asegura cobertura de mensajería eficiente aquí.`
+            desc: `${topMun[1]} pedidos entregados. Asegura cobertura eficiente en esta área.`
         } : null,
         {
             color: tasaCan > 30 ? '#ef4444' : '#10b981',
@@ -1387,8 +1522,8 @@ function renderInsights() {
             label: tasaCan > 30 ? '⚠️ Tasa de Cancelación Alta' : '✅ Tasa de Cancelación Aceptable',
             value: fmt(tasaCan, 1) + '% cancelaciones',
             desc: tasaCan > 30
-                ? `Más del 30% de pedidos se cancelan. Investigar causas — stock, comunicación, logística — para recuperar esos ingresos perdidos.`
-                : `Buena conversión. Mantén la calidad del proceso de venta y la disponibilidad de productos para no subir este número.`
+                ? `Más del 30% de pedidos se cancelan. Investigar causas para recuperar esos ingresos perdidos.`
+                : `Buena conversión. Mantén la calidad del proceso para no subir este número.`
         },
         {
             color: pctMensa > 8 ? '#ef4444' : '#10b981',
@@ -1398,7 +1533,7 @@ function renderInsights() {
             label: '🚚 Carga de Mensajería',
             value: `${fmt(pctMensa, 1)}% del ingreso`,
             desc: pctMensa > 8
-                ? `La mensajería está comiendo más del 8% de tus ingresos. Negocia rutas fijas o zonas gratuitas para tickets altos.`
+                ? `La mensajería está comiendo más del 8% de los ingresos totales. Negocia rutas fijas.`
                 : `Costo de mensajería bajo control (${fmt(pctMensa, 1)}% del ingreso total = $${fmt(totalMensa)}).`
         }
     ].filter(Boolean);
@@ -1432,12 +1567,12 @@ function fmtMonth(ym) {
     return `${months[parseInt(m) - 1]} ${y}`;
 }
 
+// Gráficos helper
 function destroyChart(id) {
     if (charts[id]) { charts[id].destroy(); delete charts[id]; }
 }
 
 function makeGradientColors(n, c1, c2) {
-    // Simple array of interpolated colors
     const arr = [];
     for (let i = 0; i < n; i++) {
         const t = n === 1 ? 0 : i / (n - 1);
