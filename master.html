@@ -169,6 +169,11 @@ function calculateDevFee(precioVenta) {
                     <select id="filter-prov-conc" class="input-dark w-64" onchange="loadConciliacion()">
                         <option value="TODOS">Todos los Proveedores</option>
                     </select>
+                    <!-- NUEVO SELECTOR DE ORDEN -->
+                    <select id="sort-date-conc" class="input-dark w-48" onchange="loadConciliacion()">
+                        <option value="nuevos" selected>🆕 Nuevos Primero</option>
+                        <option value="viejos">⏳ Viejos Primero</option>
+                    </select>
                     <button onclick="conciliarMasivo()" class="bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-emerald-500 transition-all">
                         CONFIRMAR SELECCIONADOS
                     </button>
@@ -869,6 +874,15 @@ async function loadConciliacion() {
     if (valorActual !== 'TODOS') {
         pedidosFiltrados = data.filter(p => (p.proveedor || 'General') === valorActual);
     }
+
+    // --- NUEVO: Ordenar por Nuevos o Viejos ---
+    const sortDateEl = document.getElementById('sort-date-conc');
+    const sortOrder = sortDateEl ? sortDateEl.value : 'nuevos';
+    pedidosFiltrados.sort((a, b) => {
+        const dateA = new Date(a.fecha || 0).getTime();
+        const dateB = new Date(b.fecha || 0).getTime();
+        return sortOrder === 'nuevos' ? dateB - dateA : dateA - dateB;
+    });
 
     // --- CÁLCULO INICIAL DEL TOTAL ---
     let sumaTotalARecibir = 0;
