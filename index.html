@@ -1648,25 +1648,26 @@
 <div id="cnt-aprobaciones" class="tab-cnt hidden space-y-8">
     
     <!-- BLOQUE 1: PENDIENTES -->
-    <div class="space-y-4">
-        <h4 class="text-xs font-black uppercase text-orange-500 flex items-center gap-2">
-            <span class="material-symbols-outlined text-sm">hourglass_empty</span> Solicitudes Pendientes
-        </h4>
-        <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
-                    <tr>
-                        <th class="p-4">Nombre</th>
-                        <th class="p-4">WhatsApp</th>
-                        <th class="p-4 text-right">Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="list-admin-aprobaciones" class="divide-y dark:divide-gray-700">
-                    <!-- JS inyecta aquí -->
-                </tbody>
-            </table>
-        </div>
+<div class="space-y-4">
+    <h4 class="text-xs font-black uppercase text-orange-500 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">hourglass_empty</span> Solicitudes Pendientes
+    </h4>
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                <tr>
+                    <th class="p-4">Nombre</th>
+                    <th class="p-4">WhatsApp</th>
+                    <th class="p-4">Fecha Solicitud</th>
+                    <th class="p-4 text-right">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-aprobaciones" class="divide-y dark:divide-gray-700">
+                <!-- JS inyecta aquí -->
+            </tbody>
+        </table>
     </div>
+</div>
 
     <!-- BLOQUE 2: ACTIVOS -->
     <div class="space-y-4">
@@ -12554,23 +12555,34 @@ async function loadPendingGestores() {
     const containerPendientes = document.getElementById('list-admin-aprobaciones');
     if (containerPendientes) {
         if (pendientes.length === 0) {
-            containerPendientes.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
+            // Se cambia colspan a 4 debido a la nueva columna
+            containerPendientes.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
         } else {
             containerPendientes.innerHTML = pendientes.map(g => {
-    // LIMPIEZA DE COMILLAS PARA EVITAR ERROR JS
-    const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-    
-    return `
-    <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-        <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
-        <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-        <td class="p-4 text-right">
-            <button onclick="approveGestorOnly('${g.id}', '${safeName}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
-            <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
-        </td>
-    </tr>
-    `;
-}).join('');
+                // LIMPIEZA DE COMILLAS PARA EVITAR ERROR JS
+                const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                
+                // Calcular fecha y días transcurridos desde el envío (campo g.created_at)
+                const fechaSolicitud = g.created_at ? new Date(g.created_at) : null;
+                let txtSolicitud = "---";
+                if (fechaSolicitud) {
+                    const dias = Math.floor((new Date() - fechaSolicitud) / (1000 * 60 * 60 * 24));
+                    const fechaFormateada = fechaSolicitud.toLocaleDateString();
+                    txtSolicitud = dias === 0 ? `Hoy (${fechaFormateada})` : `Hace ${dias} día${dias > 1 ? 's' : ''} (${fechaFormateada})`;
+                }
+                
+                return `
+                <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
+                    <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
+                    <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
+                    <td class="p-4 font-bold text-gray-500">${txtSolicitud}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="approveGestorOnly('${g.id}', '${safeName}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
+                        <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
         }
     }
 
