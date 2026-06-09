@@ -1549,10 +1549,19 @@
             <!-- ENCABEZADO INVENTARIO PRO -->
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-3xl border shadow-sm mb-6">
                 
-                <!-- Buscador -->
-                <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 w-full md:w-96">
-                    <span class="material-symbols-outlined text-gray-400 text-sm">inventory_2</span>
-                    <input type="text" id="search-inventario" oninput="renderAdminInventario()" placeholder="Buscar por Nombre, Categoría o SKU..." class="bg-transparent border-none focus:ring-0 text-xs w-full font-bold">
+                <!-- Buscador y Filtro por Proveedor -->
+                <div class="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+                    <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 w-full md:w-80">
+                        <span class="material-symbols-outlined text-gray-400 text-sm">inventory_2</span>
+                        <input type="text" id="search-inventario" oninput="renderAdminInventario()" placeholder="Buscar por Nombre, Categoría o SKU..." class="bg-transparent border-none focus:ring-0 text-xs w-full font-bold">
+                    </div>
+                    
+                    <!-- Filtro Proveedor -->
+                    <div class="w-full md:w-48 bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <select id="filter-inventario-proveedor" onchange="renderAdminInventario()" class="bg-transparent border-none focus:ring-0 text-xs w-full font-bold text-gray-500 cursor-pointer p-0">
+                            <option value="TODOS">Todos los Proveedores</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Botones -->
@@ -2159,7 +2168,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "106a"; 
+const versionActual = "96a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4928,6 +4937,7 @@ async function loadAdminData() {
     // 4. Procesar Inventario
     if (productos) {
         inventoryRawAdmin = productos; // Guardamos en global
+        populateInventarioProveedorFilter();
         renderAdminInventario(productos); // Pasamos los datos
     }
     
@@ -5545,16 +5555,26 @@ function renderAdminInventario(productosArg) {
     const searchInput = document.getElementById('search-inventario');
     const searchVal = searchInput ? searchInput.value.toLowerCase() : "";
 
+    // Capturar el valor seleccionado en el filtro de proveedor (id: filter-inventario-proveedor)
+    const selectProv = document.getElementById('filter-inventario-proveedor');
+    const selectedProv = selectProv ? selectProv.value : 'TODOS';
+
     if (!container) return;
 
-    // 2. Filtrar
+    // 2. Filtrar por búsqueda y por proveedor seleccionado
     const filtered = listaProductos.filter(p => {
         // Generar SKU Virtual visual
         const skuVirtual = (p.categoria ? p.categoria.substring(0,3).toUpperCase() : "GEN") + "-" + p.id.substring(0,4).toUpperCase();
         
-        return p.nombre.toLowerCase().includes(searchVal) || 
-               (p.categoria || "").toLowerCase().includes(searchVal) ||
-               skuVirtual.toLowerCase().includes(searchVal);
+        // Coincidencia con la barra de búsqueda
+        const matchSearch = p.nombre.toLowerCase().includes(searchVal) || 
+                            (p.categoria || "").toLowerCase().includes(searchVal) ||
+                            skuVirtual.toLowerCase().includes(searchVal);
+                            
+        // Coincidencia con el proveedor (se asume 'General' si p.proveedor está vacío)
+        const matchProv = selectedProv === 'TODOS' || (p.proveedor || 'General') === selectedProv;
+        
+        return matchSearch && matchProv;
     });
 
     if (filtered.length === 0) {
@@ -11711,7 +11731,18 @@ function resetVPFilters() {
     document.getElementById('vp-fecha-hasta').value = "";
     calculateProductSales();
 }
-
+function populateInventarioProveedorFilter() {
+    const selectProv = document.getElementById('filter-inventario-proveedor');
+    if (!selectProv || !inventoryRawAdmin) return;
+    
+    const currentVal = selectProv.value || 'TODOS';
+    // Extrae los proveedores únicos y los ordena alfabéticamente
+    const proveedores = [...new Set(inventoryRawAdmin.map(p => p.proveedor || 'General'))].sort();
+    
+    selectProv.innerHTML = '<option value="TODOS">Todos los Proveedores</option>' + 
+                          proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
+    selectProv.value = currentVal;
+}
 </script>
 
 
