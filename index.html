@@ -1968,15 +1968,16 @@
     <!-- === NUEVOS CAMPOS PROVEEDOR Y FLEXIBILIDAD === -->
     <div class="md:col-span-2 grid grid-cols-2 gap-4">
         <!-- Selector de Proveedor -->
+       <!-- Selector de Proveedor -->
         <div>
-            <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Proveedor / Almacén</label>
-            <input type="text" id="p-proveedor" list="lista-proveedores" placeholder="Ej: Importadora A" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
-            <datalist id="lista-proveedores">
-                <option value="General">
-                <option value="Importadora A">
-                <option value="Importadora B">
-                <!-- Se irán guardando solos al escribir -->
-            </datalist>
+            <div class="flex justify-between items-center mb-1">
+                <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Proveedor / Almacén</label>
+                <!-- Botón para añadir nuevo de forma controlada -->
+                <button type="button" onclick="agregarNuevoProveedor()" class="text-[9px] font-black uppercase text-indigo-600 hover:underline">+ Registrar Nuevo</button>
+            </div>
+            <select id="p-proveedor" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
+                <!-- Se llenará dinámicamente con JS -->
+            </select>
         </div>
         
         <!-- Selector de Flexibilidad de Precio -->
@@ -5755,6 +5756,7 @@ function openAdminMasterFromGestor() {
 
 function openModalProd() { 
         updateFormCategories(); // <--- AGREGAR ESTA LÍNEA AQUÍ
+        updateFormProviders();
 
     // 1. Limpiar el ID de edición (para que sepa que es uno NUEVO)
     const idEdit = document.getElementById('p-id-edit');
@@ -6116,6 +6118,7 @@ function clearImageSlot(event, index) {
                   || productosRaw.find(prod => prod.id === id);
         
         if (!p) return alert("Error: No se encuentra la información del producto.");
+        updateFormProviders(); // <-- Poblamos el select antes de asignarle el valor
 
         // Llenamos los campos. 
     // USAR || "" es vital para que si en la DB está vacío, el formulario se limpie
@@ -6126,9 +6129,9 @@ function clearImageSlot(event, index) {
         'p-comision': p.comision,
         'p-categoria': p.categoria,
         'p-garantia': p.garantia,
-        'p-proveedor': p.proveedor,
+        'p-proveedor': p.proveedor ? p.proveedor.trim() : 'General', // <-- Saneamos con .trim()
         'p-flexible': p.precio_flexible || 'NO',
-        'p-mensajeria': p.mensajeria || "", // <--- ESTO LIMPIA EL RASTRO DEL EQUIPO ANTERIOR
+        'p-mensajeria': p.mensajeria || "", 
         'p-disponible': p.disponible || "SI",
         'p-tamano-envio': p.tamaño_envio || "Pequeño"
     };
@@ -11743,6 +11746,63 @@ function populateInventarioProveedorFilter() {
                           proveedores.map(p => `<option value="${p}">${p}</option>`).join('');
     selectProv.value = currentVal;
 }
+
+// 1. Población dinámica de proveedores sin duplicados ni espacios basura
+function updateFormProviders() {
+    const selectProv = document.getElementById('p-proveedor');
+    if (!selectProv) return;
+
+    // Recuperamos los productos cargados actualmente para extraer los proveedores existentes
+    const listaOriginal = (typeof inventoryRawAdmin !== 'undefined' && inventoryRawAdmin.length > 0) ? inventoryRawAdmin : productosRaw;
+    
+    // Extraemos nombres únicos aplicando .trim() para limpiar espacios accidentales anteriores
+    const proveedoresUnicos = [...new Set(listaOriginal.map(p => (p.proveedor || 'General').trim()))].sort();
+    
+    // Guardamos el valor seleccionado actualmente para no perderlo al redibujar
+    const valorActual = selectProv.value;
+
+    // Renderizamos las opciones limpias
+    selectProv.innerHTML = proveedoresUnicos.map(p => `<option value="${p}">${p}</option>`).join('');
+
+    // Si había un valor seleccionado válido, lo mantenemos seleccionado
+    if (valorActual && proveedoresUnicos.includes(valorActual)) {
+        selectProv.value = valorActual;
+    }
+}
+
+// 2. Función para registrar un nuevo proveedor de forma controlada y desinfectada
+function agregarNuevoProveedor() {
+    let nuevoProv = prompt("Escribe el nombre del nuevo Proveedor / Almacén:");
+    if (!nuevoProv) return;
+    
+    // Eliminamos cualquier espacio accidental al inicio o al final
+    nuevoProv = nuevoProv.trim();
+    
+    if (nuevoProv === "") return;
+
+    const selectProv = document.getElementById('p-proveedor');
+    if (!selectProv) return;
+
+    // Comprobamos si ya existe en la lista para evitar duplicarlo
+    let existe = false;
+    for (let i = 0; i < selectProv.options.length; i++) {
+        if (selectProv.options[i].value.toLowerCase() === nuevoProv.toLowerCase()) {
+            selectProv.selectedIndex = i; // Si ya existe, simplemente lo seleccionamos
+            existe = true;
+            break;
+        }
+    }
+
+    if (!existe) {
+        // Creamos la nueva opción de manera segura
+        const opt = document.createElement('option');
+        opt.value = nuevoProv;
+        opt.innerHTML = nuevoProv;
+        selectProv.appendChild(opt);
+        selectProv.value = nuevoProv; // La dejamos seleccionada
+    }
+}
+
 </script>
 
 
