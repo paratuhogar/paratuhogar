@@ -2169,7 +2169,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "96a"; 
+const versionActual = "156a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3608,17 +3608,25 @@ async function loadProducts() {
     // --- CARGA DE DATOS OPTIMIZADA ---
     try {
         // =========================================================
-        // A. Cargar Productos Base (AHORRO MASIVO DE EGRESS CON CACHÉ)
+        // A. Cargar Productos Base (CON EXPIRACIÓN DE CACHÉ A LOS 10 MINUTOS)
         // =========================================================
         let productos = [];
-        const catalogoCacheado = sessionStorage.getItem('pth_catalogo_cache');
+        const cacheKey = 'pth_catalogo_cache';
+        const cacheTimeKey = 'pth_catalogo_cache_time';
         
-        if (catalogoCacheado) {
-            // Si ya lo descargó en esta sesión, lo lee de la memoria del celular/PC
+        const catalogoCacheado = sessionStorage.getItem(cacheKey);
+        const cacheTime = sessionStorage.getItem(cacheTimeKey);
+        
+        // Definimos un tiempo de vida para el caché de 10 minutos (600,000 milisegundos)
+        const CACHE_EXPIRATION_MS = 10 * 60 * 1000; 
+        const cacheValido = catalogoCacheado && cacheTime && (Date.now() - parseInt(cacheTime) < CACHE_EXPIRATION_MS);
+
+        if (cacheValido) {
+            // Si el caché aún no ha expirado, lo usamos para ahorrar datos
             productos = JSON.parse(catalogoCacheado);
-            console.log("📦 Catálogo cargado desde Caché (0 Egress consumido)");
+            console.log("📦 Catálogo cargado desde Caché (Válido)");
         } else {
-            // Si es la primera vez que entra, lo descarga de Supabase
+            // Si el caché expiró o no existe, descargamos datos frescos de Supabase
             const { data, error } = await supabaseClient
                 .from('productos')
                 .select('*')
@@ -3627,9 +3635,10 @@ async function loadProducts() {
             if (error) throw error;
             productos = data;
             
-            // Lo guarda en la sesión para las próximas recargas
-            sessionStorage.setItem('pth_catalogo_cache', JSON.stringify(productos));
-            console.log("☁️ Catálogo descargado desde Supabase y guardado en Caché");
+            // Guardamos el nuevo catálogo y la hora exacta de la descarga
+            sessionStorage.setItem(cacheKey, JSON.stringify(productos));
+            sessionStorage.setItem(cacheTimeKey, Date.now().toString());
+            console.log("☁️ Catálogo descargado desde Supabase y actualizado en Caché");
         }
 
         productosRaw = productos; // Guardamos copia original para trabajar
@@ -4293,6 +4302,40 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // === NUEVO: SABER SI ES RECOGIDA EN ALMACÉN ===
     const isRecogida = document.getElementById('check-recogida') ? document.getElementById('check-recogida').checked : false;
+
+    // === VERIFICACIÓN DE DISPONIBILIDAD EN TIEMPO REAL (ESCUDO ANTI-CACHÉ) ===
+    try {
+        const idsEnCarrito = cart.map(item => item.id);
+        const { data: dbProducts, error: dbError } = await supabaseClient
+            .from('productos')
+            .select('id, nombre, disponible')
+            .in('id', idsEnCarrito);
+
+        if (!dbError && dbProducts) {
+            const noDisponibles = [];
+            cart.forEach(cartItem => {
+                const dbProd = dbProducts.find(p => p.id === cartItem.id);
+                // Si el producto no existe en la DB o su estado disponible no es "SI"
+                if (!dbProd || dbProd.disponible !== 'SI') {
+                    noDisponibles.push(cartItem.nombre);
+                }
+            });
+
+            if (noDisponibles.length > 0) {
+                alert(`⚠️ PEDIDO DETENIDO POR INVENTARIO:\n\nLos siguientes productos ya no se encuentran disponibles:\n\n• ${noDisponibles.join('\n• ')}\n\nPor favor, actualice la página para refrescar el catálogo.`);
+                
+                const btnF = document.getElementById('final-submit-btn');
+                if (btnF) {
+                    btnF.disabled = false; 
+                    btnF.innerText = "Confirmar Pedido";
+                }
+                return; // Detiene la ejecución e impide que se guarde el pedido o se envíe el WhatsApp
+            }
+        }
+    } catch (errCheck) {
+        console.error("Error al verificar disponibilidad en el checkout:", errCheck);
+    }
+    // =======================================================================
 
     // === 1. NUEVO: VALIDAR LOCALIDAD ===
     const selectLocalidad = document.getElementById('check-localidad');
@@ -5613,6 +5656,9 @@ function renderAdminInventario(productosArg) {
 
 async function toggleStockAdmin(id, actual) {
     await supabaseClient.from('productos').update({ disponible: actual === 'SI' ? 'NO' : 'SI' }).eq('id', id);
+    // Forzamos la limpieza del caché local tras cambiar disponibilidad
+    sessionStorage.removeItem('pth_catalogo_cache');
+    sessionStorage.removeItem('pth_catalogo_cache_time');
     loadAdminData();
 }
 
@@ -5990,21 +6036,21 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     }
 
     if (!error) {
-        alert("✅ ¡Guardado correctamente!");
-        
-        // 1. Cerramos el modal
-        closeModalProd();
-        
-        // 2. Refrescamos los datos del administrador sin recargar la página
-        if (typeof loadAdminData === 'function') {
-            await loadAdminData(); 
-        }
+                alert("✅ ¡Guardado correctamente!");
+                
+                // Limpiamos el caché del catálogo para que se actualice inmediatamente
+                sessionStorage.removeItem('pth_catalogo_cache');
+                sessionStorage.removeItem('pth_catalogo_cache_time');
+                
+                closeModalProd();
+                
+                if (typeof loadAdminData === 'function') {
+                    await loadAdminData(); 
+                }
 
-        // 3. Reactivamos el botón por si se quiere usar de nuevo
-        btn.disabled = false;
-        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
-        
-    } else {
+                btn.disabled = false;
+                btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
+            } else {
         alert("Error: " + error.message);
         btn.disabled = false;
         btn.innerText = "Guardar Cambios";
