@@ -727,6 +727,11 @@
             <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
                 <button onclick="showDashSection('resumen')" id="btn-dash-resumen" class="px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all">📊 Resumen</button>
                 <button onclick="showDashSection('precios')" id="btn-dash-precios" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🏷️ Mis Precios (Config)</button>
+            
+            <!-- NUEVO BOTÓN DE ACCESO A SUBGESTORES CON ID -->
+            <button id="btn-open-subgestores" onclick="window.location.href='subgestores.html'" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-black uppercase border border-indigo-200 transition-all flex items-center gap-1 shrink-0">
+                👥 Red de Subgestores
+            </button>
             </div>
 
             <!-- 1. SECCIÓN RESUMEN (Aquí envolvemos lo que ya tenías) -->
@@ -2309,6 +2314,13 @@ checkShortLinks();
     
     // === INICIO LÓGICA SPLASH SCREEN ===
     const splash = document.getElementById('splash-screen');
+    // --- CAPTURAR INVITACIÓN DE SUBGESTOR ---
+        const urlParamsInvite = new URLSearchParams(window.location.search);
+        const invitadoPor = urlParamsInvite.get('invitado_por');
+        if (invitadoPor && invitadoPor.trim() !== "") {
+            localStorage.setItem('pth_invitado_por_id', invitadoPor);
+            console.log("🔗 Registro de Subgestor iniciado. Invitado por Gestor ID:", invitadoPor);
+        }
     if (splash) {
         if (!sessionStorage.getItem('pth_intro_vista')) {
             // Espera solo 800 milisegundos para que el cliente lea el logo
@@ -2555,37 +2567,58 @@ async function processRegister() {
 
     btn.disabled = true;
     const originalText = btn.innerText;
-    btn.innerText = "ENVIANDO SOLICITUD...";
+    btn.innerText = "PROCESANDO REGISTRO...";
 
     try {
-        // 1. VERIFICAR DUPLICADOS
+        // 1. VERIFICAR SI YA EXISTE EL TELÉFONO
         const { data: existe } = await supabaseClient.from('gestores').select('id, estado').eq('telefono', tel).maybeSingle();
         if (existe) {
-            alert("✅ Este número ya está registrado. Ve a la pestaña de ENTRAR.");
+            alert("⚠️ Este número ya está registrado. Ve a la pestaña de ENTRAR.");
             btn.disabled = false;
             btn.innerText = originalText;
             return;
         }
 
-        // 2. INSERTAR COMO "PENDIENTE" (El candado de seguridad)
+        // Determinar si viene invitado por un Gestor Principal
+        const parentId = localStorage.getItem('pth_invitado_por_id') || null;
+
+        // 2. INSERTAR EN LA BASE DE DATOS (MÉTODO PENDIENTE SUBGESTOR)
         const { error } = await supabaseClient
             .from('gestores')
             .insert([{ 
-                nombre: nombre, email: email, telefono: tel, password: pass, 
-                estado: 'pendiente' // <--- MAGIA AQUÍ: Queda bloqueado hasta que lo apruebes
+                nombre: nombre, 
+                email: email, 
+                telefono: tel, 
+                password: pass, 
+                estado: parentId ? 'pendiente_subgestor' : 'pendiente', // Los subgestores esperan al padre; los directos esperan al admin
+                parent_id: parentId
             }]);
 
         if (error) throw error;
 
-        // 3. MOSTRAR AVISO DE RECURSOS HUMANOS
-        alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a nuestro departamento de ventas. Un administrador evaluará tu solicitud y te activará la cuenta en las próximas 24 horas si cumples los requisitos.\n\nSi eres un cliente y solo deseas comprar, no necesitas cuenta. Cierra esta ventana y navega por el catálogo.`);
-        
-        // 4. Limpiar y volver a la pestaña de login
-        document.getElementById('reg-name').value = '';
-        document.getElementById('reg-email').value = '';
-        document.getElementById('reg-tel').value = '';
-        document.getElementById('reg-pass').value = '';
-        toggleLoginMode('login');
+        // 3. MOSTRAR PANTALLA DE SOLICITUD ENVIADA SI ES SUBGESTOR
+        if (parentId) {
+            const formContainer = document.getElementById('form-register');
+            if (formContainer) {
+                formContainer.innerHTML = `
+                    <div class="space-y-4 text-center py-4 animate-pop-in">
+                        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400 border border-amber-200">
+                            <span class="material-symbols-outlined text-3xl animate-pulse">hourglass_empty</span>
+                        </div>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase leading-tight">¡Solicitud Enviada!</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Tu registro como subgestor ha sido enviado con éxito.</p>
+                        <p class="text-[11px] text-slate-600 dark:text-gray-400 font-medium leading-relaxed">Tu Gestor Principal revisará tu solicitud y se pondrá en contacto contigo a través de WhatsApp para explicarte la metodología y activarte la cuenta.</p>
+                        
+                        <button onclick="location.reload()" class="w-full bg-slate-900 hover:bg-black text-white py-3.5 rounded-xl font-black uppercase text-xs">
+                            Volver a la Tienda
+                        </button>
+                    </div>
+                `;
+            }
+        } else {
+            alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a revisión. El administrador central de la tienda te activará la cuenta en las próximas 24 horas.`);
+            toggleLoginMode('login');
+        }
 
     } catch (e) {
         alert("Error al registrar: " + e.message);
@@ -2613,36 +2646,19 @@ async function processRegister() {
     function closeLogin() { document.getElementById('login-overlay').classList.add('hidden'); }
     function enterAsClient() { closeLogin(); loadProducts(); }
 
-    function setupSession(name, adminMode) {
+    async function setupSession(name, adminMode) {
     window.gestorName = name;
     window.isAdmin = adminMode;
-    
-    // 👇 NUEVA LÍNEA AÑADIDA: Forzar limpieza del buscador para eliminar el autocompletado del navegador
+
+    // Forzar limpieza del buscador para eliminar el autocompletado del navegador
     const searchBar = document.getElementById('search-bar');
     if (searchBar) searchBar.value = '';
-    // 👆 FIN DE LÍNEA AÑADIDA
 
     const label = document.getElementById('gestor-label');
     if(label) label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
     
     const adminNav = document.getElementById('admin-nav');
     if(adminNav) adminNav.classList.remove('hidden');
-
-    // =================================================================
-    // NUEVO: REGISTRAR ACCESO EXACTO DEL GESTOR (PARA EL PANEL MASTER)
-    // =================================================================
-    if (!adminMode && name) {
-        // Enviar una señal silenciosa a Supabase para actualizar su "Última vez visto"
-        supabaseClient.from('link_analytics').insert([{
-            agent_name: name,
-            accion: 'ACCESO_PANEL',
-            detalle: 'El gestor entró a su cuenta',
-            ip_address: '127.0.0.1', // Relleno de seguridad
-            dispositivo: /Mobi|Android/i.test(navigator.userAgent) ? 'Móvil' : 'PC',
-            timestamp: new Date().toISOString()
-        }]).then(() => console.log("✅ Acceso real registrado para: " + name)).catch(e => console.log(e));
-    }
-    // =================================================================
 
     if (adminMode) {
         // MODO ADMINISTRADOR (Logística)
@@ -2651,25 +2667,19 @@ async function processRegister() {
         if(adminNav) adminNav.classList.add('hidden');
         loadAdminData();
     } else {
-        // MODO GESTOR (Ventas)
-        
-        // 1. Mostrar Dashboard y Cargar Datos
+        // MODO GESTOR o SUBGESTOR (Ventas)
         showSection('catalogo');
         loadProducts(); 
         loadProDashboard(name);
         
-        // 2. Cargar Analíticas
         if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
 
-        // 3. MOSTRAR EL NUEVO CENTRO DE MANDO
         const commandCenter = document.getElementById('gestor-command-center');
         if (commandCenter) commandCenter.classList.remove('hidden');
 
-        // 👇 AÑADIR ESTA LÍNEA (Oculta la barra pública para los gestores)
         const publicFilters = document.getElementById('public-filters-bar');
         if (publicFilters) publicFilters.classList.add('hidden');
 
-        // === INICIO DE SISTEMA DE NIVELES ===
         if (typeof applyLockedFeatures === "function") applyLockedFeatures();
         if (typeof renderFlashButton === "function") renderFlashButton();
         if (typeof checkGamificationStatus === "function") {
@@ -2677,13 +2687,52 @@ async function processRegister() {
             showAgentWelcomeModal(name);
         }
 
-        // ===============================================
-        // 👉 AÑADE ESTA LÍNEA AQUÍ:
-        // ===============================================
+        // --- VERIFICACIÓN DE SUBGESTOR EN TIEMPO REAL (EL FIX) ---
+        try {
+            const { data: dbGestor } = await supabaseClient
+                .from('gestores')
+                .select('id, parent_id')
+                .eq('nombre', name)
+                .single();
 
+            if (dbGestor) {
+                window.currentUserData = window.currentUserData || {};
+                window.currentUserData.id = dbGestor.id;
+                window.currentUserData.parent_id = dbGestor.parent_id;
+
+                if (dbGestor.parent_id) {
+                    // Es subgestor -> Descargar datos de contacto de su Gestor Principal
+                    const { data: parentData } = await supabaseClient
+                        .from('gestores')
+                        .select('nombre, telefono')
+                        .eq('id', dbGestor.parent_id)
+                        .maybeSingle();
+
+                    if (parentData) {
+                        window.currentUserData.parent_nombre = parentData.nombre;
+                        window.currentUserData.parent_telefono = parentData.telefono;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error sincronizando rol de subgestor:", err);
+        }
+
+        // --- ENMASCARAR BOTÓN RED DE SUBGESTORES AL SUBGESTOR ---
+        const isSubgestor = window.currentUserData && window.currentUserData.parent_id;
+        const btnSub = document.getElementById('btn-open-subgestores');
+        if (btnSub) {
+            if (isSubgestor) {
+                btnSub.classList.add('hidden');
+                btnSub.style.display = 'none';
+                console.log("🔒 Botón 'Red de Subgestores' ocultado para el subgestor:", name);
+            } else {
+                btnSub.classList.remove('hidden');
+                btnSub.style.display = 'inline-flex';
+            }
+        }
     }
 
-    // FORZAR QUE SE VEA EL BOTÓN ROJO DE SALIR
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.classList.remove('hidden');
@@ -2692,58 +2741,23 @@ async function processRegister() {
     
     loadClientCRM(); 
 
-    // Ocultar botón de whatsapp si existe al entrar a modo gestor/admin
     const waBtn = document.getElementById('floating-agent-contact');
     if (waBtn) waBtn.classList.add('hidden');
 
-    // ============================================================
-    // 🛡️ LÓGICA DE BOTÓN MAESTRO (FINANCIERO)
-    // ============================================================
-    
-    // 1. Recuperar datos del usuario logueado
-    const userData = window.currentUserData || {};
-    
-    // 2. Verificar Permisos: Rol 'superadmin' O Nombres específicos del Jefe/Tú
-    const esSuperAdmin = userData.rol === 'superadmin' || name === 'Administrador' || name === 'Marcel Montano'; 
-
-    if (esSuperAdmin) {
-        // Buscamos dónde poner el botón (en el header, junto al botón de salir)
-        const headerContainer = btnLogout ? btnLogout.parentElement : document.querySelector('header div.flex.items-center');
-
-        // 3. Crear e Inyectar el botón SOLO si no existe ya
-        if (headerContainer && !document.getElementById('btn-master-vault')) {
-            const btnMaster = document.createElement('button');
-            btnMaster.id = 'btn-master-vault'; 
-            btnMaster.innerHTML = `<span class="material-symbols-outlined text-amber-900 font-bold">shield</span>`;
-            
-            // Estilos: Dorado, con sombra, pulso suave para destacar
-            btnMaster.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-amber-400 hover:bg-amber-300 text-amber-900 transition-all shadow-lg shadow-amber-500/50 border-2 border-amber-200 animate-pulse ml-2";
-            btnMaster.title = "ACCESO A BÓVEDA FINANCIERA";
-            
-            // Acción: Ir al archivo secreto
-            btnMaster.onclick = () => window.location.href = 'master.html';
-            
-            headerContainer.insertBefore(btnMaster, btnLogout);
-        }
-    }
-
-    // --- PUERTA SECRETA AL RADAR (SOLO PARA MARCEL) ---
+    // Puerta secreta al radar (Solo para Marcel o Diana)
     if (name === "Marcel Montano" || name === "Diana") {
-    const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
+        const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
         
         if (headerActions && !document.getElementById('btn-radar-secret')) {
             const btnRadar = document.createElement('button');
             btnRadar.id = 'btn-radar-secret';
             btnRadar.title = "SISTEMA RADAR";
             btnRadar.onclick = () => window.location.href = 'marcel-radar.html';
-            
             btnRadar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600/20 text-purple-400 border border-purple-500/40 hover:bg-purple-600 hover:text-white transition-all animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.4)]";
             btnRadar.innerHTML = '<span class="material-symbols-outlined">radar</span>';
-            
             headerActions.prepend(btnRadar);
         }
         
-        // INYECCIÓN DEL BOTÓN MODO DIOS (SALA DE GUERRA)
         if (headerActions && !document.getElementById('btn-war-room')) {
             const btnWar = document.createElement('button');
             btnWar.id = 'btn-war-room';
@@ -2751,19 +2765,11 @@ async function processRegister() {
             btnWar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600 text-white hover:bg-purple-500 transition-all shadow-[0_0_15px_rgba(147,51,234,0.6)] animate-pulse border border-purple-400 ml-2";
             btnWar.innerHTML = '<span class="material-symbols-outlined">smart_toy</span>';
             btnWar.title = "SALA DE GUERRA AI";
-            
             headerActions.prepend(btnWar);
         }
     }
 
-    // ============================================================
-    // AÑADIR ESTO AL FINAL DE LA FUNCIÓN setupSession()
-    // ============================================================
-    
-    // Disparar los carteles de noticias/actualizaciones en orden.
-    // Esperamos 2 segundos para que primero cargue el catálogo visualmente.
     setTimeout(() => {
-        // Solo mostramos el Radar si es un gestor (no admin maestro)
         if (!adminMode) {
             showRadarIntro();
         }
@@ -3636,40 +3642,50 @@ async function loadProducts() {
         productosRaw = productos; // Guardamos copia original para trabajar
         // =========================================================
 
-        // B. FUSIÓN DE PRECIOS (LA MAGIA)
-        if (activeGestor) {
-            // Esta consulta es muy ligera, no necesita caché estricto
-            const { data: preciosCustom } = await supabaseClient
-                .from('precios_personalizados')
-                .select('producto_id, nuevo_precio')
-                .eq('gestor', activeGestor);
+        // B. FUSIÓN DE PRECIOS Y COMISIONES DE SUBGESTORES (LA MAGIA DEFECTO/LIBRE)
+       if (activeGestor) {
+           const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+           const gestorConsultar = esSubgestor ? window.currentUserData.parent_nombre : activeGestor;
 
-            if (preciosCustom && preciosCustom.length > 0) {
-                // Recorremos los productos y aplicamos la máscara
-                productosRaw.forEach(p => {
-                    const custom = preciosCustom.find(c => c.producto_id === p.id);
-                    if (custom) {
-                        const precioBase = parseFloat(p.precio);
-                        const precioNuevo = parseFloat(custom.nuevo_precio);
-                        
-                        // Solo aplicamos si el nuevo es mayor (seguridad)
-                        if (precioNuevo >= precioBase) {
-                            const extra = precioNuevo - precioBase;
-                            
-                            // SOBRESCRIBIMOS EN MEMORIA (El cliente ve esto)
-                            p.precio = precioNuevo; 
-                            
-                            // SUMAMOS A LA COMISIÓN
-                            p.comision = (parseFloat(p.comision) + extra).toFixed(2);
-                            
-                            // Marca interna para saber que está modificado
-                            p.is_custom = true; 
-                        }
-                    }
-                });
-                console.log("✅ Precios personalizados aplicados para: " + activeGestor);
-            }
-        }
+           const { data: preciosCustom } = await supabaseClient
+               .from('precios_personalizados')
+               .select('producto_id, nuevo_precio, comision_subgestor')
+               .eq('gestor', gestorConsultar);
+
+           if (preciosCustom && preciosCustom.length > 0) {
+               productosRaw.forEach(p => {
+                   const custom = preciosCustom.find(c => c.producto_id === p.id);
+                   if (custom) {
+                       const precioBase = parseFloat(p.precio);
+                       const precioNuevo = parseFloat(custom.nuevo_precio);
+                       
+                       // Solo aplicamos cambio de precio si el producto es libre
+                       if (p.precio_flexible === 'SI') {
+                           if (precioNuevo >= precioBase) {
+                               p.precio = precioNuevo; 
+                           }
+                       }
+
+                       if (esSubgestor) {
+                           // El subgestor ve la comisión fija configurada por su padre
+                           p.comision = (parseFloat(custom.comision_subgestor) || 0).toFixed(2);
+                       } else {
+                           // El Gestor Principal ve su ganancia (Comisión base + sobreprecio si aplica)
+                           if (p.precio_flexible === 'SI' && precioNuevo >= precioBase) {
+                               const extra = precioNuevo - precioBase;
+                               p.comision = (parseFloat(p.comision) + extra).toFixed(2);
+                           }
+                       }
+                       p.is_custom = true; 
+                   } else if (esSubgestor) {
+                       // Si el principal no ha asignado comisión a este producto, por seguridad es 0
+                       p.comision = "0.00";
+                   }
+               });
+           } else if (esSubgestor) {
+               productosRaw.forEach(p => { p.comision = "0.00"; });
+           }
+       }
 
         // --- RENDERIZADO FINAL ---
         renderCategories();
@@ -4398,24 +4414,51 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN
     const activeGestor = await obtenerDuenoReal(telC);
     
-    // DETERMINAR A QUÉ WHATSAPP SE ENVÍA EL PEDIDO
+    // --- CORRECCIÓN ENRUTAMIENTO DE WHATSAPP ---
     const PHONE_DUENO_TIENDA = "5356071095"; 
     let whatsappDestino = PHONE_DUENO_TIENDA; 
 
-    if (isLogged) {
+    const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+
+    if (esSubgestor && window.currentUserData.parent_telefono) {
+        // 1. Si es un subgestor logueado haciendo pedido, el WhatsApp va a su Gestor Principal
+        let parentTel = window.currentUserData.parent_telefono.replace(/\D/g, '');
+        if (parentTel.length === 8) parentTel = "53" + parentTel;
+        whatsappDestino = parentTel;
+        console.log("➡️ Pedido manual del subgestor enrutado a su Gestor Principal:", parentTel);
+    } else if (isLogged) {
+        // 2. Si es un Gestor Principal logueado, va al dueño de la tienda
         whatsappDestino = PHONE_DUENO_TIENDA; 
     } else {
+        // 3. Si es un cliente final comprando por el link de la tienda
         if (activeGestor !== "Venta Directa") {
             const { data: gDB } = await supabaseClient
                 .from('gestores')
-                .select('telefono')
+                .select('telefono, parent_id')
                 .eq('nombre', activeGestor)
                 .maybeSingle();
             
-            if (gDB && gDB.telefono) {
-                let w = gDB.telefono.replace(/\D/g, '');
-                if (w.length === 8) w = "53" + w;
-                whatsappDestino = w;
+            if (gDB) {
+                if (gDB.parent_id) {
+                    // El dueño del enlace es un subgestor -> El pedido del cliente va a su Gestor Principal
+                    const { data: parentData } = await supabaseClient
+                        .from('gestores')
+                        .select('telefono')
+                        .eq('id', gDB.parent_id)
+                        .maybeSingle();
+                    
+                    if (parentData && parentData.telefono) {
+                        let parentW = parentData.telefono.replace(/\D/g, '');
+                        if (parentW.length === 8) parentW = "53" + parentW;
+                        whatsappDestino = parentW;
+                        console.log("➡️ Pedido del cliente enrutado al Gestor Principal:", parentW);
+                    }
+                } else if (gDB.telefono) {
+                    // El dueño del enlace es un Gestor Principal normal -> Va directo a él
+                    let w = gDB.telefono.replace(/\D/g, '');
+                    if (w.length === 8) w = "53" + w;
+                    whatsappDestino = w;
+                }
             }
         }
     }
@@ -4544,7 +4587,31 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
         const direccionFinalDB = notasExtended ? `${dirC} (${localidadC}) [NOTA: ${notasExtended}]` : `${dirC} (${localidadC})`;
 
-        const insertPromise = supabaseClient.from('pedidos').insert([{
+        // --- INTERCEPTOR DE ÓRDENES DE SUBGESTORES ---
+const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+let insertPromise;
+
+    if (esSubgestor) {
+        // El pedido va a la cola de aprobación del Gestor Principal
+        insertPromise = supabaseClient.from('pedidos_subgestores').insert([{
+            subgestor_id: window.currentUserData.id,
+            subgestor_nombre: window.currentUserData.nombre,
+            parent_gestor_id: window.currentUserData.parent_id,
+            parent_gestor_nombre: window.currentUserData.parent_nombre || 'Gestor Principal',
+            cliente: nombreC,
+            telefono: telC,
+            ci: ciC,
+            direccion: direccionFinalDB,
+            municipio: municipioC,
+            producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
+            total: totalUSDVale,
+            costo_mensajeria: envioTotalVale,
+            comision_total: comisionTotalVale,
+            proveedor: prov
+        }]);
+    } else {
+        // Pedido normal (va directo al Almacén Central)
+        insertPromise = supabaseClient.from('pedidos').insert([{
             gestor: activeGestor, 
             cliente: nombreC, 
             ci: ciC, 
@@ -4561,6 +4628,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             orden_dia: codPedido, 
             origen: origenPedido
         }]);
+    }
         promesas.push(insertPromise);
     }
 
@@ -7130,13 +7198,28 @@ async function processLogin() {
 
     // Si pasó las validaciones de BD, construimos la interfaz:
     if (gestorAprobado) {
-        try {
-            closeLogin();
-            document.getElementById('search-bar').value = '';
-            window.currentUserData = gestorAprobado; 
-            saveSessionToMemory(gestorAprobado.nombre, false, gestorAprobado); 
-            setupSession(gestorAprobado.nombre, false);
-        } catch (uiError) {
+    try {
+        closeLogin();
+        document.getElementById('search-bar').value = '';
+        
+        // --- CONFIGURACIÓN DE DATOS DE SUBGESTOR (CON TELÉFONO) ---
+        if (gestorAprobado.parent_id) {
+            const { data: parentData } = await supabaseClient
+                .from('gestores')
+                .select('nombre, telefono')
+                .eq('id', gestorAprobado.parent_id)
+                .maybeSingle();
+            
+            if (parentData) {
+                gestorAprobado.parent_nombre = parentData.nombre;
+                gestorAprobado.parent_telefono = parentData.telefono;
+            }
+        }
+        
+        window.currentUserData = gestorAprobado; 
+        saveSessionToMemory(gestorAprobado.nombre, false, gestorAprobado); 
+        setupSession(gestorAprobado.nombre, false);
+    } catch (uiError) {
             console.error("Error al construir la pantalla del gestor:", uiError);
             alert("Iniciaste sesión, pero hubo un error visual. Recarga la página.");
         }
@@ -9560,123 +9643,161 @@ async function renderGestorPricing() {
     const container = document.getElementById('list-gestor-precios');
     if(!container) return;
 
-    // 1. Filtrar productos flexibles Y DISPONIBLES
+    // 1. Filtrar TODOS los productos disponibles en stock (sean precio libre o fijo)
     const { data: productosBase } = await supabaseClient
         .from('productos')
         .select('*')
-        .eq('precio_flexible', 'SI')
         .eq('disponible', 'SI')
         .order('nombre');
 
     if(!productosBase || productosBase.length === 0) {
-        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos flexibles en stock.</p>`;
+        container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos en stock.</p>`;
         return;
     }
 
-    // 2. Obtener mis precios actuales
+    // 2. Obtener precios y comisiones de subgestor personalizadas
     const { data: misPrecios } = await supabaseClient
         .from('precios_personalizados')
         .select('*')
         .eq('gestor', window.gestorName);
 
     container.innerHTML = productosBase.map(p => {
-        // Encontrar precio guardado (p.id es UUID string)
         const saved = misPrecios.find(c => c.producto_id === p.id);
-        const precioActual = saved ? parseFloat(saved.nuevo_precio) : parseFloat(p.precio);
+        const isFlexible = p.precio_flexible === 'SI';
+        
+        const precioActual = isFlexible 
+            ? (saved ? parseFloat(saved.nuevo_precio) : parseFloat(p.precio))
+            : parseFloat(p.precio);
+            
+        const comisionSubgestor = saved ? parseFloat(saved.comision_subgestor) || 0 : 0;
+        
         const gananciaBase = parseFloat(p.comision);
-        // Calculo inicial de ganancia
-        const gananciaTotal = gananciaBase + (precioActual - parseFloat(p.precio));
+        const gananciaTotal = isFlexible 
+            ? (gananciaBase + (precioActual - parseFloat(p.precio)))
+            : gananciaBase;
 
-        // Limpieza de nombre para evitar errores con comillas
         const nombreSafe = p.nombre.replace(/"/g, '&quot;');
 
-        // OJO AQUÍ: He puesto comillas simples '${p.id}' dentro de las funciones onclick y oninput
+        const priceInputHtml = isFlexible
+            ? `<input type="number" id="input-price-${p.id}" value="${precioActual}" min="${p.precio}" 
+                  oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision}, true)"
+                  class="w-full rounded-lg border-gray-200 text-xs font-black text-slate-700 px-3 py-1.5">`
+            : `<input type="number" id="input-price-${p.id}" value="${precioActual}" disabled 
+                  class="w-full rounded-lg border-gray-200 bg-gray-100 text-xs font-black text-gray-400 px-3 py-1.5 cursor-not-allowed" title="Este producto tiene un precio fijo obligatorio">`;
+
+        const badgeFlexible = isFlexible
+            ? `<span class="bg-blue-100 text-blue-700 text-[8px] font-black px-1.5 py-0.5 rounded">📈 PRECIO LIBRE</span>`
+            : `<span class="bg-slate-100 text-slate-600 text-[8px] font-black px-1.5 py-0.5 rounded">🔒 PRECIO FIJO</span>`;
+
+        // --- VALIDACIÓN: Ocultar sub-comisión si es subgestor ---
+        const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+
+        const subgestorCommInputHtml = esSubgestor 
+            ? `<div class="flex justify-between items-center pt-2">
+                    <span class="text-xs font-black text-emerald-500">
+                        Tu Ganancia: $${gananciaTotal.toFixed(0)}
+                    </span>
+                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">save</span> Guardar
+                    </button>
+                    <!-- Campo oculto requerido para que no dé error la consulta -->
+                    <input type="hidden" id="input-sub-com-${p.id}" value="0">
+               </div>`
+            : `<div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-[9px] font-black uppercase text-purple-400">Comisión para el Subgestor ($)</label>
+                        <span id="gain-label-${p.id}" class="text-[9px] font-bold text-emerald-500">
+                            Tu Ganancia Pasiva: $${(gananciaTotal - comisionSubgestor).toFixed(0)}
+                        </span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="input-sub-com-${p.id}" value="${comisionSubgestor}" min="0" max="${gananciaTotal}"
+                            oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision}, ${isFlexible})"
+                            class="w-full rounded-lg border-gray-200 text-xs font-black text-slate-700 px-3 py-1.5">
+                        
+                        <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
+                            class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all">
+                            <span class="material-symbols-outlined text-lg">save</span>
+                        </button>
+                    </div>
+               </div>`;
+
         return `
         <div class="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm flex flex-col gap-3">
             <div class="flex gap-3">
                 <img src="${fixDriveUrl(p.thumbnail)}" class="w-12 h-12 rounded-lg object-contain bg-gray-50">
-                <div class="overflow-hidden">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${p.categoria}</p>
-                    <p class="text-xs font-black text-slate-700 leading-tight truncate">${nombreSafe}</p>
-                    <p class="text-[10px] text-gray-500">Base: $${p.precio} | Comi: $${p.comision}</p>
+                <div class="overflow-hidden flex-1">
+                    <div class="flex justify-between items-start gap-1">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase truncate">${p.categoria}</p>
+                        ${badgeFlexible}
+                    </div>
+                    <p class="text-xs font-black text-slate-700 leading-tight truncate mt-0.5">${nombreSafe}</p>
+                    <p class="text-[10px] text-gray-500">Base: $${p.precio} | Comi. Total: $${p.comision}</p>
                 </div>
             </div>
 
-            <div class="bg-gray-50 p-3 rounded-xl">
-                <div class="flex justify-between items-center mb-1">
-                    <label class="text-[9px] font-black uppercase text-indigo-400">Tu Precio de Venta</label>
-                    <span id="gain-label-${p.id}" class="text-[9px] font-bold text-emerald-500">
-                        Ganancia: $${gananciaTotal.toFixed(0)}
-                    </span>
+            <div class="bg-gray-50 p-3 rounded-xl space-y-3">
+                <!-- 1. PRECIO DE VENTA -->
+                <div>
+                    <label class="text-[9px] font-black uppercase text-indigo-400 block mb-1">Precio de Venta al Público</label>
+                    ${priceInputHtml}
                 </div>
-                <div class="flex gap-2">
-                    <input type="number" id="input-price-${p.id}" value="${precioActual}" min="${p.precio}" 
-                        oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision})"
-                        class="w-full rounded-lg border-gray-200 text-sm font-black text-slate-700 px-3 py-2">
-                    
-                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
-                        class="bg-indigo-600 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-colors">
-                        <span class="material-symbols-outlined text-lg">save</span>
-                    </button>
-                </div>
+
+                <!-- 2. COMISIÓN (Condicionada por Rol) -->
+                ${subgestorCommInputHtml}
             </div>
         </div>`;
     }).join('');
 }
 
-// Hacemos la función global asignándola a window explícitamente por si acaso
-window.calcGainUI = function(id, basePrice, baseComm) {
-    const input = document.getElementById(`input-price-${id}`);
+window.calcGainUI = function(id, basePrice, baseComm, isFlexible) {
+    const inputPrice = document.getElementById(`input-price-${id}`);
+    const inputSubCom = document.getElementById(`input-sub-com-${id}`);
     const label = document.getElementById(`gain-label-${id}`);
     
-    const val = parseFloat(input.value);
+    if(!inputPrice || !inputSubCom || !label) return;
+
+    const valPrice = isFlexible ? (parseFloat(inputPrice.value) || basePrice) : basePrice;
+    const valSubCom = parseFloat(inputSubCom.value) || 0;
     
-    // Si está vacío o no es número
-    if(isNaN(val)) {
-        label.innerText = "...";
-        return;
-    }
+    const extra = isFlexible ? (valPrice - basePrice) : 0;
+    const totalComm = baseComm + extra;
+    const parentGain = totalComm - valSubCom;
 
-    const diff = val - basePrice;
-    const totalGain = baseComm + diff;
-
-    if (val < basePrice) {
-        label.innerText = `⚠️ Pierdes $${Math.abs(diff).toFixed(0)}`;
-        label.classList.remove('text-emerald-500');
-        label.classList.add('text-red-500');
+    if (valSubCom > totalComm) {
+        label.innerText = `⚠️ Excede comisión total ($${totalComm.toFixed(0)})`;
+        label.className = "text-red-500 text-[9px] font-bold";
     } else {
-        label.innerText = `Ganancia: $${totalGain.toFixed(0)}`;
-        label.classList.remove('text-red-500');
-        label.classList.add('text-emerald-500');
+        label.innerText = `Tu Ganancia Pasiva: $${parentGain.toFixed(0)}`;
+        label.className = "text-emerald-500 text-[9px] font-bold";
     }
 }
 
 // Hacemos la función global asignándola a window
 window.saveMyPrice = async function(prodId, basePrice) {
-    const input = document.getElementById(`input-price-${prodId}`);
-    const newPrice = parseFloat(input.value);
+    const inputPrice = document.getElementById(`input-price-${prodId}`);
+    const inputSubCom = document.getElementById(`input-sub-com-${prodId}`);
+    
+    const newPrice = parseFloat(inputPrice.value);
+    const newSubCom = parseFloat(inputSubCom.value) || 0;
     const gestorActual = window.gestorName;
 
-    // VALIDACIONES
     if (!gestorActual) return alert("Error de sesión. Recarga la página.");
     if (isNaN(newPrice)) return alert("El precio no es válido.");
     if (newPrice < basePrice) return alert(`El precio mínimo es $${basePrice}`);
 
-    // UI DE CARGA
     const btn = event.currentTarget;
     const originalContent = btn.innerHTML;
     btn.innerHTML = `<span class="loader" style="width:15px;height:15px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span>`;
     btn.disabled = true;
 
     try {
-        console.log("Guardando para:", prodId); // Debug
-
-        // 1. Buscar si existe (Usando UUID)
         const { data: existing, error: searchError } = await supabaseClient
             .from('precios_personalizados')
             .select('id')
             .eq('gestor', gestorActual)
-            .eq('producto_id', prodId) // prodId ya es string UUID
+            .eq('producto_id', prodId)
             .maybeSingle();
 
         if (searchError) throw searchError;
@@ -9684,27 +9805,25 @@ window.saveMyPrice = async function(prodId, basePrice) {
         let errorGuardado;
 
         if (existing) {
-            // UPDATE
             const { error } = await supabaseClient
                 .from('precios_personalizados')
-                .update({ nuevo_precio: newPrice })
-                .eq('id', existing.id); // existing.id es UUID
+                .update({ nuevo_precio: newPrice, comision_subgestor: newSubCom })
+                .eq('id', existing.id);
             errorGuardado = error;
         } else {
-            // INSERT
             const { error } = await supabaseClient
                 .from('precios_personalizados')
                 .insert([{ 
                     gestor: gestorActual, 
                     producto_id: prodId, 
-                    nuevo_precio: newPrice 
+                    nuevo_precio: newPrice,
+                    comision_subgestor: newSubCom
                 }]);
             errorGuardado = error;
         }
 
         if (errorGuardado) throw errorGuardado;
 
-        // ÉXITO
         btn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
         btn.classList.replace('bg-indigo-600', 'bg-emerald-500');
 
@@ -9712,10 +9831,13 @@ window.saveMyPrice = async function(prodId, basePrice) {
             btn.innerHTML = `<span class="material-symbols-outlined text-lg">save</span>`;
             btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
             btn.disabled = false;
-        }, 2000);
+            // Limpiar caché y recargar catálogo
+            sessionStorage.removeItem('pth_catalogo_cache');
+            sessionStorage.removeItem('pth_catalogo_cache_time');
+            loadProducts();
+        }, 1500);
 
     } catch (e) {
-        console.error(e);
         alert("Error al guardar: " + e.message);
         btn.innerHTML = originalContent;
         btn.disabled = false;
@@ -10536,28 +10658,90 @@ async function deleteMyOrder(id) {
     }
 }
 
-// --- FUNCIÓN PARA REENVIAR PEDIDO AL ALMACÉN (MANUAL) ---
-function reenviarPedidoAdmin(id) {
+// --- REENVIAR PEDIDO MANUAL (DESDE HISTORIAL DEL SUBGESTOR) ---
+async function reenviarPedidoAdmin(id) {
     const p = myOrdersData.find(item => item.id === id);
     if (!p) return alert("Error: No se encuentran los datos del pedido.");
 
+    // Establecer destino por defecto (La tienda)
     const PHONE_DUENO = "5356071095"; 
-    const fecha = new Date(p.fecha).toLocaleDateString();
-    
-    // Cálculo inverso seguro
-    const envio = parseFloat(p.costo_mensajeria) || 0;
-    const total = parseFloat(p.total) || 0;
-    const equipo = total - envio;
+    let whatsappDestino = PHONE_DUENO;
 
-    let mensaje = `🧾 *REENVÍO PEDIDO #${p.orden_dia || '---'}*\n📅 Fecha: ${fecha}\n\n👤 *CLIENTE*\nNombre: ${p.cliente}\nTel: ${p.telefono}\nDirección: ${p.direccion}, ${p.municipio}\n`;
-    if(p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
+    // Si es un subgestor, el reenvío viaja hacia su Gestor Principal
+    const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+    if (esSubgestor && window.currentUserData.parent_telefono) {
+        let parentTel = window.currentUserData.parent_telefono.replace(/\D/g, '');
+        if (parentTel.length === 8) parentTel = "53" + parentTel;
+        whatsappDestino = parentTel;
+        console.log("➡️ Reenvío del subgestor dirigido a su Gestor Principal:", parentTel);
+    }
+
+    const fecha = new Date(p.fecha).toLocaleDateString();
+    const total = parseFloat(p.total) || 0;
+    const envio = parseFloat(p.costo_mensajeria) || 0;
+    const precioEquipos = total - envio;
+
+    // Parseo de notas y localidades
+    let dir = p.direccion || "";
+    let localidad = "";
+    let notas = "";
+    let metodoPago = "";
+    let vuelto = "";
+
+    const notaMatch = dir.match(/\[NOTA:\s*(.*?)\]/i);
+    if (notaMatch) {
+        notas = notaMatch[1];
+        dir = dir.replace(notaMatch[0], "").trim();
+    }
+    const locMatch = dir.match(/\((.*?)\)$/);
+    if (locMatch) {
+        localidad = locMatch[1];
+        dir = dir.replace(locMatch[0], "").trim();
+    }
+    const pagoMatch = notas.match(/\[PAGO:\s*(.*?)\]/i);
+    if (pagoMatch) {
+        metodoPago = pagoMatch[1];
+        notas = notas.replace(pagoMatch[0], "").trim();
+    }
+    const vueltoMatch = notas.match(/\[VUELTO:\s*(.*?)\]/i);
+    if (vueltoMatch) {
+        vuelto = vueltoMatch[1];
+        notas = notas.replace(vueltoMatch[0], "").trim();
+    }
+
+    let mensaje = `🧾 *REENVÍO PEDIDO #${p.orden_dia || '---'}*\n📅 Fecha: ${fecha}\n\n`;
+    mensaje += `👤 *CLIENTE*\nNombre: ${p.cliente}\nTel: ${p.telefono}\nDirección: ${dir}\n`;
     
-    mensaje += `\n🛒 *DETALLE*\n📦 ${p.producto}\n\n💰 *TOTAL A COBRAR: $${total} USD*\n(Equipos: $${equipo} + Envío: $${envio})\n`;
+    if (localidad) {
+        mensaje += `📍 Zona: ${localidad}, ${p.municipio || ''}\n`;
+    } else {
+        mensaje += `📍 Zona: ${p.municipio || ''}\n`;
+    }
+
+    if(p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
+    mensaje += `\n`;
+
+    if (notas) {
+        mensaje += `📝 *NOTAS / OBSERVACIONES:*\n${notas}\n\n`;
+    }
+    
+    mensaje += `🛒 *DETALLE*\n`;
+    const productosLineas = p.producto.split(' + ');
+    productosLineas.forEach(prod => {
+        mensaje += `📦 ${prod}\n`;
+    });
+    
+    mensaje += `💵 Equipos: $${precioEquipos}\n\n`;
+    mensaje += `💰 *TOTAL A PAGAR: $${total} USD*\n`;
+    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+    
+    if (metodoPago) mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
+    if (vuelto) mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
 
     const miTel = getAgentPhone(); 
-    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
+    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
     
-    window.open(`https://api.whatsapp.com/send?phone=${PHONE_DUENO}&text=${encodeURIComponent(mensaje)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
 // --- FUNCIÓN PARA REENVIAR VALE (DESDE ADMIN) ---
@@ -13159,6 +13343,30 @@ async function generarComprobanteB2B(datosPedido, accion) {
     }
 }
 
+// --- FILTRAR VISIBILIDAD DE REGISTRO PARA CLIENTES ---
+    function aplicarFiltroRegistro() {
+        const params = new URLSearchParams(window.location.search);
+        const tieneGestor = params.has('gestor') || params.has('tel');
+        const tieneInvitacion = params.has('invitado_por');
+
+        const tabRegistro = document.getElementById('tab-register-btn');
+        if (tabRegistro) {
+            // Si entró por un link de venta normal de un gestor, OCULTAMOS el registro para evitar curiosos
+            if (tieneGestor && !tieneInvitacion) {
+                tabRegistro.classList.add('hidden');
+                tabRegistro.style.display = 'none';
+                console.log("🔒 Pestaña de Registro oculta: Navegando como cliente.");
+            } else {
+                // Si entra limpio (paratuhogar.org) o por link de subgestor -> visible
+                tabRegistro.classList.remove('hidden');
+                tabRegistro.style.display = 'block';
+            }
+        }
+    }
+
+    // Ejecutar inmediatamente al cargar
+    window.addEventListener('load', aplicarFiltroRegistro);
+
 </script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
@@ -13478,6 +13686,10 @@ async function generarComprobanteB2B(datosPedido, accion) {
         </div>
     </div>
 </div>
+
+<!-- MÓDULO ADICIONAL: Tutorial Onboarding para Subgestores -->
+    <script src="subgestor-tutorial.js"></script>
+</body>
 
 </body>
 

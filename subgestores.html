@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Panel de Subgestores | ParaTuHogar</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #020617;
+        }
+        .neon-border {
+            border: 1px solid #1e3a8a;
+            box-shadow: 0 0 15px rgba(30, 58, 138, 0.2);
+        }
+        .active-tab {
+            background-color: #1e3a8a;
+            color: #60a5fa;
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen pb-12">
+
+    <!-- HEADER / IDENTIFICACIÓN -->
+    <header class="border-b border-slate-800 bg-[#070b19]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-black tracking-widest text-blue-400">RED DE SUBGESTORES</h1>
+            <p id="label-parent-name" class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Cargando sesión de Gestor...</p>
+        </div>
+        <button onclick="window.location.href='index.html'" class="flex items-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+            <span class="material-symbols-outlined text-sm">arrow_back</span> Volver a la Tienda
+        </button>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 mt-8 space-y-8">
+
+        <!-- ALERTA DE ACCESO -->
+        <div id="alert-access-denied" class="hidden bg-red-950/40 border-2 border-red-500/50 p-6 rounded-xl text-center space-y-3">
+            <span class="material-symbols-outlined text-5xl text-red-500 animate-pulse">gavel</span>
+            <h3 class="text-xl font-black">ACCESO RESTRINGIDO</h3>
+            <p class="text-sm text-red-200">Este panel es exclusivo para Gestores Principales activos en el sistema.</p>
+        </div>
+
+        <!-- CONTENIDO PRINCIPAL (Oculto si no hay login) -->
+        <div id="parent-dashboard-content" class="space-y-8 hidden">
+            
+            <!-- TARJETA ENLACE INVITACIÓN -->
+            <!-- Añadido ID para el Tour Guiado -->
+            <div id="tour-recruitment-box" class="bg-gradient-to-r from-blue-950/30 to-indigo-950/30 border border-blue-900/50 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-blue-300 flex items-center gap-2">
+                        <span class="material-symbols-outlined">person_add</span> RECLUTAR SUBGESTORES
+                    </h3>
+                    <p class="text-xs text-slate-400">Comparte este enlace. Quienes se registren bajo este link serán tus subgestores.</p>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto md:min-w-[400px]">
+                    <input type="text" id="input-invite-link" readonly class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3 text-slate-400 font-bold focus:ring-0">
+                    <button onclick="copiarLinkInvitacion()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl text-xs font-bold transition-all active:scale-95">Copiar</button>
+                </div>
+            </div>
+
+            <!-- NAVEGACIÓN INTERNA -->
+            <div class="flex gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
+                <button onclick="switchTab('aprobaciones')" id="tab-aprobaciones" class="active-tab px-4 py-3 border border-slate-800 text-xs font-black uppercase rounded-xl transition-all">
+                    📥 Pedidos por Aprobar
+                </button>
+                <button onclick="switchTab('equipo')" id="tab-equipo" class="px-4 py-3 border border-slate-800 text-xs font-black uppercase rounded-xl text-slate-400 transition-all">
+                    👥 Mi Equipo (Subgestores)
+                </button>
+                <button onclick="switchTab('nominas')" id="tab-nomina" class="px-4 py-3 border border-slate-800 text-xs font-black uppercase rounded-xl text-slate-400 transition-all">
+                    💰 Nómina y Liquidaciones
+                </button>
+            </div>
+
+            <!-- 1. SECCIÓN: PEDIDOS POR APROBAR -->
+            <div id="sec-aprobaciones" class="tab-section space-y-4">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-sm font-black uppercase tracking-widest text-slate-400">Cola de Órdenes Recibidas</h4>
+                    <span id="counter-pedidos" class="bg-blue-900/40 border border-blue-500 text-blue-300 text-xs font-bold px-2.5 py-0.5 rounded-full">0 pendientes</span>
+                </div>
+                
+                <div id="list-pedidos-pendientes" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+
+            <!-- 2. SECCIÓN: MI EQUIPO (SUBGESTORES CON PANEL DE PENDIENTES) -->
+            <div id="sec-equipo" class="tab-section hidden space-y-8">
+                
+                <!-- BLOQUE DE SOLICITUDES DE INGRESO (PENDIENTES DE APROBACIÓN) -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">hourglass_empty</span> Solicitudes de Ingreso por Aprobar
+                    </h4>
+                    <div id="list-solicitudes-subgestores" class="grid grid-cols-1 gap-3">
+                        <!-- Se cargan aquí por JS -->
+                    </div>
+                </div>
+
+                <!-- BLOQUE DE VENDEDORES ACTIVOS -->
+                <div class="space-y-3 pt-6 border-t border-slate-800">
+                    <h4 class="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">verified_user</span> Vendedores Activos en tu Red
+                    </h4>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 text-[10px] font-black uppercase text-slate-500 border-b border-slate-800">
+                                    <th class="p-4">Subgestor</th>
+                                    <th class="p-4 text-center">Rendimiento (Ventas)</th>
+                                    <th class="p-4 text-center">Chat Directo</th>
+                                    <th class="p-4 text-right">Estado / Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="list-subgestores" class="divide-y divide-slate-800 text-xs">
+                                <!-- Se carga dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 3. SECCIÓN: NÓMINA Y LIQUIDACIONES -->
+            <div id="sec-nominas" class="tab-section hidden space-y-4">
+                <div class="p-5 rounded-2xl bg-amber-950/20 border border-amber-900/50 text-xs text-amber-300">
+                    💡 <b>Instrucciones de Pago:</b> La tienda central te liquidará siempre el 100% de la comisión. Cuando recibas tu pago, utiliza este listado para rastrear cuánto debes transferirle a tus subgestores y márcalo como liquidado aquí para llevar el control.
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-950 text-[10px] font-black uppercase text-slate-500 border-b border-slate-800">
+                                <th class="p-4">Subgestor</th>
+                                <th class="p-4">Cliente / Pedido</th>
+                                <th class="p-4">Total Pedido</th>
+                                <th class="p-4">Su Comisión</th>
+                                <th class="p-4 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-nominas" class="divide-y divide-slate-800 text-xs">
+                            <!-- Se carga dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL DE EDICIÓN MAESTRA (PARA EL GESTOR ANTES DE APROBAR) -->
+    <div id="modal-edit-order" class="fixed inset-0 z-[200] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4">
+            <h3 class="text-lg font-black text-blue-400 uppercase tracking-widest border-b border-slate-800 pb-2">Corregir Datos del Cliente</h3>
+            <input type="hidden" id="edit-id">
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Nombre</label>
+                    <input type="text" id="edit-cliente" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Teléfono</label>
+                    <input type="text" id="edit-telefono" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Carnet (CI)</label>
+                    <input type="text" id="edit-ci" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3">
+                </div>
+                <div>
+                    <label class="text-[9px] font-black text-slate-400 uppercase">Municipio</label>
+                    <input type="text" id="edit-municipio" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3">
+                </div>
+            </div>
+            <div>
+                <label class="text-[9px] font-black text-slate-400 uppercase">Dirección de Entrega</label>
+                <textarea id="edit-direccion" rows="3" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3"></textarea>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="document.getElementById('modal-edit-order').classList.add('hidden')" class="flex-1 py-3 bg-slate-800 text-slate-400 rounded-xl text-xs font-black uppercase">Cancelar</button>
+                <button onclick="guardarCambiosPedido()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase hover:bg-blue-500">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUPABASE CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // CONFIGURACIÓN SUPABASE (CORREGIDA)
+        const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
+        
+        // Cambiado el nombre de la constante para evitar el error de inicialización
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentParent = null; 
+        let subgestoresList = [];
+        let pedidosPendientes = [];
+        let nominasList = [];
+
+        // 1. INICIALIZACIÓN Y SEGURIDAD
+window.addEventListener('load', async () => {
+    const savedSession = localStorage.getItem('pth_session');
+    if (!savedSession) {
+        mostrarBloqueo();
+        return;
+    }
+
+    const s = JSON.parse(savedSession);
+
+    // --- BLOQUEO CONSOLIDADO: Bloquea si es Administrador Central O si es un Subgestor ---
+    const isSubgestor = s.data && s.data.parent_id;
+    if (s.isAdmin || isSubgestor) {
+        mostrarBloqueo();
+        return;
+    }
+
+    // Descargar perfil fresco del gestor principal de Supabase
+    const { data: g, error } = await supabaseClient
+        .from('gestores')
+        .select('*')
+        .eq('nombre', s.name)
+        .single();
+
+    if (error || !g) {
+        mostrarBloqueo();
+        return;
+    }
+
+    currentParent = g;
+    document.getElementById('label-parent-name').innerText = `Gestor Principal: ${g.nombre.toUpperCase()}`;
+    document.getElementById('parent-dashboard-content').classList.remove('hidden');
+
+    // Generar Link de Invitación
+    const inviteLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
+    document.getElementById('input-invite-link').value = inviteLink;
+
+    loadData();
+});
+
+        function mostrarBloqueo() {
+            document.getElementById('alert-access-denied').classList.remove('hidden');
+        }
+
+        // 2. NAVEGACIÓN
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('sec-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('button[id^="tab-"]').forEach(b => {
+                b.className = "px-4 py-3 border border-slate-800 text-xs font-black uppercase rounded-xl text-slate-400 transition-all";
+            });
+            document.getElementById('tab-' + tabId).className = "active-tab px-4 py-3 border border-blue-500 text-xs font-black uppercase rounded-xl transition-all";
+        }
+
+        async function loadData() {
+            if(!currentParent) return;
+            await Promise.all([
+                loadPedidosPendientes(),
+                loadSubgestores(),
+                loadNominas()
+            ]);
+        }
+
+        // 3. CARGA DE PEDIDOS POR APROBAR
+        async function loadPedidosPendientes() {
+            const { data, error } = await supabaseClient
+                .from('pedidos_subgestores')
+                .select('*')
+                .eq('parent_gestor_id', currentParent.id)
+                .eq('estado', 'Pendiente Aprobacion')
+                .order('created_at', { ascending: false });
+
+            if (error) return;
+
+            pedidosPendientes = data || [];
+            document.getElementById('counter-pedidos').innerText = `${pedidosPendientes.length} pendientes`;
+            
+            const container = document.getElementById('list-pedidos-pendientes');
+            if (pedidosPendientes.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 font-bold uppercase text-xs">No hay pedidos esperando aprobación.</div>`;
+                return;
+            }
+
+            container.innerHTML = pedidosPendientes.map(p => `
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-black uppercase text-blue-400">Enviado por: ${p.subgestor_nombre}</span>
+                            <span class="text-[9px] text-slate-500 font-bold">${new Date(p.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <h4 class="text-base font-black text-slate-100 uppercase">${p.cliente}</h4>
+                        <p class="text-xs text-slate-500 font-mono">${p.telefono} | CI: ${p.ci || '---'}</p>
+                        <p class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded-lg border border-slate-800">${p.direccion}</p>
+                        <p class="text-xs text-slate-300 font-bold mt-3">📦 ${p.producto}</p>
+                        
+                        <!-- NUEVO PANEL CONTROL NUMÉRICO DE COMISIONES -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 mt-4">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Asignación de Comisión</p>
+                            <div class="grid grid-cols-2 gap-3 items-center">
+                                <div>
+                                    <label class="text-[8px] text-slate-500 uppercase font-bold">Comisión Subgestor ($)</label>
+                                    <input type="number" id="com-sub-${p.id}" value="${(p.comision_total * 0.70).toFixed(0)}" 
+                                        oninput="calcCutUI('${p.id}', ${p.comision_total})"
+                                        class="w-full bg-slate-900 border-slate-700 text-xs text-white rounded p-1.5 font-bold focus:ring-0">
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[8px] text-slate-500 uppercase font-bold">Tu Ganancia Pasiva ($)</p>
+                                    <p id="com-parent-${p.id}" class="text-base font-black text-emerald-400">$${(p.comision_total * 0.30).toFixed(0)}</p>
+                                </div>
+                            </div>
+                            <p class="text-[8px] text-slate-500 text-right mt-1 font-bold">Comisión Total del Producto: $${p.comision_total}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-baseline border-t border-slate-800 pt-3">
+                        <span class="text-base font-black text-emerald-400">$${p.total} USD</span>
+                        <div class="flex gap-2">
+                            <button onclick="editarPedido('${p.id}')" class="p-2 border border-slate-700 bg-slate-950 rounded-xl hover:text-blue-400 transition-colors">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </button>
+                            <button onclick="rechazarPedido('${p.id}')" class="bg-red-950/40 text-red-500 border border-red-900 px-4 py-2 rounded-xl text-[10px] font-black uppercase">Rechazar</button>
+                            <button onclick="aprobarPedido('${p.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase">Aprobar</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- FUNCIÓN DE CÁLCULO DE COMISIÓN INTERACTIVA (TIEMPO REAL) ---
+        window.calcCutUI = function(id, totalComm) {
+            const inputSub = document.getElementById(`com-sub-${id}`);
+            const labelParent = document.getElementById(`com-parent-${id}`);
+            if(!inputSub || !labelParent) return;
+
+            const subVal = parseFloat(inputSub.value);
+            if (isNaN(subVal)) {
+                labelParent.innerText = "---";
+                return;
+            }
+
+            const parentVal = totalComm - subVal;
+
+            if (subVal < 0) {
+                labelParent.innerText = "Mínimo 0";
+                labelParent.className = "text-red-400 text-xs font-black";
+            } else if (subVal > totalComm) {
+                labelParent.innerText = "Excede total";
+                labelParent.className = "text-red-400 text-xs font-black";
+            } else {
+                labelParent.innerText = `$${parentVal.toFixed(0)}`;
+                labelParent.className = "text-emerald-400 text-base font-black";
+            }
+        }
+
+        // --- LÓGICA DE APROBACIÓN CON DIVISIÓN MANUAL (CORREGIDA) ---
+        async function aprobarPedido(pedidoId) {
+            const p = pedidosPendientes.find(item => item.id === pedidoId);
+            if (!p) return;
+
+            // Obtener el valor ingresado por el gestor para el subgestor
+            const inputComSub = document.getElementById(`com-sub-${p.id}`);
+            const comisionSub = parseFloat(inputComSub.value);
+
+            // Validaciones de seguridad financiera
+            if (isNaN(comisionSub) || comisionSub < 0) {
+                alert("⚠️ Por favor ingresa un monto válido de comisión para el subgestor.");
+                return;
+            }
+            if (comisionSub > p.comision_total) {
+                alert(`⚠️ La comisión asignada al subgestor ($${comisionSub}) no puede ser mayor que la comisión total disponible ($${p.comision_total}).`);
+                return;
+            }
+
+            const comisionParent = Number((p.comision_total - comisionSub).toFixed(2));
+
+            const confirmar = confirm(`¿Aprobar pedido?\n\n• Para Subgestor: $${comisionSub}\n• Para ti (Ganancia): $${comisionParent}\n\nLa orden se enviará a la administración central.`);
+            if(!confirmar) return;
+
+            try {
+                // C. Insertar en la tabla "pedidos" principal de la tienda
+                const { error: errorInsert } = await supabaseClient
+                    .from('pedidos')
+                    .insert([{
+                        gestor: currentParent.nombre, // Para que el admin le pague al principal
+                        cliente: p.cliente,
+                        ci: p.ci,
+                        telefono: p.telefono,
+                        direccion: p.direccion,
+                        municipio: p.municipio,
+                        producto: p.producto,
+                        total: p.total,
+                        costo_mensajeria: p.costo_mensajeria,
+                        comision_total: p.comision_total, 
+                        estado: 'Pendiente',
+                        pago_gestor: 'Pendiente',
+                        proveedor: p.proveedor,
+                        origen: 'Subgestor',
+                        
+                        // Registro de la división manual de comisiones
+                        subgestor_nombre: p.subgestor_nombre,
+                        comision_subgestor: comisionSub,
+                        comision_parent: comisionParent,
+                        pago_subgestor: 'Pendiente'
+                    }]);
+
+                if (errorInsert) throw errorInsert;
+
+                // D. Eliminar de la cola temporal
+                await supabaseClient
+                    .from('pedidos_subgestores')
+                    .delete()
+                    .eq('id', p.id);
+
+                alert("✅ Pedido aprobado y enviado exitosamente a administración.");
+                loadData();
+
+            } catch (e) {
+                alert("Error al procesar la aprobación: " + e.message);
+            }
+        }
+
+        async function rechazarPedido(id) {
+            if (!confirm("¿Rechazar y borrar este pedido de forma permanente?")) return;
+            await supabaseClient.from('pedidos_subgestores').delete().eq('id', id);
+            loadData();
+        }
+
+        // 5. EDICIÓN DEL PEDIDO ANTES DE APROBAR
+        function editarPedido(id) {
+            const p = pedidosPendientes.find(item => item.id === id);
+            if(!p) return;
+
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-cliente').value = p.cliente || '';
+            document.getElementById('edit-telefono').value = p.telefono || '';
+            document.getElementById('edit-ci').value = p.ci || '';
+            document.getElementById('edit-municipio').value = p.municipio || '';
+            document.getElementById('edit-direccion').value = p.direccion || '';
+
+            document.getElementById('modal-edit-order').classList.remove('hidden');
+        }
+
+        async function guardarCambiosPedido() {
+            const id = document.getElementById('edit-id').value;
+            
+            const updates = {
+                cliente: document.getElementById('edit-cliente').value.trim(),
+                telefono: document.getElementById('edit-telefono').value.trim(),
+                ci: document.getElementById('edit-ci').value.trim(),
+                municipio: document.getElementById('edit-municipio').value.trim(),
+                direccion: document.getElementById('edit-direccion').value.trim()
+            };
+
+            const { error } = await supabaseClient
+                .from('pedidos_subgestores')
+                .update(updates)
+                .eq('id', id);
+
+            if (!error) {
+                alert("✅ Pedido corregido.");
+                document.getElementById('modal-edit-order').classList.add('hidden');
+                loadPedidosPendientes();
+            } else {
+                alert("Error al actualizar.");
+            }
+        }
+
+        // 6. CONTROL DE EQUIPO (SUBGESTORES - LIMPIO)
+        // 6. CONTROL DE EQUIPO (SUBGESTORES - RENDERIZADO CON HERRAMIENTAS)
+        // 6. CONTROL DE EQUIPO (SUBGESTORES - CON BOTÓN CREDENCIALES)
+        // 6. CONTROL DE EQUIPO (SUBGESTORES - CON COLA DE APROBACIÓN MANUAL)
+        async function loadSubgestores() {
+            // Descargar todos los gestores vinculados a este padre
+            const { data: gestores, error } = await supabaseClient
+                .from('gestores')
+                .select('*')
+                .eq('parent_id', currentParent.id)
+                .order('nombre', { ascending: true });
+
+            if (error) return;
+
+            // Separar solicitudes de miembros ya activos
+            const solicitudes = gestores.filter(g => g.estado === 'pendiente_subgestor');
+            const activos = gestores.filter(g => g.estado === 'activo' || g.estado === 'bloqueado');
+
+            // --- A. RENDERIZAR SOLICITUDES DE INGRESO ---
+            const containerSolicitudes = document.getElementById('list-solicitudes-subgestores');
+            if (containerSolicitudes) {
+                if (solicitudes.length === 0) {
+                    containerSolicitudes.innerHTML = `<p class="text-xs text-slate-500 font-bold uppercase py-2">No tienes solicitudes de ingreso pendientes.</p>`;
+                } else {
+                    containerSolicitudes.innerHTML = solicitudes.map(s => {
+                        const safeName = s.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const safePass = (s.password || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        return `
+                        <div class="flex justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <div>
+                                <p class="font-black text-slate-200 uppercase text-xs leading-none mb-1">${s.nombre}</p>
+                                <p class="text-[10px] text-slate-500 font-bold">Tel: ${s.telefono} | Registro: ${new Date(s.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="eliminarSolicitudSub('${s.id}')" class="text-xs bg-red-950/40 text-red-500 border border-red-900 px-3 py-1.5 rounded-lg font-black uppercase">Rechazar</button>
+                                <button onclick="aprobarYDarBienvenidaSub('${s.id}', '${safeName}', '${s.telefono}', '${safePass}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg font-black uppercase">Aprobar y Saludar</button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // --- B. RENDERIZAR VENDEDORES ACTIVOS (TABLA) ---
+            const containerActivos = document.getElementById('list-subgestores');
+            if (containerActivos) {
+                if (activos.length === 0) {
+                    containerActivos.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 uppercase font-bold">No tienes vendedores activos todavía.</td></tr>`;
+                } else {
+                    let htmlRows = [];
+                    for (let g of activos) {
+                        // Contar sus ventas entregadas en la tabla principal
+                        const { count: ventasCompletadas } = await supabaseClient
+                            .from('pedidos')
+                            .select('id', { count: 'exact', head: true })
+                            .eq('subgestor_nombre', g.nombre)
+                            .eq('estado', 'Entregado');
+
+                        // Contar sus pedidos pendientes de aprobación
+                        const { count: pedidosPendientes } = await supabaseClient
+                            .from('pedidos_subgestores')
+                            .select('id', { count: 'exact', head: true })
+                            .eq('subgestor_id', g.id);
+
+                        const statusColor = g.estado === 'activo' ? 'bg-emerald-950 text-emerald-400 border-emerald-900' : 'bg-red-950 text-red-400 border-red-900';
+                        const actionBtn = g.estado === 'activo' 
+                            ? `<button onclick="toggleSubgestorStatus('${g.id}', 'activo')" class="text-xs bg-red-950/40 text-red-500 border border-red-900 px-3 py-1.5 rounded-lg font-black uppercase">Suspender</button>`
+                            : `<button onclick="toggleSubgestorStatus('${g.id}', 'bloqueado')" class="text-xs bg-emerald-950/40 text-emerald-500 border border-emerald-900 px-3 py-1.5 rounded-lg font-black uppercase">Activar</button>`;
+
+                        const cleanPhone = g.telefono.replace(/\D/g, '');
+                        const waLink = `https://wa.me/53${cleanPhone}?text=Hola%20${g.nombre},%20¿cómo%20van%20las%20ventas%3F`;
+                        
+                        const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const safePass = (g.password || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+                        htmlRows.push(`
+                        <tr class="hover:bg-slate-950/50 transition-colors">
+                            <td class="p-4 align-middle">
+                                <p class="font-black uppercase text-slate-200">${g.nombre}</p>
+                                <p class="text-[10px] text-slate-500 font-bold">REGISTRADO: ${new Date(g.created_at).toLocaleDateString()}</p>
+                            </td>
+                            <td class="p-4 text-center align-middle">
+                                <div class="flex justify-center gap-2">
+                                    <span class="bg-emerald-950/50 border border-emerald-900 text-emerald-400 text-[10px] font-black px-2 py-1 rounded">✅ ${ventasCompletadas || 0} Entregadas</span>
+                                    <span class="bg-amber-950/50 border border-amber-900 text-amber-400 text-[10px] font-black px-2 py-1 rounded">⏳ ${pedidosPendientes || 0} Pendientes</span>
+                                </div>
+                            </td>
+                            <td class="p-4 text-center align-middle">
+                                <a href="${waLink}" target="_blank" class="inline-flex items-center gap-1.5 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 px-3 py-1.5 rounded-lg hover:bg-[#25D366]/20 transition-all font-bold text-[10px] uppercase">
+                                    <span class="material-symbols-outlined text-sm">chat</span> Chat
+                                </a>
+                            </td>
+                            <td class="p-4 text-right align-middle space-x-1 whitespace-nowrap">
+                                <button onclick="sendCredentialsWA('${g.id}', '${safeName}', '${g.telefono}', '${safePass}')" class="text-xs bg-slate-900 hover:bg-slate-800 text-indigo-400 border border-slate-700 px-3 py-1.5 rounded-lg font-black uppercase transition-all" title="Reenviar Clave">
+                                    🔑 Clave
+                                </button>
+                                <span class="px-2 py-1.5 rounded text-[10px] font-black uppercase border ${statusColor}">${g.estado.toUpperCase()}</span>
+                                ${actionBtn}
+                            </td>
+                        </tr>`);
+                    }
+                    containerActivos.innerHTML = htmlRows.join('');
+                }
+            }
+        }
+
+        // --- SISTEMA DE APROBACIÓN MANUAL Y BIENVENIDA ---
+        window.aprobarYDarBienvenidaSub = async function(id, nombre, telefono, password) {
+            const confirmar = confirm(`¿Estás seguro de APROBAR a ${nombre} como subgestor?\n\nSe activará su cuenta y se abrirá WhatsApp con el mensaje de bienvenida.`);
+            if(!confirmar) return;
+
+            try {
+                // A. Cambiar estado a activo en Supabase
+                const { error } = await supabaseClient
+                    .from('gestores')
+                    .update({ estado: 'activo' })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                // B. Preparar el mensaje y el número
+                let telLimpio = telefono.replace(/\D/g, '');
+                if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
+
+                const baseUrl = window.location.origin + window.location.pathname.replace('subgestores.html', 'index.html');
+                const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+                
+                let affiliateLink = longLink;
+                try {
+                    if(typeof getOrGenerateShortLink === 'function') {
+                        affiliateLink = await getOrGenerateShortLink(nombre, longLink);
+                    }
+                } catch(e) {}
+
+                const mensaje = `¡Hola *${nombre}*! 👋 Te saluda *${currentParent.nombre}*.
+
+Me alegra confirmarte que ya revisé tu solicitud y he *ACTIVADO tu cuenta de subgestor* en nuestro equipo de ParaTuHogar. 🥳
+
+A partir de este momento, ya puedes acceder y empezar a vender.
+
+📌 *TUS DATOS DE ACCESO:*
+👤 *Usuario:* ${nombre}
+🔑 *Contraseña:* ${password}
+🌐 *Entra al panel aquí:* ${baseUrl}
+
+🚀 *TU LINK MÁGICO DE VENTAS:*
+🔗 ${affiliateLink}
+
+Guarda este enlace. Cuando tus clientes entren a ese link, verán la tienda con los precios y ofertas que yo configure para nuestro equipo, y las comisiones de tus ventas se registrarán automáticamente a tu nombre. 💸
+
+Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento, escríbeme directamente por aquí. ¡Vamos a romperla vendiendo juntos! 🤝`;
+
+                alert("✅ Subgestor aprobado con éxito. Abriendo WhatsApp para saludarlo.");
+                loadSubgestores(); // Refrescar
+
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                const urlBase = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/send";
+                window.open(`${urlBase}?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
+
+            } catch (e) {
+                alert("Error al aprobar: " + e.message);
+            }
+        }
+
+        window.eliminarSolicitudSub = async function(id) {
+            if(!confirm("¿Rechazar y eliminar definitivamente esta solicitud de ingreso?")) return;
+            const { error } = await supabaseClient.from('gestores').delete().eq('id', id);
+            if(!error) {
+                alert("Solicitud eliminada.");
+                loadSubgestores();
+            }
+        }
+
+        // --- SISTEMA DE REENVÍO DE CREDENCIALES ---
+        window.sendCredentialsWA = function(id, nombre, telefono, password) {
+            let telLimpio = telefono.replace(/\D/g, '');
+            if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
+
+            const baseUrl = window.location.origin + window.location.pathname.replace('subgestores.html', 'index.html');
+
+            const mensaje = `Hola *${nombre}* 👋, aquí tienes tus datos de acceso para entrar a vender en la tienda de ParaTuHogar:\n\n👤 *Usuario:* ${nombre}\n🔑 *Contraseña:* ${password}\n\n🌐 *Dirección de la tienda:* ${baseUrl}\n\n_Guarda este mensaje para que no pierdas tus claves. ¡Muchos éxitos en tus ventas!_ 🤝`;
+
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const urlBase = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/send";
+            
+            window.open(`${urlBase}?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`, '_blank');
+        }
+
+        // --- SISTEMA DE SUSPENSIÓN DE SUBGESTORES ---
+        window.toggleSubgestorStatus = async function(id, estadoActual) {
+            const nuevoEstado = estadoActual === 'activo' ? 'bloqueado' : 'activo';
+            if(!confirm(`¿Estás seguro de cambiar el estado del subgestor a ${nuevoEstado.toUpperCase()}?`)) return;
+
+            const { error } = await supabaseClient
+                .from('gestores')
+                .update({ estado: nuevoEstado })
+                .eq('id', id);
+
+            if(!error) {
+                alert("✅ Estado de cuenta actualizado con éxito.");
+                loadSubgestores();
+            } else {
+                alert("Error al actualizar el estado de cuenta.");
+            }
+        }
+
+        // --- SISTEMA DE SUSPENSIÓN DE SUBGESTORES ---
+        window.toggleSubgestorStatus = async function(id, estadoActual) {
+            const nuevoEstado = estadoActual === 'activo' ? 'bloqueado' : 'activo';
+            if(!confirm(`¿Estás seguro de cambiar el estado del subgestor a ${nuevoEstado.toUpperCase()}?`)) return;
+
+            const { error } = await supabaseClient
+                .from('gestores')
+                .update({ estado: nuevoEstado })
+                .eq('id', id);
+
+            if(!error) {
+                alert("✅ Estado de cuenta actualizado con éxito.");
+                loadSubgestores();
+            } else {
+                alert("Error al actualizar el estado de cuenta.");
+            }
+        }
+
+        async function cambiarPorcentajeComision(subId, nuevoValor) {
+            const val = parseFloat(nuevoValor);
+            if (isNaN(val) || val < 1 || val > 100) return alert("Porcentaje inválido.");
+
+            const { error } = await supabaseClient
+                .from('gestores')
+                .update({ comision_sub_pct: (val / 100) })
+                .eq('id', subId);
+
+            if (!error) {
+                console.log("Porcentaje de comisión actualizado.");
+            } else {
+                alert("Error al actualizar el porcentaje.");
+            }
+        }
+
+        // 7. SECCIÓN DE NÓMINA Y PAGOS A SUBGESTORES
+        async function loadNominas() {
+            // Buscamos pedidos entregados del gestor principal donde exista trazabilidad del subgestor
+            const { data, error } = await supabaseClient
+                .from('pedidos')
+                .select('*')
+                .eq('gestor', currentParent.nombre)
+                .eq('estado', 'Entregado')
+                .not('subgestor_nombre', 'is', null)
+                .order('fecha', { ascending: false });
+
+            if (error) return;
+
+            nominasList = data || [];
+            const container = document.getElementById('list-nominas');
+
+            if (nominasList.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500 uppercase font-bold">No hay liquidaciones pendientes para subgestores.</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = nominasList.map(n => {
+                const esPagado = n.pago_subgestor === 'Pagado';
+                const buttonHtml = esPagado 
+                    ? `<span class="px-2 py-1 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-900 font-black uppercase text-[10px]">LIQUIDADO</span>`
+                    : `<button onclick="liquidarPagoSubgestor('${n.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl font-black uppercase text-[9px] (p-4)">PAGAR</button>`;
+
+                return `
+                <tr class="hover:bg-slate-950/50 transition-colors ${esPagado ? 'opacity-50' : ''}">
+                    <td class="p-4 font-black uppercase text-slate-200">${n.subgestor_nombre}</td>
+                    <td class="p-4 text-slate-400">
+                        <p class="font-bold text-slate-300 uppercase">${n.cliente}</p>
+                        <p class="text-[9px] text-slate-500 font-mono">${n.producto.substring(0,30)}...</p>
+                    </td>
+                    <td class="p-4 text-slate-300 font-bold">$${n.total}</td>
+                    <td class="p-4 text-emerald-400 font-black">$${n.comision_subgestor}</td>
+                    <td class="p-4 text-right">${buttonHtml}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function liquidarPagoSubgestor(pedidoId) {
+            if(!confirm("¿Confirmar que ya le transferiste la comisión a tu subgestor?")) return;
+
+            const { error } = await supabaseClient
+                .from('pedidos')
+                .update({ pago_subgestor: 'Pagado' })
+                .eq('id', pedidoId);
+
+            if(!error) {
+                alert("✅ Pago marcado como liquidado.");
+                loadNominas();
+            } else {
+                alert("Error al procesar la liquidación.");
+            }
+        }
+
+        function copiarLinkInvitacion() {
+            const copyText = document.getElementById("input-invite-link");
+            copyText.select();
+            document.execCommand("copy");
+            alert("✅ ¡Enlace de invitación copiado al portapapeles!");
+        }
+
+
+    // =========================================================
+        // MOTOR DE TOUR GUIADO INTERACTIVO (WALKTHROUGH)
+        // =========================================================
+
+        const tourSteps = [
+            {
+                target: "#tour-recruitment-box",
+                title: "Enlace de Reclutamiento 🔗",
+                desc: "Este es tu enlace único para invitar subgestores. Compártelo con las personas que quieran unirse a tu equipo de ventas. Los registros se enlacen bajo tu nombre automáticamente."
+            },
+            {
+                target: "#tab-aprobaciones",
+                title: "Cola de Aprobación de Pedidos 📥",
+                desc: "Aquí recibirás los pedidos enviados por tus subgestores o sus clientes. Podrás corregir las direcciones, verificar que los importes estén correctos y decidir de forma manual la división de la comisión antes de enviarlos a la tienda."
+            },
+            {
+                target: "#tab-equipo",
+                title: "Gestión de Miembros (Tu Equipo) 👥",
+                desc: "En esta pestaña verás tu lista de vendedores activos, sus estadísticas en tiempo real (ventas completadas y pedidos pendientes) y podrás suspender o activar sus accesos en un clic."
+            },
+            {
+                target: "#tab-nomina",
+                title: "Control de Nómina y Liquidaciones 💰",
+                desc: "Cuando la tienda te liquide las comisiones de tu equipo, ven aquí para consultar cuánto debes transferirle a cada uno de tus subgestores y márcalo como pagado para llevar tu contabilidad al día."
+            }
+        ];
+
+        let currentTourStep = 0;
+
+        function checkTourStatus() {
+            // Solo iniciar si el usuario es el Gestor Principal y no ha hecho el tour antes
+            const tourDone = localStorage.getItem('pth_subgestores_tour_v1');
+            if (tourDone) return;
+
+            // Crear e inyectar el contenedor del cartel del tour y el fondo atenuador
+            injectTourHTML();
+            startTour();
+        }
+
+        function injectTourHTML() {
+            // Fondo atenuador
+            const backdrop = `<div id="tour-backdrop" class="fixed inset-0 bg-black/60 z-[4000] pointer-events-none transition-opacity duration-300"></div>`;
+            
+            // Cartel Flotante
+            const card = `
+            <div id="tour-floating-card" class="fixed z-[5000] bg-[#090e17] border border-blue-500/40 rounded-2xl p-5 shadow-[0_0_30px_rgba(59,130,246,0.25)] max-w-sm w-[90%] transition-all duration-300 pointer-events-auto flex flex-col justify-between" style="font-family: 'Rajdhani', sans-serif;">
+                <div class="space-y-2">
+                    <h4 id="tour-card-title" class="text-base font-black text-blue-400 uppercase tracking-wider">---</h4>
+                    <p id="tour-card-desc" class="text-xs text-slate-300 leading-relaxed font-medium">---</p>
+                </div>
+                <div class="flex justify-between items-center mt-5 pt-3 border-t border-slate-800">
+                    <span id="tour-card-step" class="text-[10px] text-slate-500 font-bold tracking-widest">1/4</span>
+                    <button id="btn-tour-next" onclick="nextTourStep()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase px-4 py-2 rounded-lg transition-all active:scale-95">Siguiente</button>
+                </div>
+            </div>`;
+
+            document.body.insertAdjacentHTML('beforeend', backdrop + card);
+        }
+
+        function startTour() {
+            currentTourStep = 0;
+            renderTourStep();
+        }
+
+        function renderTourStep() {
+            const step = tourSteps[currentTourStep];
+            const target = document.querySelector(step.target);
+
+            if (!target) return;
+
+            // 1. Limpiar brillos de pasos anteriores
+            document.querySelectorAll('.tour-highlight').forEach(el => {
+                el.classList.remove('tour-highlight', 'ring-4', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-950', 'animate-pulse');
+            });
+
+            // 2. Aplicar brillo de enfoque (Anillo azul parpadeante) al elemento actual
+            target.classList.add('tour-highlight', 'ring-4', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-950', 'animate-pulse');
+
+            // 3. Desplazar la pantalla suavemente hacia el elemento objetivo
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // 4. Posicionar el cartel flotante debajo (o arriba si no cabe) del elemento objetivo
+            setTimeout(() => {
+                const rect = target.getBoundingClientRect();
+                const card = document.getElementById('tour-floating-card');
+                
+                // Textos
+                document.getElementById('tour-card-title').innerText = step.title;
+                document.getElementById('tour-card-desc').innerText = step.desc;
+                document.getElementById('tour-card-step').innerText = `PASO ${currentTourStep + 1} DE ${tourSteps.length}`;
+
+                // Calcular posiciones
+                let topPos = rect.bottom + window.scrollY + 12;
+                let leftPos = rect.left + window.scrollX;
+
+                // Si se sale de la pantalla por abajo, lo colocamos arriba del elemento
+                if (topPos + card.offsetHeight > document.documentElement.scrollHeight) {
+                    topPos = rect.top + window.scrollY - card.offsetHeight - 12;
+                }
+
+                // Asegurar que no se salga por la derecha en móviles
+                if (leftPos + card.offsetWidth > window.innerWidth) {
+                    leftPos = window.innerWidth - card.offsetWidth - 16;
+                }
+                if (leftPos < 16) leftPos = 16; // Margen izquierdo mínimo
+
+                card.style.top = `${topPos}px`;
+                card.style.left = `${leftPos}px`;
+
+                // Cambiar botón en el paso final
+                const btnNext = document.getElementById('btn-tour-next');
+                if (currentTourStep === tourSteps.length - 1) {
+                    btnNext.innerText = "Terminar Tour";
+                    btnNext.className = "bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase px-4 py-2 rounded-lg transition-all active:scale-95";
+                } else {
+                    btnNext.innerText = "Siguiente";
+                    btnNext.className = "bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase px-4 py-2 rounded-lg transition-all active:scale-95";
+                }
+            }, 300);
+        }
+
+        function nextTourStep() {
+            if (currentTourStep < tourSteps.length - 1) {
+                currentTourStep++;
+                renderTourStep();
+            } else {
+                finishTour();
+            }
+        }
+
+        function finishTour() {
+            // Limpiar clases de enfoque
+            document.querySelectorAll('.tour-highlight').forEach(el => {
+                el.classList.remove('tour-highlight', 'ring-4', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-950', 'animate-pulse');
+            });
+
+            // Remover elementos del DOM
+            const backdrop = document.getElementById('tour-backdrop');
+            const card = document.getElementById('tour-floating-card');
+            if (backdrop) backdrop.remove();
+            if (card) card.remove();
+
+            // Guardar marca para que no vuelva a aparecer
+            localStorage.setItem('pth_subgestores_tour_v1', 'true');
+            alert("🎉 ¡Listo! Has completado el tour. Bienvenido a tu centro de mando.");
+        }
+
+        // Ejecutar el chequeo de tour al cargar el dashboard de subgestores
+        // Lo llamamos dentro del validador de carga una vez que se recuperan los datos
+        const originalLoadData = loadData;
+        loadData = async function() {
+            await originalLoadData();
+            setTimeout(checkTourStatus, 1500); // Pequeño retraso para que cargue la interfaz
+        };
+
+    </script>
+</body>
+</html>
