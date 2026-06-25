@@ -52,17 +52,53 @@
             
             <!-- TARJETA ENLACE INVITACIÓN -->
             <!-- Añadido ID para el Tour Guiado -->
-            <div id="tour-recruitment-box" class="bg-gradient-to-r from-blue-950/30 to-indigo-950/30 border border-blue-900/50 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="space-y-1">
-                    <h3 class="text-lg font-black text-blue-300 flex items-center gap-2">
-                        <span class="material-symbols-outlined">person_add</span> RECLUTAR SUBGESTORES
-                    </h3>
-                    <p class="text-xs text-slate-400">Comparte este enlace. Quienes se registren bajo este link serán tus subgestores.</p>
+            <!-- TARJETA ENLACE INVITACIÓN Y BANCO DE GRUPOS -->
+            <div id="tour-recruitment-box" class="bg-gradient-to-r from-blue-950/30 to-indigo-950/30 border border-blue-900/50 p-6 rounded-2xl space-y-6">
+                
+                <!-- Fila Superior: Enlace de Invitación -->
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-800 pb-6">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-black text-blue-300 flex items-center gap-2">
+                            <span class="material-symbols-outlined">person_add</span> RECLUTAR SUBGESTORES
+                        </h3>
+                        <p class="text-xs text-slate-400">Comparte este enlace. Quienes se registren bajo este link serán tus subgestores.</p>
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto md:min-w-[400px]">
+                        <input type="text" id="input-invite-link" readonly class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3 text-slate-400 font-bold focus:ring-0">
+                        <button onclick="copiarLinkInvitacion()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl text-xs font-bold transition-all active:scale-95">Copiar Link</button>
+                    </div>
                 </div>
-                <div class="flex gap-2 w-full md:w-auto md:min-w-[400px]">
-                    <input type="text" id="input-invite-link" readonly class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3 text-slate-400 font-bold focus:ring-0">
-                    <button onclick="copiarLinkInvitacion()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl text-xs font-bold transition-all active:scale-95">Copiar</button>
+
+                <!-- Fila Inferior: Banco de Grupos Promocionales -->
+                <div class="space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h4 class="text-sm font-black text-indigo-400 flex items-center gap-2 uppercase tracking-wider">
+                                <span class="material-symbols-outlined">share_reviews</span> Banco de Grupos de Promoción
+                            </h4>
+                            <p class="text-[11px] text-slate-400">Únete a estos grupos de WhatsApp o envíate la lista a tu chat para publicar que buscas vendedores.</p>
+                        </div>
+                        
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <!-- BOTÓN AUTO-ENVÍO -->
+                            <button onclick="enviarGruposMiWhatsApp()" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10 active:scale-95">
+                                <span class="material-symbols-outlined text-sm">send_to_mobile</span> Enviar a mi WhatsApp
+                            </button>
+                            <!-- BOTÓN MOSTRAR/OCULTAR EN WEB -->
+                            <button onclick="toggleGruposWeb()" id="btn-toggle-grupos-web" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">visibility</span> Ver Grupos en Pantalla
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CONTENEDOR DESPLEGABLE DE GRUPOS EN WEB -->
+                    <div id="container-grupos-web" class="hidden animate-fade-in bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="grid-grupos-whatsapp">
+                            <!-- Se llena dinámicamente con JS -->
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
             <!-- NAVEGACIÓN INTERNA -->
@@ -932,6 +968,179 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
             await originalLoadData();
             setTimeout(checkTourStatus, 1500); // Pequeño retraso para que cargue la interfaz
         };
+
+    // =========================================================
+        // BANCO DE GRUPOS DE WHATSAPP DEPURADO (SANEADO)
+        // =========================================================
+        const whatsappGroupsData = {
+            "Paquete #1 - Compra y Ventas Generales": [
+                { num: 3, name: "Timbirichi | Compra - Venta", url: "https://chat.whatsapp.com/J9EvvpDePPeBmSESGx9k9W" },
+                { num: 4, name: "La Chopi | Compra - Venta", url: "https://chat.whatsapp.com/H59N9VstsBh5GXNrHWADQf" },
+                { num: 5, name: "Anuncios-cu-com | Publicidad", url: "https://chat.whatsapp.com/ChPrAPlQm1NFCg5ulAfBHx" },
+                { num: 6, name: "Anuncios-cu | Compra - Venta", url: "https://chat.whatsapp.com/KxEtac4JvoN9Q32lZJC6c1" },
+                { num: 7, name: "Merolico | Compra - Venta", url: "https://chat.whatsapp.com/JkV21VGOaZx9kCyhwrCLnw" },
+                { num: 8, name: "Ofertas-cu | Compra-Venta", url: "https://chat.whatsapp.com/LjQoRD4sYjM8v2pIDud9DS" },
+                { num: 9, name: "Mercado Libre | Ventas", url: "https://chat.whatsapp.com/CvqfQta1Bu70lGftisOfs9" },
+                { num: 10, name: "Ultra Ventas | CUBA", url: "https://chat.whatsapp.com/Gl7dDGG7FL3LClPmAKcaXo" },
+                { num: 12, name: "MEGA VENTAS | CUBA", url: "https://chat.whatsapp.com/I2zWpb1sSFvJKmoc2Id7o5" },
+                { num: 13, name: "Mercado Habana", url: "https://chat.whatsapp.com/GY9FgJzRIz49z1Dv2tYl06" },
+                { num: 14, name: "Ventas Online", url: "https://chat.whatsapp.com/LodoBAAEzjT8DRzUH1fOYl" },
+                { num: 16, name: "Shopping Habana", url: "https://chat.whatsapp.com/FKCxEfeT9vcJzlF8b5udwn" },
+                { num: 17, name: "Timbirichi", url: "https://chat.whatsapp.com/CbCozNDSCR4Lqvoxc2CFQB" },
+                { num: 18, name: "Cuba Gangas", url: "https://chat.whatsapp.com/E25YftNdwZpCeDa2kU30Gq" },
+                { num: 19, name: "Compra - Venta | Habana", url: "https://chat.whatsapp.com/HtG31mIsEjyG7sSAQsU7b3" },
+                { num: 20, name: "Revolico Cuba", url: "https://chat.whatsapp.com/EZevKiJpX2iCmi0m3vBwxy" }
+            ],
+            "Paquete #3 - Comercio Electrónico": [
+                { num: 41, name: "Ventas Online - Cuba", url: "https://chat.whatsapp.com/Gnb0DUSlNhOB9X55E8lwAv" },
+                { num: 42, name: "Ventas Habana", url: "https://chat.whatsapp.com/BG0glbBaKTxGfTi3yfqc7U" },
+                { num: 43, name: "Ganga Cuba | Ventas", url: "https://chat.whatsapp.com/JRg8keMyIeXGyzuqaaskRn" },
+                { num: 44, name: "Compra Venta | Cuba", url: "https://chat.whatsapp.com/IhmWpQ1geQYIKzm2V3id0f" },
+                { num: 46, name: "Vendedera de Todo | Cuba", url: "https://chat.whatsapp.com/J0WHLRSZfx0CKI7SLEqcRQ" },
+                { num: 47, name: "Habana Supermarket", url: "https://chat.whatsapp.com/E5Hna7kxpsUJmGSQw9TVPx" },
+                { num: 48, name: "Anuncios Habana", url: "https://chat.whatsapp.com/HLQJ30iSP8YLOj06XFcXHm" },
+                { num: 49, name: "Habana Shopping", url: "https://chat.whatsapp.com/IwccCnDU5lgLmumOosAmeE" },
+                { num: 50, name: "E-Commerce", url: "https://chat.whatsapp.com/EmWYtOBHo220weaTp1Whz8" },
+                { num: 51, name: "Supermarket", url: "https://chat.whatsapp.com/GPTRJjhpAcxAVUDoWJjRL3" },
+                { num: 52, name: "Cuba Store", url: "https://chat.whatsapp.com/F6Yzoj9rkR2085DQYwz8VH" },
+                { num: 53, name: "Habana Store", url: "https://chat.whatsapp.com/GUzZQWWbvwKDaosDNnvpJ1" },
+                { num: 54, name: "Mercado Online", url: "https://chat.whatsapp.com/LC7ao2WZOuIIXAtHddUE6L" },
+                { num: 55, name: "Vende Vende", url: "https://chat.whatsapp.com/BLoyBHI19k01HfizeVJwOO" },
+                { num: 56, name: "Compritas", url: "https://chat.whatsapp.com/BUqdqBbb3HA0J9bE3VXtty" },
+                { num: 57, name: "Ventas en Cuba", url: "https://chat.whatsapp.com/GZbdLzk1ZvYCu2LLF1gV3s" },
+                { num: 58, name: "Compra y Venta Habana", url: "https://chat.whatsapp.com/EG9NCXzoP2U4RyeDWZoxKv" },
+                { num: 59, name: "Ventas Revolico Habana", url: "https://chat.whatsapp.com/GxTQd9wrympDyL8ELbY86z" },
+                { num: 60, name: "Ventas en WhatsApp", url: "https://chat.whatsapp.com/IAZCo4v93S7Jt8iQiqAL1p" }
+            ],
+            "Paquete #4 - Todo Habana": [
+                { num: 61, name: "Todo Barato | Cuba", url: "https://chat.whatsapp.com/LjyscGGkSM61vAkmu1zgi6" },
+                { num: 62, name: "Compra y Vende de To2", url: "https://chat.whatsapp.com/Ja5ow6slO4tItRVi8syMtk" },
+                { num: 63, name: "Compra y Venta en Cuba", url: "https://chat.whatsapp.com/HoVX5WF2ObQIwMXTVGZ3AF" },
+                { num: 64, name: "Aquí hay de todo Ventas", url: "https://chat.whatsapp.com/LakeEeUi8DFIVqyvEF718r" },
+                { num: 65, name: "Revolico en WhatsApp", url: "https://chat.whatsapp.com/DCt8waHZDT3CIFSThA8Vi8" },
+                { num: 66, name: "Ventas Libres Cuba", url: "https://chat.whatsapp.com/BPwtlAnQqEgHZDNbMkgkrx" },
+                { num: 67, name: "Revolico en Cuba", url: "https://chat.whatsapp.com/CzullqJ4P8r0YBPjcsqBTM" },
+                { num: 68, name: "Compra y Venta | La Habana", url: "https://chat.whatsapp.com/CYOKMtTau0w4HttSVX0moR" },
+                { num: 69, name: "Habana Ventas Online", url: "https://chat.whatsapp.com/El6nfY2wZYw3XT4BHAnnNS" },
+                { num: 70, name: "Todo en La Habana | Ventas", url: "https://chat.whatsapp.com/DsbKmCDvg4aAARcXRLRthi" },
+                { num: 72, name: "Timbirichi en WhatsApp", url: "https://chat.whatsapp.com/CF1xRqhNFMOC3hITSAdYZr" },
+                { num: 73, name: "Ventas Cuba | Compras", url: "https://chat.whatsapp.com/DiJo2Yj32ag6M9I1sPTbIA" },
+                { num: 74, name: "Baratico Habana | Ventas", url: "https://chat.whatsapp.com/Hcag1leLrbsDnVIS4VwyXx" },
+                { num: 75, name: "SHOPPING CUBA | VENTAS", url: "https://chat.whatsapp.com/KsXI2QDuiOA51HvxClupZi" },
+                { num: 76, name: "Centro Habana | Ventas", url: "https://chat.whatsapp.com/Bi6LuH7ACjM0hfjBwB8VXP" },
+                { num: 77, name: "Ventas de to2 | Cuba", url: "https://chat.whatsapp.com/DVVWmYfvg71JJmNMNLOzqF" },
+                { num: 78, name: "Revoliqueo Compra y Venta", url: "https://chat.whatsapp.com/GrpPUV6INguABQvQDyOUAg" },
+                { num: 79, name: "Vedado | Compra y Venta", url: "https://chat.whatsapp.com/BWDWuJpxdhJ7rBCaLIkmUj" },
+                { num: 80, name: "Revolico Online | Habana", url: "https://chat.whatsapp.com/GX8uVpzEx7N30hwSq4lh9u" }
+            ],
+            "Paquete #5 - Ventas por Municipios": [
+                { num: 82, name: "Se Vende en La Habana", url: "https://chat.whatsapp.com/Df5y9ZyryiU5DCdopSkOh2" },
+                { num: 83, name: "Ventas Online Habana", url: "https://chat.whatsapp.com/KntfmxnXVl9HiDXyUjY8wg" },
+                { num: 84, name: "D´Todo Ventas Cuba", url: "https://chat.whatsapp.com/HhigMzaxKPM4jhuEXobWdr" },
+                { num: 85, name: "La Vendedera | Cuba", url: "https://chat.whatsapp.com/IOjZog10AUI9p1jFFQvIZ2" },
+                { num: 87, name: "Ofertas en la Habana", url: "https://chat.whatsapp.com/G7gDNJklUrH6zSrXvLZ8WF" },
+                { num: 88, name: "Ventas Habana | Gangas", url: "https://chat.whatsapp.com/LGnS9imQkH4KCwsgKlvaCp" },
+                { num: 89, name: "CubaGangas | Ventas HOT", url: "https://chat.whatsapp.com/L5UXpwUR8ukLrd0yJXVqcF" },
+                { num: 90, name: "RevolicCuba", url: "https://chat.whatsapp.com/BuLArbmwJcDLFV2Ou670de" },
+                { num: 91, name: "Cerro | Compra y Venta", url: "https://chat.whatsapp.com/H57y7hiosrXJf27h6ygmTW" },
+                { num: 92, name: "10 de Octubre | Compra y Venta", url: "https://chat.whatsapp.com/KlN0Z5epvfY7rS7dwcxZa0" },
+                { num: 93, name: "Habana Vieja | Compra y Venta", url: "https://chat.whatsapp.com/D655ZUefkotJIUlnYZcbiM" },
+                { num: 94, name: "Regla | Compra y Venta", url: "https://chat.whatsapp.com/KYcz79rQYMXKN2wsAXjJ5T" },
+                { num: 95, name: "Playa | Compra y Venta", url: "https://chat.whatsapp.com/ITSLPovyWF71USJA6hLC0h" },
+                { num: 96, name: "Plaza | Compra y Venta", url: "https://chat.whatsapp.com/GOjRABPfjhgFKn1l8n6mnQ" },
+                { num: 97, name: "La Lisa | Compra y Venta", url: "https://chat.whatsapp.com/BqGZfWPVj0RBOpC6vRJU7z" },
+                { num: 98, name: "Marianao | Compra y Venta", url: "https://chat.whatsapp.com/CaOvGj8eUMDBmQWNPixzab" },
+                { num: 99, name: "Centro Habana | Compra y Venta", url: "https://chat.whatsapp.com/IL7WCIUWcgFKbjuk2TAH5n" },
+                { num: 100, name: "Habana del Este | Compra y Venta", url: "https://chat.whatsapp.com/Gj7sSsl53sFA2NaFZSahuo" }
+            ],
+            "Paquete #6 - Municipios de Periferia": [
+                { num: 103, name: "Cotorro | Compra y Venta", url: "https://chat.whatsapp.com/KpHGQG1g24uHBfEWd7AFec" },
+                { num: 104, name: "Arroyo Naranjo | Compra y Venta", url: "https://chat.whatsapp.com/C65VHYgrL96649u8fclgEF" },
+                { num: 105, name: "Boyeros | Compra y Venta", url: "https://chat.whatsapp.com/LwARS2fPMMgAZ6uitnTUhv" },
+                { num: 106, name: "Merolico", url: "https://chat.whatsapp.com/FhHyQOrMj99H9dU2XVWLal" },
+                { num: 107, name: "Porlalivre Ventas", url: "https://chat.whatsapp.com/DgCCO8MSgDV6IxN8HtzoaG" },
+                { num: 108, name: "Ventas Revolico", url: "https://chat.whatsapp.com/JRZmZSVcLo4DPujZKewFh6" },
+                { num: 109, name: "Timbirichi", url: "https://chat.whatsapp.com/IejxtW4c9EWJxkmLnHsitt" },
+                { num: 110, name: "Anuncios-cu Ventas", url: "https://chat.whatsapp.com/GPHh2IimHQrD98xQhVVSKL" },
+                { num: 112, name: "Bazar Habana", url: "https://chat.whatsapp.com/ID2PGX8STGHFvJ9S9zkdj2" },
+                { num: 113, name: "Ventas de to2 Habana", url: "https://chat.whatsapp.com/GiRkByonIbIIs90ROtFUc6" },
+                { num: 114, name: "Ventas al Toque", url: "https://chat.whatsapp.com/KbQ4iMKvwkv9naG0loL0EW" },
+                { num: 115, name: "Vende en Cuba", url: "https://chat.whatsapp.com/LKus5j4xkXiEChQufz1iVV" }
+            ]
+        };
+
+        // --- 1. RENDERIZAR LOS GRUPOS DENTRO DEL ACORDEÓN WEB ---
+        function renderGruposWeb() {
+            const container = document.getElementById('grid-grupos-whatsapp');
+            if (!container) return;
+
+            let html = "";
+            for (const [paquete, grupos] of Object.entries(whatsappGroupsData)) {
+                html += `
+                <div class="col-span-1 bg-slate-900 border border-slate-800/80 p-4 rounded-xl space-y-3">
+                    <p class="text-xs font-black uppercase text-blue-400 tracking-wider flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">folder_open</span> ${paquete}
+                    </p>
+                    <div class="space-y-2 h-48 overflow-y-auto pr-1 custom-scrollbar text-[11px]">
+                        ${grupos.map(g => `
+                            <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-lg border border-slate-850">
+                                <span class="text-slate-300 font-bold truncate pr-1" title="${g.name}">#${g.num} ${g.name}</span>
+                                <a href="${g.url}" target="_blank" class="text-[9px] font-black uppercase bg-blue-900/30 text-blue-400 border border-blue-800 px-2 py-1 rounded hover:bg-blue-500 hover:text-white transition-all">Unirme</a>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // --- 2. CONTROL DE VISIBILIDAD EN WEB ---
+        window.toggleGruposWeb = function() {
+            const container = document.getElementById('container-grupos-web');
+            const btn = document.getElementById('btn-toggle-grupos-web');
+            if (!container || !btn) return;
+
+            const isHidden = container.classList.contains('hidden');
+            if (isHidden) {
+                container.classList.remove('hidden');
+                btn.innerHTML = `<span class="material-symbols-outlined text-sm">visibility_off</span> Ocultar Grupos`;
+                btn.className = "flex-1 sm:flex-none px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5";
+                renderGruposWeb();
+            } else {
+                container.classList.add('hidden');
+                btn.innerHTML = `<span class="material-symbols-outlined text-sm">visibility</span> Ver Grupos en Pantalla`;
+                btn.className = "flex-1 sm:flex-none px-4 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5";
+            }
+        }
+
+        // --- 3. AUTO-ENVÍO DIRECTO A SU WHATSAPP (SANEADO) ---
+        window.enviarGruposMiWhatsApp = function() {
+            if (!currentParent || !currentParent.telefono) {
+                return alert("No se pudo determinar tu número de teléfono. Intenta recargar la página.");
+            }
+
+            const inviteLink = document.getElementById('input-invite-link').value;
+            let targetPhone = currentParent.telefono.replace(/\D/g, '');
+            if (targetPhone.length === 8) targetPhone = "53" + targetPhone;
+
+            let mensaje = `📋 *BANCO DE GRUPOS DE RECLUTAMIENTO* 👥\n\n`;
+            mensaje += `Hola ${currentParent.nombre}! Aquí tienes la lista limpia de grupos que configuraste. Úsalos para promocionar tu enlace y captar subgestores.\n\n`;
+            mensaje += `🔗 *TU ENLACE DE RECLUTAMIENTO:* \n${inviteLink}\n\n`;
+            mensaje += `------------------------------------\n\n`;
+
+            for (const [paquete, grupos] of Object.entries(whatsappGroupsData)) {
+                mensaje += `📦 *${paquete.toUpperCase()}*\n`;
+                grupos.forEach(g => {
+                    mensaje += `▫️ *#${g.num} ${g.name}*\n  ↳ ${g.url}\n`;
+                });
+                mensaje += `\n`;
+            }
+
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const urlBase = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/send";
+            
+            window.open(`${urlBase}?phone=${targetPhone}&text=${encodeURIComponent(mensaje)}`, '_blank');
+        }
 
     </script>
 </body>
