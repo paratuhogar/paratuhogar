@@ -651,6 +651,27 @@
     </div>
 
     <!-- GRÁFICOS FILA 2 -->
+     <!-- GRÁFICO DE TRÁFICO WEB -->
+    <div class="section-title">Análisis de Tráfico Web</div>
+    <div class="chart-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <div class="chart-card-title">Tráfico Web Mensual (Últimos 3 Meses)</div>
+                <div class="chart-card-sub">Evolución de visitas únicas al sitio</div>
+            </div>
+            <!-- Filtro interactivo solicitado por el administrador -->
+            <div class="filter-group">
+                <span class="filter-label" style="font-family:'IBM Plex Mono', monospace; font-size:9px; color:var(--text-muted); letter-spacing:2px; text-transform:uppercase;">Segmentación</span>
+                <select id="f-traffic-type" class="filter-select" onchange="loadTrafficData()">
+                    <option value="TODOS">Todo el Tráfico (Orgánico + Gestores)</option>
+                    <option value="SIN_GESTORES">Excluir Clics de Gestores (Solo Orgánico)</option>
+                </select>
+            </div>
+        </div>
+        <div class="chart-wrap-tall" style="position: relative; height: 320px;">
+            <canvas id="chart-traffic-monthly"></canvas>
+        </div>
+    </div>
     <div class="section-title">Análisis de Productos</div>
     <div class="chart-grid-2" style="margin-bottom:2rem;">
         <div class="chart-card">
@@ -778,6 +799,9 @@ async function init() {
     let { data, error } = await sb.from('pedidos').select('*').order('fecha', { ascending: false });
     if (error) { console.error(error); }
     ALL_DATA = data || [];
+
+    // == CARGAR DATOS DE TRÁFICO WEB ==
+    await loadTrafficData();
 
     // Poblar filtros
     const gestores = [...new Set(ALL_DATA.map(r => r.gestor).filter(Boolean))].sort();
@@ -1465,7 +1489,7 @@ function renderInsights() {
     entregados.forEach(r => {
         const m = r.municipio || '?';
         if (!munMap[m]) munMap[m] = 0;
-        mMap[m]++;
+        munMap[m]++; // 🟢 CORREGIDO: Ahora dice munMap
     });
     const topMun = Object.entries(munMap).sort((a, b) => b[1] - a[1])[0];
 
@@ -1620,6 +1644,93 @@ function chartDefaults() {
             }
         }
     };
+}
+
+let TRAFFIC_RAW_DATA = [];
+
+async function loadTrafficData() {
+    const filterType = document.getElementById('f-traffic-type').value;
+
+    // 1. Generar rangos de fechas dinámicos para los últimos 3 meses
+    const today = new Date();
+    const monthsData = [];
+    for (let i = 2; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+        const end = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const key = `${year}-${month}`;
+        
+        monthsData.push({ key, start, end });
+    }
+
+    // 2. Ejecutar consultas de conteo directo e instantáneo a Supabase en paralelo
+    const promesas = monthsData.map(async (m) => {
+        let query = sb
+            .from('link_analytics')
+            .select('*', { count: 'exact', head: true }) // Solicita solo el número total, 0 filas descargadas
+            .gte('timestamp', m.start)
+            .lt('timestamp', m.end);
+
+        if (filterType === 'SIN_GESTORES') {
+            // Filtrar solo orgánico (Directo o nulo)
+            query = query.or('agent_name.is.null,agent_name.eq.Directo,agent_name.eq.');
+        }
+
+        const { count, error } = await query;
+        if (error) {
+            console.error(`Error de conteo en mes ${m.key}:`, error);
+            return { key: m.key, count: 0 };
+        }
+        return { key: m.key, count: count || 0 };
+    });
+
+    const resultados = await Promise.all(promesas);
+
+    // 3. Agrupar los resultados para la gráfica
+    const monthlyGroups = {};
+    resultados.forEach(r => {
+        monthlyGroups[r.key] = r.count;
+    });
+
+    console.log("📈 Conteo real de visitas sin límites de descarga:", monthlyGroups);
+
+    renderTrafficChart(monthlyGroups);
+}
+
+function renderTrafficChart(monthlyGroups) {
+    const labels = Object.keys(monthlyGroups).sort();
+    const dataValues = labels.map(l => monthlyGroups[l]);
+
+    // Renderizar gráfico
+    destroyChart('chart-traffic-monthly');
+    const ctx = document.getElementById('chart-traffic-monthly').getContext('2d');
+    charts['chart-traffic-monthly'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.map(l => fmtMonth(l)),
+            datasets: [{
+                label: 'Visitas Únicas',
+                data: dataValues,
+                backgroundColor: 'rgba(6, 182, 212, 0.6)', // Color Cyan
+                borderColor: '#06b6d4',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            ...chartDefaults(),
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => ` Visitas: ${context.raw}`
+                    }
+                }
+            }
+        }
+    });
 }
 
 // =====================================================

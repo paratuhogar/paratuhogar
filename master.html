@@ -66,14 +66,23 @@
     // --- 1. SEGURIDAD: CHECKPOINT SUPREMO ---
     const session = JSON.parse(localStorage.getItem('pth_session') || '{}');
     
-    // VERIFICACIÓN ESTRICTA:
-    // Solo entra si el rol es explícitamente 'superadmin' O si es el usuario Marcel/Ángel específico.
-    // Ya NO basta con ser "isAdmin: true".
-    const isSuperBoss = session.data?.rol === 'superadmin' || session.name === 'Marcel Montano';
+    // Normalizar textos para evitar fallos por mayúsculas, minúsculas o espacios accidentales
+    const sessionName = (session.name || '').trim().toLowerCase();
+    const sessionRol = (session.data?.rol || '').trim().toLowerCase();
+    const sessionDataName = (session.data?.nombre || '').trim().toLowerCase();
+
+    // Verificación robusta que protege el acceso solo para Ángel y Marcel
+    const isSuperBoss = 
+        sessionRol === 'superadmin' || 
+        sessionName === 'marcel montano' || 
+        sessionName === 'administrador supremo' ||
+        sessionDataName.includes('ángel') || 
+        sessionDataName.includes('angel') ||
+        sessionDataName.includes('marcel');
 
     if (!isSuperBoss) {
         alert("⛔ ACCESO DENEGADO: Área Financiera Restringida.\n\nTu nivel de administrador (Logística) no tiene permiso para ver el dinero.");
-        window.location.href = 'index.html'; // Patada de vuelta al inicio
+        window.location.href = 'index.html'; // Retorno seguro al catálogo
     }
 
     // Configuración Supabase

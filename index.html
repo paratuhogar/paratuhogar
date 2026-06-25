@@ -2166,7 +2166,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "256a"; 
+const versionActual = "256b"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2271,7 +2271,9 @@ async function checkShortLinks() {
 // IMPORTANTE: Ejecutar la función inmediatamente
 checkShortLinks();
 
+
     const MASTER_KEY = "HOGAR2025"; 
+    const ADMIN_SECRET_KEY = "ANGEL_ORO"; // <--- Esta línea corrige el ReferenceError
 
     const _0xaf21 = "NTIwMl9OSU1EQV9PUlA="; 
     const getAccess = () => atob(_0xaf21).split('').reverse().join('');
@@ -2743,6 +2745,30 @@ async function processRegister() {
 
     const waBtn = document.getElementById('floating-agent-contact');
     if (waBtn) waBtn.classList.add('hidden');
+
+    // ============================================================
+    // 🛡️ LÓGICA DE BOTÓN MAESTRO (FINANCIERO) (RESTAURADA)
+    // ============================================================
+    const userData = window.currentUserData || {};
+    const esSuperAdmin = userData.rol === 'superadmin' || name === 'Administrador' || name === 'Marcel Montano'; 
+
+    if (esSuperAdmin) {
+        // Localizamos el contenedor de los botones del header al lado del botón de salida
+        const headerContainer = btnLogout ? btnLogout.parentElement : document.querySelector('header div.flex.items-center');
+
+        if (headerContainer && !document.getElementById('btn-master-vault')) {
+            const btnMaster = document.createElement('button');
+            btnMaster.id = 'btn-master-vault'; 
+            btnMaster.innerHTML = `<span class="material-symbols-outlined text-amber-900 font-bold">shield</span>`;
+            
+            // Estilos: Dorado, con sombra, pulso suave para destacar
+            btnMaster.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-amber-400 hover:bg-amber-300 text-amber-900 transition-all shadow-lg shadow-amber-500/50 border-2 border-amber-200 animate-pulse ml-2";
+            btnMaster.title = "ACCESO A BÓVEDA FINANCIERA";
+            btnMaster.onclick = () => window.location.href = 'master.html';
+            
+            headerContainer.insertBefore(btnMaster, btnLogout);
+        }
+    }
 
     // Puerta secreta al radar (Solo para Marcel o Diana)
     if (name === "Marcel Montano" || name === "Diana") {
@@ -3601,7 +3627,11 @@ async function loadProducts() {
     }
     
     // Solo registramos el rastro si es un clic NUEVO (viene por URL)
-    if (urlGestor) await registrarRastroIP(urlGestor);
+    if (urlGestor) {
+        await registrarRastroIP(urlGestor);
+    } else {
+        await registrarRastroIP("Directo"); 
+    }
 
     // --- CARGA DE DATOS OPTIMIZADA ---
     try {
@@ -3715,6 +3745,12 @@ async function loadProducts() {
 
 async function registrarRastroIP(nombreGestor) {
     if (!nombreGestor) return;
+
+    // == EXCLUSIÓN DE GESTORES Y ADMINS ==
+    if (localStorage.getItem('pth_session')) {
+        console.log("ℹ️ Sesión activa detectada. No se registra tráfico interno.");
+        return;
+    }
 
     let ip = "";
     let pais = "Desconocido";
