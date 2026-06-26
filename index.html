@@ -2166,7 +2166,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "256b"; 
+const versionActual = "266"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2809,19 +2809,19 @@ async function processRegister() {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // CORRECCIÓN DE EGRESS: Pedir a Supabase SOLO los pedidos de este gestor
+    // 1. Pedir a Supabase SOLO los pedidos de este gestor
     const { data: misVentas, error } = await supabaseClient
         .from('pedidos')
         .select('*')
-        .eq('gestor', nombreGestor) // <-- LA MAGIA ESTÁ AQUÍ
+        .eq('gestor', nombreGestor)
         .order('fecha', { ascending: false })
-        .limit(500); // 500 es más que suficiente para el historial de un gestor
+        .limit(500);
 
     if(error) { console.error(error); return; }
     
     myOrdersData = misVentas; 
 
-    // 3. Cálculos Financieros
+    // 2. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
     const misPendientes = misVentas.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
 
@@ -2839,17 +2839,27 @@ async function loadProDashboard(nombreGestor) {
     if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
     if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
 
-    // 4. RENDERIZAR TABLA DE MIS PEDIDOS
+    // 3. RENDERIZAR TABLA DE MIS PEDIDOS
     renderMyOrdersList(misVentas);
 
-    // 5. GRÁFICA DE FUENTES
+    // 4. GRÁFICA DE FUENTES
     renderSourceChart(misVentas);
 
-    // 6. ENLACES (Link corto)
+    // 5. ENLACES (Link corto)
     await injectLinksSection(nombreGestor);
 
-    // 7. RENDERIZAR RANKING (Llamamos al bloqueado para aplicar la regla del Nivel 4)
-    renderLockedRanking(allPedidos, nombreGestor);
+    // 6. RENDERIZAR RANKING (Consultamos allPedidos de forma segura para evitar el crash)
+    const hace30dias = new Date();
+    hace30dias.setDate(hace30dias.getDate() - 30);
+    
+    const { data: allPedidos, error: errAll } = await supabaseClient
+        .from('pedidos')
+        .select('*')
+        .eq('estado', 'Entregado')
+        .gte('fecha', hace30dias.toISOString());
+
+    const rankingPedidos = allPedidos || [];
+    renderLockedRanking(rankingPedidos, nombreGestor);
 }
 
 // Función auxiliar para el Ranking (para mantener el código limpio)
