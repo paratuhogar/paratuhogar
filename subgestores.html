@@ -242,45 +242,104 @@
         let pedidosPendientes = [];
         let nominasList = [];
 
-        // 1. INICIALIZACIÓN Y SEGURIDAD
-window.addEventListener('load', async () => {
-    const savedSession = localStorage.getItem('pth_session');
-    if (!savedSession) {
-        mostrarBloqueo();
-        return;
-    }
+        // 1. INICIALIZACIÓN Y SEGURIDAD (VERSIÓN ULTRA-ROBUSTA INMUNE A ERRORES DE ESCRITURA)
+        window.addEventListener('load', async () => {
+            const savedSession = localStorage.getItem('pth_session');
+            if (!savedSession) {
+                mostrarBloqueo();
+                return;
+            }
 
-    const s = JSON.parse(savedSession);
+            const s = JSON.parse(savedSession);
 
-    // --- BLOQUEO CONSOLIDADO: Bloquea si es Administrador Central O si es un Subgestor ---
-    const isSubgestor = s.data && s.data.parent_id;
-    if (s.isAdmin || isSubgestor) {
-        mostrarBloqueo();
-        return;
-    }
+            // Bloquear si la sesión local dice que es Administrador (es panel de gestores)
+            if (s.isAdmin) {
+                mostrarBloqueo();
+                return;
+            }
 
-    // Descargar perfil fresco del gestor principal de Supabase
-    const { data: g, error } = await supabaseClient
-        .from('gestores')
-        .select('*')
-        .eq('nombre', s.name)
-        .single();
+            let g = null;
+            let queryError = null;
 
-    if (error || !g) {
-        mostrarBloqueo();
-        return;
-    }
+            // --- INTENTO 1: Buscar por ID (UUID único de base de datos) ---
+            const gestorId = (s.data && s.data.id) ? s.data.id : null;
+            if (gestorId) {
+                const { data, error } = await supabaseClient
+                    .from('gestores')
+                    .select('*')
+                    .eq('id', gestorId)
+                    .maybeSingle();
+                g = data;
+                queryError = error;
+            }
 
-    currentParent = g;
-    document.getElementById('label-parent-name').innerText = `Gestor Principal: ${g.nombre.toUpperCase()}`;
-    document.getElementById('parent-dashboard-content').classList.remove('hidden');
+            // --- INTENTO 2: Buscar por Teléfono (Saneado numéricamente, inmune a espacios) ---
+            const gestorTel = (s.data && s.data.telefono) ? s.data.telefono.replace(/\D/g, '') : null;
+            if (!g && gestorTel) {
+                const { data, error } = await supabaseClient
+                    .from('gestores')
+                    .select('*')
+                    .eq('telefono', gestorTel)
+                    .maybeSingle();
+                g = data;
+                queryError = error;
+            }
 
-    // Generar Link de Invitación
-    const inviteLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
-    document.getElementById('input-invite-link').value = inviteLink;
+            // --- INTENTO 3: Buscar por Email (Inmune a caracteres ocultos de nombres) ---
+            const gestorEmail = (s.data && s.data.email) ? s.data.email.trim() : null;
+            if (!g && gestorEmail) {
+                const { data, error } = await supabaseClient
+                    .from('gestores')
+                    .select('*')
+                    .eq('email', gestorEmail)
+                    .maybeSingle();
+                g = data;
+                queryError = error;
+            }
 
-    loadData();
-});
+            // --- INTENTO 4: Buscar por Nombre Parcial (Comodines % para ignorar espacios invisibles) ---
+            if (!g && s.name) {
+                const cleanName = s.name.trim();
+                const { data, error } = await supabaseClient
+                    .from('gestores')
+                    .select('*')
+                    .ilike('nombre', `%${cleanName}%`) // Busca el nombre aproximado si hay caracteres ocultos
+                    .maybeSingle();
+                g = data;
+                queryError = error;
+            }
+
+            // Si hay error, o no se encontró en la DB, o la cuenta no está activa, denegar
+            if (queryError || !g || g.estado !== 'activo') {
+                console.error("Acceso denegado: Gestor no encontrado, inactivo o error de red:", queryError);
+                mostrarBloqueo();
+                return;
+            }
+
+            // --- VALIDACIÓN DE SUBGESTOR CON DATA REAL ---
+            if (g.parent_id) {
+                console.log("Acceso denegado: El usuario es un subgestor.");
+                mostrarBloqueo();
+                return;
+            }
+
+            // --- AUTO-CORRECCIÓN DE CACHÉ ---
+            // Sincroniza y repara la memoria del navegador con los datos oficiales limpios
+            s.data = g;
+            s.name = g.nombre; 
+            localStorage.setItem('pth_session', JSON.stringify(s));
+
+            // Configuración del panel si todo es correcto
+            currentParent = g;
+            document.getElementById('label-parent-name').innerText = `Gestor Principal: ${g.nombre.toUpperCase()}`;
+            document.getElementById('parent-dashboard-content').classList.remove('hidden');
+
+            // Generar Link de Invitación
+            const inviteLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
+            document.getElementById('input-invite-link').value = inviteLink;
+
+            loadData();
+        });
 
         function mostrarBloqueo() {
             document.getElementById('alert-access-denied').classList.remove('hidden');
