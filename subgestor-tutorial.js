@@ -1,7 +1,7 @@
 /**
- * SISTEMA DE ONBOARDING INDEPENDIENTE PARA GESTORES PRINCIPALES
- * Este archivo inyecta de forma dinámica un tutorial de 3 tarjetas
- * que solo se muestra la primera vez que un Gestor Principal inicia sesión.
+ * SISTEMA DE ONBOARDING INDEPENDIENTE PARA GESTORES PRINCIPALES (4 TARJETAS)
+ * Este archivo inyecta de forma dinámica un tutorial que explica el sistema,
+ * cómo reclutar por WhatsApp, comisiones, aprobaciones y redirecciona al panel.
  */
 
 // Configuración de las Tarjetas Informativas
@@ -11,11 +11,24 @@ const tutorialSlides = [
         icon: "group_add",
         html: `
             <p class="text-sm leading-relaxed text-slate-300">
-                Ahora puedes reclutar a tus propios subgestores. Para evitar que tus clientes normales se registren como vendedores por curiosidad, la pestaña de registro está oculta en tus enlaces de ventas. Solo es visible desde tu <span class="text-blue-400 font-bold">Enlace de Reclutamiento</span>.
+                Ahora puedes reclutar a tus propios subgestores para multiplicar tus ventas. Para evitar que tus clientes normales se confundan y se registren como vendedores por error, la pestaña de registro está oculta en tus enlaces de venta convencionales.
             </p>
             <div class="bg-blue-950/40 border border-blue-900/50 p-4 rounded-xl space-y-2 mt-2 text-xs">
-                <p class="font-bold text-blue-300">Filtro de Ingreso (Aprobación):</p>
-                <p class="text-slate-400">Cuando alguien se registre con tu link, aparecerá en tu pestaña de <b>"Solicitudes de Ingreso por Aprobar"</b>. Podrás contactarlo por WhatsApp, explicarle que es una cuenta para trabajar y hacer clic en <b>"Aprobar y Saludar"</b> para activar su cuenta y enviarle sus claves.</p>
+                <p class="font-bold text-blue-300">Aprobación de Vendedores:</p>
+                <p class="text-slate-400">Cuando alguien se registre con tu link, aparecerá en tu sección de <b>"Solicitudes de Ingreso"</b>. Deberás contactarlo por WhatsApp, explicarle el trabajo y aprobarlo desde tu panel para activar su cuenta.</p>
+            </div>
+        `
+    },
+    {
+        title: "Reclutamiento y WhatsApp 📢",
+        icon: "share",
+        html: `
+            <p class="text-sm leading-relaxed text-slate-300">
+                La mejor manera de hacer crecer tu red es utilizando el <b>Enlace de Reclutamiento</b> que aparece en la parte superior de tu panel.
+            </p>
+            <div class="bg-blue-950/40 border border-blue-900/50 p-4 rounded-xl space-y-2 mt-2 text-xs">
+                <p class="font-bold text-blue-300">🚀 ¿Cómo usarlo para captar?</p>
+                <p class="text-slate-400">Copia tu enlace y compártelo en tus estados, canales o grupos de WhatsApp de empleo, clasificados o ventas en Cuba. El sistema identificará de forma automática a cualquiera que se una a través de él y lo pondrá en tu lista de espera.</p>
             </div>
         `
     },
@@ -24,7 +37,7 @@ const tutorialSlides = [
         icon: "tune",
         html: `
             <p class="text-sm leading-relaxed text-slate-300">
-                No utilizamos porcentajes. En tu pestaña <span class="text-indigo-400 font-bold">"Mis Precios (Config)"</span> verás todo el catálogo de productos disponibles en la tienda (sean precio libre o fijo).
+                No usamos porcentajes. En tu pestaña <span class="text-indigo-400 font-bold">"Mis Precios (Config)"</span> verás todo el catálogo disponible en stock (sean precios libres o fijos).
             </p>
             <ul class="space-y-3 mt-2 text-xs text-slate-400 list-none">
                 <li class="flex gap-2"><span class="text-indigo-400 font-bold">▪️</span> <b>Precios Libres:</b> Configura el precio público y determina el reparto manual en dólares.</li>
@@ -150,11 +163,11 @@ function renderOnboardingSlide() {
         btnBack.classList.remove('invisible');
     }
 
-    // --- MEJORA: Modificar el botón final para ir a la sección ---
+    // Modificar el botón final para ir a la sección
     const btnNext = document.getElementById('btn-onboarding-next');
     if (currentSlideIndex === tutorialSlides.length - 1) {
-        btnNext.innerText = "Ir a mi Red de Subgestores"; // Cambiado el texto
-        btnNext.className = "flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-black uppercase transition-all hover:brightness-110 shadow-lg shadow-blue-500/20 animate-pulse";
+        btnNext.innerText = "Ir a mi Red de Subgestores"; 
+        btnNext.className = "flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-black uppercase transition-all hover:brightness-110 shadow-lg shadow-emerald-500/20 animate-pulse";
     } else {
         btnNext.innerText = "Siguiente";
         btnNext.className = "flex-1 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20";
@@ -164,7 +177,7 @@ function renderOnboardingSlide() {
 function navigateOnboarding(direction) {
     if (direction === 1 && currentSlideIndex === tutorialSlides.length - 1) {
         closeOnboardingTutorial();
-        // --- MEJORA: Redirección automática al finalizar ---
+        // Redirección automática al finalizar el tutorial de 4 tarjetas
         window.location.href = 'subgestores.html'; 
         return;
     }

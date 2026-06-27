@@ -741,16 +741,25 @@
             </div>
 
             <!-- 2. SECCIÓN CONFIGURADOR DE PRECIOS (NUEVO) -->
-            <div id="sub-dash-precios" class="hidden animate-fade-in">
-                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl mb-6">
-                    <h3 class="text-lg font-black text-indigo-900 uppercase italic mb-2">Configurador de Precios</h3>
-                    <!-- Texto eliminado para que Facebook no lo lea. Se inyecta con JS -->
-<p id="msg-instrucciones-seguro" class="text-xs text-indigo-700 mb-4"></p>
-                    <div id="list-gestor-precios" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Se llena con JS -->
+        <div id="sub-dash-precios" class="hidden animate-fade-in">
+            <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl mb-6">
+                <!-- CABECERA CONFIGURADA CON BOTÓN MASIVO -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-indigo-100/50 pb-4">
+                    <div>
+                        <h3 class="text-lg font-black text-indigo-900 uppercase italic mb-1">Configurador de Precios</h3>
+                        <p id="msg-instrucciones-seguro" class="text-xs text-indigo-700"></p>
                     </div>
+                    <!-- BOTÓN AUTO-ASIGNAR -->
+                    <button onclick="autoAssignHalfCommissions()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs uppercase rounded-xl transition-all shadow-md shadow-emerald-500/20 hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5 shrink-0">
+                        <span class="material-symbols-outlined text-sm">bolt</span> Auto-Asignar 50% a Vacíos
+                    </button>
+                </div>
+                
+                <div id="list-gestor-precios" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Se llena con JS -->
                 </div>
             </div>
+        </div>
 
 
             <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
@@ -12070,6 +12079,111 @@ function agregarNuevoProveedor() {
         selectProv.value = nuevoProv; // La dejamos seleccionada
     }
 }
+
+// --- AUTO-ASIGNACIÓN DEL 50% DE COMISIÓN (VERSIÓN BLINDADA MULTI-ARRAY) ---
+    async function autoAssignHalfCommissions() {
+        const gestorActual = window.gestorName;
+        if (!gestorActual) return alert("Error de sesión. Por favor recarga la página.");
+
+        const confirmar = confirm("¿Deseas asignar automáticamente el 50% de la comisión de todos los productos en stock donde aún no has definido una comisión para tus subgestores?\n\n(Las comisiones que ya configuraste de manera manual se mantendrán intactas).");
+        if (!confirmar) return;
+
+        const btn = event.currentTarget;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<span class="loader" style="width:12px;height:12px;border:2px solid currentColor;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span> Procesando...`;
+        btn.disabled = true;
+
+        try {
+            // 1. Obtener todos los productos en stock actualmente
+            const { data: productosBase, error: errProd } = await supabaseClient
+                .from('productos')
+                .select('*')
+                .eq('disponible', 'SI');
+            
+            if (errProd) throw errProd;
+
+            // 2. Obtener precios personalizados guardados por este gestor
+            const { data: misPrecios, error: errPrecios } = await supabaseClient
+                .from('precios_personalizados')
+                .select('*')
+                .eq('gestor', gestorActual);
+            
+            if (errPrecios) throw errPrecios;
+
+            // Listas separadas para evitar conflicto de llaves en PostgREST
+            const toInsert = [];
+            const toUpdate = [];
+
+            productosBase.forEach(p => {
+                const saved = misPrecios.find(c => c.producto_id === p.id);
+                const hasCustomCom = saved && parseFloat(saved.comision_subgestor) > 0;
+
+                // Solo actuamos sobre aquellos productos donde no se ha definido comisión (es nula o 0)
+                if (!hasCustomCom) {
+                    const baseComm = parseFloat(p.comision) || 0;
+                    const halfComm = Math.floor(baseComm / 2); // Redondear comisión hacia abajo de forma entera
+
+                    if (saved && saved.id) {
+                        // Si ya existía el registro de precio, va a la lista de UPDATE (con ID de la fila)
+                        toUpdate.push({
+                            id: saved.id,
+                            gestor: gestorActual,
+                            producto_id: p.id,
+                            nuevo_precio: saved.nuevo_precio,
+                            comision_subgestor: halfComm
+                        });
+                    } else {
+                        // Si es un producto totalmente nuevo para este gestor, va a la lista de INSERT (absolutamente sin ID)
+                        toInsert.push({
+                            gestor: gestorActual,
+                            producto_id: p.id,
+                            nuevo_precio: p.precio,
+                            comision_subgestor: halfComm
+                        });
+                    }
+                }
+            });
+
+            const totalOperaciones = toInsert.length + toUpdate.length;
+
+            if (totalOperaciones === 0) {
+                alert("ℹ️ Todos tus productos activos ya cuentan con comisiones de subgestor personalizadas.");
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                return;
+            }
+
+            // 3. Ejecutar las operaciones correspondientes de forma limpia en Supabase
+            if (toInsert.length > 0) {
+                const { error: errIns } = await supabaseClient
+                    .from('precios_personalizados')
+                    .insert(toInsert);
+                if (errIns) throw errIns;
+            }
+
+            if (toUpdate.length > 0) {
+                const { error: errUpd } = await supabaseClient
+                    .from('precios_personalizados')
+                    .upsert(toUpdate);
+                if (errUpd) throw errUpd;
+            }
+
+            alert(`✅ ¡Asignación masiva exitosa!\nSe han configurado ${totalOperaciones} productos con el 50% de comisión para tu red.`);
+            
+            // Forzar limpieza de caché y refrescar vistas
+            sessionStorage.removeItem('pth_catalogo_cache');
+            sessionStorage.removeItem('pth_catalogo_cache_time');
+            renderGestorPricing();
+            loadProducts();
+
+        } catch (e) {
+            console.error(e);
+            alert("❌ Ocurrió un error al procesar la asignación masiva: " + e.message);
+        } finally {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+    }
 
 </script>
 
