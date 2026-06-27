@@ -69,6 +69,47 @@
                     </div>
                 </div>
 
+                <!-- NUEVA SECCIÓN: PLANTILLAS DE COPIADO RÁPIDO (SUGERENCIA 1) -->
+                <div class="border-b border-slate-800 pb-6 space-y-3">
+                    <h4 class="text-xs font-black uppercase text-indigo-400 flex items-center gap-1.5 tracking-wider">
+                        <span class="material-symbols-outlined text-sm">campaign</span> Anuncios de Reclutamiento (Copiado Rápido)
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Elige el anuncio de acuerdo a la plataforma donde vayas a publicar. Tu link de reclutamiento se incluirá automáticamente.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Anuncio 1: Estados -->
+                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-850 flex flex-col justify-between space-y-3">
+                            <div>
+                                <span class="px-2 py-0.5 bg-blue-900/30 text-blue-400 text-[9px] font-black uppercase rounded border border-blue-900">📲 Estados / Historias</span>
+                                <p class="text-[10px] text-slate-400 mt-2 leading-tight">Redacción corta con viñetas. Ideal para captar atención rápida en WhatsApp e Instagram.</p>
+                            </div>
+                            <button onclick="copiarAnuncio('estado')" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-bold border border-slate-700 active:scale-95 transition-all flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-sm">content_copy</span> Copiar Anuncio
+                            </button>
+                        </div>
+                        <!-- Anuncio 2: Facebook -->
+                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-850 flex flex-col justify-between space-y-3">
+                            <div>
+                                <span class="px-2 py-0.5 bg-purple-900/30 text-purple-400 text-[9px] font-black uppercase rounded border border-purple-900">👥 Facebook / Clasificados</span>
+                                <p class="text-[10px] text-slate-400 mt-2 leading-tight">Estructura detallada y formal. Describe con claridad las garantías de logística y comisiones.</p>
+                            </div>
+                            <button onclick="copiarAnuncio('facebook')" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-bold border border-slate-700 active:scale-95 transition-all flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-sm">content_copy</span> Copiar Anuncio
+                            </button>
+                        </div>
+                        <!-- Anuncio 3: Chat Directo -->
+                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-850 flex flex-col justify-between space-y-3">
+                            <div>
+                                <span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 text-[9px] font-black uppercase rounded border border-emerald-900">✉️ Mensaje Personalizado</span>
+                                <p class="text-[10px] text-slate-400 mt-2 leading-tight">Tono informal, amigable y empático. Diseñado para enviarlo a amigos o socios de confianza.</p>
+                            </div>
+                            <button onclick="copiarAnuncio('directo')" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-bold border border-slate-700 active:scale-95 transition-all flex items-center justify-center gap-1">
+                                <span class="material-symbols-outlined text-sm">content_copy</span> Copiar Anuncio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Fila Inferior: Banco de Grupos Promocionales -->
                 <div class="space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -80,6 +121,37 @@
                         </div>
                         
                         <div class="flex gap-2 w-full sm:w-auto">
+                            <!-- BOTÓN AUTO-ENVÍO -->
+                            <button onclick="enviarGruposMiWhatsApp()" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10 active:scale-95">
+                                <span class="material-symbols-outlined text-sm">send_to_mobile</span> Enviar a mi WhatsApp
+                            </button>
+                            <!-- BOTÓN MOSTRAR/OCULTAR EN WEB -->
+                            <button onclick="toggleGruposWeb()" id="btn-toggle-grupos-web" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">visibility</span> Ver Grupos en Pantalla
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- NUEVA CAJA DE ANÁLISIS ESTRATÉGICO Y POTENCIALIDADES (SUGERENCIA DE RECLUTAMIENTO) -->
+                    <div class="bg-indigo-950/20 border-l-4 border-indigo-500 p-4 rounded-r-xl space-y-2 text-xs">
+                        <h5 class="text-indigo-400 font-black uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base">psychology</span> Estrategia de Caza: ¿Por qué estos grupos son una mina de oro?
+                        </h5>
+                        <p class="text-slate-300 leading-relaxed font-medium">
+                            La gran mayoría de las personas que publican diariamente en estos grupos de compra-venta <span class="text-indigo-300 font-bold">ya son gestores de venta activos</span> para otros negocios. Son personas que ya saben vender, tienen experiencia cerrando tratos por chat y manejan sus propios clientes en La Habana [16].
+                        </p>
+                        <p class="text-slate-400 leading-relaxed font-medium">
+                            🎯 <b>Tu potencial aquí:</b> No estás buscando capacitar a principiantes. Al publicar tu anuncio en estas comunidades, les estás ofreciendo una herramienta superior: una tienda personalizada, un catálogo de importación fresco en stock (splits, neveras, baterías, plantas) y garantía real con entregas a domicilio [16]. Al unirlos a tu equipo, integras a tu red **vendedores profesionales listos para generar comisiones pasivas para ti desde el primer día** [16].
+                        </p>
+                    </div>
+
+                    <!-- CONTENEDOR DESPLEGABLE DE GRUPOS EN WEB -->
+                    <div id="container-grupos-web" class="hidden animate-fade-in bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="grid-grupos-whatsapp">
+                            <!-- Se llena dinámicamente con JS -->
+                        </div>
+                    </div>
+                </div>
                             <!-- BOTÓN AUTO-ENVÍO -->
                             <button onclick="enviarGruposMiWhatsApp()" class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10 active:scale-95">
                                 <span class="material-symbols-outlined text-sm">send_to_mobile</span> Enviar a mi WhatsApp
@@ -1199,6 +1271,84 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
             const urlBase = isMobile ? "whatsapp://send" : "https://web.whatsapp.com/send";
             
             window.open(`${urlBase}?phone=${targetPhone}&text=${encodeURIComponent(mensaje)}`, '_blank');
+        }
+
+    
+        // --- COPIAR ANUNCIOS DE RECLUTAMIENTO DINÁMICOS ---
+        window.copiarAnuncio = function(tipo) {
+            const inviteLink = document.getElementById('input-invite-link').value;
+            const gestorName = currentParent ? currentParent.nombre : "Asesor de Ventas";
+            
+            let texto = "";
+
+            if (tipo === 'estado') {
+                texto = 
+`🇨🇺 ¿QUIERES GANAR DINERO VENDIENDO EN CUBA? 🇨🇺
+
+¡Únete a mi equipo de ventas y genera ingresos extras de forma cómoda! 💸
+
+🔹 Te doy tu propia tienda online totalmente gratis.
+🔹 splits, refrigeradores, plantas eléctricas, baterías de litio y más en stock.
+🔹 Todas las entregas son con garantía real y factura en La Habana.
+🔹 Tú manejas tu propio tiempo, sin jefes ni horarios.
+
+👇 Toca este enlace y regístrate en mi equipo ahora mismo:
+${inviteLink}
+
+⚠️ _Una vez registrado/a, escríbeme para activarte de inmediato en el sistema._`;
+            } else if (tipo === 'facebook') {
+                texto = 
+`📢 CONVOCATORIA DE TRABAJO: BUSCO VENDEDORES ONLINE EN LA HABANA 🇨🇺
+
+¿Quieres trabajar desde casa vendiendo electrodomésticos de alta demanda, con garantía real y entrega a domicilio?
+
+¡Únete a mi red oficial de ventas y empieza a cobrar comisiones semanales!
+
+💎 BENEFICIOS AL UNIRTE A MI EQUIPO:
+1. Tu propia tienda online personalizada gratis para compartir.
+2. Catálogo de importación en stock (splits inverter, neveras, plantas, baterías de litio).
+3. Todas las ventas se entregan a domicilio con factura y garantía real.
+4. Soporte y coordinación directa conmigo para tus cierres.
+5. Puedes subir los precios flexibles para aumentar tu ganancia de forma libre.
+
+🚀 CÓMO EMPEZAR:
+Ingresa al enlace de registro de mi equipo y crea tu cuenta de vendedor en 1 minuto:
+👉 ${inviteLink}
+
+⚠️ Nota: El registro es exclusivo para personas interesadas en trabajar. Una vez completado, escríbeme para activarte de inmediato en el sistema.`;
+            } else if (tipo === 'directo') {
+                texto = 
+`¡Hola! ¿Cómo estás? Espero que todo marche bien por allá. 🙌
+
+Mira, te escribo porque estoy expandiendo mi equipo de ventas en ParaTuHogar y pensé en ti por si te interesa generar un dinero extra de forma cómoda.
+
+Básicamente, estoy reclutando subgestores. Te doy tu propio catálogo online con splits, refrigeradores y plantas eléctricas listas en almacén. Cada vez que consigas un comprador, yo me encargo de coordinar la logística y la entrega en La Habana, y tú te llevas una comisión directa en dólares por cada equipo entregado. 💸
+
+Puedes registrarte gratis y crear tu cuenta de vendedor aquí en mi red:
+👉 ${inviteLink}
+
+Si te animas a probarlo o quieres que te explique los detalles sin compromiso, regístrate y me avisas para activarte e ir planeando tus primeras ventas. 😉`;
+            }
+
+            // Copiar al portapapeles con feedback visual
+            const btn = event.currentTarget;
+            const originalContent = btn.innerHTML;
+            
+            navigator.clipboard.writeText(texto).then(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined text-sm">check</span> ¡Copiado!`;
+                btn.classList.replace('bg-slate-900', 'bg-emerald-900/40');
+                btn.classList.replace('text-slate-300', 'text-emerald-400');
+                btn.classList.add('border-emerald-900');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-emerald-900/40', 'bg-slate-900');
+                    btn.classList.replace('text-emerald-400', 'text-slate-300');
+                    btn.classList.remove('border-emerald-900');
+                }, 2000);
+            }).catch(err => {
+                alert("Error al copiar: " + err);
+            });
         }
 
     </script>
