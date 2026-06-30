@@ -2175,7 +2175,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "266"; 
+const versionActual = "306"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3691,35 +3691,42 @@ async function loadProducts() {
         productosRaw = productos; // Guardamos copia original para trabajar
         // =========================================================
 
-        // B. FUSIÓN DE PRECIOS Y COMISIONES DE SUBGESTORES (LA MAGIA DEFECTO/LIBRE)
+        // B. FUSIÓN DE PRECIOS Y FILTRADO DE VISIBILIDAD PARA SUBGESTORES (LA MAGIA DEFECTO/LIBRE)
        if (activeGestor) {
            const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
            const gestorConsultar = esSubgestor ? window.currentUserData.parent_nombre : activeGestor;
 
            const { data: preciosCustom } = await supabaseClient
                .from('precios_personalizados')
-               .select('producto_id, nuevo_precio, comision_subgestor')
+               .select('producto_id, nuevo_precio, comision_subgestor, visible_subgestor')
                .eq('gestor', gestorConsultar);
 
            if (preciosCustom && preciosCustom.length > 0) {
+               
+               // --- 🛡️ FILTRO DE VISIBILIDAD PARA EL SUBGESTOR ---
+               // Si el principal ocultó el producto para su red (visible_subgestor === false), lo eliminamos por completo del catálogo del subgestor
+               productosRaw = productosRaw.filter(p => {
+                   const custom = preciosCustom.find(c => c.producto_id === p.id);
+                   if (esSubgestor && custom && custom.visible_subgestor === false) {
+                       return false; // Se descarta el producto, el subgestor no lo verá jamás en la tienda
+                   }
+                   return true; // Se mantiene visible
+               });
+
+               // Fusionamos el resto normalmente
                productosRaw.forEach(p => {
                    const custom = preciosCustom.find(c => c.producto_id === p.id);
                    if (custom) {
                        const precioBase = parseFloat(p.precio);
                        const precioNuevo = parseFloat(custom.nuevo_precio);
                        
-                       // Solo aplicamos cambio de precio si el producto es libre
                        if (p.precio_flexible === 'SI') {
-                           if (precioNuevo >= precioBase) {
-                               p.precio = precioNuevo; 
-                           }
+                           if (precioNuevo >= precioBase) p.precio = precioNuevo; 
                        }
 
                        if (esSubgestor) {
-                           // El subgestor ve la comisión fija configurada por su padre
                            p.comision = (parseFloat(custom.comision_subgestor) || 0).toFixed(2);
                        } else {
-                           // El Gestor Principal ve su ganancia (Comisión base + sobreprecio si aplica)
                            if (p.precio_flexible === 'SI' && precioNuevo >= precioBase) {
                                const extra = precioNuevo - precioBase;
                                p.comision = (parseFloat(p.comision) + extra).toFixed(2);
@@ -3727,7 +3734,6 @@ async function loadProducts() {
                        }
                        p.is_custom = true; 
                    } else if (esSubgestor) {
-                       // Si el principal no ha asignado comisión a este producto, por seguridad es 0
                        p.comision = "0.00";
                    }
                });
@@ -9698,23 +9704,25 @@ async function renderGestorPricing() {
     const container = document.getElementById('list-gestor-precios');
     if(!container) return;
 
-    // 1. Filtrar TODOS los productos disponibles en stock (sean precio libre o fijo)
-    const { data: productosBase } = await supabaseClient
+    // 1. Filtrar TODOS los productos disponibles en stock
+    const { data: productosBase, error: errProd } = await supabaseClient
         .from('productos')
         .select('*')
         .eq('disponible', 'SI')
         .order('nombre');
 
-    if(!productosBase || productosBase.length === 0) {
+    if(errProd || !productosBase || productosBase.length === 0) {
         container.innerHTML = `<p class="text-gray-400 col-span-full text-center">No hay productos en stock.</p>`;
         return;
     }
 
-    // 2. Obtener precios y comisiones de subgestor personalizadas
-    const { data: misPrecios } = await supabaseClient
+    // 2. Obtener precios personalizados y visibilidades guardadas por este gestor
+    const { data: misPrecios, error: errPrecios } = await supabaseClient
         .from('precios_personalizados')
         .select('*')
         .eq('gestor', window.gestorName);
+
+    if (errPrecios) return;
 
     container.innerHTML = productosBase.map(p => {
         const saved = misPrecios.find(c => c.producto_id === p.id);
@@ -9725,6 +9733,9 @@ async function renderGestorPricing() {
             : parseFloat(p.precio);
             
         const comisionSubgestor = saved ? parseFloat(saved.comision_subgestor) || 0 : 0;
+        
+        // --- FILTRAR VISIBILIDAD (Por defecto es visible = true) ---
+        const visibleSubgestor = saved ? (saved.visible_subgestor !== false) : true;
         
         const gananciaBase = parseFloat(p.comision);
         const gananciaTotal = isFlexible 
@@ -9744,22 +9755,25 @@ async function renderGestorPricing() {
             ? `<span class="bg-blue-100 text-blue-700 text-[8px] font-black px-1.5 py-0.5 rounded">📈 PRECIO LIBRE</span>`
             : `<span class="bg-slate-100 text-slate-600 text-[8px] font-black px-1.5 py-0.5 rounded">🔒 PRECIO FIJO</span>`;
 
-        // --- VALIDACIÓN: Ocultar sub-comisión si es subgestor ---
+        // Validación de rol para ocultar subcomisiones
         const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
 
         const subgestorCommInputHtml = esSubgestor 
             ? `<div class="flex justify-between items-center pt-2">
-                    <span class="text-xs font-black text-emerald-500">
-                        Tu Ganancia: $${gananciaTotal.toFixed(0)}
-                    </span>
-                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
-                        class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1">
-                        <span class="material-symbols-outlined text-sm">save</span> Guardar
-                    </button>
-                    <!-- Campo oculto requerido para que no dé error la consulta -->
+                    <span class="text-xs font-black text-emerald-500">Tu Ganancia: $${gananciaTotal.toFixed(0)}</span>
+                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1"><span class="material-symbols-outlined text-sm">save</span> Guardar</button>
                     <input type="hidden" id="input-sub-com-${p.id}" value="0">
                </div>`
             : `<div>
+                    <!-- INTERRUPTOR VISIBILIDAD PARA EL SUBGESTOR (AUTO-GUARDADO AL CAMBIAR) -->
+                    <div class="flex justify-between items-center mb-2 border-b border-gray-150 pb-2">
+                        <span class="text-[9px] font-black uppercase text-indigo-400">Mostrar a mis Subgestores</span>
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                            <input type="checkbox" id="input-visible-${p.id}" ${visibleSubgestor ? 'checked' : ''} onchange="saveMyPrice('${p.id}', ${p.precio})" class="sr-only peer">
+                            <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+
                     <div class="flex justify-between items-center mb-1">
                         <label class="text-[9px] font-black uppercase text-purple-400">Comisión para el Subgestor ($)</label>
                         <span id="gain-label-${p.id}" class="text-[9px] font-bold text-emerald-500">
@@ -9799,7 +9813,7 @@ async function renderGestorPricing() {
                     ${priceInputHtml}
                 </div>
 
-                <!-- 2. COMISIÓN (Condicionada por Rol) -->
+                <!-- 2. COMISIÓN Y VISIBILIDAD -->
                 ${subgestorCommInputHtml}
             </div>
         </div>`;
@@ -9833,19 +9847,28 @@ window.calcGainUI = function(id, basePrice, baseComm, isFlexible) {
 window.saveMyPrice = async function(prodId, basePrice) {
     const inputPrice = document.getElementById(`input-price-${prodId}`);
     const inputSubCom = document.getElementById(`input-sub-com-${prodId}`);
+    const inputVisible = document.getElementById(`input-visible-${prodId}`);
     
     const newPrice = parseFloat(inputPrice.value);
     const newSubCom = parseFloat(inputSubCom.value) || 0;
+    // Si no existe el input (porque es subgestor), por defecto es visible = true
+    const isVisible = inputVisible ? inputVisible.checked : true;
+    
     const gestorActual = window.gestorName;
 
-    if (!gestorActual) return alert("Error de sesión. Recarga la página.");
+    if (!gestorActual) return alert("Error de sesión. Por favor recarga la página.");
     if (isNaN(newPrice)) return alert("El precio no es válido.");
     if (newPrice < basePrice) return alert(`El precio mínimo es $${basePrice}`);
 
     const btn = event.currentTarget;
     const originalContent = btn.innerHTML;
-    btn.innerHTML = `<span class="loader" style="width:15px;height:15px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span>`;
-    btn.disabled = true;
+    
+    // Si el guardado fue provocado por el cambio de toggle (autoguardado), no mostramos spinner en el botón de guardar
+    const isToggle = event.type === 'change';
+    if (!isToggle) {
+        btn.innerHTML = `<span class="loader" style="width:15px;height:15px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span>`;
+        btn.disabled = true;
+    }
 
     try {
         const { data: existing, error: searchError } = await supabaseClient
@@ -9862,7 +9885,11 @@ window.saveMyPrice = async function(prodId, basePrice) {
         if (existing) {
             const { error } = await supabaseClient
                 .from('precios_personalizados')
-                .update({ nuevo_precio: newPrice, comision_subgestor: newSubCom })
+                .update({ 
+                    nuevo_precio: newPrice, 
+                    comision_subgestor: newSubCom,
+                    visible_subgestor: isVisible 
+                })
                 .eq('id', existing.id);
             errorGuardado = error;
         } else {
@@ -9872,30 +9899,40 @@ window.saveMyPrice = async function(prodId, basePrice) {
                     gestor: gestorActual, 
                     producto_id: prodId, 
                     nuevo_precio: newPrice,
-                    comision_subgestor: newSubCom
+                    comision_subgestor: newSubCom,
+                    visible_subgestor: isVisible
                 }]);
             errorGuardado = error;
         }
 
         if (errorGuardado) throw errorGuardado;
 
-        btn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
-        btn.classList.replace('bg-indigo-600', 'bg-emerald-500');
+        if (!isToggle) {
+            btn.innerHTML = `<span class="material-symbols-outlined">check</span>`;
+            btn.classList.replace('bg-indigo-600', 'bg-emerald-500');
 
-        setTimeout(() => {
-            btn.innerHTML = `<span class="material-symbols-outlined text-lg">save</span>`;
-            btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
-            btn.disabled = false;
-            // Limpiar caché y recargar catálogo
+            setTimeout(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined text-lg">save</span>`;
+                btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
+                btn.disabled = false;
+                
+                sessionStorage.removeItem('pth_catalogo_cache');
+                sessionStorage.removeItem('pth_catalogo_cache_time');
+                loadProducts();
+            }, 1500);
+        } else {
+            // Si fue cambio de visibilidad, refrescamos silenciosamente el catálogo
             sessionStorage.removeItem('pth_catalogo_cache');
             sessionStorage.removeItem('pth_catalogo_cache_time');
             loadProducts();
-        }, 1500);
+        }
 
     } catch (e) {
         alert("Error al guardar: " + e.message);
-        btn.innerHTML = originalContent;
-        btn.disabled = false;
+        if (!isToggle) {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
     }
 }
 
