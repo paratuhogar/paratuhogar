@@ -2175,7 +2175,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "306"; 
+const versionActual = "107"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -9743,9 +9743,10 @@ async function renderGestorPricing() {
             : gananciaBase;
 
         const nombreSafe = p.nombre.replace(/"/g, '&quot;');
+        const minPricePermitido = parseFloat(p.precio) - gananciaBase;
 
         const priceInputHtml = isFlexible
-            ? `<input type="number" id="input-price-${p.id}" value="${precioActual}" min="${p.precio}" 
+            ? `<input type="number" id="input-price-${p.id}" value="${precioActual}" min="${minPricePermitido}" 
                   oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision}, true)"
                   class="w-full rounded-lg border-gray-200 text-xs font-black text-slate-700 px-3 py-1.5">`
             : `<input type="number" id="input-price-${p.id}" value="${precioActual}" disabled 
@@ -9769,7 +9770,7 @@ async function renderGestorPricing() {
                     <div class="flex justify-between items-center mb-2 border-b border-gray-150 pb-2">
                         <span class="text-[9px] font-black uppercase text-indigo-400">Mostrar a mis Subgestores</span>
                         <label class="relative inline-flex items-center cursor-pointer select-none">
-                            <input type="checkbox" id="input-visible-${p.id}" ${visibleSubgestor ? 'checked' : ''} onchange="saveMyPrice('${p.id}', ${p.precio})" class="sr-only peer">
+                            <input type="checkbox" id="input-visible-${p.id}" ${visibleSubgestor ? 'checked' : ''} onchange="saveMyPrice('${p.id}', ${p.precio}, ${p.comision})" class="sr-only peer">
                             <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
@@ -9785,7 +9786,7 @@ async function renderGestorPricing() {
                             oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision}, ${isFlexible})"
                             class="w-full rounded-lg border-gray-200 text-xs font-black text-slate-700 px-3 py-1.5">
                         
-                        <button onclick="saveMyPrice('${p.id}', ${p.precio})" 
+                        <button onclick="saveMyPrice('${p.id}', ${p.precio}, ${p.comision})"
                             class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all">
                             <span class="material-symbols-outlined text-lg">save</span>
                         </button>
@@ -9844,26 +9845,30 @@ window.calcGainUI = function(id, basePrice, baseComm, isFlexible) {
 }
 
 // Hacemos la función global asignándola a window
-window.saveMyPrice = async function(prodId, basePrice) {
+// --- GUARDAR PRECIO Y COMISIÓN CON SOPORTE PARA DESCUENTOS ---
+window.saveMyPrice = async function(prodId, basePrice, baseComm) {
     const inputPrice = document.getElementById(`input-price-${prodId}`);
     const inputSubCom = document.getElementById(`input-sub-com-${prodId}`);
     const inputVisible = document.getElementById(`input-visible-${prodId}`);
     
     const newPrice = parseFloat(inputPrice.value);
     const newSubCom = parseFloat(inputSubCom.value) || 0;
-    // Si no existe el input (porque es subgestor), por defecto es visible = true
     const isVisible = inputVisible ? inputVisible.checked : true;
     
     const gestorActual = window.gestorName;
 
     if (!gestorActual) return alert("Error de sesión. Por favor recarga la página.");
     if (isNaN(newPrice)) return alert("El precio no es válido.");
-    if (newPrice < basePrice) return alert(`El precio mínimo es $${basePrice}`);
+
+    // --- REGLA DE DESCUENTO: El precio mínimo permitido es el PRECIO AL COSTO ---
+    const minPrice = basePrice - baseComm;
+    if (newPrice < minPrice) {
+        return alert(`El precio mínimo permitido (al costo) es $${minPrice}`);
+    }
 
     const btn = event.currentTarget;
     const originalContent = btn.innerHTML;
     
-    // Si el guardado fue provocado por el cambio de toggle (autoguardado), no mostramos spinner en el botón de guardar
     const isToggle = event.type === 'change';
     if (!isToggle) {
         btn.innerHTML = `<span class="loader" style="width:15px;height:15px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span>`;
@@ -9921,7 +9926,6 @@ window.saveMyPrice = async function(prodId, basePrice) {
                 loadProducts();
             }, 1500);
         } else {
-            // Si fue cambio de visibilidad, refrescamos silenciosamente el catálogo
             sessionStorage.removeItem('pth_catalogo_cache');
             sessionStorage.removeItem('pth_catalogo_cache_time');
             loadProducts();
