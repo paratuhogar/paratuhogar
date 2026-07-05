@@ -3659,26 +3659,16 @@ function renderMyOrdersList(lista) {
     // 2. CARGA DE PRODUCTOS
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
 // --- FUNCIÓN MAESTRA DE CARGA Y FUSIÓN DE PRECIOS ---
+// =====================================================
+// CARGA DE PRODUCTOS CON CACHE BUSTING INTELIGENTE
+// =====================================================
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
-    let urlGestor = urlParams.get('gestor'); // Gestor en URL (Link nuevo)
-    const sessionGestor = window.gestorName; // Gestor Logueado (Tú editando)
+    let urlGestor = urlParams.get('gestor'); 
+    const sessionGestor = window.gestorName; 
 
-    // --- NUEVO: BUSCAR EN MEMORIA (El arreglo para Beatriz) ---
-    let memoriaGestor = null;
-    try {
-        // Buscamos si ya hay un "Botón Verde" activo en este teléfono
-        const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-        if (stored && stored.nombre) {
-            memoriaGestor = stored.nombre;
-        }
-    } catch(e) {}
-
-    // 1. PRIORIDAD DE GESTOR (CORREGIDA)
-    const activeGestor = sessionGestor || urlGestor || memoriaGestor;
-
-    // --- LOGICA LINK CORTO (Mantenida Intacta) ---
+    // Saneamiento de variables y redirección (Se mantiene intacto)
     if (slug) {
         const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
         if (data) {
@@ -3688,35 +3678,46 @@ async function loadProducts() {
         }
     }
     
-    // Solo registramos el rastro si es un clic NUEVO (viene por URL)
     if (urlGestor) {
         await registrarRastroIP(urlGestor);
     } else {
         await registrarRastroIP("Directo"); 
     }
 
-    // --- CARGA DE DATOS OPTIMIZADA ---
     try {
         // =========================================================
-        // A. Cargar Productos Base (CON EXPIRACIÓN DE CACHÉ DE 2 HORAS EN LOCALSTORAGE)
+        // VERIFICACIÓN RÁPIDA DE VERSIÓN DE INVENTARIO
         // =========================================================
         let productos = [];
         const cacheKey = 'pth_catalogo_cache';
         const cacheTimeKey = 'pth_catalogo_cache_time';
+        const cacheLocalKey = 'pth_ultimo_cambio_productos';
 
-        // Cambiado de sessionStorage a localStorage para persistir entre pestañas cerradas
         const catalogoCacheado = localStorage.getItem(cacheKey);
         const cacheTime = localStorage.getItem(cacheTimeKey);
+        const ultimoCambioLocal = localStorage.getItem(cacheLocalKey);
 
-        // Aumentado el tiempo de vida de 10 minutos a 2 horas (7,200,000 ms) para ahorrar egress
-        const CACHE_EXPIRATION_MS = 2 * 60 * 60 * 1000; 
-        const cacheValido = catalogoCacheado && cacheTime && (Date.now() - parseInt(cacheTime) < CACHE_EXPIRATION_MS);
+        // 1. Consulta de control ultra ligera (descarga pocos bytes)
+        const { data: ctrlData } = await supabaseClient
+            .from('control_sistema')
+            .select('valor')
+            .eq('clave', 'ultimo_cambio_productos')
+            .maybeSingle();
 
-        if (cacheValido) {
+        const ultimoCambioNube = ctrlData ? ctrlData.valor : null;
+        const CACHE_EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 horas de respaldo automático
+
+        // Si la marca de tiempo de la base de datos es diferente a la local, se fuerza la descarga
+        const hayNuevaVersion = ultimoCambioNube && (ultimoCambioNube !== ultimoCambioLocal);
+        const cacheExpirada = !cacheTime || (Date.now() - parseInt(cacheTime) > CACHE_EXPIRATION_MS);
+
+        const necesitaDescargar = !catalogoCacheado || hayNuevaVersion || cacheExpirada;
+
+        if (!necesitaDescargar) {
             productos = JSON.parse(catalogoCacheado);
-            console.log("📦 Catálogo cargado desde Caché Local (Válido)");
+            console.log("📦 Catálogo cargado desde Caché Local (Versión al día)");
         } else {
-            // Si expira, descarga de la nube
+            // Descargar catálogo completo de Supabase sólo si es estrictamente necesario
             const { data, error } = await supabaseClient
                 .from('productos')
                 .select('*')
@@ -3725,76 +3726,72 @@ async function loadProducts() {
             if (error) throw error;
             productos = data;
             
-            // Guardado persistente
+            // Guardar en caché y actualizar marcas de tiempo
             localStorage.setItem(cacheKey, JSON.stringify(productos));
             localStorage.setItem(cacheTimeKey, Date.now().toString());
-            console.log("☁️ Catálogo descargado desde Supabase y actualizado en Caché Local");
+            if (ultimoCambioNube) {
+                localStorage.setItem(cacheLocalKey, ultimoCambioNube);
+            }
+            console.log("☁️ Catálogo actualizado desde Supabase (Nueva versión detectada)");
         }
 
-        productosRaw = productos; // Guardamos copia original para trabajar
+        productosRaw = productos; 
         // =========================================================
 
-        // B. FUSIÓN DE PRECIOS Y FILTRADO DE VISIBILIDAD PARA SUBGESTORES (LA MAGIA DEFECTO/LIBRE)
-       if (activeGestor) {
-           const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
-           const gestorConsultar = esSubgestor ? window.currentUserData.parent_nombre : activeGestor;
+        // Fusionar precios personalizados de gestores (Se mantiene intacto)
+        if (activeGestor) {
+            const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+            const gestorConsultar = esSubgestor ? window.currentUserData.parent_nombre : activeGestor;
 
-           const { data: preciosCustom } = await supabaseClient
-               .from('precios_personalizados')
-               .select('producto_id, nuevo_precio, comision_subgestor, visible_subgestor')
-               .eq('gestor', gestorConsultar);
+            const { data: preciosCustom } = await supabaseClient
+                .from('precios_personalizados')
+                .select('producto_id, nuevo_precio, comision_subgestor, visible_subgestor')
+                .eq('gestor', gestorConsultar);
 
-           if (preciosCustom && preciosCustom.length > 0) {
-               
-               // --- 🛡️ FILTRO DE VISIBILIDAD PARA EL SUBGESTOR ---
-               // Si el principal ocultó el producto para su red (visible_subgestor === false), lo eliminamos por completo del catálogo del subgestor
-               productosRaw = productosRaw.filter(p => {
-                   const custom = preciosCustom.find(c => c.producto_id === p.id);
-                   if (esSubgestor && custom && custom.visible_subgestor === false) {
-                       return false; // Se descarta el producto, el subgestor no lo verá jamás en la tienda
-                   }
-                   return true; // Se mantiene visible
-               });
+            if (preciosCustom && preciosCustom.length > 0) {
+                productosRaw = productosRaw.filter(p => {
+                    const custom = preciosCustom.find(c => c.producto_id === p.id);
+                    if (esSubgestor && custom && custom.visible_subgestor === false) {
+                        return false; 
+                    }
+                    return true; 
+                });
 
-               // Fusionamos el resto normalmente
-               productosRaw.forEach(p => {
-                   const custom = preciosCustom.find(c => c.producto_id === p.id);
-                   if (custom) {
-                       const precioBase = parseFloat(p.precio);
-                       const precioNuevo = parseFloat(custom.nuevo_precio);
-                       
-                       if (p.precio_flexible === 'SI') {
-                           if (precioNuevo >= precioBase) p.precio = precioNuevo; 
-                       }
+                productosRaw.forEach(p => {
+                    const custom = preciosCustom.find(c => c.producto_id === p.id);
+                    if (custom) {
+                        const precioBase = parseFloat(p.precio);
+                        const precioNuevo = parseFloat(custom.nuevo_precio);
+                        
+                        if (p.precio_flexible === 'SI') {
+                            if (precioNuevo >= precioBase) p.precio = precioNuevo; 
+                        }
 
-                       if (esSubgestor) {
-                           p.comision = (parseFloat(custom.comision_subgestor) || 0).toFixed(2);
-                       } else {
-                           if (p.precio_flexible === 'SI' && precioNuevo >= precioBase) {
+                        if (esSubgestor) {
+                            p.comision = (parseFloat(custom.comision_subgestor) || 0).toFixed(2);
+                        } else {
+                            if (p.precio_flexible === 'SI' && precioNuevo >= precioBase) {
                                const extra = precioNuevo - precioBase;
                                p.comision = (parseFloat(p.comision) + extra).toFixed(2);
-                           }
-                       }
-                       p.is_custom = true; 
-                   } else if (esSubgestor) {
-                       p.comision = "0.00";
-                   }
-               });
-           } else if (esSubgestor) {
-               productosRaw.forEach(p => { p.comision = "0.00"; });
-           }
-       }
+                            }
+                        }
+                        p.is_custom = true; 
+                    } else if (esSubgestor) {
+                        p.comision = "0.00";
+                    }
+                });
+            } else if (esSubgestor) {
+                productosRaw.forEach(p => { p.comision = "0.00"; });
+            }
+        }
 
-        // --- RENDERIZADO FINAL ---
         renderCategories();
         renderProducts();
         
-        // Si estoy logueado, cargo mi configurador de precios
         if (sessionGestor) {
             renderGestorPricing(); 
         }
 
-        // Abrir producto si viene en URL
         const searchParam = urlParams.get('search');
         if (searchParam) {
             const existe = productosRaw.find(p => p.nombre === searchParam);
@@ -5823,7 +5820,12 @@ function renderAdminInventario(productosArg) {
 
 async function toggleStockAdmin(id, actual) {
     await supabaseClient.from('productos').update({ disponible: actual === 'SI' ? 'NO' : 'SI' }).eq('id', id);
-    // Forzamos la limpieza del caché local tras cambiar disponibilidad
+    
+    // Forzar actualización de versión para todos los gestores en la nube
+    await supabaseClient
+        .from('control_sistema')
+        .upsert([{ clave: 'ultimo_cambio_productos', valor: new Date().toISOString() }]);
+
     localStorage.removeItem('pth_catalogo_cache');
     localStorage.removeItem('pth_catalogo_cache_time');
     loadAdminData();
@@ -6205,7 +6207,11 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     if (!error) {
                 alert("✅ ¡Guardado correctamente!");
                 
-                // Limpiamos el caché del catálogo para que se actualice inmediatamente
+                // Forzar actualización de versión para todos los gestores en la nube
+                await supabaseClient
+                    .from('control_sistema')
+                    .upsert([{ clave: 'ultimo_cambio_productos', valor: new Date().toISOString() }]);
+
                 localStorage.removeItem('pth_catalogo_cache');
                 localStorage.removeItem('pth_catalogo_cache_time');
                 
@@ -6217,11 +6223,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
 
                 btn.disabled = false;
                 btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
-            } else {
-        alert("Error: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "Guardar Cambios";
-    }
+            }
 });
 
 
