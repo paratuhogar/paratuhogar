@@ -3662,11 +3662,26 @@ function renderMyOrdersList(lista) {
 // =====================================================
 // CARGA DE PRODUCTOS CON CACHE BUSTING INTELIGENTE
 // =====================================================
+// =====================================================
+// CARGA DE PRODUCTOS CON CACHE BUSTING INTELIGENTE (CORREGIDO)
+// =====================================================
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
     let urlGestor = urlParams.get('gestor'); 
     const sessionGestor = window.gestorName; 
+
+    // --- RECUPERAR GESTOR DESDE MEMORIA (SANEADO) ---
+    let memoriaGestor = null;
+    try {
+        const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+        if (stored && stored.nombre) {
+            memoriaGestor = stored.nombre;
+        }
+    } catch(e) {}
+
+    // Declarar activeGestor con prioridad de sesión, URL o memoria
+    const activeGestor = sessionGestor || urlGestor || memoriaGestor;
 
     // Saneamiento de variables y redirección (Se mantiene intacto)
     if (slug) {
