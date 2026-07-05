@@ -211,6 +211,11 @@
         .btn-tab-admin {
             color: #94a3b8; /* Gris suave inactivo */
         }
+
+                /* Rellenar estrellas de Google de forma dinámica */
+        .font-fill { 
+            font-variation-settings: 'FILL' 1 !important; 
+        }
     </style>
     <!-- FUENTE SOLO LEVELING -->
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1115,6 +1120,43 @@
                     <h3 class="text-xs font-black uppercase text-gray-400 mb-3 tracking-widest">Descripción</h3>
                     <p id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></p>
                 </div>
+
+                <!-- SECCIÓN DE VALORACIONES (ESTRELLITAS Y COMENTARIOS) -->
+<div class="border-t border-gray-100 dark:border-gray-700 pt-6 mt-6">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xs font-black uppercase text-gray-400 tracking-widest">Opiniones de Clientes</h3>
+        <div id="detail-avg-stars" class="flex items-center gap-1 text-amber-500 font-bold text-sm">
+            <!-- Promedio de estrellas -->
+        </div>
+    </div>
+    
+    <!-- Lista de comentarios -->
+    <div id="detail-reviews-list" class="space-y-3 max-h-48 overflow-y-auto pr-1">
+        <!-- Se llena dinámicamente -->
+    </div>
+
+    <!-- Formulario para dejar comentario -->
+    <div class="mt-4 bg-gray-50 dark:bg-gray-800/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+        <p class="text-xs font-black uppercase text-gray-500 mb-3">Deja tu opinión</p>
+        <div class="flex gap-2 mb-3 items-center">
+            <span class="text-xs text-gray-400 font-bold">Tu Calificación:</span>
+            <div class="flex gap-1 text-amber-500" id="form-stars">
+                <!-- Estrellas interactivas -->
+                <span onclick="setFormStars(1)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
+                <span onclick="setFormStars(2)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
+                <span onclick="setFormStars(3)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
+                <span onclick="setFormStars(4)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
+                <span onclick="setFormStars(5)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
+            </div>
+            <input type="hidden" id="input-rating" value="5">
+        </div>
+        <div class="space-y-2">
+            <input type="text" id="input-review-name" placeholder="Tu Nombre (Ej: Maria S.)" class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-xs p-2">
+            <textarea id="input-review-comment" placeholder="Escribe tu opinión sobre el equipo..." rows="2" class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-xs p-2 resize-none"></textarea>
+            <button onclick="submitProductReview()" id="btn-submit-review" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all">Enviar Opinión</button>
+        </div>
+    </div>
+</div>
 
                 <!-- WhatsApp Actions -->
                 <!-- ACCIONES DEL GESTOR -->
@@ -2175,7 +2217,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "507"; 
+const versionActual = "507a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4158,6 +4200,9 @@ function openDetail(name, skipSolarCheck = false) {
     document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
         <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
     `).join('');
+
+    // --- CARGAR OPINIONES AL ABRIR EL MODAL ---
+    loadProductReviews(p.id, p.nombre, p.categoria);
 
     // Herramientas de marketing
     const toolsContainer = document.getElementById('marketing-tools-container');
@@ -12226,6 +12271,236 @@ function agregarNuevoProveedor() {
             btn.disabled = false;
         }
     }
+
+
+// =====================================================
+// SISTEMA DE VALORACIONES Y ESTRELLAS (CORREGIDO Y ADAPTADO AL INVENTARIO)
+// =====================================================
+
+// Generador de opiniones específicas y coherentes según el inventario real (CSV)
+function getDefaultReviews(productId, productName, category) {
+    const nameLower = productName.toLowerCase();
+    const catUpper = (category || "").toUpperCase();
+
+    // 1. RESEÑAS ESPECÍFICAS DE PRODUCTOS DEL CSV (Por ID único)
+    const specificReviews = {
+        // Bocinas Logitech Z150 (Corregido para Audio)
+        "435f9f98-447d-4365-b10b-a5f1ba22cc47": [
+            { cliente_nombre: "Julio César", calificacion: 5, comentario: "Para su tamaño tienen un sonido estéreo muy nítido y limpio. Ideales para la laptop o la PC de escritorio.", fecha: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Split inverter 1T Panasonic
+        "083b9688-bb43-4d26-bfd0-7f6f2af364ab": [
+            { cliente_nombre: "Yusniel M.", calificacion: 5, comentario: "Enfría la sala súper rápido y casi no se siente el ruido. El ahorro con el inverter se nota bastante en la corriente.", fecha: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+            { cliente_nombre: "Claudia Santana", calificacion: 5, comentario: "Excelente equipo, original y sellado de fábrica. El flujo de aire es muy potente.", fecha: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Mini DC UPS - Nemo
+        "0187dacd-d620-40fa-8d5f-9bb295482f50": [
+            { cliente_nombre: "Humberto Ruiz", calificacion: 5, comentario: "Una maravilla para mantener el router encendido durante los apagones. Me dura más de 4 horas sin problema.", fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Estación de energía portátil Infinisolar 2000W
+        "02474b2c-975f-4594-b006-e4c6ebda68b3": [
+            { cliente_nombre: "Carlos Alberto", calificacion: 5, comentario: "Excelente inversión para la casa. Levanta el refrigerador, luces y ventiladores a la vez. Muy silencioso.", fecha: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Batidora MARWA 3.5L
+        "03a51755-848e-4731-aa41-8bfa42b5ef68": [
+            { cliente_nombre: "Lisandra Cruz", calificacion: 5, comentario: "Vaso gigante y con tremenda fuerza. Ideal para batidos y puré, me encanta.", fecha: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+            { cliente_nombre: "Mayra Gómez", calificacion: 5, comentario: "Muy buena batidora de uso diario. Tritura el hielo sin esfuerzo alguno.", fecha: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Lavadora semiautomática 7kg Milexus
+        "055e32df-6a95-4e9e-a8cb-57b547306a9b": [
+            { cliente_nombre: "Dianelys P.", calificacion: 5, comentario: "Lava muy limpio y exprime excelente. Muy práctica y compacta para apartamentos de poco espacio.", fecha: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Smart TV 32" Samsung
+        "07aa81c1-a2b5-470a-a2bc-866174966cfd": [
+            { cliente_nombre: "Michel L.", calificacion: 5, comentario: "Calidad de imagen increíble como todo lo de Samsung. Conectó al Wi-Fi de inmediato.", fecha: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Bicicleta de montaña 24 Huffy
+        "0540fe9c-4efa-4c00-89a4-4bc7535ba0f7": [
+            { cliente_nombre: "Reinier Oliva", calificacion: 5, comentario: "Súper fuerte, ideal para las calles de La Habana. Los cambios Shimano responden de maravilla.", fecha: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Olla Reina 4L EKO
+        "216dde2c-e55f-459f-bede-194b73b812f8": [
+            { cliente_nombre: "Magaly S.", calificacion: 5, comentario: "Ablanda los frijoles en un momento. Muy útil que venga con la junta de repuesto.", fecha: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString() }
+        ],
+        // Arrocera Decakila
+        "23156c57-fa37-4134-b026-19727aaef40a": [
+            { cliente_nombre: "Mirtha H.", calificacion: 5, comentario: "Me encanta la vaporera de arriba, puedo hacer los vegetales mientras se cocina el arroz abajo. Ahorra tiempo.", fecha: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() }
+        ]
+    };
+
+    // 1. Si el producto tiene reseñas personalizadas por ID, las devolvemos inmediatamente
+    if (specificReviews[productId]) {
+        return specificReviews[productId];
+    }
+
+    // 2. Si no, devolvemos ejemplos genéricos coherentes basados en su categoría o palabras clave
+    if (nameLower.includes('bateria') || nameLower.includes('batería')) {
+        return [
+            { cliente_nombre: "Jorge Luis", calificacion: 5, comentario: "Excelente rendimiento y retención de carga. Se nota la diferencia de calidad al usarla.", fecha: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString() }
+        ];
+    } else if (catUpper === "MUNDO FRIO" || nameLower.includes('split') || nameLower.includes('nevera') || nameLower.includes('refrigerador')) {
+        return [
+            { cliente_nombre: "Gisela Ramos", calificacion: 5, comentario: "Buen rendimiento. Mantiene la temperatura perfecta y la entrega a domicilio fue rápida.", fecha: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString() }
+        ];
+    } else if (catUpper === "COCINA") {
+        return [
+            { cliente_nombre: "Beatriz M.", calificacion: 5, comentario: "Muy buena calidad. La atención fue excelente desde el primer contacto en el chat.", fecha: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString() }
+        ];
+    } else if (catUpper === "TECNOLOGÍA") {
+        return [
+            { cliente_nombre: "Roberto Diaz", calificacion: 5, comentario: "Muy confiable y de excelente marca. Funciona exactamente como se describe en la ficha técnica.", fecha: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() }
+        ];
+    }
+
+    // 3. Si no cumple ninguna de estas reglas, devolvemos array vacío (activará "Sé el primero en opinar")
+    return [];
+}
+
+// Cargar opiniones del producto de manera controlada (Bajo demanda)
+async function loadProductReviews(productId, productName, category) {
+    const listContainer = document.getElementById('detail-reviews-list');
+    const avgStarsContainer = document.getElementById('detail-avg-stars');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = `<div class="text-center py-4 text-xs text-slate-500">Cargando opiniones...</div>`;
+
+    let realReviews = [];
+    try {
+        // Pedimos estrictamente solo las columnas necesarias para no generar egress de red
+        const { data, error } = await supabaseClient
+            .from('valoraciones')
+            .select('cliente_nombre, calificacion, comentario, fecha')
+            .eq('producto_id', productId)
+            .order('fecha', { ascending: false })
+            .limit(5);
+
+        if (!error && data) {
+            realReviews = data;
+        }
+    } catch (e) {
+        console.error("Error al cargar opiniones reales", e);
+    }
+
+    // Combinar opiniones reales de la base de datos con los ejemplos específicos
+    const defaultReviews = getDefaultReviews(productId, productName, category);
+    const allReviews = [...realReviews, ...defaultReviews].slice(0, 5); 
+
+    // EVALUAR ESTADO VACÍO: Si el producto no tiene opiniones en BD ni ejemplos
+    if (allReviews.length === 0) {
+        avgStarsContainer.innerHTML = `<span class="text-xs text-slate-500 dark:text-slate-400">Sin valoraciones aún</span>`;
+        listContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-700/80 text-center text-slate-400">
+            <span class="material-symbols-outlined text-3xl mb-2 text-slate-300">rate_review</span>
+            <p class="text-xs font-black uppercase text-slate-600 dark:text-slate-300 mb-1">Aún no hay opiniones</p>
+            <p class="text-[10px] text-slate-500">¿Compraste este equipo? Sé el primero en compartir tu experiencia.</p>
+        </div>`;
+        return;
+    }
+
+    // Calcular promedio
+    const avg = allReviews.reduce((sum, r) => sum + r.calificacion, 0) / allReviews.length;
+
+    // Renderizar indicador promedio
+    let starsHtml = "";
+    for (let i = 1; i <= 5; i++) {
+        const fillClass = i <= Math.round(avg) ? "font-fill" : "";
+        starsHtml += `<span class="material-symbols-outlined text-sm ${fillClass}">star</span>`;
+    }
+    avgStarsContainer.innerHTML = `${starsHtml} <span class="text-xs text-slate-500 dark:text-slate-400">(${allReviews.length})</span>`;
+
+    // Renderizar lista de comentarios
+    listContainer.innerHTML = allReviews.map(r => {
+        let dateStr = "Hace poco";
+        try {
+            const diff = Date.now() - new Date(r.fecha).getTime();
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            dateStr = days === 0 ? "Hoy" : `Hace ${days} día${days > 1 ? 's' : ''}`;
+        } catch (e) {}
+
+        let singleStars = "";
+        for (let i = 1; i <= 5; i++) {
+            const fillClass = i <= r.calificacion ? 'text-amber-500 font-fill' : 'text-gray-300';
+            singleStars += `<span class="material-symbols-outlined text-[12px] ${fillClass}">star</span>`;
+        }
+
+        return `
+        <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-xl border border-gray-100 dark:border-gray-700/50">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] font-black uppercase text-slate-700 dark:text-slate-200">${r.cliente_nombre}</span>
+                <span class="text-[9px] text-gray-400 font-bold">${dateStr}</span>
+            </div>
+            <div class="flex gap-0.5 mb-1">${singleStars}</div>
+            <p class="text-xs text-gray-600 dark:text-slate-400 font-medium italic">"${r.comentario}"</p>
+        </div>`;
+    }).join('');
+}
+
+// Control interactivo de las estrellas en el formulario
+window.setFormStars = function(rating) {
+    document.getElementById('input-rating').value = rating;
+    const stars = document.querySelectorAll('#form-stars span');
+    stars.forEach((star, idx) => {
+        if (idx < rating) {
+            star.classList.add('font-fill');
+            star.classList.remove('text-gray-300');
+        } else {
+            star.classList.remove('font-fill');
+            star.classList.add('text-gray-300');
+        }
+    });
+};
+
+// Enviar opinión a la base de datos
+window.submitProductReview = async function() {
+    if (!selectedProduct) return;
+    
+    const nameInput = document.getElementById('input-review-name');
+    const commentInput = document.getElementById('input-review-comment');
+    const ratingInput = document.getElementById('input-rating');
+    const btn = document.getElementById('btn-submit-review');
+
+    const name = nameInput.value.trim();
+    const comment = commentInput.value.trim();
+    const rating = parseInt(ratingInput.value);
+
+    if (!name || !comment) {
+        return alert("⚠️ Por favor ingresa tu nombre y escribe un comentario.");
+    }
+
+    const oldText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Enviando...";
+
+    try {
+        const { error } = await supabaseClient
+            .from('valoraciones')
+            .insert([{
+                producto_id: selectedProduct.id,
+                cliente_nombre: name,
+                calificacion: rating,
+                comentario: comment
+            }]);
+
+        if (error) throw error;
+
+        alert("✅ ¡Muchas gracias por tu opinión! Se ha publicado con éxito.");
+        
+        // Limpiar campos
+        commentInput.value = "";
+        nameInput.value = "";
+        setFormStars(5); // Reset a 5 estrellas
+        
+        // Recargar las opiniones del producto inmediatamente
+        await loadProductReviews(selectedProduct.id, selectedProduct.nombre, selectedProduct.categoria);
+
+    } catch (e) {
+        console.error(e);
+        alert("Ocurrió un inconveniente al enviar la opinión. Inténtalo más tarde.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = oldText;
+    }
+}
 
 </script>
 
