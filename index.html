@@ -12358,7 +12358,7 @@ function getDefaultReviews(productId, productName, category) {
     return [];
 }
 
-// Cargar opiniones del producto de manera controlada (Bajo demanda)
+// Cargar opiniones del producto directamente desde la base de datos (Supabase)
 async function loadProductReviews(productId, productName, category) {
     const listContainer = document.getElementById('detail-reviews-list');
     const avgStarsContainer = document.getElementById('detail-avg-stars');
@@ -12368,13 +12368,13 @@ async function loadProductReviews(productId, productName, category) {
 
     let realReviews = [];
     try {
-        // Pedimos estrictamente solo las columnas necesarias para no generar egress de red
+        // Optimizado: se piden estrictamente solo los datos de valoraciones y un límite de 5
         const { data, error } = await supabaseClient
             .from('valoraciones')
             .select('cliente_nombre, calificacion, comentario, fecha')
             .eq('producto_id', productId)
             .order('fecha', { ascending: false })
-            .limit(5);
+            .limit(5); // Mantener un límite bajo cuida tu consumo de red
 
         if (!error && data) {
             realReviews = data;
@@ -12383,12 +12383,8 @@ async function loadProductReviews(productId, productName, category) {
         console.error("Error al cargar opiniones reales", e);
     }
 
-    // Combinar opiniones reales de la base de datos con los ejemplos específicos
-    const defaultReviews = getDefaultReviews(productId, productName, category);
-    const allReviews = [...realReviews, ...defaultReviews].slice(0, 5); 
-
-    // EVALUAR ESTADO VACÍO: Si el producto no tiene opiniones en BD ni ejemplos
-    if (allReviews.length === 0) {
+    // EVALUAR ESTADO VACÍO: Si el producto no tiene opiniones en la base de datos
+    if (realReviews.length === 0) {
         avgStarsContainer.innerHTML = `<span class="text-xs text-slate-500 dark:text-slate-400">Sin valoraciones aún</span>`;
         listContainer.innerHTML = `
         <div class="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-700/80 text-center text-slate-400">
@@ -12399,8 +12395,8 @@ async function loadProductReviews(productId, productName, category) {
         return;
     }
 
-    // Calcular promedio
-    const avg = allReviews.reduce((sum, r) => sum + r.calificacion, 0) / allReviews.length;
+    // Calcular promedio de las opiniones de la base de datos
+    const avg = realReviews.reduce((sum, r) => sum + r.calificacion, 0) / realReviews.length;
 
     // Renderizar indicador promedio
     let starsHtml = "";
@@ -12408,10 +12404,10 @@ async function loadProductReviews(productId, productName, category) {
         const fillClass = i <= Math.round(avg) ? "font-fill" : "";
         starsHtml += `<span class="material-symbols-outlined text-sm ${fillClass}">star</span>`;
     }
-    avgStarsContainer.innerHTML = `${starsHtml} <span class="text-xs text-slate-500 dark:text-slate-400">(${allReviews.length})</span>`;
+    avgStarsContainer.innerHTML = `${starsHtml} <span class="text-xs text-slate-500 dark:text-slate-400">(${realReviews.length})</span>`;
 
-    // Renderizar lista de comentarios
-    listContainer.innerHTML = allReviews.map(r => {
+    // Renderizar lista de comentarios de la base de datos
+    listContainer.innerHTML = realReviews.map(r => {
         let dateStr = "Hace poco";
         try {
             const diff = Date.now() - new Date(r.fecha).getTime();
