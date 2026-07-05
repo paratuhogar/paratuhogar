@@ -558,14 +558,14 @@ function calculateDevFee(precioVenta) {
         // --- VARIABLE GLOBAL NECESARIA ---
 let pedidosRawAdmin = []; 
 
-// --- LA FUNCIÓN QUE FALTABA ---
+// --- LA FUNCIÓN QUE FALTABA (OPTIMIZADA PARA CONTROLAR EL EGRESS) ---
 async function loadAdminData() {
     console.log("🔄 Actualizando datos del Sistema...");
 
-    // 1. Cargar todos los pedidos ENTREGADOS (necesarios para calcular tu deuda y estadísticas)
+    // 1. Cargar todos los pedidos ENTREGADOS (Optimizado seleccionando solo columnas de cálculo)
     const { data, error } = await supabaseClient
         .from('pedidos')
-        .select('*')
+        .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema, orden_dia')
         .eq('estado', 'Entregado');
 
     if (error) {
@@ -854,7 +854,7 @@ async function loadConciliacion() {
     // 2. Obtener datos
     const { data: rawData, error } = await supabaseClient
         .from('pedidos')
-        .select('*')
+        .select('id, orden_dia, fecha, cliente, producto, proveedor, total, costo_mensajeria, estado_financiero, pago_gestor')
         .eq('estado', 'Entregado');
 
     if(error) return console.error(error);
@@ -1015,9 +1015,9 @@ async function loadNomina() {
     // A. Cargar Pedidos CONCILIADOS (Listos para pagar al gestor) pero NO LIQUIDADOS
     const { data: pedidos, error: errP } = await supabaseClient
         .from('pedidos')
-        .select('*')
+        .select('id, orden_dia, gestor, comision_total, producto, pago_gestor, cliente, total')
         .eq('estado_financiero', 'Conciliado_Prov') 
-        .neq('pago_gestor', 'Pagado'); 
+        .neq('pago_gestor', 'Pagado');
 
     // B. Cargar Movimientos de Caja
     const { data: caja, error: errC } = await supabaseClient.from('caja_gestores').select('*');
@@ -1291,7 +1291,7 @@ async function loadDashboard() {
     if(allOrdersCache.length === 0) {
         const { data } = await supabaseClient
             .from('pedidos')
-            .select('*')
+            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema')
             .eq('estado', 'Entregado')
             .order('fecha', { ascending: true }); // Ordenar por fecha para el gráfico
         

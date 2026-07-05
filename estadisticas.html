@@ -796,7 +796,10 @@ async function init() {
     ALL_PRODUCTS = productsData || [];
 
     // Cargar todos los pedidos
-    let { data, error } = await sb.from('pedidos').select('*').order('fecha', { ascending: false });
+    // Cargar pedidos históricos pidiendo únicamente métricas de cálculo
+    let { data, error } = await sb.from('pedidos')
+        .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio')
+        .order('fecha', { ascending: false });
     if (error) { console.error(error); }
     ALL_DATA = data || [];
 

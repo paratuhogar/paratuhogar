@@ -2175,7 +2175,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "107"; 
+const versionActual = "507"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -2818,13 +2818,13 @@ async function processRegister() {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // 1. Pedir a Supabase SOLO los pedidos de este gestor
-    const { data: misVentas, error } = await supabaseClient
-        .from('pedidos')
-        .select('*')
-        .eq('gestor', nombreGestor)
-        .order('fecha', { ascending: false })
-        .limit(500);
+    // 1. Pedir a Supabase solo las columnas requeridas y limitar a 150 registros para reducir egress
+const { data: misVentas, error } = await supabaseClient
+    .from('pedidos')
+    .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_gestor')
+    .eq('gestor', nombreGestor)
+    .order('fecha', { ascending: false })
+    .limit(150); // Borde de seguridad reducido para mitigar consumo de red
 
     if(error) { console.error(error); return; }
     
@@ -2861,11 +2861,12 @@ async function loadProDashboard(nombreGestor) {
     const hace30dias = new Date();
     hace30dias.setDate(hace30dias.getDate() - 30);
     
-    const { data: allPedidos, error: errAll } = await supabaseClient
-        .from('pedidos')
-        .select('*')
-        .eq('estado', 'Entregado')
-        .gte('fecha', hace30dias.toISOString());
+    // Obtiene el ranking pidiendo únicamente las columnas esenciales del cálculo
+        const { data: allPedidos, error: errAll } = await supabaseClient
+            .from('pedidos')
+            .select('gestor, comision_total, producto, created_at, fecha, estado')
+            .eq('estado', 'Entregado')
+            .gte('fecha', hace30dias.toISOString());
 
     const rankingPedidos = allPedidos || [];
     renderLockedRanking(rankingPedidos, nombreGestor);
@@ -3655,25 +3656,25 @@ async function loadProducts() {
     // --- CARGA DE DATOS OPTIMIZADA ---
     try {
         // =========================================================
-        // A. Cargar Productos Base (CON EXPIRACIÓN DE CACHÉ A LOS 10 MINUTOS)
+        // A. Cargar Productos Base (CON EXPIRACIÓN DE CACHÉ DE 2 HORAS EN LOCALSTORAGE)
         // =========================================================
         let productos = [];
         const cacheKey = 'pth_catalogo_cache';
         const cacheTimeKey = 'pth_catalogo_cache_time';
-        
-        const catalogoCacheado = sessionStorage.getItem(cacheKey);
-        const cacheTime = sessionStorage.getItem(cacheTimeKey);
-        
-        // Definimos un tiempo de vida para el caché de 10 minutos (600,000 milisegundos)
-        const CACHE_EXPIRATION_MS = 10 * 60 * 1000; 
+
+        // Cambiado de sessionStorage a localStorage para persistir entre pestañas cerradas
+        const catalogoCacheado = localStorage.getItem(cacheKey);
+        const cacheTime = localStorage.getItem(cacheTimeKey);
+
+        // Aumentado el tiempo de vida de 10 minutos a 2 horas (7,200,000 ms) para ahorrar egress
+        const CACHE_EXPIRATION_MS = 2 * 60 * 60 * 1000; 
         const cacheValido = catalogoCacheado && cacheTime && (Date.now() - parseInt(cacheTime) < CACHE_EXPIRATION_MS);
 
         if (cacheValido) {
-            // Si el caché aún no ha expirado, lo usamos para ahorrar datos
             productos = JSON.parse(catalogoCacheado);
-            console.log("📦 Catálogo cargado desde Caché (Válido)");
+            console.log("📦 Catálogo cargado desde Caché Local (Válido)");
         } else {
-            // Si el caché expiró o no existe, descargamos datos frescos de Supabase
+            // Si expira, descarga de la nube
             const { data, error } = await supabaseClient
                 .from('productos')
                 .select('*')
@@ -3682,10 +3683,10 @@ async function loadProducts() {
             if (error) throw error;
             productos = data;
             
-            // Guardamos el nuevo catálogo y la hora exacta de la descarga
-            sessionStorage.setItem(cacheKey, JSON.stringify(productos));
-            sessionStorage.setItem(cacheTimeKey, Date.now().toString());
-            console.log("☁️ Catálogo descargado desde Supabase y actualizado en Caché");
+            // Guardado persistente
+            localStorage.setItem(cacheKey, JSON.stringify(productos));
+            localStorage.setItem(cacheTimeKey, Date.now().toString());
+            console.log("☁️ Catálogo descargado desde Supabase y actualizado en Caché Local");
         }
 
         productosRaw = productos; // Guardamos copia original para trabajar
@@ -5778,8 +5779,8 @@ function renderAdminInventario(productosArg) {
 async function toggleStockAdmin(id, actual) {
     await supabaseClient.from('productos').update({ disponible: actual === 'SI' ? 'NO' : 'SI' }).eq('id', id);
     // Forzamos la limpieza del caché local tras cambiar disponibilidad
-    sessionStorage.removeItem('pth_catalogo_cache');
-    sessionStorage.removeItem('pth_catalogo_cache_time');
+    localStorage.removeItem('pth_catalogo_cache');
+    localStorage.removeItem('pth_catalogo_cache_time');
     loadAdminData();
 }
 
@@ -6160,8 +6161,8 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
                 alert("✅ ¡Guardado correctamente!");
                 
                 // Limpiamos el caché del catálogo para que se actualice inmediatamente
-                sessionStorage.removeItem('pth_catalogo_cache');
-                sessionStorage.removeItem('pth_catalogo_cache_time');
+                localStorage.removeItem('pth_catalogo_cache');
+                localStorage.removeItem('pth_catalogo_cache_time');
                 
                 closeModalProd();
                 
@@ -7883,7 +7884,7 @@ async function loadClientCRM() {
         .from('pedidos')
         .select('cliente, ci, telefono, direccion')
         .order('fecha', { ascending: false })
-        .limit(1000); // Revisamos los últimos 1000
+        .limit(300); // Revisamos los últimos 1000
 
     // FILTRO DE ORO: Si NO es admin, filtra solo sus ventas
     if (!esAdmin && gestorActual) {
@@ -9921,13 +9922,13 @@ window.saveMyPrice = async function(prodId, basePrice, baseComm) {
                 btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
                 btn.disabled = false;
                 
-                sessionStorage.removeItem('pth_catalogo_cache');
-                sessionStorage.removeItem('pth_catalogo_cache_time');
+                localStorage.removeItem('pth_catalogo_cache');
+                localStorage.removeItem('pth_catalogo_cache_time');
                 loadProducts();
             }, 1500);
         } else {
-            sessionStorage.removeItem('pth_catalogo_cache');
-            sessionStorage.removeItem('pth_catalogo_cache_time');
+            localStorage.removeItem('pth_catalogo_cache');
+            localStorage.removeItem('pth_catalogo_cache_time');
             loadProducts();
         }
 
@@ -12212,8 +12213,8 @@ function agregarNuevoProveedor() {
             alert(`✅ ¡Asignación masiva exitosa!\nSe han configurado ${totalOperaciones} productos con el 50% de comisión para tu red.`);
             
             // Forzar limpieza de caché y refrescar vistas
-            sessionStorage.removeItem('pth_catalogo_cache');
-            sessionStorage.removeItem('pth_catalogo_cache_time');
+            localStorage.removeItem('pth_catalogo_cache');
+            localStorage.removeItem('pth_catalogo_cache_time');
             renderGestorPricing();
             loadProducts();
 
@@ -13033,7 +13034,7 @@ async function loadPendingGestores() {
     .from('link_analytics')
     .select('agent_name, timestamp')
     .order('timestamp', { ascending: false })
-    .limit(10000); // <-- AGREGAR LÍMITE EVITA EL ERROR 400
+    .limit(2000); // <-- AGREGAR LÍMITE EVITA EL ERROR 400
 
     const now = new Date();
     const zombiesUpdate = [];
