@@ -3773,28 +3773,37 @@ async function loadProducts() {
                 });
 
                 productosRaw.forEach(p => {
-                    const custom = preciosCustom.find(c => c.producto_id === p.id);
-                    if (custom) {
-                        const precioBase = parseFloat(p.precio);
-                        const precioNuevo = parseFloat(custom.nuevo_precio);
-                        
-                        if (p.precio_flexible === 'SI') {
-                            if (precioNuevo >= precioBase) p.precio = precioNuevo; 
-                        }
+            p.comision_original_base = parseFloat(p.comision) || 0; // Guardamos comisión original base de la DB
+            const custom = preciosCustom.find(c => c.producto_id === p.id);
+            if (custom) {
+                const precioBase = parseFloat(p.precio);
+                const precioNuevo = parseFloat(custom.nuevo_precio);
+                
+                if (p.precio_flexible === 'SI') {
+                    if (precioNuevo >= precioBase) p.precio = precioNuevo; 
+                }
 
-                        if (esSubgestor) {
-                            p.comision = (parseFloat(custom.comision_subgestor) || 0).toFixed(2);
-                        } else {
-                            if (p.precio_flexible === 'SI' && precioNuevo >= precioBase) {
-                               const extra = precioNuevo - precioBase;
-                               p.comision = (parseFloat(p.comision) + extra).toFixed(2);
-                            }
-                        }
-                        p.is_custom = true; 
-                    } else if (esSubgestor) {
-                        p.comision = "0.00";
+                if (esSubgestor) {
+                    // Calculamos la comisión total real del producto para el gestor principal (base + sobreprecio)
+                    const extraParent = (p.precio_flexible === 'SI' && precioNuevo >= precioBase) ? (precioNuevo - precioBase) : 0;
+                    p.comision_original_pool = p.comision_original_base + extraParent;
+                    
+                    p.comision = (parseFloat(custom.comision_subgestor) || 0).toFixed(2);
+                } else {
+                    if (p.precio_flexible === 'SI' && precioNuevo >= precioBase) {
+                       const extra = precioNuevo - precioBase;
+                       p.comision = (parseFloat(p.comision) + extra).toFixed(2);
                     }
-                });
+                    p.comision_original_pool = parseFloat(p.comision);
+                }
+                p.is_custom = true; 
+            } else {
+                p.comision_original_pool = p.comision_original_base;
+                if (esSubgestor) {
+                    p.comision = "0.00";
+                }
+            }
+        });
             } else if (esSubgestor) {
                 productosRaw.forEach(p => { p.comision = "0.00"; });
             }
@@ -4262,6 +4271,8 @@ function openDetail(name, skipSolarCheck = false) {
             qty: 1,
             precio_venta: Number(selectedProduct.precio),
             comision_actual: Number(selectedProduct.comision || 0),
+            comision_original_pool: Number(selectedProduct.comision_original_pool || selectedProduct.comision || 0),
+            comision_original_pool_base: Number(selectedProduct.comision_original_pool || selectedProduct.comision || 0),
             shipping_linea: defaultShipping,
             cup_extra: selectedProduct.cup_extra || 0
         });
@@ -4624,6 +4635,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 
         let codPedido = "";
         try {
+            // 1. Consultamos los últimos consecutivos de la tabla principal
             const { data: ultimosPedidos, error: errLast } = await supabaseClient
                 .from('pedidos')
                 .select('orden_dia')
@@ -4634,18 +4646,35 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
             if (errLast) throw errLast;
 
+            // 2. Consultamos los últimos consecutivos pendientes en la cola de subgestores
+            const { data: ultimosSub, error: errSub } = await supabaseClient
+                .from('pedidos_subgestores')
+                .select('orden_dia')
+                .eq('proveedor', prov)
+                .not('orden_dia', 'like', '%TEMP%')
+                .order('created_at', { ascending: false })
+                .limit(20);
+
             let maximoNumero = 0;
-            if (ultimosPedidos && ultimosPedidos.length > 0) {
-                const numeros = ultimosPedidos.map(p => {
-                    if (!p.orden_dia) return 0;
-                    const partes = p.orden_dia.split('-');
-                    const num = parseInt(partes[partes.length - 1]);
-                    return isNaN(num) ? 0 : num;
-                });
-                if (numeros.length > 0) {
-                    maximoNumero = Math.max(...numeros);
+            
+            // Función interna para extraer y comparar el número más alto de ambas tablas
+            const procesarNumeros = (lista) => {
+                if (lista && lista.length > 0) {
+                    lista.forEach(p => {
+                        if (!p.orden_dia) return;
+                        const partes = p.orden_dia.split('-');
+                        const num = parseInt(partes[partes.length - 1]);
+                        if (!isNaN(num) && num > maximoNumero) {
+                            maximoNumero = num;
+                        }
+                    });
                 }
-            }
+            };
+
+            procesarNumeros(ultimosPedidos);
+            procesarNumeros(ultimosSub);
+
+            // Generamos el consecutivo real asegurando que no choque con ningún pendiente
             codPedido = `${prov}-${maximoNumero + 1}`;
         } catch (e) {
             const random = Math.floor(1000 + Math.random() * 9000);
@@ -4654,7 +4683,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
         let detalleCuerpo = "";
         let subtotalProductos = 0; 
-        let comisionTotalVale = 0; 
+        let comisionTotalVale = 0; // Guardará la comisión configurada para el subgestor ($3)
+        let comisionOriginalPoolVale = 0; // Guardará la comisión total del producto en la tienda ($5)
         
         // Asignación inteligente del costo de envío
         let envioTotalVale = 0;
@@ -4669,6 +4699,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             
             if (activeGestor !== "Venta Directa") {
                 comisionTotalVale += (item.comision_actual * item.qty);
+                comisionOriginalPoolVale += ((item.comision_original_pool || item.comision_actual) * item.qty);
             }
             
             // Ya no mostramos el envío individual aquí, solo el equipo
@@ -4707,47 +4738,49 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         const direccionFinalDB = notasExtended ? `${dirC} (${localidadC}) [NOTA: ${notasExtended}]` : `${dirC} (${localidadC})`;
 
         // --- INTERCEPTOR DE ÓRDENES DE SUBGESTORES ---
-const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
-let insertPromise;
+        const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+        let insertPromise;
 
-    if (esSubgestor) {
-        // El pedido va a la cola de aprobación del Gestor Principal
-        insertPromise = supabaseClient.from('pedidos_subgestores').insert([{
-            subgestor_id: window.currentUserData.id,
-            subgestor_nombre: window.currentUserData.nombre,
-            parent_gestor_id: window.currentUserData.parent_id,
-            parent_gestor_nombre: window.currentUserData.parent_nombre || 'Gestor Principal',
-            cliente: nombreC,
-            telefono: telC,
-            ci: ciC,
-            direccion: direccionFinalDB,
-            municipio: municipioC,
-            producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
-            total: totalUSDVale,
-            costo_mensajeria: envioTotalVale,
-            comision_total: comisionTotalVale,
-            proveedor: prov
-        }]);
-    } else {
-        // Pedido normal (va directo al Almacén Central)
-        insertPromise = supabaseClient.from('pedidos').insert([{
-            gestor: activeGestor, 
-            cliente: nombreC, 
-            ci: ciC, 
-            telefono: telC, 
-            direccion: direccionFinalDB, 
-            municipio: municipioC,
-            producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
-            total: totalUSDVale,              
-            costo_mensajeria: envioTotalVale, 
-            comision_total: comisionTotalVale, 
-            estado: 'Pendiente', 
-            pago_gestor: 'Pendiente',
-            proveedor: prov, 
-            orden_dia: codPedido, 
-            origen: origenPedido
-        }]);
-    }
+        if (esSubgestor) {
+            // El pedido va a la cola de aprobación del Gestor Principal
+            insertPromise = supabaseClient.from('pedidos_subgestores').insert([{
+                subgestor_id: window.currentUserData.id,
+                subgestor_nombre: window.currentUserData.nombre,
+                parent_gestor_id: window.currentUserData.parent_id,
+                parent_gestor_nombre: window.currentUserData.parent_nombre || 'Gestor Principal',
+                cliente: nombreC,
+                telefono: telC,
+                ci: ciC,
+                direccion: direccionFinalDB,
+                municipio: municipioC,
+                producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
+                total: totalUSDVale,
+                costo_mensajeria: envioTotalVale,
+                comision_total: comisionOriginalPoolVale, // <-- Guardamos la comisión completa original de la tienda ($5)
+                comision_subgestor: comisionTotalVale,   // <-- Guardamos la comisión del subgestor por separado ($3)
+                orden_dia: codPedido,                     // <-- Guardamos el consecutivo generado para que no se pierda
+                proveedor: prov
+            }]);
+        } else {
+            // Pedido normal (va directo al Almacén Central)
+            insertPromise = supabaseClient.from('pedidos').insert([{
+                gestor: activeGestor, 
+                cliente: nombreC, 
+                ci: ciC, 
+                telefono: telC, 
+                direccion: direccionFinalDB, 
+                municipio: municipioC,
+                producto: productos.map(p => `${p.qty}x ${p.nombre} [USD]`).join(' + '),
+                total: totalUSDVale,              
+                costo_mensajeria: envioTotalVale, 
+                comision_total: comisionTotalVale, 
+                estado: 'Pendiente', 
+                pago_gestor: 'Pendiente',
+                proveedor: prov, 
+                orden_dia: codPedido, 
+                origen: origenPedido
+            }]);
+        }
         promesas.push(insertPromise);
     }
 
@@ -7289,19 +7322,23 @@ async function processLogin() {
     let gestorAprobado = null;
 
     try {
-        const { data, error } = await supabaseClient
-            .from('gestores')
-            .select('*')
-            .eq('nombre', user)
-            .eq('password', pass)
-            .single();
+            // Limpiamos caracteres no numéricos por si escribe su número de teléfono
+            const phoneSearch = user.replace(/\D/g, '');
 
-        if (error || !data) {
-            return alert("❌ Usuario o contraseña incorrectos.");
-        } 
-        
-        if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
-        if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
+            // Buscamos por nombre (ilike), email o por teléfono limpio
+            const { data, error } = await supabaseClient
+                .from('gestores')
+                .select('*')
+                .eq('password', pass)
+                .or(`nombre.ilike."${user}",email.eq."${user}",telefono.eq."${phoneSearch || 'XYZ_NONE'}"`)
+                .maybeSingle();
+
+            if (error || !data) {
+                return alert("❌ Usuario o contraseña incorrectos.");
+            } 
+            
+            if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
+            if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
 
         // =================================================================
         // NUEVO: SI EL GESTOR ERA UN "ZOMBIE", LO REVIVIMOS AUTOMÁTICAMENTE
@@ -7578,6 +7615,7 @@ function updateCartItemPrice(index, newValue) {
     // Matemáticamente: Comisión Original + (PrecioVenta - PrecioOriginal)
     const diferencia = newPrice - Number(item.precio);
     item.comision_actual = Number(item.comision) + diferencia;
+    item.comision_original_pool = Number(item.comision_original_pool_base || item.comision_original_pool) + diferencia;
 
     // 4. Actualizar vista
     renderCart(); // Vuelve a pintar para mostrar la nueva ganancia y validar input

@@ -457,7 +457,71 @@
                 return;
             }
 
-            container.innerHTML = pedidosPendientes.map(p => `
+            // Traemos productos y precios personalizados para realizar un recálculo en tiempo real
+            let allProds = [];
+            let customPrices = [];
+            try {
+                const { data: prods } = await supabaseClient
+                    .from('productos')
+                    .select('id, nombre, comision, precio');
+                allProds = prods || [];
+
+                const { data: customs } = await supabaseClient
+                    .from('precios_personalizados')
+                    .select('producto_id, comision_subgestor, nuevo_precio')
+                    .eq('gestor', currentParent.nombre);
+                customPrices = customs || [];
+            } catch (e) {
+                console.error("Error al sincronizar tablas de comisión:", e);
+            }
+
+            container.innerHTML = pedidosPendientes.map(p => {
+                // Cálculo cruzado en tiempo real por producto
+                const lines = p.producto.split(' + ');
+                let calculatedTotalComm = 0;
+                let calculatedSubgestorComm = 0;
+
+                lines.forEach(line => {
+                    let qty = 1;
+                    const qtyMatch = line.match(/^(\d+)x/);
+                    if (qtyMatch) qty = parseInt(qtyMatch[1]);
+
+                    let nombreLimpio = line.replace(/^\d+x\s+/, '').split('[')[0].trim();
+                    
+                    const prod = allProds.find(pr => pr.nombre.trim().toUpperCase() === nombreLimpio.toUpperCase());
+                    if (prod) {
+                        const custom = customPrices.find(cp => cp.producto_id === prod.id);
+                        
+                        const baseComm = parseFloat(prod.comision) || 0;
+                        const basePrice = parseFloat(prod.precio) || 0;
+                        
+                        // Si aumentaste el precio del producto flexible
+                        const nuevoPrecioParent = custom ? parseFloat(custom.nuevo_precio) : basePrice;
+                        const extraParent = (nuevoPrecioParent > basePrice) ? (nuevoPrecioParent - basePrice) : 0;
+                        
+                        const itemTotalComm = baseComm + extraParent;
+                        const itemSubComm = custom ? parseFloat(custom.comision_subgestor) : (itemTotalComm * 0.70);
+
+                        calculatedTotalComm += (itemTotalComm * qty);
+                        calculatedSubgestorComm += (itemSubComm * qty);
+                    }
+                });
+
+                // Respaldo de seguridad en caso de fallo de consulta
+                if (calculatedTotalComm === 0) {
+                    calculatedTotalComm = p.comision_total || 0;
+                    calculatedSubgestorComm = p.comision_subgestor !== undefined && p.comision_subgestor !== null 
+                        ? parseFloat(p.comision_subgestor) 
+                        : parseFloat((calculatedTotalComm * 0.70).toFixed(0));
+                }
+
+                // Sincronizamos las comisiones calculadas en la memoria local de la orden
+                p.comision_total_calculada = calculatedTotalComm;
+                p.comision_subgestor_calculada = calculatedSubgestorComm;
+
+                const defaultParentComm = calculatedTotalComm - calculatedSubgestorComm;
+
+                return `
                 <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-2">
@@ -469,22 +533,22 @@
                         <p class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded-lg border border-slate-800">${p.direccion}</p>
                         <p class="text-xs text-slate-300 font-bold mt-3">📦 ${p.producto}</p>
                         
-                        <!-- NUEVO PANEL CONTROL NUMÉRICO DE COMISIONES -->
+                        <!-- PANEL CONTROL NUMÉRICO DE COMISIONES -->
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 mt-4">
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Asignación de Comisión</p>
                             <div class="grid grid-cols-2 gap-3 items-center">
                                 <div>
                                     <label class="text-[8px] text-slate-500 uppercase font-bold">Comisión Subgestor ($)</label>
-                                    <input type="number" id="com-sub-${p.id}" value="${(p.comision_total * 0.70).toFixed(0)}" 
-                                        oninput="calcCutUI('${p.id}', ${p.comision_total})"
+                                    <input type="number" id="com-sub-${p.id}" value="${calculatedSubgestorComm}" 
+                                        oninput="calcCutUI('${p.id}', ${calculatedTotalComm})"
                                         class="w-full bg-slate-900 border-slate-700 text-xs text-white rounded p-1.5 font-bold focus:ring-0">
                                 </div>
                                 <div class="text-right">
                                     <p class="text-[8px] text-slate-500 uppercase font-bold">Tu Ganancia Pasiva ($)</p>
-                                    <p id="com-parent-${p.id}" class="text-base font-black text-emerald-400">$${(p.comision_total * 0.30).toFixed(0)}</p>
+                                    <p id="com-parent-${p.id}" class="text-base font-black text-emerald-400">$${defaultParentComm}</p>
                                 </div>
                             </div>
-                            <p class="text-[8px] text-slate-500 text-right mt-1 font-bold">Comisión Total del Producto: $${p.comision_total}</p>
+                            <p class="text-[8px] text-slate-500 text-right mt-1 font-bold">Comisión Total del Producto: $${calculatedTotalComm}</p>
                         </div>
                     </div>
 
@@ -499,7 +563,8 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // --- FUNCIÓN DE CÁLCULO DE COMISIÓN INTERACTIVA (TIEMPO REAL) ---
@@ -528,7 +593,6 @@
             }
         }
 
-        // --- LÓGICA DE APROBACIÓN CON DIVISIÓN MANUAL (CORREGIDA) ---
         async function aprobarPedido(pedidoId) {
             const p = pedidosPendientes.find(item => item.id === pedidoId);
             if (!p) return;
@@ -537,17 +601,20 @@
             const inputComSub = document.getElementById(`com-sub-${p.id}`);
             const comisionSub = parseFloat(inputComSub.value);
 
+            // Utilizamos el valor calculado en tiempo real
+            const totalCommReal = p.comision_total_calculada || p.comision_total || 0;
+
             // Validaciones de seguridad financiera
             if (isNaN(comisionSub) || comisionSub < 0) {
                 alert("⚠️ Por favor ingresa un monto válido de comisión para el subgestor.");
                 return;
             }
-            if (comisionSub > p.comision_total) {
-                alert(`⚠️ La comisión asignada al subgestor ($${comisionSub}) no puede ser mayor que la comisión total disponible ($${p.comision_total}).`);
+            if (comisionSub > totalCommReal) {
+                alert(`⚠️ La comisión asignada al subgestor ($${comisionSub}) no puede ser mayor que la comisión total disponible ($${totalCommReal}).`);
                 return;
             }
 
-            const comisionParent = Number((p.comision_total - comisionSub).toFixed(2));
+            const comisionParent = Number((totalCommReal - comisionSub).toFixed(2));
 
             const confirmar = confirm(`¿Aprobar pedido?\n\n• Para Subgestor: $${comisionSub}\n• Para ti (Ganancia): $${comisionParent}\n\nLa orden se enviará a la administración central.`);
             if(!confirmar) return;
@@ -566,13 +633,14 @@
                         producto: p.producto,
                         total: p.total,
                         costo_mensajeria: p.costo_mensajeria,
-                        comision_total: p.comision_total, 
+                        comision_total: totalCommReal, 
                         estado: 'Pendiente',
                         pago_gestor: 'Pendiente',
                         proveedor: p.proveedor,
                         origen: 'Subgestor',
+                        orden_dia: p.orden_dia,
                         
-                        // Registro de la división manual de comisiones
+                        // Registro de la división de comisiones
                         subgestor_nombre: p.subgestor_nombre,
                         comision_subgestor: comisionSub,
                         comision_parent: comisionParent,
