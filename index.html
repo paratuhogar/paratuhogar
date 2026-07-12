@@ -2860,15 +2860,55 @@ async function processRegister() {
 let myOrdersData = [];
 
 async function loadProDashboard(nombreGestor) {
-    // 1. Pedir a Supabase solo las columnas requeridas y limitar a 150 registros para reducir egress
-const { data: misVentas, error } = await supabaseClient
-    .from('pedidos')
-    .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_gestor')
-    .eq('gestor', nombreGestor)
-    .order('fecha', { ascending: false })
-    .limit(150); // Borde de seguridad reducido para mitigar consumo de red
+    // --- DETECTAR ROL EN TIEMPO REAL ---
+    const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+    
+    let misVentas = [];
+    
+    if (esSubgestor) {
+        // 1. Obtener pedidos aprobados (de la tabla 'pedidos')
+        const { data: aprobados, error: errAprobados } = await supabaseClient
+            .from('pedidos')
+            .select('id, fecha, estado, total, comision_subgestor, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_subgestor')
+            .eq('subgestor_nombre', nombreGestor)
+            .order('fecha', { ascending: false });
+            
+        // 2. Obtener pedidos pendientes de aprobación (de 'pedidos_subgestores')
+        const { data: pendientes, error: errPendientes } = await supabaseClient
+            .from('pedidos_subgestores')
+            .select('id, created_at, cliente, telefono, ci, direccion, municipio, producto, total, costo_mensajeria, comision_subgestor, orden_dia, proveedor')
+            .eq('subgestor_nombre', nombreGestor)
+            .order('created_at', { ascending: false });
 
-    if(error) { console.error(error); return; }
+        // Adaptar campos de aprobados y pendientes para unificar la visualización
+        const listaAprobados = (aprobados || []).map(p => ({
+            ...p,
+            comision_total: p.comision_subgestor, // Mapeamos su comisión real
+            pago_gestor: p.pago_subgestor // Mapeamos el estado de su pago
+        }));
+
+        const listaPendientes = (pendientes || []).map(p => ({
+            ...p,
+            fecha: p.created_at,
+            estado: 'Pendiente', 
+            comision_total: p.comision_subgestor,
+            pago_gestor: 'Pendiente'
+        }));
+
+        // Combinar ambas listas para su historial unificado
+        misVentas = [...listaPendientes, ...listaAprobados];
+    } else {
+        // Comportamiento original para Gestores Principales
+        const { data, error } = await supabaseClient
+            .from('pedidos')
+            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_gestor')
+            .eq('gestor', nombreGestor)
+            .order('fecha', { ascending: false })
+            .limit(150);
+            
+        if(error) { console.error(error); return; }
+        misVentas = data || [];
+    }
     
     myOrdersData = misVentas; 
 
@@ -2899,16 +2939,15 @@ const { data: misVentas, error } = await supabaseClient
     // 5. ENLACES (Link corto)
     await injectLinksSection(nombreGestor);
 
-    // 6. RENDERIZAR RANKING (Consultamos allPedidos de forma segura para evitar el crash)
+    // 6. RENDERIZAR RANKING (Se eliminó 'created_at' para evitar el error de consulta)
     const hace30dias = new Date();
     hace30dias.setDate(hace30dias.getDate() - 30);
     
-    // Obtiene el ranking pidiendo únicamente las columnas esenciales del cálculo
-        const { data: allPedidos, error: errAll } = await supabaseClient
-            .from('pedidos')
-            .select('gestor, comision_total, producto, created_at, fecha, estado')
-            .eq('estado', 'Entregado')
-            .gte('fecha', hace30dias.toISOString());
+    const { data: allPedidos, error: errAll } = await supabaseClient
+        .from('pedidos')
+        .select('gestor, comision_total, producto, fecha, estado') 
+        .eq('estado', 'Entregado')
+        .gte('fecha', hace30dias.toISOString());
 
     const rankingPedidos = allPedidos || [];
     renderLockedRanking(rankingPedidos, nombreGestor);
