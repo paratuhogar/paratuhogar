@@ -4823,7 +4823,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         promesas.push(insertPromise);
     }
 
-    await Promise.all(promesas);
+    // Interceptor y detector de errores para depuración
+    const resultados = await Promise.all(promesas);
+    for (let r of resultados) {
+        if (r && r.error) {
+            alert("❌ ERROR AL GUARDAR EN BASE DE DATOS:\n\n" + r.error.message + "\n\nCódigo: " + r.error.code + "\nDetalles: " + (r.error.details || "Ninguno"));
+            
+            // Reactivamos el botón para que puedas corregir
+            const finalBtn = document.getElementById('final-submit-btn');
+            if (finalBtn) {
+                finalBtn.disabled = false;
+                finalBtn.innerText = "Confirmar Pedido";
+            }
+            return; // Detiene la ejecución para que no abra WhatsApp si falló la base de datos
+        }
+    }
 
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
     

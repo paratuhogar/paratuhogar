@@ -714,105 +714,212 @@
         // 6. CONTROL DE EQUIPO (SUBGESTORES - CON BOTÓN CREDENCIALES)
         // 6. CONTROL DE EQUIPO (SUBGESTORES - CON COLA DE APROBACIÓN MANUAL)
         async function loadSubgestores() {
-            // Descargar todos los gestores vinculados a este padre
-            const { data: gestores, error } = await supabaseClient
-                .from('gestores')
-                .select('*')
-                .eq('parent_id', currentParent.id)
-                .order('nombre', { ascending: true });
+    // Descargar todos los gestores vinculados a este padre
+    const { data: gestores, error } = await supabaseClient
+        .from('gestores')
+        .select('*')
+        .eq('parent_id', currentParent.id)
+        .order('nombre', { ascending: true });
 
-            if (error) return;
+    if (error) return;
 
-            // Separar solicitudes de miembros ya activos
-            const solicitudes = gestores.filter(g => g.estado === 'pendiente_subgestor');
-            const activos = gestores.filter(g => g.estado === 'activo' || g.estado === 'bloqueado');
+    // Separar solicitudes de miembros ya activos
+    const solicitudes = gestores.filter(g => g.estado === 'pendiente_subgestor');
+    const activos = gestores.filter(g => g.estado === 'activo' || g.estado === 'bloqueado');
 
-            // --- A. RENDERIZAR SOLICITUDES DE INGRESO ---
-            const containerSolicitudes = document.getElementById('list-solicitudes-subgestores');
-            if (containerSolicitudes) {
-                if (solicitudes.length === 0) {
-                    containerSolicitudes.innerHTML = `<p class="text-xs text-slate-500 font-bold uppercase py-2">No tienes solicitudes de ingreso pendientes.</p>`;
-                } else {
-                    containerSolicitudes.innerHTML = solicitudes.map(s => {
-                        const safeName = s.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        const safePass = (s.password || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        return `
-                        <div class="flex justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
-                            <div>
-                                <p class="font-black text-slate-200 uppercase text-xs leading-none mb-1">${s.nombre}</p>
-                                <p class="text-[10px] text-slate-500 font-bold">Tel: ${s.telefono} | Registro: ${new Date(s.created_at).toLocaleDateString()}</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="eliminarSolicitudSub('${s.id}')" class="text-xs bg-red-950/40 text-red-500 border border-red-900 px-3 py-1.5 rounded-lg font-black uppercase">Rechazar</button>
-                                <button onclick="aprobarYDarBienvenidaSub('${s.id}', '${safeName}', '${s.telefono}', '${safePass}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg font-black uppercase">Aprobar y Saludar</button>
-                            </div>
-                        </div>`;
-                    }).join('');
-                }
-            }
-
-            // --- B. RENDERIZAR VENDEDORES ACTIVOS (TABLA) ---
-            const containerActivos = document.getElementById('list-subgestores');
-            if (containerActivos) {
-                if (activos.length === 0) {
-                    containerActivos.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 uppercase font-bold">No tienes vendedores activos todavía.</td></tr>`;
-                } else {
-                    let htmlRows = [];
-                    for (let g of activos) {
-                        // Contar sus ventas entregadas en la tabla principal
-                        const { count: ventasCompletadas } = await supabaseClient
-                            .from('pedidos')
-                            .select('id', { count: 'exact', head: true })
-                            .eq('subgestor_nombre', g.nombre)
-                            .eq('estado', 'Entregado');
-
-                        // Contar sus pedidos pendientes de aprobación
-                        const { count: pedidosPendientes } = await supabaseClient
-                            .from('pedidos_subgestores')
-                            .select('id', { count: 'exact', head: true })
-                            .eq('subgestor_id', g.id);
-
-                        const statusColor = g.estado === 'activo' ? 'bg-emerald-950 text-emerald-400 border-emerald-900' : 'bg-red-950 text-red-400 border-red-900';
-                        const actionBtn = g.estado === 'activo' 
-                            ? `<button onclick="toggleSubgestorStatus('${g.id}', 'activo')" class="text-xs bg-red-950/40 text-red-500 border border-red-900 px-3 py-1.5 rounded-lg font-black uppercase">Suspender</button>`
-                            : `<button onclick="toggleSubgestorStatus('${g.id}', 'bloqueado')" class="text-xs bg-emerald-950/40 text-emerald-500 border border-emerald-900 px-3 py-1.5 rounded-lg font-black uppercase">Activar</button>`;
-
-                        const cleanPhone = g.telefono.replace(/\D/g, '');
-                        const waLink = `https://wa.me/53${cleanPhone}?text=Hola%20${g.nombre},%20¿cómo%20van%20las%20ventas%3F`;
-                        
-                        const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        const safePass = (g.password || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
-
-                        htmlRows.push(`
-                        <tr class="hover:bg-slate-950/50 transition-colors">
-                            <td class="p-4 align-middle">
-                                <p class="font-black uppercase text-slate-200">${g.nombre}</p>
-                                <p class="text-[10px] text-slate-500 font-bold">REGISTRADO: ${new Date(g.created_at).toLocaleDateString()}</p>
-                            </td>
-                            <td class="p-4 text-center align-middle">
-                                <div class="flex justify-center gap-2">
-                                    <span class="bg-emerald-950/50 border border-emerald-900 text-emerald-400 text-[10px] font-black px-2 py-1 rounded">✅ ${ventasCompletadas || 0} Entregadas</span>
-                                    <span class="bg-amber-950/50 border border-amber-900 text-amber-400 text-[10px] font-black px-2 py-1 rounded">⏳ ${pedidosPendientes || 0} Pendientes</span>
-                                </div>
-                            </td>
-                            <td class="p-4 text-center align-middle">
-                                <a href="${waLink}" target="_blank" class="inline-flex items-center gap-1.5 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 px-3 py-1.5 rounded-lg hover:bg-[#25D366]/20 transition-all font-bold text-[10px] uppercase">
-                                    <span class="material-symbols-outlined text-sm">chat</span> Chat
-                                </a>
-                            </td>
-                            <td class="p-4 text-right align-middle space-x-1 whitespace-nowrap">
-                                <button onclick="sendCredentialsWA('${g.id}', '${safeName}', '${g.telefono}', '${safePass}')" class="text-xs bg-slate-900 hover:bg-slate-800 text-indigo-400 border border-slate-700 px-3 py-1.5 rounded-lg font-black uppercase transition-all" title="Reenviar Clave">
-                                    🔑 Clave
-                                </button>
-                                <span class="px-2 py-1.5 rounded text-[10px] font-black uppercase border ${statusColor}">${g.estado.toUpperCase()}</span>
-                                ${actionBtn}
-                            </td>
-                        </tr>`);
-                    }
-                    containerActivos.innerHTML = htmlRows.join('');
-                }
-            }
+    // --- A. RENDERIZAR SOLICITUDES DE INGRESO ---
+    const containerSolicitudes = document.getElementById('list-solicitudes-subgestores');
+    if (containerSolicitudes) {
+        if (solicitudes.length === 0) {
+            containerSolicitudes.innerHTML = `<p class="text-xs text-slate-500 font-bold uppercase py-2">No tienes solicitudes de ingreso pendientes.</p>`;
+        } else {
+            containerSolicitudes.innerHTML = solicitudes.map(s => {
+                const safeName = s.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safePass = (s.password || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                return `
+                <div class="flex justify-between items-center bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <div>
+                        <p class="font-black text-slate-200 uppercase text-xs leading-none mb-1">${s.nombre}</p>
+                        <p class="text-[10px] text-slate-500 font-bold">Tel: ${s.telefono} | Registro: ${new Date(s.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="eliminarSolicitudSub('${s.id}')" class="text-xs bg-red-950/40 text-red-500 border border-red-900 px-3 py-1.5 rounded-lg font-black uppercase">Rechazar</button>
+                        <button onclick="aprobarYDarBienvenidaSub('${s.id}', '${safeName}', '${s.telefono}', '${safePass}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg font-black uppercase">Aprobar y Saludar</button>
+                    </div>
+                </div>`;
+            }).join('');
         }
+    }
+
+    // --- B. RENDERIZAR VENDEDORES ACTIVOS (TABLA CON DETALLES DESPLEGABLES) ---
+    const containerActivos = document.getElementById('list-subgestores');
+    if (containerActivos) {
+        if (activos.length === 0) {
+            containerActivos.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-500 uppercase font-bold">No tienes vendedores activos todavía.</td></tr>`;
+            return;
+        }
+
+        // --- OPTIMIZACIÓN DE RENDIMIENTO: Consultas masivas para evitar bucles lentos ---
+        const subgestoresNames = activos.map(g => g.nombre);
+        const subgestoresIds = activos.map(g => g.id);
+
+        // 1. Pedidos en tránsito y completados (aprobados) de 'pedidos'
+        const { data: pedidosAprobados } = await supabaseClient
+            .from('pedidos')
+            .select('*')
+            .in('subgestor_nombre', subgestoresNames)
+            .order('fecha', { ascending: false });
+
+        // 2. Pedidos en espera de aprobación de 'pedidos_subgestores'
+        const { data: pedidosEnCola } = await supabaseClient
+            .from('pedidos_subgestores')
+            .select('*')
+            .in('subgestor_id', subgestoresIds)
+            .order('created_at', { ascending: false });
+
+        const aprobadosRaw = pedidosAprobados || [];
+        const colaRaw = pedidosEnCola || [];
+
+        let htmlRows = [];
+        
+        for (let g of activos) {
+            const nombreNorm = g.nombre.trim().toLowerCase();
+
+            // Filtrar en memoria el historial para este subgestor específico
+            const susAprobados = aprobadosRaw.filter(p => (p.subgestor_nombre || "").trim().toLowerCase() === nombreNorm);
+            const susCola = colaRaw.filter(p => p.subgestor_id === g.id);
+
+            // Clasificar estados para las métricas resumidas
+            const entregados = susAprobados.filter(p => p.estado === 'Entregado').length;
+            const pendientesAprobacion = susCola.length;
+            const enTransito = susAprobados.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado').length;
+            const totalPendientes = pendientesAprobacion + enTransito;
+
+            const statusColor = g.estado === 'activo' ? 'bg-emerald-950 text-emerald-400 border-emerald-900' : 'bg-red-950 text-red-400 border-red-900';
+            const actionBtn = g.estado === 'activo' 
+                ? `<button onclick="toggleSubgestorStatus('${g.id}', 'activo')" class="text-xs bg-red-950/40 text-red-500 border border-red-900 px-3 py-1.5 rounded-lg font-black uppercase">Suspender</button>`
+                : `<button onclick="toggleSubgestorStatus('${g.id}', 'bloqueado')" class="text-xs bg-emerald-950/40 text-emerald-500 border border-emerald-900 px-3 py-1.5 rounded-lg font-black uppercase">Activar</button>`;
+
+            const cleanPhone = g.telefono.replace(/\D/g, '');
+            const waLink = `https://wa.me/53${cleanPhone}?text=Hola%20${g.nombre},%20¿cómo%20van%20las%20ventas%3F`;
+            
+            const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const safePass = (g.password || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+            // --- GENERAR HISTORIAL DETALLADO DE PEDIDOS (DRAWER WEB) ---
+            const todosSusPedidos = [
+                ...susCola.map(p => ({ 
+                    ...p, 
+                    fecha: p.created_at, 
+                    estado: 'Por Aprobar', 
+                    comision_subgestor: p.comision_subgestor, 
+                    comision_parent: (parseFloat(p.comision_total) - parseFloat(p.comision_subgestor)) 
+                })),
+                ...susAprobados
+            ];
+
+            let detHtml = `<div class="text-center py-4 text-slate-500 font-bold uppercase text-[10px]">Este subgestor aún no registra pedidos.</div>`;
+            
+            if (todosSusPedidos.length > 0) {
+                detHtml = `
+                <div class="overflow-x-auto p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                    <table class="w-full text-left text-[11px] border-collapse">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-800 font-black uppercase">
+                                <th class="p-2">Pedido</th>
+                                <th class="p-2">Cliente</th>
+                                <th class="p-2">Equipos</th>
+                                <th class="p-2 text-right">Comis. Subgestor</th>
+                                <th class="p-2 text-right">Tu Ganancia</th>
+                                <th class="p-2 text-right">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-900">
+                            ${todosSusPedidos.map(p => {
+                                let estadoStyle = "text-slate-400 bg-slate-900 border-slate-800";
+                                if (p.estado === 'Por Aprobar') estadoStyle = "text-amber-400 bg-amber-950/30 border-amber-900";
+                                if (p.estado === 'Pendiente') estadoStyle = "text-yellow-400 bg-yellow-950/30 border-yellow-900";
+                                if (p.estado === 'Asignado Mensajero') estadoStyle = "text-blue-400 bg-blue-950/30 border-blue-900";
+                                if (p.estado === 'Entregado') estadoStyle = "text-emerald-400 bg-emerald-950/30 border-emerald-900";
+                                if (p.estado === 'Cancelado') estadoStyle = "text-red-400 bg-red-950/30 border-red-900";
+
+                                const comisionParentCalculada = Number(p.comision_parent || (parseFloat(p.comision_total) - parseFloat(p.comision_subgestor))).toFixed(0);
+
+                                return `
+                                <tr class="hover:bg-slate-900/30">
+                                    <td class="p-2 font-mono font-bold text-slate-300">#${p.orden_dia || '---'}</td>
+                                    <td class="p-2 text-slate-400 font-bold uppercase">${p.cliente}</td>
+                                    <td class="p-2 text-slate-500 truncate max-w-[150px]" title="${p.producto}">${p.producto}</td>
+                                    <td class="p-2 text-right text-emerald-400 font-bold">$${p.comision_subgestor}</td>
+                                    <td class="p-2 text-right text-purple-400 font-bold">+$${comisionParentCalculada}</td>
+                                    <td class="p-2 text-right">
+                                        <span class="px-1.5 py-0.5 rounded border text-[9px] font-black uppercase ${estadoStyle}">${p.estado}</span>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            }
+
+            // Fila principal y fila oculta del subgestor
+            htmlRows.push(`
+            <tr class="hover:bg-slate-950/50 transition-colors">
+                <td class="p-4 align-middle">
+                    <p class="font-black uppercase text-slate-200">${g.nombre}</p>
+                    <p class="text-[10px] text-slate-500 font-bold">REGISTRADO: ${new Date(g.created_at).toLocaleDateString()}</p>
+                    <button onclick="toggleSubgestorDetail('${g.id}')" class="text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1.5 text-[9px] font-black uppercase tracking-wider transition-all">
+                        <span class="material-symbols-outlined text-sm" id="toggle-icon-${g.id}">expand_more</span> 
+                        <span id="toggle-text-${g.id}">Ver pedidos (${todosSusPedidos.length})</span>
+                    </button>
+                </td>
+                <td class="p-4 text-center align-middle">
+                    <div class="flex justify-center gap-2">
+                        <span class="bg-emerald-950/50 border border-emerald-900 text-emerald-400 text-[10px] font-black px-2 py-1 rounded">✅ ${entregados} Entregadas</span>
+                        <span class="bg-amber-950/50 border border-amber-900 text-amber-400 text-[10px] font-black px-2 py-1 rounded">⏳ ${totalPendientes} Pendientes</span>
+                    </div>
+                </td>
+                <td class="p-4 text-center align-middle">
+                    <a href="${waLink}" target="_blank" class="inline-flex items-center gap-1.5 bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 px-3 py-1.5 rounded-lg hover:bg-[#25D366]/20 transition-all font-bold text-[10px] uppercase">
+                        <span class="material-symbols-outlined text-sm">chat</span> Chat
+                    </a>
+                </td>
+                <td class="p-4 text-right align-middle space-x-1 whitespace-nowrap">
+                    <button onclick="sendCredentialsWA('${g.id}', '${safeName}', '${g.telefono}', '${safePass}')" class="text-xs bg-slate-900 hover:bg-slate-800 text-indigo-400 border border-slate-700 px-3 py-1.5 rounded-lg font-black uppercase transition-all" title="Reenviar Clave">
+                        🔑 Clave
+                    </button>
+                    <span class="px-2 py-1.5 rounded text-[10px] font-black uppercase border ${statusColor}">${g.estado.toUpperCase()}</span>
+                    ${actionBtn}
+                </td>
+            </tr>
+            <!-- Fila oculta de detalle -->
+            <tr id="row-detail-${g.id}" class="hidden bg-slate-950/30">
+                <td colspan="4" class="p-4">
+                    ${detHtml}
+                </td>
+            </tr>`);
+        }
+        containerActivos.innerHTML = htmlRows.join('');
+    }
+}
+
+// --- FUNCIÓN GLOBAL PARA MANEJAR EL DESPLIEGUE ---
+window.toggleSubgestorDetail = function(id) {
+    const row = document.getElementById(`row-detail-${id}`);
+    const icon = document.getElementById(`toggle-icon-${id}`);
+    const text = document.getElementById(`toggle-text-${id}`);
+    
+    if (!row || !icon || !text) return;
+
+    const isHidden = row.classList.contains('hidden');
+    if (isHidden) {
+        row.classList.remove('hidden');
+        icon.innerText = "expand_less";
+    } else {
+        row.classList.add('hidden');
+        icon.innerText = "expand_more";
+    }
+}
 
         // --- SISTEMA DE APROBACIÓN MANUAL Y BIENVENIDA ---
         window.aprobarYDarBienvenidaSub = async function(id, nombre, telefono, password) {
