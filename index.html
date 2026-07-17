@@ -2232,7 +2232,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "507a"; 
+const versionActual = "1707a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10923,17 +10923,19 @@ async function deleteMyOrder(id) {
     }
 }
 
-// --- REENVIAR PEDIDO MANUAL (DESDE HISTORIAL DEL SUBGESTOR) ---
+// --- REENVIAR PEDIDO MANUAL (UNIFICADA - GESTORES Y SUBGESTORES) ---
 async function reenviarPedidoAdmin(id) {
     const p = myOrdersData.find(item => item.id === id);
     if (!p) return alert("Error: No se encuentran los datos del pedido.");
 
-    // Establecer destino por defecto (La tienda)
+    // Establecer destino por defecto (La tienda / Elizabeth)
     const PHONE_DUENO = "5356071095"; 
     let whatsappDestino = PHONE_DUENO;
 
-    // Si es un subgestor, el reenvío viaja hacia su Gestor Principal
+    // Comprobamos si el usuario actual es un subgestor
     const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
+
+    // Si es subgestor, el reenvío viaja hacia su Gestor Principal (Elías, etc.)
     if (esSubgestor && window.currentUserData.parent_telefono) {
         let parentTel = window.currentUserData.parent_telefono.replace(/\D/g, '');
         if (parentTel.length === 8) parentTel = "53" + parentTel;
@@ -10946,7 +10948,7 @@ async function reenviarPedidoAdmin(id) {
     const envio = parseFloat(p.costo_mensajeria) || 0;
     const precioEquipos = total - envio;
 
-    // Parseo de notas y localidades
+    // PARSEO DE LA DIRECCIÓN PARA EXTRAER NOTAS Y LOCALIDAD
     let dir = p.direccion || "";
     let localidad = "";
     let notas = "";
@@ -10958,16 +10960,19 @@ async function reenviarPedidoAdmin(id) {
         notas = notaMatch[1];
         dir = dir.replace(notaMatch[0], "").trim();
     }
+    
     const locMatch = dir.match(/\((.*?)\)$/);
     if (locMatch) {
         localidad = locMatch[1];
         dir = dir.replace(locMatch[0], "").trim();
     }
+
     const pagoMatch = notas.match(/\[PAGO:\s*(.*?)\]/i);
     if (pagoMatch) {
         metodoPago = pagoMatch[1];
         notas = notas.replace(pagoMatch[0], "").trim();
     }
+
     const vueltoMatch = notas.match(/\[VUELTO:\s*(.*?)\]/i);
     if (vueltoMatch) {
         vuelto = vueltoMatch[1];
@@ -10983,7 +10988,7 @@ async function reenviarPedidoAdmin(id) {
         mensaje += `📍 Zona: ${p.municipio || ''}\n`;
     }
 
-    if(p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
+    if (p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
     mensaje += `\n`;
 
     if (notas) {
@@ -10996,16 +11001,35 @@ async function reenviarPedidoAdmin(id) {
         mensaje += `📦 ${prod}\n`;
     });
     
-    mensaje += `💵 Equipos: $${precioEquipos}\n\n`;
+    if (productosLineas.length === 1) {
+         mensaje += `💵 Equipo: $${precioEquipos}\n\n`;
+    } else {
+         mensaje += `💵 Equipos (Subtotal): $${precioEquipos}\n\n`;
+    }
+    
     mensaje += `💰 *TOTAL A PAGAR: $${total} USD*\n`;
     mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
     
-    if (metodoPago) mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
-    if (vuelto) mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
+    if (metodoPago) {
+        mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
+    }
+    if (vuelto) {
+        mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
+    }
 
     const miTel = getAgentPhone(); 
-    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
+    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*`;
     
+    if (esSubgestor) {
+        // El subgestor envía a su principal informando su propia comisión y nombre
+        mensaje += `\nComercial: ${window.currentUserData.nombre}\n`;
+        mensaje += `Comisión: $${p.comision_total}\n`; // Mostrará su comisión correspondiente ($8)
+        mensaje += `Tel Comercial: ${miTel}\n`;
+    } else {
+        // El principal envía a la tienda informando la comisión total de la orden
+        mensaje += ` (SOLO ALMACÉN)\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
+    }
+
     window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
@@ -11068,94 +11092,7 @@ async function obtenerTelefonoGestor(gestorName) {
     return null;
 }
 
-// --- FUNCIÓN PARA REENVIAR PEDIDO AL ALMACÉN (MANUAL) ---
-async function reenviarPedidoAdmin(id) {
-    const p = myOrdersData.find(item => item.id === id);
-    if (!p) return alert("Error: No se encuentran los datos del pedido.");
 
-    const PHONE_DUENO = "5356071095"; 
-    const fecha = new Date(p.fecha).toLocaleDateString();
-    
-    // Cálculo inverso seguro
-    const envio = parseFloat(p.costo_mensajeria) || 0;
-    const total = parseFloat(p.total) || 0;
-    const precioEquipos = total - envio;
-
-    // PARSEO DE LA DIRECCIÓN PARA EXTRAER NOTAS Y LOCALIDAD
-    let dir = p.direccion || "";
-    let localidad = "";
-    let notas = "";
-    let metodoPago = "";
-    let vuelto = "";
-
-    const notaMatch = dir.match(/\[NOTA:\s*(.*?)\]/i);
-    if (notaMatch) {
-        notas = notaMatch[1];
-        dir = dir.replace(notaMatch[0], "").trim();
-    }
-    
-    const locMatch = dir.match(/\((.*?)\)$/);
-    if (locMatch) {
-        localidad = locMatch[1];
-        dir = dir.replace(locMatch[0], "").trim();
-    }
-
-    const pagoMatch = notas.match(/\[PAGO:\s*(.*?)\]/i);
-    if (pagoMatch) {
-        metodoPago = pagoMatch[1];
-        notas = notas.replace(pagoMatch[0], "").trim();
-    }
-
-    const vueltoMatch = notas.match(/\[VUELTO:\s*(.*?)\]/i);
-    if (vueltoMatch) {
-        vuelto = vueltoMatch[1];
-        notas = notas.replace(vueltoMatch[0], "").trim();
-    }
-
-    let mensaje = `🧾 *REENVÍO PEDIDO #${p.orden_dia || '---'}*\n📅 Fecha: ${fecha}\n\n`;
-    mensaje += `👤 *CLIENTE*\nNombre: ${p.cliente}\nTel: ${p.telefono}\nDirección: ${dir}\n`;
-    
-    if (localidad) {
-        mensaje += `📍 Zona: ${localidad}, ${p.municipio || ''}\n`;
-    } else {
-        mensaje += `📍 Zona: ${p.municipio || ''}\n`;
-    }
-
-    if(p.ci && p.ci !== "No especificado") mensaje += `CI: ${p.ci}\n`;
-    mensaje += `\n`;
-
-    if (notas) {
-        mensaje += `📝 *NOTAS / OBSERVACIONES:*\n${notas}\n\n`;
-    }
-    
-    mensaje += `🛒 *DETALLE*\n`;
-    
-    const productosLineas = p.producto.split(' + ');
-    productosLineas.forEach(prod => {
-        mensaje += `📦 ${prod}\n`;
-    });
-    
-    if (productosLineas.length === 1) {
-         mensaje += `💵 Equipo: $${precioEquipos}\n\n`;
-    } else {
-         mensaje += `💵 Equipos (Subtotal): $${precioEquipos}\n\n`;
-    }
-    
-    mensaje += `💰 *TOTAL A PAGAR: $${total} USD*\n`;
-    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
-    
-    if (metodoPago) {
-        mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
-    }
-    if (vuelto) {
-        mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
-    }
-
-    const miTel = getAgentPhone(); 
-    mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS (SOLO ALMACÉN)*\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
-    
-    window.open(`https://api.whatsapp.com/send?phone=${PHONE_DUENO}&text=${encodeURIComponent(mensaje)}`, '_blank');
-}
 
 // --- FUNCIÓN PARA REENVIAR VALE (DESDE ADMIN) ---
 async function reenviarValeAdmin(id) {
