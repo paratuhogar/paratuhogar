@@ -1496,6 +1496,8 @@
     <button onclick="changeAdminTab('aprobaciones')" id="tab-aprobaciones" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">Aprobar Gestores</button>
     <button onclick="changeAdminTab('ventas-prod')" id="tab-ventas-prod" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
     🏆 Top Productos
+    <!-- Agrega este botón al final de tu listado de botones de pestañas administrativas -->
+    <button onclick="changeAdminTab('mensajeros-equipo')" id="tab-mensajeros-equipo" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">🚴 Mensajeros</button>
 </button>
 
 <button onclick="changeAdminTab('categorias')" id="tab-categorias" class="btn-tab-admin flex-1 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest transition-all text-gray-400">
@@ -1933,6 +1935,59 @@
                 </tr>
             </thead>
             <tbody id="list-admin-categorias" class="divide-y dark:divide-gray-700">
+                <!-- Se llena con JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- === SECCIÓN GESTIÓN DE MENSAJEROS (EQUIPO) === -->
+<div id="cnt-mensajeros-equipo" class="tab-cnt hidden space-y-6">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl border shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h3 class="text-lg font-black uppercase text-indigo-600 flex items-center gap-2">
+                <span class="material-symbols-outlined">motorcycle</span> Equipo de Mensajeros
+            </h3>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Registra y administra los accesos de tus mensajeros</p>
+        </div>
+    </div>
+
+    <!-- Formulario para Registrar Nuevo Mensajero -->
+    <div class="bg-indigo-50 dark:bg-gray-800/50 p-6 rounded-3xl border border-indigo-100 dark:border-gray-700">
+        <h4 class="text-xs font-black uppercase text-indigo-800 dark:text-indigo-400 mb-4">Registrar Nuevo Mensajero</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label class="text-[9px] font-black uppercase text-gray-500">Nombre del Mensajero</label>
+                <input type="text" id="m-nom-nuevo" placeholder="Ej: Yasiel" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3">
+            </div>
+            <div>
+                <label class="text-[9px] font-black uppercase text-gray-500">Teléfono</label>
+                <input type="text" id="m-tel-nuevo" placeholder="Ej: 5xxxxxxx" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3">
+            </div>
+            <div>
+                <label class="text-[9px] font-black uppercase text-gray-500">PIN de Acceso (Único)</label>
+                <input type="text" id="m-pin-nuevo" placeholder="Ej: 4321" maxlength="6" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3">
+            </div>
+        </div>
+        <div class="mt-4 flex justify-end">
+            <button onclick="registrarNuevoMensajeroAdmin()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all">
+                Registrar Acceso
+            </button>
+        </div>
+    </div>
+
+    <!-- Listado de Mensajeros -->
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                <tr>
+                    <th class="p-4">Nombre</th>
+                    <th class="p-4">Teléfono</th>
+                    <th class="p-4 text-center">PIN</th>
+                    <th class="p-4 text-right">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-mensajeros-equipo" class="divide-y dark:divide-gray-700">
                 <!-- Se llena con JS -->
             </tbody>
         </table>
@@ -5233,10 +5288,10 @@ let pedidosRawAdmin = []; // Añade esta línea antes de la función
 let inventoryRawAdmin = []; // Variable global vital para el inventario
 
 async function loadAdminData() {
-    // 1. CARGA PRIORITARIA: GESTORES (Para que esto nunca falle)
-    
+    // 1. CARGA PRIORITARIA: MENSAJEROS (Se cargan primero para tenerlos listos antes de dibujar la logística)
+    await loadMensajerosEnAdmin();
 
-    // 2. Cargamos los datos masivos
+    // 2. Cargamos los datos masivos de pedidos, productos y visitas
     const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
     const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
     const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
@@ -5245,7 +5300,7 @@ async function loadAdminData() {
     if (pedidos) {
         pedidosRawAdmin = pedidos; 
         populateLogisticaFilters();
-        renderAdminLogistica(); 
+        renderAdminLogistica(); // <--- Ahora sí, listadoMensajerosAdmin ya tendrá los datos de MARCELITO y otros listos
         renderAdminCortes();
         updateAdminStats(pedidos);
         calculateProductSales();
@@ -5275,6 +5330,137 @@ async function loadAdminData() {
     loadPendingGestores();
     loadAdminReports();
     loadAdminCategorias();
+}
+
+// =================================================================
+// 🚴 LÓGICA DE CONTROL Y ASIGNACIÓN DE MENSAJEROS (NUEVO)
+// =================================================================
+let listadoMensajerosAdmin = [];
+
+// 1. Cargar mensajeros activos desde Supabase
+async function loadMensajerosEnAdmin() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('mensajeros')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre', { ascending: true });
+
+        if (!error && data) {
+            listadoMensajerosAdmin = data;
+            renderAdminMensajerosEquipo();
+        }
+    } catch (e) {
+        console.error("Error al cargar mensajeros en el panel:", e);
+    }
+}
+
+// 2. Dibujar la lista de mensajeros registrados en su pestaña
+function renderAdminMensajerosEquipo() {
+    const container = document.getElementById('list-admin-mensajeros-equipo');
+    if (!container) return;
+
+    if (listadoMensajerosAdmin.length === 0) {
+        container.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 text-xs font-bold uppercase">No hay mensajeros registrados.</td></tr>`;
+        return;
+    }
+
+    container.innerHTML = listadoMensajerosAdmin.map(m => `
+        <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 font-black uppercase text-slate-800 text-xs">${m.nombre}</td>
+            <td class="p-4 font-bold text-gray-500 text-xs">${m.telefono || '---'}</td>
+            <td class="p-4 text-center font-mono font-black text-indigo-600 text-xs">${m.pin}</td>
+            <td class="p-4 text-right">
+                <button onclick="desactivarMensajero('${m.id}', '${m.nombre}')" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Dar de baja">
+                    <span class="material-symbols-outlined text-sm">block</span>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 3. Registrar un nuevo mensajero en Supabase (Ely)
+async function registrarNuevoMensajeroAdmin() {
+    const nombre = document.getElementById('m-nom-nuevo').value.trim();
+    const telefono = document.getElementById('m-tel-nuevo').value.trim();
+    const pin = document.getElementById('m-pin-nuevo').value.trim();
+
+    if (!nombre || !pin) {
+        return alert("El Nombre y el PIN de acceso son campos obligatorios.");
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('mensajeros')
+            .insert([{ nombre, telefono, pin, activo: true }]);
+
+        if (error) {
+            if (error.message.includes('unique')) {
+                alert("Ese PIN ya está asignado a otro mensajero. Por favor, introduce un PIN diferente.");
+            } else {
+                throw error;
+            }
+            return;
+        }
+
+        alert("Mensajero registrado con éxito en el sistema.");
+        document.getElementById('m-nom-nuevo').value = "";
+        document.getElementById('m-tel-nuevo').value = "";
+        document.getElementById('m-pin-nuevo').value = "";
+        
+        await loadMensajerosEnAdmin();
+        renderAdminLogistica(); // Refrescar logística para actualizar los dropdowns de asignación
+
+    } catch (e) {
+        alert("Error al registrar: " + e.message);
+    }
+}
+
+// 4. Dar de baja a un mensajero (Ely)
+async function desactivarMensajero(id, nombre) {
+    if (!confirm(`¿Estás seguro de que quieres dar de baja a ${nombre}?\nYa no podrá acceder a la ruta utilizando su PIN.`)) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('mensajeros')
+            .update({ activo: false })
+            .eq('id', id);
+
+        if (error) throw error;
+        await loadMensajerosEnAdmin();
+        renderAdminLogistica();
+
+    } catch (e) {
+        alert("Error al desactivar.");
+    }
+}
+
+// 5. Asignar un pedido a un mensajero desde la tabla de logística
+// --- CORREGIDO: ASIGNAR MENSAJERO ---
+async function asignarMensajeroPedido(pedidoId, mensajeroId) {
+    // CORRECCIÓN: Ahora evalúa correctamente 'mensajeroId' al final
+    const mId = mensajeroId === "" ? null : mensajeroId; 
+    const updates = { mensajero_id: mId };
+    
+    // Si asignamos un mensajero, el pedido pasa automáticamente a estar "Con Mensajero"
+    if (mId) {
+        updates.estado = "Asignado Mensajero";
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('pedidos')
+            .update(updates)
+            .eq('id', pedidoId);
+
+        if (error) throw error;
+        
+        console.log("Asignación guardada con éxito en Supabase.");
+        await loadAdminData(); // Refresca las tablas automáticamente
+
+    } catch (e) {
+        alert("Error al guardar la asignación: " + e.message);
+    }
 }
 
 // --- NUEVA LÓGICA DE EDICIÓN TOTAL (ADMIN MASTER) ---
@@ -5740,6 +5926,16 @@ function renderAdminLogistica() {
                             <option value="Cancelado">❌ Cancelado</option>
                         </select>`
                     }
+
+                    
+                    <div class="mt-2 w-32">
+                        <select onchange="asignarMensajeroPedido('${p.id}', this.value)" class="text-[9px] font-bold uppercase rounded-lg border border-gray-200 bg-white dark:bg-gray-800 text-gray-500 py-1 cursor-pointer focus:ring-0 w-full shadow-sm text-center">
+                            <option value="">🚫 Sin Mensajero</option>
+                            ${listadoMensajerosAdmin.map(m => `
+                                <option value="${m.id}" ${p.mensajero_id === m.id ? 'selected' : ''}>🏍️ ${m.nombre.toUpperCase()}</option>
+                            `).join('')}
+                        </select>
+                    </div>
                     
                     <!-- AQUI ESTÁ EL CAMBIO: Un div contenedor para alinear el precio y el botón -->
                     <div class="flex items-center justify-end gap-1">

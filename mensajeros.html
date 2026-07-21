@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ParaTuHogar | Portal de Mensajería</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 pb-12">
+
+    <!-- ACCESO POR PIN -->
+    <div id="login-section" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-sm text-center space-y-6">
+            <span class="material-symbols-outlined text-5xl text-indigo-600">two_wheeler</span>
+            <div>
+                <h1 class="text-2xl font-black uppercase text-slate-800">Mensajeros</h1>
+                <p class="text-xs text-slate-400 font-bold">Introduce tu PIN de acceso para ver la ruta</p>
+            </div>
+            
+            <input type="password" id="pin-input" placeholder="PIN de acceso" maxlength="6" inputmode="numeric" 
+                class="w-full text-center text-3xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 p-3 focus:border-indigo-600 focus:ring-0">
+            
+            <button onclick="loginMensajero()" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all">
+                Cargar Ruta del Día
+            </button>
+        </div>
+    </div>
+
+    <!-- PORTAL PRINCIPAL -->
+    <div id="main-section" class="hidden">
+        <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-30">
+            <div class="max-w-md mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined">motorcycle</span>
+                    <h2 class="font-black uppercase tracking-tight text-sm" id="user-display">Mensajero</h2>
+                </div>
+                <button onclick="logout()" class="p-1 hover:bg-indigo-700 rounded-lg flex items-center">
+                    <span class="material-symbols-outlined">logout</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="max-w-md mx-auto p-4 space-y-4">
+            <!-- Tabs de navegación -->
+            <div class="flex bg-white rounded-2xl p-1 border border-slate-200">
+                <button onclick="changeTab('pendientes')" id="tab-pendientes" class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase bg-indigo-600 text-white shadow-sm transition-all">
+                    Asignados
+                </button>
+                <button onclick="changeTab('entregados')" id="tab-entregados" class="flex-1 py-2.5 rounded-xl text-xs font-black uppercase text-slate-500 transition-all">
+                    Historial (Entregas)
+                </button>
+            </div>
+
+            <!-- Contador -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex justify-between items-center">
+                <span class="text-xs font-black uppercase text-indigo-800">Pendientes de cobro hoy:</span>
+                <span id="pending-counter" class="text-2xl font-black text-indigo-600">0</span>
+            </div>
+
+            <div id="orders-container" class="space-y-4"></div>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; 
+        
+        // CORRECCIÓN: Usamos 'supabaseClient' para evitar el conflicto con la variable global
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentMensajero = null;
+        let currentTab = 'pendientes';
+        let ordersList = [];
+
+        window.addEventListener('load', () => {
+            const savedSession = localStorage.getItem('pth_messenger_session');
+            if (savedSession) {
+                currentMensajero = JSON.parse(savedSession);
+                initPortal();
+            }
+        });
+
+        async function loginMensajero() {
+            const pin = document.getElementById('pin-input').value.trim();
+            const btn = document.getElementById('btn-login');
+            
+            if (!pin) return alert("Por favor ingresa tu PIN.");
+
+            btn.disabled = true;
+            btn.innerText = "Verificando...";
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('mensajeros')
+                    .select('*')
+                    .eq('pin', pin)
+                    .eq('activo', true)
+                    .maybeSingle();
+
+                if (error || !data) {
+                    alert("PIN incorrecto o mensajero inactivo.");
+                    btn.disabled = false;
+                    btn.innerText = "Cargar Ruta del Día";
+                    return;
+                }
+
+                currentMensajero = data;
+                localStorage.setItem('pth_messenger_session', JSON.stringify(data));
+                initPortal();
+            } catch (e) {
+                alert("Error de conexión");
+                btn.disabled = false;
+                btn.innerText = "Cargar Ruta del Día";
+            }
+        }
+
+        function initPortal() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-section').classList.remove('hidden');
+            document.getElementById('user-display').innerText = currentMensajero.nombre;
+            loadOrders();
+        }
+
+        function logout() {
+            localStorage.removeItem('pth_messenger_session');
+            location.reload();
+        }
+
+        async function loadOrders() {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = `<div class="text-center py-12 text-slate-400 font-bold">Cargando mapa de ruta...</div>`;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('pedidos')
+                    .select('*')
+                    .eq('mensajero_id', currentMensajero.id)
+                    .order('fecha', { ascending: false });
+
+                if (error) throw error;
+
+                ordersList = data || [];
+                renderOrders();
+
+            } catch (e) {
+                container.innerHTML = `<div class="text-center py-12 text-red-500 font-bold">Error de conexión.</div>`;
+            }
+        }
+
+        function changeTab(tab) {
+            currentTab = tab;
+            const btnPendientes = document.getElementById('tab-pendientes');
+            const btnEntregados = document.getElementById('tab-entregados');
+
+            if (tab === 'pendientes') {
+                btnPendientes.className = "flex-1 py-2.5 rounded-xl text-xs font-black uppercase bg-indigo-600 text-white shadow-sm transition-all";
+                btnEntregados.className = "flex-1 py-2.5 rounded-xl text-xs font-black uppercase text-slate-500 transition-all";
+            } else {
+                btnEntregados.className = "flex-1 py-2.5 rounded-xl text-xs font-black uppercase bg-indigo-600 text-white shadow-sm transition-all";
+                btnPendientes.className = "flex-1 py-2.5 rounded-xl text-xs font-black uppercase text-slate-500 transition-all";
+            }
+            renderOrders();
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-container');
+            const filtrados = ordersList.filter(p => {
+                if (currentTab === 'pendientes') {
+                    return p.estado !== 'Entregado' && p.estado !== 'Cancelado';
+                } else {
+                    return p.estado === 'Entregado' || p.estado === 'Cancelado';
+                }
+            });
+
+            document.getElementById('pending-counter').innerText = ordersList.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado').length;
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 bg-white border border-slate-200 rounded-3xl text-slate-400 space-y-2">
+                        <span class="material-symbols-outlined text-4xl">inbox</span>
+                        <p class="text-xs font-black uppercase">Sin entregas registradas</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtrados.map(p => {
+                let dirLimpia = p.direccion || "";
+                let notas = "";
+                let localidad = "";
+
+                const notaMatch = dirLimpia.match(/\[NOTA:\s*(.*?)\]/i);
+                if (notaMatch) {
+                    notas = notaMatch[1];
+                    dirLimpia = dirLimpia.replace(notaMatch[0], "").trim();
+                }
+                
+                const locMatch = dirLimpia.match(/\((.*?)\)$/);
+                if (locMatch) {
+                    localidad = locMatch[1];
+                    dirLimpia = dirLimpia.replace(locMatch[0], "").trim();
+                }
+
+                const mapaUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dirLimpia + ', ' + p.municipio + ', La Habana, Cuba')}`;
+
+                let btnAccion = "";
+                if (p.estado !== 'Entregado' && p.estado !== 'Cancelado') {
+                    btnAccion = `
+                    <button onclick="completarEntrega('${p.id}', this)" class="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all">
+                        <span class="material-symbols-outlined">check_circle</span>
+                        <span>Marcar como Entregado</span>
+                    </button>`;
+                } else {
+                    const badgeClass = p.estado === 'Entregado' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100';
+                    btnAccion = `
+                    <div class="text-center mt-3 py-2.5 rounded-xl text-xs font-black uppercase ${badgeClass}">
+                        ${p.estado}
+                    </div>`;
+                }
+
+                return `
+                <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+                        <div>
+                            <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">${p.orden_dia || 'PEDIDO'}</span>
+                            <h3 class="text-base font-black text-slate-800 uppercase mt-1">${p.cliente}</h3>
+                        </div>
+                        <span class="text-slate-400 font-bold text-[10px]">${new Date(p.fecha).toLocaleDateString()}</span>
+                    </div>
+
+                    <div class="space-y-2 text-xs font-medium text-slate-600">
+                        <p class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-slate-400 text-base">location_on</span>
+                            <span>${dirLimpia} ${localidad ? '('+localidad+')' : ''}, <b>${p.municipio}</b></span>
+                        </p>
+                        ${notas ? `
+                        <div class="p-3 bg-amber-50 text-amber-800 rounded-xl border border-amber-100 text-[11px] leading-relaxed">
+                            <b>Notas de la Orden:</b> ${notas}
+                        </div>` : ''}
+                        
+                        <p class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-slate-400 text-base">inventory_2</span>
+                            <span class="font-bold text-slate-800">${p.producto}</span>
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-2xl flex justify-between items-center border border-slate-100">
+                        <span class="text-xs font-black text-slate-500 uppercase">A cobrar en destino:</span>
+                        <span class="text-xl font-black text-emerald-600">$${p.total} USD</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <a href="tel:${p.telefono}" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-black text-center text-xs flex items-center justify-center gap-1.5 transition-colors">
+                            <span class="material-symbols-outlined text-base">call</span> Llamar Cliente
+                        </a>
+                        <a href="${mapaUrl}" target="_blank" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-black text-center text-xs flex items-center justify-center gap-1.5 transition-colors">
+                            <span class="material-symbols-outlined text-base">map</span> Ver Mapa
+                        </a>
+                    </div>
+
+                    ${btnAccion}
+                </div>`;
+            }).join('');
+        }
+
+        async function completarEntrega(pedidoId, buttonElement) {
+            const confirmacion = confirm("¿Confirmas que has cobrado y entregado conforme esta orden?");
+            if (!confirmacion) return;
+
+            buttonElement.disabled = true;
+            buttonElement.innerText = "Registrando entrega...";
+
+            try {
+                const { error } = await supabaseClient
+                    .from('pedidos')
+                    .update({ 
+                        estado: 'Entregado',
+                        fecha_entrega: new Date().toISOString()
+                    })
+                    .eq('id', pedidoId);
+
+                if (error) throw error;
+                await loadOrders();
+
+            } catch (e) {
+                alert("Error al procesar. Verifica tu conexión.");
+                buttonElement.disabled = false;
+                buttonElement.innerText = "Marcar como Entregado";
+            }
+        }
+    </script>
+</body>
+</html>
