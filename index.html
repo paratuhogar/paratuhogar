@@ -2287,7 +2287,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "1707a"; 
+const versionActual = "2107a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10241,14 +10241,18 @@ window.saveMyPrice = async function(prodId, basePrice, baseComm) {
     }
 
     try {
-        const { data: existing, error: searchError } = await supabaseClient
+        // CORRECCIÓN DE SEGURIDAD: Usar .limit(1) en vez de .maybeSingle() evita el error PGRST116 si hay registros duplicados
+        const { data: results, error: searchError } = await supabaseClient
             .from('precios_personalizados')
             .select('id')
             .eq('gestor', gestorActual)
             .eq('producto_id', prodId)
-            .maybeSingle();
+            .limit(1);
 
         if (searchError) throw searchError;
+
+        // Extraemos el primer registro si existe
+        const existing = (results && results.length > 0) ? results[0] : null;
 
         let errorGuardado;
 
