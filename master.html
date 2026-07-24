@@ -851,11 +851,13 @@ async function loadConciliacion() {
         await loadCostos(); 
     }
 
-    // 2. Obtener datos
+    // 2. Obtener datos (AJUSTE: Trae los más recientes primero y hasta 2,000 registros)
     const { data: rawData, error } = await supabaseClient
         .from('pedidos')
         .select('id, orden_dia, fecha, cliente, producto, proveedor, total, costo_mensajeria, estado_financiero, pago_gestor')
-        .eq('estado', 'Entregado');
+        .eq('estado', 'Entregado')
+        .order('fecha', { ascending: false }) // <--- FIX 1: Los más nuevos arriba
+        .limit(2000);                          // <--- FIX 2: Rompe el límite de 1,000
 
     if(error) return console.error(error);
 
@@ -868,20 +870,20 @@ async function loadConciliacion() {
 
     // --- FILTROS ---
     const select = document.getElementById('filter-prov-conc');
-    const valorActual = select.value;
+    const valorActual = select ? select.value : 'TODOS';
 
-    const proveedoresUnicos = [...new Set(data.map(p => p.proveedor || 'General'))].sort();
+    const proveedoresUnicos = [...new Set(data.map(p => (p.proveedor || 'General').trim().toUpperCase()))].sort();
     
-    if (select.options.length <= 1 || valorActual === 'TODOS') {
+    if (select && (select.options.length <= 1 || valorActual === 'TODOS')) {
         select.innerHTML = `<option value="TODOS">Todos los Proveedores</option>` +
             proveedoresUnicos.map(prov => `<option value="${prov}">${prov}</option>`).join('');
         select.value = valorActual;
     }
 
-    // Filtrar lista
+    // Filtrar lista (AJUSTE: Compara limpiando espacios en blanco)
     let pedidosFiltrados = data;
     if (valorActual !== 'TODOS') {
-        pedidosFiltrados = data.filter(p => (p.proveedor || 'General') === valorActual);
+        pedidosFiltrados = data.filter(p => (p.proveedor || 'General').trim().toUpperCase() === valorActual.trim().toUpperCase());
     }
 
     // --- NUEVO: Ordenar por Nuevos o Viejos ---
@@ -901,37 +903,35 @@ async function loadConciliacion() {
         // --- 1. NUEVA LÓGICA: SEPARAR MULTIPLES PRODUCTOS POR EL SIGNO "+" ---
         const lineasProductos = p.producto.split('+');
         // --- CÁLCULO MEJORADO DE COSTO (Anti-error de signo +) ---
-// --- CÁLCULO ULTRA-FLEXIBLE DE COSTO (Limpia acentos y espacios) ---
-let totalCosto = 0;
+        // --- CÁLCULO ULTRA-FLEXIBLE DE COSTO (Limpia acentos y espacios) ---
+        let totalCosto = 0;
 
-// Función interna para normalizar el texto (quita acentos y espacios raros)
-const normalizarTexto = (txt) => {
-    return txt.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos (Lámpara -> lampara)
-        .replace(/\s+/g, ' ') // Convierte múltiples espacios o saltos de línea en uno solo
-        .trim();
-};
+        // Función interna para normalizar el texto (quita acentos y espacios raros)
+        const normalizarTexto = (txt) => {
+            return (txt || "").toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos (Lámpara -> lampara)
+                .replace(/\s+/g, ' ') // Convierte múltiples espacios o saltos de línea en uno solo
+                .trim();
+        };
 
-const pedidoLimpio = normalizarTexto(p.producto);
+        const pedidoLimpio = normalizarTexto(p.producto);
 
-inventario.forEach(itemInv => {
-    const nombreInvLimpio = normalizarTexto(itemInv.nombre);
-    
-    // Si el nombre del inventario (limpio) está dentro del pedido (limpio)
-    if (pedidoLimpio.includes(nombreInvLimpio)) {
-        
-        // Buscamos la cantidad (ej: "1x")
-        const escapedName = itemInv.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regexQty = new RegExp(`(\\d+)x\\s*`, 'i');
-        const matchQty = p.producto.match(regexQty);
-        
-        let qty = matchQty ? parseInt(matchQty[1]) : 1;
-        
-        totalCosto += (Number(itemInv.costo_proveedor || 0) * qty);
-    }
-});
-// -----------------------------------------------------------------
-        // ----------------------------------------------------------------------
+        inventario.forEach(itemInv => {
+            const nombreInvLimpio = normalizarTexto(itemInv.nombre);
+            
+            // Si el nombre del inventario (limpio) está dentro del pedido (limpio)
+            if (pedidoLimpio.includes(nombreInvLimpio)) {
+                
+                // Buscamos la cantidad (ej: "1x")
+                const escapedName = itemInv.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regexQty = new RegExp(`(\\d+)x\\s*`, 'i');
+                const matchQty = p.producto.match(regexQty);
+                
+                let qty = matchQty ? parseInt(matchQty[1]) : 1;
+                
+                totalCosto += (Number(itemInv.costo_proveedor || 0) * qty);
+            }
+        });
 
         const totalVenta = parseFloat(p.total);
         const costoMensajeria = parseFloat(p.costo_mensajeria || 0);
@@ -944,9 +944,9 @@ inventario.forEach(itemInv => {
 
         sumaTotalARecibir += aRecibir;
 
-        // Estilo de alerta si el costo es 0
-// Estilo de alerta si el costo es 0 (Ahora usa totalCosto)
-const borderClass = totalCosto === 0 ? 'border-red-500 text-red-500' : 'border-slate-600 text-red-300';
+        // Estilo de alerta si el costo es 0 (Ahora usa totalCosto)
+        const borderClass = totalCosto === 0 ? 'border-red-500 text-red-500' : 'border-slate-600 text-red-300';
+
         // --- CAMBIO CLAVE: INPUT EDITABLE EN LUGAR DE TEXTO FIJO ---
         return `
         <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalVenta}">
