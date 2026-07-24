@@ -587,17 +587,257 @@
 
         <!-- 2. CONTENEDOR DEL CATÁLOGO (Solo envuelve cosas del catálogo) -->
         <div id="sec-catalogo">
-            <!-- Hero Section -->
-            <section class="px-6 py-10 lg:py-16">
-                <div class="max-w-2xl">
-                    <h2 class="text-4xl lg:text-5xl font-black leading-tight mb-4">Equipos para tu familia en Cuba</h2>
-                    <p class="text-gray-500 dark:text-gray-400 text-lg">Catálogo optimizado. Ordena por WhatsApp y paga al recibir en la puerta de tu casa.</p>
-                    <div class="flex gap-3 mt-6">
-                        <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">bolt</span> Entrega 24-48h</span>
-                        <span class="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold"><span class="material-symbols-outlined text-sm">verified_user</span> Garantía Real</span>
-                    </div>
+            <!-- === HERO SECTION COMPLETO (TEXTO + BOTONES + FOTO RESTAURADA) === -->
+<section class="bg-white py-12 md:py-16 px-4 md:px-10 border-b border-slate-100">
+    <div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        
+        <!-- Columna Izquierda: Texto + Botones + Reseñas -->
+        <div class="lg:col-span-6 space-y-6">
+            <span class="inline-flex items-center gap-2 px-3.5 py-1 bg-blue-50 text-[#1a4789] rounded-full text-xs font-black uppercase tracking-wider">
+                <span class="material-symbols-outlined text-sm">verified</span> Soluciones confiables para tu hogar
+            </span>
+            
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 leading-[1.15] tracking-tight">
+                Mejoramos tu hogar, <br>
+                <span class="text-[#1a4789]">mejoramos tu vida.</span>
+            </h1>
+
+            <p class="text-slate-600 text-sm md:text-base leading-relaxed">
+                Equipos electrodomésticos, climatización y energía solar con garantía real y atención personalizada. Entrega rápida en La Habana con pago al recibir.
+            </p>
+
+            <!-- Doble Botón de Acción -->
+            <div class="flex flex-wrap items-center gap-4 pt-2">
+                <a href="#category-list" class="px-6 py-3.5 bg-[#1a4789] hover:bg-[#153866] text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">grid_view</span>
+                    <span>Ver Catálogo</span>
+                </a>
+
+                <button onclick="contactarGestorAtribuido('Hola, quiero consultar el catálogo y recibir asesoría personalizada.')" class="px-6 py-3.5 bg-white border-2 border-slate-200 hover:border-[#1a4789] text-slate-700 hover:text-[#1a4789] rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">chat</span>
+                    <span>Solicitar Asesoría</span>
+                </button>
+            </div>
+
+            <!-- Prueba Social / Reseñas -->
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+                <div class="flex -space-x-2">
+                    <img class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=33" alt="Cliente">
+                    <img class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=47" alt="Cliente">
+                    <img class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=12" alt="Cliente">
                 </div>
-            </section>
+                <div>
+                    <div class="flex items-center gap-1 text-amber-400 text-xs font-black">
+                        ★★★★★ <span class="text-slate-900 font-extrabold ml-1">4.9 / 5</span>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-400">En más de 500 entregas verificadas en La Habana</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Foto de la Empresa / Equipos (RESTAURADA) -->
+        <div class="lg:col-span-6 relative mt-6 lg:mt-0">
+            <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+                <img src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1000&auto=format&fit=crop" 
+                     alt="Equipos para el hogar" 
+                     class="w-full h-[380px] md:h-[420px] object-cover">
+            </div>
+
+            <!-- Tarjeta Flotante sobre la Foto -->
+            <div class="absolute -bottom-6 left-6 bg-white/95 backdrop-blur-md p-3 px-5 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3">
+                <div class="flex -space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs border-2 border-white">A</div>
+                    <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs border-2 border-white">M</div>
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border-2 border-white">E</div>
+                </div>
+                <div>
+                    <p class="text-xs font-black text-slate-800">Atención Personalizada</p>
+                    <p class="text-[10px] text-slate-500 font-bold">Asesores en línea por WhatsApp</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- === TESTIMONIOS Y FORMULARIO DE CONSULTA === -->
+<section class="py-16 px-4 md:px-10 bg-white">
+    <div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        <!-- Izquierda: Testimonios -->
+        <div class="lg:col-span-6 space-y-6">
+            <div>
+                <span class="text-xs font-black uppercase text-[#1a4789] tracking-wider">Lo que dicen nuestros clientes</span>
+                <h2 class="text-3xl font-black text-slate-900 mt-1">Opiniones que nos respaldan</h2>
+            </div>
+
+            <!-- Card Testimonio 1 -->
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative space-y-3">
+                <span class="text-4xl font-serif text-blue-200 absolute top-4 right-6">“</span>
+                <p class="text-sm text-slate-700 italic">"Excelente servicio de principio a fin. El split enfriando súper bien y el mensajero muy amable. Lo pagué al recibirlo en la casa."</p>
+                <div class="flex justify-between items-center pt-2">
+                    <div>
+                        <p class="text-xs font-black text-slate-900">María Fernanda G.</p>
+                        <p class="text-[10px] text-slate-400 font-bold">Compra de Split Inverter - Playa</p>
+                    </div>
+                    <div class="text-amber-400 text-xs">★★★★★</div>
+                </div>
+            </div>
+
+            <!-- Card Testimonio 2 -->
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative space-y-3">
+                <span class="text-4xl font-serif text-blue-200 absolute top-4 right-6">“</span>
+                <p class="text-sm text-slate-700 italic">"Muy profesionales. Compré una batería de litio para los apagones y todo llegó sellado en su caja original. 100% recomendados."</p>
+                <div class="flex justify-between items-center pt-2">
+                    <div>
+                        <p class="text-xs font-black text-slate-900">José Luis R.</p>
+                        <p class="text-[10px] text-slate-400 font-bold">Estación de Energía - Vedado</p>
+                    </div>
+                    <div class="text-amber-400 text-xs">★★★★★</div>
+                </div>
+            </div>
+
+            <button onclick="contactarGestorAtribuido('Hola, vi las opiniones en la tienda y quisiera asesoría sobre un equipo.')" class="inline-flex items-center gap-2 text-xs font-black text-[#1a4789] hover:underline bg-transparent border-0 p-0 cursor-pointer">
+                <span>Chatear con mi asesor de ventas</span> →
+            </button>
+        </div>
+
+        <!-- Derecha: Formulario de Solicitud Directa (Inteligente) -->
+        <div class="lg:col-span-6">
+            <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-900">¿Buscas un equipo específico?</h3>
+                    <p class="text-xs text-slate-500 mt-1">Cuéntanos qué necesitas y te enviamos fotos y precios disponibles de inmediato.</p>
+                </div>
+
+                <form onsubmit="procesarSolicitudFormulario(event)" class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500">Tu Nombre</label>
+                        <input type="text" id="sol-nombre" placeholder="Ej: Juan Pérez" class="w-full mt-1 bg-white border border-slate-200 rounded-xl p-3 text-xs font-bold focus:ring-[#1a4789]" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500">Teléfono / WhatsApp</label>
+                        <input type="tel" id="sol-tel" placeholder="5xxxxxxx" class="w-full mt-1 bg-white border border-slate-200 rounded-xl p-3 text-xs font-bold focus:ring-[#1a4789]" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-500">Equipo que te interesa</label>
+                        <input type="text" id="sol-equipo" placeholder="Ej: Refrigerador, Split 1T, Batería..." class="w-full mt-1 bg-white border border-slate-200 rounded-xl p-3 text-xs font-bold focus:ring-[#1a4789]" required>
+                    </div>
+                    
+                    <button type="submit" class="w-full py-4 bg-[#1a4789] hover:bg-[#153866] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center justify-center gap-2">
+                        <span>Consultar Disponibilidad</span>
+                        <span class="material-symbols-outlined text-sm">send</span>
+                    </button>
+                </form>
+
+                <p class="text-[10px] text-slate-400 text-center font-medium">🔒 Tu información está protegida. No compartimos tus datos.</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+
+<!-- === 4. BANNER FINAL CTA (ESTILO MOCKUP) === -->
+<section class="max-w-[1200px] mx-auto my-10 px-4">
+    <div class="bg-[#1a4789] rounded-3xl p-8 md:p-12 text-white flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl">
+        <div class="space-y-2 text-center md:text-left">
+            <h3 class="text-2xl md:text-3xl font-black">¿Listo para equipar tu hogar en Cuba?</h3>
+            <p class="text-xs text-blue-100">Déjanos ayudarte a encontrar el equipo ideal para tu familia con entrega inmediata.</p>
+        </div>
+        <a href="https://wa.me/5356071095" target="_blank" class="px-8 py-4 bg-white text-[#1a4789] rounded-xl font-black text-xs uppercase tracking-wider hover:bg-blue-50 transition-all shadow-md shrink-0">
+            Escribir por WhatsApp ahora →
+        </a>
+    </div>
+</section>
+
+<!-- === BENEFICIOS DE CONFIANZA (DE LA IMAGEN 1) === -->
+<section class="py-8 bg-white border-b border-slate-100 px-4 md:px-10">
+    <div class="max-w-[1200px] mx-auto">
+        <p class="text-center text-xs font-black uppercase text-slate-400 tracking-widest mb-6">¿Por qué elegir paratuhogar.org?</p>
+        
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+            
+            <div class="p-3 space-y-1">
+                <span class="material-symbols-outlined text-[#1a4789] text-2xl">verified_user</span>
+                <p class="text-xs font-black text-slate-800">Garantía por escrito</p>
+                <p class="text-[10px] text-slate-400 font-medium">Respaldo total en cada compra</p>
+            </div>
+
+            <div class="p-3 space-y-1">
+                <span class="material-symbols-outlined text-[#1a4789] text-2xl">local_shipping</span>
+                <p class="text-xs font-black text-slate-800">Cumplimos tiempos</p>
+                <p class="text-[10px] text-slate-400 font-medium">Entregas programadas 24-48h</p>
+            </div>
+
+            <div class="p-3 space-y-1">
+                <span class="material-symbols-outlined text-[#1a4789] text-2xl">payments</span>
+                <p class="text-xs font-black text-slate-800">Precios justos</p>
+                <p class="text-[10px] text-slate-400 font-medium">Sin sorpresas ni cargos ocultos</p>
+            </div>
+
+            <div class="p-3 space-y-1">
+                <span class="material-symbols-outlined text-[#1a4789] text-2xl">support_agent</span>
+                <p class="text-xs font-black text-slate-800">Atención cercana</p>
+                <p class="text-[10px] text-slate-400 font-medium">Asesoría directa en WhatsApp</p>
+            </div>
+
+            <div class="p-3 space-y-1 col-span-2 md:col-span-1">
+                <span class="material-symbols-outlined text-emerald-600 text-2xl">lock_reset</span>
+                <p class="text-xs font-black text-slate-800">Pago al recibir</p>
+                <p class="text-[10px] text-slate-400 font-medium">Cero riesgo para el cliente</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- === PROCESO SIMPLE EN 4 PASOS (DE LA IMAGEN 1) === -->
+<section class="py-16 px-4 md:px-10 bg-slate-50 border-y border-slate-200/60">
+    <div class="max-w-[1200px] mx-auto space-y-10">
+        
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+            <span class="text-xs font-black uppercase text-[#1a4789] tracking-wider">Proceso simple y transparente</span>
+            <h2 class="text-3xl font-black text-slate-900">Así trabajamos para ti</h2>
+            <p class="text-xs text-slate-500 font-medium">Comprar equipos para tu familia nunca fue tan fácil y seguro.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- Paso 1 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm relative space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#1a4789] flex items-center justify-center font-black text-base">1</div>
+                <h3 class="text-sm font-black text-slate-900">Eliges tu equipo</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">Explora nuestro catálogo con fotos reales y precios claros en USD, Zelle o CUP.</p>
+            </div>
+
+            <!-- Paso 2 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm relative space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#1a4789] flex items-center justify-center font-black text-base">2</div>
+                <h3 class="text-sm font-black text-slate-900">Ordenas por WhatsApp</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">Tu asesor confirma tus datos, dirección de entrega y coordina el envío sin adelantos.</p>
+            </div>
+
+            <!-- Paso 3 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm relative space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-[#1a4789] flex items-center justify-center font-black text-base">3</div>
+                <h3 class="text-sm font-black text-slate-900">Enviamos a tu casa</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">Mensajería rápida en 24-48h en todos los municipios de La Habana.</p>
+            </div>
+
+            <!-- Paso 4 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm relative space-y-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-base">4</div>
+                <h3 class="text-sm font-black text-slate-900">Revisas y Pagas</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">Compruebas el equipo sellado, recibes tu propiedad/garantía y pagas en la puerta.</p>
+            </div>
+
+        </div>
+
+    </div>
+</section>
 
             <!-- Category Tabs (Sticky) & Marketing Bar -->
             <div class="sticky top-[65px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur shadow-sm border-b border-gray-200 dark:border-gray-800">
@@ -2287,7 +2527,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2107a"; 
+const versionActual = "2407a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -14099,6 +14339,52 @@ async function generarComprobanteB2B(datosPedido, accion) {
 
     // Ejecutar inmediatamente al cargar
     window.addEventListener('load', aplicarFiltroRegistro);
+
+// === CEREBRO DE ENRUTAMIENTO WHATSAPP (GESTOR VS TIENDA) ===
+
+// 1. Obtiene el teléfono del gestor amarrado o cae de respaldo al dueño de la tienda
+async function getDestinoWhatsAppGestor() {
+    try {
+        // Intentar recuperar el referido guardado en la memoria del navegador
+        const stored = localStorage.getItem('pth_referrer_smart') || localStorage.getItem('pth_referrer');
+        if (stored) {
+            const data = JSON.parse(stored);
+            if (data && data.telefono) {
+                let tel = data.telefono.replace(/\D/g, '');
+                if (tel.length === 8) tel = "53" + tel;
+                if (tel.length > 7) return tel;
+            }
+        }
+    } catch (e) {
+        console.error("Error leyendo gestor guardado:", e);
+    }
+
+    // Si es un cliente orgánico (sin enlace), el WhatsApp va a la tienda central
+    return "5356071095";
+}
+
+// 2. Procesa el formulario de consulta rápida enviando los datos al WhatsApp del gestor correcto
+async function procesarSolicitudFormulario(event) {
+    event.preventDefault();
+    
+    const nombre = document.getElementById('sol-nombre').value.trim();
+    const telCliente = document.getElementById('sol-tel').value.trim();
+    const equipo = document.getElementById('sol-equipo').value.trim();
+
+    const targetPhone = await getDestinoWhatsAppGestor();
+
+    const mensaje = `👋 Hola, mi nombre es *${nombre}* (${telCliente}).\n\nEstoy viendo la tienda online y quiero consultar la disponibilidad de: *${equipo}*.`;
+    
+    window.open(`https://api.whatsapp.com/send?phone=${targetPhone}&text=${encodeURIComponent(mensaje)}`, '_blank');
+}
+
+// 3. Abre WhatsApp con el gestor correcto para los botones del banner y testimonios
+async function contactarGestorAtribuido(mensajeOpcional) {
+    const targetPhone = await getDestinoWhatsAppGestor();
+    const txt = mensajeOpcional || "Hola, estoy navegando en la tienda online y me gustaría asesoría para comprar un equipo.";
+    
+    window.open(`https://api.whatsapp.com/send?phone=${targetPhone}&text=${encodeURIComponent(txt)}`, '_blank');
+}
 
 </script>
 
