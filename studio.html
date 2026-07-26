@@ -20,14 +20,35 @@
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
 
     <style>
-        body { font-family: 'Manrope', sans-serif; background-color: #0f172a; color: white; overflow: hidden; }
+        :root { color-scheme: dark; }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background:
+                radial-gradient(circle at 75% 0%, rgba(99,102,241,.16), transparent 34rem),
+                #070b14;
+            color: white;
+            overflow: hidden;
+        }
         
         /* Scrollbar fina */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
         
-        .canvas-preview { width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.2s; }
+        .canvas-preview {
+            width: 100%;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0,0,0,.42);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+        .group:hover .canvas-preview { transform: translateY(-4px); box-shadow: 0 30px 75px rgba(0,0,0,.58); }
+        .studio-panel { background: linear-gradient(180deg, rgba(18,24,39,.98), rgba(8,12,22,.98)); }
+        .control {
+            width: 100%; border: 1px solid rgba(148,163,184,.18); border-radius: 12px;
+            background: rgba(30,41,59,.64); padding: .7rem .85rem; font-size: .8rem;
+            outline: none; transition: border-color .2s, box-shadow .2s;
+        }
+        .control:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(99,102,241,.14); }
         
         /* Switches iOS */
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -42,6 +63,11 @@
         .sidebar.closed { transform: translateX(-100%); }
         /* En Desktop siempre visible */
         @media (min-width: 768px) { .sidebar.closed { transform: translateX(0); } }
+        .quick-chip { border: 1px solid rgba(148,163,184,.18); background: rgba(30,41,59,.64); }
+        .quick-chip.active { border-color: #818cf8; background: rgba(79,70,229,.28); color: #c7d2fe; }
+        .product-selected .canvas-preview { outline: 3px solid #818cf8; outline-offset: 2px; }
+        .studio-toast { animation: toast-in .2s ease-out; }
+        @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
     </style>
 </head>
 <body class="flex h-screen relative">
@@ -52,7 +78,7 @@
     </button>
 
     <!-- 1. BARRA LATERAL (CONTROLES) -->
-    <aside id="sidebar" class="sidebar closed md:block absolute md:static top-0 left-0 h-full w-80 bg-[#0f172a] text-white border-r border-white/10 z-40 flex flex-col p-6 shadow-2xl overflow-y-auto">
+    <aside id="sidebar" class="sidebar studio-panel closed md:block absolute md:static top-0 left-0 h-full w-80 text-white border-r border-white/10 z-40 flex flex-col p-6 shadow-2xl overflow-y-auto">
         
         <!-- Header -->
         <div class="mb-6 flex items-center justify-between">
@@ -68,13 +94,33 @@
             <button onclick="toggleSidebar()" class="md:hidden text-slate-400"><span class="material-symbols-outlined">close</span></button>
         </div>
 
+        <div class="mb-5 rounded-xl border border-white/10 bg-slate-900/70 p-3">
+            <p id="studio-role-status" class="text-[10px] font-black text-indigo-300">🔒 Vista privada</p>
+            <p id="studio-cache-status" class="text-[9px] text-slate-500 mt-1">Comprobando caché…</p>
+            <button id="btn-refresh-studio-data" type="button" onclick="refreshStudioData()" class="mt-2 text-[9px] font-black uppercase text-sky-400 hover:text-sky-300">
+                Actualizar catálogo y precios
+            </button>
+        </div>
+
         <!-- Filtros -->
         <div class="space-y-4 mb-6 border-b border-white/10 pb-6">
-            <input type="text" id="ctrl-search" placeholder="Buscar equipo..." 
-                   class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 px-3 text-sm focus:border-indigo-500 outline-none">
-            <select id="ctrl-category" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-2 px-3 text-sm outline-none text-slate-300">
+            <input type="text" id="ctrl-search" placeholder="Buscar equipo..." class="control">
+            <select id="ctrl-category" class="control text-slate-300">
                 <option value="TODOS">Todas las Categorías</option>
             </select>
+            <select id="ctrl-collection" class="control text-slate-300">
+                <option value="TODOS">✨ Todas las oportunidades</option>
+                <option value="RECOMENDADOS">🎯 Sugerencias de hoy</option>
+                <option value="MENOS_100">💵 Menos de $100</option>
+                <option value="ENTREGA_HOY">🚚 Entrega rápida</option>
+                <option value="ALTA_COMISION">💰 Alta ganancia (privado)</option>
+                <option value="FAVORITOS">⭐ Mis favoritos</option>
+                <option value="RECIENTES">🕘 Usados recientemente</option>
+            </select>
+            <div class="flex gap-2">
+                <button type="button" onclick="selectVisibleProducts()" class="quick-chip flex-1 rounded-lg px-2 py-2 text-[10px] font-black uppercase">Seleccionar visibles</button>
+                <button type="button" onclick="clearProductSelection()" class="quick-chip rounded-lg px-3 py-2 text-[10px] font-black uppercase">Limpiar</button>
+            </div>
         </div>
 
         <!-- Configuración -->
@@ -83,34 +129,30 @@
             <!-- Selector Tema -->
             <div>
                 <label class="text-xs font-bold text-slate-400 mb-1 block">Estilo Visual</label>
-                <select id="ctrl-theme" class="w-full bg-indigo-900/30 border border-indigo-500/50 rounded-lg py-2 px-3 text-sm font-bold text-indigo-300 outline-none">
-                    <option value="classic">🔵 Clásico</option>
-                    <option value="minimal">⚪ Minimal (Apple)</option>
-                    <option value="midnight">⚫ Midnight</option>
-                    <option value="impact">🔴 Impacto</option>
-                    <!-- En tu studio.html, dentro de <select id="ctrl-theme"> -->
-<option value="classic">🔵 Clásico</option>
-<option value="minimal">⚪ Minimal (Apple)</option>
-<option value="midnight">⚫ Midnight</option>
-<option value="impact">🔴 Impacto</option>
-<option value="techno" selected>🟡 Techno Retail</option> <!-- NUEVA OPCIÓN -->
+                <select id="ctrl-theme" class="control font-bold text-indigo-200">
+                    <option value="techno" selected>🔵 Azul — Comercial</option>
+                    <option value="minimal">⚪ Blanco — Apple</option>
+                    <option value="midnight">⚫ Grafito — Premium</option>
+                    <option value="classic">🟢 Verde — Confianza</option>
+                    <option value="impact">🟠 Naranja — Oferta</option>
                 </select>
+                <p class="text-[10px] leading-relaxed text-slate-500 mt-2">Cada estilo se adapta automáticamente a Story y publicación cuadrada.</p>
             </div>
 
             <!-- IA TOGGLE -->
             <div class="bg-indigo-600/10 p-3 rounded-xl border border-indigo-500/30">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-indigo-400 text-lg">auto_fix</span>
-                        <span class="text-sm font-bold text-white">IA: Quitar Fondo</span>
+                        <span class="material-symbols-outlined text-indigo-400 text-lg">photo</span>
+                        <span class="text-sm font-bold text-white">Conservar foto original</span>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="toggle-ai-bg">
+                        <input type="checkbox" id="toggle-ai-bg" disabled>
                         <span class="slider"></span>
                     </label>
                 </div>
                 <p class="text-[9px] text-indigo-300 mt-1 leading-tight">
-                    ⚠️ Tarda 3-5 seg por foto. Activar solo si es necesario.
+                    No se elimina ni se transparenta ninguna parte del producto.
                 </p>
             </div>
 
@@ -127,27 +169,54 @@
         <div class="mt-auto pt-4 border-t border-white/10">
             <button onclick="downloadAllImages()" id="btn-download" class="w-full bg-white text-[#0f172a] hover:bg-slate-200 py-3 rounded-xl font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
                 <span class="material-symbols-outlined">download</span>
-                Descargar Pack
+                <span id="download-label">Descargar Pack</span>
             </button>
+            <p class="text-[9px] text-center text-slate-500 mt-2">Si seleccionas productos, el pack incluirá solo esos diseños.</p>
             <button onclick="window.location.href='index.html'" class="w-full text-center text-[10px] font-bold text-slate-500 mt-3 uppercase">Volver</button>
         </div>
     </aside>
 
     <!-- 2. ÁREA VISUALIZACIÓN -->
-    <main class="flex-1 h-full overflow-y-auto p-4 md:p-8 bg-slate-900 relative w-full" onclick="closeSidebarMobile()">
-        <header class="flex justify-between items-center mb-6 pl-10 md:pl-0">
-            <h2 class="text-xl md:text-2xl font-bold text-white"><span id="count-label">0</span> Diseños</h2>
+    <main class="flex-1 h-full overflow-y-auto p-4 md:p-8 bg-transparent relative w-full" onclick="closeSidebarMobile()">
+        <header class="flex justify-between items-center mb-4 pl-10 md:pl-0">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[.22em] text-indigo-400">Contenido listo para publicar</p>
+                <h2 class="text-xl md:text-2xl font-extrabold text-white mt-1"><span id="count-label">0</span> diseños</h2>
+            </div>
             <button onclick="refreshPreviews()" class="bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-700 flex items-center gap-1">
                 <span class="material-symbols-outlined text-sm">refresh</span> <span class="hidden md:inline">Regenerar</span>
             </button>
         </header>
+
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div class="rounded-xl border border-white/10 bg-slate-900/70 p-3">
+                <p class="text-[9px] uppercase font-black tracking-wider text-slate-500">Seleccionados</p>
+                <p id="metric-selected" class="text-xl font-black text-indigo-300">0</p>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-slate-900/70 p-3">
+                <p class="text-[9px] uppercase font-black tracking-wider text-slate-500">WhatsApp abiertos</p>
+                <p id="metric-shared" class="text-xl font-black text-emerald-400">0</p>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-slate-900/70 p-3">
+                <p class="text-[9px] uppercase font-black tracking-wider text-slate-500">Copies usados</p>
+                <p id="metric-copies" class="text-xl font-black text-sky-400">0</p>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-slate-900/70 p-3">
+                <p class="text-[9px] uppercase font-black tracking-wider text-slate-500">Descargas</p>
+                <p id="metric-downloads" class="text-xl font-black text-amber-400">0</p>
+            </div>
+        </section>
+
+        <section id="daily-recommendation" class="hidden mb-5 rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4"></section>
 
         <div id="preview-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
             <!-- JS llena esto -->
         </div>
     </main>
 
-    <script src="js/studio-core.js"></script>
+    <div id="studio-toast" class="hidden studio-toast fixed left-1/2 bottom-6 -translate-x-1/2 z-[100] rounded-full bg-white text-slate-900 px-5 py-3 text-xs font-black shadow-2xl"></div>
+
+    <script src="js/studio-core.js?v=2607c"></script>
     <script>
         // Funciones de ayuda globales para el Canvas
         window.wrapText = function(ctx, text, x, y, maxWidth, lineHeight) {
