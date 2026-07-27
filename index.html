@@ -2527,7 +2527,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2407a"; 
+const versionActual = "2607d"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -8955,35 +8955,19 @@ function applyLockedFeatures() {
         lockButton(btnPdf, "Catálogo PDF", 4, "Crea catálogos profesionales con tu nombre.");
     }
 
-    // ------------------------------------------------------
-    // ------------------------------------------------------
-    // LÓGICA MAGIC STUDIO (PROMO SEMANA SANTA - HASTA EL 28 MARZO 2026)
-    // ------------------------------------------------------
-    // ------------------------------------------------------
-    // LÓGICA MAGIC STUDIO (PROMO DE 1 MES)
-    // ------------------------------------------------------
-    // 👇 CAMBIA ESTA FECHA por el día exacto en que quieres que se acabe el mes de promo (Formato: AÑO-MES-DÍA)
-    const fechaFinPromo = new Date('2026-04-29'); 
-    const esPromoActiva = new Date() < fechaFinPromo;
+    // MAGIC STUDIO: disponible para todos los gestores y administradores
+    // con una sesión válida, sin requisitos de nivel ni promociones.
+    const hasStudioAccess = Boolean(localStorage.getItem('pth_session'));
 
-    if (level >= 2 || isGodMode || esPromoActiva) { 
+    if (hasStudioAccess) {
         if(btnStudio) {
             btnStudio.className = "flex-1 xl:flex-none py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white border border-purple-400 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer";
-            
-            // Si es nivel bajo y la promo está activa, le avisamos que es un regalo temporal
-            const textoBoton = (esPromoActiva && level < 2) ? "Studio (PROMO)" : "Magic Studio";
-            
-            btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">${textoBoton}</span>`;
-            btnStudio.title = esPromoActiva && level < 2 ? "¡ACCESO LIBRE POR 1 MES!" : "Magic Studio AI - Activo";
+            btnStudio.innerHTML = `<span class="material-symbols-outlined text-xl">auto_fix</span><span class="hidden md:inline text-xs font-black">Magic Studio</span>`;
+            btnStudio.title = "Magic Studio - Activo para todos los gestores";
             btnStudio.onclick = function() { goToStudio(); };
-
-            // Efecto especial animado de latido solo para los que están aprovechando la promo
-            if(esPromoActiva && level < 2) {
-                btnStudio.classList.add('animate-pulse');
-            }
         }
     } else {
-        lockButton(btnStudio, "Magic Studio", 2, "Genera imágenes de marketing con IA."); 
+        lockButton(btnStudio, "Magic Studio", 0, "Inicia sesión como gestor para acceder."); 
     }
 }
 
