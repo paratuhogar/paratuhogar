@@ -1514,11 +1514,11 @@
     </main>
 
     <!-- MODAL DETALLE (ESTILO IMAGEN) -->
-    <div id="detail-modal" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm p-2 md:p-4 overflow-y-auto flex justify-center items-start lg:items-center lg:p-8">
+    <div id="detail-modal" class="fixed inset-0 z-[100] hidden bg-slate-950/75 backdrop-blur-sm p-0 md:p-4 overflow-y-auto flex justify-center items-start lg:items-center lg:p-8">
 
-        <div class="bg-white dark:bg-background-dark w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row relative lg:max-h-[90vh] lg:h-full">
+        <div class="bg-white dark:bg-background-dark w-full max-w-6xl min-h-full md:min-h-0 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row relative lg:max-h-[90vh] lg:h-full">
 
-            <button onclick="closeDetail()" class="absolute top-4 right-4 z-10 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:rotate-90 transition-transform">
+            <button onclick="closeDetail()" class="fixed right-3 top-3 z-[120] p-2 bg-white/95 text-slate-600 shadow-lg md:absolute md:right-4 md:top-4 dark:bg-gray-800 rounded-full hover:rotate-90 transition-transform" aria-label="Cerrar detalle">
                 <span class="material-symbols-outlined">close</span>
             </button>
 
@@ -1529,37 +1529,61 @@
                 </div>
                 <div id="detail-thumbnails" class="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-4"></div>
                 <p class="mb-4 text-[10px] text-gray-400 flex items-center gap-1 uppercase tracking-widest px-4 text-center">
-                    <span class="material-symbols-outlined text-sm">info</span> Imagen real del equipo en almacén
+                    <span class="material-symbols-outlined text-sm">photo_library</span> Fotos disponibles del producto
                 </p>
             </div>
 
             <!-- Info Derecha -->
-            <div class="lg:w-1/2 p-8 lg:p-12 flex flex-col lg:overflow-y-auto">
+            <div class="lg:w-1/2 p-5 pb-32 md:p-8 lg:p-10 lg:pb-10 flex flex-col lg:overflow-y-auto">
 
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-primary/10 text-primary px-2.5 py-1 rounded-full text-[10px] font-black uppercase">En Stock</span>
+                    <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Disponible ahora</span>
                     <span id="detail-cat" class="text-[10px] text-gray-400 font-bold uppercase"></span>
                 </div>
-                <h2 id="detail-name" class="text-3xl font-black mb-4"></h2>
+                <h2 id="detail-name" class="text-2xl font-black leading-tight mb-3 md:text-3xl"></h2>
                 
-                <div class="flex items-baseline gap-4 mb-8">
-                    <span id="detail-price" class="text-4xl font-black text-primary"></span>
+                <div class="flex items-baseline gap-4 mb-4">
+                    <span id="detail-price" class="text-3xl font-black text-primary md:text-4xl"></span>
                 </div>
 
                 <!-- Specs Grid -->
-                <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="grid grid-cols-2 gap-3 mb-4">
                     <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Garantía</p>
+                        <p class="text-[9px] text-gray-400 font-black uppercase mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-blue-600">verified_user</span>Garantía</p>
                         <p id="detail-warranty" class="font-bold text-sm"></p>
                     </div>
                     <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Mensajería</p>
+                        <p class="text-[9px] text-gray-400 font-black uppercase mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-blue-600">local_shipping</span>Entrega</p>
                         <p id="detail-shipping" class="font-bold text-sm"></p>
                     </div>
                 </div>
 
+                <div class="mb-5 grid grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200 bg-white py-3 text-center shadow-sm">
+                    <div class="px-2">
+                        <span class="material-symbols-outlined text-lg text-emerald-600">payments</span>
+                        <p class="text-[8px] font-black uppercase leading-tight text-slate-600">Pago al recibir</p>
+                    </div>
+                    <div class="px-2">
+                        <span class="material-symbols-outlined text-lg text-blue-600">schedule</span>
+                        <p class="text-[8px] font-black uppercase leading-tight text-slate-600">Coordinación rápida</p>
+                    </div>
+                    <div class="px-2">
+                        <span class="material-symbols-outlined text-lg text-violet-600">support_agent</span>
+                        <p class="text-[8px] font-black uppercase leading-tight text-slate-600">Asesor personal</p>
+                    </div>
+                </div>
+
+                <div class="mb-6 grid grid-cols-[0.8fr_1.2fr] gap-2">
+                    <button onclick="consultSelectedProduct()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-50">
+                        <i class="fab fa-whatsapp text-lg"></i> Consultar
+                    </button>
+                    <button onclick="addItemToCart()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a4789] px-3 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#153866] active:scale-95">
+                        <span class="material-symbols-outlined text-lg">add_shopping_cart</span> Añadir al pedido
+                    </button>
+                </div>
+
                 <div class="mb-8">
-                    <h3 class="text-xs font-black uppercase text-gray-400 mb-3 tracking-widest">Descripción</h3>
+                    <h3 class="text-xs font-black uppercase text-slate-700 mb-3 tracking-widest">Información del equipo</h3>
                     <p id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></p>
                 </div>
 
@@ -1635,14 +1659,22 @@
         </div>
     </div>
 
-    <!-- Fila 2: ACCIÓN PRINCIPAL (Hacer la Orden) -->
-    <!-- Este botón mantiene la función addItemToCart() para seguir el flujo normal de venta -->
-    <button onclick="addItemToCart()" class="w-full bg-[#25D366] hover:bg-[#20bd5c] text-white py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-500/20 active:scale-95">
-        <span class="material-symbols-outlined text-2xl">shopping_cart_checkout</span>
-        <span>Añadir a la Orden / Tramitar</span>
-    </button>
-    
 </div>
+            </div>
+        </div>
+
+        <div class="fixed inset-x-0 bottom-0 z-[115] border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden">
+            <div class="mx-auto flex max-w-md items-center gap-3">
+                <div class="min-w-0 flex-1">
+                    <p class="text-[8px] font-black uppercase tracking-wider text-slate-400">Precio del equipo</p>
+                    <p id="detail-mobile-price" class="truncate text-lg font-black text-[#1a4789]">—</p>
+                </div>
+                <button onclick="consultSelectedProduct()" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 text-emerald-600" aria-label="Consultar por WhatsApp">
+                    <i class="fab fa-whatsapp text-xl"></i>
+                </button>
+                <button onclick="addItemToCart()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a4789] px-5 text-xs font-black text-white shadow-lg">
+                    <span class="material-symbols-outlined text-lg">shopping_cart</span> Pedir
+                </button>
             </div>
         </div>
     </div>
@@ -1651,9 +1683,18 @@
     <div id="cart-modal" class="fixed inset-0 z-[110] hidden bg-black/80 flex justify-end">
         <!-- CAMBIO: Padding ajustado y flex completo -->
 <div class="bg-white dark:bg-background-dark w-full max-w-md h-full shadow-2xl flex flex-col p-4 animate-slide-left overflow-y-auto pb-6">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-xl font-black uppercase italic text-primary">Mi Pedido</h2>
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-600">Compra segura · sin pago adelantado</p>
+                    <h2 class="mt-1 text-xl font-black text-slate-900">Completa tu pedido</h2>
+                </div>
                 <button onclick="toggleCartModal(false)" class="p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
+            </div>
+
+            <div class="mb-5 grid grid-cols-3 gap-2 text-center">
+                <div class="rounded-xl bg-blue-50 px-2 py-2 text-[8px] font-black uppercase text-blue-700"><span class="block text-sm">1</span>Equipos</div>
+                <div class="rounded-xl bg-blue-50 px-2 py-2 text-[8px] font-black uppercase text-blue-700"><span class="block text-sm">2</span>Tus datos</div>
+                <div class="rounded-xl bg-emerald-50 px-2 py-2 text-[8px] font-black uppercase text-emerald-700"><span class="block text-sm">3</span>WhatsApp</div>
             </div>
             
             <div id="cart-items" class="space-y-4 mb-6"></div>
@@ -1664,6 +1705,15 @@
 
 <!-- CAMBIO: flex-1 en lugar de h-full para que el form se expanda sin romperse -->
 <form id="checkout-form" class="flex-1 flex flex-col mt-4">
+    <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-emerald-600">verified_user</span>
+            <div>
+                <p class="text-xs font-black text-emerald-900">Tu pedido se confirma personalmente</p>
+                <p class="mt-1 text-[10px] font-medium leading-relaxed text-emerald-700">Al finalizar abriremos WhatsApp con todos los datos. Un asesor confirmará disponibilidad, mensajería y horario antes de la entrega.</p>
+            </div>
+        </div>
+    </div>
     
     <!-- 1. HERRAMIENTAS GESTOR (Buscador grande) -->
     <div id="gestor-checkout-tools" class="hidden mb-6 space-y-4"> 
@@ -1819,10 +1869,11 @@
     <!-- BOTÓN FINAL GIGANTE -->
     <!-- CAMBIO: Añadimos mt-6 (margen top) y quitamos mt-auto para que no se pegue -->
 <div class="pt-4 mt-6">
-    <button type="submit" id="final-submit-btn" class="w-full bg-[#1a4789] text-white py-5 rounded-2xl font-black text-lg uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-[#2c6fb5] transition-all active:scale-95 flex items-center justify-center gap-3">
-            <span>Confirmar Pedido</span>
-            <span class="material-symbols-outlined">arrow_forward</span>
+    <button type="submit" id="final-submit-btn" class="w-full bg-[#25D366] text-white py-5 rounded-2xl font-black text-base uppercase tracking-wider shadow-xl shadow-emerald-900/20 hover:bg-[#20bd5c] transition-all active:scale-95 flex items-center justify-center gap-3">
+            <i class="fab fa-whatsapp text-xl"></i>
+            <span>Confirmar por WhatsApp</span>
         </button>
+        <p class="mt-3 text-center text-[9px] font-bold leading-relaxed text-slate-400">No se realiza ningún cobro automático. Revisaremos los datos antes de coordinar la entrega.</p>
     </div>
 </form>
             </div>
@@ -4761,8 +4812,15 @@ function renderCatalogProducts(list) {
                         <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
                     </button>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
+                        <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Disponible
+                        </div>
                         <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-slate-800">${product.nombre}</h3>
                         <p class="text-xl font-black text-primary md:text-2xl">${priceDisplay}</p>
+                        <div class="space-y-1 border-t border-slate-100 pt-2 text-[9px] font-bold text-slate-500">
+                            <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">verified_user</span><span class="truncate">${product.garantia || 'Garantía disponible'}</span></p>
+                            <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">local_shipping</span><span class="truncate">${product.mensajeria || 'Entrega coordinada'}</span></p>
+                        </div>
                         <button onclick="openDetail('${safeName}')" class="mt-auto w-full rounded-lg bg-primary py-2.5 text-xs font-extrabold text-white shadow-md">Ver detalles</button>
                     </div>
                 </article>`;
@@ -4865,6 +4923,8 @@ function openDetail(name, skipSolarCheck = false) {
 
     // PRECIOS Y DETALLES
     document.getElementById('detail-price').innerText = `$${p.precio}.00 USD`;
+    const mobilePrice = document.getElementById('detail-mobile-price');
+    if (mobilePrice) mobilePrice.innerText = `$${p.precio}.00 USD`;
     document.getElementById('detail-cat').innerText = p.categoria || '';
     document.getElementById('detail-warranty').innerText = p.garantia || '1 Mes';
     document.getElementById('detail-shipping').innerText = p.mensajeria || 'Consultar';
@@ -4889,6 +4949,12 @@ function openDetail(name, skipSolarCheck = false) {
 
     detailModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+}
+
+function consultSelectedProduct() {
+    if (!selectedProduct) return;
+    const message = `Hola, estoy viendo *${selectedProduct.nombre}* en ParaTuHogar y quisiera confirmar disponibilidad, entrega y garantía.`;
+    contactarGestorAtribuido(message);
 }
 
     // 4. CARRITO Y PAGOS
