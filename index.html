@@ -537,16 +537,16 @@
         <!-- 2. CONTENEDOR DEL CATÁLOGO (Solo envuelve cosas del catálogo) -->
         <div id="sec-catalogo">
             <!-- === HERO SECTION COMPLETO (TEXTO + BOTONES + FOTO RESTAURADA) === -->
-<section class="client-only-section bg-white py-12 md:py-16 px-4 md:px-10 border-b border-slate-100">
+<section class="client-only-section bg-white py-8 md:py-16 px-4 md:px-10 border-b border-slate-100">
     <div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         
         <!-- Columna Izquierda: Texto + Botones + Reseñas -->
-        <div class="lg:col-span-6 space-y-6">
+        <div class="lg:col-span-6 space-y-5 md:space-y-6">
             <span class="inline-flex items-center gap-2 px-3.5 py-1 bg-blue-50 text-[#1a4789] rounded-full text-xs font-black uppercase tracking-wider">
                 <span class="material-symbols-outlined text-sm">verified</span> Soluciones confiables para tu hogar
             </span>
             
-            <h1 class="text-4xl md:text-5xl font-black text-slate-900 leading-[1.15] tracking-tight">
+            <h1 class="text-3xl md:text-5xl font-black text-slate-900 leading-[1.15] tracking-tight">
                 Mejoramos tu hogar, <br>
                 <span class="text-[#1a4789]">mejoramos tu vida.</span>
             </h1>
@@ -556,13 +556,13 @@
             </p>
 
             <!-- Doble Botón de Acción -->
-            <div class="flex flex-wrap items-center gap-4 pt-2">
-                <a href="#category-list" class="px-6 py-3.5 bg-[#1a4789] hover:bg-[#153866] text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+            <div class="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-3 md:gap-4 pt-2">
+                <a href="#category-list" class="justify-center px-6 py-3.5 bg-[#1a4789] hover:bg-[#153866] text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">grid_view</span>
                     <span>Ver Catálogo</span>
                 </a>
 
-                <button onclick="contactarGestorAtribuido('Hola, quiero consultar el catálogo y recibir asesoría personalizada.')" class="px-6 py-3.5 bg-white border-2 border-slate-200 hover:border-[#1a4789] text-slate-700 hover:text-[#1a4789] rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2">
+                <button onclick="contactarGestorAtribuido('Hola, quiero consultar el catálogo y recibir asesoría personalizada.')" class="justify-center px-6 py-3.5 bg-white border-2 border-slate-200 hover:border-[#1a4789] text-slate-700 hover:text-[#1a4789] rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">chat</span>
                     <span>Solicitar Asesoría</span>
                 </button>
@@ -585,23 +585,22 @@
         </div>
 
         <!-- Columna Derecha: Foto de la Empresa / Equipos (RESTAURADA) -->
-        <div class="lg:col-span-6 relative mt-6 lg:mt-0">
+        <div class="lg:col-span-6 relative mt-2 md:mt-6 lg:mt-0">
             <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                 <img src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1000&auto=format&fit=crop" 
                      alt="Equipos para el hogar" 
-                     class="w-full h-[380px] md:h-[420px] object-cover">
+                     class="w-full h-[220px] sm:h-[300px] md:h-[420px] object-cover">
             </div>
 
             <!-- Tarjeta Flotante sobre la Foto -->
             <div class="absolute -bottom-6 left-6 bg-white/95 backdrop-blur-md p-3 px-5 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3">
-                <div class="flex -space-x-2">
-                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs border-2 border-white">A</div>
-                    <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs border-2 border-white">M</div>
-                    <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border-2 border-white">E</div>
+                <div class="relative flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-[#1a4789]">
+                    <span class="material-symbols-outlined">support_agent</span>
+                    <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
                 </div>
                 <div>
-                    <p class="text-xs font-black text-slate-800">Atención Personalizada</p>
-                    <p class="text-[10px] text-slate-500 font-bold">Asesores en línea por WhatsApp</p>
+                    <p id="client-assigned-advisor-name" class="text-xs font-black text-slate-800">Atención personalizada</p>
+                    <p id="client-assigned-advisor-status" class="text-[10px] text-slate-500 font-bold">Asesoría directa por WhatsApp</p>
                 </div>
             </div>
         </div>
@@ -696,20 +695,20 @@
             <h3 class="text-2xl md:text-3xl font-black">¿Listo para equipar tu hogar en Cuba?</h3>
             <p class="text-xs text-blue-100">Déjanos ayudarte a encontrar el equipo ideal para tu familia con entrega inmediata.</p>
         </div>
-        <a href="https://wa.me/5356071095" target="_blank" class="px-8 py-4 bg-white text-[#1a4789] rounded-xl font-black text-xs uppercase tracking-wider hover:bg-blue-50 transition-all shadow-md shrink-0">
+        <button type="button" onclick="contactarGestorAtribuido('Hola, estoy listo para equipar mi hogar y quisiera recibir asesoría para elegir los equipos.')" class="px-8 py-4 bg-white text-[#1a4789] rounded-xl font-black text-xs uppercase tracking-wider hover:bg-blue-50 transition-all shadow-md shrink-0">
             Escribir por WhatsApp ahora →
-        </a>
+        </button>
     </div>
 </section>
 
 <!-- === BENEFICIOS DE CONFIANZA (DE LA IMAGEN 1) === -->
-<section class="client-only-section client-trust-section py-8 bg-white border-b border-slate-100 px-4 md:px-10">
+<section class="client-only-section client-trust-section py-6 md:py-8 bg-white border-b border-slate-100 px-4 md:px-10">
     <div class="max-w-[1200px] mx-auto">
         <p class="text-center text-xs font-black uppercase text-slate-400 tracking-widest mb-6">¿Por qué elegir paratuhogar.org?</p>
         
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+        <div class="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 text-center">
             
-            <div class="p-3 space-y-1">
+            <div class="hidden p-3 space-y-1 sm:block">
                 <span class="material-symbols-outlined text-[#1a4789] text-2xl">verified_user</span>
                 <p class="text-xs font-black text-slate-800">Garantía por escrito</p>
                 <p class="text-[10px] text-slate-400 font-medium">Respaldo total en cada compra</p>
@@ -733,7 +732,7 @@
                 <p class="text-[10px] text-slate-400 font-medium">Asesoría directa en WhatsApp</p>
             </div>
 
-            <div class="p-3 space-y-1 col-span-2 md:col-span-1">
+            <div class="p-3 space-y-1">
                 <span class="material-symbols-outlined text-emerald-600 text-2xl">lock_reset</span>
                 <p class="text-xs font-black text-slate-800">Pago al recibir</p>
                 <p class="text-[10px] text-slate-400 font-medium">Cero riesgo para el cliente</p>
@@ -798,16 +797,21 @@
                 </div>
 
                 <!-- === BARRA DE FILTROS PÚBLICA (Para Clientes) === -->
-<div id="public-filters-bar" class="px-6 py-3 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm relative z-30 md:sticky md:top-[130px]">
-    <span class="text-xs font-bold text-gray-500 hidden md:block">Explora nuestro catálogo</span>
-    <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-        <span class="text-[10px] font-black uppercase text-gray-400">Ordenar por:</span>
-        <select id="sort-selector-public" onchange="applySort()" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-primary p-2 cursor-pointer w-full md:w-auto">
+<div id="public-filters-bar" class="px-4 md:px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm relative z-30 md:sticky md:top-[130px]">
+    <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+            <p class="text-[9px] font-black uppercase tracking-[0.16em] text-[#1a4789]">Catálogo actualizado</p>
+            <p id="public-catalog-result-label" class="truncate text-xs font-bold text-slate-600">Preparando productos disponibles…</p>
+        </div>
+        <div class="flex min-w-[145px] items-center gap-2 md:min-w-0">
+        <label for="sort-selector-public" class="sr-only">Ordenar productos</label>
+        <select id="sort-selector-public" onchange="applySort()" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-primary p-2 cursor-pointer w-full md:w-auto" aria-label="Ordenar productos">
             <option value="nuevo">🆕 Lo Más Nuevo</option>
             <option value="demandados">🔥 Más Demandados</option>
             <option value="precio_asc">💲 Precio: Menor a Mayor</option>
             <option value="precio_desc">💲 Precio: Mayor a Menor</option>
         </select>
+        </div>
     </div>
 </div>
 
@@ -1530,6 +1534,17 @@
                     </button>
                 </div>
 
+                <section id="detail-related-section" class="mb-6 hidden rounded-2xl border border-blue-100 bg-blue-50/40 p-3 md:p-4">
+                    <div class="mb-4 flex items-end justify-between gap-3">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-[0.16em] text-blue-600">Recomendados para ti</p>
+                            <h3 class="mt-1 text-base font-black text-slate-900">También podría interesarte</h3>
+                        </div>
+                        <span class="hidden text-[9px] font-bold text-slate-400 sm:block">Disponibles ahora</span>
+                    </div>
+                    <div id="detail-related-products" class="grid grid-cols-3 gap-2"></div>
+                </section>
+
                 <div class="mb-8">
                     <h3 class="text-xs font-black uppercase text-slate-700 mb-3 tracking-widest">Información del equipo</h3>
                     <p id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></p>
@@ -1624,6 +1639,35 @@
                     <span class="material-symbols-outlined text-lg">shopping_cart</span> Pedir
                 </button>
             </div>
+        </div>
+    </div>
+
+    <div id="product-compare-bar" class="fixed inset-x-3 bottom-3 z-[80] hidden">
+        <div class="mx-auto flex max-w-2xl items-center gap-3 rounded-2xl border border-blue-100 bg-white/95 p-3 shadow-2xl backdrop-blur">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#1a4789]">
+                <span class="material-symbols-outlined">compare_arrows</span>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">Comparador</p>
+                <p id="product-compare-summary" class="truncate text-xs font-black text-slate-800">Selecciona 2 o 3 equipos</p>
+            </div>
+            <button onclick="clearProductComparison()" class="px-2 py-2 text-[10px] font-black text-slate-400">Limpiar</button>
+            <button id="product-compare-open" onclick="openProductComparison()" class="rounded-xl bg-[#1a4789] px-4 py-3 text-[10px] font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300" disabled>Comparar</button>
+        </div>
+    </div>
+
+    <div id="product-compare-modal" class="fixed inset-0 z-[140] hidden overflow-y-auto bg-slate-950/80 p-3 backdrop-blur-sm md:p-8">
+        <div class="mx-auto w-full max-w-5xl rounded-3xl bg-slate-50 shadow-2xl">
+            <header class="sticky top-0 z-10 flex items-center justify-between rounded-t-3xl border-b border-slate-200 bg-white/95 p-5 backdrop-blur">
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-[0.18em] text-blue-600">Decide con claridad</p>
+                    <h2 class="mt-1 text-xl font-black text-slate-900">Comparar equipos</h2>
+                </div>
+                <button onclick="closeProductComparison()" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600" aria-label="Cerrar comparador">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </header>
+            <div id="product-compare-content" class="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 md:p-6"></div>
         </div>
     </div>
 
@@ -2827,6 +2871,8 @@ checkShortLinks();
 
     
     let productosRaw = [], cart = [], selectedProduct = null;
+    let comparisonProductIds = [];
+    let detailRelatedProducts = [];
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
     
     
@@ -4721,6 +4767,67 @@ function getCatalogProductBadges(product) {
     return badges.join('');
 }
 
+function getPublicProductPrice(product) {
+    const usd = Number(product?.precio) || 0;
+    if (!showInCUP) return `$${usd} USD`;
+    const cup = calculateProductCUP(usd, null, product?.cup_extra);
+    return cup
+        ? `CUP ${cup.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+        : `$${usd} USD`;
+}
+
+function renderDetailRelatedProducts(product) {
+    const section = document.getElementById('detail-related-section');
+    const container = document.getElementById('detail-related-products');
+    if (!section || !container || !product) return;
+
+    const normalizeCategory = value => String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Z0-9]+/gi, ' ')
+        .trim()
+        .toUpperCase();
+    const category = normalizeCategory(product.categoria);
+    const currentPrice = Number(product.precio) || 0;
+    const available = productosRaw.filter(item =>
+        item.disponible === 'SI' && item.nombre !== product.nombre);
+    const sameCategory = available.filter(item => {
+        const itemCategory = normalizeCategory(item.categoria);
+        return itemCategory === category
+            || (category.length > 3 && itemCategory.includes(category))
+            || (itemCategory.length > 3 && category.includes(itemCategory));
+    });
+    const pool = sameCategory.length >= 3 ? sameCategory : [
+        ...sameCategory,
+        ...available.filter(item => !sameCategory.includes(item))
+    ];
+    const alternatives = pool
+        .sort((a, b) => Math.abs((Number(a.precio) || 0) - currentPrice)
+            - Math.abs((Number(b.precio) || 0) - currentPrice))
+        .slice(0, 3);
+
+    if (!alternatives.length) {
+        container.innerHTML = '';
+        section.classList.add('hidden');
+        return;
+    }
+
+    container.innerHTML = alternatives.map(item => {
+        const safeName = String(item.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return `
+            <button onclick="openDetail('${safeName}')" class="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:shadow-md">
+                <div class="aspect-square overflow-hidden bg-slate-50 p-2">
+                    <img src="${fixDriveUrl(item.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-300 group-hover:scale-105">
+                </div>
+                <div class="p-2">
+                    <p class="line-clamp-2 min-h-[2rem] text-[10px] font-black leading-tight text-slate-700">${item.nombre}</p>
+                    <p class="mt-1 truncate text-xs font-black text-[#1a4789]">${getPublicProductPrice(item)}</p>
+                </div>
+            </button>`;
+    }).join('');
+    section.classList.remove('hidden');
+}
+
 function renderCatalogProducts(list) {
     const container = document.getElementById('productos-container');
     if (!container) return;
@@ -4731,6 +4838,11 @@ function renderCatalogProducts(list) {
         : 'px-4 md:px-6 py-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6';
 
     renderGestorCatalogSummary(list.length);
+    const publicResult = document.getElementById('public-catalog-result-label');
+    if (publicResult && !seller) {
+        const categoryLabel = activeCategory === 'TODOS' ? 'todas las categorías' : activeCategory.toLowerCase();
+        publicResult.textContent = `${list.length} ${list.length === 1 ? 'equipo disponible' : 'equipos disponibles'} · ${categoryLabel}`;
+    }
     if (!list.length) {
         const term = (document.getElementById('search-bar')?.value || '').trim();
         if (term.length > 3) trackSpy('BUSQUEDA_VACIA', term);
@@ -4747,11 +4859,7 @@ function renderCatalogProducts(list) {
         const price = Number(product.precio) || 0;
         const commission = Number(product.comision) || 0;
         const safeName = String(product.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        let priceDisplay = `$${price}`;
-        if (showInCUP) {
-            const cup = calculateProductCUP(price, null, product.cup_extra);
-            priceDisplay = cup ? `CUP ${cup.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : 'Solo USD/EUR';
-        }
+        let priceDisplay = getPublicProductPrice(product);
 
         if (!seller) {
             return `
@@ -4769,7 +4877,12 @@ function renderCatalogProducts(list) {
                             <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">verified_user</span><span class="truncate">${product.garantia || 'Garantía disponible'}</span></p>
                             <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">local_shipping</span><span class="truncate">${product.mensajeria || 'Entrega coordinada'}</span></p>
                         </div>
-                        <button onclick="openDetail('${safeName}')" class="mt-auto w-full rounded-lg bg-primary py-2.5 text-xs font-extrabold text-white shadow-md">Ver detalles</button>
+                        <div class="mt-auto grid grid-cols-[1fr_44px] gap-2 pt-1">
+                            <button onclick="openDetail('${safeName}')" class="min-h-11 rounded-xl bg-primary px-2 text-xs font-extrabold text-white shadow-md transition hover:bg-[#12396f]">Ver detalles</button>
+                            <button onclick="addProductFromCard('${safeName}')" class="flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-primary transition hover:bg-blue-100" title="Añadir ${safeName} al pedido" aria-label="Añadir ${safeName} al pedido">
+                                <span class="material-symbols-outlined text-xl">add_shopping_cart</span>
+                            </button>
+                        </div>
                     </div>
                 </article>`;
         }
@@ -4833,8 +4946,9 @@ function renderProducts() {
 // 3. DETALLE DE PRODUCTO (CON INTERCEPTORES DE B2B Y PANELES + HERRAMIENTAS RESTAURADAS)
 function openDetail(name, skipSolarCheck = false) {
     // === SEO DINÁMICO ===
-    const urlSegura = encodeURIComponent(name);
-    history.pushState({producto: name}, '', `?search=${urlSegura}`);
+    const detailUrl = new URL(window.location.href);
+    detailUrl.searchParams.set('search', name);
+    history.pushState({producto: name}, '', `${detailUrl.pathname}${detailUrl.search}${detailUrl.hash}`);
     document.title = `${name.replace(/&quot;/g, '"')} | Comprar en Cuba - ParaTuHogar`;
     
     const nombreReal = name.replace(/&quot;/g, '"');
@@ -4870,9 +4984,10 @@ function openDetail(name, skipSolarCheck = false) {
     }
 
     // PRECIOS Y DETALLES
-    document.getElementById('detail-price').innerText = `$${p.precio}.00 USD`;
+    const detailPriceDisplay = getPublicProductPrice(p);
+    document.getElementById('detail-price').innerText = detailPriceDisplay;
     const mobilePrice = document.getElementById('detail-mobile-price');
-    if (mobilePrice) mobilePrice.innerText = `$${p.precio}.00 USD`;
+    if (mobilePrice) mobilePrice.innerText = detailPriceDisplay;
     document.getElementById('detail-cat').innerText = p.categoria || '';
     document.getElementById('detail-warranty').innerText = p.garantia || '1 Mes';
     document.getElementById('detail-shipping').innerText = p.mensajeria || 'Consultar';
@@ -4883,6 +4998,7 @@ function openDetail(name, skipSolarCheck = false) {
     document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
         <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
     `).join('');
+    renderDetailRelatedProducts(p);
 
     // --- CARGAR OPINIONES AL ABRIR EL MODAL ---
     loadProductReviews(p.id, p.nombre, p.categoria);
@@ -5607,6 +5723,14 @@ function renderFloatingWA(nombre, telefono) {
     // ======================================
 
     const primerNombre = nombre.split(' ')[0];
+    const advisorName = document.getElementById('client-assigned-advisor-name');
+    const advisorStatus = document.getElementById('client-assigned-advisor-status');
+    if (advisorName) {
+        advisorName.textContent = nombre === 'Atención al Cliente'
+            ? 'Atención personalizada'
+            : `Te atiende ${primerNombre}`;
+    }
+    if (advisorStatus) advisorStatus.textContent = 'Disponible para ayudarte por WhatsApp';
 
     container.innerHTML = `
         <a href="https://wa.me/${telLimpio}?text=${encodeURIComponent('Hola ' + primerNombre + ', estoy viendo el catálogo y me interesa un equipo.')}" 
@@ -5662,9 +5786,9 @@ function renderFloatingWA(nombre, telefono) {
 }
     function closeDetail() {
     // === NUEVO: RESTAURAR SEO DINÁMICO ===
-    const urlLimpia = window.location.protocol + "//" + window.location.host + window.location.pathname;
-    const gestorParams = window.gestorName ? `?gestor=${encodeURIComponent(window.gestorName)}` : '';
-    history.pushState(null, '', urlLimpia + gestorParams);
+    const catalogUrl = new URL(window.location.href);
+    catalogUrl.searchParams.delete('search');
+    history.pushState(null, '', `${catalogUrl.pathname}${catalogUrl.search}${catalogUrl.hash}`);
     document.title = "ParaTuHogar | Electrodomésticos para Cuba";
     // ==========================================
 
