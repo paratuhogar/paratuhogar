@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHADOW MARKETER | Centro de Comando</title>
+    <script>
+        (() => {
+            try {
+                const session = JSON.parse(localStorage.getItem('pth_session') || 'null');
+                if (!session || session.name !== 'Marcel Montano') {
+                    window.location.replace('index.html');
+                    return;
+                }
+                document.documentElement.dataset.ownerAccess = 'granted';
+            } catch (_) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -12,6 +26,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
     <style>
+        html:not([data-owner-access="granted"]) body { display: none; }
         body { font-family: 'Rajdhani', sans-serif; background-color: #050505; color: #e2e8f0; }
         .loader { width: 20px; height: 20px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -298,22 +313,14 @@
     // --- INICIO ---
     // --- INICIO ---
     window.onload = async () => {
-        const pass = prompt("🛡️ SALA DE GUERRA\nClave de Mando:");
-        
-        let initialName = "Marcel Montano";
-        let initialPhone = "58183649";
-
-        // Detectar quién es según la clave
-        if (pass === "marcel/6") {
-            initialName = "Marcel Montano";
-            initialPhone = "58183649";
-        } else if (pass === "diana/god") { 
-            initialName = "Diana";
-            initialPhone = "50000000"; // <--- CAMBIA ESTO POR SU NÚMERO
-        } else { 
-            document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:20%'>DENEGADO</h1>"; 
-            return; 
+        const session = JSON.parse(localStorage.getItem('pth_session') || 'null');
+        if (!session || session.name !== 'Marcel Montano') {
+            window.location.replace('index.html');
+            return;
         }
+
+        const initialName = "Marcel Montano";
+        const initialPhone = String(session.data?.telefono || "58183649").replace(/\D/g, '').replace(/^53(?=\d{8}$)/, '');
 
         // Llenar las casillas visuales con los datos
         document.getElementById('cfg-agent-name').value = initialName;

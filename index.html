@@ -589,7 +589,7 @@
         <!-- 2. CONTENEDOR DEL CATÁLOGO (Solo envuelve cosas del catálogo) -->
         <div id="sec-catalogo">
             <!-- === HERO SECTION COMPLETO (TEXTO + BOTONES + FOTO RESTAURADA) === -->
-<section class="bg-white py-12 md:py-16 px-4 md:px-10 border-b border-slate-100">
+<section class="client-only-section bg-white py-12 md:py-16 px-4 md:px-10 border-b border-slate-100">
     <div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         
         <!-- Columna Izquierda: Texto + Botones + Reseñas -->
@@ -663,7 +663,7 @@
 
 
 <!-- === TESTIMONIOS Y FORMULARIO DE CONSULTA === -->
-<section class="py-16 px-4 md:px-10 bg-white">
+<section class="client-only-section client-secondary-section py-16 px-4 md:px-10 bg-white">
     <div class="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
         
         <!-- Izquierda: Testimonios -->
@@ -742,7 +742,7 @@
 
 
 <!-- === 4. BANNER FINAL CTA (ESTILO MOCKUP) === -->
-<section class="max-w-[1200px] mx-auto my-10 px-4">
+<section class="client-only-section client-secondary-section client-final-cta max-w-[1200px] mx-auto my-10 px-4">
     <div class="bg-[#1a4789] rounded-3xl p-8 md:p-12 text-white flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl">
         <div class="space-y-2 text-center md:text-left">
             <h3 class="text-2xl md:text-3xl font-black">¿Listo para equipar tu hogar en Cuba?</h3>
@@ -755,7 +755,7 @@
 </section>
 
 <!-- === BENEFICIOS DE CONFIANZA (DE LA IMAGEN 1) === -->
-<section class="py-8 bg-white border-b border-slate-100 px-4 md:px-10">
+<section class="client-only-section client-trust-section py-8 bg-white border-b border-slate-100 px-4 md:px-10">
     <div class="max-w-[1200px] mx-auto">
         <p class="text-center text-xs font-black uppercase text-slate-400 tracking-widest mb-6">¿Por qué elegir paratuhogar.org?</p>
         
@@ -796,7 +796,7 @@
 </section>
 
 <!-- === PROCESO SIMPLE EN 4 PASOS (DE LA IMAGEN 1) === -->
-<section class="py-16 px-4 md:px-10 bg-slate-50 border-y border-slate-200/60">
+<section class="client-only-section client-secondary-section py-16 px-4 md:px-10 bg-slate-50 border-y border-slate-200/60">
     <div class="max-w-[1200px] mx-auto space-y-10">
         
         <div class="text-center max-w-2xl mx-auto space-y-2">
@@ -868,6 +868,45 @@
                 <!-- 2. BARRA DE MARKETING PRO (Solo para Gestores) -->
             <!-- === CENTRO DE MANDO GESTOR (DISEÑO UNIFICADO) === -->
             <div id="gestor-command-center" class="hidden max-w-[1200px] mx-auto px-4 md:px-6 py-4">
+                <section class="mb-4 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 p-5 md:flex md:items-center md:justify-between md:gap-5">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-[#1a4789]">Catálogo de ventas</p>
+                            <h2 class="mt-1 text-xl font-black text-slate-900">Encuentra qué ofrecer en segundos</h2>
+                            <p id="gestor-catalog-result-label" class="mt-1 text-xs font-medium text-slate-500">Preparando inventario…</p>
+                        </div>
+                        <div class="mt-4 inline-flex rounded-xl bg-slate-100 p-1 md:mt-0">
+                            <button id="gestor-view-grid" onclick="setGestorCatalogView('grid')" class="flex min-h-10 items-center gap-2 rounded-lg bg-white px-3 text-[10px] font-black uppercase text-[#1a4789] shadow-sm">
+                                <span class="material-symbols-outlined text-lg">grid_view</span><span class="hidden sm:inline">Cuadrícula</span>
+                            </button>
+                            <button id="gestor-view-list" onclick="setGestorCatalogView('list')" class="flex min-h-10 items-center gap-2 rounded-lg px-3 text-[10px] font-black uppercase text-slate-500">
+                                <span class="material-symbols-outlined text-lg">view_list</span><span class="hidden sm:inline">Lista</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-3">
+                        <button onclick="setGestorCatalogFilter('disponibles')" data-gestor-catalog-filter="disponibles" class="gestor-catalog-filter bg-blue-50 p-4 text-left">
+                            <strong id="gestor-catalog-available" class="block text-xl font-black text-slate-900">—</strong>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Disponibles</span>
+                        </button>
+                        <button onclick="setGestorCatalogFilter('nuevos')" data-gestor-catalog-filter="nuevos" class="gestor-catalog-filter bg-white p-4 text-left">
+                            <strong id="gestor-catalog-new" class="block text-xl font-black text-slate-900">—</strong>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Nuevos · 7 días</span>
+                        </button>
+                        <button onclick="setGestorCatalogFilter('comision')" data-gestor-catalog-filter="comision" class="gestor-catalog-filter bg-white p-4 text-left">
+                            <strong id="gestor-catalog-high-commission" class="block text-xl font-black text-emerald-600">—</strong>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Ganancia +$10</span>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2 overflow-x-auto border-t border-slate-100 p-3 scrollbar-hide">
+                        <button onclick="setGestorCatalogFilter('todos')" data-gestor-catalog-filter="todos" class="gestor-catalog-filter shrink-0 rounded-full border border-slate-200 px-4 py-2 text-[10px] font-black uppercase text-slate-500">Todos</button>
+                        <button onclick="setGestorCatalogFilter('disponibles')" data-gestor-catalog-filter="disponibles" class="gestor-catalog-filter shrink-0 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase text-blue-700">Disponibles</button>
+                        <button onclick="setGestorCatalogFilter('nuevos')" data-gestor-catalog-filter="nuevos" class="gestor-catalog-filter shrink-0 rounded-full border border-slate-200 px-4 py-2 text-[10px] font-black uppercase text-slate-500">Nuevos</button>
+                        <button onclick="setGestorCatalogFilter('comision')" data-gestor-catalog-filter="comision" class="gestor-catalog-filter shrink-0 rounded-full border border-slate-200 px-4 py-2 text-[10px] font-black uppercase text-slate-500">Mayor ganancia</button>
+                    </div>
+                </section>
                 
                 <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none p-3 flex flex-col xl:flex-row gap-4 items-center justify-between">
                     
@@ -954,7 +993,7 @@
                 <div id="gestor-filters" class="hidden px-6 py-2 flex items-center justify-end bg-gray-50 dark:bg-gray-900/50">
                     <div class="flex items-center gap-2">
                         <span class="text-[9px] font-black uppercase text-gray-400">Ordenar:</span>
-                        <select id="sort-selector" onchange="applySort()" class="bg-transparent border-none text-[10px] font-bold text-gray-600 dark:text-gray-300 focus:ring-0 p-0 cursor-pointer">
+                        <select id="sort-selector-legacy" onchange="applySort()" class="bg-transparent border-none text-[10px] font-bold text-gray-600 dark:text-gray-300 focus:ring-0 p-0 cursor-pointer">
                             <option value="defecto">Relevancia</option>
                             <option value="comision_desc">💰 Mayor Ganancia</option>
                             <option value="precio_asc">💲 Precio: Bajo a Alto</option>
@@ -972,9 +1011,114 @@
 
         <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
+            <!-- === INICIO OPERATIVO DEL GESTOR === -->
+            <div id="gestor-home" class="space-y-6">
+                <section class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0f2d57] via-[#174b89] to-[#2563a8] text-white shadow-xl shadow-blue-950/15">
+                    <div class="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
+                        <div>
+                            <div class="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">
+                                <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                                Centro de trabajo
+                            </div>
+                            <p id="gestor-home-date" class="text-xs font-bold text-blue-100"></p>
+                            <h1 id="gestor-home-title" class="mt-1 text-2xl font-black tracking-tight md:text-4xl">Hola, gestor</h1>
+                            <p id="gestor-home-summary" class="mt-3 max-w-2xl text-sm leading-relaxed text-blue-100">Estamos preparando tus prioridades y resultados.</p>
+                        </div>
+                        <div class="flex flex-col justify-center gap-2 sm:flex-row md:flex-col">
+                            <button onclick="openGestorClientView()" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-black text-[#174b89] shadow-lg transition hover:-translate-y-0.5">
+                                <span class="material-symbols-outlined text-lg">visibility</span> Ver mi tienda
+                            </button>
+                            <button onclick="copyGestorStoreLink()" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-xs font-black text-white backdrop-blur transition hover:bg-white/20">
+                                <span class="material-symbols-outlined text-lg">link</span> Copiar enlace
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section aria-label="Indicadores principales" class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span class="rounded-xl bg-amber-50 p-2 text-amber-600 material-symbols-outlined">pending_actions</span>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Atender</span>
+                        </div>
+                        <strong id="gestor-kpi-active" class="block text-2xl font-black text-slate-900">—</strong>
+                        <span class="text-[11px] font-bold text-slate-500">Pedidos activos</span>
+                    </article>
+                    <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span class="rounded-xl bg-emerald-50 p-2 text-emerald-600 material-symbols-outlined">payments</span>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Disponible</span>
+                        </div>
+                        <strong id="gestor-kpi-receivable" class="block text-2xl font-black text-slate-900">—</strong>
+                        <span class="text-[11px] font-bold text-slate-500">Comisión por cobrar</span>
+                    </article>
+                    <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span class="rounded-xl bg-blue-50 p-2 text-blue-600 material-symbols-outlined">task_alt</span>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Histórico</span>
+                        </div>
+                        <strong id="gestor-kpi-delivered" class="block text-2xl font-black text-slate-900">—</strong>
+                        <span class="text-[11px] font-bold text-slate-500">Pedidos entregados</span>
+                    </article>
+                    <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                        <div class="mb-4 flex items-center justify-between">
+                            <span class="rounded-xl bg-violet-50 p-2 text-violet-600 material-symbols-outlined">receipt_long</span>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Promedio</span>
+                        </div>
+                        <strong id="gestor-kpi-ticket" class="block text-2xl font-black text-slate-900">—</strong>
+                        <span class="text-[11px] font-bold text-slate-500">Ticket entregado</span>
+                    </article>
+                </section>
+
+                <section class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                        <div class="mb-5">
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-[#1a4789]">Acciones rápidas</p>
+                            <h2 class="mt-1 text-lg font-black text-slate-900">Empieza a vender</h2>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="openGestorTool('catalogo')" class="group min-h-24 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50">
+                                <span class="material-symbols-outlined text-[#1a4789]">search</span>
+                                <span class="mt-2 block text-xs font-black text-slate-800">Buscar producto</span>
+                            </button>
+                            <button onclick="openGestorTool('mensaje')" class="group min-h-24 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50">
+                                <span class="material-symbols-outlined text-emerald-600">campaign</span>
+                                <span class="mt-2 block text-xs font-black text-slate-800">Crear mensaje</span>
+                            </button>
+                            <button onclick="openGestorTool('story')" class="group min-h-24 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-fuchsia-300 hover:bg-fuchsia-50">
+                                <span class="material-symbols-outlined text-fuchsia-600">auto_awesome</span>
+                                <span class="mt-2 block text-xs font-black text-slate-800">Crear Story</span>
+                            </button>
+                            <button onclick="openGestorTool('pdf')" class="group min-h-24 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-amber-300 hover:bg-amber-50">
+                                <span class="material-symbols-outlined text-amber-600">picture_as_pdf</span>
+                                <span class="mt-2 block text-xs font-black text-slate-800">Catálogo PDF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-100 p-5 md:p-6">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-[#1a4789]">Actividad reciente</p>
+                                <h2 class="mt-1 text-lg font-black text-slate-900">Últimos pedidos</h2>
+                            </div>
+                            <button onclick="openGestorOrders()" class="text-[10px] font-black uppercase text-[#1a4789] hover:underline">Ver todos</button>
+                        </div>
+                        <div id="gestor-home-orders" class="divide-y divide-slate-100">
+                            <div class="p-8 text-center text-xs font-bold text-slate-400">Cargando actividad…</div>
+                        </div>
+                    </div>
+                </section>
+
+                <button id="gestor-advanced-toggle" onclick="toggleGestorAdvanced()" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 text-left text-xs font-black text-slate-600 shadow-sm transition hover:border-slate-300">
+                    <span class="flex items-center gap-2"><span class="material-symbols-outlined text-lg">monitoring</span> Ver análisis, ranking e historial completo</span>
+                    <span id="gestor-advanced-icon" class="material-symbols-outlined transition-transform">expand_more</span>
+                </button>
+            </div>
+
             <!-- === NAVEGACIÓN DASHBOARD GESTOR === -->
             <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
-                <button onclick="showDashSection('resumen')" id="btn-dash-resumen" class="px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all">📊 Resumen</button>
+                <button onclick="showDashSection('resumen')" id="btn-dash-resumen" class="px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all">Inicio</button>
                 <button onclick="showDashSection('precios')" id="btn-dash-precios" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🏷️ Mis Precios (Config)</button>
             
             <!-- NUEVO BOTÓN DE ACCESO A SUBGESTORES CON ID -->
@@ -984,7 +1128,7 @@
             </div>
 
             <!-- 1. SECCIÓN RESUMEN (Aquí envolvemos lo que ya tenías) -->
-            <div id="sub-dash-resumen">
+            <div id="sub-dash-resumen" class="hidden">
             <!-- AQUÍ DENTRO DEBE QUEDAR TODO LO QUE YA TENÍAS EN TU DASHBOARD (Tarjetas, Ranking, etc.) -->
             <!-- No borres nada de tu código anterior, solo asegúrate de que el contenido viejo del dashboard quede visualmente bajo esta lógica o simplemente déjalo como está y el JS se encargará de ocultarlo/mostrarlo si lo envuelves en un div -->
             </div>
@@ -3020,17 +3164,12 @@ async function processRegister() {
         loadAdminData();
     } else {
         // MODO GESTOR o SUBGESTOR (Ventas)
-        showSection('catalogo');
-        loadProducts(); 
-        loadProDashboard(name);
-        
-        if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
-
         const commandCenter = document.getElementById('gestor-command-center');
         if (commandCenter) commandCenter.classList.remove('hidden');
 
         const publicFilters = document.getElementById('public-filters-bar');
         if (publicFilters) publicFilters.classList.add('hidden');
+        document.querySelectorAll('.client-only-section').forEach(section => section.classList.add('hidden'));
 
         if (typeof applyLockedFeatures === "function") applyLockedFeatures();
         if (typeof renderFlashButton === "function") renderFlashButton();
@@ -3083,6 +3222,16 @@ async function processRegister() {
                 btnSub.style.display = 'inline-flex';
             }
         }
+
+        // Cargar la información una sola vez, ya con el rol correcto resuelto.
+        // El gestor entra directamente a su centro de trabajo.
+        await Promise.all([
+            loadProducts(),
+            loadProDashboard(name),
+            loadClientCRM()
+        ]);
+        if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
+        showSection('dashboard');
     }
 
     const btnLogout = document.getElementById('btn-logout');
@@ -3091,7 +3240,7 @@ async function processRegister() {
         btnLogout.style.display = 'inline-flex'; 
     }
     
-    loadClientCRM(); 
+    if (adminMode) loadClientCRM(); 
 
     const waBtn = document.getElementById('floating-agent-contact');
     if (waBtn) waBtn.classList.add('hidden');
@@ -3120,8 +3269,9 @@ async function processRegister() {
         }
     }
 
-    // Puerta secreta al radar (Solo para Marcel o Diana)
-    if (name === "Marcel Montano" || name === "Diana") {
+    // Herramientas experimentales: acceso exclusivo del propietario/programador.
+    ['btn-radar-secret', 'btn-war-room'].forEach(id => document.getElementById(id)?.remove());
+    if (name === "Marcel Montano") {
         const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
         
         if (headerActions && !document.getElementById('btn-radar-secret')) {
@@ -3228,6 +3378,14 @@ async function loadProDashboard(nombreGestor) {
     if(document.getElementById('dash-money-paid')) document.getElementById('dash-money-paid').innerText = `$${cobrado.toFixed(2)}`;
     if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = misEntregados.length;
     if(document.getElementById('dash-pending')) document.getElementById('dash-pending').innerText = misPendientes.length;
+
+    renderGestorHome({
+        ventas: misVentas,
+        entregados: misEntregados,
+        pendientes: misPendientes,
+        porCobrar,
+        cobrado
+    });
 
     // 3. RENDERIZAR TABLA DE MIS PEDIDOS
     renderMyOrdersList(misVentas);
@@ -3995,6 +4153,29 @@ function renderMyOrdersList(lista) {
 
 
     // 2. CARGA DE PRODUCTOS
+function prepareClientExperience() {
+    // En una sesión interna estas secciones se ocultan; esta organización es
+    // exclusivamente para quien visita la tienda como cliente.
+    if (localStorage.getItem('pth_session')) return;
+    const catalog = document.getElementById('sec-catalogo');
+    const hero = catalog?.querySelector('.client-only-section');
+    const trust = catalog?.querySelector('.client-trust-section');
+    const productGrid = document.getElementById('productos-container');
+    if (!catalog || !hero || !productGrid) return;
+
+    // Promesa de confianza breve y luego productos: la intención de compra
+    // aparece antes que testimonios, formularios y explicaciones extensas.
+    if (trust) hero.insertAdjacentElement('afterend', trust);
+
+    const finalCta = catalog.querySelector('.client-final-cta');
+    catalog.querySelectorAll('.client-secondary-section:not(.client-final-cta)').forEach(section => {
+        productGrid.insertAdjacentElement('afterend', section);
+    });
+    if (finalCta) catalog.appendChild(finalCta);
+}
+
+document.addEventListener('DOMContentLoaded', prepareClientExperience);
+
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
 // --- FUNCIÓN MAESTRA DE CARGA Y FUSIÓN DE PRECIOS ---
 // =====================================================
@@ -4405,132 +4586,184 @@ async function renderCategories() {
     }).join('');
 }
 
-    function renderProducts() {
-    // 1. OBTENCIÓN SEGURA DE ELEMENTOS
-    const searchInput = document.getElementById('search-bar');
-    const container = document.getElementById('productos-container');
-    
-    // Si por alguna razón el HTML no ha cargado, salimos para no dar error
-    if (!searchInput || !container) return;
+let gestorCatalogView = 'grid';
+let gestorCatalogFilter = 'disponibles';
 
-    const query = searchInput.value.toLowerCase();
-    
-    // 2. VARIABLES DE ESTADO
-    const isGestor = window.gestorName ? true : false;
-    // Un enlace referido puede traer el nombre del gestor, pero eso no convierte
-    // al cliente en usuario interno. Las herramientas comerciales solo aparecen
-    // cuando existe una sesión real de gestor, subgestor o administrador.
-    const hasSellerSession = Boolean(localStorage.getItem('pth_session'));
-    const filterCheckbox = document.getElementById('filter-high-comm');
-    const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
-    
-    // 3. FILTRADO
-    const filtered = productosRaw.filter(p => {
-        const matchSearch = p.nombre.toLowerCase().includes(query);
-        const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-        
-        // Lógica del filtro "Tiburón" (Ganancia > 10)
-        const matchComm = !filterHighComm || (Number(p.comision || 0) > 10);
+function isGestorCatalogMode() {
+    return Boolean(localStorage.getItem('pth_session')) && Boolean(window.gestorName);
+}
 
-        return matchSearch && matchCat && matchComm && p.disponible === "SI";
+function isRecentCatalogProduct(product) {
+    const created = new Date(product.created_at || product.fecha || 0).getTime();
+    return created > 0 && (Date.now() - created) <= 7 * 24 * 60 * 60 * 1000;
+}
+
+function matchesGestorCatalogFilter(product) {
+    if (!isGestorCatalogMode()) return product.disponible === 'SI';
+    if (gestorCatalogFilter === 'todos') return product.disponible === 'SI';
+    if (gestorCatalogFilter === 'nuevos') return product.disponible === 'SI' && isRecentCatalogProduct(product);
+    if (gestorCatalogFilter === 'comision') return product.disponible === 'SI' && Number(product.comision || 0) > 10;
+    return product.disponible === 'SI';
+}
+
+function getFilteredCatalogProducts() {
+    const query = (document.getElementById('search-bar')?.value || '').trim().toLowerCase();
+    const filterHighComm = Boolean(document.getElementById('filter-high-comm')?.checked);
+    return productosRaw.filter(product => {
+        const name = String(product.nombre || '').toLowerCase();
+        const category = String(product.categoria || '');
+        const matchSearch = !query || name.includes(query) || category.toLowerCase().includes(query);
+        const matchCategory = activeCategory === 'TODOS' || category.toUpperCase().includes(activeCategory);
+        const matchCommission = !filterHighComm || Number(product.comision || 0) > 10;
+        return matchSearch && matchCategory && matchCommission && matchesGestorCatalogFilter(product);
     });
+}
 
-    if (filtered.length === 0) {
-        // --- SENSOR: CAPTURAR DEMANDA NO SATISFECHA ---
-        const term = document.getElementById('search-bar').value.trim();
-        
-        // Solo rastreamos si escribió más de 3 letras (para evitar basura)
-        if (term.length > 3) {
-            trackSpy('BUSQUEDA_VACIA', term);
-        }
-        // ----------------------------------------------
+function renderGestorCatalogSummary(visibleCount) {
+    if (!isGestorCatalogMode()) return;
+    const available = productosRaw.filter(product => product.disponible === 'SI');
+    const values = {
+        'gestor-catalog-available': available.length,
+        'gestor-catalog-new': available.filter(isRecentCatalogProduct).length,
+        'gestor-catalog-high-commission': available.filter(product => Number(product.comision || 0) > 10).length
+    };
+    Object.entries(values).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    });
+    const result = document.getElementById('gestor-catalog-result-label');
+    if (result) result.textContent = `${visibleCount} ${visibleCount === 1 ? 'producto visible' : 'productos visibles'} · ${activeCategory === 'TODOS' ? 'Todas las categorías' : activeCategory}`;
 
-        container.innerHTML = `<div class="col-span-full py-20 text-center text-gray-400 font-bold">No se encontraron equipos.</div>`;
+    document.querySelectorAll('[data-gestor-catalog-filter]').forEach(button => {
+        const active = button.dataset.gestorCatalogFilter === gestorCatalogFilter;
+        button.classList.toggle('ring-2', active);
+        button.classList.toggle('ring-[#1a4789]', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
+function setGestorCatalogFilter(filter) {
+    gestorCatalogFilter = ['todos', 'disponibles', 'nuevos', 'comision'].includes(filter)
+        ? filter
+        : 'disponibles';
+    applySort();
+}
+
+function setGestorCatalogView(view) {
+    gestorCatalogView = view === 'list' ? 'list' : 'grid';
+    const gridButton = document.getElementById('gestor-view-grid');
+    const listButton = document.getElementById('gestor-view-list');
+    [gridButton, listButton].forEach(button => button?.classList.remove('bg-white', 'text-[#1a4789]', 'shadow-sm'));
+    const activeButton = gestorCatalogView === 'grid' ? gridButton : listButton;
+    activeButton?.classList.add('bg-white', 'text-[#1a4789]', 'shadow-sm');
+    applySort();
+}
+
+function getCatalogProductBadges(product) {
+    const badges = [];
+    if (product.disponible !== 'SI') badges.push('<span class="rounded-full bg-rose-50 px-2 py-1 text-[8px] font-black uppercase text-rose-700">Agotado</span>');
+    else badges.push('<span class="rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-black uppercase text-emerald-700">Disponible</span>');
+    if (isRecentCatalogProduct(product)) badges.push('<span class="rounded-full bg-blue-50 px-2 py-1 text-[8px] font-black uppercase text-blue-700">Nuevo</span>');
+    if (product.precio_flexible === 'SI') badges.push('<span class="rounded-full bg-violet-50 px-2 py-1 text-[8px] font-black uppercase text-violet-700">Precio flexible</span>');
+    return badges.join('');
+}
+
+function renderCatalogProducts(list) {
+    const container = document.getElementById('productos-container');
+    if (!container) return;
+    const seller = isGestorCatalogMode();
+    const isList = seller && gestorCatalogView === 'list';
+    container.className = isList
+        ? 'px-4 md:px-6 py-6 grid grid-cols-1 gap-3'
+        : 'px-4 md:px-6 py-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6';
+
+    renderGestorCatalogSummary(list.length);
+    if (!list.length) {
+        const term = (document.getElementById('search-bar')?.value || '').trim();
+        if (term.length > 3) trackSpy('BUSQUEDA_VACIA', term);
+        container.innerHTML = `
+            <div class="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-center">
+                <span class="material-symbols-outlined text-4xl text-slate-300">search_off</span>
+                <p class="mt-3 text-sm font-black text-slate-700">No encontramos productos con estos filtros</p>
+                <button onclick="setGestorCatalogFilter('disponibles')" class="mt-3 text-xs font-black text-[#1a4789] hover:underline">Ver disponibles</button>
+            </div>`;
         return;
     }
 
-    // 5. RENDERIZADO DE TARJETAS
-    // 5. RENDERIZADO DE TARJETAS
-    container.innerHTML = filtered.map(p => {
-        const precio = parseFloat(p.precio) || 0;
-        
-        // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE ---
-        let pDisplay = `$${precio}`; 
-
+    container.innerHTML = list.map(product => {
+        const price = Number(product.precio) || 0;
+        const commission = Number(product.comision) || 0;
+        const safeName = String(product.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        let priceDisplay = `$${price}`;
         if (showInCUP) {
-            const precioCUP = calculateProductCUP(precio, null, p.cup_extra);
-            if (precioCUP) {
-                pDisplay = `CUP ${precioCUP.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-            } else {
-                pDisplay = "<span class='text-sm text-gray-400'>Solo USD/EUR</span>";
-            }
+            const cup = calculateProductCUP(price, null, product.cup_extra);
+            priceDisplay = cup ? `CUP ${cup.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : 'Solo USD/EUR';
         }
-        // --- FIN: NUEVA LÓGICA ---
-        
-        // Etiqueta de Comisión
-        let htmlComision = isGestor ? 
-            `<div class="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
-                <span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md">GANAS $${p.comision || 0}</span>
-                ${p.precio_flexible === 'SI' ? '<span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-md border border-white">📈 PRECIO LIBRE</span>' : ''}
-             </div>` : '';
 
-        // === CORRECCIÓN: LIMPIEZA DE COMILLAS DOBLES Y SIMPLES ===
-        const nombreSeguro = p.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        if (!seller) {
+            return `
+                <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
+                    <button onclick="openDetail('${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
+                        <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
+                    </button>
+                    <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
+                        <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-slate-800">${product.nombre}</h3>
+                        <p class="text-xl font-black text-primary md:text-2xl">${priceDisplay}</p>
+                        <button onclick="openDetail('${safeName}')" class="mt-auto w-full rounded-lg bg-primary py-2.5 text-xs font-extrabold text-white shadow-md">Ver detalles</button>
+                    </div>
+                </article>`;
+        }
 
+        const unavailable = product.disponible !== 'SI';
+        const updatedAt = product.updated_at || product.created_at;
+        const updatedLabel = updatedAt
+            ? new Date(updatedAt).toLocaleDateString('es-CU', { day: '2-digit', month: 'short' })
+            : 'Sin fecha';
+        const cardLayout = isList ? 'md:grid md:grid-cols-[150px_1fr_250px] md:items-stretch' : 'flex flex-col';
+        const imageLayout = isList ? 'aspect-[4/3] md:aspect-auto md:min-h-[180px]' : 'aspect-square';
         return `
-        <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
-            ${htmlComision}
-            
-            <!-- Imagen Clickable (USANDO nombreSeguro) -->
-            <div onclick="openDetail('${nombreSeguro}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer flex items-center justify-center">
-                <img 
-                    src="${fixDriveUrl(p.thumbnail)}" 
-                    loading="lazy" 
-                    alt="${nombreSeguro}"
-                    class="w-full h-full object-contain transition-transform group-hover:scale-110 duration-500"
-                >
-            </div>
-
-            <!-- Info -->
-            <div class="p-5 flex flex-col gap-2 flex-1">
-                <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
-                <p class="text-primary text-2xl font-black">${pDisplay}</p>
-                
-                <!-- Botón Ver Detalles (USANDO nombreSeguro) -->
-                <button onclick="openDetail('${nombreSeguro}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
-                    Ver Detalles
+            <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
+                <button onclick="openDetail('${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
+                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
                 </button>
-            </div>
-
-            ${hasSellerSession ? `
-            <!-- RESPUESTA RÁPIDA: SOLO USUARIOS INTERNOS -->
-            <div class="border-t border-gray-100 dark:border-gray-700 bg-slate-50/90 dark:bg-gray-900/60 p-2">
-                <div class="grid grid-cols-5 gap-1">
-                    <button onclick="copyProductOffer('${nombreSeguro}', this)" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all" title="Copiar oferta">
-                        <span class="material-symbols-outlined text-lg">content_copy</span>
-                        <span class="hidden xl:block text-[8px] font-black uppercase">Copiar</span>
-                    </button>
-                    <button onclick="shareProductWhatsApp('${nombreSeguro}')" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-green-600 hover:shadow-sm transition-all" title="Compartir por WhatsApp">
-                        <i class="fab fa-whatsapp text-lg"></i>
-                        <span class="hidden xl:block text-[8px] font-black uppercase">WhatsApp</span>
-                    </button>
-                    <button onclick="downloadProductCardImage('${nombreSeguro}', this)" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all" title="Descargar imagen">
-                        <span class="material-symbols-outlined text-lg">download</span>
-                        <span class="hidden xl:block text-[8px] font-black uppercase">Imagen</span>
-                    </button>
-                    <button onclick="generateStoryForProduct('${nombreSeguro}', this)" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 px-1 py-2 text-white shadow-sm hover:shadow-md transition-all" title="Crear Story">
-                        <span class="material-symbols-outlined text-lg">auto_awesome</span>
-                        <span class="hidden xl:block text-[8px] font-black uppercase">Story</span>
-                    </button>
-                    <button onclick="addProductFromCard('${nombreSeguro}')" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg bg-[#1a4789] px-1 py-2 text-white shadow-sm hover:bg-[#12396f] transition-all" title="Añadir al pedido">
-                        <span class="material-symbols-outlined text-lg">add_shopping_cart</span>
-                        <span class="hidden xl:block text-[8px] font-black uppercase">Pedido</span>
-                    </button>
+                <div class="flex min-w-0 flex-1 flex-col p-4">
+                    <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
+                    <h3 class="line-clamp-2 text-sm font-black leading-snug text-slate-900">${product.nombre}</h3>
+                    <p class="mt-1 truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">${product.categoria || 'Sin categoría'}</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <span class="block text-[8px] font-black uppercase text-slate-400">Cliente paga</span>
+                            <strong class="mt-1 block text-lg font-black text-[#1a4789]">${priceDisplay}</strong>
+                        </div>
+                        <div class="rounded-xl bg-emerald-50 p-3">
+                            <span class="block text-[8px] font-black uppercase text-emerald-600">Tu ganancia</span>
+                            <strong class="mt-1 block text-lg font-black text-emerald-700">$${commission}</strong>
+                        </div>
+                    </div>
+                    <div class="mt-3 space-y-1.5 text-[10px] font-bold text-slate-500">
+                        <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">verified</span><span class="truncate">${product.garantia || 'Garantía por confirmar'}</span></p>
+                        <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">local_shipping</span><span class="truncate">${product.mensajeria || 'Mensajería por confirmar'}</span></p>
+                        <p class="flex items-center gap-1.5 text-slate-400"><span class="material-symbols-outlined text-sm">update</span><span>Actualizado ${updatedLabel}</span></p>
+                    </div>
                 </div>
-            </div>
-            ` : ''}
-        </div>`;
+                <div class="border-t border-slate-100 bg-slate-50/80 p-3 ${isList ? 'md:flex md:flex-col md:justify-center md:border-l md:border-t-0' : ''}">
+                    <div class="grid grid-cols-4 gap-1">
+                        <button onclick="copyProductOffer('${safeName}', this)" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-indigo-600" title="Copiar oferta"><span class="material-symbols-outlined text-xl">content_copy</span></button>
+                        <button onclick="shareProductWhatsApp('${safeName}')" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-emerald-600" title="Compartir por WhatsApp"><i class="fab fa-whatsapp text-xl"></i></button>
+                        <button onclick="downloadProductCardImage('${safeName}', this)" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-blue-600" title="Descargar imagen"><span class="material-symbols-outlined text-xl">download</span></button>
+                        <button onclick="generateStoryForProduct('${safeName}', this)" class="flex min-h-11 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 text-white shadow-sm" title="Crear Story"><span class="material-symbols-outlined text-xl">auto_awesome</span></button>
+                    </div>
+                    <button onclick="addProductFromCard('${safeName}')" ${unavailable ? 'disabled' : ''} class="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-black ${unavailable ? 'cursor-not-allowed bg-slate-200 text-slate-400' : 'bg-[#1a4789] text-white shadow-md hover:bg-[#12396f]'}">
+                        <span class="material-symbols-outlined text-lg">${unavailable ? 'block' : 'add_shopping_cart'}</span>${unavailable ? 'No disponible' : 'Añadir al pedido'}
+                    </button>
+                    <button onclick="openDetail('${safeName}')" class="mt-2 w-full py-2 text-[10px] font-black uppercase text-slate-500 hover:text-[#1a4789]">Ver información completa</button>
+                </div>
+            </article>`;
     }).join('');
+}
+
+function renderProducts() {
+    renderCatalogProducts(getFilteredCatalogProducts());
 }
 
     // 3. DETALLE DE PRODUCTO
@@ -5482,6 +5715,193 @@ async function loadFullDashboard() {
         `).join('');
     }
 
+function prepareGestorDashboardLayout() {
+    const dashboard = document.getElementById('sec-dashboard');
+    if (!dashboard || dashboard.dataset.layoutReady === 'true') return;
+
+    const home = document.getElementById('gestor-home');
+    const dashboardNav = document.getElementById('btn-dash-resumen')?.parentElement;
+    if (home && dashboardNav) dashboard.insertBefore(dashboardNav, home);
+
+    const prices = document.getElementById('sub-dash-precios');
+    let legacyStarted = false;
+    Array.from(dashboard.children).forEach(child => {
+        if (child === prices) {
+            legacyStarted = true;
+            return;
+        }
+        if (legacyStarted) {
+            child.classList.add('gestor-legacy-block', 'hidden');
+        }
+    });
+    dashboard.dataset.layoutReady = 'true';
+}
+
+function gestorSafeText(value) {
+    const node = document.createElement('div');
+    node.textContent = value == null ? '' : String(value);
+    return node.innerHTML;
+}
+
+function getGestorStoreLink() {
+    const generatedLink = document.getElementById('my-link-input')?.value;
+    if (generatedLink) return generatedLink;
+    const data = window.currentUserData || {};
+    const base = window.location.origin + window.location.pathname;
+    return `${base}?gestor=${encodeURIComponent(window.gestorName || '')}&tel=${encodeURIComponent(data.telefono || '')}`;
+}
+
+function copyGestorStoreLink() {
+    const link = getGestorStoreLink();
+    if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(link).then(() => alert('✅ Enlace de tu tienda copiado.'));
+    } else {
+        const temp = document.createElement('textarea');
+        temp.value = link;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        temp.remove();
+        alert('✅ Enlace de tu tienda copiado.');
+    }
+}
+
+function openGestorClientView() {
+    window.open(getGestorStoreLink(), '_blank', 'noopener');
+}
+
+function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCobrar = 0 }) {
+    prepareGestorDashboardLayout();
+
+    const firstName = (window.gestorName || 'gestor').trim().split(/\s+/)[0];
+    const now = new Date();
+    const dateLabel = now.toLocaleDateString('es-CU', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+    });
+    const deliveredTotal = entregados.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    const averageTicket = entregados.length ? deliveredTotal / entregados.length : 0;
+
+    const title = document.getElementById('gestor-home-title');
+    const date = document.getElementById('gestor-home-date');
+    const summary = document.getElementById('gestor-home-summary');
+    if (title) title.textContent = `Hola, ${firstName}`;
+    if (date) date.textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
+    if (summary) {
+        summary.textContent = pendientes.length
+            ? `Tienes ${pendientes.length} ${pendientes.length === 1 ? 'pedido activo que requiere' : 'pedidos activos que requieren'} seguimiento.`
+            : 'Todo está al día. Es un buen momento para compartir ofertas y generar nuevas ventas.';
+    }
+
+    const values = {
+        'gestor-kpi-active': pendientes.length,
+        'gestor-kpi-receivable': `$${porCobrar.toFixed(2)}`,
+        'gestor-kpi-delivered': entregados.length,
+        'gestor-kpi-ticket': `$${averageTicket.toFixed(0)}`
+    };
+    Object.entries(values).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    });
+
+    const list = document.getElementById('gestor-home-orders');
+    if (!list) return;
+    const recent = [...ventas]
+        .sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0))
+        .slice(0, 4);
+
+    if (!recent.length) {
+        list.innerHTML = `
+            <div class="p-8 text-center">
+                <span class="material-symbols-outlined text-3xl text-slate-300">inbox</span>
+                <p class="mt-2 text-xs font-black text-slate-600">Todavía no hay pedidos</p>
+                <p class="mt-1 text-[11px] text-slate-400">Comparte tu enlace para comenzar a vender.</p>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = recent.map(order => {
+        const status = order.estado || 'Pendiente';
+        const isDelivered = status === 'Entregado';
+        const isCancelled = status === 'Cancelado';
+        const statusClass = isDelivered
+            ? 'bg-emerald-50 text-emerald-700'
+            : isCancelled ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700';
+        const orderDate = order.fecha || order.created_at;
+        const dateText = orderDate
+            ? new Date(orderDate).toLocaleDateString('es-CU', { day: '2-digit', month: 'short' })
+            : 'Sin fecha';
+        return `
+            <div class="flex items-center gap-3 p-4 md:px-6">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                    <span class="material-symbols-outlined text-xl">shopping_bag</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-black text-slate-800">${gestorSafeText(order.producto || 'Pedido')}</p>
+                    <p class="mt-1 truncate text-[10px] font-bold text-slate-400">${gestorSafeText(order.cliente || 'Cliente')} · ${dateText}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                    <p class="text-xs font-black text-slate-800">$${(Number(order.total) || 0).toFixed(0)}</p>
+                    <span class="mt-1 inline-flex rounded-full px-2 py-1 text-[8px] font-black uppercase ${statusClass}">${gestorSafeText(status)}</span>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function renderGestorHomeFromCache() {
+    const ventas = Array.isArray(myOrdersData) ? myOrdersData : [];
+    const entregados = ventas.filter(order => order.estado === 'Entregado');
+    const pendientes = ventas.filter(order => order.estado !== 'Entregado' && order.estado !== 'Cancelado');
+    const porCobrar = entregados
+        .filter(order => order.pago_gestor === 'Pendiente' || !order.pago_gestor)
+        .reduce((sum, order) => sum + (Number(order.comision_total) || 0), 0);
+    renderGestorHome({ ventas, entregados, pendientes, porCobrar });
+}
+
+function openGestorTool(tool) {
+    showSection('catalogo');
+    setTimeout(() => {
+        if (tool === 'catalogo') {
+            const search = document.getElementById('search-bar');
+            search?.focus();
+            document.getElementById('category-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+        if (tool === 'mensaje') {
+            document.getElementById('btn-copy-bulk')?.click();
+            return;
+        }
+        if (tool === 'pdf') {
+            document.getElementById('btn-pdf-bulk')?.click();
+            return;
+        }
+        if (tool === 'story') {
+            document.getElementById('productos-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            alert('Elige un producto y toca el botón Story de su tarjeta.');
+        }
+    }, 120);
+}
+
+function openGestorOrders() {
+    toggleGestorAdvanced(true);
+    setTimeout(() => document.getElementById('list-mis-pedidos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+function toggleGestorAdvanced(forceOpen) {
+    prepareGestorDashboardLayout();
+    const blocks = document.querySelectorAll('#sec-dashboard > .gestor-legacy-block');
+    const shouldOpen = typeof forceOpen === 'boolean'
+        ? forceOpen
+        : Array.from(blocks).some(block => block.classList.contains('hidden'));
+    blocks.forEach(block => block.classList.toggle('hidden', !shouldOpen));
+    document.getElementById('gestor-advanced-icon')?.classList.toggle('rotate-180', shouldOpen);
+    const label = document.querySelector('#gestor-advanced-toggle > span:first-child');
+    if (label) {
+        label.innerHTML = `<span class="material-symbols-outlined text-lg">monitoring</span> ${shouldOpen ? 'Ocultar análisis avanzado' : 'Ver análisis, ranking e historial completo'}`;
+    }
+}
+
     // Busca esta función y reemplázala completamente
 function showSection(section) {
     const isCat = section === 'catalogo';
@@ -5498,8 +5918,10 @@ function showSection(section) {
     if (!isCat) {
         // Obtenemos el nombre del gestor de la variable global
         const currentGestor = window.gestorName;
-        if (currentGestor) {
+        if (currentGestor && !myOrdersData.length) {
             loadProDashboard(currentGestor); // <--- ESTO CARGA EL RANKING Y PODIO
+        } else if (currentGestor) {
+            renderGestorHomeFromCache();
         }
     }
     
@@ -7084,28 +7506,14 @@ https://wa.me/${miTelefono}?text=${encodeURIComponent('Hola, me interesa el equi
 
 function applySort() {
     // 1. Determinar quién está viendo y qué selector leer
-    const isGestor = window.gestorName ? true : false;
+    const isGestor = isGestorCatalogMode();
     let selector = isGestor ? document.getElementById('sort-selector') : document.getElementById('sort-selector-public');
     
     // Si por error no encuentra el selector, usamos 'nuevo' por defecto
     let criteria = selector ? selector.value : 'nuevo';
 
-    // 2. Obtener el término de búsqueda actual y filtros de Tiburón
-    const searchInput = document.getElementById('search-bar');
-    const query = searchInput ? searchInput.value.toLowerCase() : "";
-    const filterCheckbox = document.getElementById('filter-high-comm');
-    const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
-
-    // 3. FILTRAR LOS PRODUCTOS VISIBLES
-    let listaProcesada = productosRaw.filter(p => {
-        const matchSearch = p.nombre.toLowerCase().includes(query) || 
-                            (p.categoria && p.categoria.toLowerCase().includes(query));
-        const matchCat = activeCategory === 'TODOS' || 
-                         (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-        const matchComm = !filterHighComm || (Number(p.comision || 0) > 10);
-        
-        return matchSearch && matchCat && matchComm && p.disponible === "SI";
-    });
+    // 2. Reutilizar los mismos filtros de búsqueda, categoría e inventario.
+    let listaProcesada = getFilteredCatalogProducts();
 
     // 4. APLICAR EL ORDENAMIENTO (NÚCLEO DEL CAMBIO)
     listaProcesada.sort((a, b) => {
@@ -7143,74 +7551,7 @@ function applySort() {
 }
 
 function renderProductsCustom(lista) {
-    const container = document.getElementById('productos-container');
-    const isGestor = window.gestorName ? true : false;
-    const hasSellerSession = Boolean(localStorage.getItem('pth_session'));
-    
-    container.innerHTML = lista.map(p => {
-        const precio = parseFloat(p.precio) || 0;
-        
-        // --- INICIO: NUEVA LÓGICA DE PRECIOS INTELIGENTE (IGUAL QUE EN RENDERPRODUCTS) ---
-        let pDisplay = `$${precio}`; // Valor por defecto
-
-        
-        // --- FIN: NUEVA LÓGICA ---
-        
-        // Etiqueta de Comisión + Indicador de Precio Flexible
-        let htmlComision = isGestor ? 
-            `<div class="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
-                <span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-md">GANAS $${p.comision || 0}</span>
-                ${p.precio_flexible === 'SI' ? '<span class="bg-blue-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg shadow-md border border-white">📈 PRECIO LIBRE</span>' : ''}
-             </div>` : '';
-
-             // Esta línea limpia tanto la comilla simple como la comilla doble de las pulgadas
-            const nombreSeguro = p.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-
-        return `
-        <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-slate-100 dark:border-gray-700 group shadow-sm hover:shadow-xl transition-all duration-300 relative flex flex-col">
-            ${htmlComision}
-            
-            
-
-        
-            <div onclick="openDetail('${nombreSeguro}')" class="w-full aspect-square bg-slate-50 dark:bg-gray-900 p-4 relative overflow-hidden cursor-pointer">
-                <div class="absolute inset-0 bg-center bg-no-repeat bg-contain transition-transform group-hover:scale-110 duration-500" style="background-image: url('${fixDriveUrl(p.thumbnail)}');"></div>
-            </div>
-
-            <!-- Info -->
-            <div class="p-5 flex flex-col gap-2 flex-1">
-                <h3 class="text-slate-800 dark:text-white text-sm font-bold leading-snug line-clamp-2 min-h-[2.5rem]">${p.nombre}</h3>
-                <p class="text-primary text-2xl font-black">${pDisplay}</p>
-                
-                <!-- Aquí también cambiamos a nombreSeguro -->
-                <button onclick="openDetail('${nombreSeguro}')" class="mt-auto w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-lg text-xs font-extrabold hover:bg-secondary transition-colors shadow-md">
-                    Ver Detalles
-                </button>
-            </div>
-
-            ${hasSellerSession ? `
-            <div class="border-t border-gray-100 dark:border-gray-700 bg-slate-50/90 dark:bg-gray-900/60 p-2">
-                <div class="grid grid-cols-5 gap-1">
-                    <button onclick="copyProductOffer('${nombreSeguro}', this)" class="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all" title="Copiar oferta">
-                        <span class="material-symbols-outlined text-lg">content_copy</span><span class="hidden xl:block text-[8px] font-black uppercase">Copiar</span>
-                    </button>
-                    <button onclick="shareProductWhatsApp('${nombreSeguro}')" class="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-green-600 hover:shadow-sm transition-all" title="Compartir por WhatsApp">
-                        <i class="fab fa-whatsapp text-lg"></i><span class="hidden xl:block text-[8px] font-black uppercase">WhatsApp</span>
-                    </button>
-                    <button onclick="downloadProductCardImage('${nombreSeguro}', this)" class="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all" title="Descargar imagen">
-                        <span class="material-symbols-outlined text-lg">download</span><span class="hidden xl:block text-[8px] font-black uppercase">Imagen</span>
-                    </button>
-                    <button onclick="generateStoryForProduct('${nombreSeguro}', this)" class="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 px-1 py-2 text-white shadow-sm hover:shadow-md transition-all" title="Crear Story">
-                        <span class="material-symbols-outlined text-lg">auto_awesome</span><span class="hidden xl:block text-[8px] font-black uppercase">Story</span>
-                    </button>
-                    <button onclick="addProductFromCard('${nombreSeguro}')" class="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-[#1a4789] px-1 py-2 text-white shadow-sm hover:bg-[#12396f] transition-all" title="Añadir al pedido">
-                        <span class="material-symbols-outlined text-lg">add_shopping_cart</span><span class="hidden xl:block text-[8px] font-black uppercase">Pedido</span>
-                    </button>
-                </div>
-            </div>
-            ` : ''}
-        </div>`;
-    }).join('');
+    renderCatalogProducts(lista);
 }
 
 function getProductForQuickAction(name) {
@@ -10537,9 +10878,13 @@ function esMensajeriaAmbigua(texto) {
 
 // --- LÓGICA DE PESTAÑAS DEL DASHBOARD ---
 function showDashSection(section) {
+    prepareGestorDashboardLayout();
+
     // Ocultar todo
     document.getElementById('sub-dash-resumen').classList.add('hidden');
     document.getElementById('sub-dash-precios').classList.add('hidden');
+    document.getElementById('gestor-home')?.classList.add('hidden');
+    document.querySelectorAll('#sec-dashboard > .gestor-legacy-block').forEach(block => block.classList.add('hidden'));
     
     // Desactivar botones
     document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
@@ -10547,8 +10892,9 @@ function showDashSection(section) {
 
     // Activar selección
     if(section === 'resumen') {
-        document.getElementById('sub-dash-resumen').classList.remove('hidden');
+        document.getElementById('gestor-home')?.classList.remove('hidden');
         document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
+        document.getElementById('gestor-advanced-icon')?.classList.remove('rotate-180');
     } else {
         // === AQUÍ INYECTAMOS EL TEXTO SECRETO ===
         // Solo se escribe cuando el usuario entra a esta sección

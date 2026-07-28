@@ -4,11 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SALA DE GUERRA | Marcel Montano</title>
+    <script>
+        (() => {
+            try {
+                const session = JSON.parse(localStorage.getItem('pth_session') || 'null');
+                if (!session || session.name !== 'Marcel Montano') {
+                    window.location.replace('index.html');
+                    return;
+                }
+                document.documentElement.dataset.ownerAccess = 'granted';
+            } catch (_) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        html:not([data-owner-access="granted"]) body { display: none; }
         body { font-family: 'Rajdhani', sans-serif; background: #020617; color: #94a3b8; }
         .radar-grid { background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 20px 20px; }
         .neon-text { text-shadow: 0 0 15px #22d3ee; color: #a5f3fc; }
