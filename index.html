@@ -1489,7 +1489,7 @@
             <div class="lg:w-1/2 p-5 pb-32 md:p-8 lg:p-10 lg:pb-10 flex flex-col lg:overflow-y-auto">
 
                 <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Disponible ahora</span>
+                    <span id="detail-client-availability" class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Disponible ahora</span>
                     <span id="detail-cat" class="text-[10px] text-gray-400 font-bold uppercase"></span>
                 </div>
                 <h2 id="detail-name" class="text-2xl font-black leading-tight mb-3 md:text-3xl"></h2>
@@ -1510,7 +1510,7 @@
                     </div>
                 </div>
 
-                <div class="mb-5 grid grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200 bg-white py-3 text-center shadow-sm">
+                <div id="detail-client-benefits" class="mb-5 grid grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200 bg-white py-3 text-center shadow-sm">
                     <div class="px-2">
                         <span class="material-symbols-outlined text-lg text-emerald-600">payments</span>
                         <p class="text-[8px] font-black uppercase leading-tight text-slate-600">Pago al recibir</p>
@@ -1525,8 +1525,8 @@
                     </div>
                 </div>
 
-                <div class="mb-6 grid grid-cols-[0.8fr_1.2fr] gap-2">
-                    <button onclick="consultSelectedProduct()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-50">
+                <div id="detail-primary-actions" class="mb-6 grid grid-cols-[0.8fr_1.2fr] gap-2">
+                    <button id="detail-client-consult" onclick="consultSelectedProduct()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-50">
                         <i class="fab fa-whatsapp text-lg"></i> Consultar
                     </button>
                     <button onclick="addItemToCart()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a4789] px-3 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#153866] active:scale-95">
@@ -1632,7 +1632,7 @@
                     <p class="text-[8px] font-black uppercase tracking-wider text-slate-400">Precio del equipo</p>
                     <p id="detail-mobile-price" class="truncate text-lg font-black text-[#1a4789]">—</p>
                 </div>
-                <button onclick="consultSelectedProduct()" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 text-emerald-600" aria-label="Consultar por WhatsApp">
+                <button id="detail-client-mobile-consult" onclick="consultSelectedProduct()" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 text-emerald-600" aria-label="Consultar por WhatsApp">
                     <i class="fab fa-whatsapp text-xl"></i>
                 </button>
                 <button onclick="addItemToCart()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a4789] px-5 text-xs font-black text-white shadow-lg">
@@ -4828,6 +4828,22 @@ function renderDetailRelatedProducts(product) {
     section.classList.remove('hidden');
 }
 
+function applyDetailAudienceMode() {
+    const internal = Boolean(localStorage.getItem('pth_session'));
+    [
+        'detail-client-availability',
+        'detail-client-benefits',
+        'detail-client-consult',
+        'detail-client-mobile-consult'
+    ].forEach(id => document.getElementById(id)?.classList.toggle('hidden', internal));
+
+    const actions = document.getElementById('detail-primary-actions');
+    if (actions) {
+        actions.classList.toggle('grid-cols-[0.8fr_1.2fr]', !internal);
+        actions.classList.toggle('grid-cols-1', internal);
+    }
+}
+
 function renderCatalogProducts(list) {
     const container = document.getElementById('productos-container');
     if (!container) return;
@@ -4999,6 +5015,7 @@ function openDetail(name, skipSolarCheck = false) {
         <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
     `).join('');
     renderDetailRelatedProducts(p);
+    applyDetailAudienceMode();
 
     // --- CARGAR OPINIONES AL ABRIR EL MODAL ---
     loadProductReviews(p.id, p.nombre, p.categoria);
