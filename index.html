@@ -11000,9 +11000,9 @@ function getProductsVisibleOnScreen() {
 function ensureSalesComposerModal() {
     if (document.getElementById('sales-composer-modal')) return;
     document.body.insertAdjacentHTML('beforeend', `
-        <div id="sales-composer-modal" class="fixed inset-0 z-[650] hidden bg-slate-950/80 backdrop-blur-sm p-3 md:p-6">
-            <div class="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900">
-                <header class="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
+        <div id="sales-composer-modal" class="fixed inset-0 z-[650] hidden overflow-y-auto bg-slate-950/80 backdrop-blur-sm p-3 md:p-6">
+            <div class="mx-auto flex min-h-full w-full max-w-5xl flex-col overflow-y-auto rounded-3xl bg-white pb-52 shadow-2xl dark:bg-slate-900 lg:h-full lg:min-h-0 lg:overflow-hidden lg:pb-0">
+                <header class="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-700 dark:bg-slate-900">
                     <div class="flex items-center gap-3">
                         <div id="sales-composer-icon" class="grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700">
                             <span class="material-symbols-outlined">flash_on</span>
@@ -11017,8 +11017,8 @@ function ensureSalesComposerModal() {
                     </button>
                 </header>
 
-                <div class="grid min-h-0 flex-1 lg:grid-cols-[390px_1fr]">
-                    <section class="min-h-0 overflow-y-auto border-b border-slate-200 p-5 dark:border-slate-700 lg:border-b-0 lg:border-r">
+                <div class="block min-h-0 flex-1 lg:grid lg:grid-cols-[390px_1fr]">
+                    <section class="border-b border-slate-200 p-5 dark:border-slate-700 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
                         <div class="mb-4 grid grid-cols-2 gap-3">
                             <label class="space-y-1">
                                 <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Plantilla</span>
@@ -11041,10 +11041,10 @@ function ensureSalesComposerModal() {
                             <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Productos visibles</p>
                             <span id="sales-composer-selected-count" class="rounded-full bg-indigo-50 px-2 py-1 text-[9px] font-black text-indigo-600"></span>
                         </div>
-                        <div id="sales-composer-products" class="space-y-2"></div>
+                        <div id="sales-composer-products" class="max-h-[320px] space-y-2 overflow-y-auto overscroll-contain pr-1 lg:max-h-none lg:overflow-visible"></div>
                     </section>
 
-                    <section class="flex min-h-0 flex-col bg-slate-50 p-5 dark:bg-slate-950">
+                    <section class="flex min-h-0 flex-col bg-slate-50 p-5 pb-6 dark:bg-slate-950">
                         <div class="mb-3 flex items-center justify-between">
                             <div>
                                 <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Vista previa editable</p>
@@ -11052,9 +11052,9 @@ function ensureSalesComposerModal() {
                             </div>
                             <span id="sales-composer-link-status" class="text-[9px] font-bold text-slate-400">Preparando enlace…</span>
                         </div>
-                        <textarea id="sales-composer-preview" class="min-h-[330px] flex-1 resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-inner focus:border-indigo-400 focus:ring-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"></textarea>
+                        <textarea id="sales-composer-preview" class="h-[360px] min-h-[360px] flex-none resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-inner focus:border-indigo-400 focus:ring-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 lg:h-auto lg:min-h-[330px] lg:flex-1"></textarea>
 
-                        <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        <div class="fixed bottom-3 left-3 right-3 z-[660] grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-2xl sm:grid-cols-3 lg:static lg:z-10 lg:mt-4 lg:border-0 lg:p-0 lg:shadow-none dark:border-slate-700 dark:bg-slate-950">
                             <button onclick="copySalesComposerMessage(this)" class="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black text-white hover:bg-indigo-500">
                                 <span class="material-symbols-outlined text-lg">content_copy</span> Copiar
                             </button>
