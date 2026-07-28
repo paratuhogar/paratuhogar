@@ -305,6 +305,9 @@
         setSyncLabel(remoteAvailable
             ? `Sincronizado ${lastSync ? relativeTime(lastSync) : 'pendiente'}`
             : 'Modo local · activa la tabla para sincronizar');
+        window.dispatchEvent(new CustomEvent('pth:followups-updated', {
+            detail: { stats: { ...stats } }
+        }));
     }
 
     function relativeTime(timestamp) {
@@ -543,7 +546,12 @@
         reference.insertAdjacentElement('afterend', button);
     }
 
-    function open() {
+    function open(filter) {
+        if (!root) return;
+        if (['hoy', 'atrasados', 'proximos', 'interesados', 'cerrados'].includes(filter)) {
+            activeFilter = filter;
+            render();
+        }
         root.classList.add('is-open');
         document.body.style.overflow = 'hidden';
         sync(false);
@@ -566,6 +574,12 @@
         render();
         sync(false);
     }
+
+    window.PTHFollowups = {
+        getStats: () => ({ ...getStats() }),
+        open,
+        sync: () => sync(true)
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init, { once: true });
