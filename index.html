@@ -841,7 +841,7 @@
 </section>
 
             <!-- Category Tabs (Sticky) & Marketing Bar -->
-            <div class="sticky top-[65px] z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur shadow-sm border-b border-gray-200 dark:border-gray-800">
+            <div id="catalog-toolbar-shell" class="relative z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur shadow-sm border-b border-gray-200 dark:border-gray-800 md:sticky md:top-[65px]">
                 
                 <!-- 1. Lista de Categorías (Se llena sola con JS) -->
                 <div id="category-list" class="flex gap-8 px-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
@@ -850,7 +850,7 @@
                 </div>
 
                 <!-- === BARRA DE FILTROS PÚBLICA (Para Clientes) === -->
-<div id="public-filters-bar" class="px-6 py-3 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm sticky top-[130px] z-30">
+<div id="public-filters-bar" class="px-6 py-3 flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm relative z-30 md:sticky md:top-[130px]">
     <span class="text-xs font-bold text-gray-500 hidden md:block">Explora nuestro catálogo</span>
     <div class="flex items-center gap-2 w-full md:w-auto justify-end">
         <span class="text-[10px] font-black uppercase text-gray-400">Ordenar por:</span>
@@ -885,16 +885,16 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-3">
-                        <button onclick="setGestorCatalogFilter('disponibles')" data-gestor-catalog-filter="disponibles" class="gestor-catalog-filter bg-blue-50 p-4 text-left">
+                    <div class="grid grid-cols-3 gap-px bg-slate-100">
+                        <button onclick="setGestorCatalogFilter('disponibles')" data-gestor-catalog-filter="disponibles" class="gestor-catalog-filter bg-blue-50 p-3 text-left md:p-4">
                             <strong id="gestor-catalog-available" class="block text-xl font-black text-slate-900">—</strong>
                             <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Disponibles</span>
                         </button>
-                        <button onclick="setGestorCatalogFilter('nuevos')" data-gestor-catalog-filter="nuevos" class="gestor-catalog-filter bg-white p-4 text-left">
+                        <button onclick="setGestorCatalogFilter('nuevos')" data-gestor-catalog-filter="nuevos" class="gestor-catalog-filter bg-white p-3 text-left md:p-4">
                             <strong id="gestor-catalog-new" class="block text-xl font-black text-slate-900">—</strong>
                             <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Nuevos · 7 días</span>
                         </button>
-                        <button onclick="setGestorCatalogFilter('comision')" data-gestor-catalog-filter="comision" class="gestor-catalog-filter bg-white p-4 text-left">
+                        <button onclick="setGestorCatalogFilter('comision')" data-gestor-catalog-filter="comision" class="gestor-catalog-filter bg-white p-3 text-left md:p-4">
                             <strong id="gestor-catalog-high-commission" class="block text-xl font-black text-emerald-600">—</strong>
                             <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Ganancia +$10</span>
                         </button>
@@ -5905,6 +5905,12 @@ function toggleGestorAdvanced(forceOpen) {
     // Busca esta función y reemplázala completamente
 function showSection(section) {
     const isCat = section === 'catalogo';
+
+    // Recuperar siempre el desplazamiento de la página al volver desde
+    // cualquier modal o herramienta interna, especialmente en Android.
+    document.documentElement.style.overflowY = 'auto';
+    document.body.style.overflowY = 'auto';
+    document.body.style.touchAction = 'pan-y';
     
     // 1. Mostrar/Ocultar contenedores
     document.getElementById('sec-catalogo').style.display = isCat ? 'block' : 'none';
