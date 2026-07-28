@@ -1070,6 +1070,40 @@
                     </article>
                 </section>
 
+                <section id="gestor-today-panel" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-100 p-5 md:px-6">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-amber-600">Prioridades comerciales</p>
+                            <h2 class="mt-1 text-lg font-black text-slate-900">Atender hoy</h2>
+                            <p id="gestor-today-summary" class="mt-1 text-[11px] font-medium text-slate-500">Preparando tu agenda…</p>
+                        </div>
+                        <span id="gestor-today-total" class="flex h-11 min-w-11 items-center justify-center rounded-2xl bg-amber-50 px-3 text-lg font-black text-amber-700">—</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-px bg-slate-100">
+                        <button onclick="openGestorOrders()" class="bg-white p-4 text-left transition hover:bg-amber-50">
+                            <strong id="gestor-today-orders" class="block text-xl font-black text-slate-900">0</strong>
+                            <span class="mt-1 block text-[8px] font-black uppercase leading-tight tracking-wider text-slate-500">Pedidos activos</span>
+                        </button>
+                        <button onclick="openGestorFollowups('hoy')" class="bg-white p-4 text-left transition hover:bg-blue-50">
+                            <strong id="gestor-today-followups" class="block text-xl font-black text-blue-700">0</strong>
+                            <span class="mt-1 block text-[8px] font-black uppercase leading-tight tracking-wider text-slate-500">Contactos hoy</span>
+                        </button>
+                        <button onclick="openGestorFollowups('atrasados')" class="bg-white p-4 text-left transition hover:bg-rose-50">
+                            <strong id="gestor-today-overdue" class="block text-xl font-black text-rose-600">0</strong>
+                            <span class="mt-1 block text-[8px] font-black uppercase leading-tight tracking-wider text-slate-500">Atrasados</span>
+                        </button>
+                    </div>
+                    <div id="gestor-today-orders-list" class="divide-y divide-slate-100"></div>
+                    <div class="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50 p-3">
+                        <button onclick="openGestorFollowups('hoy')" class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white text-[10px] font-black text-indigo-700">
+                            <span class="material-symbols-outlined text-lg">notification_important</span> Abrir seguimientos
+                        </button>
+                        <button onclick="openGestorOrders()" class="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1a4789] text-[10px] font-black text-white shadow-sm">
+                            <span class="material-symbols-outlined text-lg">inventory_2</span> Gestionar pedidos
+                        </button>
+                    </div>
+                </section>
+
                 <section class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
                     <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
                         <div class="mb-5">
@@ -1093,6 +1127,26 @@
                                 <span class="material-symbols-outlined text-amber-600">picture_as_pdf</span>
                                 <span class="mt-2 block text-xs font-black text-slate-800">Catálogo PDF</span>
                             </button>
+                        </div>
+                        <div id="gestor-daily-opportunity" class="mt-4 hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                                    <span class="material-symbols-outlined">trending_up</span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">Oportunidad recomendada</p>
+                                    <p id="gestor-opportunity-name" class="mt-1 line-clamp-2 text-xs font-black text-slate-800"></p>
+                                    <p id="gestor-opportunity-reason" class="mt-1 text-[10px] font-bold text-slate-500"></p>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-2 gap-2">
+                                <button onclick="shareGestorOpportunity('copy', this)" class="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-white text-[10px] font-black text-emerald-700">
+                                    <span class="material-symbols-outlined text-base">content_copy</span> Copiar oferta
+                                </button>
+                                <button onclick="shareGestorOpportunity('whatsapp', this)" class="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-[10px] font-black text-white shadow-sm">
+                                    <i class="fab fa-whatsapp text-base"></i> WhatsApp
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -5743,6 +5797,40 @@ function gestorSafeText(value) {
     return node.innerHTML;
 }
 
+let gestorRecommendedProductName = '';
+
+function renderGestorDailyOpportunity() {
+    const container = document.getElementById('gestor-daily-opportunity');
+    if (!container || !Array.isArray(productosRaw)) return;
+    const candidates = productosRaw
+        .filter(product => product.disponible === 'SI')
+        .sort((a, b) => {
+            const recentDifference = Number(isRecentCatalogProduct(b)) - Number(isRecentCatalogProduct(a));
+            if (recentDifference) return recentDifference;
+            return (Number(b.comision) || 0) - (Number(a.comision) || 0);
+        });
+    const product = candidates[0];
+    if (!product) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    gestorRecommendedProductName = product.nombre;
+    document.getElementById('gestor-opportunity-name').textContent = product.nombre;
+    document.getElementById('gestor-opportunity-reason').textContent =
+        `${isRecentCatalogProduct(product) ? 'Producto nuevo' : 'Producto disponible'} · ganas $${Number(product.comision) || 0}`;
+    container.classList.remove('hidden');
+}
+
+function shareGestorOpportunity(action, button) {
+    if (!gestorRecommendedProductName) return;
+    if (action === 'whatsapp') {
+        shareProductWhatsApp(gestorRecommendedProductName);
+    } else {
+        copyProductOffer(gestorRecommendedProductName, button);
+    }
+}
+
 function getGestorStoreLink() {
     const generatedLink = document.getElementById('my-link-input')?.value;
     if (generatedLink) return generatedLink;
@@ -5768,6 +5856,75 @@ function copyGestorStoreLink() {
 
 function openGestorClientView() {
     window.open(getGestorStoreLink(), '_blank', 'noopener');
+}
+
+function getGestorFollowupStats() {
+    return window.PTHFollowups?.getStats?.() || { overdue: 0, today: 0, interested: 0 };
+}
+
+function renderGestorToday(orders = myOrdersData, followupStats = getGestorFollowupStats()) {
+    const activeOrders = (Array.isArray(orders) ? orders : [])
+        .filter(order => order.estado !== 'Entregado' && order.estado !== 'Cancelado')
+        .sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0));
+    const todayFollowups = Number(followupStats.today) || 0;
+    const overdueFollowups = Number(followupStats.overdue) || 0;
+    const total = activeOrders.length + todayFollowups + overdueFollowups;
+
+    const values = {
+        'gestor-today-orders': activeOrders.length,
+        'gestor-today-followups': todayFollowups,
+        'gestor-today-overdue': overdueFollowups,
+        'gestor-today-total': total
+    };
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+
+    const summary = document.getElementById('gestor-today-summary');
+    if (summary) {
+        summary.textContent = total
+            ? `${total} ${total === 1 ? 'acción prioritaria' : 'acciones prioritarias'} para mantener tus ventas en movimiento.`
+            : 'Todo está al día. Puedes concentrarte en generar nuevas conversaciones.';
+    }
+
+    const list = document.getElementById('gestor-today-orders-list');
+    if (!list) return;
+    const priorityOrders = activeOrders.slice(0, 3);
+    if (!priorityOrders.length) {
+        list.innerHTML = `
+            <div class="flex items-center gap-3 p-4 text-xs font-bold text-slate-500 md:px-6">
+                <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                No tienes pedidos activos pendientes.
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = priorityOrders.map(order => {
+        const phone = String(order.telefono || '').replace(/\D/g, '');
+        return `
+            <div class="grid grid-cols-[36px_minmax(0,1fr)_40px] items-center gap-3 p-4 md:px-6">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <span class="material-symbols-outlined text-lg">pending_actions</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="truncate text-xs font-black text-slate-800">${gestorSafeText(order.cliente || 'Cliente')}</p>
+                    <p class="mt-1 truncate text-[10px] font-bold text-slate-400">${gestorSafeText(order.producto || 'Pedido')} · ${gestorSafeText(order.estado || 'Pendiente')}</p>
+                </div>
+                ${phone ? `
+                    <button onclick="contactGestorOrder('${phone}')" class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="Escribir por WhatsApp">
+                        <i class="fab fa-whatsapp text-lg"></i>
+                    </button>` : '<span></span>'}
+            </div>`;
+    }).join('');
+}
+
+function openGestorFollowups(filter = 'hoy') {
+    if (window.PTHFollowups?.open) {
+        window.PTHFollowups.open(filter);
+        return;
+    }
+    document.getElementById('btn-client-followup')?.click();
 }
 
 function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCobrar = 0 }) {
@@ -5804,6 +5961,8 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
         const el = document.getElementById(id);
         if (el) el.textContent = value;
     });
+    renderGestorDailyOpportunity();
+    renderGestorToday(ventas);
 
     const list = document.getElementById('gestor-home-orders');
     if (!list) return;
@@ -5833,7 +5992,7 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
             ? new Date(orderDate).toLocaleDateString('es-CU', { day: '2-digit', month: 'short' })
             : 'Sin fecha';
         return `
-            <div class="flex items-center gap-3 p-4 md:px-6">
+            <div class="grid grid-cols-[40px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-4 md:flex md:px-6">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
                     <span class="material-symbols-outlined text-xl">shopping_bag</span>
                 </div>
@@ -5841,12 +6000,30 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
                     <p class="truncate text-xs font-black text-slate-800">${gestorSafeText(order.producto || 'Pedido')}</p>
                     <p class="mt-1 truncate text-[10px] font-bold text-slate-400">${gestorSafeText(order.cliente || 'Cliente')} · ${dateText}</p>
                 </div>
-                <div class="shrink-0 text-right">
+                <div class="col-start-2 flex min-w-0 items-center justify-between gap-2 md:block md:shrink-0 md:text-right">
                     <p class="text-xs font-black text-slate-800">$${(Number(order.total) || 0).toFixed(0)}</p>
-                    <span class="mt-1 inline-flex rounded-full px-2 py-1 text-[8px] font-black uppercase ${statusClass}">${gestorSafeText(status)}</span>
+                    <div class="flex min-w-0 items-center justify-end gap-1.5">
+                        <span class="inline-flex max-w-[130px] truncate rounded-full px-2 py-1 text-[8px] font-black uppercase ${statusClass}">${gestorSafeText(status)}</span>
+                        ${order.telefono ? `
+                        <button onclick="contactGestorOrder('${String(order.telefono).replace(/\D/g, '')}')" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600" title="Contactar por WhatsApp">
+                            <i class="fab fa-whatsapp text-sm"></i>
+                        </button>` : ''}
+                    </div>
                 </div>
             </div>`;
     }).join('');
+}
+
+window.addEventListener('pth:followups-updated', event => {
+    renderGestorToday(myOrdersData, event.detail?.stats || getGestorFollowupStats());
+});
+
+function contactGestorOrder(phone) {
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (!cleanPhone) return;
+    const normalizedPhone = cleanPhone.startsWith('53') ? cleanPhone : `53${cleanPhone}`;
+    const message = 'Hola, te escribo de ParaTuHogar para dar seguimiento a tu pedido.';
+    window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
 }
 
 function renderGestorHomeFromCache() {
