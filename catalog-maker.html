@@ -3,549 +3,438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estudio de Catálogos | paratuhogar</title>
+    <title>Estudio de Catálogos | ParaTuHogar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    
-    <!-- LIBRERÍAS (Independientes para no cargar el sistema principal) -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
     <style>
-        body { font-family: 'Manrope', sans-serif; }
-        .preview-shadow { box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25); }
-        /* Animación de carga */
-        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 0; } }
-        .pulse-loader { animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        body { font-family: Manrope, sans-serif; }
+        .paper { box-shadow: 0 25px 70px -20px rgba(15, 23, 42, .35); }
+        @keyframes shimmer { to { transform: translateX(100%); } }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col">
-
-    <!-- HEADER -->
-    <header class="bg-[#1a4789] text-white p-4 shadow-lg sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
+<body class="min-h-screen bg-slate-100 text-slate-900">
+    <header class="sticky top-0 z-40 bg-[#102b53] text-white shadow-xl">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
             <div class="flex items-center gap-3">
-                <div class="bg-white/10 p-2 rounded-lg"><span class="material-symbols-outlined text-2xl">design_services</span></div>
+                <div class="grid h-10 w-10 place-items-center rounded-xl bg-white/10">
+                    <span class="material-symbols-outlined">auto_awesome</span>
+                </div>
                 <div>
-                    <h1 class="font-black text-lg leading-none uppercase tracking-tight">Estudio de Diseño</h1>
-                    <p class="text-[10px] opacity-80 font-medium">Creación de Catálogos PDF</p>
+                    <h1 class="text-base font-black uppercase tracking-tight">Estudio de Catálogos</h1>
+                    <p class="text-[10px] font-bold uppercase tracking-[.18em] text-blue-200">ParaTuHogar · PDF profesional</p>
                 </div>
             </div>
-            <button onclick="window.close()" class="text-white/70 hover:text-white transition-colors flex items-center gap-1 text-xs font-bold bg-white/10 px-3 py-2 rounded-lg hover:bg-white/20">
-                <span class="material-symbols-outlined text-sm">close</span> Cerrar Estudio
-            </button>
+            <button onclick="window.close()" class="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">Cerrar</button>
         </div>
     </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-        
-        <!-- PANEL IZQUIERDO: CONFIGURACIÓN -->
-        <div class="w-full lg:w-1/3 space-y-6">
-            
-            <!-- 1. RESUMEN DE DATOS -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-1 rounded uppercase">Datos Cargados</span>
-                    <span id="date-tag" class="text-[10px] text-slate-400 font-bold">Hoy</span>
+    <main class="mx-auto grid max-w-7xl gap-7 p-4 md:p-8 lg:grid-cols-[360px_1fr]">
+        <section class="space-y-5">
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="mb-4 flex items-center justify-between">
+                    <span class="rounded-full bg-blue-50 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-blue-700">Datos listos</span>
+                    <span id="date-tag" class="text-[10px] font-bold text-slate-400"></span>
                 </div>
-                
-                <h2 id="cat-title" class="text-2xl font-black text-[#1a4789] mb-1 leading-tight">...</h2>
-                <p id="cat-count" class="text-xs font-bold text-slate-500 mb-4">Cargando productos...</p>
-                
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
-                    <div class="h-10 w-10 bg-white rounded-full flex items-center justify-center text-[#1a4789] shadow-sm border border-slate-100">
+                <h2 id="cat-title" class="text-2xl font-black leading-tight text-[#102b53]">Catálogo</h2>
+                <p id="cat-count" class="mt-1 text-xs font-bold text-slate-500">Cargando...</p>
+                <div class="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
+                    <div class="grid h-10 w-10 place-items-center rounded-full bg-white text-[#1a4789] shadow-sm">
                         <span class="material-symbols-outlined">person</span>
                     </div>
-                    <div>
-                        <p class="text-[9px] font-black uppercase text-slate-400">Agente Responsable</p>
-                        <p id="agent-name" class="text-sm font-bold text-slate-800">...</p>
+                    <div class="min-w-0">
+                        <p class="text-[9px] font-black uppercase tracking-wider text-slate-400">Asesor responsable</p>
+                        <p id="agent-name" class="truncate text-sm font-extrabold text-slate-800"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. SELECTOR DE DISEÑO -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">ESTILO DEL CATÁLOGO</p>
-                
-                <!-- Opción Básica -->
-                <label class="group flex items-start gap-4 p-4 border rounded-xl cursor-pointer hover:bg-slate-50 transition-all mb-3 has-[:checked]:border-slate-400 has-[:checked]:ring-1 has-[:checked]:ring-slate-400">
-                    <input type="radio" name="style" value="basic" class="mt-1 w-4 h-4 text-slate-600 focus:ring-slate-500" onchange="toggleOptions()">
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="mb-4 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Formato</p>
+                <label class="mb-3 flex cursor-pointer gap-3 rounded-2xl border p-4 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="style" value="pro" checked class="mt-1">
                     <div>
-                        <h4 class="font-black text-sm text-slate-700 group-hover:text-[#1a4789] transition-colors">📄 Lista Compacta (Básico)</h4>
-                        <p class="text-[11px] text-slate-400 mt-1 leading-snug">Formato tabla. Ideal para imprimir, revendedores o inventario rápido. Sin fotos grandes.</p>
+                        <p class="text-sm font-black">Catálogo comercial PRO</p>
+                        <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Portada, fichas visuales, precio destacado, información útil y contacto directo.</p>
                     </div>
                 </label>
-
-                <!-- Opción PRO (Default) -->
-                <label class="group flex items-start gap-4 p-4 border rounded-xl cursor-pointer hover:bg-purple-50/50 transition-all has-[:checked]:border-purple-500 has-[:checked]:bg-purple-50 has-[:checked]:ring-1 has-[:checked]:ring-purple-500 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-purple-500 text-white text-[9px] font-black px-2 py-1 rounded-bl-lg">RECOMENDADO</div>
-                    <input type="radio" name="style" value="pro" checked class="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500" onchange="toggleOptions()">
+                <label class="flex cursor-pointer gap-3 rounded-2xl border p-4 has-[:checked]:border-slate-500 has-[:checked]:bg-slate-50">
+                    <input type="radio" name="style" value="basic" class="mt-1">
                     <div>
-                        <h4 class="font-black text-sm text-slate-800 group-hover:text-purple-700 transition-colors flex items-center gap-2">
-                            ✨ Revista Digital (PRO)
-                        </h4>
-                        <p class="text-[11px] text-slate-500 mt-1 leading-snug">Diseño visual impactante. Fotos grandes, portada personalizada y <b>Códigos QR de compra</b>.</p>
+                        <p class="text-sm font-black">Lista de precios</p>
+                        <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Versión compacta para imprimir o consultar inventario rápidamente.</p>
                     </div>
                 </label>
             </div>
 
-            <!-- 3. CONFIGURACIÓN PRO -->
-            <div id="pro-options" class="bg-gradient-to-b from-purple-50 to-white p-6 rounded-2xl shadow-sm border border-purple-100 transition-all duration-300">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="material-symbols-outlined text-purple-500 text-sm">tune</span>
-                    <p class="text-[10px] font-black uppercase text-purple-400 tracking-widest">PERSONALIZACIÓN PRO</p>
-                </div>
-                
-                <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                        <div class="relative">
-                            <input type="checkbox" id="opt-cover" checked class="sr-only peer">
-                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
-                        </div>
-                        <span class="text-xs font-bold text-slate-600">Portada de Impacto</span>
-                    </label>
-                    
-                    <label class="flex items-center gap-3 cursor-pointer select-none">
-                        <div class="relative">
-                            <input type="checkbox" id="opt-qr" checked class="sr-only peer">
-                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-slate-600">Códigos QR de WhatsApp</span>
-                            <span class="text-[9px] text-slate-400">El cliente escanea y te pide el producto.</span>
-                        </div>
-                    </label>
+            <div class="rounded-3xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-6 shadow-sm">
+                <p class="mb-4 text-[10px] font-black uppercase tracking-[.18em] text-blue-500">Contenido</p>
+                <div class="space-y-3 text-xs font-bold text-slate-700">
+                    <label class="flex items-center justify-between"><span>Portada premium</span><input id="opt-cover" type="checkbox" checked></label>
+                    <label class="flex items-center justify-between"><span>QR general de contacto</span><input id="opt-qr" type="checkbox" checked></label>
+                    <label class="flex items-center justify-between"><span>Garantía y entrega</span><input id="opt-details" type="checkbox" checked></label>
                 </div>
             </div>
 
-            <!-- BOTÓN ACCIÓN -->
-            <div class="pt-2">
-                <button onclick="startGeneration()" id="btn-generate" class="group relative w-full py-4 bg-[#1a4789] hover:bg-[#2c6fb5] text-white rounded-xl font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 transition-all active:scale-95 flex items-center justify-center gap-3 overflow-hidden">
-                    <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                    <span class="material-symbols-outlined">download_for_offline</span>
-                    <span>DESCARGAR PDF</span>
-                </button>
-                
-                <!-- Barra de Progreso -->
-                <div id="progress-container" class="hidden mt-4">
-                    <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
-                        <span id="status-text">Procesando imágenes...</span>
-                        <span id="progress-percent">0%</span>
+            <button id="btn-generate" onclick="startGeneration()" class="relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-[#1a4789] py-4 text-xs font-black uppercase tracking-[.15em] text-white shadow-xl shadow-blue-900/20 hover:bg-[#2461a5]">
+                <span class="material-symbols-outlined">download</span>
+                <span>Descargar PDF</span>
+            </button>
+            <div id="progress-container" class="hidden">
+                <div class="mb-2 flex justify-between text-[10px] font-bold text-slate-500">
+                    <span id="status-text">Preparando...</span><span id="progress-percent">0%</span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-slate-200"><div id="progress-bar" class="h-full w-0 bg-emerald-500 transition-all"></div></div>
+            </div>
+        </section>
+
+        <section class="relative min-h-[620px] overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-200 p-6 md:p-10">
+            <div class="absolute inset-0 opacity-30" style="background-image:radial-gradient(#94a3b8 1px,transparent 1px);background-size:22px 22px"></div>
+            <div class="paper relative mx-auto flex aspect-[1/1.414] w-full max-w-[480px] flex-col overflow-hidden bg-white">
+                <div class="h-2 bg-gradient-to-r from-[#102b53] via-[#2475b9] to-[#27b3a2]"></div>
+                <div class="flex flex-1 flex-col justify-between p-9">
+                    <div>
+                        <p class="text-[9px] font-black uppercase tracking-[.28em] text-blue-600">Selección comercial</p>
+                        <h3 id="preview-title" class="mt-3 text-4xl font-black uppercase leading-none text-[#102b53]">Catálogo</h3>
+                        <div class="mt-5 h-1 w-16 rounded bg-emerald-400"></div>
                     </div>
-                    <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                        <div id="progress-bar" class="h-full bg-emerald-500 w-0 transition-all duration-300"></div>
+                    <div class="rounded-3xl bg-[#102b53] p-6 text-white">
+                        <p class="text-[9px] font-black uppercase tracking-[.2em] text-blue-200">Tu asesor</p>
+                        <p id="preview-agent" class="mt-2 text-xl font-black">ParaTuHogar</p>
+                        <p class="mt-1 text-xs text-blue-100">Precios claros · Compra asistida · Atención directa</p>
                     </div>
                 </div>
             </div>
-
-        </div>
-
-        <!-- PANEL DERECHO: PREVISUALIZACIÓN -->
-        <div class="flex-1 bg-slate-200 rounded-3xl border border-slate-300/50 flex flex-col items-center justify-center p-8 relative overflow-hidden min-h-[500px]">
-            <!-- Decoración fondo -->
-            <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(#1a4789 2px, transparent 2px); background-size: 30px 30px;"></div>
-            
-            <!-- Hoja A4 -->
-            <div class="bg-white w-full max-w-[420px] aspect-[1/1.414] shadow-2xl preview-shadow rounded-sm p-8 relative flex flex-col items-center justify-center text-center z-10 transition-transform hover:scale-[1.02] duration-500">
-                
-                <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 text-blue-200">
-                    <span class="material-symbols-outlined text-6xl">picture_as_pdf</span>
-                </div>
-                
-                <h3 class="text-slate-800 font-black text-xl uppercase mb-2">Listo para Crear</h3>
-                <p class="text-slate-500 text-sm px-4 leading-relaxed">
-                    Nuestro motor inteligente optimizará tus imágenes para que el PDF se vea nítido en cualquier celular pero pese muy poco para enviar por WhatsApp.
-                </p>
-
-                <div class="mt-8 flex gap-4">
-                    <div class="flex flex-col items-center">
-                        <span class="material-symbols-outlined text-emerald-500 text-2xl mb-1">compress</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase">Ultra Ligero</span>
-                    </div>
-                    <div class="w-px h-10 bg-slate-100"></div>
-                    <div class="flex flex-col items-center">
-                        <span class="material-symbols-outlined text-purple-500 text-2xl mb-1">qr_code_2</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase">Interactivo</span>
-                    </div>
-                    <div class="w-px h-10 bg-slate-100"></div>
-                    <div class="flex flex-col items-center">
-                        <span class="material-symbols-outlined text-blue-500 text-2xl mb-1">hd</span>
-                        <span class="text-[9px] font-bold text-slate-400 uppercase">Calidad HD</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        </section>
     </main>
+    <div id="qr-stage" class="fixed -left-[9999px] -top-[9999px]"></div>
 
-    <!-- LOGICA JAVASCRIPT -->
-    <!-- PEGA ESTO DENTRO DE catalog-maker.html REEMPLAZANDO EL SCRIPT ACTUAL -->
 <script>
-    let payload = null;
-    const { jsPDF } = window.jspdf;
+let payload;
+const { jsPDF } = window.jspdf;
+const C = { navy:[16,43,83], blue:[26,71,137], teal:[39,179,162], ink:[24,38,58], muted:[91,106,125], pale:[244,247,250], line:[222,229,236] };
 
-    // 1. INICIALIZACIÓN Y CARGA DE DATOS
-    window.addEventListener('load', () => {
-        const dataStr = localStorage.getItem('pth_catalog_data');
-        if (!dataStr) {
-            alert("No hay datos cargados. Vuelve al catálogo principal.");
-            window.close();
-            return;
+window.addEventListener('load', () => {
+    try {
+        payload = JSON.parse(localStorage.getItem('pth_catalog_data') || 'null');
+        if (!payload || !Array.isArray(payload.products)) throw new Error('No hay productos cargados.');
+        const cat = payload.categoryName === 'TODOS' ? 'Selección general' : (payload.categoryName || 'Catálogo');
+        document.getElementById('cat-title').textContent = cat;
+        document.getElementById('preview-title').textContent = cat;
+        document.getElementById('cat-count').textContent = `${payload.products.length} productos disponibles`;
+        document.getElementById('agent-name').textContent = payload.agent || 'Asesor de ventas';
+        document.getElementById('preview-agent').textContent = payload.agent || 'Asesor de ventas';
+        document.getElementById('date-tag').textContent = new Date(payload.timestamp || Date.now()).toLocaleDateString('es-ES');
+    } catch (error) {
+        alert(error.message);
+        document.getElementById('btn-generate').disabled = true;
+    }
+});
+
+function cleanText(value) {
+    const box = document.createElement('div');
+    box.innerHTML = String(value || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n');
+    return (box.textContent || '').replace(/[•●▪]/g, '-').replace(/\s*\n\s*/g, '\n').replace(/[ \t]+/g, ' ').trim();
+}
+
+function money(value) {
+    const n = Number(String(value || 0).replace(/[^\d.]/g, '')) || 0;
+    return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+function productImageUrl(raw) {
+    if (!raw) return '';
+    const value = String(raw).trim().replace(/['"]/g, '');
+    if (/^https?:\/\//i.test(value) && !value.includes('drive.google.com')) return value;
+    const name = value.split('/').pop().split('?')[0].trim();
+    return `https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/${encodeURIComponent(name)}`;
+}
+
+function loadImage(url) {
+    return new Promise(resolve => {
+        if (!url) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const max = 760;
+            const scale = Math.min(1, max / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve({ data: canvas.toDataURL('image/jpeg', .86), ratio: canvas.width / canvas.height });
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+}
+
+function makeQrData(text) {
+    return new Promise(resolve => {
+        const stage = document.getElementById('qr-stage');
+        stage.innerHTML = '';
+        new QRCode(stage, { text, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+        setTimeout(() => {
+            const canvas = stage.querySelector('canvas');
+            const image = stage.querySelector('img');
+            resolve(canvas ? canvas.toDataURL('image/png') : (image ? image.src : null));
+        }, 80);
+    });
+}
+
+function contactLink(productName = '') {
+    const digits = String(payload.phone || '').replace(/\D/g, '');
+    const message = productName
+        ? `Hola ${payload.agent}, me interesa ${productName}. ¿Está disponible?`
+        : `Hola ${payload.agent}, vi tu catálogo de ParaTuHogar y quiero recibir asesoría.`;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
+function addContainedImage(doc, img, x, y, w, h) {
+    if (!img) return false;
+    let dw = w, dh = w / img.ratio;
+    if (dh > h) { dh = h; dw = h * img.ratio; }
+    doc.addImage(img.data, 'JPEG', x + (w - dw) / 2, y + (h - dh) / 2, dw, dh, undefined, 'FAST');
+    return true;
+}
+
+function drawLogo(doc, x, y, dark = false) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(...(dark ? C.navy : [255,255,255]));
+    doc.text('PARA', x, y);
+    const w = doc.getTextWidth('PARA');
+    doc.setTextColor(...C.teal);
+    doc.text('TUHOGAR', x + w + 1, y);
+}
+
+async function startGeneration() {
+    if (!payload?.products?.length) return;
+    const btn = document.getElementById('btn-generate');
+    const progress = document.getElementById('progress-container');
+    const bar = document.getElementById('progress-bar');
+    const pct = document.getElementById('progress-percent');
+    const status = document.getElementById('status-text');
+    btn.disabled = true;
+    btn.classList.add('opacity-60');
+    progress.classList.remove('hidden');
+    try {
+        const prepared = [];
+        for (let i = 0; i < payload.products.length; i++) {
+            const p = payload.products[i];
+            const percent = Math.round(((i + 1) / payload.products.length) * 100);
+            bar.style.width = `${percent}%`;
+            pct.textContent = `${percent}%`;
+            status.textContent = `Optimizando ${String(p.nombre || '').slice(0, 25)}...`;
+            prepared.push({ ...p, imgObj: await loadImage(productImageUrl(p.thumbnail)) });
         }
-        
-        try {
-            payload = JSON.parse(dataStr);
-            
-            // Llenar UI del panel izquierdo
-            document.getElementById('cat-title').innerText = payload.categoryName || "CATÁLOGO";
-            document.getElementById('cat-count').innerText = `${payload.products.length} productos`;
-            document.getElementById('agent-name').innerText = payload.agent.toUpperCase();
-            
-            const date = new Date(payload.timestamp);
-            document.getElementById('date-tag').innerText = date.toLocaleDateString();
+        const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
+        const style = document.querySelector('input[name="style"]:checked').value;
+        status.textContent = 'Componiendo catálogo...';
+        if (style === 'basic') generateBasic(doc, prepared);
+        else await generatePro(doc, prepared);
+        const safeCat = String(payload.categoryName || 'Catalogo').replace(/[^a-z0-9]+/gi, '_');
+        const safeAgent = String(payload.agent || 'Asesor').replace(/[^a-z0-9]+/gi, '_');
+        doc.save(`Catalogo_${safeCat}_${safeAgent}.pdf`);
+        status.textContent = 'Catálogo descargado';
+    } catch (error) {
+        console.error(error);
+        alert(`No se pudo generar el catálogo: ${error.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60');
+    }
+}
 
-        } catch(e) {
-            console.error(e);
+async function generatePro(doc, products) {
+    const useCover = document.getElementById('opt-cover').checked;
+    const useQr = document.getElementById('opt-qr').checked;
+    const useDetails = document.getElementById('opt-details').checked;
+    const generalQr = useQr ? await makeQrData(contactLink()) : null;
+    const category = payload.categoryName === 'TODOS' ? 'SELECCIÓN GENERAL' : String(payload.categoryName || 'CATÁLOGO').toUpperCase();
+
+    if (useCover) {
+        doc.setFillColor(...C.navy); doc.rect(0,0,210,297,'F');
+        doc.setFillColor(22,60,112); doc.circle(205,40,74,'F');
+        doc.setFillColor(...C.teal); doc.circle(18,280,58,'F');
+        drawLogo(doc, 18, 25);
+        doc.setTextColor(152,190,229); doc.setFontSize(9); doc.setFont('helvetica','bold');
+        doc.text('CATÁLOGO COMERCIAL · EDICIÓN DIGITAL',18,58);
+        doc.setTextColor(255,255,255); doc.setFontSize(36);
+        const titleLines = doc.splitTextToSize(category, 170).slice(0,3);
+        doc.text(titleLines,18,78);
+        const titleEnd = 78 + titleLines.length * 14;
+        doc.setFillColor(...C.teal); doc.roundedRect(18,titleEnd + 8,35,3,1.5,1.5,'F');
+        doc.setTextColor(202,219,239); doc.setFontSize(11); doc.setFont('helvetica','normal');
+        doc.text('Equipos seleccionados para comprar mejor.',18,titleEnd + 22);
+        doc.text('Precios transparentes y atención personalizada.',18,titleEnd + 29);
+        doc.setFillColor(255,255,255); doc.roundedRect(18,210,174,56,5,5,'F');
+        doc.setTextColor(...C.muted); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text('ASESOR COMERCIAL',30,226);
+        doc.setTextColor(...C.navy); doc.setFontSize(17);
+        doc.text(String(payload.agent || 'Asesor de ventas').toUpperCase(),30,237);
+        doc.setFontSize(10); doc.setTextColor(...C.blue);
+        doc.text(`WhatsApp +${String(payload.phone || '').replace(/^\+/, '')}`,30,247);
+        doc.setTextColor(...C.muted); doc.setFontSize(8); doc.setFont('helvetica','normal');
+        doc.text(`${products.length} productos disponibles · Precios en USD`,30,257);
+        if (generalQr) {
+            doc.addImage(generalQr,'PNG',154,218,30,30);
+            doc.setTextColor(...C.muted); doc.setFontSize(6); doc.setFont('helvetica','bold');
+            doc.text('ESCANEA Y ESCRÍBEME',169,253,{align:'center'});
+        }
+        doc.addPage();
+    }
+
+    const drawPageFrame = () => {
+        doc.setFillColor(...C.navy); doc.rect(0,0,210,17,'F');
+        drawLogo(doc,14,11.5);
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(191,213,235);
+        doc.text(category,196,11.5,{align:'right'});
+        doc.setDrawColor(...C.line); doc.line(14,282,196,282);
+        doc.setTextColor(...C.muted); doc.setFontSize(7); doc.setFont('helvetica','normal');
+        doc.text(`Atendido por ${payload.agent} · WhatsApp +${String(payload.phone || '').replace(/^\+/, '')}`,14,288);
+    };
+
+    drawPageFrame();
+    const cardW = 88, cardH = 122, gapX = 6, gapY = 8, startX = 14, startY = 24;
+    for (let i = 0; i < products.length; i++) {
+        const slot = i % 4;
+        if (i > 0 && slot === 0) { doc.addPage(); drawPageFrame(); }
+        const col = slot % 2, row = Math.floor(slot / 2);
+        const x = startX + col * (cardW + gapX), y = startY + row * (cardH + gapY);
+        drawProductCard(doc, products[i], x, y, cardW, cardH, useDetails);
+    }
+    if (products.length % 4 === 1) {
+        drawAdvisorCard(doc, startX + cardW + gapX, startY, cardW, cardH, generalQr);
+    }
+
+    const pages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) {
+        doc.setPage(p); doc.setFontSize(7); doc.setTextColor(...C.muted);
+        doc.text(`${p} / ${pages}`,196,288,{align:'right'});
+    }
+}
+
+function drawAdvisorCard(doc, x, y, w, h, qrData) {
+    doc.setFillColor(...C.navy);
+    doc.roundedRect(x,y,w,h,3,3,'F');
+    doc.setFillColor(24,65,119);
+    doc.circle(x+w+5,y+8,34,'F');
+    doc.setFillColor(...C.teal);
+    doc.roundedRect(x+7,y+9,28,3,1.5,1.5,'F');
+    doc.setTextColor(181,207,234);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.text('¿TE AYUDO A ELEGIR?',x+7,y+23);
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(17);
+    doc.text(['COMPRA CON','ASESORÍA DIRECTA'],x+7,y+36);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(205,222,240);
+    const copy = doc.splitTextToSize('Confirma disponibilidad, entrega y garantía antes de comprar.',w-14);
+    doc.text(copy,x+7,y+58);
+    if (qrData) {
+        doc.setFillColor(255,255,255);
+        doc.roundedRect(x+7,y+73,36,36,2,2,'F');
+        doc.addImage(qrData,'PNG',x+10,y+76,30,30);
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(6);
+        doc.setTextColor(255,255,255);
+        doc.text('ESCANEA PARA ESCRIBIR',x+48,y+83);
+    }
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(255,255,255);
+    doc.text(String(payload.agent || 'Asesor de ventas').toUpperCase(),x+48,y+94,{maxWidth:w-55});
+    doc.setFontSize(7);
+    doc.setTextColor(...C.teal);
+    doc.text(`+${String(payload.phone || '').replace(/^\+/, '')}`,x+48,y+104);
+    doc.link(x,y,w,h,{url:contactLink()});
+}
+
+function drawProductCard(doc, p, x, y, w, h, useDetails) {
+    doc.setFillColor(255,255,255); doc.setDrawColor(...C.line); doc.roundedRect(x,y,w,h,3,3,'FD');
+    doc.setFillColor(...C.pale); doc.roundedRect(x+1,y+1,w-2,50,2,2,'F');
+    if (!addContainedImage(doc,p.imgObj,x+6,y+5,w-12,42)) {
+        doc.setDrawColor(207,216,226); doc.setLineWidth(.6);
+        doc.circle(x+w/2,y+22,10); doc.line(x+w/2-6,y+28,x+w/2+6,y+16);
+        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(148,163,184);
+        doc.text('IMAGEN NO DISPONIBLE',x+w/2,y+39,{align:'center'});
+    }
+    doc.setFillColor(...C.teal); doc.roundedRect(x+6,y+47,24,6,3,3,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(6); doc.setFont('helvetica','bold');
+    doc.text('DISPONIBLE',x+18,y+51.2,{align:'center'});
+
+    doc.setTextColor(...C.ink); doc.setFontSize(9.3); doc.setFont('helvetica','bold');
+    let name = doc.splitTextToSize(cleanText(p.nombre).toUpperCase(),w-12);
+    if (name.length > 2) name = [name[0], `${name[1].slice(0,-2)}...`];
+    doc.text(name,x+6,y+61);
+
+    doc.setTextColor(...C.blue); doc.setFontSize(18); doc.setFont('helvetica','bold');
+    const price = `$${money(p.precio)}`;
+    doc.text(price,x+6,y+77);
+    const priceW = doc.getTextWidth(price);
+    doc.setFontSize(7); doc.text('USD',x+7+priceW,y+77);
+
+    let infoY = y + 85;
+    if (useDetails) {
+        const facts = [];
+        const warranty = cleanText(p.garantia);
+        const delivery = cleanText(p.mensajeria);
+        if (warranty) facts.push(`Garantía: ${warranty}`);
+        if (delivery) facts.push(`Entrega: ${delivery}`);
+        const desc = cleanText(p.descripcion).split('\n').filter(Boolean).slice(0,2).join(' · ');
+        if (desc) facts.push(desc);
+        doc.setTextColor(...C.muted); doc.setFont('helvetica','normal'); doc.setFontSize(6.8);
+        let lines = doc.splitTextToSize(facts.join('\n'),w-12).slice(0,4);
+        doc.text(lines,x+6,infoY);
+    }
+
+    const btnY = y+h-15;
+    doc.setFillColor(...C.navy); doc.roundedRect(x+6,btnY,w-12,9,2,2,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    doc.text('CONSULTAR POR WHATSAPP',x+w/2,btnY+5.8,{align:'center'});
+    doc.link(x+6,btnY,w-12,9,{url:contactLink(p.nombre)});
+}
+
+function generateBasic(doc, products) {
+    doc.setFillColor(...C.navy); doc.rect(0,0,210,35,'F');
+    drawLogo(doc,14,14);
+    doc.setTextColor(255,255,255); doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.text('LISTA DE PRECIOS',14,27);
+    doc.setFontSize(8); doc.setTextColor(194,215,238);
+    doc.text(`${payload.agent} · WhatsApp +${String(payload.phone || '').replace(/^\+/, '')}`,196,27,{align:'right'});
+    const body = products.map(p => [
+        cleanText(p.nombre),
+        String(p.categoria || ''),
+        `$${money(p.precio)}`,
+        cleanText(p.garantia) || 'Consultar'
+    ]);
+    doc.autoTable({
+        startY:42,
+        head:[['Producto','Categoría','Precio USD','Garantía']],
+        body,
+        margin:{left:14,right:14,bottom:18},
+        theme:'plain',
+        headStyles:{fillColor:C.blue,textColor:255,fontStyle:'bold',fontSize:8,cellPadding:3},
+        bodyStyles:{textColor:C.ink,fontSize:8,cellPadding:3},
+        alternateRowStyles:{fillColor:C.pale},
+        columnStyles:{0:{cellWidth:85},1:{cellWidth:35},2:{cellWidth:25,fontStyle:'bold',textColor:C.blue},3:{cellWidth:37}},
+        didDrawPage: data => {
+            doc.setDrawColor(...C.line); doc.line(14,284,196,284);
+            doc.setFontSize(7); doc.setTextColor(...C.muted);
+            doc.text('Precios sujetos a disponibilidad. Confirma antes de realizar tu compra.',14,290);
+            doc.text(String(doc.internal.getCurrentPageInfo().pageNumber),196,290,{align:'right'});
         }
     });
-
-    function toggleOptions() {
-        const isPro = document.querySelector('input[name="style"]:checked').value === 'pro';
-        const panel = document.getElementById('pro-options');
-        isPro ? panel.classList.remove('opacity-50', 'pointer-events-none') : panel.classList.add('opacity-50', 'pointer-events-none');
-    }
-
-    // 2. FUNCIÓN PRINCIPAL DE GENERACIÓN
-    async function startGeneration() {
-        const btn = document.getElementById('btn-generate');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-percent');
-        const statusText = document.getElementById('status-text');
-        const progressContainer = document.getElementById('progress-container');
-
-        btn.disabled = true;
-        btn.classList.add('opacity-80', 'cursor-wait');
-        progressContainer.classList.remove('hidden');
-
-        try {
-            const style = document.querySelector('input[name="style"]:checked').value;
-            // A4 en milímetros (210 x 297)
-            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-            
-            const total = payload.products.length;
-            const processedProducts = [];
-
-            // --- FASE 1: PROCESAMIENTO DE IMÁGENES ---
-            for (let i = 0; i < total; i++) {
-                const p = payload.products[i];
-                
-                // Actualizar barra de progreso visual
-                const percent = Math.round(((i + 1) / total) * 100);
-                progressBar.style.width = `${percent}%`;
-                progressText.innerText = `${percent}%`;
-                statusText.innerText = `Procesando: ${p.nombre.substring(0,15)}...`;
-
-                let imgObj = null;
-                // --- PEGAR ESTO EN catalog-maker.html (Dentro de startGeneration) ---
-                if (p.thumbnail) {
-                    // 1. Limpieza del nombre
-                    let nombreLimpio = p.thumbnail;
-                    if (nombreLimpio.includes('/')) nombreLimpio = nombreLimpio.split('/').pop();
-                    nombreLimpio = nombreLimpio.split('?')[0].replace(/['"]/g, '').replace(/\s+/g, '');
-
-                    // 2. Construir URL GitHub
-                    let url = `https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/${nombreLimpio}`;
-
-                    // 3. Obtener imagen procesada
-                    imgObj = await getProImage(url);
-                }
-                
-                processedProducts.push({ ...p, imgObj });
-            }
-
-            statusText.innerText = "Diseñando PDF Premium...";
-            
-            if (style === 'basic') {
-                generateBasicPDF(doc, processedProducts);
-            } else {
-                await generatePremiumPDF(doc, processedProducts);
-            }
-
-            const safeName = (payload.categoryName || 'Catalogo').replace(/[^a-z0-9]/gi, '_');
-            doc.save(`Catalogo_${safeName}_${payload.agent.replace(/\s+/g,'_')}.pdf`);
-            
-            statusText.innerText = "¡Listo!";
-            setTimeout(() => {
-                const closeIt = confirm("✅ Catálogo descargado con éxito.\n¿Cerrar el estudio?");
-                if(closeIt) window.close();
-                btn.disabled = false;
-                btn.classList.remove('opacity-80', 'cursor-wait');
-            }, 500);
-
-        } catch (e) {
-            console.error("Error PDF:", e);
-            alert("Ocurrió un error: " + e.message);
-            btn.disabled = false;
-        }
-    }
-
-    // 3. COMPRESOR DE IMÁGENES MEJORADO (Retorna Dimensiones)
-    function getProImage(url) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            // Anti-caché para evitar CORS
-            img.src = url + "?t=" + new Date().getTime();
-            
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Calidad alta pero tamaño manejable (600px ancho)
-                const maxWidth = 600; 
-                let w = img.width;
-                let h = img.height;
-                
-                // Calculamos aspecto para redimensionar el canvas, NO la imagen final en el PDF
-                if (w > maxWidth) {
-                    h = h * (maxWidth / w);
-                    w = maxWidth;
-                }
-
-                canvas.width = w;
-                canvas.height = h;
-                
-                // Fondo blanco por si es PNG transparente
-                ctx.fillStyle = "#FFFFFF";
-                ctx.fillRect(0, 0, w, h);
-                ctx.drawImage(img, 0, 0, w, h);
-                
-                // Retornamos DataURL Y las proporciones (ratio)
-                resolve({
-                    data: canvas.toDataURL('image/jpeg', 0.85),
-                    ratio: w / h // Ancho dividido Alto
-                });
-            };
-            
-            img.onerror = () => {
-                console.warn("Error cargando imagen:", url);
-                resolve(null);
-            };
-        });
-    }
-
-    // 4. GENERADOR PREMIUM (NUEVO DISEÑO)
-    // 4. GENERADOR PREMIUM (NUEVO DISEÑO CORREGIDO)
-    async function generatePremiumPDF(doc, products) {
-        const blue = [26, 71, 137];   
-        const cyan = [44, 111, 181];  
-        const dark = [30, 41, 59];    
-        const grey = [80, 90, 100]; // Gris un poco más oscuro para leer mejor
-
-        // --- PÁGINA 1: PORTADA (IGUAL QUE ANTES) ---
-        if (document.getElementById('opt-cover').checked) {
-            doc.setFillColor(...blue);
-            doc.rect(0, 0, 210, 297, 'F');
-            doc.setFillColor(...cyan); 
-            doc.circle(105, 350, 200, 'F'); 
-            doc.setTextColor(255, 255, 255);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(24);
-            doc.text("CATÁLOGO OFICIAL", 105, 60, { align: 'center' });
-            doc.setFontSize(50); // Reducir un poco si el nombre es muy largo
-            const title = payload.categoryName ? payload.categoryName.toUpperCase() : "GENERAL";
-            doc.text(title, 105, 85, { align: 'center' });
-            doc.setDrawColor(255, 255, 255);
-            doc.setLineWidth(1.5);
-            doc.line(60, 95, 150, 95);
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(40, 180, 130, 60, 4, 4, 'F');
-            doc.setTextColor(...blue);
-            doc.setFontSize(10);
-            doc.text("ASESOR COMERCIAL", 105, 195, { align: 'center' });
-            doc.setFontSize(18);
-            doc.text(payload.agent.toUpperCase(), 105, 205, { align: 'center' });
-            doc.setFillColor(...blue);
-            doc.roundedRect(65, 215, 80, 12, 6, 6, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(10);
-            doc.text(`WhatsApp: +${payload.phone}`, 105, 222, { align: 'center' });
-            doc.addPage();
-        }
-
-        // --- PÁGINAS DE PRODUCTOS ---
-        let y = 35;
-        const marginX = 15;
-        const cardWidth = 85;  
-        const cardHeight = 130; // AUMENTADO para que quepa todo
-        const gap = 10;
-        let col = 0;
-
-        const drawHeader = () => {
-            doc.setFillColor(248, 250, 252);
-            doc.rect(0, 0, 210, 20, 'F');
-            doc.setTextColor(150, 150, 150);
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "bold");
-            doc.text("PARATUHOGAR.CU", 15, 12);
-            doc.text(`Catálogo: ${payload.categoryName}`, 195, 12, { align: 'right' });
-        };
-        drawHeader();
-
-        for (let i = 0; i < products.length; i++) {
-            const p = products[i];
-
-            // Control de salto de página
-            if (y + cardHeight > 285) {
-                doc.addPage();
-                drawHeader();
-                y = 35;
-                col = 0;
-            }
-
-            const x = marginX + (col * (cardWidth + gap));
-
-            // 1. TARJETA
-            doc.setDrawColor(230, 230, 230);
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'FD');
-
-            // 2. IMAGEN
-            const imgAreaH = 55;
-            const imgAreaW = cardWidth - 10;
-            const imgYStart = y + 5;
-
-            if (p.imgObj) {
-                let drawW = imgAreaW;
-                let drawH = imgAreaW / p.imgObj.ratio;
-                if (drawH > imgAreaH) {
-                    drawH = imgAreaH;
-                    drawW = imgAreaH * p.imgObj.ratio;
-                }
-                const xOffset = (imgAreaW - drawW) / 2;
-                const yOffset = (imgAreaH - drawH) / 2;
-                try {
-                    doc.addImage(p.imgObj.data, 'JPEG', x + 5 + xOffset, imgYStart + yOffset, drawW, drawH);
-                } catch(err) {}
-            } else {
-                doc.setTextColor(200, 200, 200);
-                doc.setFontSize(8);
-                doc.text("Sin Foto", x + (cardWidth/2), y + 30, { align: 'center' });
-            }
-
-            // --- AQUI EMPIEZA LA CORRECCIÓN DE ESPACIADO ---
-            
-            // 3. NOMBRE (Bajamos un poco el inicio)
-            const textStartY = y + imgAreaH + 10; 
-            
-            doc.setTextColor(...dark);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            const nameLines = doc.splitTextToSize(p.nombre.toUpperCase(), cardWidth - 10);
-            const safeName = nameLines.length > 2 ? [nameLines[0], nameLines[1] + '...'] : nameLines;
-            
-            doc.text(safeName, x + 5, textStartY);
-
-            // Calculamos dónde terminó el nombre para poner el precio
-            // Cada línea de texto suele ocupar unos 4-5 unidades.
-            const nameHeight = safeName.length * 5; 
-            const priceY = textStartY + nameHeight + 4; // +4 de aire extra
-
-            // 4. PRECIO + USD (Separados)
-            doc.setTextColor(...blue);
-            doc.setFontSize(16);
-            doc.setFont("helvetica", "bold");
-            const priceStr = `$${p.precio}`;
-            doc.text(priceStr, x + 5, priceY);
-            
-            // Etiqueta USD (Calculamos ancho del precio para ponerlo al lado, no encima)
-            const priceWidth = doc.getTextWidth(priceStr);
-            doc.setFontSize(9);
-            doc.text("USD", x + 5 + priceWidth + 2, priceY);
-
-            // 5. DESCRIPCIÓN (Debajo del precio con buen margen)
-            doc.setTextColor(...grey);
-            doc.setFontSize(9); // Letra un pelín más grande para leer
-            doc.setFont("helvetica", "normal");
-            
-            let cleanDesc = (p.descripcion || "Garantía Oficial incluída.").replace(/<[^>]*>?/gm, '');
-            const descLines = doc.splitTextToSize(cleanDesc, cardWidth - 10);
-            // Permitimos 3 líneas
-            const safeDesc = descLines.slice(0, 3); 
-            
-            // Posición: Debajo del precio + 6 unidades
-            doc.text(safeDesc, x + 5, priceY + 7);
-
-            // 6. BOTÓN COMPRAR (Al final de la tarjeta)
-            const btnH = 14;
-            const btnY = y + cardHeight - btnH; // Pegado al borde inferior
-            
-            // Link Inteligente
-            const webLink = `${window.location.origin}${window.location.pathname.replace('catalog-maker.html','index.html')}?search=${encodeURIComponent(p.nombre)}&gestor=${encodeURIComponent(payload.agent)}&tel=${payload.phone}`;
-            
-            // Fondo Botón (Sin bordes redondeados abajo para que encaje)
-            doc.setFillColor(...blue);
-            // Dibuja rectángulo pero rellenando las esquinas inferiores del borde rounded de la tarjeta
-            // Truco: Dibujar un rect un poco más arriba y tapar. O usar roundedRect con esquinas superiores en 0.
-            // Para simplificar y que se vea limpio: Rectángulo centrado flotante
-            doc.roundedRect(x + 5, btnY - 5, cardWidth - 10, 12, 2, 2, 'F');
-            
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "bold");
-            doc.text("COMPRAR AHORA ➜", x + (cardWidth / 2), btnY + 2, { align: 'center' });
-
-            // ENLACE GIGANTE (Cubre toda la tarjeta para asegurar el clic)
-            doc.link(x, y, cardWidth, cardHeight, { url: webLink });
-
-            // Siguiente columna
-            col++;
-            if (col > 1) { 
-                col = 0;
-                y += cardHeight + gap;
-            }
-        }
-
-        const pages = doc.internal.getNumberOfPages();
-        for(let k=1; k<=pages; k++) {
-            doc.setPage(k);
-            doc.setFontSize(8);
-            doc.setTextColor(200, 200, 200);
-            doc.text(`Pág ${k}/${pages}`, 105, 292, { align: 'center' });
-        }
-    }
-
-    // Generador Básico (Tabla) - Se mantiene igual para quien quiera imprimir lista simple
-    function generateBasicPDF(doc, products) {
-        doc.setFillColor(26, 71, 137);
-        doc.rect(0, 0, 210, 30, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("LISTA DE PRECIOS", 105, 15, { align: 'center' });
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Agente: ${payload.agent} | +${payload.phone}`, 105, 22, { align: 'center' });
-
-        const bodyData = products.map(p => [
-            p.nombre,
-            `$${p.precio}`,
-            p.garantia || "-",
-            p.mensajeria || "Consultar"
-        ]);
-
-        doc.autoTable({
-            startY: 35,
-            head: [['Producto', 'USD', 'Garantía', 'Envío']],
-            body: bodyData,
-            theme: 'grid',
-            headStyles: { fillColor: [60, 60, 60] },
-            columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 20, fontStyle: 'bold' } }
-        });
-    }
+}
 </script>
 </body>
 </html>

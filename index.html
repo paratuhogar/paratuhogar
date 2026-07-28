@@ -34,6 +34,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/client-followup.css?v=1">
 
     <!-- 3. Librería para Gráficas (Chart.js) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -911,19 +912,13 @@
 <div class="w-full xl:w-auto overflow-x-auto pb-2 md:pb-0">
     <div class="flex items-center gap-2 min-w-max"> <!-- min-w-max evita que se encojan -->
 
-        <!-- BOTÓN GAMIFICACIÓN: LEADS PREMIUM -->
-<button onclick="reclamarLeadsPremium()" class="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-yellow-900 border border-yellow-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/30 whitespace-nowrap active:scale-95 transition-transform font-black" title="Premio: Cartera de Clientes">
-    <span class="material-symbols-outlined text-xl animate-bounce">contact_phone</span>
-    <span>Leads VIP</span>
-</button>
-        
         <!-- 1. Botón Flash -->
         <div id="container-flash-btn" class="h-10"></div>
 
         <!-- 2. Botón Texto -->
-        <button id="btn-copy-bulk" class="h-10 px-4 rounded-xl border border-indigo-100 bg-white text-indigo-600 flex items-center justify-center gap-2 shadow-sm whitespace-nowrap" title="Copiado Masivo">
-            <span class="material-symbols-outlined text-xl">content_copy</span>
-            <span class="text-xs font-bold">Texto</span>
+        <button id="btn-copy-bulk" class="h-10 px-4 rounded-xl border border-indigo-100 bg-white text-indigo-600 flex items-center justify-center gap-2 shadow-sm whitespace-nowrap" title="Crear mensaje de ofertas">
+            <span class="material-symbols-outlined text-xl">campaign</span>
+            <span class="text-xs font-bold">Mensaje</span>
         </button>
 
         <!-- 3. MAGIC STUDIO -->
@@ -948,12 +943,6 @@
             <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
             <span class="text-xs font-bold">PDF</span>
         </button>
-
-        <!-- Botón IA Marketing (Con ID y estado inicial) -->
-<button id="btn-ai-post" onclick="openMarketingAI()" class="h-10 px-4 rounded-xl border border-gray-200 bg-white text-gray-400 cursor-not-allowed flex items-center justify-center gap-2 shadow-sm whitespace-nowrap transition-all" title="Bloqueado - Requiere Nivel 3">
-    <span class="material-symbols-outlined text-xl">lock</span>
-    <span class="text-xs font-bold">AI Post</span>
-</button>
 
     </div>
 </div>
@@ -1429,7 +1418,7 @@
             </button>
 
             <!-- Botón 2: Descargar Foto (Nivel 0) -->
-            <button onclick="downloadProductImage(this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
+            <button onclick="downloadProductCardImage(selectedProduct.nombre, this)" class="flex-1 min-w-[80px] py-3 bg-white border-2 border-gray-100 dark:bg-gray-800 dark:border-gray-700 rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:border-primary hover:text-primary transition-all text-gray-500 gap-1 shadow-sm">
                 <span class="material-symbols-outlined text-xl">download</span>
                 Foto
             </button>
@@ -1441,7 +1430,7 @@
             </button>
 
             <!-- Botón 4: STORY MAKER (Nivel 1 - Se controla por JS) -->
-            <button id="btn-story-maker" onclick="generateStoryImage()" class="flex-1 min-w-[80px] py-3 bg-gradient-to-br from-pink-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
+            <button id="btn-story-maker" onclick="generateStoryForProduct(selectedProduct.nombre, this)" class="flex-1 min-w-[80px] py-3 bg-gradient-to-br from-fuchsia-500 to-orange-400 text-white border-none rounded-xl font-bold text-[10px] uppercase flex flex-col items-center justify-center hover:opacity-90 transition-all gap-1 shadow-lg shadow-pink-500/20">
                 <span class="material-symbols-outlined text-xl">fit_screen</span>
                 Crear Story
             </button>
@@ -2527,7 +2516,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2607d"; 
+const versionActual = "2807a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -4158,6 +4147,13 @@ async function loadProducts() {
             }
         }
 
+        // Restaurar el contexto de un mensaje compartido antes de dibujar.
+        const sharedCategory = urlParams.get('catalog_category');
+        const sharedQuery = urlParams.get('catalog_q');
+        if (sharedCategory) activeCategory = sharedCategory.toUpperCase();
+        const sharedSearchInput = document.getElementById('search-bar');
+        if (sharedSearchInput && sharedQuery) sharedSearchInput.value = sharedQuery;
+
         renderCategories();
         renderProducts();
         
@@ -4421,6 +4417,10 @@ async function renderCategories() {
     
     // 2. VARIABLES DE ESTADO
     const isGestor = window.gestorName ? true : false;
+    // Un enlace referido puede traer el nombre del gestor, pero eso no convierte
+    // al cliente en usuario interno. Las herramientas comerciales solo aparecen
+    // cuando existe una sesión real de gestor, subgestor o administrador.
+    const hasSellerSession = Boolean(localStorage.getItem('pth_session'));
     const filterCheckbox = document.getElementById('filter-high-comm');
     const filterHighComm = filterCheckbox ? filterCheckbox.checked : false;
     
@@ -4502,15 +4502,33 @@ async function renderCategories() {
                 </button>
             </div>
 
-            <!-- BARRA SOCIAL (USANDO nombreSeguro) -->
-            <div class="grid grid-cols-2 border-t border-gray-100 dark:border-gray-700 divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <button onclick="shareProductSocial('${nombreSeguro}', 'wa')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all">
-                    <i class="fab fa-whatsapp text-lg"></i> <span class="text-[9px] font-bold uppercase">Estado</span>
-                </button>
-                <button onclick="shareProductSocial('${nombreSeguro}', 'fb')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                    <i class="fab fa-facebook text-lg"></i> <span class="text-[9px] font-bold uppercase">Post</span>
-                </button>
+            ${hasSellerSession ? `
+            <!-- RESPUESTA RÁPIDA: SOLO USUARIOS INTERNOS -->
+            <div class="border-t border-gray-100 dark:border-gray-700 bg-slate-50/90 dark:bg-gray-900/60 p-2">
+                <div class="grid grid-cols-5 gap-1">
+                    <button onclick="copyProductOffer('${nombreSeguro}', this)" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all" title="Copiar oferta">
+                        <span class="material-symbols-outlined text-lg">content_copy</span>
+                        <span class="hidden xl:block text-[8px] font-black uppercase">Copiar</span>
+                    </button>
+                    <button onclick="shareProductWhatsApp('${nombreSeguro}')" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-green-600 hover:shadow-sm transition-all" title="Compartir por WhatsApp">
+                        <i class="fab fa-whatsapp text-lg"></i>
+                        <span class="hidden xl:block text-[8px] font-black uppercase">WhatsApp</span>
+                    </button>
+                    <button onclick="downloadProductCardImage('${nombreSeguro}', this)" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all" title="Descargar imagen">
+                        <span class="material-symbols-outlined text-lg">download</span>
+                        <span class="hidden xl:block text-[8px] font-black uppercase">Imagen</span>
+                    </button>
+                    <button onclick="generateStoryForProduct('${nombreSeguro}', this)" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 px-1 py-2 text-white shadow-sm hover:shadow-md transition-all" title="Crear Story">
+                        <span class="material-symbols-outlined text-lg">auto_awesome</span>
+                        <span class="hidden xl:block text-[8px] font-black uppercase">Story</span>
+                    </button>
+                    <button onclick="addProductFromCard('${nombreSeguro}')" class="group flex min-w-0 flex-col items-center gap-1 rounded-lg bg-[#1a4789] px-1 py-2 text-white shadow-sm hover:bg-[#12396f] transition-all" title="Añadir al pedido">
+                        <span class="material-symbols-outlined text-lg">add_shopping_cart</span>
+                        <span class="hidden xl:block text-[8px] font-black uppercase">Pedido</span>
+                    </button>
+                </div>
             </div>
+            ` : ''}
         </div>`;
     }).join('');
 }
@@ -7127,6 +7145,7 @@ function applySort() {
 function renderProductsCustom(lista) {
     const container = document.getElementById('productos-container');
     const isGestor = window.gestorName ? true : false;
+    const hasSellerSession = Boolean(localStorage.getItem('pth_session'));
     
     container.innerHTML = lista.map(p => {
         const precio = parseFloat(p.precio) || 0;
@@ -7169,17 +7188,304 @@ function renderProductsCustom(lista) {
                 </button>
             </div>
 
-            <!-- BARRA SOCIAL -->
-            <div class="grid grid-cols-2 border-t border-gray-100 dark:border-gray-700 divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'wa')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-green-500 hover:bg-green-50 transition-all">
-                    <i class="fab fa-whatsapp text-lg"></i> <span class="text-[9px] font-bold uppercase">Estado</span>
-                </button>
-                <button onclick="shareProductSocial('${p.nombre.replace(/'/g, "\\'")}', 'fb')" class="py-3 flex items-center justify-center gap-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all">
-                    <i class="fab fa-facebook text-lg"></i> <span class="text-[9px] font-bold uppercase">Post</span>
-                </button>
+            ${hasSellerSession ? `
+            <div class="border-t border-gray-100 dark:border-gray-700 bg-slate-50/90 dark:bg-gray-900/60 p-2">
+                <div class="grid grid-cols-5 gap-1">
+                    <button onclick="copyProductOffer('${nombreSeguro}', this)" class="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-indigo-600 hover:shadow-sm transition-all" title="Copiar oferta">
+                        <span class="material-symbols-outlined text-lg">content_copy</span><span class="hidden xl:block text-[8px] font-black uppercase">Copiar</span>
+                    </button>
+                    <button onclick="shareProductWhatsApp('${nombreSeguro}')" class="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-green-600 hover:shadow-sm transition-all" title="Compartir por WhatsApp">
+                        <i class="fab fa-whatsapp text-lg"></i><span class="hidden xl:block text-[8px] font-black uppercase">WhatsApp</span>
+                    </button>
+                    <button onclick="downloadProductCardImage('${nombreSeguro}', this)" class="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all" title="Descargar imagen">
+                        <span class="material-symbols-outlined text-lg">download</span><span class="hidden xl:block text-[8px] font-black uppercase">Imagen</span>
+                    </button>
+                    <button onclick="generateStoryForProduct('${nombreSeguro}', this)" class="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 px-1 py-2 text-white shadow-sm hover:shadow-md transition-all" title="Crear Story">
+                        <span class="material-symbols-outlined text-lg">auto_awesome</span><span class="hidden xl:block text-[8px] font-black uppercase">Story</span>
+                    </button>
+                    <button onclick="addProductFromCard('${nombreSeguro}')" class="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-[#1a4789] px-1 py-2 text-white shadow-sm hover:bg-[#12396f] transition-all" title="Añadir al pedido">
+                        <span class="material-symbols-outlined text-lg">add_shopping_cart</span><span class="hidden xl:block text-[8px] font-black uppercase">Pedido</span>
+                    </button>
+                </div>
             </div>
+            ` : ''}
         </div>`;
     }).join('');
+}
+
+function getProductForQuickAction(name) {
+    const realName = String(name || '').replace(/&quot;/g, '"');
+    return productosRaw.find(product => product.nombre === realName) || null;
+}
+
+function buildProductOfferText(product) {
+    const agent = window.gestorName || 'ParaTuHogar';
+    const phone = String(getAgentPhone() || '').replace(/\D/g, '');
+    const productUrl = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(product.nombre)}${window.gestorName ? `&gestor=${encodeURIComponent(window.gestorName)}&tel=${phone}` : ''}`;
+    return `🔥 *OFERTA DISPONIBLE*
+
+📦 *${product.nombre}*
+💰 *Precio:* $${product.precio} USD
+🛡️ *Garantía:* ${product.garantia || 'Consultar'}
+🚚 *Entrega:* ${product.mensajeria || 'Consultar'}
+
+🔎 Fotos y detalles:
+${productUrl}
+
+📲 Atendido por ${agent}`;
+}
+
+async function copyProductOffer(name, button) {
+    const product = getProductForQuickAction(name);
+    if (!product) return;
+    try {
+        await navigator.clipboard.writeText(buildProductOfferText(product));
+        trackSpy('COPIO_OFERTA', product.nombre);
+        if (button) {
+            const previous = button.innerHTML;
+            button.innerHTML = `<span class="material-symbols-outlined text-lg">check</span><span class="text-[8px] font-black uppercase">Listo</span>`;
+            button.classList.add('text-emerald-600');
+            setTimeout(() => {
+                button.innerHTML = previous;
+                button.classList.remove('text-emerald-600');
+            }, 1600);
+        }
+    } catch (error) {
+        alert('No se pudo copiar la oferta. Revisa los permisos del navegador.');
+    }
+}
+
+function shareProductWhatsApp(name) {
+    const product = getProductForQuickAction(name);
+    if (!product) return;
+    trackSpy('COMPARTIO_WHATSAPP', product.nombre);
+    const shareUrl = `https://wa.me/?text=${encodeURIComponent(buildProductOfferText(product))}`;
+    window.open(shareUrl, '_blank', 'noopener');
+}
+
+async function downloadProductCardImage(name, button) {
+    const product = getProductForQuickAction(name);
+    if (!product || !product.thumbnail) return alert('Este producto todavía no tiene imagen disponible.');
+    const previous = button ? button.innerHTML : '';
+    try {
+        if (button) button.innerHTML = `<span class="loader w-4 h-4 border-blue-600"></span><span class="text-[8px] font-black uppercase">Bajando</span>`;
+        const response = await fetch(fixDriveUrl(product.thumbnail));
+        if (!response.ok) throw new Error('No se pudo obtener la imagen.');
+        const blobUrl = URL.createObjectURL(await response.blob());
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `Oferta_${product.nombre.replace(/[^a-z0-9]+/gi, '_').slice(0, 55)}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+        trackSpy('DESCARGO_FOTO', product.nombre);
+    } catch (error) {
+        console.error(error);
+        alert('No se pudo descargar la imagen de este producto.');
+    } finally {
+        if (button) button.innerHTML = previous;
+    }
+}
+
+function addProductFromCard(name) {
+    const product = getProductForQuickAction(name);
+    if (!product) return;
+    selectedProduct = product;
+    addItemToCart();
+}
+
+function drawStoryRoundedRect(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+}
+
+function drawStoryText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+    const words = String(text || '').trim().split(/\s+/);
+    const lines = [];
+    let current = '';
+    for (const word of words) {
+        const test = current ? `${current} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && current) {
+            lines.push(current);
+            current = word;
+            if (lines.length === maxLines) break;
+        } else {
+            current = test;
+        }
+    }
+    if (lines.length < maxLines && current) lines.push(current);
+    if (lines.length === maxLines && words.join(' ').length > lines.join(' ').length) {
+        lines[maxLines - 1] = `${lines[maxLines - 1].replace(/[.,;:!?]*$/, '')}…`;
+    }
+    lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
+    return y + lines.length * lineHeight;
+}
+
+function loadStoryProductImage(url) {
+    return new Promise(resolve => {
+        if (!url) return resolve(null);
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => resolve(image);
+        image.onerror = () => resolve(null);
+        image.src = fixDriveUrl(url);
+    });
+}
+
+async function generateStoryForProduct(name, button) {
+    const product = getProductForQuickAction(name);
+    if (!product) return;
+    const previous = button ? button.innerHTML : '';
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = `<span class="loader w-4 h-4 border-white"></span><span class="text-[8px] font-black uppercase">Creando</span>`;
+    }
+
+    try {
+        await document.fonts.ready;
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+
+        // Fondo editorial de alto contraste.
+        const background = ctx.createLinearGradient(0, 0, 1080, 1920);
+        background.addColorStop(0, '#0b1f3a');
+        background.addColorStop(0.58, '#123d70');
+        background.addColorStop(1, '#071426');
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, 1080, 1920);
+
+        // Formas decorativas de campaña.
+        ctx.fillStyle = '#21b7a8';
+        ctx.beginPath();
+        ctx.arc(990, 90, 300, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ff6b5e';
+        ctx.beginPath();
+        ctx.moveTo(0, 1580);
+        ctx.lineTo(660, 1920);
+        ctx.lineTo(0, 1920);
+        ctx.closePath();
+        ctx.fill();
+
+        // Marca y categoría.
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 54px Manrope, sans-serif';
+        ctx.fillText('PARA', 72, 105);
+        const paraWidth = ctx.measureText('PARA').width;
+        ctx.fillStyle = '#62e0d2';
+        ctx.fillText('TUHOGAR', 72 + paraWidth + 8, 105);
+        ctx.fillStyle = 'rgba(255,255,255,.16)';
+        drawStoryRoundedRect(ctx, 72, 142, 360, 58, 29);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 25px Manrope, sans-serif';
+        ctx.fillText(String(product.categoria || 'OFERTA ESPECIAL').toUpperCase().slice(0, 24), 102, 180);
+
+        // Tarjeta principal del producto.
+        ctx.shadowColor = 'rgba(0,0,0,.28)';
+        ctx.shadowBlur = 55;
+        ctx.shadowOffsetY = 24;
+        ctx.fillStyle = '#f8fafc';
+        drawStoryRoundedRect(ctx, 72, 245, 936, 900, 48);
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+
+        const image = await loadStoryProductImage(product.thumbnail);
+        if (image) {
+            const box = { x: 135, y: 300, w: 810, h: 730 };
+            const scale = Math.min(box.w / image.width, box.h / image.height);
+            const width = image.width * scale;
+            const height = image.height * scale;
+            ctx.drawImage(image, box.x + (box.w - width) / 2, box.y + (box.h - height) / 2, width, height);
+        } else {
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(540, 640, 95, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(480, 700);
+            ctx.lineTo(600, 580);
+            ctx.stroke();
+            ctx.fillStyle = '#94a3b8';
+            ctx.textAlign = 'center';
+            ctx.font = '700 28px Manrope, sans-serif';
+            ctx.fillText('IMAGEN NO DISPONIBLE', 540, 790);
+        }
+
+        // Cinta de disponibilidad.
+        ctx.fillStyle = '#21b7a8';
+        drawStoryRoundedRect(ctx, 126, 1070, 300, 58, 29);
+        ctx.fill();
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#062e2a';
+        ctx.font = '800 25px Manrope, sans-serif';
+        ctx.fillText('DISPONIBLE AHORA', 276, 1108);
+
+        // Nombre y precio.
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 64px Manrope, sans-serif';
+        const nameEnd = drawStoryText(ctx, product.nombre.toUpperCase(), 72, 1245, 936, 74, 3);
+
+        ctx.fillStyle = '#9fb9d6';
+        ctx.font = '700 25px Manrope, sans-serif';
+        ctx.fillText('PRECIO DE VENTA', 72, nameEnd + 30);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 118px Manrope, sans-serif';
+        ctx.fillText(`$${product.precio}`, 72, nameEnd + 145);
+        const priceWidth = ctx.measureText(`$${product.precio}`).width;
+        ctx.fillStyle = '#62e0d2';
+        ctx.font = '800 36px Manrope, sans-serif';
+        ctx.fillText('USD', 90 + priceWidth, nameEnd + 145);
+
+        // Beneficios y contacto.
+        const infoY = Math.max(1580, nameEnd + 215);
+        ctx.fillStyle = 'rgba(255,255,255,.12)';
+        drawStoryRoundedRect(ctx, 72, infoY, 936, 115, 28);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 27px Manrope, sans-serif';
+        const warranty = String(product.garantia || 'Garantía disponible').slice(0, 35);
+        const delivery = String(product.mensajeria || 'Entrega a consultar').slice(0, 42);
+        ctx.fillText(`GARANTÍA  ·  ${warranty}`, 105, infoY + 46);
+        ctx.fillText(`ENTREGA    ·  ${delivery}`, 105, infoY + 86);
+
+        const phone = String(getAgentPhone() || '').replace(/\D/g, '');
+        const agent = window.gestorName || 'ParaTuHogar';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 30px Manrope, sans-serif';
+        ctx.fillText(`PÍDELO CON ${agent.toUpperCase().slice(0, 30)}`, 72, 1810);
+        ctx.fillStyle = '#62e0d2';
+        ctx.font = '800 48px Manrope, sans-serif';
+        ctx.fillText(`WHATSAPP  +${phone}`, 72, 1870);
+
+        const link = document.createElement('a');
+        link.download = `Story_${product.nombre.replace(/[^a-z0-9]+/gi, '_').slice(0, 45)}.png`;
+        link.href = canvas.toDataURL('image/png', 1);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        trackSpy('USO_HERRAMIENTA', `Story: ${product.nombre}`);
+    } catch (error) {
+        console.error(error);
+        alert('No se pudo crear el Story de este producto.');
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = previous;
+        }
+    }
 }
 
 // IMPORTANTE: Modificar la función 'renderProducts' original para que use esta si no hay filtros,
@@ -7348,7 +7654,7 @@ window.doLogout = function() {
     // ==========================================
 
     // 1. COPIAR LISTA DE OFERTAS (AMETRALLADORA)
-    async function copyCategoryOffers() {
+    async function legacyCopyCategoryOffersV1() {
     const gestor = window.gestorName || 'Ventas';
     const miTelefono = getAgentPhone(); // <--- Aquí usamos el "Cerebro"
     
@@ -8281,7 +8587,7 @@ function renderAnaliticaConversion(pedidos, vistasRaw) {
 // Variable global para guardar el conteo
 let gestorSalesCount = 0;
 
-async function generateFlashResponse() {
+async function legacyGenerateFlashResponse() {
     // 1. Obtener lo que el gestor escribió en el buscador
     const searchInput = document.getElementById('search-bar');
     const query = searchInput ? searchInput.value.trim() : "";
@@ -8364,7 +8670,7 @@ async function generateFlashResponse() {
 
 
 // 2. FUNCIÓN PARA DIBUJAR EL BOTÓN (Candado vs Rayo)
-function renderFlashButton() {
+function legacyRenderFlashButton() {
     const container = document.getElementById('container-flash-btn');
     if (!container) return;
 
@@ -8746,12 +9052,12 @@ if (sales >= 70) return {
         hasShortLink: true 
     };
 
-    // --- NIVEL 3: ÉLITE (AI POST + Radar) ---
+    // --- NIVEL 3: ÉLITE ---
     if (sales >= 20) return { 
         lvl: 3, name: "Élite", next: 40, color: "text-indigo-500", 
         duration: 2160, 
         hasShortLink: true,
-        power: "Redactor IA" // <--- Aquí movimos la IA
+        power: "Radar de Riesgos"
     };
 
     // --- NIVEL 2: EXPERTO ---
@@ -8819,7 +9125,7 @@ async function showAgentWelcomeModal(nombre) {
 
         // (El resto de tu código para dibujar el cartel azul sigue aquí igual...)
         const tiers = [
-            { lvl: 1, name: "Novato", tool: "Flash & Story Maker", boost: 1.5, phrase: "Cerrarás clientes en segundos con las respuestas automáticas." },
+            { lvl: 1, name: "Novato", tool: "Story Maker", boost: 1.5, phrase: "Crearás piezas visuales listas para publicar." },
             { lvl: 2, name: "Experto", tool: "Magic Studio AI & Fotos", boost: 2.2, phrase: "Tu publicidad ahora será creada por Inteligencia Artificial." },
             { lvl: 3, name: "Élite", tool: "Radar de Tendencias", boost: 2.8, phrase: "Publicarás exactamente lo que los clientes están buscando hoy." },
             { lvl: 4, name: "Monarca", tool: "Catálogo PDF Pro", boost: 3.5, phrase: "Tu imagen profesional será irresistible para clientes de alto valor." },
@@ -8885,7 +9191,7 @@ function closeWelcomeAgent() {
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
 // --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---
 // --- CORRECCIÓN: FUNCIÓN PARA GESTIONAR CANDADOS Y MENSAJES ---
-// --- FUNCIÓN DE GESTIÓN DE CANDADOS (ACTUALIZADA CON AI POST) ---
+// --- FUNCIÓN DE GESTIÓN DE CANDADOS ---
 function applyLockedFeatures() {
     const level = window.currentGestorLevel || 0; 
     const sales = window.gestorSalesCount || 0;
@@ -8896,7 +9202,6 @@ function applyLockedFeatures() {
     // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
     const btnZip = document.getElementById('btn-zip-bulk');
-    const btnAi = document.getElementById('btn-ai-post'); 
     const btnPdf = document.getElementById('btn-pdf-bulk');
     const btnStudio = document.getElementById('btn-magic-studio');
 
@@ -8908,8 +9213,8 @@ function applyLockedFeatures() {
     // ======================================================
     if (btnCopy) {
         btnCopy.className = `${baseStyle} bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50`;
-        btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">content_copy</span> <span>Texto</span>`;
-        btnCopy.title = "Copiado Masivo";
+        btnCopy.innerHTML = `<span class="material-symbols-outlined text-lg">campaign</span> <span>Mensaje</span>`;
+        btnCopy.title = "Crear mensaje de ofertas para WhatsApp";
         btnCopy.onclick = function() { copyCategoryOffers(); };
     }
 
@@ -8927,32 +9232,18 @@ function applyLockedFeatures() {
         lockButton(btnZip, "Pack Fotos", 2, "Descarga 50 fotos en un clic.");
     }
 
-    // ------------------------------------------------------
-    // NIVEL 3 (20 Ventas): AI POST
-    // ------------------------------------------------------
-    if (level >= 3 || isGodMode) {
-        if (btnAi) {
-            btnAi.className = `${baseStyle} bg-gradient-to-r from-pink-600 to-orange-500 text-white border-pink-400 shadow-lg shadow-pink-500/20 group`;
-            btnAi.innerHTML = `<span class="material-symbols-outlined text-xl group-hover:animate-spin">smart_toy</span> <span class="font-black">AI Post</span>`;
-            btnAi.onclick = function() { openMarketingAI(); };
-            btnAi.title = "Redactor IA Viral - Activo";
-        }
-    } else {
-        lockButton(btnAi, "AI Post", 3, "Redacta posts virales con Inteligencia Artificial.");
-    }
-
-    // ------------------------------------------------------
-    // NIVEL 4 (40 Ventas): PDF PRO
-    // ------------------------------------------------------
-    if (level >= 4 || isGodMode) {
+    // Catálogo PDF profesional: disponible para todos los gestores,
+    // subgestores y administradores con una sesión válida.
+    const hasCatalogAccess = Boolean(localStorage.getItem('pth_session'));
+    if (hasCatalogAccess) {
         if (btnPdf) {
             btnPdf.className = `${baseStyle} bg-red-50 text-red-600 border-red-100 hover:bg-red-500 hover:text-white`;
             btnPdf.innerHTML = `<span class="material-symbols-outlined text-lg">picture_as_pdf</span> <span>PDF</span>`;
-            btnPdf.title = "Generar Catálogo PDF";
+            btnPdf.title = "Crear catálogo PDF profesional";
             btnPdf.onclick = function() { downloadCatalogPDF(); };
         }
     } else {
-        lockButton(btnPdf, "Catálogo PDF", 4, "Crea catálogos profesionales con tu nombre.");
+        lockButton(btnPdf, "Catálogo PDF", 0, "Inicia sesión como gestor para acceder.");
     }
 
     // MAGIC STUDIO: disponible para todos los gestores y administradores
@@ -9295,28 +9586,17 @@ if (slName) {
 // --- FUNCIÓN PARA DIBUJAR EL BOTÓN FLASH (CANDADO O RAYO) ---
 function renderFlashButton() {
     const container = document.getElementById('container-flash-btn');
-    if (!container) return; // Si no encuentra el hueco, no hace nada
+    if (!container) return;
+    const hasSellerSession = Boolean(localStorage.getItem('pth_session'));
 
-    // Obtenemos el nivel actual guardado en la variable global (o 0 por defecto)
-    const currentLvl = window.currentGestorLevel || 0;
-    
-    // REGLA: El Flash se desbloquea a partir de NIVEL 1
-    const NIVEL_DESBLOQUEO = 1;
-
-    if (currentLvl >= NIVEL_DESBLOQUEO) {
-        // --- DESBLOQUEADO (AMARILLO/RAYO) ---
+    if (hasSellerSession) {
         container.innerHTML = `
-            <button onclick="generateFlashResponse()" class="w-full h-full py-2.5 px-4 rounded-xl bg-amber-400 text-amber-900 border border-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-black shadow-md active:scale-95 animate-pulse" title="Generar respuesta rápida">
+            <button onclick="generateFlashResponse()" class="w-full h-full py-2.5 px-4 rounded-xl bg-amber-400 text-amber-900 border border-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-black shadow-md active:scale-95" title="Crear una respuesta rápida para WhatsApp">
                 <span class="material-symbols-outlined text-lg">flash_on</span> 
                 <span class="hidden sm:inline">Flash</span>
             </button>`;
     } else {
-        // --- BLOQUEADO (GRIS/CANDADO) ---
-        container.innerHTML = `
-            <button onclick="alert('🔒 BLOQUEADO: Sube a NIVEL 1 (3 ventas) para desbloquear la Respuesta Flash.')" class="w-full h-full py-2.5 px-4 rounded-xl bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed flex items-center justify-center gap-2 text-xs font-bold" title="Bloqueado - Nivel Insuficiente">
-                <span class="material-symbols-outlined text-lg">lock</span> 
-                <span class="hidden sm:inline">Flash</span>
-            </button>`;
+        container.innerHTML = '';
     }
 }
 
@@ -10567,9 +10847,6 @@ function showPriceIntro() {
         // Muestra el de precios si es nuevo
         const modal = document.getElementById('modal-intro-precios');
         if (modal) modal.classList.remove('hidden');
-    } else {
-        // Si ya vio el de precios, salta automáticamente al de Leads
-        if (typeof anunciarPromoLeads === "function") anunciarPromoLeads();
     }
 }
 
@@ -10598,10 +10875,6 @@ function closePriceIntro() {
     localStorage.setItem(CURRENT_CAMPAIGN, 'true');
     showDashSection('precios'); 
 
-    // EFECTO DOMINÓ: Al cerrar Precios, abrimos Leads
-    setTimeout(() => {
-        if (typeof anunciarPromoLeads === "function") anunciarPromoLeads();
-    }, 500);
 }
 
 // Función para saltar al Studio con los filtros actuales
@@ -10647,7 +10920,7 @@ window.filterMyOrders = function() {
 // ==========================================
 
 // 1. BOTÓN TEXTO: Copiado Masivo
-async function copyCategoryOffers() {
+async function legacyCopyCategoryOffersV2() {
     const btn = document.getElementById('btn-copy-bulk');
     const originalContent = btn.innerHTML;
     trackSpy('USO_HERRAMIENTA', 'Copiado Masivo (Texto)');
@@ -10695,6 +10968,315 @@ async function copyCategoryOffers() {
         alert(e.message);
         btn.innerHTML = originalContent;
     }
+}
+
+// ======================================================
+// COMPOSITOR UNIFICADO: RESPUESTA RÁPIDA + DIFUSIÓN
+// ======================================================
+let salesComposerState = null;
+
+function getProductsVisibleOnScreen() {
+    const renderedNames = [...document.querySelectorAll('#productos-container h3')]
+        .map(node => node.textContent.trim())
+        .filter(Boolean);
+
+    const ordered = renderedNames
+        .map(name => productosRaw.find(product => product.nombre === name))
+        .filter(Boolean);
+
+    if (ordered.length) return ordered;
+
+    const query = (document.getElementById('search-bar')?.value || '').trim().toLowerCase();
+    const highCommission = Boolean(document.getElementById('filter-high-comm')?.checked);
+    return productosRaw.filter(product => {
+        const matchesQuery = !query || String(product.nombre || '').toLowerCase().includes(query);
+        const matchesCategory = activeCategory === 'TODOS' ||
+            String(product.categoria || '').toUpperCase().includes(activeCategory);
+        const matchesCommission = !highCommission || Number(product.comision || 0) > 10;
+        return matchesQuery && matchesCategory && matchesCommission && product.disponible === 'SI';
+    });
+}
+
+function ensureSalesComposerModal() {
+    if (document.getElementById('sales-composer-modal')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="sales-composer-modal" class="fixed inset-0 z-[650] hidden bg-slate-950/80 backdrop-blur-sm p-3 md:p-6">
+            <div class="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900">
+                <header class="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-700">
+                    <div class="flex items-center gap-3">
+                        <div id="sales-composer-icon" class="grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700">
+                            <span class="material-symbols-outlined">flash_on</span>
+                        </div>
+                        <div>
+                            <h2 id="sales-composer-title" class="text-lg font-black text-slate-900 dark:text-white">Respuesta rápida</h2>
+                            <p id="sales-composer-scope" class="text-[11px] font-bold text-slate-500"></p>
+                        </div>
+                    </div>
+                    <button onclick="closeSalesComposer()" class="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </header>
+
+                <div class="grid min-h-0 flex-1 lg:grid-cols-[390px_1fr]">
+                    <section class="min-h-0 overflow-y-auto border-b border-slate-200 p-5 dark:border-slate-700 lg:border-b-0 lg:border-r">
+                        <div class="mb-4 grid grid-cols-2 gap-3">
+                            <label class="space-y-1">
+                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Plantilla</span>
+                                <select id="sales-composer-template" onchange="refreshSalesComposerPreview()" class="w-full rounded-xl border-slate-200 bg-slate-50 text-xs font-bold">
+                                    <option value="quick">Respuesta a consulta</option>
+                                    <option value="broadcast">Mensaje de difusión</option>
+                                </select>
+                            </label>
+                            <label class="space-y-1">
+                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Cantidad</span>
+                                <select id="sales-composer-count" onchange="setSalesComposerCount(Number(this.value))" class="w-full rounded-xl border-slate-200 bg-slate-50 text-xs font-bold">
+                                    <option value="3">3 productos</option>
+                                    <option value="5">5 productos</option>
+                                    <option value="10">10 productos</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="mb-3 flex items-center justify-between">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Productos visibles</p>
+                            <span id="sales-composer-selected-count" class="rounded-full bg-indigo-50 px-2 py-1 text-[9px] font-black text-indigo-600"></span>
+                        </div>
+                        <div id="sales-composer-products" class="space-y-2"></div>
+                    </section>
+
+                    <section class="flex min-h-0 flex-col bg-slate-50 p-5 dark:bg-slate-950">
+                        <div class="mb-3 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Vista previa editable</p>
+                                <p class="text-[10px] text-slate-400">Puedes modificar el mensaje antes de compartirlo.</p>
+                            </div>
+                            <span id="sales-composer-link-status" class="text-[9px] font-bold text-slate-400">Preparando enlace…</span>
+                        </div>
+                        <textarea id="sales-composer-preview" class="min-h-[330px] flex-1 resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-inner focus:border-indigo-400 focus:ring-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"></textarea>
+
+                        <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <button onclick="copySalesComposerMessage(this)" class="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black text-white hover:bg-indigo-500">
+                                <span class="material-symbols-outlined text-lg">content_copy</span> Copiar
+                            </button>
+                            <button onclick="openSalesComposerWhatsApp()" class="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-xs font-black text-white hover:bg-[#20bd5c]">
+                                <i class="fab fa-whatsapp text-lg"></i> WhatsApp
+                            </button>
+                            <button onclick="shareSalesComposerMessage()" class="flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-4 py-3 text-xs font-black text-white hover:bg-slate-700">
+                                <span class="material-symbols-outlined text-lg">share</span> Compartir
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+function buildContextualCatalogUrl() {
+    const params = new URLSearchParams();
+    const query = (document.getElementById('search-bar')?.value || '').trim();
+    const phone = String(getAgentPhone() || '').replace(/\D/g, '');
+    if (query) params.set('catalog_q', query);
+    if (activeCategory && activeCategory !== 'TODOS') params.set('catalog_category', activeCategory);
+    if (window.gestorName) params.set('gestor', window.gestorName);
+    if (phone) params.set('tel', phone);
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+}
+
+async function openSalesComposer(mode = 'quick') {
+    const products = getProductsVisibleOnScreen();
+    if (!products.length) return alert('No hay productos visibles para crear el mensaje.');
+    ensureSalesComposerModal();
+
+    const defaultCount = mode === 'quick' ? 3 : 5;
+    salesComposerState = {
+        mode,
+        products: products.slice(0, 30),
+        selectedNames: new Set(products.slice(0, defaultCount).map(product => product.nombre)),
+        catalogLink: buildContextualCatalogUrl()
+    };
+
+    const modal = document.getElementById('sales-composer-modal');
+    const isQuick = mode === 'quick';
+    document.getElementById('sales-composer-title').textContent = isQuick ? 'Respuesta rápida' : 'Mensaje de difusión';
+    document.getElementById('sales-composer-icon').innerHTML = `<span class="material-symbols-outlined">${isQuick ? 'flash_on' : 'campaign'}</span>`;
+    document.getElementById('sales-composer-icon').className = `grid h-11 w-11 place-items-center rounded-2xl ${isQuick ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`;
+    document.getElementById('sales-composer-template').value = mode;
+    document.getElementById('sales-composer-count').value = String(defaultCount);
+    document.getElementById('sales-composer-scope').textContent =
+        `${activeCategory === 'TODOS' ? 'Catálogo general' : activeCategory} · ${products.length} productos en pantalla`;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    renderSalesComposerProducts();
+    refreshSalesComposerPreview();
+
+    const status = document.getElementById('sales-composer-link-status');
+    status.textContent = 'Preparando enlace…';
+    try {
+        const agent = window.gestorName || 'Ventas';
+        salesComposerState.catalogLink = await getOrGenerateShortLink(agent, salesComposerState.catalogLink);
+        status.textContent = 'Enlace de catálogo listo';
+    } catch (error) {
+        status.textContent = 'Se usará el enlace completo';
+    }
+    refreshSalesComposerPreview();
+    trackSpy('USO_HERRAMIENTA', isQuick ? 'Respuesta rápida' : 'Mensaje de difusión');
+}
+
+function closeSalesComposer() {
+    document.getElementById('sales-composer-modal')?.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function setSalesComposerCount(count) {
+    if (!salesComposerState) return;
+    salesComposerState.selectedNames = new Set(
+        salesComposerState.products.slice(0, count).map(product => product.nombre)
+    );
+    renderSalesComposerProducts();
+    refreshSalesComposerPreview();
+}
+
+function toggleSalesComposerProduct(name, checked) {
+    if (!salesComposerState) return;
+    if (checked) {
+        if (salesComposerState.selectedNames.size >= 10) {
+            renderSalesComposerProducts();
+            return alert('Puedes seleccionar hasta 10 productos por mensaje.');
+        }
+        salesComposerState.selectedNames.add(name);
+    } else {
+        salesComposerState.selectedNames.delete(name);
+    }
+    renderSalesComposerProducts();
+    refreshSalesComposerPreview();
+}
+
+function moveSalesComposerProduct(index, direction) {
+    if (!salesComposerState) return;
+    const target = index + direction;
+    if (target < 0 || target >= salesComposerState.products.length) return;
+    const [product] = salesComposerState.products.splice(index, 1);
+    salesComposerState.products.splice(target, 0, product);
+    renderSalesComposerProducts();
+    refreshSalesComposerPreview();
+}
+
+function renderSalesComposerProducts() {
+    if (!salesComposerState) return;
+    const container = document.getElementById('sales-composer-products');
+    container.innerHTML = salesComposerState.products.map((product, index) => {
+        const selected = salesComposerState.selectedNames.has(product.nombre);
+        return `
+            <div class="flex items-center gap-2 rounded-xl border ${selected ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 bg-white'} p-2">
+                <input type="checkbox" ${selected ? 'checked' : ''} onchange="toggleSalesComposerProduct(${JSON.stringify(product.nombre).replace(/"/g, '&quot;')}, this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                <img src="${fixDriveUrl(product.thumbnail)}" class="h-10 w-10 rounded-lg bg-white object-contain" alt="">
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-[11px] font-black text-slate-700">${product.nombre}</p>
+                    <p class="text-[10px] font-bold text-indigo-600">$${product.precio} USD</p>
+                </div>
+                <div class="flex">
+                    <button onclick="moveSalesComposerProduct(${index}, -1)" class="p-1 text-slate-400 hover:text-indigo-600" title="Subir"><span class="material-symbols-outlined text-base">arrow_upward</span></button>
+                    <button onclick="moveSalesComposerProduct(${index}, 1)" class="p-1 text-slate-400 hover:text-indigo-600" title="Bajar"><span class="material-symbols-outlined text-base">arrow_downward</span></button>
+                </div>
+            </div>`;
+    }).join('');
+    document.getElementById('sales-composer-selected-count').textContent =
+        `${salesComposerState.selectedNames.size} seleccionados`;
+}
+
+function getSalesComposerSelectedProducts() {
+    if (!salesComposerState) return [];
+    return salesComposerState.products.filter(product => salesComposerState.selectedNames.has(product.nombre));
+}
+
+function cleanComposerDetail(value, fallback) {
+    const div = document.createElement('div');
+    div.innerHTML = String(value || '');
+    return (div.textContent || '').replace(/\s+/g, ' ').trim() || fallback;
+}
+
+function createSalesComposerMessage() {
+    const products = getSalesComposerSelectedProducts();
+    if (!products.length) return 'Selecciona al menos un producto.';
+    const template = document.getElementById('sales-composer-template')?.value || salesComposerState.mode;
+    const link = salesComposerState.catalogLink;
+    const agent = window.gestorName || 'nuestro equipo';
+
+    if (template === 'quick') {
+        let message = `Hola, te comparto ${products.length === 1 ? 'esta opción disponible' : `${products.length} opciones disponibles`}:\n\n`;
+        products.forEach((product, index) => {
+            const warranty = cleanComposerDetail(product.garantia, 'Garantía a consultar');
+            const delivery = cleanComposerDetail(product.mensajeria, 'Entrega a consultar');
+            message += `*${index + 1}. ${product.nombre}* — *$${product.precio} USD*\n`;
+            message += `${warranty} · ${delivery}\n\n`;
+        });
+        message += `Fotos y detalles:\n${link}\n\n`;
+        message += `¿Cuál se ajusta mejor a lo que buscas?`;
+        return message;
+    }
+
+    let message = `🔥 *OFERTAS DISPONIBLES${activeCategory !== 'TODOS' ? ` EN ${activeCategory}` : ''}*\n\n`;
+    products.forEach(product => {
+        message += `✅ *${product.nombre}* — *$${product.precio} USD*\n`;
+    });
+    message += `\nPrecios y disponibilidad confirmables al momento de realizar el pedido.\n`;
+    message += `📲 Consulta fotos, garantía y entrega:\n${link}\n\n`;
+    message += `Atendido por *${agent}*.`;
+    return message;
+}
+
+function refreshSalesComposerPreview() {
+    const preview = document.getElementById('sales-composer-preview');
+    if (preview) preview.value = createSalesComposerMessage();
+}
+
+async function copySalesComposerMessage(button) {
+    const preview = document.getElementById('sales-composer-preview');
+    if (!preview?.value.trim()) return;
+    try {
+        await navigator.clipboard.writeText(preview.value);
+        const previous = button.innerHTML;
+        button.innerHTML = `<span class="material-symbols-outlined text-lg">check</span> Copiado`;
+        setTimeout(() => button.innerHTML = previous, 1600);
+        trackSpy('MENSAJE_COPIADO', salesComposerState?.mode || 'composer');
+    } catch (error) {
+        preview.focus();
+        preview.select();
+        alert('Seleccionamos el mensaje. Usa Copiar desde el menú del navegador.');
+    }
+}
+
+function openSalesComposerWhatsApp() {
+    const message = document.getElementById('sales-composer-preview')?.value.trim();
+    if (!message) return;
+    trackSpy('MENSAJE_COMPARTIDO', 'WhatsApp');
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+async function shareSalesComposerMessage() {
+    const message = document.getElementById('sales-composer-preview')?.value.trim();
+    if (!message) return;
+    if (navigator.share) {
+        try {
+            await navigator.share({ text: message });
+            trackSpy('MENSAJE_COMPARTIDO', 'Share');
+            return;
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
+    await navigator.clipboard.writeText(message);
+    alert('Mensaje copiado para compartir.');
+}
+
+function generateFlashResponse() {
+    openSalesComposer('quick');
+}
+
+function copyCategoryOffers() {
+    openSalesComposer('broadcast');
 }
 
 // 2. BOTÓN FOTOS: Descargar ZIP
@@ -10774,9 +11356,17 @@ async function downloadCatalogPDF() {
         // 2. Filtrar productos visibles (respetando tus filtros actuales)
         const productsToExport = productosRaw.filter(p => {
             const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-            // Si tienes filtro de "Modo Tiburón" (comisión alta), aplicarlo también si quieres, o dejarlo general:
             return matchCat && p.disponible === 'SI';
-        });
+        }).map(p => ({
+            id: p.id,
+            nombre: p.nombre,
+            categoria: p.categoria,
+            precio: p.precio,
+            descripcion: p.descripcion,
+            garantia: p.garantia,
+            mensajeria: p.mensajeria,
+            thumbnail: p.thumbnail
+        }));
 
         if (productsToExport.length === 0) throw new Error("No hay productos visibles para el catálogo.");
 
@@ -10786,7 +11376,9 @@ async function downloadCatalogPDF() {
             agent: window.gestorName || "Asesor de Ventas",
             phone: getAgentPhone(), // Tu función que obtiene el teléfono correcto
             categoryName: activeCategory,
-            products: productsToExport // Enviamos los productos limpios
+            // Solo se transfieren datos comerciales. Nunca se incluyen costo,
+            // comisión, proveedor ni campos internos en el PDF.
+            products: productsToExport
         };
 
         // 4. Guardar en la memoria del navegador
@@ -13514,7 +14106,7 @@ window.submitProductReview = async function() {
             rank: "INVENTARIO OCULTO",
             icon: "lock_open",
             title: "HERRAMIENTAS SELLADAS",
-            text: "Hay funciones poderosas bloqueadas: <span class='sl-highlight'>Magic Studio</span>, <span class='sl-highlight'>IA Redactora</span> y <span class='sl-highlight'>CRM de Clientes</span>.<br>El Sistema las desbloqueará automáticamente cuando alcances las metas de venta.",
+            text: "Hay funciones poderosas disponibles: <span class='sl-highlight'>Magic Studio</span>, <span class='sl-highlight'>Radar de Riesgos</span> y <span class='sl-highlight'>CRM de Clientes</span>.<br>El Sistema te mostrará cada herramienta según tu flujo de trabajo.",
             btn: "ROMPE EL SELLO"
         },
         {
@@ -14561,11 +15153,6 @@ async function contactarGestorAtribuido(mensajeOpcional) {
     <script src="admin-stats.js"></script>
     <!-- Script de Campaña de Tráfico -->
 <script src="traffic-campaign.js"></script>
-<!-- Módulo de Recompensa Leads -->
-<script src="leads-premium.js"></script>
-
-
-
 <!-- === MODAL INTRODUCCIÓN: RADAR DE RIESGOS === -->
 <div id="modal-intro-radar" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
     
@@ -14692,6 +15279,7 @@ async function contactarGestorAtribuido(mensajeOpcional) {
 
 <!-- MÓDULO ADICIONAL: Tutorial Onboarding para Subgestores -->
     <script src="subgestor-tutorial.js"></script>
+    <script src="js/client-followup.js?v=1"></script>
 </body>
 
 </body>
