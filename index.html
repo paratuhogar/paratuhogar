@@ -1148,6 +1148,8 @@
             <!-- === NAVEGACIÓN DASHBOARD GESTOR === -->
             <div class="flex gap-2 overflow-x-auto pb-2 mb-4">
                 <button onclick="showDashSection('resumen')" id="btn-dash-resumen" class="px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all">Inicio</button>
+                <button onclick="showDashSection('comisiones')" id="btn-dash-comisiones" class="shrink-0 rounded-xl border border-emerald-100 bg-white px-4 py-2 text-xs font-black uppercase text-emerald-700 transition-all">💰 Mis comisiones</button>
+                <button onclick="showDashSection('rendimiento')" id="btn-dash-rendimiento" class="shrink-0 rounded-xl border border-blue-100 bg-white px-4 py-2 text-xs font-black uppercase text-blue-700 transition-all">📈 Mi rendimiento</button>
                 <button onclick="showDashSection('precios')" id="btn-dash-precios" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🏷️ Mis Precios (Config)</button>
             
             <!-- NUEVO BOTÓN DE ACCESO A SUBGESTORES CON ID -->
@@ -1182,6 +1184,255 @@
                 </div>
             </div>
         </div>
+
+        <!-- 3. CENTRO PROFESIONAL DE COMISIONES Y LIQUIDACIONES -->
+        <section id="sub-dash-comisiones" class="hidden animate-fade-in space-y-5">
+            <div class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#072d27] via-[#0b5d4e] to-[#11866e] text-white shadow-xl shadow-emerald-950/15">
+                <div class="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
+                    <div>
+                        <div class="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100">
+                            <span class="material-symbols-outlined text-base">account_balance_wallet</span>
+                            Centro de comisiones
+                        </div>
+                        <h2 class="text-2xl font-black tracking-tight md:text-3xl">Tu dinero, pedido por pedido</h2>
+                        <p id="commission-center-role-note" class="mt-3 max-w-2xl text-sm leading-relaxed text-emerald-50">Aquí puedes comprobar qué ventas ya generaron comisión y cuáles fueron liquidadas.</p>
+                    </div>
+                    <button id="commission-request-button" onclick="requestCommissionSettlement()" class="inline-flex min-h-12 items-center justify-center gap-2 self-center rounded-xl bg-white px-5 py-3 text-xs font-black text-[#0b5d4e] shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50">
+                        <i class="fab fa-whatsapp text-lg"></i>
+                        Solicitar liquidación
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <article class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 md:p-5">
+                    <div class="mb-3 flex items-center justify-between">
+                        <span class="material-symbols-outlined rounded-xl bg-emerald-600 p-2 text-white">payments</span>
+                        <span class="text-[8px] font-black uppercase tracking-wider text-emerald-700">Disponible</span>
+                    </div>
+                    <strong id="commission-center-pending" class="block text-2xl font-black text-emerald-900">$0.00</strong>
+                    <span class="text-[10px] font-bold text-emerald-700">Listo para solicitar</span>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
+                    <div class="mb-3 flex items-center justify-between">
+                        <span class="material-symbols-outlined rounded-xl bg-blue-50 p-2 text-blue-600">verified</span>
+                        <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Liquidado</span>
+                    </div>
+                    <strong id="commission-center-paid" class="block text-2xl font-black text-slate-900">$0.00</strong>
+                    <span class="text-[10px] font-bold text-slate-500">Marcado pagado en bóveda</span>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
+                    <div class="mb-3 flex items-center justify-between">
+                        <span class="material-symbols-outlined rounded-xl bg-amber-50 p-2 text-amber-600">hourglass_top</span>
+                        <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Potencial</span>
+                    </div>
+                    <strong id="commission-center-pipeline" class="block text-2xl font-black text-slate-900">$0.00</strong>
+                    <span class="text-[10px] font-bold text-slate-500">Se acredita al entregarse</span>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
+                    <div class="mb-3 flex items-center justify-between">
+                        <span class="material-symbols-outlined rounded-xl bg-violet-50 p-2 text-violet-600">receipt_long</span>
+                        <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Ventas</span>
+                    </div>
+                    <strong id="commission-center-count" class="block text-2xl font-black text-slate-900">0</strong>
+                    <span class="text-[10px] font-bold text-slate-500">Entregadas con comisión</span>
+                </article>
+            </div>
+
+            <div class="grid gap-5 lg:grid-cols-[1fr_0.42fr]">
+                <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 p-5 md:flex md:items-center md:justify-between md:px-6">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Estado detallado</p>
+                            <h3 class="mt-1 text-lg font-black text-slate-900">Movimientos de comisión</h3>
+                            <p id="commission-center-summary" class="mt-1 text-[10px] font-bold text-slate-500">Preparando tu historial…</p>
+                        </div>
+                        <button onclick="downloadCommissionStatement()" class="mt-3 flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[9px] font-black uppercase text-slate-600 md:mt-0">
+                            <span class="material-symbols-outlined text-base">download</span> Descargar estado
+                        </button>
+                    </div>
+                    <div class="flex gap-2 overflow-x-auto border-b border-slate-100 p-3">
+                        <button onclick="setCommissionCenterFilter('pending')" data-commission-filter="pending" class="commission-filter shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-[9px] font-black uppercase text-white">Por cobrar</button>
+                        <button onclick="setCommissionCenterFilter('paid')" data-commission-filter="paid" class="commission-filter shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-[9px] font-black uppercase text-slate-500">Liquidadas</button>
+                        <button onclick="setCommissionCenterFilter('pipeline')" data-commission-filter="pipeline" class="commission-filter shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-[9px] font-black uppercase text-slate-500">En proceso</button>
+                        <button onclick="setCommissionCenterFilter('all')" data-commission-filter="all" class="commission-filter shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-[9px] font-black uppercase text-slate-500">Todas</button>
+                    </div>
+                    <div id="commission-center-list" class="divide-y divide-slate-100">
+                        <div class="p-8 text-center text-xs font-bold text-slate-400">Cargando comisiones…</div>
+                    </div>
+                </section>
+
+                <aside class="space-y-4">
+                    <div class="rounded-3xl border border-blue-100 bg-blue-50 p-5">
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Cómo se liquida</p>
+                        <ol class="mt-4 space-y-4">
+                            <li class="flex gap-3">
+                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">1</span>
+                                <p class="text-[11px] font-bold leading-relaxed text-slate-600">El pedido se entrega y la comisión pasa a “Por cobrar”.</p>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">2</span>
+                                <p id="commission-center-step-two" class="text-[11px] font-bold leading-relaxed text-slate-600">Cuando quieras cobrar, solicita la liquidación por WhatsApp.</p>
+                            </li>
+                            <li class="flex gap-3">
+                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-black text-white">3</span>
+                                <p class="text-[11px] font-bold leading-relaxed text-slate-600">Al realizarse el pago, la bóveda marca esas ventas como liquidadas.</p>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="rounded-3xl border border-amber-100 bg-amber-50 p-5">
+                        <div class="flex gap-3">
+                            <span class="material-symbols-outlined text-amber-600">info</span>
+                            <div>
+                                <p class="text-xs font-black text-amber-900">Cálculo transparente</p>
+                                <p class="mt-1 text-[10px] font-bold leading-relaxed text-amber-800">Solo las ventas entregadas generan saldo disponible. Los pedidos pendientes aparecen como comisión potencial y no forman parte de la liquidación.</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- 4. RENDIMIENTO, CLIENTES Y GESTIÓN COMERCIAL -->
+        <section id="sub-dash-rendimiento" class="hidden animate-fade-in space-y-5">
+            <div class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0b2550] via-[#174f91] to-[#1f78b9] p-6 text-white shadow-xl shadow-blue-950/15 md:p-8">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">Centro de rendimiento</p>
+                <h2 class="mt-2 text-2xl font-black tracking-tight md:text-3xl">Convierte tus datos en próximas ventas</h2>
+                <p id="performance-main-insight" class="mt-3 max-w-3xl text-sm leading-relaxed text-blue-50">Analizando tus pedidos, clientes y canales de venta…</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <article class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-blue-700">Entregas</span>
+                    <strong id="performance-delivered" class="mt-2 block text-2xl font-black text-blue-950">0</strong>
+                    <span id="performance-delivered-trend" class="text-[9px] font-bold text-blue-600">Últimos 30 días</span>
+                </article>
+                <article class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-emerald-700">Tasa de cierre</span>
+                    <strong id="performance-close-rate" class="mt-2 block text-2xl font-black text-emerald-950">0%</strong>
+                    <span class="text-[9px] font-bold text-emerald-600">Entregados / pedidos válidos</span>
+                </article>
+                <article class="rounded-2xl border border-violet-100 bg-violet-50 p-4">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-violet-700">Clientes recurrentes</span>
+                    <strong id="performance-repeat-count" class="mt-2 block text-2xl font-black text-violet-950">0</strong>
+                    <span class="text-[9px] font-bold text-violet-600">Compraron 2 veces o más</span>
+                </article>
+                <article class="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-700">Venta entregada</span>
+                    <strong id="performance-sales-total" class="mt-2 block text-2xl font-black text-amber-950">$0</strong>
+                    <span class="text-[9px] font-bold text-amber-600">Valor histórico gestionado</span>
+                </article>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Ticket promedio</span>
+                    <strong id="performance-average-ticket" class="mt-1 block text-xl font-black text-slate-900">$0</strong>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Comisión media</span>
+                    <strong id="performance-average-commission" class="mt-1 block text-xl font-black text-emerald-700">$0</strong>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Pedidos activos</span>
+                    <strong id="performance-active-orders" class="mt-1 block text-xl font-black text-amber-700">0</strong>
+                </article>
+                <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <span class="text-[8px] font-black uppercase tracking-wider text-slate-400">Tasa de recompra</span>
+                    <strong id="performance-repeat-rate" class="mt-1 block text-xl font-black text-violet-700">0%</strong>
+                </article>
+            </div>
+
+            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-col gap-3 border-b border-slate-100 p-5 md:flex-row md:items-center md:justify-between md:px-6">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Evolución comercial</p>
+                        <h3 class="mt-1 text-lg font-black text-slate-900">Ventas y comisiones por mes</h3>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Las barras muestran ventas entregadas; la línea, comisiones generadas.</p>
+                    </div>
+                    <div class="flex items-center gap-3 text-[9px] font-black">
+                        <span class="flex items-center gap-1.5 text-blue-700"><i class="h-2.5 w-2.5 rounded-sm bg-blue-600"></i> Ventas</span>
+                        <span class="flex items-center gap-1.5 text-emerald-700"><i class="h-0.5 w-4 bg-emerald-500"></i> Comisión</span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto p-4 md:p-6">
+                    <div class="relative h-[280px] min-w-[660px]">
+                        <canvas id="performance-sales-chart" aria-label="Gráfico mensual de ventas y comisiones"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid gap-5 xl:grid-cols-2">
+                <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 p-5 md:px-6">
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Flujo operativo</p>
+                        <h3 class="mt-1 text-lg font-black text-slate-900">Embudo de pedidos</h3>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Detecta dónde se concentran las ventas que aún no han llegado a entrega.</p>
+                    </div>
+                    <div class="overflow-x-auto p-4 md:p-6">
+                        <div class="relative h-[250px] min-w-[520px]">
+                            <canvas id="performance-funnel-chart" aria-label="Embudo por estado de pedidos"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 p-5 md:px-6">
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Ganancia del gestor</p>
+                        <h3 class="mt-1 text-lg font-black text-slate-900">Estado de tus comisiones</h3>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Compara lo liquidado, lo disponible y lo que está en proceso.</p>
+                    </div>
+                    <div class="grid gap-4 p-4 sm:grid-cols-[240px_1fr] sm:items-center md:p-6">
+                        <div class="relative mx-auto h-[220px] w-[220px]">
+                            <canvas id="performance-commission-chart" aria-label="Distribución de comisiones"></canvas>
+                        </div>
+                        <div id="performance-commission-legend" class="space-y-3"></div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="grid gap-5 xl:grid-cols-2">
+                <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">Canales que convierten</p>
+                            <h3 class="mt-1 text-lg font-black text-slate-900">Origen de tus pedidos</h3>
+                        </div>
+                        <span class="material-symbols-outlined rounded-xl bg-blue-50 p-2 text-blue-600">donut_large</span>
+                    </div>
+                    <div class="relative mx-auto mt-5 h-[190px] w-[190px]">
+                        <canvas id="performance-source-chart" aria-label="Distribución de origen de pedidos"></canvas>
+                    </div>
+                    <div id="performance-sources" class="mt-5 space-y-4"></div>
+                    <p id="performance-source-note" class="mt-5 rounded-xl bg-slate-50 p-3 text-[10px] font-bold leading-relaxed text-slate-500"></p>
+                </section>
+
+                <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-5 md:p-6">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.16em] text-violet-700">Oportunidad de recompra</p>
+                            <h3 class="mt-1 text-lg font-black text-slate-900">Clientes que vuelven</h3>
+                        </div>
+                        <button onclick="openGestorFollowups('hoy')" class="rounded-xl border border-violet-100 bg-violet-50 px-3 py-2 text-[9px] font-black uppercase text-violet-700">Seguimientos</button>
+                    </div>
+                    <div id="performance-repeat-customers" class="divide-y divide-slate-100"></div>
+                </section>
+            </div>
+
+            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-100 p-5 md:flex md:items-center md:justify-between md:px-6">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Mesa de trabajo</p>
+                        <h3 class="mt-1 text-lg font-black text-slate-900">Pedidos y próximas acciones</h3>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Contacta, reenvía, descarga o comparte la factura sin salir de tu rendimiento.</p>
+                    </div>
+                    <button onclick="openGestorFollowups('hoy')" class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-[9px] font-black uppercase text-white md:mt-0">
+                        <span class="material-symbols-outlined text-base">notifications_active</span> Ver seguimiento
+                    </button>
+                </div>
+                <div id="performance-orders" class="divide-y divide-slate-100"></div>
+            </section>
+        </section>
 
 
             <!-- === 1. TARJETA DE NIVEL (DASHBOARD) === -->
@@ -1269,7 +1520,7 @@
                 </div>
                 <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 font-mono">
                     <span class="material-symbols-outlined text-sm">pending</span>
-                    <span>Procesando liquidación...</span>
+                    <span>Disponible para solicitar liquidación.</span>
                 </div>
             </div>
         </div>
@@ -1292,7 +1543,7 @@
                 </div>
                 <div class="mt-4 flex items-center gap-2 text-xs text-slate-500 font-mono">
                     <span class="material-symbols-outlined text-sm">history</span>
-                    <span>Transferido a tu cuenta.</span>
+                    <span>Liquidado y actualizado por la bóveda.</span>
                 </div>
             </div>
         </div>
@@ -2808,6 +3059,9 @@
                 <button onclick="enterAsClient()" class="text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-primary mt-4">
                     Solo quiero ver el catálogo (Cliente)
                 </button>
+                <a href="gestores.html" class="block text-primary text-[10px] font-black uppercase tracking-widest hover:underline">
+                    Conoce el programa para gestores
+                </a>
             </div>
         </div>
 
@@ -2973,6 +3227,13 @@ checkShortLinks();
         if (invitadoPor && invitadoPor.trim() !== "") {
             localStorage.setItem('pth_invitado_por_id', invitadoPor);
             console.log("🔗 Registro de Subgestor iniciado. Invitado por Gestor ID:", invitadoPor);
+        }
+        if (urlParamsInvite.get('registro') === 'gestor') {
+            const loginOverlay = document.getElementById('login-overlay');
+            if (loginOverlay) loginOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                if (typeof toggleLoginMode === 'function') toggleLoginMode('register');
+            }, 80);
         }
     if (splash) {
         if (!sessionStorage.getItem('pth_intro_vista')) {
@@ -3475,7 +3736,7 @@ async function loadProDashboard(nombreGestor) {
         // 1. Obtener pedidos aprobados (de la tabla 'pedidos')
         const { data: aprobados, error: errAprobados } = await supabaseClient
             .from('pedidos')
-            .select('id, fecha, estado, total, comision_subgestor, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_subgestor')
+            .select('id, fecha, estado, total, comision_subgestor, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_subgestor, origen')
             .eq('subgestor_nombre', nombreGestor)
             .order('fecha', { ascending: false });
             
@@ -3498,7 +3759,8 @@ async function loadProDashboard(nombreGestor) {
             fecha: p.created_at,
             estado: 'Pendiente', 
             comision_total: p.comision_subgestor,
-            pago_gestor: 'Pendiente'
+            pago_gestor: 'Pendiente',
+            origen: 'Manual (Panel)'
         }));
 
         // Combinar ambas listas para su historial unificado
@@ -3507,10 +3769,9 @@ async function loadProDashboard(nombreGestor) {
         // Comportamiento original para Gestores Principales
         const { data, error } = await supabaseClient
             .from('pedidos')
-            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_gestor')
+            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_gestor, origen')
             .eq('gestor', nombreGestor)
-            .order('fecha', { ascending: false })
-            .limit(150);
+            .order('fecha', { ascending: false });
             
         if(error) { console.error(error); return; }
         misVentas = data || [];
@@ -6204,12 +6465,15 @@ function prepareGestorDashboardLayout() {
     if (home && dashboardNav) dashboard.insertBefore(dashboardNav, home);
 
     const prices = document.getElementById('sub-dash-precios');
+    const commissions = document.getElementById('sub-dash-comisiones');
+    const performance = document.getElementById('sub-dash-rendimiento');
     let legacyStarted = false;
     Array.from(dashboard.children).forEach(child => {
         if (child === prices) {
             legacyStarted = true;
             return;
         }
+        if (child === commissions || child === performance) return;
         if (legacyStarted) {
             child.classList.add('gestor-legacy-block', 'hidden');
         }
@@ -6353,6 +6617,209 @@ function openGestorFollowups(filter = 'hoy') {
         return;
     }
     document.getElementById('btn-client-followup')?.click();
+}
+
+let commissionCenterFilter = 'pending';
+
+function isCommissionPaid(order) {
+    return String(order?.pago_gestor || '').trim().toLowerCase() === 'pagado';
+}
+
+function getOrderCommission(order) {
+    return Math.max(0, Number(order?.comision_total) || 0);
+}
+
+function getCommissionCenterData() {
+    const orders = Array.isArray(myOrdersData) ? myOrdersData : [];
+    const delivered = orders.filter(order => order.estado === 'Entregado' && getOrderCommission(order) > 0);
+    const pending = delivered.filter(order => !isCommissionPaid(order));
+    const paid = delivered.filter(isCommissionPaid);
+    const pipeline = orders.filter(order =>
+        order.estado !== 'Entregado'
+        && order.estado !== 'Cancelado'
+        && getOrderCommission(order) > 0);
+    const sum = list => list.reduce((total, order) => total + getOrderCommission(order), 0);
+    return {
+        delivered,
+        pending,
+        paid,
+        pipeline,
+        pendingTotal: sum(pending),
+        paidTotal: sum(paid),
+        pipelineTotal: sum(pipeline)
+    };
+}
+
+function getCommissionSettlementContact() {
+    const isSubmanager = Boolean(window.currentUserData?.parent_id);
+    if (isSubmanager) {
+        let phone = String(window.currentUserData?.parent_telefono || '').replace(/\D/g, '');
+        if (phone.length === 8) phone = `53${phone}`;
+        return {
+            name: window.currentUserData?.parent_nombre || 'tu gestor principal',
+            phone: phone || '5355386602',
+            isSubmanager: true
+        };
+    }
+    return { name: 'Ángel', phone: '5355386602', isSubmanager: false };
+}
+
+function getCommissionOrderDate(order) {
+    const raw = order?.fecha || order?.created_at;
+    const date = raw ? new Date(raw) : null;
+    return date && !Number.isNaN(date.getTime())
+        ? date.toLocaleDateString('es-CU', { day: '2-digit', month: 'short', year: 'numeric' })
+        : 'Sin fecha';
+}
+
+function getCommissionOrderReference(order) {
+    const id = String(order?.id || '');
+    return id ? `#${id.slice(-7).toUpperCase()}` : 'Sin referencia';
+}
+
+function renderCommissionCenter() {
+    const list = document.getElementById('commission-center-list');
+    if (!list) return;
+    const data = getCommissionCenterData();
+    const contact = getCommissionSettlementContact();
+    const amountValues = {
+        'commission-center-pending': `$${data.pendingTotal.toFixed(2)}`,
+        'commission-center-paid': `$${data.paidTotal.toFixed(2)}`,
+        'commission-center-pipeline': `$${data.pipelineTotal.toFixed(2)}`,
+        'commission-center-count': String(data.delivered.length)
+    };
+    Object.entries(amountValues).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+
+    const note = document.getElementById('commission-center-role-note');
+    const step = document.getElementById('commission-center-step-two');
+    const requestButton = document.getElementById('commission-request-button');
+    if (note) {
+        note.textContent = contact.isSubmanager
+            ? `Tus comisiones se liquidan con ${contact.name}. Cada importe está respaldado por una venta entregada.`
+            : 'Cada importe está respaldado por una venta entregada. Tú decides cuándo solicitar la liquidación a Ángel.';
+    }
+    if (step) {
+        step.textContent = `Cuando quieras cobrar, solicita la liquidación directamente a ${contact.name} por WhatsApp.`;
+    }
+    if (requestButton) {
+        requestButton.disabled = data.pendingTotal <= 0;
+        requestButton.innerHTML = data.pendingTotal > 0
+            ? '<i class="fab fa-whatsapp text-lg"></i> Solicitar cobro'
+            : '<span class="material-symbols-outlined text-lg">check_circle</span> Sin saldo pendiente';
+    }
+
+    document.querySelectorAll('.commission-filter').forEach(button => {
+        const active = button.dataset.commissionFilter === commissionCenterFilter;
+        button.classList.toggle('bg-emerald-600', active);
+        button.classList.toggle('text-white', active);
+        button.classList.toggle('border-emerald-600', active);
+        button.classList.toggle('bg-white', !active);
+        button.classList.toggle('text-slate-500', !active);
+        button.classList.toggle('border-slate-200', !active);
+    });
+
+    let displayed = [];
+    if (commissionCenterFilter === 'pending') displayed = data.pending;
+    else if (commissionCenterFilter === 'paid') displayed = data.paid;
+    else if (commissionCenterFilter === 'pipeline') displayed = data.pipeline;
+    else displayed = [...data.delivered, ...data.pipeline];
+    displayed = [...displayed].sort((a, b) =>
+        new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0));
+
+    const summary = document.getElementById('commission-center-summary');
+    if (summary) {
+        summary.textContent = `${displayed.length} ${displayed.length === 1 ? 'movimiento visible' : 'movimientos visibles'} · los importes se calculan desde tus pedidos`;
+    }
+
+    if (!displayed.length) {
+        const emptyMessages = {
+            pending: ['Todo está liquidado', 'No tienes comisiones entregadas pendientes de pago.'],
+            paid: ['Aún no hay liquidaciones', 'Cuando la bóveda marque un pago, aparecerá aquí.'],
+            pipeline: ['No hay comisión en proceso', 'Tus próximos pedidos activos aparecerán en esta sección.'],
+            all: ['Aún no hay movimientos', 'Tus comisiones aparecerán cuando registres pedidos.']
+        };
+        const [title, description] = emptyMessages[commissionCenterFilter] || emptyMessages.all;
+        list.innerHTML = `
+            <div class="p-10 text-center">
+                <span class="material-symbols-outlined text-4xl text-slate-300">account_balance_wallet</span>
+                <p class="mt-2 text-xs font-black text-slate-700">${title}</p>
+                <p class="mt-1 text-[10px] font-bold text-slate-400">${description}</p>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = displayed.map(order => {
+        const paid = order.estado === 'Entregado' && isCommissionPaid(order);
+        const available = order.estado === 'Entregado' && !paid;
+        const status = paid
+            ? { label: 'Liquidada', icon: 'check_circle', className: 'bg-emerald-50 text-emerald-700' }
+            : available
+                ? { label: 'Por cobrar', icon: 'payments', className: 'bg-amber-50 text-amber-700' }
+                : { label: 'En proceso', icon: 'hourglass_top', className: 'bg-blue-50 text-blue-700' };
+        return `
+            <article class="grid grid-cols-[44px_minmax(0,1fr)] gap-3 p-4 md:grid-cols-[46px_minmax(0,1fr)_auto] md:items-center md:px-6">
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl ${status.className}">
+                    <span class="material-symbols-outlined">${status.icon}</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="truncate text-xs font-black text-slate-800">${gestorSafeText(order.producto || 'Pedido')}</p>
+                    <p class="mt-1 text-[9px] font-bold text-slate-400">${getCommissionOrderReference(order)} · ${getCommissionOrderDate(order)}</p>
+                </div>
+                <div class="col-start-2 flex items-center justify-between gap-3 md:col-start-auto md:block md:text-right">
+                    <span class="inline-flex rounded-full px-2 py-1 text-[8px] font-black uppercase ${status.className}">${status.label}</span>
+                    <p class="text-base font-black text-emerald-700 md:mt-1">+$${getOrderCommission(order).toFixed(2)}</p>
+                </div>
+            </article>`;
+    }).join('');
+}
+
+function setCommissionCenterFilter(filter) {
+    commissionCenterFilter = ['pending', 'paid', 'pipeline', 'all'].includes(filter) ? filter : 'pending';
+    renderCommissionCenter();
+}
+
+function requestCommissionSettlement() {
+    const data = getCommissionCenterData();
+    if (!data.pending.length || data.pendingTotal <= 0) return;
+    const contact = getCommissionSettlementContact();
+    const managerName = window.gestorName || 'Gestor';
+    const message = `Hola ${contact.name}, soy *${managerName}*.\n\nQuisiera cobrar mis comisiones pendientes. Por favor, avísame cuándo puedo pasar a cobrar.`;
+    window.open(`https://wa.me/${contact.phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+function downloadCommissionStatement() {
+    const data = getCommissionCenterData();
+    const rows = [...data.delivered, ...data.pipeline]
+        .sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0))
+        .map(order => {
+            const state = order.estado === 'Entregado'
+                ? (isCommissionPaid(order) ? 'Liquidada' : 'Por cobrar')
+                : 'En proceso';
+            return [
+                getCommissionOrderReference(order),
+                getCommissionOrderDate(order),
+                order.producto || 'Pedido',
+                getOrderCommission(order).toFixed(2),
+                state
+            ];
+        });
+    if (!rows.length) return alert('Todavía no tienes movimientos de comisión para descargar.');
+    const csvEscape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csv = [
+        ['Referencia', 'Fecha del pedido', 'Producto', 'Comisión USD', 'Estado'],
+        ...rows
+    ].map(row => row.map(csvEscape).join(',')).join('\n');
+    const blobUrl = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `Estado_comisiones_${String(window.gestorName || 'gestor').replace(/[^a-z0-9]+/gi, '_')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 }
 
 function getGestorPulseStorageKey() {
@@ -6604,6 +7071,8 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
     renderGestorDailyOpportunity();
     renderGestorToday(ventas);
     updateGestorSalesPulse();
+    renderCommissionCenter();
+    renderGestorPerformance(ventas);
 
     const list = document.getElementById('gestor-home-orders');
     if (!list) return;
@@ -6665,6 +7134,429 @@ function contactGestorOrder(phone) {
     const normalizedPhone = cleanPhone.startsWith('53') ? cleanPhone : `53${cleanPhone}`;
     const message = 'Hola, te escribo de ParaTuHogar para dar seguimiento a tu pedido.';
     window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+function getGestorOrderSource(order) {
+    const source = String(order?.origen || '').trim().toLowerCase();
+    if (source.includes('enlace')) return 'link';
+    return 'manual';
+}
+
+function getGestorCustomerKey(order) {
+    const phone = String(order?.telefono || '').replace(/\D/g, '');
+    if (phone) return `tel:${phone.slice(-8)}`;
+    return `name:${String(order?.cliente || '').trim().toLowerCase().replace(/\s+/g, ' ')}`;
+}
+
+const gestorPerformanceCharts = {};
+
+function replaceGestorPerformanceChart(key, canvasId, config) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (gestorPerformanceCharts[key]) gestorPerformanceCharts[key].destroy();
+    gestorPerformanceCharts[key] = new Chart(canvas.getContext('2d'), config);
+}
+
+function getPerformanceChartDefaults() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 650, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#fff',
+                bodyColor: '#e2e8f0',
+                padding: 12,
+                cornerRadius: 12,
+                displayColors: true
+            }
+        }
+    };
+}
+
+function renderGestorPerformanceCharts(all, delivered) {
+    const baseOptions = getPerformanceChartDefaults();
+    const monthFormatter = new Intl.DateTimeFormat('es-CU', { month: 'short' });
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, index) => {
+        const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+        return {
+            key: `${date.getFullYear()}-${date.getMonth()}`,
+            label: monthFormatter.format(date).replace('.', '').replace(/^\w/, letter => letter.toUpperCase())
+        };
+    });
+    const deliveredByMonth = Object.fromEntries(months.map(month => [month.key, { sales: 0, commission: 0, count: 0 }]));
+    delivered.forEach(order => {
+        const date = new Date(order.fecha || order.created_at || 0);
+        const key = `${date.getFullYear()}-${date.getMonth()}`;
+        if (!deliveredByMonth[key]) return;
+        deliveredByMonth[key].sales += Number(order.total) || 0;
+        deliveredByMonth[key].commission += getOrderCommission(order);
+        deliveredByMonth[key].count += 1;
+    });
+    replaceGestorPerformanceChart('sales', 'performance-sales-chart', {
+        type: 'bar',
+        data: {
+            labels: months.map(month => month.label),
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Ventas entregadas',
+                    data: months.map(month => deliveredByMonth[month.key].sales),
+                    backgroundColor: '#2563eb',
+                    hoverBackgroundColor: '#1d4ed8',
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    maxBarThickness: 44
+                },
+                {
+                    type: 'line',
+                    label: 'Comisiones',
+                    data: months.map(month => deliveredByMonth[month.key].commission),
+                    borderColor: '#10b981',
+                    backgroundColor: '#10b981',
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#10b981',
+                    pointBorderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 3,
+                    tension: 0.35,
+                    yAxisID: 'commission'
+                }
+            ]
+        },
+        options: {
+            ...baseOptions,
+            scales: {
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { color: '#64748b', font: { size: 11, weight: 'bold' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    border: { display: false },
+                    grid: { color: '#eef2f7' },
+                    ticks: {
+                        color: '#64748b',
+                        callback: value => `$${Number(value).toLocaleString('es-CU')}`
+                    }
+                },
+                commission: {
+                    beginAtZero: true,
+                    position: 'right',
+                    border: { display: false },
+                    grid: { display: false },
+                    ticks: { color: '#059669', callback: value => `$${value}` }
+                }
+            },
+            plugins: {
+                ...baseOptions.plugins,
+                tooltip: {
+                    ...baseOptions.plugins.tooltip,
+                    callbacks: {
+                        label: context => `${context.dataset.label}: $${Number(context.raw || 0).toFixed(2)}`
+                    }
+                }
+            }
+        }
+    });
+
+    const statusGroups = [
+        { label: 'Pendientes', test: state => state.includes('pendiente'), color: '#f59e0b' },
+        { label: 'En preparación', test: state => state.includes('prepar') || state.includes('confirm'), color: '#8b5cf6' },
+        { label: 'Con mensajero', test: state => state.includes('mensaj') || state.includes('asignado'), color: '#0ea5e9' },
+        { label: 'Recogida', test: state => state.includes('recog'), color: '#14b8a6' },
+        { label: 'Entregados', test: state => state.includes('entregado'), color: '#10b981' }
+    ];
+    const funnelValues = statusGroups.map(group => all.filter(order =>
+        group.test(String(order.estado || 'Pendiente').toLowerCase())).length);
+    replaceGestorPerformanceChart('funnel', 'performance-funnel-chart', {
+        type: 'bar',
+        data: {
+            labels: statusGroups.map(group => group.label),
+            datasets: [{
+                data: funnelValues,
+                backgroundColor: statusGroups.map(group => group.color),
+                borderRadius: 8,
+                borderSkipped: false,
+                barThickness: 24
+            }]
+        },
+        options: {
+            ...baseOptions,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grace: '10%',
+                    border: { display: false },
+                    grid: { color: '#eef2f7' },
+                    ticks: { precision: 0, color: '#64748b' }
+                },
+                y: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { color: '#334155', font: { size: 11, weight: 'bold' } }
+                }
+            },
+            plugins: {
+                ...baseOptions.plugins,
+                tooltip: {
+                    ...baseOptions.plugins.tooltip,
+                    callbacks: { label: context => `${context.raw} pedidos` }
+                }
+            }
+        }
+    });
+
+    const commissionData = getCommissionCenterData();
+    const commissionValues = [
+        commissionData.paidTotal,
+        commissionData.pendingTotal,
+        commissionData.pipelineTotal
+    ];
+    replaceGestorPerformanceChart('commission', 'performance-commission-chart', {
+        type: 'doughnut',
+        data: {
+            labels: ['Liquidado', 'Por cobrar', 'En proceso'],
+            datasets: [{
+                data: commissionValues,
+                backgroundColor: ['#10b981', '#f59e0b', '#3b82f6'],
+                hoverOffset: 7,
+                borderColor: '#ffffff',
+                borderWidth: 5
+            }]
+        },
+        options: {
+            ...baseOptions,
+            cutout: '72%',
+            plugins: {
+                ...baseOptions.plugins,
+                tooltip: {
+                    ...baseOptions.plugins.tooltip,
+                    callbacks: { label: context => `${context.label}: $${Number(context.raw || 0).toFixed(2)}` }
+                }
+            }
+        }
+    });
+    const commissionLegend = document.getElementById('performance-commission-legend');
+    if (commissionLegend) {
+        const total = commissionValues.reduce((sum, value) => sum + value, 0);
+        const rows = [
+            ['Liquidado', commissionValues[0], 'bg-emerald-500'],
+            ['Por cobrar', commissionValues[1], 'bg-amber-500'],
+            ['En proceso', commissionValues[2], 'bg-blue-500']
+        ];
+        commissionLegend.innerHTML = rows.map(([label, value, color]) => `
+            <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
+                <span class="flex items-center gap-2 text-[10px] font-black text-slate-600"><i class="h-2.5 w-2.5 rounded-full ${color}"></i>${label}</span>
+                <span class="text-xs font-black text-slate-900">$${Number(value).toFixed(2)} <small class="text-[8px] text-slate-400">${total ? Math.round((value / total) * 100) : 0}%</small></span>
+            </div>`).join('');
+    }
+
+    const sourceLabels = ['Por mi enlace', 'Registrado por mí'];
+    const sourceValues = ['link', 'manual'].map(source =>
+        all.filter(order => getGestorOrderSource(order) === source).length);
+    replaceGestorPerformanceChart('sources', 'performance-source-chart', {
+        type: 'doughnut',
+        data: {
+            labels: sourceLabels,
+            datasets: [{
+                data: sourceValues,
+                backgroundColor: ['#2563eb', '#f97316'],
+                borderColor: '#ffffff',
+                borderWidth: 5,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            ...baseOptions,
+            cutout: '68%',
+            plugins: {
+                ...baseOptions.plugins,
+                tooltip: {
+                    ...baseOptions.plugins.tooltip,
+                    callbacks: { label: context => `${context.label}: ${context.raw} pedidos` }
+                }
+            }
+        }
+    });
+}
+
+function renderGestorPerformance(orders = myOrdersData) {
+    const section = document.getElementById('sub-dash-rendimiento');
+    if (!section) return;
+    const all = (Array.isArray(orders) ? orders : []).filter(order => order.estado !== 'Cancelado');
+    const delivered = all.filter(order => order.estado === 'Entregado');
+    const deliveredValue = delivered.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    const closeRate = all.length ? Math.round((delivered.length / all.length) * 100) : 0;
+    const deliveredCommission = delivered.reduce((sum, order) => sum + getOrderCommission(order), 0);
+    const activeOrders = all.filter(order => order.estado !== 'Entregado');
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const sixtyDaysAgo = new Date(now);
+    sixtyDaysAgo.setDate(now.getDate() - 60);
+    const orderDate = order => new Date(order.fecha || order.created_at || 0);
+    const currentDelivered = delivered.filter(order => orderDate(order) >= thirtyDaysAgo).length;
+    const previousDelivered = delivered.filter(order => {
+        const date = orderDate(order);
+        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+    }).length;
+    const trend = currentDelivered - previousDelivered;
+
+    const customerMap = new Map();
+    all.forEach(order => {
+        const key = getGestorCustomerKey(order);
+        if (key === 'name:') return;
+        if (!customerMap.has(key)) {
+            customerMap.set(key, {
+                name: order.cliente || 'Cliente',
+                phone: String(order.telefono || '').replace(/\D/g, ''),
+                orders: []
+            });
+        }
+        customerMap.get(key).orders.push(order);
+    });
+    const repeatCustomers = [...customerMap.values()]
+        .filter(customer => customer.orders.length >= 2)
+        .sort((a, b) => {
+            if (b.orders.length !== a.orders.length) return b.orders.length - a.orders.length;
+            return Math.max(...b.orders.map(order => orderDate(order).getTime())) -
+                Math.max(...a.orders.map(order => orderDate(order).getTime()));
+        });
+    const uniqueCustomers = customerMap.size;
+    const repeatRate = uniqueCustomers ? Math.round((repeatCustomers.length / uniqueCustomers) * 100) : 0;
+
+    const values = {
+        'performance-delivered': String(delivered.length),
+        'performance-close-rate': `${closeRate}%`,
+        'performance-repeat-count': String(repeatCustomers.length),
+        'performance-sales-total': `$${deliveredValue.toFixed(0)}`,
+        'performance-average-ticket': `$${(delivered.length ? deliveredValue / delivered.length : 0).toFixed(0)}`,
+        'performance-average-commission': `$${(delivered.length ? deliveredCommission / delivered.length : 0).toFixed(2)}`,
+        'performance-active-orders': String(activeOrders.length),
+        'performance-repeat-rate': `${repeatRate}%`
+    };
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    });
+    const trendElement = document.getElementById('performance-delivered-trend');
+    if (trendElement) {
+        trendElement.textContent = trend === 0
+            ? `${currentDelivered} en los últimos 30 días · sin cambio`
+            : `${currentDelivered} en 30 días · ${trend > 0 ? '+' : ''}${trend} vs. periodo anterior`;
+    }
+    const insight = document.getElementById('performance-main-insight');
+    if (insight) {
+        if (!all.length) {
+            insight.textContent = 'Cuando registres tus primeros pedidos, aquí verás avances, recurrencia y canales que convierten.';
+        } else if (repeatCustomers.length) {
+            insight.textContent = `Tienes ${repeatCustomers.length} ${repeatCustomers.length === 1 ? 'cliente que ya volvió' : 'clientes que ya volvieron'}. Recontactarlos puede ser tu camino más corto hacia la próxima venta.`;
+        } else if (closeRate >= 60) {
+            insight.textContent = `Tu tasa de cierre es ${closeRate}%. Mantén el seguimiento y empieza a cultivar la recompra de tus clientes entregados.`;
+        } else {
+            insight.textContent = `Has cerrado ${closeRate}% de tus pedidos válidos. Prioriza los pedidos activos y los seguimientos vencidos para elevar ese resultado.`;
+        }
+    }
+
+    const sourceDefinitions = [
+        { key: 'link', label: 'Por mi enlace', color: 'bg-blue-600', text: 'text-blue-700' },
+        { key: 'manual', label: 'Registrado por mí', color: 'bg-orange-500', text: 'text-orange-700' }
+    ];
+    const knownSourceTotal = all.length;
+    const sourcesContainer = document.getElementById('performance-sources');
+    if (sourcesContainer) {
+        sourcesContainer.innerHTML = sourceDefinitions.map(source => {
+            const count = all.filter(order => getGestorOrderSource(order) === source.key).length;
+            const percentage = knownSourceTotal ? Math.round((count / knownSourceTotal) * 100) : 0;
+            return `
+                <div>
+                    <div class="mb-2 flex items-center justify-between gap-3 text-[10px] font-black">
+                        <span class="${source.text}">${source.label}</span>
+                        <span class="text-slate-700">${count} · ${percentage}%</span>
+                    </div>
+                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-full rounded-full ${source.color}" style="width:${percentage}%"></div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+    const sourceNote = document.getElementById('performance-source-note');
+    if (sourceNote) {
+        sourceNote.textContent = '“Por mi enlace” identifica pedidos atribuidos a tu enlace personal. Los demás corresponden a órdenes registradas directamente por ti.';
+    }
+    renderGestorPerformanceCharts(all, delivered);
+
+    const repeatContainer = document.getElementById('performance-repeat-customers');
+    if (repeatContainer) {
+        if (!repeatCustomers.length) {
+            repeatContainer.innerHTML = `
+                <div class="p-8 text-center">
+                    <span class="material-symbols-outlined text-3xl text-slate-300">group</span>
+                    <p class="mt-2 text-xs font-black text-slate-700">Aún no hay compradores recurrentes</p>
+                    <p class="mt-1 text-[10px] font-bold text-slate-400">Se destacarán automáticamente al completar su segundo pedido.</p>
+                </div>`;
+        } else {
+            repeatContainer.innerHTML = repeatCustomers.slice(0, 6).map(customer => {
+                const deliveredCount = customer.orders.filter(order => order.estado === 'Entregado').length;
+                const total = customer.orders
+                    .filter(order => order.estado === 'Entregado')
+                    .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+                const phone = customer.phone;
+                return `
+                    <article class="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 p-4 md:px-6">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                            <span class="material-symbols-outlined">workspace_premium</span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="truncate text-xs font-black text-slate-800">${gestorSafeText(customer.name)}</p>
+                            <p class="mt-1 text-[9px] font-bold text-slate-400">${customer.orders.length} pedidos · ${deliveredCount} entregados · $${total.toFixed(0)}</p>
+                        </div>
+                        ${phone ? `<button onclick="contactGestorOrder('${phone}')" class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="Recontactar por WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}
+                    </article>`;
+            }).join('');
+        }
+    }
+
+    const ordersContainer = document.getElementById('performance-orders');
+    if (!ordersContainer) return;
+    const recent = [...all].sort((a, b) => orderDate(b) - orderDate(a)).slice(0, 12);
+    if (!recent.length) {
+        ordersContainer.innerHTML = '<div class="p-8 text-center text-xs font-bold text-slate-400">Todavía no hay pedidos para gestionar.</div>';
+        return;
+    }
+    ordersContainer.innerHTML = recent.map(order => {
+        const id = String(order.id || '').replace(/'/g, '');
+        const phone = String(order.telefono || '').replace(/\D/g, '');
+        const source = getGestorOrderSource(order);
+        const sourceLabels = { link: 'Mi enlace', manual: 'Registrado por mí' };
+        return `
+            <article class="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="truncate text-xs font-black text-slate-800">${gestorSafeText(order.cliente || 'Cliente')}</p>
+                        <span class="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-black uppercase text-slate-500">${sourceLabels[source]}</span>
+                        <span class="rounded-full bg-blue-50 px-2 py-1 text-[8px] font-black uppercase text-blue-700">${gestorSafeText(order.estado || 'Pendiente')}</span>
+                    </div>
+                    <p class="mt-1 truncate text-[10px] font-bold text-slate-500">${gestorSafeText(order.producto || 'Pedido')}</p>
+                    <p class="mt-1 text-[9px] font-bold text-slate-400">${getCommissionOrderDate(order)} · $${(Number(order.total) || 0).toFixed(0)}</p>
+                </div>
+                <div class="flex gap-2 overflow-x-auto">
+                    ${phone ? `<button onclick="contactGestorOrder('${phone}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}
+                    <button onclick="reenviarPedidoAdmin('${id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600" title="Reenviar pedido"><span class="material-symbols-outlined text-lg">send</span></button>
+                    <button onclick="prepararPDFDesdeHistorial('${id}','descargar')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600" title="Descargar factura"><span class="material-symbols-outlined text-lg">download</span></button>
+                    <button onclick="prepararPDFDesdeHistorial('${id}','compartir')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600" title="Compartir factura"><span class="material-symbols-outlined text-lg">share</span></button>
+                </div>
+            </article>`;
+    }).join('');
 }
 
 function renderGestorHomeFromCache() {
@@ -7222,7 +8114,8 @@ function updateAdminStats(pedidos) {
     const entregados = pedidos.filter(p => p.estado === 'Entregado');
     const totalUSD = entregados.reduce((acc, p) => acc + Number(p.total || 0), 0);
     const pendientes = pedidos.filter(p => p.estado === 'Pendiente' || p.estado === 'En Camino').length;
-    const deuda = pedidos.filter(p => p.estado === 'Entregado' && p.pago_gestor === 'Pendiente')
+    const deuda = pedidos.filter(p =>
+        p.estado === 'Entregado' && String(p.pago_gestor || '').toLowerCase() !== 'pagado')
                          .reduce((acc, p) => acc + Number(p.comision_total || 0), 0);
 
     document.getElementById('m-stat-ventas').innerText = `$${totalUSD.toLocaleString()}`;
@@ -7520,7 +8413,10 @@ function renderAdminCortes() {
     // -----------------------
 
     // Filtramos solo los pedidos entregados que deben comisión
-    const deuda = pedidosRawAdmin.filter(p => p.estado === 'Entregado' && p.pago_gestor === 'Pendiente' && p.gestor !== 'Venta Directa');
+    const deuda = pedidosRawAdmin.filter(p =>
+        p.estado === 'Entregado'
+        && String(p.pago_gestor || '').toLowerCase() !== 'pagado'
+        && p.gestor !== 'Venta Directa');
 
     // Agrupar por gestor
     const porGestor = deuda.reduce((acc, p) => {
@@ -11962,75 +12858,9 @@ async function buscarDuenoPorIP() {
 
 // --- NUEVA FUNCIÓN: GRÁFICA DE ORIGEN DE VENTAS ---
 function renderSourceChart(ventas) {
-    // 1. Calcular Datos
-    const total = ventas.length;
-    if (total === 0) return;
-
-    const manuales = ventas.filter(v => v.origen === 'Manual (Panel)').length;
-    const enlaces = ventas.filter(v => v.origen === 'Enlace Compartido').length;
-    const otros = total - manuales - enlaces;
-
-    // Porcentajes para las barras
-    const pEnlace = Math.round((enlaces / total) * 100);
-    const pManual = Math.round((manuales / total) * 100);
-    const pOtros = 100 - pEnlace - pManual;
-
-    // 2. Insertar HTML antes de la lista
-    const listContainer = document.getElementById('list-mis-pedidos');
     const existingChart = document.getElementById('chart-sources-container');
-    if (existingChart) existingChart.remove(); // Evitar duplicados
-
-    const advice = pEnlace > pManual 
-        ? "¡Tus enlaces funcionan genial! Sigue compartiendo." 
-        : "Eres fuerte en venta manual. Intenta mover más tu enlace para ingresos pasivos.";
-
-    const html = `
-    <div id="chart-sources-container" class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-6 mb-8 shadow-sm">
-        <!-- Título más grande y oscuro -->
-        <h3 class="text-sm md:text-base font-black uppercase text-slate-700 dark:text-white mb-5 flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary text-2xl">pie_chart</span> Fuentes de Tráfico
-        </h3>
-        
-        <!-- Barra Visual más gruesa (h-6 en vez de h-4) -->
-        <div class="flex h-6 w-full rounded-full overflow-hidden mb-6 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-            <div style="width: ${pEnlace}%" class="bg-blue-600 h-full shadow-inner" title="Enlaces"></div>
-            <div style="width: ${pManual}%" class="bg-orange-500 h-full shadow-inner" title="Manual"></div>
-            <div style="width: ${pOtros}%" class="bg-gray-400 h-full shadow-inner" title="Otros"></div>
-        </div>
-
-        <!-- Leyenda con Letras Grandes y Alto Contraste -->
-        <div class="flex flex-col sm:flex-row justify-between text-center gap-4">
-            
-            <!-- Caja Enlaces -->
-            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex-1 border border-blue-100 dark:border-blue-800/50">
-                <p class="text-xs font-black uppercase text-blue-700 dark:text-blue-300 mb-1 tracking-wider">🔗 Enlaces</p>
-                <div class="flex items-baseline justify-center gap-2">
-                    <p class="text-4xl font-black text-blue-900 dark:text-blue-100">${enlaces}</p> 
-                    <span class="text-sm font-bold text-blue-600 dark:text-blue-400">(${pEnlace}%)</span>
-                </div>
-            </div>
-
-            <!-- Caja Manual -->
-            <div class="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex-1 border border-orange-100 dark:border-orange-800/50">
-                <p class="text-xs font-black uppercase text-orange-700 dark:text-orange-300 mb-1 tracking-wider">✍️ Manual</p>
-                <div class="flex items-baseline justify-center gap-2">
-                    <p class="text-4xl font-black text-orange-800 dark:text-orange-100">${manuales}</p> 
-                    <span class="text-sm font-bold text-orange-600 dark:text-orange-400">(${pManual}%)</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Consejo IA más legible -->
-        <div class="mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
-            <p class="text-xs md:text-sm font-medium text-slate-600 dark:text-gray-300 text-center flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-amber-500 text-lg">lightbulb</span>
-                ${advice}
-            </p>
-        </div>
-    </div>`;
-    
-    // Insertamos la gráfica ANTES de la lista de pedidos
-    listContainer.insertAdjacentHTML('beforebegin', html);
+    if (existingChart) existingChart.remove();
+    renderGestorPerformance(ventas);
 }
 function esMensajeriaAmbigua(texto) {
     if (!texto) return false;
@@ -12046,18 +12876,30 @@ function showDashSection(section) {
     // Ocultar todo
     document.getElementById('sub-dash-resumen').classList.add('hidden');
     document.getElementById('sub-dash-precios').classList.add('hidden');
+    document.getElementById('sub-dash-comisiones').classList.add('hidden');
+    document.getElementById('sub-dash-rendimiento').classList.add('hidden');
     document.getElementById('gestor-home')?.classList.add('hidden');
     document.querySelectorAll('#sec-dashboard > .gestor-legacy-block').forEach(block => block.classList.add('hidden'));
     
     // Desactivar botones
     document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
     document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
+    document.getElementById('btn-dash-comisiones').className = "shrink-0 rounded-xl border border-emerald-100 bg-white px-4 py-2 text-xs font-black uppercase text-emerald-700 transition-all";
+    document.getElementById('btn-dash-rendimiento').className = "shrink-0 rounded-xl border border-blue-100 bg-white px-4 py-2 text-xs font-black uppercase text-blue-700 transition-all";
 
     // Activar selección
     if(section === 'resumen') {
         document.getElementById('gestor-home')?.classList.remove('hidden');
         document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
         document.getElementById('gestor-advanced-icon')?.classList.remove('rotate-180');
+    } else if (section === 'comisiones') {
+        document.getElementById('sub-dash-comisiones').classList.remove('hidden');
+        document.getElementById('btn-dash-comisiones').className = "shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black uppercase text-white shadow-md transition-all";
+        renderCommissionCenter();
+    } else if (section === 'rendimiento') {
+        document.getElementById('sub-dash-rendimiento').classList.remove('hidden');
+        document.getElementById('btn-dash-rendimiento').className = "shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase text-white shadow-md transition-all";
+        renderGestorPerformance();
     } else {
         // === AQUÍ INYECTAMOS EL TEXTO SECRETO ===
         // Solo se escribe cuando el usuario entra a esta sección

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b2550">
+    <title>Vende con ParaTuHogar | Tu catálogo, herramientas y comisiones</title>
+    <meta name="description" content="Únete como gestor comercial de ParaTuHogar. Recibe tu catálogo personalizado, herramientas de venta, seguimiento de clientes y control de comisiones.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
+    <style>
+        :root{--navy:#09234b;--blue:#1d5eb2;--sky:#eaf3ff;--green:#0aa56e;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--warm:#fffbeb}
+        *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#f8fafc;color:var(--ink);font-family:Manrope,system-ui,sans-serif}a{text-decoration:none;color:inherit}button{font:inherit}
+        .wrap{width:min(1180px,calc(100% - 32px));margin:auto}.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(18px);border-bottom:1px solid rgba(226,232,240,.8)}.nav-in{height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:800;color:var(--navy)}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,var(--navy),#2774c9);color:#fff}.nav-links{display:flex;align-items:center;gap:24px;font-size:13px;font-weight:700;color:#475569}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:48px;padding:0 20px;border:0;border-radius:14px;font-weight:800;cursor:pointer;transition:.2s}.btn:hover{transform:translateY(-2px)}.btn-primary{background:linear-gradient(135deg,#1764c0,#0f4c98);color:#fff;box-shadow:0 14px 30px rgba(29,94,178,.22)}.btn-light{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn-green{background:#10b981;color:#fff;box-shadow:0 14px 28px rgba(16,185,129,.2)}
+        .hero{position:relative;overflow:hidden;padding:82px 0 70px;background:radial-gradient(circle at 82% 16%,rgba(56,189,248,.22),transparent 27%),linear-gradient(145deg,#061a38,#0c3365 58%,#1459a3);color:#fff}.hero:after{content:"";position:absolute;inset:auto -10% -180px 35%;height:330px;background:rgba(255,255,255,.05);border-radius:50%;transform:rotate(-8deg)}.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:1.02fr .98fr;align-items:center;gap:68px}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.hero h1{max-width:680px;margin:22px 0 18px;font-size:clamp(42px,6vw,72px);line-height:.99;letter-spacing:-.055em}.hero h1 span{color:#62d8ff}.hero-copy{max-width:650px;font-size:17px;line-height:1.7;color:#dbeafe}.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}.micro{display:flex;flex-wrap:wrap;gap:18px;margin-top:26px;color:#bfdbfe;font-size:11px;font-weight:700}.micro span{display:flex;align-items:center;gap:6px}.micro i{width:7px;height:7px;border-radius:50%;background:#34d399}
+        .product-ui{padding:14px;border:1px solid rgba(255,255,255,.18);border-radius:30px;background:rgba(255,255,255,.1);box-shadow:0 30px 80px rgba(0,0,0,.28);backdrop-filter:blur(16px);transform:rotate(1deg)}.screen{overflow:hidden;border-radius:22px;background:#f8fafc;color:var(--ink)}.screen-top{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;background:#fff;border-bottom:1px solid var(--line)}.screen-top b{font-size:12px}.live{font-size:9px;font-weight:800;color:#047857;background:#d1fae5;padding:6px 8px;border-radius:99px}.screen-body{padding:18px}.mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.mini-kpi{padding:14px 10px;background:#fff;border:1px solid var(--line);border-radius:14px}.mini-kpi small{display:block;font-size:7px;font-weight:800;text-transform:uppercase;color:#94a3b8}.mini-kpi strong{display:block;margin-top:6px;font-size:19px}.chart{height:134px;margin-top:12px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:16px}.bars{height:80px;display:flex;align-items:end;gap:9px;border-bottom:1px solid #e2e8f0}.bars i{flex:1;min-width:12px;border-radius:6px 6px 0 0;background:linear-gradient(#3b82f6,#1d4ed8)}.chart-label{display:flex;justify-content:space-between;margin-top:10px;font-size:8px;font-weight:800;color:#64748b}.task{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;margin-top:12px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:14px}.task-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#ecfdf5;color:#059669}.task p{margin:0;font-size:10px;font-weight:800}.task small{color:#94a3b8}.task button{border:0;border-radius:9px;background:#10b981;color:#fff;padding:8px;font-size:8px;font-weight:800}
+        .trust{background:#fff;border-bottom:1px solid var(--line)}.trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0}.trust-item{padding:26px 20px;text-align:center;border-right:1px solid var(--line)}.trust-item:last-child{border:0}.trust-item strong{display:block;font-size:14px}.trust-item span{font-size:11px;color:var(--muted)}
+        .section{padding:88px 0}.section-soft{background:#eef5fd}.section-head{max-width:720px;margin:0 auto 42px;text-align:center}.section-head .tag{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}.section-head h2{margin:10px 0 14px;font-size:clamp(30px,4vw,46px);letter-spacing:-.045em;line-height:1.08}.section-head p{margin:0;color:var(--muted);line-height:1.7}
+        .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{padding:26px;border:1px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 12px 35px rgba(15,23,42,.045)}.card-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:var(--sky);color:var(--blue)}.card h3{margin:20px 0 9px;font-size:16px}.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.65}.card.featured{background:linear-gradient(145deg,#0b2854,#154f8e);color:#fff;border:0}.card.featured .card-icon{background:rgba(255,255,255,.12);color:#7dd3fc}.card.featured p{color:#dbeafe}
+        .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;counter-reset:step}.step{position:relative;padding:27px 22px;border:1px solid var(--line);border-radius:20px;background:#fff}.step:before{counter-increment:step;content:"0" counter(step);display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--navy);color:#fff;font-size:12px;font-weight:800}.step h3{margin:18px 0 8px;font-size:15px}.step p{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
+        .tools{display:grid;grid-template-columns:.86fr 1.14fr;gap:46px;align-items:center}.tool-list{display:grid;gap:12px}.tool{display:grid;grid-template-columns:45px 1fr;gap:14px;padding:17px;border:1px solid var(--line);border-radius:17px;background:#fff}.tool span{display:grid;place-items:center;width:45px;height:45px;border-radius:14px;background:#eff6ff;color:var(--blue)}.tool h3{margin:1px 0 5px;font-size:14px}.tool p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}.tool-copy h2{margin:10px 0 18px;font-size:clamp(32px,4vw,48px);line-height:1.07;letter-spacing:-.045em}.tool-copy>p{color:var(--muted);line-height:1.75}.checklist{display:grid;gap:10px;margin:24px 0}.checklist div{display:flex;gap:9px;font-size:13px;font-weight:700}.checklist .material-symbols-outlined{color:var(--green);font-size:20px}
+        .transparency{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{padding:32px;border-radius:24px;background:#fff;border:1px solid var(--line)}.panel.dark{background:var(--navy);color:#fff;border:0}.panel h3{margin:12px 0;font-size:23px}.panel p{color:var(--muted);font-size:13px;line-height:1.7}.panel.dark p{color:#bfdbfe}.money-flow{display:grid;gap:10px;margin-top:22px}.money-row{display:flex;align-items:center;justify-content:space-between;padding:13px;border-radius:13px;background:#f8fafc;font-size:11px;font-weight:800}.panel.dark .money-row{background:rgba(255,255,255,.08)}.money-row b{color:var(--green)}
+        .faq{max-width:820px;margin:auto;display:grid;gap:12px}.faq-item{overflow:hidden;border:1px solid var(--line);border-radius:17px;background:#fff}.faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px;border:0;background:transparent;text-align:left;color:var(--ink);font-size:14px;font-weight:800;cursor:pointer}.faq-a{display:none;padding:0 20px 20px;color:var(--muted);font-size:13px;line-height:1.7}.faq-item.open .faq-a{display:block}.faq-item.open .faq-q span{transform:rotate(45deg)}
+        .final{padding:30px 0 90px}.final-box{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;align-items:center;gap:30px;padding:48px;border-radius:30px;background:linear-gradient(135deg,#071d3f,#145ba7);color:#fff}.final-box h2{margin:7px 0 12px;font-size:clamp(30px,4vw,46px);letter-spacing:-.04em}.final-box p{margin:0;max-width:660px;color:#dbeafe;line-height:1.65}.footer{padding:28px 0;border-top:1px solid var(--line);background:#fff}.footer-in{display:flex;align-items:center;justify-content:space-between;gap:20px;color:#64748b;font-size:11px}.mobile-cta{display:none}
+        @media(max-width:900px){.nav-links{display:none}.hero{padding:56px 0}.hero-grid,.tools,.transparency{grid-template-columns:1fr}.product-ui{max-width:620px;margin:auto;transform:none}.benefits{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.trust-grid{grid-template-columns:repeat(2,1fr)}.trust-item:nth-child(2){border-right:0}.final-box{grid-template-columns:1fr}.final-box .btn{justify-self:start}}
+        @media(max-width:600px){.wrap{width:min(100% - 22px,1180px)}.nav-in{height:64px}.nav .btn{min-height:42px;padding:0 13px;font-size:11px}.hero h1{font-size:42px}.hero-copy{font-size:14px}.hero-actions .btn{width:100%}.product-ui{margin-top:10px;padding:8px;border-radius:23px}.mini-kpis{grid-template-columns:repeat(3,1fr)}.trust-item{padding:20px 10px}.trust-item strong{font-size:12px}.section{padding:66px 0}.benefits,.steps{grid-template-columns:1fr}.section-head{text-align:left}.final{padding-bottom:110px}.final-box{padding:30px 23px}.footer-in{align-items:flex-start;flex-direction:column}.mobile-cta{position:fixed;z-index:60;left:10px;right:10px;bottom:10px;display:flex}.mobile-cta .btn{width:100%;min-height:56px;border:3px solid rgba(255,255,255,.8)}}
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="wrap nav-in">
+            <a class="brand" href="index.html"><span class="brand-mark material-symbols-outlined">home_iot_device</span> paratuhogar</a>
+            <div class="nav-links"><a href="#beneficios">Beneficios</a><a href="#como-funciona">Cómo funciona</a><a href="#herramientas">Herramientas</a><a href="#preguntas">Preguntas</a></div>
+            <a class="btn btn-primary register-link" href="index.html?registro=gestor"><span class="material-symbols-outlined">person_add</span> Crear mi cuenta</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="wrap hero-grid">
+            <div>
+                <span class="eyebrow"><span class="material-symbols-outlined" style="font-size:16px">storefront</span> Programa de gestores comerciales</span>
+                <h1>Tu talento vende. <span>Nosotros ponemos el sistema.</span></h1>
+                <p class="hero-copy">Obtén una tienda online personalizada, catálogo actualizado y herramientas profesionales para compartir ofertas, atender clientes y controlar cada comisión desde un solo lugar.</p>
+                <div class="hero-actions">
+                    <a class="btn btn-green register-link" href="index.html?registro=gestor"><span class="material-symbols-outlined">rocket_launch</span> Quiero comenzar gratis</a>
+                    <a class="btn btn-light" href="#como-funciona"><span class="material-symbols-outlined">play_circle</span> Ver cómo funciona</a>
+                </div>
+                <div class="micro"><span><i></i> Sin inversión inicial</span><span><i></i> Sin comprar inventario</span><span><i></i> Tú organizas tu tiempo</span></div>
+            </div>
+            <div class="product-ui" aria-label="Vista previa del panel del gestor">
+                <div class="screen">
+                    <div class="screen-top"><b>Mi rendimiento</b><span class="live">● DATOS EN VIVO</span></div>
+                    <div class="screen-body">
+                        <div class="mini-kpis">
+                            <div class="mini-kpi"><small>Por cobrar</small><strong style="color:#059669">$45</strong></div>
+                            <div class="mini-kpi"><small>Pedidos</small><strong>4</strong></div>
+                            <div class="mini-kpi"><small>Cierre</small><strong style="color:#2563eb">67%</strong></div>
+                        </div>
+                        <div class="chart"><div class="bars"><i style="height:28%"></i><i style="height:44%"></i><i style="height:38%"></i><i style="height:68%"></i><i style="height:60%"></i><i style="height:90%"></i></div><div class="chart-label"><span>FEB</span><span>MAR</span><span>ABR</span><span>MAY</span><span>JUN</span><span>JUL</span></div></div>
+                        <div class="task"><span class="task-icon material-symbols-outlined">notifications_active</span><div><p>Cliente listo para recontactar</p><small>Seguimiento programado para hoy</small></div><button>WHATSAPP</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="trust">
+        <div class="wrap trust-grid">
+            <div class="trust-item"><strong>Catálogo actualizado</strong><span>Productos, precios y disponibilidad</span></div>
+            <div class="trust-item"><strong>Venta acompañada</strong><span>Coordinación y logística central</span></div>
+            <div class="trust-item"><strong>Comisión trazable</strong><span>Pedido por pedido en tu panel</span></div>
+            <div class="trust-item"><strong>Herramientas incluidas</strong><span>Contenido listo para compartir</span></div>
+        </div>
+    </section>
+
+    <main>
+        <section class="section" id="beneficios">
+            <div class="wrap">
+                <div class="section-head"><span class="tag">Mucho más que un catálogo</span><h2>Todo lo necesario para vender con confianza</h2><p>El sistema reduce el trabajo repetitivo para que puedas concentrarte en conversar, recomendar y cerrar.</p></div>
+                <div class="benefits">
+                    <article class="card featured"><span class="card-icon material-symbols-outlined">captive_portal</span><h3>Tu propia tienda online</h3><p>Recibes un enlace personal. Los pedidos que llegan desde él quedan atribuidos automáticamente a ti.</p></article>
+                    <article class="card"><span class="card-icon material-symbols-outlined">inventory_2</span><h3>Sin comprar mercancía</h3><p>Promocionas productos disponibles sin tener que invertir en inventario ni ocuparte del almacenamiento.</p></article>
+                    <article class="card"><span class="card-icon material-symbols-outlined">local_shipping</span><h3>Logística coordinada</h3><p>La operación central gestiona confirmación, mensajería, factura, entrega y garantía del equipo.</p></article>
+                    <article class="card"><span class="card-icon material-symbols-outlined">monitoring</span><h3>Rendimiento visible</h3><p>Consulta ventas, tasa de cierre, ticket promedio, clientes recurrentes y comisiones generadas.</p></article>
+                    <article class="card"><span class="card-icon material-symbols-outlined">auto_awesome</span><h3>Contenido profesional</h3><p>Crea Stories, comparaciones, paquetes, promociones y catálogos PDF desde los productos reales.</p></article>
+                    <article class="card"><span class="card-icon material-symbols-outlined">notifications_active</span><h3>Seguimiento comercial</h3><p>Organiza clientes interesados, recordatorios y recontactos para no perder oportunidades.</p></article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-soft" id="como-funciona">
+            <div class="wrap">
+                <div class="section-head"><span class="tag">Simple desde el primer día</span><h2>De tu registro a tu primera venta</h2><p>No necesitas conocimientos técnicos. El flujo está diseñado para empezar con pasos claros.</p></div>
+                <div class="steps">
+                    <article class="step"><h3>Crea tu cuenta</h3><p>Regístrate gratis con tus datos y espera la revisión de acceso del equipo.</p></article>
+                    <article class="step"><h3>Recibe tu tienda</h3><p>Accede al catálogo, tu enlace personalizado y las herramientas comerciales.</p></article>
+                    <article class="step"><h3>Comparte y asesora</h3><p>Publica ofertas o recomienda productos según lo que necesita cada cliente.</p></article>
+                    <article class="step"><h3>Registra y cobra</h3><p>El pedido se coordina, se entrega y tu comisión queda disponible en el panel.</p></article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="herramientas">
+            <div class="wrap tools">
+                <div class="tool-list">
+                    <article class="tool"><span class="material-symbols-outlined">bolt</span><div><h3>Respuesta rápida</h3><p>Copia ofertas, comparte por WhatsApp y añade productos a pedidos.</p></div></article>
+                    <article class="tool"><span class="material-symbols-outlined">auto_awesome</span><div><h3>Magic Studio y Stories</h3><p>Diseños de productos, paquetes, comparaciones y promociones múltiples.</p></div></article>
+                    <article class="tool"><span class="material-symbols-outlined">picture_as_pdf</span><div><h3>Catálogo PDF profesional</h3><p>Selecciona productos y crea documentos listos para enviar a clientes.</p></div></article>
+                    <article class="tool"><span class="material-symbols-outlined">query_stats</span><div><h3>Centro de rendimiento</h3><p>KPI, gráficos, recurrencia, fuentes de venta y mesa de trabajo comercial.</p></div></article>
+                </div>
+                <div class="tool-copy">
+                    <span class="tag" style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.14em">TRABAJA CON INFORMACIÓN REAL</span>
+                    <h2>Menos improvisación. Más oportunidades atendidas.</h2>
+                    <p>Cada herramienta utiliza los productos, precios y pedidos de la plataforma. No necesitas montar otra tienda, diseñar desde cero ni llevar tus cuentas en notas separadas.</p>
+                    <div class="checklist">
+                        <div><span class="material-symbols-outlined">check_circle</span> Productos agotados ocultos para evitar ofertas inválidas.</div>
+                        <div><span class="material-symbols-outlined">check_circle</span> Enlaces cortos y personalizados para compartir.</div>
+                        <div><span class="material-symbols-outlined">check_circle</span> Clientes recurrentes destacados automáticamente.</div>
+                        <div><span class="material-symbols-outlined">check_circle</span> Comisiones separadas por estado y pedido.</div>
+                    </div>
+                    <a class="btn btn-primary register-link" href="index.html?registro=gestor">Crear mi cuenta de gestor</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section section-soft">
+            <div class="wrap transparency">
+                <article class="panel dark"><span class="material-symbols-outlined">account_balance_wallet</span><h3>Comisiones claras</h3><p>La comisión se genera cuando la venta queda entregada. Puedes consultar lo disponible, lo liquidado y lo que todavía está en proceso.</p><div class="money-flow"><div class="money-row"><span>Pedido en proceso</span><b>Comisión potencial</b></div><div class="money-row"><span>Pedido entregado</span><b>Disponible para cobrar</b></div><div class="money-row"><span>Liquidación realizada</span><b>Marcada como pagada</b></div></div></article>
+                <article class="panel"><span class="material-symbols-outlined" style="color:var(--blue)">verified_user</span><h3>Expectativas honestas</h3><p>Ser gestor no garantiza ingresos automáticos. Tus resultados dependen de la constancia, la atención y las ventas efectivamente entregadas.</p><div class="money-flow"><div class="money-row"><span>Crear cuenta</span><b>Gratis</b></div><div class="money-row"><span>Comprar inventario</span><b>No requerido</b></div><div class="money-row"><span>Horario obligatorio</span><b>No</b></div></div></article>
+            </div>
+        </section>
+
+        <section class="section" id="preguntas">
+            <div class="wrap">
+                <div class="section-head"><span class="tag">Antes de comenzar</span><h2>Preguntas frecuentes</h2></div>
+                <div class="faq">
+                    <article class="faq-item open"><button class="faq-q">¿Tengo que pagar para registrarme?<span class="material-symbols-outlined">add</span></button><div class="faq-a">No. La creación de la cuenta y el acceso inicial a las herramientas del gestor no requieren comprar inventario.</div></article>
+                    <article class="faq-item"><button class="faq-q">¿Cómo sé cuánto voy a ganar?<span class="material-symbols-outlined">add</span></button><div class="faq-a">Cada producto muestra la comisión correspondiente dentro de la vista del gestor. El panel registra la comisión de cada pedido y su estado.</div></article>
+                    <article class="faq-item"><button class="faq-q">¿Quién entrega los productos?<span class="material-symbols-outlined">add</span></button><div class="faq-a">La coordinación logística, mensajería, factura y entrega se gestiona desde la operación central según las condiciones indicadas en cada producto.</div></article>
+                    <article class="faq-item"><button class="faq-q">¿Puedo trabajar desde el teléfono?<span class="material-symbols-outlined">add</span></button><div class="faq-a">Sí. El catálogo, los mensajes, los diseños, los pedidos, los seguimientos y las estadísticas están preparados para utilizarse desde el móvil.</div></article>
+                    <article class="faq-item"><button class="faq-q">¿Cuándo puedo solicitar mis comisiones?<span class="material-symbols-outlined">add</span></button><div class="faq-a">Cuando tengas comisiones de ventas entregadas disponibles, puedes solicitar el cobro desde tu centro de comisiones.</div></article>
+                </div>
+            </div>
+        </section>
+
+        <section class="final">
+            <div class="wrap final-box">
+                <div><span class="eyebrow">Tu próximo paso</span><h2>Convierte tus contactos en una oportunidad comercial real.</h2><p>Crea tu cuenta, conoce el catálogo y decide si este sistema encaja contigo. Sin inversión inicial y con información clara desde el principio.</p></div>
+                <a class="btn btn-green register-link" href="index.html?registro=gestor"><span class="material-symbols-outlined">person_add</span> Solicitar acceso gratis</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer"><div class="wrap footer-in"><a class="brand" href="index.html"><span class="brand-mark material-symbols-outlined">home_iot_device</span> paratuhogar</a><span>Programa de gestores comerciales · La Habana, Cuba</span><a href="index.html">Volver al catálogo</a></div></footer>
+    <div class="mobile-cta"><a class="btn btn-green register-link" href="index.html?registro=gestor"><span class="material-symbols-outlined">rocket_launch</span> Comenzar gratis</a></div>
+
+    <script>
+        const inviteId = new URLSearchParams(window.location.search).get('invitado_por');
+        document.querySelectorAll('.register-link').forEach(link => {
+            const params = new URLSearchParams({ registro: 'gestor' });
+            if (inviteId) params.set('invitado_por', inviteId);
+            link.href = `index.html?${params.toString()}`;
+        });
+        document.querySelectorAll('.faq-q').forEach(button => {
+            button.addEventListener('click', () => button.closest('.faq-item').classList.toggle('open'));
+        });
+    </script>
+</body>
+</html>
