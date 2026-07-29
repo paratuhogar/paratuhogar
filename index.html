@@ -1470,18 +1470,21 @@
 
         <div class="bg-white dark:bg-background-dark w-full max-w-6xl min-h-full md:min-h-0 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row relative lg:max-h-[90vh] lg:h-full">
 
-            <button onclick="closeDetail()" class="fixed right-3 top-3 z-[120] p-2 bg-white/95 text-slate-600 shadow-lg md:absolute md:right-4 md:top-4 dark:bg-gray-800 rounded-full hover:rotate-90 transition-transform" aria-label="Cerrar detalle">
+            <button onclick="closeDetail()" class="fixed left-3 top-3 z-[120] flex min-h-10 items-center gap-1 rounded-full bg-white/95 px-3 text-xs font-black text-slate-700 shadow-lg md:absolute md:left-auto md:right-4 md:top-4 md:h-10 md:w-10 md:justify-center md:px-0 dark:bg-gray-800" aria-label="Volver al catálogo">
+                <span class="material-symbols-outlined text-lg md:hidden">arrow_back</span>
+                <span class="md:hidden">Volver</span>
                 <span class="material-symbols-outlined">close</span>
             </button>
 
             <!-- Imagen Izquierda -->
             <div class="lg:w-1/2 bg-white flex flex-col items-center border-r border-gray-100 dark:border-gray-800">
-                <div class="w-full p-4 flex items-center justify-center bg-white min-h-[300px] max-h-[500px]">
-                    <img id="detail-main-img" src="" class="w-full h-full object-contain">
+                <div class="relative flex h-[250px] w-full items-center justify-center bg-white p-4 sm:h-[320px] lg:min-h-[420px] lg:flex-1">
+                    <img id="detail-main-img" src="" class="h-full w-full cursor-zoom-in object-contain" onclick="openDetailImagePreview()" alt="">
+                    <span id="detail-image-counter" class="absolute bottom-3 right-3 rounded-full bg-slate-900/75 px-2.5 py-1 text-[9px] font-black text-white backdrop-blur">1 / 1</span>
                 </div>
                 <div id="detail-thumbnails" class="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-4"></div>
-                <p class="mb-4 text-[10px] text-gray-400 flex items-center gap-1 uppercase tracking-widest px-4 text-center">
-                    <span class="material-symbols-outlined text-sm">photo_library</span> Fotos disponibles del producto
+                <p class="mb-3 flex items-center gap-1 px-4 text-center text-[9px] font-bold uppercase tracking-widest text-gray-400">
+                    <span class="material-symbols-outlined text-sm">touch_app</span> Toca la imagen para ampliarla
                 </p>
             </div>
 
@@ -1537,8 +1540,8 @@
                 <section id="detail-related-section" class="mb-6 hidden rounded-2xl border border-blue-100 bg-blue-50/40 p-3 md:p-4">
                     <div class="mb-4 flex items-end justify-between gap-3">
                         <div>
-                            <p class="text-[9px] font-black uppercase tracking-[0.16em] text-blue-600">Recomendados para ti</p>
-                            <h3 class="mt-1 text-base font-black text-slate-900">También podría interesarte</h3>
+                            <p id="detail-related-eyebrow" class="text-[9px] font-black uppercase tracking-[0.16em] text-blue-600">Recomendados para ti</p>
+                            <h3 id="detail-related-title" class="mt-1 text-base font-black text-slate-900">También podría interesarte</h3>
                         </div>
                         <span class="hidden text-[9px] font-bold text-slate-400 sm:block">Disponibles ahora</span>
                     </div>
@@ -1547,7 +1550,11 @@
 
                 <div class="mb-8">
                     <h3 class="text-xs font-black uppercase text-slate-700 mb-3 tracking-widest">Información del equipo</h3>
-                    <p id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></p>
+                    <div id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></div>
+                    <p id="detail-manager-updated" class="mt-4 hidden items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-500">
+                        <span class="material-symbols-outlined text-sm">update</span>
+                        <span id="detail-manager-updated-text">Actualización pendiente</span>
+                    </p>
                 </div>
 
                 <!-- SECCIÓN DE VALORACIONES (ESTRELLITAS Y COMENTARIOS) -->
@@ -4762,6 +4769,88 @@ function getPublicProductPrice(product) {
         : `$${usd} USD`;
 }
 
+let detailGalleryImages = [];
+let detailGalleryIndex = 0;
+
+function selectDetailImage(index) {
+    if (!detailGalleryImages.length) return;
+    detailGalleryIndex = Math.max(0, Math.min(index, detailGalleryImages.length - 1));
+    const image = document.getElementById('detail-main-img');
+    const counter = document.getElementById('detail-image-counter');
+    if (image) image.src = detailGalleryImages[detailGalleryIndex];
+    if (counter) counter.textContent = `${detailGalleryIndex + 1} / ${detailGalleryImages.length}`;
+    document.querySelectorAll('[data-detail-thumbnail]').forEach((thumb, thumbIndex) => {
+        thumb.classList.toggle('border-[#1a4789]', thumbIndex === detailGalleryIndex);
+        thumb.classList.toggle('ring-2', thumbIndex === detailGalleryIndex);
+        thumb.classList.toggle('ring-blue-100', thumbIndex === detailGalleryIndex);
+        thumb.classList.toggle('border-slate-200', thumbIndex !== detailGalleryIndex);
+    });
+}
+
+function openDetailImagePreview() {
+    if (!detailGalleryImages.length) return;
+    let preview = document.getElementById('detail-image-preview');
+    if (!preview) {
+        preview = document.createElement('div');
+        preview.id = 'detail-image-preview';
+        preview.className = 'fixed inset-0 z-[180] hidden items-center justify-center bg-slate-950/95 p-4';
+        preview.innerHTML = `
+            <button type="button" onclick="closeDetailImagePreview()" class="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Cerrar imagen ampliada">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <img id="detail-image-preview-img" class="max-h-[88vh] max-w-full object-contain" alt="Vista ampliada del producto">`;
+        preview.addEventListener('click', event => {
+            if (event.target === preview) closeDetailImagePreview();
+        });
+        document.body.appendChild(preview);
+    }
+    document.getElementById('detail-image-preview-img').src = detailGalleryImages[detailGalleryIndex];
+    preview.classList.remove('hidden');
+    preview.classList.add('flex');
+}
+
+function closeDetailImagePreview() {
+    const preview = document.getElementById('detail-image-preview');
+    if (!preview) return;
+    preview.classList.add('hidden');
+    preview.classList.remove('flex');
+}
+
+function escapeDetailText(value) {
+    return String(value || '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    })[character]);
+}
+
+function renderDetailDescription(description) {
+    const container = document.getElementById('detail-desc');
+    if (!container) return;
+    const raw = String(description || '').trim();
+    if (!raw) {
+        container.innerHTML = '<p class="rounded-xl bg-slate-50 p-3 text-xs font-medium text-slate-500">Consulta con tu asesor para conocer todas las especificaciones de este equipo.</p>';
+        return;
+    }
+    if (/<[a-z][\s\S]*>/i.test(raw)) {
+        container.innerHTML = raw;
+        return;
+    }
+
+    const lines = raw.split(/\n+|[•·]\s*/).map(line => line.trim()).filter(Boolean);
+    if (lines.length <= 1) {
+        container.innerHTML = `<p>${escapeDetailText(raw)}</p>`;
+        return;
+    }
+    container.innerHTML = `<ul class="grid gap-2">${lines.map(line => `
+        <li class="flex gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+            <span class="material-symbols-outlined mt-0.5 text-sm text-blue-600">check_circle</span>
+            <span class="min-w-0">${escapeDetailText(line)}</span>
+        </li>`).join('')}</ul>`;
+}
+
 function renderDetailRelatedProducts(product) {
     const section = document.getElementById('detail-related-section');
     const container = document.getElementById('detail-related-products');
@@ -4814,7 +4903,7 @@ function renderDetailRelatedProducts(product) {
     section.classList.remove('hidden');
 }
 
-function applyDetailAudienceMode() {
+function applyDetailAudienceMode(product) {
     const internal = Boolean(localStorage.getItem('pth_session'));
     [
         'detail-client-availability',
@@ -4826,6 +4915,21 @@ function applyDetailAudienceMode() {
     if (actions) {
         actions.classList.toggle('grid-cols-[0.8fr_1.2fr]', !internal);
         actions.classList.toggle('grid-cols-1', internal);
+    }
+    const relatedEyebrow = document.getElementById('detail-related-eyebrow');
+    const relatedTitle = document.getElementById('detail-related-title');
+    if (relatedEyebrow) relatedEyebrow.textContent = internal ? 'Opciones para cerrar la venta' : 'Recomendados para ti';
+    if (relatedTitle) relatedTitle.textContent = internal ? 'Alternativas para ofrecer' : 'También podría interesarte';
+
+    const updated = document.getElementById('detail-manager-updated');
+    const updatedText = document.getElementById('detail-manager-updated-text');
+    updated?.classList.toggle('hidden', !internal);
+    updated?.classList.toggle('flex', internal);
+    if (internal && updatedText) {
+        const dateValue = product?.updated_at || product?.created_at;
+        updatedText.textContent = dateValue
+            ? `Producto actualizado el ${new Date(dateValue).toLocaleDateString('es-CU', { day: '2-digit', month: 'short', year: 'numeric' })}`
+            : 'Este producto no tiene fecha de actualización registrada';
     }
 }
 
@@ -4970,7 +5074,7 @@ function openDetail(name, skipSolarCheck = false) {
     const detailModal = document.getElementById('detail-modal');
     
     document.getElementById('detail-name').innerText = p.nombre;
-    document.getElementById('detail-desc').innerHTML = p.descripcion || ''; 
+    renderDetailDescription(p.descripcion);
 
     // Badge de Ganancia
     const oldBadge = document.getElementById('admin-comm-badge');
@@ -4994,13 +5098,17 @@ function openDetail(name, skipSolarCheck = false) {
     document.getElementById('detail-shipping').innerText = p.mensajeria || 'Consultar';
     
     // IMÁGENES
-    document.getElementById('detail-main-img').src = fixDriveUrl(p.thumbnail);
     const thumbs = [p.thumbnail, p.image1, p.image2, p.image3].filter(url => url && url.length > 5);
-    document.getElementById('detail-thumbnails').innerHTML = thumbs.map(url => `
-        <img src="${fixDriveUrl(url)}" onclick="document.getElementById('detail-main-img').src=this.src" class="w-12 h-12 object-contain rounded-lg border border-gray-100 bg-white p-1 cursor-pointer hover:border-primary transition-colors">
+    detailGalleryImages = [...new Set((thumbs.length ? thumbs : ['']).map(fixDriveUrl))];
+    document.getElementById('detail-main-img').alt = p.nombre;
+    document.getElementById('detail-thumbnails').innerHTML = detailGalleryImages.map((url, index) => `
+        <button type="button" data-detail-thumbnail onclick="selectDetailImage(${index})" class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 transition" aria-label="Ver imagen ${index + 1} de ${detailGalleryImages.length}">
+            <img src="${url}" class="h-full w-full object-contain" alt="">
+        </button>
     `).join('');
+    selectDetailImage(0);
     renderDetailRelatedProducts(p);
-    applyDetailAudienceMode();
+    applyDetailAudienceMode(p);
 
     // --- CARGAR OPINIONES AL ABRIR EL MODAL ---
     loadProductReviews(p.id, p.nombre, p.categoria);
@@ -5792,6 +5900,7 @@ function renderFloatingWA(nombre, telefono) {
     catalogUrl.searchParams.delete('search');
     history.pushState(null, '', `${catalogUrl.pathname}${catalogUrl.search}${catalogUrl.hash}`);
     document.title = "ParaTuHogar | Electrodomésticos para Cuba";
+    closeDetailImagePreview();
     // ==========================================
 
     // 1. SENSOR: Calcular tiempo de lectura antes de cerrar
