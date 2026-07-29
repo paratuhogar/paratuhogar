@@ -1626,7 +1626,7 @@
             </div>
         </div>
 
-        <div class="fixed inset-x-0 bottom-0 z-[115] border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden">
+        <div id="detail-mobile-actions" class="pointer-events-none fixed inset-x-0 bottom-0 z-[115] translate-y-full border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur transition-transform duration-200 lg:hidden">
             <div class="mx-auto flex max-w-md items-center gap-3">
                 <div class="min-w-0 flex-1">
                     <p class="text-[8px] font-black uppercase tracking-wider text-slate-400">Precio del equipo</p>
@@ -4844,6 +4844,32 @@ function applyDetailAudienceMode() {
     }
 }
 
+let detailActionsObserver = null;
+
+function setDetailMobileActionsVisible(visible) {
+    const bar = document.getElementById('detail-mobile-actions');
+    if (!bar) return;
+    bar.classList.toggle('translate-y-full', !visible);
+    bar.classList.toggle('pointer-events-none', !visible);
+    bar.classList.toggle('translate-y-0', visible);
+    bar.classList.toggle('pointer-events-auto', visible);
+}
+
+function setupDetailMobileActionBar() {
+    if (detailActionsObserver) detailActionsObserver.disconnect();
+    const inlineActions = document.getElementById('detail-primary-actions');
+    if (!inlineActions || window.matchMedia('(min-width: 1024px)').matches) {
+        setDetailMobileActionsVisible(false);
+        return;
+    }
+
+    detailActionsObserver = new IntersectionObserver(entries => {
+        const actionsAreVisible = entries.some(entry => entry.isIntersecting);
+        setDetailMobileActionsVisible(!actionsAreVisible);
+    }, { threshold: 0.2 });
+    detailActionsObserver.observe(inlineActions);
+}
+
 function renderCatalogProducts(list) {
     const container = document.getElementById('productos-container');
     if (!container) return;
@@ -5030,6 +5056,7 @@ function openDetail(name, skipSolarCheck = false) {
 
     detailModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    requestAnimationFrame(setupDetailMobileActionBar);
 }
 
 function consultSelectedProduct() {
@@ -5807,6 +5834,8 @@ function renderFloatingWA(nombre, telefono) {
     catalogUrl.searchParams.delete('search');
     history.pushState(null, '', `${catalogUrl.pathname}${catalogUrl.search}${catalogUrl.hash}`);
     document.title = "ParaTuHogar | Electrodomésticos para Cuba";
+    if (detailActionsObserver) detailActionsObserver.disconnect();
+    setDetailMobileActionsVisible(false);
     // ==========================================
 
     // 1. SENSOR: Calcular tiempo de lectura antes de cerrar
