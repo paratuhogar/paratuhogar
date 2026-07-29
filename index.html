@@ -620,29 +620,30 @@
                 <h2 class="text-3xl font-black text-slate-900 mt-1">Opiniones que nos respaldan</h2>
             </div>
 
-            <!-- Card Testimonio 1 -->
-            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative space-y-3">
-                <span class="text-4xl font-serif text-blue-200 absolute top-4 right-6">“</span>
-                <p class="text-sm text-slate-700 italic">"Excelente servicio de principio a fin. El split enfriando súper bien y el mensajero muy amable. Lo pagué al recibirlo en la casa."</p>
-                <div class="flex justify-between items-center pt-2">
+            <!-- Opinión real anonimizada: recibida después de una entrega -->
+            <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-6 shadow-sm">
+                <div class="mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined rounded-xl bg-emerald-600 p-2 text-white">verified</span>
                     <div>
-                        <p class="text-xs font-black text-slate-900">María Fernanda G.</p>
-                        <p class="text-[10px] text-slate-400 font-bold">Compra de Split Inverter - Playa</p>
+                        <p class="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-700">Experiencia post-entrega</p>
+                        <p class="text-[10px] font-bold text-slate-400">Comentario real · identidad protegida</p>
                     </div>
-                    <div class="text-amber-400 text-xs">★★★★★</div>
                 </div>
-            </div>
-
-            <!-- Card Testimonio 2 -->
-            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 relative space-y-3">
-                <span class="text-4xl font-serif text-blue-200 absolute top-4 right-6">“</span>
-                <p class="text-sm text-slate-700 italic">"Muy profesionales. Compré una batería de litio para los apagones y todo llegó sellado en su caja original. 100% recomendados."</p>
-                <div class="flex justify-between items-center pt-2">
-                    <div>
-                        <p class="text-xs font-black text-slate-900">José Luis R.</p>
-                        <p class="text-[10px] text-slate-400 font-bold">Estación de Energía - Vedado</p>
+                <span class="absolute right-6 top-3 font-serif text-6xl text-emerald-100">“</span>
+                <p class="relative text-base font-bold leading-relaxed text-slate-700">“Quedé muy complacida con la atención. Todo llegó muy bien y los mensajeros fueron súper atentos, serviciales y educados.”</p>
+                <div class="mt-5 grid grid-cols-3 gap-2">
+                    <div class="rounded-xl bg-white p-3 text-center shadow-sm">
+                        <span class="material-symbols-outlined text-lg text-[#1a4789]">support_agent</span>
+                        <p class="mt-1 text-[8px] font-black uppercase text-slate-500">Buena atención</p>
                     </div>
-                    <div class="text-amber-400 text-xs">★★★★★</div>
+                    <div class="rounded-xl bg-white p-3 text-center shadow-sm">
+                        <span class="material-symbols-outlined text-lg text-emerald-600">local_shipping</span>
+                        <p class="mt-1 text-[8px] font-black uppercase text-slate-500">Entrega cuidada</p>
+                    </div>
+                    <div class="rounded-xl bg-white p-3 text-center shadow-sm">
+                        <span class="material-symbols-outlined text-lg text-violet-600">sentiment_satisfied</span>
+                        <p class="mt-1 text-[8px] font-black uppercase text-slate-500">Trato profesional</p>
+                    </div>
                 </div>
             </div>
 
@@ -1020,6 +1021,28 @@
                         <strong id="gestor-kpi-ticket" class="block text-2xl font-black text-slate-900">—</strong>
                         <span class="text-[11px] font-bold text-slate-500">Ticket entregado</span>
                     </article>
+                </section>
+
+                <section id="gestor-sales-pulse" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-5 md:px-6">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <span class="material-symbols-outlined rounded-2xl bg-indigo-50 p-3 text-indigo-600">vital_signs</span>
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-600">Pulso de venta</p>
+                                <h2 class="mt-1 text-lg font-black text-slate-900">Qué cambió y qué vender ahora</h2>
+                                <p id="gestor-pulse-summary" class="mt-1 text-[11px] font-medium text-slate-500">Revisando el catálogo guardado en este dispositivo…</p>
+                            </div>
+                        </div>
+                        <span id="gestor-pulse-count" class="hidden min-w-9 rounded-full bg-indigo-600 px-3 py-2 text-center text-xs font-black text-white">0</span>
+                    </div>
+                    <div id="gestor-pulse-list" class="divide-y divide-slate-100">
+                        <div class="p-6 text-center text-xs font-bold text-slate-400">El pulso aparecerá cuando termine de cargar el catálogo.</div>
+                    </div>
+                    <div id="gestor-pulse-footer" class="hidden border-t border-slate-100 bg-slate-50 p-3">
+                        <button onclick="markGestorPulseRead()" class="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase text-slate-600">
+                            <span class="material-symbols-outlined text-lg">done_all</span> Marcar cambios como revisados
+                        </button>
+                    </div>
                 </section>
 
                 <section id="gestor-today-panel" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -1551,6 +1574,17 @@
                 <div class="mb-8">
                     <h3 class="text-xs font-black uppercase text-slate-700 mb-3 tracking-widest">Información del equipo</h3>
                     <div id="detail-desc" class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"></div>
+                    <section id="detail-technical-sheet" class="mt-5 hidden overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+                        <div class="flex items-start gap-3 p-4">
+                            <span class="material-symbols-outlined rounded-xl bg-[#1a4789] p-2.5 text-white">picture_as_pdf</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[9px] font-black uppercase tracking-[0.16em] text-blue-600">Documentación del equipo</p>
+                                <h4 id="detail-technical-sheet-name" class="mt-1 truncate text-sm font-black text-slate-800">Ficha técnica</h4>
+                                <p id="detail-technical-sheet-meta" class="mt-1 text-[10px] font-bold text-slate-500">Documento PDF</p>
+                            </div>
+                        </div>
+                        <div id="detail-technical-sheet-actions" class="border-t border-blue-100 p-3"></div>
+                    </section>
                     <p id="detail-manager-updated" class="mt-4 hidden items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-500">
                         <span class="material-symbols-outlined text-sm">update</span>
                         <span id="detail-manager-updated-text">Actualización pendiente</span>
@@ -2604,6 +2638,37 @@
             <label class="text-[10px] font-black uppercase text-gray-400 ml-1">🚚 Detalles de Mensajería</label>
             <input type="text" id="p-mensajeria" placeholder="Ej: Gratis en La Habana..." class="w-full rounded-xl border-gray-200 font-bold text-gray-700 bg-gray-50 focus:bg-white transition-colors">
         </div>
+    </div>
+
+    <!-- FICHA TÉCNICA PDF (ARCHIVO EXTERNO, SOLO SE GUARDA EL ENLACE) -->
+    <div class="md:col-span-2 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+        <div class="mb-3 flex items-start gap-3">
+            <span class="material-symbols-outlined rounded-xl bg-[#1a4789] p-2 text-white">picture_as_pdf</span>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-wider text-blue-800">Ficha técnica PDF</p>
+                <p class="mt-1 text-[9px] font-bold leading-relaxed text-blue-600">Pega el enlace directo de GitHub. Si se deja vacío, la ficha no aparecerá en la tienda.</p>
+            </div>
+        </div>
+        <label class="text-[9px] font-black uppercase text-slate-500">Enlace público del PDF</label>
+        <input type="url" id="p-ficha-pdf" placeholder="https://raw.githubusercontent.com/.../ficha.pdf" class="mt-1 w-full rounded-xl border-blue-100 bg-white text-xs font-bold text-slate-700">
+        <div class="mt-3 grid grid-cols-[1fr_90px] gap-3">
+            <div>
+                <label class="text-[9px] font-black uppercase text-slate-500">Nombre visible</label>
+                <input type="text" id="p-ficha-pdf-nombre" placeholder="Ficha técnica" class="mt-1 w-full rounded-xl border-blue-100 bg-white text-xs font-bold text-slate-700">
+            </div>
+            <div>
+                <label class="text-[9px] font-black uppercase text-slate-500">Idioma</label>
+                <select id="p-ficha-pdf-idioma" class="mt-1 w-full rounded-xl border-blue-100 bg-white text-xs font-bold text-slate-700">
+                    <option value="ES">ES</option>
+                    <option value="EN">EN</option>
+                    <option value="ES/EN">ES/EN</option>
+                    <option value="OTRO">Otro</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" onclick="testTechnicalSheetAdmin()" class="mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white text-[10px] font-black uppercase text-[#1a4789]">
+            <span class="material-symbols-outlined text-lg">open_in_new</span> Comprobar enlace
+        </button>
     </div>
     
 
@@ -4318,6 +4383,16 @@ async function loadProducts() {
         const cacheKey = 'pth_catalogo_cache';
         const cacheTimeKey = 'pth_catalogo_cache_time';
         const cacheLocalKey = 'pth_ultimo_cambio_productos';
+        const catalogSchemaKey = 'pth_catalogo_schema_version';
+        const catalogSchemaVersion = 'technical-sheets-v1';
+
+        // Fuerza una sola actualización cuando la estructura del catálogo incorpora
+        // campos nuevos, sin aumentar las consultas en las visitas posteriores.
+        if (localStorage.getItem(catalogSchemaKey) !== catalogSchemaVersion) {
+            localStorage.removeItem(cacheKey);
+            localStorage.removeItem(cacheTimeKey);
+            localStorage.setItem(catalogSchemaKey, catalogSchemaVersion);
+        }
 
         const catalogoCacheado = localStorage.getItem(cacheKey);
         const cacheTime = localStorage.getItem(cacheTimeKey);
@@ -4429,6 +4504,7 @@ async function loadProducts() {
 
         renderCategories();
         renderProducts();
+        updateGestorSalesPulse();
         
         if (sessionGestor) {
             renderGestorPricing(); 
@@ -4851,6 +4927,132 @@ function renderDetailDescription(description) {
         </li>`).join('')}</ul>`;
 }
 
+function normalizeTechnicalSheetUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    let parsed;
+    try { parsed = new URL(raw); } catch (error) { return ''; }
+    if (parsed.protocol !== 'https:') return '';
+
+    if (parsed.hostname === 'github.com') {
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        const blobIndex = parts.indexOf('blob');
+        if (blobIndex === 2 && parts.length > 4) {
+            parsed = new URL(`https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${parts[3]}/${parts.slice(4).join('/')}`);
+        }
+    }
+    if (!parsed.pathname.toLowerCase().endsWith('.pdf')) return '';
+    return parsed.href;
+}
+
+function renderDetailTechnicalSheet(product) {
+    const section = document.getElementById('detail-technical-sheet');
+    const actions = document.getElementById('detail-technical-sheet-actions');
+    const name = document.getElementById('detail-technical-sheet-name');
+    const meta = document.getElementById('detail-technical-sheet-meta');
+    if (!section || !actions || !name || !meta) return;
+
+    const pdfUrl = normalizeTechnicalSheetUrl(product?.ficha_pdf);
+    if (!pdfUrl) {
+        section.classList.add('hidden');
+        actions.innerHTML = '';
+        return;
+    }
+
+    const internal = Boolean(localStorage.getItem('pth_session'));
+    name.textContent = product.ficha_pdf_nombre || 'Ficha técnica';
+    meta.textContent = `Documento PDF · ${product.ficha_pdf_idioma || 'ES'}`;
+    const encodedUrl = encodeURIComponent(pdfUrl).replace(/'/g, '%27');
+    const encodedProduct = encodeURIComponent(product.nombre || 'Producto').replace(/'/g, '%27');
+    actions.innerHTML = internal ? `
+        <button type="button" onclick="openTechnicalSheet('${encodedUrl}')" class="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1a4789] text-[10px] font-black uppercase text-white shadow-sm">
+            <span class="material-symbols-outlined text-lg">visibility</span> Ver ficha técnica
+        </button>
+        <div class="mt-2 grid grid-cols-3 gap-2">
+            <button type="button" onclick="copyTechnicalSheetLink('${encodedUrl}', this)" class="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white text-[9px] font-black text-slate-600">
+                <span class="material-symbols-outlined text-base">link</span> Copiar
+            </button>
+            <button type="button" onclick="shareTechnicalSheetWhatsApp('${encodedUrl}', '${encodedProduct}')" class="flex min-h-10 items-center justify-center gap-1 rounded-xl bg-[#25D366] text-[9px] font-black text-white">
+                <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            <button type="button" onclick="downloadTechnicalSheet('${encodedUrl}', '${encodedProduct}', this)" class="flex min-h-10 items-center justify-center gap-1 rounded-xl border border-blue-200 bg-blue-50 text-[9px] font-black text-blue-700">
+                <span class="material-symbols-outlined text-base">download</span> Descargar
+            </button>
+        </div>` : `
+        <button type="button" onclick="openTechnicalSheet('${encodedUrl}')" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1a4789] text-xs font-black text-white shadow-md">
+            <span class="material-symbols-outlined">description</span> Consultar ficha técnica
+            <span class="material-symbols-outlined text-base">open_in_new</span>
+        </button>`;
+    section.classList.remove('hidden');
+}
+
+function openTechnicalSheet(encodedUrl) {
+    const url = normalizeTechnicalSheetUrl(decodeURIComponent(encodedUrl || ''));
+    if (!url) return alert('La ficha técnica no tiene un enlace válido.');
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+async function copyTechnicalSheetLink(encodedUrl, button) {
+    const url = normalizeTechnicalSheetUrl(decodeURIComponent(encodedUrl || ''));
+    if (!url) return alert('La ficha técnica no tiene un enlace válido.');
+    try {
+        await navigator.clipboard.writeText(url);
+        const original = button?.innerHTML;
+        if (button) button.innerHTML = '<span class="material-symbols-outlined text-base">check</span> Copiado';
+        setTimeout(() => { if (button && original) button.innerHTML = original; }, 1600);
+    } catch (error) {
+        window.prompt('Copia el enlace de la ficha técnica:', url);
+    }
+}
+
+function shareTechnicalSheetWhatsApp(encodedUrl, encodedProduct) {
+    const url = normalizeTechnicalSheetUrl(decodeURIComponent(encodedUrl || ''));
+    const productName = decodeURIComponent(encodedProduct || 'Producto');
+    if (!url) return alert('La ficha técnica no tiene un enlace válido.');
+    const message = `Te comparto la ficha técnica de *${productName}*:\n${url}\n\nSi tienes alguna duda, puedo ayudarte a revisar sus características.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+async function downloadTechnicalSheet(encodedUrl, encodedProduct, button) {
+    const url = normalizeTechnicalSheetUrl(decodeURIComponent(encodedUrl || ''));
+    const productName = decodeURIComponent(encodedProduct || 'ficha-tecnica');
+    if (!url) return alert('La ficha técnica no tiene un enlace válido.');
+    const original = button?.innerHTML;
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<span class="material-symbols-outlined animate-spin text-base">progress_activity</span>';
+    }
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('No se pudo descargar el PDF');
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = `${productName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'ficha-tecnica'}.pdf`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = original;
+        }
+    }
+}
+
+function testTechnicalSheetAdmin() {
+    const input = document.getElementById('p-ficha-pdf');
+    const normalized = normalizeTechnicalSheetUrl(input?.value);
+    if (!input?.value.trim()) return alert('Primero pega el enlace público del PDF.');
+    if (!normalized) return alert('El enlace debe comenzar con https:// y terminar en .pdf.');
+    input.value = normalized;
+    window.open(normalized, '_blank', 'noopener,noreferrer');
+}
+
 function renderDetailRelatedProducts(product) {
     const section = document.getElementById('detail-related-section');
     const container = document.getElementById('detail-related-products');
@@ -5109,6 +5311,7 @@ function openDetail(name, skipSolarCheck = false) {
     selectDetailImage(0);
     renderDetailRelatedProducts(p);
     applyDetailAudienceMode(p);
+    renderDetailTechnicalSheet(p);
 
     // --- CARGAR OPINIONES AL ABRIR EL MODAL ---
     loadProductReviews(p.id, p.nombre, p.categoria);
@@ -6174,6 +6377,218 @@ function openGestorFollowups(filter = 'hoy') {
     document.getElementById('btn-client-followup')?.click();
 }
 
+function getGestorPulseStorageKey() {
+    const identity = String(window.gestorName || window.currentUserData?.nombre || 'gestor')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9áéíóúñ]+/g, '-');
+    return `pth_sales_pulse_${identity || 'gestor'}`;
+}
+
+function buildGestorCatalogSnapshot() {
+    return (Array.isArray(productosRaw) ? productosRaw : []).reduce((snapshot, product) => {
+        const id = String(product.id ?? product.nombre ?? '').trim();
+        if (!id) return snapshot;
+        snapshot[id] = {
+            id,
+            nombre: String(product.nombre || 'Producto'),
+            disponible: product.disponible === 'SI',
+            precio: Number(product.precio) || 0,
+            comision: Number(product.comision) || 0,
+            categoria: String(product.categoria || 'OTROS'),
+            thumbnail: String(product.thumbnail || ''),
+            updatedAt: String(product.updated_at || product.fecha_actualizacion || '')
+        };
+        return snapshot;
+    }, {});
+}
+
+function detectGestorCatalogChanges(previous = {}, current = {}) {
+    const changes = [];
+    Object.values(current).forEach(product => {
+        const before = previous[product.id];
+        if (!before) {
+            if (product.disponible) changes.push({ type: 'new', product, label: 'Nuevo en catálogo' });
+            return;
+        }
+        if (!before.disponible && product.disponible) {
+            changes.push({ type: 'restock', product, label: 'Disponible nuevamente' });
+        } else if (before.disponible && !product.disponible) {
+            changes.push({ type: 'soldout', product, label: 'Ya no está disponible' });
+        }
+        if (product.disponible && before.precio !== product.precio) {
+            changes.push({
+                type: 'price',
+                product,
+                label: product.precio > before.precio ? 'Precio actualizado' : 'Precio más atractivo',
+                detail: `$${before.precio.toFixed(0)} → $${product.precio.toFixed(0)}`
+            });
+        }
+        if (product.disponible && before.comision !== product.comision) {
+            changes.push({
+                type: 'commission',
+                product,
+                label: product.comision > before.comision ? 'Mejor comisión' : 'Comisión actualizada',
+                detail: `Ahora ganas $${product.comision.toFixed(0)}`
+            });
+        }
+    });
+    return changes;
+}
+
+function getGestorPulseChangeKey(change) {
+    return [
+        change.type,
+        change.product?.id,
+        change.product?.disponible,
+        change.product?.precio,
+        change.product?.comision
+    ].join(':');
+}
+
+function getGestorPulseOpportunities(limit = 3) {
+    return Object.values(buildGestorCatalogSnapshot())
+        .filter(product => product.disponible)
+        .sort((a, b) => (b.comision - a.comision) || (b.precio - a.precio))
+        .slice(0, limit)
+        .map(product => ({
+            type: 'opportunity',
+            product,
+            label: 'Oportunidad disponible',
+            detail: product.comision > 0 ? `Puedes ganar $${product.comision.toFixed(0)}` : `Precio $${product.precio.toFixed(0)}`
+        }));
+}
+
+function getGestorPulseVisual(type) {
+    const visuals = {
+        new: { icon: 'new_releases', color: 'text-blue-600', bg: 'bg-blue-50' },
+        restock: { icon: 'inventory', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        soldout: { icon: 'remove_shopping_cart', color: 'text-rose-600', bg: 'bg-rose-50' },
+        price: { icon: 'sell', color: 'text-amber-600', bg: 'bg-amber-50' },
+        commission: { icon: 'payments', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        opportunity: { icon: 'trending_up', color: 'text-violet-600', bg: 'bg-violet-50' }
+    };
+    return visuals[type] || visuals.opportunity;
+}
+
+function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun = false) {
+    const list = document.getElementById('gestor-pulse-list');
+    const summary = document.getElementById('gestor-pulse-summary');
+    const count = document.getElementById('gestor-pulse-count');
+    const footer = document.getElementById('gestor-pulse-footer');
+    if (!list || !summary || !count || !footer) return;
+
+    const relevantItems = items.filter(change =>
+        change.type === 'soldout' || change.product?.disponible
+    );
+    const displayItems = relevantItems.length ? relevantItems.slice(0, 8) : getGestorPulseOpportunities(3);
+    const pendingCount = hasPendingChanges ? relevantItems.length : 0;
+    count.textContent = String(pendingCount);
+    count.classList.toggle('hidden', !pendingCount);
+    footer.classList.toggle('hidden', !pendingCount);
+    summary.textContent = pendingCount
+        ? `${pendingCount} ${pendingCount === 1 ? 'cambio importante pendiente' : 'cambios importantes pendientes'} de revisar.`
+        : firstRun
+            ? 'Catálogo sincronizado. Desde tu próxima visita te mostraremos aquí cada cambio.'
+            : 'No hay cambios pendientes. Estas son buenas opciones para compartir hoy.';
+
+    if (!displayItems.length) {
+        list.innerHTML = `<div class="p-8 text-center">
+            <span class="material-symbols-outlined text-3xl text-slate-300">inventory_2</span>
+            <p class="mt-2 text-xs font-black text-slate-600">No hay productos disponibles</p>
+        </div>`;
+        return;
+    }
+
+    list.innerHTML = displayItems.map(change => {
+        const product = change.product;
+        const visual = getGestorPulseVisual(change.type);
+        const encodedName = encodeURIComponent(product.nombre);
+        const canPromote = product.disponible && change.type !== 'soldout';
+        const fallbackDetail = product.disponible
+            ? `$${product.precio.toFixed(0)} USD${product.comision > 0 ? ` · ganas $${product.comision.toFixed(0)}` : ''}`
+            : 'Busca una alternativa disponible para tu cliente';
+        return `
+            <article class="grid grid-cols-[44px_minmax(0,1fr)] gap-3 p-4 md:grid-cols-[48px_minmax(0,1fr)_auto] md:items-center md:px-6">
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl ${visual.bg} ${visual.color}">
+                    <span class="material-symbols-outlined">${visual.icon}</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-[9px] font-black uppercase tracking-wider ${visual.color}">${gestorSafeText(change.label)}</p>
+                    <p class="mt-1 truncate text-xs font-black text-slate-800">${gestorSafeText(product.nombre)}</p>
+                    <p class="mt-1 text-[10px] font-bold text-slate-500">${gestorSafeText(change.detail || fallbackDetail)}</p>
+                </div>
+                ${canPromote ? `
+                <div class="col-start-2 flex gap-2 md:col-start-auto">
+                    <button onclick="openGestorPulseProduct('${encodedName}')" class="flex min-h-9 flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-[9px] font-black text-slate-600 md:flex-none">
+                        <span class="material-symbols-outlined text-base">visibility</span> Ver
+                    </button>
+                    <button onclick="shareGestorPulseProduct('${encodedName}')" class="flex min-h-9 flex-1 items-center justify-center gap-1 rounded-xl bg-[#25D366] px-3 text-[9px] font-black text-white md:flex-none">
+                        <i class="fab fa-whatsapp"></i> Compartir
+                    </button>
+                </div>` : ''}
+            </article>`;
+    }).join('');
+}
+
+function updateGestorSalesPulse() {
+    if (!document.getElementById('gestor-sales-pulse') || !localStorage.getItem('pth_session') || !productosRaw.length) return;
+    const key = getGestorPulseStorageKey();
+    const current = buildGestorCatalogSnapshot();
+    let state = null;
+    try { state = JSON.parse(localStorage.getItem(key) || 'null'); } catch (error) {}
+
+    if (!state?.snapshot) {
+        localStorage.setItem(key, JSON.stringify({ snapshot: current, pending: [], visitedAt: Date.now() }));
+        renderGestorSalesPulse([], false, true);
+        return;
+    }
+
+    const detected = detectGestorCatalogChanges(state.snapshot, current);
+    const merged = [...(Array.isArray(state.pending) ? state.pending : []), ...detected];
+    const pending = Array.from(new Map(merged.map(change => [getGestorPulseChangeKey(change), change])).values())
+        .sort((a, b) => {
+            const priority = { restock: 5, new: 4, commission: 3, price: 2, soldout: 1 };
+            return (priority[b.type] || 0) - (priority[a.type] || 0);
+        });
+    localStorage.setItem(key, JSON.stringify({ snapshot: current, pending, visitedAt: Date.now() }));
+    renderGestorSalesPulse(pending, pending.length > 0);
+}
+
+function markGestorPulseRead() {
+    const key = getGestorPulseStorageKey();
+    localStorage.setItem(key, JSON.stringify({
+        snapshot: buildGestorCatalogSnapshot(),
+        pending: [],
+        visitedAt: Date.now()
+    }));
+    renderGestorSalesPulse([], false);
+}
+
+function openGestorPulseProduct(encodedName) {
+    const name = decodeURIComponent(encodedName || '');
+    const product = productosRaw.find(item => item.nombre === name);
+    showSection('catalogo');
+    setTimeout(() => {
+        if (product?.disponible === 'SI') {
+            openDetail(name);
+            return;
+        }
+        const search = document.getElementById('search-bar');
+        if (search) search.value = product?.categoria || '';
+        activeCategory = product?.categoria?.toUpperCase() || 'TODOS';
+        gestorCatalogFilter = 'disponibles';
+        renderCategories();
+        renderProducts();
+        document.getElementById('productos-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
+
+function shareGestorPulseProduct(encodedName) {
+    const name = decodeURIComponent(encodedName || '');
+    shareProductWhatsApp(name);
+}
+
 function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCobrar = 0 }) {
     prepareGestorDashboardLayout();
 
@@ -6210,6 +6625,7 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
     });
     renderGestorDailyOpportunity();
     renderGestorToday(ventas);
+    updateGestorSalesPulse();
 
     const list = document.getElementById('gestor-home-orders');
     if (!list) return;
@@ -6301,8 +6717,7 @@ function openGestorTool(tool) {
             return;
         }
         if (tool === 'story') {
-            document.getElementById('productos-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            alert('Elige un producto y toca el botón Story de su tarjeta.');
+            openStoryComposer();
         }
     }, 120);
 }
@@ -7525,6 +7940,16 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
     const nombreInput = document.getElementById('p-nombre').value.trim();
     const categoriaInput = document.getElementById('p-categoria').value;
     const editId = document.getElementById('p-id-edit').value;
+    const fichaPdfInput = document.getElementById('p-ficha-pdf');
+    const fichaPdfOriginal = fichaPdfInput?.value.trim() || '';
+    const fichaPdfUrl = normalizeTechnicalSheetUrl(fichaPdfOriginal);
+
+    if (fichaPdfOriginal && !fichaPdfUrl) {
+        alert("❌ La ficha técnica debe tener un enlace HTTPS válido que termine en .pdf.");
+        fichaPdfInput?.focus();
+        return;
+    }
+    if (fichaPdfInput && fichaPdfUrl) fichaPdfInput.value = fichaPdfUrl;
     
     // ============================================================
     // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
@@ -7605,6 +8030,14 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         image1: document.getElementById('img-path-1').value,
         image2: document.getElementById('img-path-2').value,
         image3: document.getElementById('img-path-3').value,
+
+        ficha_pdf: fichaPdfUrl || null,
+        ficha_pdf_nombre: fichaPdfUrl
+            ? (document.getElementById('p-ficha-pdf-nombre')?.value.trim() || 'Ficha técnica')
+            : null,
+        ficha_pdf_idioma: fichaPdfUrl
+            ? (document.getElementById('p-ficha-pdf-idioma')?.value || 'ES')
+            : null,
         
         mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
         tamaño_envio: document.getElementById('p-tamano-envio').value,
@@ -7769,6 +8202,9 @@ function clearImageSlot(event, index) {
         'p-proveedor': p.proveedor ? p.proveedor.trim() : 'General', // <-- Saneamos con .trim()
         'p-flexible': p.precio_flexible || 'NO',
         'p-mensajeria': p.mensajeria || "", 
+        'p-ficha-pdf': p.ficha_pdf || "",
+        'p-ficha-pdf-nombre': p.ficha_pdf_nombre || "Ficha técnica",
+        'p-ficha-pdf-idioma': p.ficha_pdf_idioma || "ES",
         'p-disponible': p.disponible || "SI",
         'p-tamano-envio': p.tamaño_envio || "Pequeño"
     };
@@ -8110,7 +8546,245 @@ function loadStoryProductImage(url) {
     });
 }
 
-async function generateStoryForProduct(name, button) {
+const storyComposerSelection = new Set();
+
+function storyComposerModeLimits(mode) {
+    if (mode === 'single') return { min: 1, max: 1 };
+    if (mode === 'compare') return { min: 2, max: 3 };
+    if (mode === 'bundle') return { min: 2, max: 4 };
+    return { min: 2, max: 6 };
+}
+
+function ensureStoryComposerModal() {
+    if (document.getElementById('story-composer-modal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'story-composer-modal';
+    modal.className = 'fixed inset-0 z-[240] hidden items-center justify-center bg-slate-950/85 p-3 backdrop-blur-sm';
+    modal.innerHTML = `
+        <div class="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <header class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-[.18em] text-fuchsia-600">Story Express</p>
+                    <h2 class="text-xl font-black text-slate-900">Promoción lista para WhatsApp</h2>
+                </div>
+                <button onclick="closeStoryComposer()" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500"><span class="material-symbols-outlined">close</span></button>
+            </header>
+            <div class="grid min-h-0 flex-1 md:grid-cols-[250px_1fr]">
+                <aside class="space-y-4 border-b border-slate-100 bg-slate-50 p-4 md:border-b-0 md:border-r">
+                    <div>
+                        <label class="mb-1 block text-[9px] font-black uppercase text-slate-400">Formato</label>
+                        <select id="story-composer-mode" onchange="updateStoryComposerMode()" class="w-full rounded-xl border-slate-200 bg-white text-xs font-black">
+                            <option value="single">Producto individual</option>
+                            <option value="bundle">Paquete · 2 a 4</option>
+                            <option value="compare">Comparación · 2 o 3</option>
+                            <option value="multi">Promoción múltiple · 2 a 6</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-[9px] font-black uppercase text-slate-400">Título</label>
+                        <input id="story-composer-title" maxlength="55" value="OFERTAS PARA TU HOGAR" class="w-full rounded-xl border-slate-200 bg-white text-xs font-bold">
+                    </div>
+                    <div id="story-composer-price-wrap" class="hidden">
+                        <label class="mb-1 block text-[9px] font-black uppercase text-slate-400">Precio promocional opcional</label>
+                        <input id="story-composer-price" type="number" min="0" step="0.01" placeholder="Total del paquete" class="w-full rounded-xl border-slate-200 bg-white text-xs font-bold">
+                        <p class="mt-1 text-[9px] text-slate-400">Si queda vacío se calcula el total real.</p>
+                    </div>
+                    <div class="rounded-xl border border-blue-100 bg-blue-50 p-3">
+                        <p id="story-composer-help" class="text-[10px] font-bold leading-relaxed text-blue-800">Selecciona un producto.</p>
+                        <p id="story-composer-count" class="mt-1 text-xs font-black text-blue-900">0 seleccionados</p>
+                    </div>
+                </aside>
+                <section class="flex min-h-0 flex-col p-4">
+                    <input id="story-composer-search" oninput="renderStoryComposerProducts()" placeholder="Buscar producto..." class="mb-3 rounded-xl border-slate-200 text-xs font-bold">
+                    <div id="story-composer-products" class="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"></div>
+                </section>
+            </div>
+            <footer class="grid grid-cols-2 gap-3 border-t border-slate-100 p-4">
+                <button onclick="closeStoryComposer()" class="min-h-12 rounded-xl bg-slate-100 text-xs font-black text-slate-600">Cancelar</button>
+                <button id="story-composer-generate" onclick="generateStoryComposition()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-orange-500 text-xs font-black text-white shadow-lg">
+                    <span class="material-symbols-outlined">download</span> Crear Story
+                </button>
+            </footer>
+        </div>`;
+    document.body.appendChild(modal);
+}
+
+function openStoryComposer(name = '') {
+    ensureStoryComposerModal();
+    storyComposerSelection.clear();
+    const product = name ? getProductForQuickAction(name) : null;
+    if (product) storyComposerSelection.add(String(product.id ?? product.nombre));
+    document.getElementById('story-composer-mode').value = 'single';
+    document.getElementById('story-composer-search').value = '';
+    document.getElementById('story-composer-modal').classList.remove('hidden');
+    document.getElementById('story-composer-modal').classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    updateStoryComposerMode();
+}
+
+function closeStoryComposer() {
+    const modal = document.getElementById('story-composer-modal');
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+    const detailIsOpen = !document.getElementById('detail-modal')?.classList.contains('hidden');
+    document.body.style.overflow = detailIsOpen ? 'hidden' : '';
+}
+
+function storyComposerProductId(product) {
+    return String(product.id ?? product.nombre);
+}
+
+function updateStoryComposerMode() {
+    const mode = document.getElementById('story-composer-mode').value;
+    const limits = storyComposerModeLimits(mode);
+    while (storyComposerSelection.size > limits.max) {
+        storyComposerSelection.delete([...storyComposerSelection].pop());
+    }
+    document.getElementById('story-composer-price-wrap').classList.toggle('hidden', !['bundle', 'multi'].includes(mode));
+    document.getElementById('story-composer-help').textContent = mode === 'single'
+        ? 'Selecciona un producto para una promoción rápida.'
+        : mode === 'compare'
+            ? 'Selecciona 2 o 3 equipos para compararlos sin declarar un ganador.'
+            : mode === 'bundle'
+                ? 'Combina entre 2 y 4 productos en una sola oferta.'
+                : 'Muestra entre 2 y 6 ofertas en un único Story.';
+    renderStoryComposerProducts();
+}
+
+function renderStoryComposerProducts() {
+    const container = document.getElementById('story-composer-products');
+    if (!container) return;
+    const term = document.getElementById('story-composer-search').value.trim().toLowerCase();
+    const products = productosRaw.filter(product => product.disponible === 'SI'
+        && (!term || String(product.nombre || '').toLowerCase().includes(term)
+            || String(product.categoria || '').toLowerCase().includes(term)));
+    container.innerHTML = products.map(product => {
+        const id = storyComposerProductId(product);
+        const selected = storyComposerSelection.has(id);
+        return `
+            <button type="button" onclick="toggleStoryComposerProduct('${id.replace(/'/g, "\\'")}')" class="flex min-w-0 items-center gap-3 rounded-xl border p-2 text-left ${selected ? 'border-fuchsia-400 bg-fuchsia-50' : 'border-slate-200 bg-white'}">
+                <img src="${fixDriveUrl(product.thumbnail)}" class="h-12 w-12 shrink-0 rounded-lg bg-slate-50 object-contain p-1" alt="">
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-[10px] font-black text-slate-800">${escapeDetailText(product.nombre)}</span>
+                    <span class="block text-xs font-black text-[#1a4789]">$${Number(product.precio) || 0} USD</span>
+                </span>
+                <span class="material-symbols-outlined ${selected ? 'text-fuchsia-600' : 'text-slate-300'}">${selected ? 'check_circle' : 'circle'}</span>
+            </button>`;
+    }).join('') || '<p class="col-span-full py-8 text-center text-xs font-bold text-slate-400">No encontramos productos.</p>';
+    const count = document.getElementById('story-composer-count');
+    if (count) count.textContent = `${storyComposerSelection.size} seleccionados`;
+}
+
+function toggleStoryComposerProduct(id) {
+    const mode = document.getElementById('story-composer-mode').value;
+    const limits = storyComposerModeLimits(mode);
+    if (storyComposerSelection.has(id)) storyComposerSelection.delete(id);
+    else {
+        if (mode === 'single') storyComposerSelection.clear();
+        if (storyComposerSelection.size >= limits.max) return alert(`Este formato admite hasta ${limits.max} productos.`);
+        storyComposerSelection.add(id);
+    }
+    renderStoryComposerProducts();
+}
+
+async function drawStoryCompositionCanvas(products, mode, title, promotionalPrice) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+    const bg = ctx.createLinearGradient(0, 0, 1080, 1920);
+    bg.addColorStop(0, '#081a31'); bg.addColorStop(.55, '#123f73'); bg.addColorStop(1, '#071426');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, 1080, 1920);
+    ctx.fillStyle = '#21b7a8'; ctx.beginPath(); ctx.arc(1010, 40, 290, 0, Math.PI * 2); ctx.fill();
+    ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = '800 48px Manrope, sans-serif'; ctx.fillText('PARATUHOGAR', 64, 92);
+    ctx.fillStyle = '#9fb9d6'; ctx.font = '800 22px Manrope, sans-serif';
+    ctx.fillText(mode === 'compare' ? 'COMPARACIÓN CLARA' : mode === 'bundle' ? 'PAQUETE ESPECIAL' : 'SELECCIÓN DISPONIBLE', 64, 142);
+    ctx.fillStyle = '#fff'; ctx.font = '800 62px Manrope, sans-serif';
+    drawStoryText(ctx, title.toUpperCase(), 64, 230, 950, 68, 2);
+
+    const columns = mode === 'compare' ? products.length : 2;
+    const rows = Math.ceil(products.length / columns);
+    const gap = 24, x0 = 64, gridTop = 350, gridBottom = mode === 'bundle' ? 1570 : 1660;
+    const cardW = (952 - gap * (columns - 1)) / columns;
+    const cardH = (gridBottom - gridTop - gap * (rows - 1)) / rows;
+    const images = await Promise.all(products.map(product => loadStoryProductImage(product.thumbnail)));
+    products.forEach((product, index) => {
+        const col = index % columns, row = Math.floor(index / columns);
+        const x = x0 + col * (cardW + gap), y = gridTop + row * (cardH + gap);
+        ctx.fillStyle = '#fff'; drawStoryRoundedRect(ctx, x, y, cardW, cardH, 30); ctx.fill();
+        const image = images[index];
+        const imageBoxH = cardH * .57;
+        if (image) {
+            const scale = Math.min((cardW - 34) / image.width, (imageBoxH - 24) / image.height);
+            const w = image.width * scale, h = image.height * scale;
+            ctx.drawImage(image, x + (cardW - w) / 2, y + 14 + (imageBoxH - h) / 2, w, h);
+        }
+        ctx.fillStyle = '#13233a'; ctx.font = `800 ${columns === 3 ? 25 : 30}px Manrope, sans-serif`;
+        drawStoryText(ctx, product.nombre, x + 20, y + imageBoxH + 36, cardW - 40, columns === 3 ? 30 : 36, 2);
+        ctx.fillStyle = '#1a4789'; ctx.font = `800 ${columns === 3 ? 37 : 46}px Manrope, sans-serif`;
+        ctx.fillText(`$${Number(product.precio) || 0}`, x + 20, y + cardH - (mode === 'compare' ? 92 : 34));
+        if (mode === 'compare') {
+            ctx.fillStyle = '#64748b'; ctx.font = '700 17px Manrope, sans-serif';
+            ctx.fillText(String(product.garantia || 'Garantía a consultar').slice(0, 25), x + 20, y + cardH - 52);
+            ctx.fillText(String(product.mensajeria || 'Entrega a consultar').slice(0, 25), x + 20, y + cardH - 24);
+        }
+    });
+
+    if (mode === 'bundle') {
+        const regularTotal = products.reduce((sum, product) => sum + (Number(product.precio) || 0), 0);
+        const finalTotal = Number(promotionalPrice) > 0 ? Number(promotionalPrice) : regularTotal;
+        ctx.fillStyle = '#21b7a8'; drawStoryRoundedRect(ctx, 64, 1610, 952, 125, 28); ctx.fill();
+        ctx.fillStyle = '#062e2a'; ctx.font = '800 26px Manrope, sans-serif'; ctx.fillText('PRECIO DEL PAQUETE', 96, 1655);
+        ctx.font = '800 62px Manrope, sans-serif'; ctx.fillText(`$${finalTotal} USD`, 96, 1712);
+    }
+    const phone = String(getAgentPhone() || '').replace(/\D/g, '');
+    ctx.fillStyle = '#fff'; ctx.font = '800 28px Manrope, sans-serif'; ctx.fillText(`ASESOR: ${(window.gestorName || 'PARATUHOGAR').toUpperCase().slice(0, 28)}`, 64, 1810);
+    ctx.fillStyle = '#62e0d2'; ctx.font = '800 43px Manrope, sans-serif'; ctx.fillText(`WHATSAPP +${phone}`, 64, 1872);
+    return canvas;
+}
+
+async function generateStoryComposition() {
+    const mode = document.getElementById('story-composer-mode').value;
+    const limits = storyComposerModeLimits(mode);
+    const products = productosRaw.filter(product => storyComposerSelection.has(storyComposerProductId(product)));
+    if (products.length < limits.min || products.length > limits.max) {
+        return alert(`Selecciona entre ${limits.min} y ${limits.max} productos para este formato.`);
+    }
+    if (mode === 'single') {
+        closeStoryComposer();
+        return generateQuickStoryForProduct(products[0].nombre);
+    }
+    const button = document.getElementById('story-composer-generate');
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="loader h-4 w-4 border-white"></span> Creando';
+    try {
+        await document.fonts.ready;
+        const title = document.getElementById('story-composer-title').value.trim() || 'OFERTAS PARA TU HOGAR';
+        const promo = document.getElementById('story-composer-price').value;
+        const canvas = await drawStoryCompositionCanvas(products, mode, title, promo);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1));
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Story_${mode}_${Date.now()}.png`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1500);
+        trackSpy('USO_HERRAMIENTA', `Story ${mode}: ${products.length} productos`);
+        closeStoryComposer();
+    } catch (error) {
+        console.error(error);
+        alert('No se pudo crear la composición.');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = original;
+    }
+}
+
+function generateStoryForProduct(name) {
+    openStoryComposer(name);
+}
+
+async function generateQuickStoryForProduct(name, button) {
     const product = getProductForQuickAction(name);
     if (!product) return;
     const previous = button ? button.innerHTML : '';
@@ -11663,6 +12337,15 @@ function goToStudio() {
     
     // 'activeCategory' es la variable global que ya usas en tu código actual
     const category = activeCategory || "TODOS";
+    localStorage.setItem('pth_studio_launch_catalog', JSON.stringify({
+        savedAt: Date.now(),
+        products: productosRaw.filter(product => product.disponible === 'SI').map(product => ({
+            id: product.id,
+            nombre: product.nombre,
+            precio: Number(product.precio) || 0,
+            comision: Number(product.comision) || 0
+        }))
+    }));
 
     // 2. Construir la URL con parámetros
     // Ejemplo: studio.html?q=refrigerador&cat=LINEA%20BLANCA
@@ -12112,10 +12795,9 @@ async function downloadCategoryPhotos() {
 // --- NUEVA FUNCIÓN PUENTE EN INDEX.HTML ---
 // Reemplaza a la antigua downloadCatalogPDF
 async function downloadCatalogPDF() {
-    // 1. Validar que hay categoría seleccionada
-    if (activeCategory === 'TODOS' && productosRaw.length > 50) {
-        if(!confirm("Has seleccionado 'TODOS' con muchos productos. ¿Quieres ir al estudio de diseño?")) return;
-    }
+    const visibleProducts = getProductsVisibleOnScreen().filter(product => product.disponible === 'SI');
+    if (visibleProducts.length > 50
+        && !confirm(`La selección actual contiene ${visibleProducts.length} productos. ¿Quieres abrir el estudio PDF con todos ellos?`)) return;
 
     const btn = document.getElementById('btn-pdf-bulk');
     const originalText = btn ? btn.innerHTML : "";
@@ -12130,10 +12812,7 @@ async function downloadCatalogPDF() {
 
     try {
         // 2. Filtrar productos visibles (respetando tus filtros actuales)
-        const productsToExport = productosRaw.filter(p => {
-            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-            return matchCat && p.disponible === 'SI';
-        }).map(p => ({
+        const productsToExport = visibleProducts.map(p => ({
             id: p.id,
             nombre: p.nombre,
             categoria: p.categoria,
@@ -12152,6 +12831,8 @@ async function downloadCatalogPDF() {
             agent: window.gestorName || "Asesor de Ventas",
             phone: getAgentPhone(), // Tu función que obtiene el teléfono correcto
             categoryName: activeCategory,
+            mode: 'catalog',
+            title: activeCategory === 'TODOS' ? 'Selección comercial' : activeCategory,
             // Solo se transfieren datos comerciales. Nunca se incluyen costo,
             // comisión, proveedor ni campos internos en el PDF.
             products: productsToExport
