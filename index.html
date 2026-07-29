@@ -568,18 +568,14 @@
                 </button>
             </div>
 
-            <!-- Prueba Social / Reseñas -->
-            <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
-                <div class="flex -space-x-2">
-                    <img class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=33" alt="Cliente">
-                    <img class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=47" alt="Cliente">
-                    <img class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=12" alt="Cliente">
+            <!-- Prueba social conectada a pedidos reales -->
+            <div id="social-proof-summary" class="flex items-center gap-3 pt-4 border-t border-slate-100">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                    <span class="material-symbols-outlined">verified</span>
                 </div>
                 <div>
-                    <div class="flex items-center gap-1 text-amber-400 text-xs font-black">
-                        ★★★★★ <span class="text-slate-900 font-extrabold ml-1">4.9 / 5</span>
-                    </div>
-                    <p class="text-[10px] font-bold text-slate-400">En más de 500 entregas verificadas en La Habana</p>
+                    <p class="text-xs font-black text-slate-800">Compras y opiniones verificadas</p>
+                    <p id="social-proof-delivered-count" class="text-[10px] font-bold text-slate-400">Consultando entregas confirmadas…</p>
                 </div>
             </div>
         </div>
@@ -620,30 +616,10 @@
                 <h2 class="text-3xl font-black text-slate-900 mt-1">Opiniones que nos respaldan</h2>
             </div>
 
-            <!-- Opinión real anonimizada: recibida después de una entrega -->
-            <div class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-blue-50 p-6 shadow-sm">
-                <div class="mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined rounded-xl bg-emerald-600 p-2 text-white">verified</span>
-                    <div>
-                        <p class="text-[9px] font-black uppercase tracking-[0.16em] text-emerald-700">Experiencia post-entrega</p>
-                        <p class="text-[10px] font-bold text-slate-400">Comentario real · identidad protegida</p>
-                    </div>
-                </div>
-                <span class="absolute right-6 top-3 font-serif text-6xl text-emerald-100">“</span>
-                <p class="relative text-base font-bold leading-relaxed text-slate-700">“Quedé muy complacida con la atención. Todo llegó muy bien y los mensajeros fueron súper atentos, serviciales y educados.”</p>
-                <div class="mt-5 grid grid-cols-3 gap-2">
-                    <div class="rounded-xl bg-white p-3 text-center shadow-sm">
-                        <span class="material-symbols-outlined text-lg text-[#1a4789]">support_agent</span>
-                        <p class="mt-1 text-[8px] font-black uppercase text-slate-500">Buena atención</p>
-                    </div>
-                    <div class="rounded-xl bg-white p-3 text-center shadow-sm">
-                        <span class="material-symbols-outlined text-lg text-emerald-600">local_shipping</span>
-                        <p class="mt-1 text-[8px] font-black uppercase text-slate-500">Entrega cuidada</p>
-                    </div>
-                    <div class="rounded-xl bg-white p-3 text-center shadow-sm">
-                        <span class="material-symbols-outlined text-lg text-violet-600">sentiment_satisfied</span>
-                        <p class="mt-1 text-[8px] font-black uppercase text-slate-500">Trato profesional</p>
-                    </div>
+            <div id="verified-social-proof-list" class="space-y-4">
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center">
+                    <span class="material-symbols-outlined text-3xl text-slate-300">rate_review</span>
+                    <p class="mt-2 text-xs font-black text-slate-600">Cargando opiniones autorizadas…</p>
                 </div>
             </div>
 
@@ -1856,25 +1832,11 @@
         <!-- Se llena dinámicamente -->
     </div>
 
-    <!-- Formulario para dejar comentario -->
-    <div class="mt-4 bg-gray-50 dark:bg-gray-800/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-        <p class="text-xs font-black uppercase text-gray-500 mb-3">Deja tu opinión</p>
-        <div class="flex gap-2 mb-3 items-center">
-            <span class="text-xs text-gray-400 font-bold">Tu Calificación:</span>
-            <div class="flex gap-1 text-amber-500" id="form-stars">
-                <!-- Estrellas interactivas -->
-                <span onclick="setFormStars(1)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
-                <span onclick="setFormStars(2)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
-                <span onclick="setFormStars(3)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
-                <span onclick="setFormStars(4)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
-                <span onclick="setFormStars(5)" class="material-symbols-outlined cursor-pointer font-fill">star</span>
-            </div>
-            <input type="hidden" id="input-rating" value="5">
-        </div>
-        <div class="space-y-2">
-            <input type="text" id="input-review-name" placeholder="Tu Nombre (Ej: Maria S.)" class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-xs p-2">
-            <textarea id="input-review-comment" placeholder="Escribe tu opinión sobre el equipo..." rows="2" class="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-xs p-2 resize-none"></textarea>
-            <button onclick="submitProductReview()" id="btn-submit-review" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all">Enviar Opinión</button>
+    <div class="mt-4 flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+        <span class="material-symbols-outlined text-emerald-600">verified_user</span>
+        <div>
+            <p class="text-[10px] font-black uppercase text-emerald-800">Solo compras entregadas</p>
+            <p class="mt-1 text-[10px] font-bold leading-relaxed text-emerald-700">Las opiniones se solicitan después de confirmar la entrega y únicamente se publican con autorización del cliente.</p>
         </div>
     </div>
 </div>
@@ -4561,6 +4523,9 @@ function prepareClientExperience() {
 }
 
 document.addEventListener('DOMContentLoaded', prepareClientExperience);
+// Respaldo para navegadores móviles que restauran la página desde caché y
+// pueden haber completado DOMContentLoaded antes de ejecutar este bloque.
+window.addEventListener('load', prepareClientExperience);
 
     // 2. CARGA DE PRODUCTOS Y CATEGORÍAS AUTOMÁTICAS
 // --- FUNCIÓN MAESTRA DE CARGA Y FUSIÓN DE PRECIOS ---
@@ -6830,6 +6795,10 @@ function getGestorPulseStorageKey() {
     return `pth_sales_pulse_${identity || 'gestor'}`;
 }
 
+function isProductCurrentlyAvailable(product) {
+    return String(product?.disponible || '').trim().toUpperCase() === 'SI';
+}
+
 function buildGestorCatalogSnapshot() {
     return (Array.isArray(productosRaw) ? productosRaw : []).reduce((snapshot, product) => {
         const id = String(product.id ?? product.nombre ?? '').trim();
@@ -6837,7 +6806,7 @@ function buildGestorCatalogSnapshot() {
         snapshot[id] = {
             id,
             nombre: String(product.nombre || 'Producto'),
-            disponible: product.disponible === 'SI',
+            disponible: isProductCurrentlyAvailable(product),
             precio: Number(product.precio) || 0,
             comision: Number(product.comision) || 0,
             categoria: String(product.categoria || 'OTROS'),
@@ -6916,6 +6885,24 @@ function getGestorPulseVisual(type) {
     return visuals[type] || visuals.opportunity;
 }
 
+function reconcileGestorPulseItems(items = []) {
+    const currentById = new Map(
+        Object.values(buildGestorCatalogSnapshot()).map(product => [String(product.id), product])
+    );
+    const currentByName = new Map(
+        Object.values(buildGestorCatalogSnapshot()).map(product => [product.nombre, product])
+    );
+
+    return items.reduce((validItems, change) => {
+        if (change?.type === 'soldout') return validItems;
+        const currentProduct = currentById.get(String(change?.product?.id || ''))
+            || currentByName.get(String(change?.product?.nombre || ''));
+        if (!currentProduct?.disponible) return validItems;
+        validItems.push({ ...change, product: currentProduct });
+        return validItems;
+    }, []);
+}
+
 function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun = false) {
     const list = document.getElementById('gestor-pulse-list');
     const summary = document.getElementById('gestor-pulse-summary');
@@ -6923,9 +6910,7 @@ function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun 
     const footer = document.getElementById('gestor-pulse-footer');
     if (!list || !summary || !count || !footer) return;
 
-    const relevantItems = items.filter(change =>
-        change.type === 'soldout' || change.product?.disponible
-    );
+    const relevantItems = reconcileGestorPulseItems(items);
     const displayItems = relevantItems.length ? relevantItems.slice(0, 8) : getGestorPulseOpportunities(3);
     const pendingCount = hasPendingChanges ? relevantItems.length : 0;
     count.textContent = String(pendingCount);
@@ -6949,10 +6934,8 @@ function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun 
         const product = change.product;
         const visual = getGestorPulseVisual(change.type);
         const encodedName = encodeURIComponent(product.nombre);
-        const canPromote = product.disponible && change.type !== 'soldout';
-        const fallbackDetail = product.disponible
-            ? `$${product.precio.toFixed(0)} USD${product.comision > 0 ? ` · ganas $${product.comision.toFixed(0)}` : ''}`
-            : 'Busca una alternativa disponible para tu cliente';
+        const canPromote = product.disponible;
+        const fallbackDetail = `$${product.precio.toFixed(0)} USD${product.comision > 0 ? ` · ganas $${product.comision.toFixed(0)}` : ''}`;
         return `
             <article class="grid grid-cols-[44px_minmax(0,1fr)] gap-3 p-4 md:grid-cols-[48px_minmax(0,1fr)_auto] md:items-center md:px-6">
                 <div class="flex h-11 w-11 items-center justify-center rounded-2xl ${visual.bg} ${visual.color}">
@@ -6991,7 +6974,9 @@ function updateGestorSalesPulse() {
 
     const detected = detectGestorCatalogChanges(state.snapshot, current);
     const merged = [...(Array.isArray(state.pending) ? state.pending : []), ...detected];
-    const pending = Array.from(new Map(merged.map(change => [getGestorPulseChangeKey(change), change])).values())
+    const pending = reconcileGestorPulseItems(
+        Array.from(new Map(merged.map(change => [getGestorPulseChangeKey(change), change])).values())
+    )
         .sort((a, b) => {
             const priority = { restock: 5, new: 4, commission: 3, price: 2, soldout: 1 };
             return (priority[b.type] || 0) - (priority[a.type] || 0);
@@ -7015,7 +7000,7 @@ function openGestorPulseProduct(encodedName) {
     const product = productosRaw.find(item => item.nombre === name);
     showSection('catalogo');
     setTimeout(() => {
-        if (product?.disponible === 'SI') {
+        if (isProductCurrentlyAvailable(product)) {
             openDetail(name);
             return;
         }
@@ -7031,6 +7016,12 @@ function openGestorPulseProduct(encodedName) {
 
 function shareGestorPulseProduct(encodedName) {
     const name = decodeURIComponent(encodedName || '');
+    const product = productosRaw.find(item => item.nombre === name);
+    if (!isProductCurrentlyAvailable(product)) {
+        updateGestorSalesPulse();
+        alert('Este producto acaba de agotarse y ya fue retirado de tus recomendaciones.');
+        return;
+    }
     shareProductWhatsApp(name);
 }
 
@@ -7133,6 +7124,18 @@ function contactGestorOrder(phone) {
     if (!cleanPhone) return;
     const normalizedPhone = cleanPhone.startsWith('53') ? cleanPhone : `53${cleanPhone}`;
     const message = 'Hola, te escribo de ParaTuHogar para dar seguimiento a tu pedido.';
+    window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+function requestVerifiedReview(orderId) {
+    const order = (Array.isArray(myOrdersData) ? myOrdersData : []).find(item => String(item.id) === String(orderId));
+    if (!order || order.estado !== 'Entregado') return alert('La opinión solo puede solicitarse para una compra entregada.');
+    const cleanPhone = String(order.telefono || '').replace(/\D/g, '');
+    if (!cleanPhone) return alert('Este pedido no tiene un teléfono válido.');
+    const normalizedPhone = cleanPhone.startsWith('53') ? cleanPhone : `53${cleanPhone}`;
+    const firstName = String(order.cliente || 'cliente').trim().split(/\s+/)[0];
+    const product = String(order.producto || 'tu compra').replace(/\s*\[.*?\]\s*/g, '').trim();
+    const message = `Hola ${firstName}. Esperamos que estés disfrutando tu compra de *${product}* en ParaTuHogar.\n\nQueremos conocer tu experiencia:\n\n1️⃣ ¿Cómo valoras nuestra atención del 1 al 5?\n2️⃣ ¿Cómo valoras la mensajería del 1 al 5?\n3️⃣ ¿Qué comentario deseas compartir?\n\nSi estás de acuerdo con que publiquemos tu opinión de forma anónima, responde también: *AUTORIZO SU PUBLICACIÓN*.\n\nSolo mostraremos el producto y la fecha aproximada. El municipio y cualquier foto se publicarán únicamente si los autorizas por separado. Nunca publicaremos tu nombre, teléfono ni esta conversación.`;
     window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
 }
 
@@ -7551,6 +7554,7 @@ function renderGestorPerformance(orders = myOrdersData) {
                 </div>
                 <div class="flex gap-2 overflow-x-auto">
                     ${phone ? `<button onclick="contactGestorOrder('${phone}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}
+                    ${order.estado === 'Entregado' && phone ? `<button onclick="requestVerifiedReview('${id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600" title="Solicitar opinión verificada"><span class="material-symbols-outlined text-lg">reviews</span></button>` : ''}
                     <button onclick="reenviarPedidoAdmin('${id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600" title="Reenviar pedido"><span class="material-symbols-outlined text-lg">send</span></button>
                     <button onclick="prepararPDFDesdeHistorial('${id}','descargar')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600" title="Descargar factura"><span class="material-symbols-outlined text-lg">download</span></button>
                     <button onclick="prepararPDFDesdeHistorial('${id}','compartir')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600" title="Compartir factura"><span class="material-symbols-outlined text-lg">share</span></button>
@@ -15694,7 +15698,123 @@ function getDefaultReviews(productId, productName, category) {
     return [];
 }
 
-// Cargar opiniones del producto directamente desde la base de datos (Supabase)
+function renderVerifiedStars(value) {
+    const rating = Math.max(0, Math.min(5, Number(value) || 0));
+    return Array.from({ length: 5 }, (_, index) =>
+        `<span class="material-symbols-outlined text-sm ${index < rating ? 'font-fill text-amber-400' : 'text-slate-200'}">star</span>`
+    ).join('');
+}
+
+function getApproximateReviewDate(value) {
+    if (!value) return 'Fecha de entrega verificada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Fecha de entrega verificada';
+    return date.toLocaleDateString('es-CU', { month: 'long', year: 'numeric' });
+}
+
+function renderVerifiedOpinionCard(review, compact = false) {
+    const catalogProduct = (Array.isArray(productosRaw) ? productosRaw : []).find(product =>
+        (review.producto_id && String(product.id) === String(review.producto_id))
+        || String(product.nombre || '').trim().toLowerCase() === String(review.producto_nombre || '').trim().toLowerCase()
+    );
+    const isCurrentlyUnavailable = catalogProduct && !isProductCurrentlyAvailable(catalogProduct);
+    const municipality = review.mostrar_municipio && review.municipio
+        ? `<span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">location_on</span>${gestorSafeText(review.municipio)}</span>`
+        : '';
+    const authorizedPhoto = review.foto_autorizada && review.foto_url ? review.foto_url : '';
+    const catalogPhoto = review.producto_imagen_url || catalogProduct?.thumbnail || catalogProduct?.imagen || '';
+    const productReferencePhoto = catalogPhoto ? fixDriveUrl(catalogPhoto) : '';
+    const productImage = productReferencePhoto
+        ? `<img src="${gestorSafeText(productReferencePhoto)}" alt="Imagen del producto adquirido" class="${compact ? 'h-16 w-16' : 'h-24 w-24'} shrink-0 rounded-2xl border border-slate-100 bg-white object-contain p-2 shadow-sm" loading="lazy">`
+        : '';
+    const realPhoto = authorizedPhoto
+        ? `<figure class="mt-4">
+            <img src="${gestorSafeText(authorizedPhoto)}" alt="Foto real autorizada de la compra entregada" class="${compact ? 'h-28' : 'h-44'} w-full rounded-2xl bg-white object-contain" loading="lazy">
+            <figcaption class="mt-1 text-[8px] font-bold text-slate-400">Foto real compartida con autorización</figcaption>
+        </figure>`
+        : '';
+    return `
+        <article class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-blue-50 ${compact ? 'p-4' : 'p-6'} shadow-sm">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-white">
+                    <span class="material-symbols-outlined text-xs">verified</span> Compra entregada
+                </span>
+                <span class="text-[9px] font-bold capitalize text-slate-400">${getApproximateReviewDate(review.fecha_entrega)}</span>
+                ${municipality ? `<span class="text-[9px] font-bold text-slate-400">${municipality}</span>` : ''}
+            </div>
+            <p class="mt-4 text-[9px] font-black uppercase tracking-wider text-[#1a4789]">Producto adquirido</p>
+            <div class="mt-2 flex items-center gap-3">
+                ${productImage}
+                <div class="min-w-0">
+                    <p class="text-xs font-black leading-snug text-slate-800">${gestorSafeText(review.producto_nombre || 'Producto verificado')}</p>
+                    ${isCurrentlyUnavailable ? '<span class="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-slate-500">Agotado actualmente</span>' : ''}
+                    ${productReferencePhoto ? '<p class="mt-2 text-[8px] font-bold text-slate-400">Imagen de referencia del equipo comprado</p>' : ''}
+                </div>
+            </div>
+            <p class="mt-4 ${compact ? 'text-xs' : 'text-sm'} font-bold leading-relaxed text-slate-700">“${gestorSafeText(review.comentario)}”</p>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <div class="rounded-xl bg-white p-3 shadow-sm">
+                    <p class="text-[8px] font-black uppercase text-slate-400">Atención</p>
+                    <div class="mt-1 flex">${review.valoracion_atencion ? renderVerifiedStars(review.valoracion_atencion) : '<span class="text-[9px] font-bold text-slate-400">Comentario verificado</span>'}</div>
+                </div>
+                <div class="rounded-xl bg-white p-3 shadow-sm">
+                    <p class="text-[8px] font-black uppercase text-slate-400">Mensajería</p>
+                    <div class="mt-1 flex">${review.valoracion_mensajeria ? renderVerifiedStars(review.valoracion_mensajeria) : '<span class="text-[9px] font-bold text-slate-400">No valorada</span>'}</div>
+                </div>
+            </div>
+            ${realPhoto}
+            <p class="mt-3 flex items-center gap-1 text-[8px] font-bold text-slate-400"><span class="material-symbols-outlined text-xs">privacy_tip</span> Identidad protegida · publicación autorizada</p>
+        </article>`;
+}
+
+async function loadVerifiedSocialProof() {
+    const list = document.getElementById('verified-social-proof-list');
+    const deliveredLabel = document.getElementById('social-proof-delivered-count');
+    if (!list && !deliveredLabel) return;
+    try {
+        const [reviewsResult, deliveredResult] = await Promise.all([
+            supabaseClient
+                .from('opiniones_verificadas')
+                .select('id, producto_id, producto_nombre, producto_imagen_url, comentario, valoracion_atencion, valoracion_mensajeria, municipio, mostrar_municipio, foto_url, foto_autorizada, fecha_entrega')
+                .eq('aprobada', true)
+                .eq('consentimiento_publicacion', true)
+                .order('fecha_entrega', { ascending: false })
+                .limit(6),
+            supabaseClient.rpc('contar_pedidos_entregados')
+        ]);
+
+        if (deliveredLabel) {
+            const deliveredCount = Number(deliveredResult.data);
+            deliveredLabel.textContent = !deliveredResult.error && Number.isFinite(deliveredCount)
+                ? `${deliveredCount} ${deliveredCount === 1 ? 'pedido entregado confirmado' : 'pedidos entregados confirmados'}`
+                : 'Opiniones vinculadas a entregas confirmadas';
+        }
+
+        if (!list) return;
+        const reviews = reviewsResult.error ? [] : (reviewsResult.data || []);
+        if (!reviews.length) {
+            list.innerHTML = `
+                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center">
+                    <span class="material-symbols-outlined text-3xl text-slate-300">verified_user</span>
+                    <p class="mt-2 text-xs font-black text-slate-700">Preparando opiniones verificadas</p>
+                    <p class="mx-auto mt-1 max-w-md text-[10px] font-bold leading-relaxed text-slate-400">Solo mostraremos experiencias de compras entregadas cuando el cliente haya autorizado expresamente su publicación.</p>
+                </div>`;
+            return;
+        }
+        list.innerHTML = reviews.slice(0, 3).map(review => renderVerifiedOpinionCard(review)).join('');
+    } catch (error) {
+        console.error('No se pudo cargar la prueba social verificada:', error);
+        if (deliveredLabel) deliveredLabel.textContent = 'Opiniones vinculadas a entregas confirmadas';
+        if (list) list.innerHTML = `
+            <div class="rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center">
+                <p class="text-xs font-black text-slate-600">Las opiniones verificadas estarán disponibles próximamente.</p>
+            </div>`;
+    }
+}
+
+window.addEventListener('load', loadVerifiedSocialProof);
+
+// Cargar únicamente opiniones verificadas del producto.
 async function loadProductReviews(productId, productName, category) {
     const listContainer = document.getElementById('detail-reviews-list');
     const avgStarsContainer = document.getElementById('detail-avg-stars');
@@ -15704,13 +15824,14 @@ async function loadProductReviews(productId, productName, category) {
 
     let realReviews = [];
     try {
-        // Optimizado: se piden estrictamente solo los datos de valoraciones y un límite de 5
         const { data, error } = await supabaseClient
-            .from('valoraciones')
-            .select('cliente_nombre, calificacion, comentario, fecha')
-            .eq('producto_id', productId)
-            .order('fecha', { ascending: false })
-            .limit(5); // Mantener un límite bajo cuida tu consumo de red
+            .from('opiniones_verificadas')
+            .select('producto_id, producto_nombre, producto_imagen_url, comentario, valoracion_atencion, valoracion_mensajeria, municipio, mostrar_municipio, foto_url, foto_autorizada, fecha_entrega')
+            .eq('producto_id', String(productId))
+            .eq('aprobada', true)
+            .eq('consentimiento_publicacion', true)
+            .order('fecha_entrega', { ascending: false })
+            .limit(5);
 
         if (!error && data) {
             realReviews = data;
@@ -15732,41 +15853,14 @@ async function loadProductReviews(productId, productName, category) {
     }
 
     // Calcular promedio de las opiniones de la base de datos
-    const avg = realReviews.reduce((sum, r) => sum + r.calificacion, 0) / realReviews.length;
-
-    // Renderizar indicador promedio
-    let starsHtml = "";
-    for (let i = 1; i <= 5; i++) {
-        const fillClass = i <= Math.round(avg) ? "font-fill" : "";
-        starsHtml += `<span class="material-symbols-outlined text-sm ${fillClass}">star</span>`;
+    const ratedReviews = realReviews.filter(review => Number(review.valoracion_atencion) > 0);
+    if (ratedReviews.length) {
+        const avg = ratedReviews.reduce((sum, review) => sum + Number(review.valoracion_atencion), 0) / ratedReviews.length;
+        avgStarsContainer.innerHTML = `${renderVerifiedStars(Math.round(avg))} <span class="text-xs text-slate-500 dark:text-slate-400">(${ratedReviews.length})</span>`;
+    } else {
+        avgStarsContainer.innerHTML = `<span class="text-xs text-slate-500 dark:text-slate-400">${realReviews.length} ${realReviews.length === 1 ? 'compra verificada' : 'compras verificadas'}</span>`;
     }
-    avgStarsContainer.innerHTML = `${starsHtml} <span class="text-xs text-slate-500 dark:text-slate-400">(${realReviews.length})</span>`;
-
-    // Renderizar lista de comentarios de la base de datos
-    listContainer.innerHTML = realReviews.map(r => {
-        let dateStr = "Hace poco";
-        try {
-            const diff = Date.now() - new Date(r.fecha).getTime();
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            dateStr = days === 0 ? "Hoy" : `Hace ${days} día${days > 1 ? 's' : ''}`;
-        } catch (e) {}
-
-        let singleStars = "";
-        for (let i = 1; i <= 5; i++) {
-            const fillClass = i <= r.calificacion ? 'text-amber-500 font-fill' : 'text-gray-300';
-            singleStars += `<span class="material-symbols-outlined text-[12px] ${fillClass}">star</span>`;
-        }
-
-        return `
-        <div class="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-xl border border-gray-100 dark:border-gray-700/50">
-            <div class="flex justify-between items-center mb-1">
-                <span class="text-[11px] font-black uppercase text-slate-700 dark:text-slate-200">${r.cliente_nombre}</span>
-                <span class="text-[9px] text-gray-400 font-bold">${dateStr}</span>
-            </div>
-            <div class="flex gap-0.5 mb-1">${singleStars}</div>
-            <p class="text-xs text-gray-600 dark:text-slate-400 font-medium italic">"${r.comentario}"</p>
-        </div>`;
-    }).join('');
+    listContainer.innerHTML = realReviews.map(review => renderVerifiedOpinionCard(review, true)).join('');
 }
 
 // Control interactivo de las estrellas en el formulario
