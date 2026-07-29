@@ -53,6 +53,49 @@
             </div>
 
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="mb-4 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Qué quieres crear</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="cursor-pointer rounded-xl border p-3 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="radio" name="mode" value="catalog" checked class="mr-1">
+                        <span class="text-xs font-black">Catálogo</span>
+                        <span class="mt-1 block text-[9px] text-slate-500">Selección completa</span>
+                    </label>
+                    <label class="cursor-pointer rounded-xl border p-3 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
+                        <input type="radio" name="mode" value="bundle" class="mr-1">
+                        <span class="text-xs font-black">Paquete</span>
+                        <span class="mt-1 block text-[9px] text-slate-500">Oferta combinada</span>
+                    </label>
+                    <label class="cursor-pointer rounded-xl border p-3 has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50">
+                        <input type="radio" name="mode" value="comparison" class="mr-1">
+                        <span class="text-xs font-black">Comparación</span>
+                        <span class="mt-1 block text-[9px] text-slate-500">2 o 3 alternativas</span>
+                    </label>
+                    <label class="cursor-pointer rounded-xl border p-3 has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50">
+                        <input type="radio" name="mode" value="multi" class="mr-1">
+                        <span class="text-xs font-black">Promoción</span>
+                        <span class="mt-1 block text-[9px] text-slate-500">Varias ofertas</span>
+                    </label>
+                </div>
+                <label class="mt-4 block">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Título personalizado</span>
+                    <input id="custom-title" maxlength="55" placeholder="Ej. Soluciones para tus apagones" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold outline-none focus:border-blue-500">
+                </label>
+                <div class="mt-5 border-t border-slate-100 pt-5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Productos</span>
+                        <span id="selection-count" class="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-black text-blue-700">0 seleccionados</span>
+                    </div>
+                    <input id="product-search" type="search" placeholder="Buscar en esta selección…" class="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold outline-none focus:border-blue-500">
+                    <div class="mt-2 flex gap-2">
+                        <button id="select-visible" type="button" class="flex-1 rounded-lg bg-slate-100 px-2 py-2 text-[9px] font-black uppercase text-slate-600">Seleccionar visibles</button>
+                        <button id="clear-selection" type="button" class="rounded-lg bg-slate-100 px-3 py-2 text-[9px] font-black uppercase text-slate-600">Limpiar</button>
+                    </div>
+                    <div id="product-selector-list" class="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1"></div>
+                    <p id="selection-rule" class="mt-3 text-[9px] font-bold text-slate-400"></p>
+                </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="mb-4 text-[10px] font-black uppercase tracking-[.18em] text-slate-400">Formato</p>
                 <label class="mb-3 flex cursor-pointer gap-3 rounded-2xl border p-4 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
                     <input type="radio" name="style" value="pro" checked class="mt-1">
@@ -114,6 +157,7 @@
 
 <script>
 let payload;
+let selectedProductKeys = new Set();
 const { jsPDF } = window.jspdf;
 const C = { navy:[16,43,83], blue:[26,71,137], teal:[39,179,162], ink:[24,38,58], muted:[91,106,125], pale:[244,247,250], line:[222,229,236] };
 
@@ -128,11 +172,122 @@ window.addEventListener('load', () => {
         document.getElementById('agent-name').textContent = payload.agent || 'Asesor de ventas';
         document.getElementById('preview-agent').textContent = payload.agent || 'Asesor de ventas';
         document.getElementById('date-tag').textContent = new Date(payload.timestamp || Date.now()).toLocaleDateString('es-ES');
+        const requestedMode = ['catalog','bundle','comparison','multi'].includes(payload.mode) ? payload.mode : 'catalog';
+        const modeControl = document.querySelector(`input[name="mode"][value="${requestedMode}"]`);
+        if (modeControl) modeControl.checked = true;
+        document.getElementById('custom-title').value = payload.title || '';
+        payload.products.forEach((product, index) => {
+            product.__catalogKey = String(product.id ?? `product-${index}`);
+            selectedProductKeys.add(product.__catalogKey);
+        });
+        bindProductSelector();
+        enforceModeSelection(false);
+        renderProductSelector();
     } catch (error) {
         alert(error.message);
         document.getElementById('btn-generate').disabled = true;
     }
 });
+
+const modeRules = {
+    catalog: { min:1, max:Infinity, label:'Catálogo: selecciona uno o más productos.' },
+    bundle: { min:2, max:4, label:'Paquete: selecciona entre 2 y 4 productos.' },
+    comparison: { min:2, max:3, label:'Comparación: selecciona 2 o 3 productos.' },
+    multi: { min:2, max:12, label:'Promoción: selecciona entre 2 y 12 productos.' }
+};
+
+function currentMode() {
+    return document.querySelector('input[name="mode"]:checked')?.value || 'catalog';
+}
+
+function visibleSelectorProducts() {
+    const query = cleanText(document.getElementById('product-search')?.value).toLowerCase();
+    return payload.products.filter(product => !query ||
+        cleanText(product.nombre).toLowerCase().includes(query) ||
+        cleanText(product.categoria).toLowerCase().includes(query));
+}
+
+function bindProductSelector() {
+    document.querySelectorAll('input[name="mode"]').forEach(input => input.addEventListener('change', () => {
+        enforceModeSelection(true);
+        renderProductSelector();
+    }));
+    document.getElementById('product-search').addEventListener('input', renderProductSelector);
+    document.getElementById('custom-title').addEventListener('input', renderProductSelector);
+    document.getElementById('select-visible').addEventListener('click', () => {
+        const rule = modeRules[currentMode()];
+        for (const product of visibleSelectorProducts()) {
+            if (selectedProductKeys.size >= rule.max) break;
+            selectedProductKeys.add(product.__catalogKey);
+        }
+        renderProductSelector();
+    });
+    document.getElementById('clear-selection').addEventListener('click', () => {
+        selectedProductKeys.clear();
+        renderProductSelector();
+    });
+}
+
+function enforceModeSelection(notify) {
+    const rule = modeRules[currentMode()];
+    if (selectedProductKeys.size > rule.max) {
+        selectedProductKeys = new Set([...selectedProductKeys].slice(0, rule.max));
+        if (notify) {
+            const message = currentMode() === 'comparison'
+                ? 'La comparación conserva un máximo de 3 productos.'
+                : `Este formato conserva un máximo de ${rule.max} productos.`;
+            alert(message);
+        }
+    }
+}
+
+function toggleCatalogProduct(key, checked) {
+    const rule = modeRules[currentMode()];
+    if (checked) {
+        if (selectedProductKeys.size >= rule.max) {
+            alert(`Este formato permite un máximo de ${rule.max} productos.`);
+            renderProductSelector();
+            return;
+        }
+        selectedProductKeys.add(key);
+    } else {
+        selectedProductKeys.delete(key);
+    }
+    renderProductSelector();
+}
+
+function renderProductSelector() {
+    if (!payload?.products) return;
+    const list = document.getElementById('product-selector-list');
+    const products = visibleSelectorProducts();
+    list.innerHTML = products.length ? products.map(product => {
+        const checked = selectedProductKeys.has(product.__catalogKey);
+        const safeKey = JSON.stringify(product.__catalogKey).replace(/"/g, '&quot;');
+        return `<label class="flex cursor-pointer items-center gap-2 rounded-xl border ${checked ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-white'} p-2">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCatalogProduct(${safeKey},this.checked)" class="accent-blue-600">
+            <span class="min-w-0 flex-1">
+                <span class="block truncate text-[10px] font-black text-slate-700">${escapeSelectorHtml(product.nombre)}</span>
+                <span class="block truncate text-[9px] font-bold text-slate-400">$${money(product.precio)} · ${escapeSelectorHtml(product.categoria || '')}</span>
+            </span>
+        </label>`;
+    }).join('') : '<p class="py-5 text-center text-[10px] font-bold text-slate-400">No hay coincidencias.</p>';
+    document.getElementById('selection-count').textContent = `${selectedProductKeys.size} seleccionados`;
+    document.getElementById('selection-rule').textContent = modeRules[currentMode()].label;
+    const selected = payload.products.filter(product => selectedProductKeys.has(product.__catalogKey));
+    document.getElementById('cat-count').textContent = `${selected.length} productos seleccionados`;
+    const fallback = currentMode() === 'bundle' ? 'Paquete recomendado'
+        : currentMode() === 'comparison' ? 'Compara y elige mejor'
+        : currentMode() === 'multi' ? 'Ofertas seleccionadas'
+        : (payload.categoryName === 'TODOS' ? 'Selección general' : payload.categoryName || 'Catálogo');
+    document.getElementById('preview-title').textContent =
+        cleanText(document.getElementById('custom-title')?.value || fallback);
+}
+
+function escapeSelectorHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, character => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[character]);
+}
 
 function cleanText(value) {
     const box = document.createElement('div');
@@ -216,6 +371,15 @@ function drawLogo(doc, x, y, dark = false) {
 
 async function startGeneration() {
     if (!payload?.products?.length) return;
+    const mode = currentMode();
+    const rule = modeRules[mode];
+    const activeProducts = payload.products.filter(product => selectedProductKeys.has(product.__catalogKey));
+    if (activeProducts.length < rule.min || activeProducts.length > rule.max) {
+        alert(Number.isFinite(rule.max)
+            ? `Selecciona entre ${rule.min} y ${rule.max} productos para este formato.`
+            : 'Selecciona al menos un producto para este formato.');
+        return;
+    }
     const btn = document.getElementById('btn-generate');
     const progress = document.getElementById('progress-container');
     const bar = document.getElementById('progress-bar');
@@ -226,9 +390,9 @@ async function startGeneration() {
     progress.classList.remove('hidden');
     try {
         const prepared = [];
-        for (let i = 0; i < payload.products.length; i++) {
-            const p = payload.products[i];
-            const percent = Math.round(((i + 1) / payload.products.length) * 100);
+        for (let i = 0; i < activeProducts.length; i++) {
+            const p = activeProducts[i];
+            const percent = Math.round(((i + 1) / activeProducts.length) * 100);
             bar.style.width = `${percent}%`;
             pct.textContent = `${percent}%`;
             status.textContent = `Optimizando ${String(p.nombre || '').slice(0, 25)}...`;
@@ -237,11 +401,15 @@ async function startGeneration() {
         const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
         const style = document.querySelector('input[name="style"]:checked').value;
         status.textContent = 'Componiendo catálogo...';
-        if (style === 'basic') generateBasic(doc, prepared);
+        if (mode === 'bundle') await generateBundle(doc, prepared);
+        else if (mode === 'comparison') await generateComparison(doc, prepared);
+        else if (mode === 'multi') await generateMultiPromotion(doc, prepared);
+        else if (style === 'basic') generateBasic(doc, prepared);
         else await generatePro(doc, prepared);
         const safeCat = String(payload.categoryName || 'Catalogo').replace(/[^a-z0-9]+/gi, '_');
         const safeAgent = String(payload.agent || 'Asesor').replace(/[^a-z0-9]+/gi, '_');
-        doc.save(`Catalogo_${safeCat}_${safeAgent}.pdf`);
+        const modeName = {catalog:'Catalogo',bundle:'Paquete',comparison:'Comparativa',multi:'Promociones'}[mode];
+        doc.save(`${modeName}_${safeCat}_${safeAgent}.pdf`);
         status.textContent = 'Catálogo descargado';
     } catch (error) {
         console.error(error);
@@ -250,6 +418,116 @@ async function startGeneration() {
         btn.disabled = false;
         btn.classList.remove('opacity-60');
     }
+}
+
+function documentTitle(fallback) {
+    return cleanText(document.getElementById('custom-title')?.value || payload.title || fallback).toUpperCase();
+}
+
+function drawCommercialHeader(doc, title, kicker, accent = C.teal) {
+    doc.setFillColor(...C.navy); doc.rect(0,0,210,45,'F');
+    doc.setFillColor(...accent); doc.rect(0,42,210,3,'F');
+    drawLogo(doc,14,14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(172,202,231);
+    doc.text(kicker,14,25);
+    doc.setFontSize(19); doc.setTextColor(255,255,255);
+    doc.text(doc.splitTextToSize(title,180).slice(0,2),14,34);
+}
+
+function drawCommercialFooter(doc, page, pages) {
+    doc.setDrawColor(...C.line); doc.line(14,282,196,282);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.muted);
+    doc.text(`${payload.agent || 'Asesor'} · WhatsApp +${String(payload.phone || '').replace(/^\+/,'')}`,14,288);
+    doc.text(`${page} / ${pages}`,196,288,{align:'right'});
+}
+
+async function generateBundle(doc, products) {
+    const groups = Array.isArray(payload.groups) && payload.groups.length
+        ? payload.groups.map(group => ({
+            title: group.title || group.name || 'Paquete recomendado',
+            products: products.filter(p => (group.productIds || group.ids || []).map(String).includes(String(p.id)))
+        })).filter(group => group.products.length)
+        : [{ title: documentTitle('Paquete recomendado'), products }];
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+        if (groupIndex) doc.addPage();
+        const group = groups[groupIndex];
+        drawCommercialHeader(doc, cleanText(group.title), 'SOLUCIÓN COMPLETA · PRECIO TRANSPARENTE', C.teal);
+        const shown = group.products.slice(0,4);
+        const total = shown.reduce((sum,p) => sum + (Number(p.precio) || 0), 0);
+        shown.forEach((p,index) => {
+            const col = index % 2, row = Math.floor(index / 2);
+            const x = 14 + col * 94, y = 54 + row * 83;
+            doc.setFillColor(...C.pale); doc.setDrawColor(...C.line); doc.roundedRect(x,y,88,75,3,3,'FD');
+            addContainedImage(doc,p.imgObj,x+5,y+5,30,30);
+            doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.ink);
+            doc.text(doc.splitTextToSize(cleanText(p.nombre),46).slice(0,3),x+39,y+10);
+            doc.setFontSize(15); doc.setTextColor(...C.blue); doc.text(`$${money(p.precio)}`,x+39,y+31);
+            doc.setFontSize(6.5); doc.setTextColor(...C.muted);
+            const facts = [cleanText(p.garantia) && `Garantía: ${cleanText(p.garantia)}`, cleanText(p.mensajeria)].filter(Boolean).join(' · ');
+            doc.text(doc.splitTextToSize(facts,78).slice(0,2),x+5,y+44);
+        });
+        doc.setFillColor(...C.navy); doc.roundedRect(14,228,182,38,5,5,'F');
+        doc.setFont('helvetica','bold'); doc.setTextColor(174,205,234); doc.setFontSize(7);
+        doc.text(`${shown.length} EQUIPOS EN ESTA SOLUCIÓN`,24,240);
+        doc.setTextColor(255,255,255); doc.setFontSize(24); doc.text(`TOTAL $${money(total)} USD`,24,257);
+        doc.setTextColor(...C.teal); doc.setFontSize(8); doc.text('CONSULTA DISPONIBILIDAD Y ENTREGA',188,255,{align:'right'});
+        doc.link(14,228,182,38,{url:contactLink(`el paquete ${cleanText(group.title)}`)});
+    }
+    const pages = doc.internal.getNumberOfPages();
+    for(let p=1;p<=pages;p++){doc.setPage(p);drawCommercialFooter(doc,p,pages);}
+}
+
+async function generateComparison(doc, products) {
+    const selected = products.slice(0,3);
+    if (selected.length < 2) throw new Error('La comparación necesita al menos 2 productos.');
+    drawCommercialHeader(doc, documentTitle('Compara y elige mejor'), 'GUÍA DE DECISIÓN · ALTERNATIVAS DISPONIBLES', [124,58,237]);
+    const gap = 4, w = (182 - gap * (selected.length - 1)) / selected.length;
+    selected.forEach((p,index) => {
+        const x = 14 + index * (w + gap);
+        doc.setFillColor(255,255,255); doc.setDrawColor(...C.line); doc.roundedRect(x,55,w,199,4,4,'FD');
+        doc.setFillColor(...C.pale); doc.roundedRect(x+1,56,w-2,57,3,3,'F');
+        addContainedImage(doc,p.imgObj,x+5,60,w-10,48);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...C.ink);
+        doc.text(doc.splitTextToSize(cleanText(p.nombre).toUpperCase(),w-10).slice(0,4),x+5,122);
+        doc.setFontSize(18); doc.setTextColor(...C.blue); doc.text(`$${money(p.precio)}`,x+5,153);
+        doc.setFontSize(7); doc.setTextColor(...C.muted); doc.setFont('helvetica','bold');
+        doc.text('GARANTÍA',x+5,169); doc.setFont('helvetica','normal');
+        doc.text(doc.splitTextToSize(cleanText(p.garantia)||'Consultar',w-10).slice(0,2),x+5,177);
+        doc.setFont('helvetica','bold'); doc.text('ENTREGA',x+5,194); doc.setFont('helvetica','normal');
+        doc.text(doc.splitTextToSize(cleanText(p.mensajeria)||'Consultar',w-10).slice(0,3),x+5,202);
+        doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.blue);
+        doc.text('CONSULTAR ESTA OPCIÓN',x+w/2,242,{align:'center'});
+        doc.link(x,55,w,199,{url:contactLink(p.nombre)});
+    });
+    drawCommercialFooter(doc,1,1);
+}
+
+async function generateMultiPromotion(doc, products) {
+    const groups = [];
+    for (let i=0;i<products.length;i+=3) groups.push(products.slice(i,i+3));
+    groups.forEach((group,pageIndex) => {
+        if (pageIndex) doc.addPage();
+        drawCommercialHeader(doc, documentTitle('Ofertas seleccionadas para ti'), 'PROMOCIONES DISPONIBLES · EDICIÓN DIGITAL', [249,115,22]);
+        group.forEach((p,index) => {
+            const y = 54 + index * 70;
+            doc.setFillColor(index % 2 ? 248 : 244,index % 2 ? 250 : 247,index % 2 ? 252 : 250);
+            doc.roundedRect(14,y,182,62,4,4,'F');
+            addContainedImage(doc,p.imgObj,20,y+6,50,50);
+            doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...C.ink);
+            doc.text(doc.splitTextToSize(cleanText(p.nombre).toUpperCase(),108).slice(0,2),77,y+13);
+            doc.setTextColor(...C.blue); doc.setFontSize(22); doc.text(`$${money(p.precio)} USD`,77,y+36);
+            doc.setFontSize(7); doc.setTextColor(...C.muted);
+            doc.text(doc.splitTextToSize([cleanText(p.garantia),cleanText(p.mensajeria)].filter(Boolean).join(' · '),108).slice(0,2),77,y+47);
+            doc.setFillColor(...C.teal); doc.roundedRect(164,y+47,24,8,2,2,'F');
+            doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(6);
+            doc.text('CONSULTAR',176,y+52.5,{align:'center'});
+            doc.link(14,y,182,62,{url:contactLink(p.nombre)});
+        });
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.blue);
+        doc.text('Toca cualquier oferta en el PDF para escribir directamente por WhatsApp.',105,272,{align:'center'});
+    });
+    const pages=doc.internal.getNumberOfPages();
+    for(let p=1;p<=pages;p++){doc.setPage(p);drawCommercialFooter(doc,p,pages);}
 }
 
 async function generatePro(doc, products) {
