@@ -1486,7 +1486,7 @@
             </div>
 
             <!-- Info Derecha -->
-            <div class="lg:w-1/2 p-5 pb-32 md:p-8 lg:p-10 lg:pb-10 flex flex-col lg:overflow-y-auto">
+            <div class="lg:w-1/2 p-5 pb-8 md:p-8 lg:p-10 lg:pb-10 flex flex-col lg:overflow-y-auto">
 
                 <div class="flex items-center gap-3 mb-2">
                     <span id="detail-client-availability" class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Disponible ahora</span>
@@ -1626,20 +1626,6 @@
             </div>
         </div>
 
-        <div id="detail-mobile-actions" class="pointer-events-none fixed inset-x-0 bottom-0 z-[115] translate-y-full border-t border-slate-200 bg-white/95 p-3 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur transition-transform duration-200 lg:hidden">
-            <div class="mx-auto flex max-w-md items-center gap-3">
-                <div class="min-w-0 flex-1">
-                    <p class="text-[8px] font-black uppercase tracking-wider text-slate-400">Precio del equipo</p>
-                    <p id="detail-mobile-price" class="truncate text-lg font-black text-[#1a4789]">—</p>
-                </div>
-                <button id="detail-client-mobile-consult" onclick="consultSelectedProduct()" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-200 text-emerald-600" aria-label="Consultar por WhatsApp">
-                    <i class="fab fa-whatsapp text-xl"></i>
-                </button>
-                <button onclick="addItemToCart()" class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a4789] px-5 text-xs font-black text-white shadow-lg">
-                    <span class="material-symbols-outlined text-lg">shopping_cart</span> Pedir
-                </button>
-            </div>
-        </div>
     </div>
 
     <div id="product-compare-bar" class="fixed inset-x-3 bottom-3 z-[80] hidden">
@@ -4833,8 +4819,7 @@ function applyDetailAudienceMode() {
     [
         'detail-client-availability',
         'detail-client-benefits',
-        'detail-client-consult',
-        'detail-client-mobile-consult'
+        'detail-client-consult'
     ].forEach(id => document.getElementById(id)?.classList.toggle('hidden', internal));
 
     const actions = document.getElementById('detail-primary-actions');
@@ -4842,32 +4827,6 @@ function applyDetailAudienceMode() {
         actions.classList.toggle('grid-cols-[0.8fr_1.2fr]', !internal);
         actions.classList.toggle('grid-cols-1', internal);
     }
-}
-
-let detailActionsObserver = null;
-
-function setDetailMobileActionsVisible(visible) {
-    const bar = document.getElementById('detail-mobile-actions');
-    if (!bar) return;
-    bar.classList.toggle('translate-y-full', !visible);
-    bar.classList.toggle('pointer-events-none', !visible);
-    bar.classList.toggle('translate-y-0', visible);
-    bar.classList.toggle('pointer-events-auto', visible);
-}
-
-function setupDetailMobileActionBar() {
-    if (detailActionsObserver) detailActionsObserver.disconnect();
-    const inlineActions = document.getElementById('detail-primary-actions');
-    if (!inlineActions || window.matchMedia('(min-width: 1024px)').matches) {
-        setDetailMobileActionsVisible(false);
-        return;
-    }
-
-    detailActionsObserver = new IntersectionObserver(entries => {
-        const actionsAreVisible = entries.some(entry => entry.isIntersecting);
-        setDetailMobileActionsVisible(!actionsAreVisible);
-    }, { threshold: 0.2 });
-    detailActionsObserver.observe(inlineActions);
 }
 
 function renderCatalogProducts(list) {
@@ -5056,7 +5015,6 @@ function openDetail(name, skipSolarCheck = false) {
 
     detailModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-    requestAnimationFrame(setupDetailMobileActionBar);
 }
 
 function consultSelectedProduct() {
@@ -5834,8 +5792,6 @@ function renderFloatingWA(nombre, telefono) {
     catalogUrl.searchParams.delete('search');
     history.pushState(null, '', `${catalogUrl.pathname}${catalogUrl.search}${catalogUrl.hash}`);
     document.title = "ParaTuHogar | Electrodomésticos para Cuba";
-    if (detailActionsObserver) detailActionsObserver.disconnect();
-    setDetailMobileActionsVisible(false);
     // ==========================================
 
     // 1. SENSOR: Calcular tiempo de lectura antes de cerrar
