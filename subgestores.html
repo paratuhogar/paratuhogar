@@ -407,7 +407,8 @@
             document.getElementById('parent-dashboard-content').classList.remove('hidden');
 
             // Generar Link de Invitación
-            const inviteLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
+            const inviteLongLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
+            const inviteLink = await getOrGenerateShortLink(g.nombre, inviteLongLink);
             document.getElementById('input-invite-link').value = inviteLink;
 
             loadData();
@@ -918,6 +919,54 @@ window.toggleSubgestorDetail = function(id) {
     } else {
         row.classList.add('hidden');
         icon.innerText = "expand_more";
+    }
+}
+
+// Genera siempre un enlace de venta corto para el subgestor aprobado.
+// La URL completa queda guardada como destino y conserva toda la atribución.
+async function getOrGenerateShortLink(gestor, longLink) {
+    const cacheKey = 'pth_subgestor_short_links_v1';
+    let cache = {};
+    try { cache = JSON.parse(localStorage.getItem(cacheKey) || '{}'); } catch (error) {}
+    const identity = `${gestor}|${longLink}`;
+    if (cache[identity]) return cache[identity];
+
+    try {
+        const { data: existing, error: findError } = await supabaseClient
+            .from('short_links')
+            .select('slug')
+            .eq('gestor', gestor)
+            .eq('original_url', longLink)
+            .limit(1)
+            .maybeSingle();
+        if (findError) throw findError;
+
+        let slug = existing?.slug || '';
+        if (!slug) {
+            const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+            for (let attempt = 0; attempt < 3 && !slug; attempt++) {
+                const values = new Uint32Array(7);
+                window.crypto.getRandomValues(values);
+                const candidate = Array.from(values, value => alphabet[value % alphabet.length]).join('');
+                const { error } = await supabaseClient.from('short_links').insert([{
+                    slug: candidate,
+                    original_url: longLink,
+                    gestor
+                }]);
+                if (!error) slug = candidate;
+                else if (error.code !== '23505') throw error;
+            }
+        }
+
+        if (!slug) throw new Error('No se pudo crear el enlace corto.');
+        const shortLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?s=${slug}`;
+        cache[identity] = shortLink;
+        const entries = Object.entries(cache).slice(-100);
+        localStorage.setItem(cacheKey, JSON.stringify(Object.fromEntries(entries)));
+        return shortLink;
+    } catch (error) {
+        console.error('No se pudo acortar el enlace del subgestor:', error);
+        return longLink;
     }
 }
 

@@ -301,7 +301,7 @@
     // 👇 AQUÍ ESTÁ LA SOLUCIÓN: Usar "let" en vez de "const" 👇
     let AGENT_NAME = "";
     let AGENT_PHONE = ""; 
-    const BASE_WEB_URL = "https://paratuhogar.github.io/paratuhogar"; 
+    const BASE_WEB_URL = "https://paratuhogar.org"; 
 
     let allProducts = [];
     let filteredProducts = [];
@@ -839,13 +839,13 @@
 
     async function getOrGenerateShortLink(name, agentName, agentPhone) {
         const c = encodeURIComponent(name.trim());
-        const l = `${BASE_WEB_URL}/index.html?search=${c}&gestor=${encodeURIComponent(agentName)}&tel=${agentPhone}`;
+        const l = `${BASE_WEB_URL}/?search=${c}&gestor=${encodeURIComponent(agentName)}&tel=${agentPhone}`;
         try {
             const { data } = await supabaseClient.from('short_links').select('slug').eq('original_url', l).maybeSingle();
-            if (data && data.slug) return `${BASE_WEB_URL}/index.html?s=${data.slug}`;
+            if (data && data.slug) return `${BASE_WEB_URL}/?s=${data.slug}`;
             const s = Math.random().toString(36).substring(2, 7);
             await supabaseClient.from('short_links').insert([{ slug: s, original_url: l, gestor: agentName }]);
-            return `${BASE_WEB_URL}/index.html?s=${s}`;
+            return `${BASE_WEB_URL}/?s=${s}`;
         } catch (e) { return l; }
     }
 
