@@ -87,6 +87,14 @@ window.addEventListener('load', async () => {
     document.getElementById('ctrl-search').addEventListener('input', applyFilters);
     document.getElementById('ctrl-category').addEventListener('change', applyFilters);
     document.getElementById('ctrl-collection').addEventListener('change', applyFilters);
+    document.getElementById('ctrl-mode').addEventListener('change', () => {
+        studioUpdateModeUI();
+        refreshPreviews();
+    });
+    ['ctrl-composition-title', 'ctrl-promo-price'].forEach(id => {
+        document.getElementById(id).addEventListener('input', refreshStudioCompositionPreview);
+    });
+    document.getElementById('ctrl-use-commission-discount').addEventListener('change', refreshStudioCompositionPreview);
 
     // El tema solo cambia el diseño; no altera la selección de productos.
     document.getElementById('ctrl-theme').addEventListener('change', () => {
@@ -97,7 +105,71 @@ window.addEventListener('load', async () => {
     // El toggle de IA debe regenerar la vista
     const switches =['toggle-format', 'toggle-ai-bg', 'toggle-price', 'toggle-phone', 'toggle-delivery', 'toggle-warranty'];
     switches.forEach(id => document.getElementById(id).addEventListener('change', refreshPreviews));
+    studioUpdateModeUI();
 });
+
+const STUDIO_MODE_RULES = {
+    individual: { min: 0, max: Infinity, help: 'Genera una pieza por cada producto.' },
+    bundle: { min: 2, max: 4, help: 'Selecciona entre 2 y 4 productos para crear un paquete.' },
+    compare: { min: 2, max: 3, help: 'Selecciona 2 o 3 productos para compararlos con datos reales.' },
+    multi: { min: 2, max: 6, help: 'Selecciona entre 2 y 6 productos para una promoción conjunta.' }
+};
+
+function studioMode() {
+    return document.getElementById('ctrl-mode')?.value || 'individual';
+}
+
+function studioUpdateModeUI() {
+    const mode = studioMode();
+    const rule = STUDIO_MODE_RULES[mode];
+    if (Number.isFinite(rule.max) && selectedProductIds.size > rule.max) {
+        [...selectedProductIds].slice(rule.max).forEach(id => selectedProductIds.delete(id));
+        studioToast(`Se conservaron los primeros ${rule.max} productos seleccionados`);
+    }
+    document.getElementById('studio-mode-help').textContent = rule.help;
+    document.getElementById('studio-composition-fields').classList.toggle('hidden', mode === 'individual');
+    document.getElementById('studio-promo-price-field').classList.toggle('hidden', mode === 'compare');
+    renderStudioMetrics();
+}
+
+function studioSelectedProductsForComposition(strict = false) {
+    const mode = studioMode();
+    const rule = STUDIO_MODE_RULES[mode];
+    const products = allProducts.filter(product => selectedProductIds.has(studioProductId(product)));
+    if (mode === 'individual') return products;
+    if (strict && products.length < rule.min) {
+        throw new Error(`Selecciona al menos ${rule.min} productos para este formato.`);
+    }
+    if (strict && products.length > rule.max) {
+        throw new Error(`Este formato admite hasta ${rule.max} productos.`);
+    }
+    return products.slice(0, rule.max);
+}
+
+function studioPromotionPriceState(products, options) {
+    const total = products.reduce((sum, product) => sum + (Number(product.precio) || 0), 0);
+    const availableCommission = products.reduce((sum, product) =>
+        sum + Math.max(0, Number(product._studioPrivateCommission) || 0), 0);
+    const requested = Number(options.promoPrice) || 0;
+    const minimum = Math.max(0, total - availableCommission);
+    const savings = requested > 0 && requested < total ? total - requested : 0;
+    let error = '';
+    if (requested > 0 && requested < total && !options.allowCommissionDiscount) {
+        error = `Para bajar de $${total.toFixed(2)} USD debes autorizar “Descontar de mi comisión”.`;
+    } else if (requested > 0 && requested < minimum) {
+        error = `El mínimo permitido es $${minimum.toFixed(2)} USD, después de usar toda tu comisión disponible.`;
+    }
+    return { total, availableCommission, requested, minimum, savings, error };
+}
+
+function studioUpdateDiscountStatus(state) {
+    const status = document.getElementById('studio-discount-status');
+    if (!status) return;
+    status.className = `block text-[9px] leading-relaxed ${state.error ? 'text-rose-300' : state.savings ? 'text-emerald-300' : 'text-slate-400'}`;
+    status.textContent = state.error || (state.savings
+        ? `Se usarán $${state.savings.toFixed(2)} USD de tu comisión. Mínimo permitido: $${state.minimum.toFixed(2)} USD.`
+        : 'No se aplicará ningún descuento.');
+}
 
 async function resolveStudioRole() {
     const isSubgestor = Boolean(gestorData.parent_id);
@@ -232,6 +304,7 @@ async function loadInventory() {
             delete p._studioBaseCommission;
         }
     });
+    studioApplyLaunchPriceFloors();
 
     const cats =[...new Set(allProducts.map(p => p.categoria ? p.categoria.toUpperCase() : 'VARIOS'))].sort();
     const select = document.getElementById('ctrl-category');
@@ -239,6 +312,22 @@ async function loadInventory() {
     cats.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c; opt.innerText = c; select.appendChild(opt);
+    });
+}
+
+function studioApplyLaunchPriceFloors() {
+    const launch = studioReadStorage('pth_studio_launch_catalog', null);
+    if (!launch?.savedAt
+        || Date.now() - Number(launch.savedAt) > 2 * 60 * 60 * 1000
+        || !Array.isArray(launch.products)) return;
+    const floors = new Map(launch.products.map(product => [String(product.id ?? product.nombre), product]));
+    allProducts.forEach(product => {
+        const current = floors.get(String(product.id ?? product.nombre));
+        if (!current) return;
+        const publishedPrice = Number(current.precio) || 0;
+        product._studioWebPriceFloor = publishedPrice;
+        product._studioLaunchCommission = Math.max(0, Number(current.comision) || 0);
+        product.precio = Math.max(Number(product.precio) || 0, publishedPrice);
     });
 }
 
@@ -535,9 +624,11 @@ function renderStudioMetrics() {
         if (element) element.textContent = value;
     });
     const label = document.getElementById('download-label');
-    if (label) label.textContent = selectedProductIds.size
-        ? `Descargar seleccionados (${selectedProductIds.size})`
-        : 'Descargar Pack';
+    if (label) {
+        label.textContent = studioMode() === 'individual'
+            ? (selectedProductIds.size ? `Descargar seleccionados (${selectedProductIds.size})` : 'Descargar Pack')
+            : `Descargar composición (${selectedProductIds.size})`;
+    }
 }
 
 function studioToast(message) {
@@ -615,14 +706,23 @@ window.toggleProductSelection = function(encodedId) {
     const product = studioFindProduct(encodedId);
     if (!product) return;
     const id = studioProductId(product);
-    if (selectedProductIds.has(id)) selectedProductIds.delete(id);
-    else selectedProductIds.add(id);
+    if (selectedProductIds.has(id)) {
+        selectedProductIds.delete(id);
+    } else {
+        const rule = STUDIO_MODE_RULES[studioMode()];
+        if (selectedProductIds.size >= rule.max) {
+            studioToast(`Máximo ${rule.max} productos en este formato`);
+            return;
+        }
+        selectedProductIds.add(id);
+    }
     renderStudioMetrics();
     refreshPreviews();
 };
 
 window.selectVisibleProducts = function() {
-    filteredProducts.slice(0, visibleCount).forEach(product => selectedProductIds.add(studioProductId(product)));
+    const rule = STUDIO_MODE_RULES[studioMode()];
+    filteredProducts.slice(0, Math.min(visibleCount, rule.max)).forEach(product => selectedProductIds.add(studioProductId(product)));
     renderStudioMetrics();
     refreshPreviews();
 };
@@ -734,7 +834,11 @@ function studioCurrentOptions() {
         showDelivery: document.getElementById('toggle-delivery').checked,
         showWarranty: document.getElementById('toggle-warranty').checked,
         gestorName: gestorData.nombre,
-        gestorPhone: gestorData.telefono || '5356071095'
+        gestorPhone: gestorData.telefono || '5356071095',
+        mode: studioMode(),
+        compositionTitle: document.getElementById('ctrl-composition-title')?.value.trim() || '',
+        promoPrice: Number(document.getElementById('ctrl-promo-price')?.value) || 0,
+        allowCommissionDiscount: Boolean(document.getElementById('ctrl-use-commission-discount')?.checked)
     };
 }
 
@@ -743,6 +847,7 @@ async function refreshPreviews() {
     container.innerHTML = ""; 
 
     const options = studioCurrentOptions();
+    await refreshStudioCompositionPreview();
 
     const productsToShow = filteredProducts.slice(0, visibleCount);
 
@@ -788,6 +893,197 @@ async function refreshPreviews() {
         btnDiv.innerHTML = `<button onclick="loadMoreItems()" class="bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-full font-bold shadow-lg">Mostrar más (${remaining})</button>`;
         container.appendChild(btnDiv);
     }
+}
+
+async function refreshStudioCompositionPreview() {
+    const section = document.getElementById('studio-composition-preview');
+    if (!section) return;
+    const mode = studioMode();
+    if (mode === 'individual') {
+        section.classList.add('hidden');
+        return;
+    }
+    const products = studioSelectedProductsForComposition(false);
+    const rule = STUDIO_MODE_RULES[mode];
+    const options = studioCurrentOptions();
+    const priceState = studioPromotionPriceState(products, options);
+    studioUpdateDiscountStatus(priceState);
+    section.classList.remove('hidden');
+    document.getElementById('studio-composition-caption').textContent = products.length < rule.min
+        ? `Selecciona ${rule.min - products.length} producto(s) más para completar el diseño.`
+        : `${products.length} productos listos · la pieza se genera localmente`;
+    const holder = document.getElementById('studio-composition-canvas-holder');
+    holder.innerHTML = '';
+    if (products.length < rule.min) {
+        holder.innerHTML = '<div class="rounded-2xl border border-dashed border-white/20 p-10 text-center text-sm text-slate-500">Selecciona productos desde las tarjetas inferiores.</div>';
+        return;
+    }
+    if (mode !== 'compare' && priceState.error) {
+        holder.innerHTML = `<div class="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-8 text-center text-sm font-bold text-rose-200">${studioEscapeHtml(priceState.error)}</div>`;
+        return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = options.isStory ? 1920 : 1080;
+    canvas.className = 'canvas-preview h-auto w-full';
+    holder.appendChild(canvas);
+    await drawStudioComposition(canvas, products, options);
+}
+
+window.downloadStudioComposition = async function() {
+    try {
+        const products = studioSelectedProductsForComposition(true);
+        const options = studioCurrentOptions();
+        const priceState = studioPromotionPriceState(products, options);
+        if (options.mode !== 'compare' && priceState.error) throw new Error(priceState.error);
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = options.isStory ? 1920 : 1080;
+        await drawStudioComposition(canvas, products, options);
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/jpeg', .95);
+        link.download = `${options.mode}_${String(options.compositionTitle || 'promocion').replace(/[^a-z0-9]/gi, '_')}.jpg`;
+        link.click();
+        products.forEach(studioRememberProduct);
+        studioIncrementMetric('downloads');
+        studioToast('Composición descargada');
+    } catch (error) {
+        studioToast(error.message);
+    }
+};
+
+async function drawStudioComposition(canvas, products, opt) {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const p = STUDIO_PALETTES[opt.theme] || STUDIO_PALETTES.techno;
+    const margin = opt.isStory ? 68 : 58;
+    const title = opt.compositionTitle || (opt.mode === 'bundle'
+        ? 'TODO LO QUE NECESITAS'
+        : opt.mode === 'compare' ? 'ELIGE TU MEJOR OPCIÓN' : 'OFERTAS PARA TI');
+    const priceState = studioPromotionPriceState(products, opt);
+    if (opt.mode !== 'compare' && priceState.error) throw new Error(priceState.error);
+    const total = priceState.total;
+
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, p.bg1);
+    bg.addColorStop(1, p.bg2);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = p.ink;
+    ctx.textAlign = 'left';
+    ctx.font = `900 ${opt.isStory ? 40 : 31}px Manrope, Arial, sans-serif`;
+    ctx.fillText('PARATUHOGAR', margin, opt.isStory ? 92 : 70);
+    ctx.fillStyle = p.accent;
+    ctx.fillRect(margin, opt.isStory ? 112 : 86, opt.isStory ? 110 : 88, 7);
+    ctx.fillStyle = p.ink;
+    const titleSize = studioFitFont(ctx, title.toUpperCase(), W - margin * 2, opt.isStory ? 72 : 56, opt.isStory ? 44 : 34, 900);
+    ctx.font = `900 ${titleSize}px Manrope, Arial, sans-serif`;
+    const titleLines = studioWrapLines(ctx, title.toUpperCase(), W - margin * 2, 2);
+    titleLines.forEach((line, index) => ctx.fillText(line, margin, (opt.isStory ? 190 : 145) + index * (titleSize + 8)));
+
+    const twoProductComparison = opt.mode === 'compare' && products.length === 2;
+    const gridTop = twoProductComparison ? (opt.isStory ? 315 : 220) : (opt.isStory ? 340 : 245);
+    const footerH = opt.isStory ? 290 : 205;
+    const gridBottom = H - footerH - 28;
+    const count = products.length;
+    const cols = opt.mode === 'compare' ? count : (count <= 2 ? count : 2);
+    const rows = Math.ceil(count / cols);
+    const gap = opt.isStory ? 24 : 18;
+    const cardW = (W - margin * 2 - gap * (cols - 1)) / cols;
+    const cardH = (gridBottom - gridTop - gap * (rows - 1)) / rows;
+
+    for (let index = 0; index < products.length; index++) {
+        const product = products[index];
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = margin + col * (cardW + gap);
+        const y = gridTop + row * (cardH + gap);
+        ctx.fillStyle = 'rgba(255,255,255,.88)';
+        studioRoundRect(ctx, x, y, cardW, cardH, 24);
+        ctx.fill();
+        const img = await getSmartImage(product, false);
+        const imageH = twoProductComparison ? cardH * .48 : (opt.mode === 'compare' ? cardH * .38 : cardH * .52);
+        if (img) {
+            const scale = Math.min((cardW - 34) / img.width, (imageH - 20) / img.height);
+            const dw = img.width * scale;
+            const dh = img.height * scale;
+            ctx.drawImage(img, x + (cardW - dw) / 2, y + 16 + (imageH - dh) / 2, dw, dh);
+        }
+        ctx.fillStyle = p.ink;
+        ctx.textAlign = 'left';
+        const name = studioDisplayName(product).toUpperCase();
+        const nameSize = studioFitFont(ctx, name, cardW - 34, opt.isStory ? 27 : 21, opt.isStory ? 19 : 15, 900);
+        ctx.font = `900 ${nameSize}px Manrope, Arial, sans-serif`;
+        studioWrapLines(ctx, name, cardW - 34, 2).forEach((line, lineIndex) => {
+            ctx.fillText(line, x + 17, y + imageH + 40 + lineIndex * (nameSize + 5));
+        });
+        if (twoProductComparison) {
+            const infoH = opt.isStory ? 205 : 154;
+            const infoY = y + cardH - infoH - 14;
+            ctx.fillStyle = `${p.accent}12`;
+            studioRoundRect(ctx, x + 14, infoY, cardW - 28, infoH, 18);
+            ctx.fill();
+            ctx.fillStyle = p.accent;
+            ctx.font = `900 ${opt.isStory ? 43 : 34}px Manrope, Arial, sans-serif`;
+            ctx.fillText(`$${product.precio} USD`, x + 30, infoY + (opt.isStory ? 57 : 45));
+            ctx.fillStyle = p.ink;
+            ctx.font = `800 ${opt.isStory ? 18 : 14}px Manrope, Arial, sans-serif`;
+            ctx.fillText(`GARANTÍA · ${studioPlainText(product.garantia || 'A consultar').slice(0, 28)}`,
+                x + 30, infoY + (opt.isStory ? 105 : 82));
+            ctx.fillStyle = p.muted;
+            ctx.font = `700 ${opt.isStory ? 17 : 13}px Manrope, Arial, sans-serif`;
+            studioWrapLines(ctx, `ENTREGA · ${studioPlainText(product.mensajeria || 'A coordinar')}`, cardW - 60, 2)
+                .forEach((line, lineIndex) => ctx.fillText(line, x + 30,
+                    infoY + (opt.isStory ? 148 : 113) + lineIndex * (opt.isStory ? 24 : 19)));
+        } else {
+            ctx.fillStyle = p.accent;
+            ctx.font = `900 ${opt.isStory ? 38 : 30}px Manrope, Arial, sans-serif`;
+            ctx.fillText(`$${product.precio} USD`, x + 17, y + cardH - (opt.mode === 'compare' ? 112 : 28));
+        }
+        if (opt.mode === 'compare' && !twoProductComparison) {
+            ctx.fillStyle = p.muted;
+            ctx.font = `700 ${opt.isStory ? 17 : 14}px Manrope, Arial, sans-serif`;
+            const facts = [
+                `Garantía: ${product.garantia || 'A consultar'}`,
+                String(product.mensajeria || 'Entrega a coordinar')
+            ];
+            facts.forEach((fact, factIndex) => {
+                const clean = studioPlainText(fact);
+                ctx.fillText(clean.slice(0, 38), x + 17, y + cardH - 70 + factIndex * 27);
+            });
+        }
+    }
+
+    const footerY = H - footerH;
+    ctx.fillStyle = p.accent;
+    ctx.fillRect(0, footerY, W, footerH);
+    ctx.fillStyle = p.priceInk;
+    ctx.textAlign = 'left';
+    if (opt.mode !== 'compare') {
+        const finalPrice = opt.promoPrice > 0 ? opt.promoPrice : total;
+        ctx.font = `800 ${opt.isStory ? 20 : 15}px Manrope, Arial, sans-serif`;
+        ctx.fillText(opt.promoPrice > 0 ? 'PRECIO PROMOCIONAL' : 'TOTAL DEL CONJUNTO', margin, footerY + (opt.isStory ? 66 : 48));
+        ctx.font = `900 ${opt.isStory ? 82 : 62}px Manrope, Arial, sans-serif`;
+        ctx.fillText(`$${finalPrice} USD`, margin, footerY + (opt.isStory ? 155 : 118));
+        if (priceState.savings > 0) {
+            ctx.font = `800 ${opt.isStory ? 17 : 13}px Manrope, Arial, sans-serif`;
+            ctx.fillText(`AHORRO APORTADO POR EL GESTOR · $${priceState.savings.toFixed(2)} USD`,
+                margin, footerY + (opt.isStory ? 190 : 145));
+        }
+    } else {
+        ctx.font = `900 ${opt.isStory ? 36 : 27}px Manrope, Arial, sans-serif`;
+        ctx.fillText('COMPARA Y ELIGE CON CONFIANZA', margin, footerY + (opt.isStory ? 105 : 82));
+    }
+    if (opt.showPhone) {
+        ctx.textAlign = 'right';
+        ctx.font = `800 ${opt.isStory ? 23 : 17}px Manrope, Arial, sans-serif`;
+        ctx.fillText(`WHATSAPP · ${studioCleanPhone(opt.gestorPhone)}`, W - margin, footerY + (opt.isStory ? 76 : 57));
+        ctx.font = `700 ${opt.isStory ? 17 : 13}px Manrope, Arial, sans-serif`;
+        ctx.fillText(`Atención directa · ${String(opt.gestorName || 'Tu gestor').toUpperCase()}`, W - margin, footerY + (opt.isStory ? 112 : 86));
+    }
+    ctx.fillStyle = p.accent2;
+    ctx.fillRect(0, H - (opt.isStory ? 12 : 8), W, opt.isStory ? 12 : 8);
 }
 
 window.loadMoreItems = function() { visibleCount += 12; refreshPreviews(); };
@@ -1779,6 +2075,10 @@ async function drawLegacyProductCard(canvas, product, opt) {
 }
 
 async function downloadAllImages() {
+    if (studioMode() !== 'individual') {
+        await window.downloadStudioComposition();
+        return;
+    }
     const btn = document.getElementById('btn-download');
     const oldText = btn.innerText;
     btn.innerText = "⏳ GENERANDO...";
