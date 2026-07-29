@@ -55,17 +55,38 @@
             <!-- TARJETA ENLACE INVITACIÓN Y BANCO DE GRUPOS -->
             <div id="tour-recruitment-box" class="bg-gradient-to-r from-blue-950/30 to-indigo-950/30 border border-blue-900/50 p-6 rounded-2xl space-y-6">
                 
-                <!-- Fila Superior: Enlace de Invitación -->
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-800 pb-6">
-                    <div class="space-y-1">
-                        <h3 class="text-lg font-black text-blue-300 flex items-center gap-2">
-                            <span class="material-symbols-outlined">person_add</span> RECLUTAR SUBGESTORES
-                        </h3>
-                        <p class="text-xs text-slate-400">Comparte este enlace. Quienes se registren bajo este link serán tus subgestores.</p>
-                    </div>
-                    <div class="flex gap-2 w-full md:w-auto md:min-w-[400px]">
-                        <input type="text" id="input-invite-link" readonly class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3 text-slate-400 font-bold focus:ring-0">
-                        <button onclick="copiarLinkInvitacion()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-xl text-xs font-bold transition-all active:scale-95">Copiar Link</button>
+                <!-- Fila Superior: Página profesional personalizada -->
+                <div class="border-b border-slate-800 pb-6">
+                    <div class="grid gap-5 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+                        <div class="space-y-3">
+                            <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-800 bg-sky-950/60 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-sky-300">
+                                <span class="material-symbols-outlined text-sm">captive_portal</span> Página profesional de captación
+                            </span>
+                            <h3 class="text-xl font-black text-blue-200">Presenta el programa antes de pedir el registro</h3>
+                            <p class="max-w-2xl text-xs font-medium leading-relaxed text-slate-300">
+                                Esta página explica beneficios, herramientas, comisiones y cómo funciona el trabajo. Está personalizada con tu invitación: <strong class="text-emerald-400">toda persona que se registre desde este enlace quedará asignada automáticamente como tu subgestor</strong> y aparecerá en tus solicitudes pendientes.
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="abrirPaginaCaptacion()" class="inline-flex items-center gap-2 rounded-xl border border-sky-700 bg-sky-950/50 px-4 py-2.5 text-[10px] font-black uppercase text-sky-300 transition hover:bg-sky-900">
+                                    <span class="material-symbols-outlined text-base">visibility</span> Ver mi página
+                                </button>
+                                <span class="inline-flex items-center gap-2 text-[9px] font-bold text-slate-500"><span class="material-symbols-outlined text-sm text-emerald-500">verified</span> Atribución automática incluida</span>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-blue-900/70 bg-slate-950/70 p-4">
+                            <label class="mb-2 block text-[9px] font-black uppercase tracking-wider text-slate-500">Tu enlace profesional</label>
+                            <div class="flex flex-col gap-2 sm:flex-row">
+                                <input type="text" id="input-invite-link" readonly class="w-full rounded-xl border-slate-800 bg-slate-950 p-3 text-xs font-bold text-slate-300 focus:ring-0">
+                                <button onclick="copiarLinkInvitacion()" class="shrink-0 rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition-all hover:bg-blue-500 active:scale-95">Copiar página</button>
+                            </div>
+                            <details class="mt-3">
+                                <summary class="cursor-pointer text-[9px] font-black uppercase text-slate-500">Mostrar registro directo</summary>
+                                <div class="mt-3 flex gap-2">
+                                    <input type="text" id="input-direct-invite-link" readonly class="w-full rounded-xl border-slate-800 bg-slate-900 p-2.5 text-[10px] font-bold text-slate-500 focus:ring-0">
+                                    <button onclick="copiarLinkRegistroDirecto()" class="shrink-0 rounded-lg border border-slate-700 px-3 text-[9px] font-black uppercase text-slate-400">Copiar</button>
+                                </div>
+                            </details>
+                        </div>
                     </div>
                 </div>
 
@@ -406,10 +427,14 @@
             document.getElementById('label-parent-name').innerText = `Gestor Principal: ${g.nombre.toUpperCase()}`;
             document.getElementById('parent-dashboard-content').classList.remove('hidden');
 
-            // Generar Link de Invitación
-            const inviteLongLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
-            const inviteLink = await getOrGenerateShortLink(g.nombre, inviteLongLink);
-            document.getElementById('input-invite-link').value = inviteLink;
+            // Generar la página profesional y conservar un registro directo secundario
+            const recruitmentLongLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'gestores.html')}?invitado_por=${g.id}`;
+            const recruitmentLink = await getOrGenerateShortLink(g.nombre, recruitmentLongLink);
+            document.getElementById('input-invite-link').value = recruitmentLink;
+
+            const directLongLink = `${window.location.origin}${window.location.pathname.replace('subgestores.html', 'index.html')}?invitado_por=${g.id}`;
+            const directLink = await getOrGenerateShortLink(g.nombre, directLongLink);
+            document.getElementById('input-direct-invite-link').value = directLink;
 
             loadData();
         });
@@ -1161,11 +1186,35 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
             }
         }
 
+        async function copiarTextoReclutamiento(inputId, successMessage) {
+            const input = document.getElementById(inputId);
+            if (!input?.value) return;
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(input.value);
+                } else {
+                    input.select();
+                    document.execCommand("copy");
+                }
+                alert(successMessage);
+            } catch (error) {
+                input.select();
+                document.execCommand("copy");
+                alert(successMessage);
+            }
+        }
+
         function copiarLinkInvitacion() {
-            const copyText = document.getElementById("input-invite-link");
-            copyText.select();
-            document.execCommand("copy");
-            alert("✅ ¡Enlace de invitación copiado al portapapeles!");
+            copiarTextoReclutamiento("input-invite-link", "✅ Página profesional de captación copiada.");
+        }
+
+        function copiarLinkRegistroDirecto() {
+            copiarTextoReclutamiento("input-direct-invite-link", "✅ Enlace de registro directo copiado.");
+        }
+
+        function abrirPaginaCaptacion() {
+            const url = document.getElementById("input-invite-link")?.value;
+            if (url) window.open(url, "_blank", "noopener");
         }
 
 
@@ -1176,8 +1225,8 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
         const tourSteps = [
             {
                 target: "#tour-recruitment-box",
-                title: "Enlace de Reclutamiento 🔗",
-                desc: "Este es tu enlace único para invitar subgestores. Compártelo con las personas que quieran unirse a tu equipo de ventas. Los registros se enlacen bajo tu nombre automáticamente."
+                title: "Página de captación personalizada 🔗",
+                desc: "Comparte esta página para explicar profesionalmente el programa. Toda persona que se registre desde ella quedará vinculada automáticamente como tu subgestor."
             },
             {
                 target: "#tab-aprobaciones",
