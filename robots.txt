@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /master.html
+Disallow: /estadisticas.html
+Disallow: /mensajeros.html
+Disallow: /radar-riesgos.html
+Disallow: /shadow-marketer.html
+Disallow: /shadow-marketer1.html
+Disallow: /studio.html
+Disallow: /catalog-maker.html
+Disallow: /*?s=
+Disallow: /*?registro=
+Disallow: /*?ref=
+Disallow: /*?contact=
+
+Sitemap: https://paratuhogar.org/sitemap.xml

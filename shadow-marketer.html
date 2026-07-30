@@ -839,7 +839,7 @@
 
     async function getOrGenerateShortLink(name, agentName, agentPhone) {
         const c = encodeURIComponent(name.trim());
-        const l = `${BASE_WEB_URL}/?search=${c}&gestor=${encodeURIComponent(agentName)}&tel=${agentPhone}`;
+        const l = `${BASE_WEB_URL}/?search=${c}&ref=${encodeURIComponent(agentName)}&contact=${agentPhone}`;
         try {
             const { data } = await supabaseClient.from('short_links').select('slug').eq('original_url', l).maybeSingle();
             if (data && data.slug) return `${BASE_WEB_URL}/?s=${data.slug}`;

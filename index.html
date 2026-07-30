@@ -67,11 +67,6 @@
         "@type": "PostalAddress",
         "addressLocality": "La Habana",
         "addressCountry": "CU"
-      },
-      "offers": {
-        "@type": "Offer",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
       }
     }
     </script>
@@ -365,29 +360,6 @@
 }
 </style>
 </style>
-
-<!-- Datos Estructurados para Google (Local Business) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "ElectronicsStore",
-      "name": "paratuhogar",
-      "image": "https://paratuhogar.org/log.jpeg",
-      "description": "Venta de electrodomésticos, plantas eléctricas, baterías de litio y climatización con entrega en La Habana, Cuba.",
-      "url": "https://paratuhogar.org",
-      "telephone": "+5356071095",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "La Habana",
-        "addressCountry": "CU"
-      },
-      "offers": {
-        "@type": "Offer",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    }
-    </script>
 
     <!-- === PREGUNTAS FRECUENTES PARA GOOGLE E IA (FAQ SCHEMA) === -->
 <script type="application/ld+json">
@@ -3116,7 +3088,7 @@ async function checkShortLinks() {
             let telOriginal = "";
             try {
                 const urlObj = new URL(data.original_url);
-                telOriginal = urlObj.searchParams.get('tel') || "";
+                telOriginal = urlObj.searchParams.get('contact') || urlObj.searchParams.get('tel') || "";
             } catch(e) {}
 
             if (!telOriginal) {
@@ -3173,8 +3145,8 @@ checkShortLinks();
     
 
     const urlParams = new URLSearchParams(window.location.search);
-    const gestorName = urlParams.get('gestor');
-    const gestorTel = urlParams.get('tel');
+    const gestorName = urlParams.get('ref') || urlParams.get('gestor');
+    const gestorTel = urlParams.get('contact') || urlParams.get('tel');
     const isAdmin = urlParams.get('admin') === 'true';
 
     // ==========================================
@@ -3282,8 +3254,8 @@ checkShortLinks();
 
     function initReferralSystem() {
         const urlParams = new URLSearchParams(window.location.search);
-        const urlGestor = urlParams.get('gestor');
-        const urlTel = urlParams.get('tel');
+        const urlGestor = urlParams.get('ref') || urlParams.get('gestor');
+        const urlTel = urlParams.get('contact') || urlParams.get('tel');
 
         // 1. SI HAY NUEVO ENLACE -> SOBRESCRIBIMOS (Last Click Wins)
         if (urlGestor) {
@@ -4471,7 +4443,7 @@ function renderMyOrdersList(lista) {
     let diasDuracion = lvlData.duration / 24;
     if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 
-    const myLongLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${userData.telefono || ''}`;
+    const myLongLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${userData.telefono || ''}`;
     const linkParaMostrar = await getOrGenerateShortLink(nombre, myLongLink);
 
     // CAMBIO VISUAL: Quitamos mt-6 (margen arriba) y pusimos mb-8 (margen abajo)
@@ -4566,7 +4538,7 @@ window.addEventListener('load', prepareClientExperience);
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
-    let urlGestor = urlParams.get('gestor'); 
+    let urlGestor = urlParams.get('ref') || urlParams.get('gestor'); 
     const sessionGestor = window.gestorName; 
 
     // --- RECUPERAR GESTOR DESDE MEMORIA (SANEADO) ---
@@ -5075,6 +5047,57 @@ function getPublicProductPrice(product) {
         : `$${usd} USD`;
 }
 
+function createStableProductSlug(productOrName) {
+    const product = typeof productOrName === 'object' && productOrName !== null ? productOrName : null;
+    const storedSlug = String(product?.slug || '').trim();
+    if (storedSlug) {
+        return storedSlug
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+    const name = String(product?.nombre || productOrName || 'producto');
+    return name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 90) || 'producto';
+}
+
+function getPermanentProductUrl(productOrName, absolute = false) {
+    const slug = createStableProductSlug(productOrName);
+    const path = `/producto/${encodeURIComponent(slug)}/`;
+    return absolute ? `${window.location.origin}${path}` : path;
+}
+
+function makeOpaqueAttributedFallback(longLink) {
+    try {
+        const url = new URL(longLink, window.location.origin);
+        const ref = url.searchParams.get('ref');
+        const contact = url.searchParams.get('contact');
+        if (!ref) return longLink;
+        const payload = JSON.stringify({ n: ref, t: contact || '' });
+        const token = btoa(unescape(encodeURIComponent(payload)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/g, '');
+        url.search = '';
+        url.searchParams.set('r', token);
+        return url.toString();
+    } catch (error) {
+        return longLink;
+    }
+}
+
+function openProductCard(event, productName) {
+    if (event) event.preventDefault();
+    openDetail(productName);
+}
+
 let detailGalleryImages = [];
 let detailGalleryIndex = 0;
 
@@ -5409,9 +5432,9 @@ function renderCatalogProducts(list) {
         if (!seller) {
             return `
                 <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
-                    <button onclick="openDetail('${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
+                    <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
                         <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
-                    </button>
+                    </a>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
                         <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Disponible
@@ -5423,7 +5446,7 @@ function renderCatalogProducts(list) {
                             <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">local_shipping</span><span class="truncate">${product.mensajeria || 'Entrega coordinada'}</span></p>
                         </div>
                         <div class="mt-auto grid grid-cols-[1fr_44px] gap-2 pt-1">
-                            <button onclick="openDetail('${safeName}')" class="min-h-11 rounded-xl bg-primary px-2 text-xs font-extrabold text-white shadow-md transition hover:bg-[#12396f]">Ver detalles</button>
+                            <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="flex min-h-11 items-center justify-center rounded-xl bg-primary px-2 text-xs font-extrabold text-white shadow-md transition hover:bg-[#12396f]">Ver detalles</a>
                             <button onclick="addProductFromCard('${safeName}')" class="flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-primary transition hover:bg-blue-100" title="Añadir ${safeName} al pedido" aria-label="Añadir ${safeName} al pedido">
                                 <span class="material-symbols-outlined text-xl">add_shopping_cart</span>
                             </button>
@@ -5439,9 +5462,9 @@ function renderCatalogProducts(list) {
         const imageLayout = isList ? 'aspect-[4/3] md:aspect-auto md:min-h-[180px]' : 'aspect-square';
         return `
             <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
-                <button onclick="openDetail('${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
+                <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
                     <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
-                </button>
+                </a>
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                     <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
                     <h3 class="line-clamp-2 text-sm font-black leading-snug text-slate-900">${product.nombre}</h3>
@@ -5472,7 +5495,7 @@ function renderCatalogProducts(list) {
                     <button onclick="addProductFromCard('${safeName}')" ${unavailable ? 'disabled' : ''} class="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-black ${unavailable ? 'cursor-not-allowed bg-slate-200 text-slate-400' : 'bg-[#1a4789] text-white shadow-md hover:bg-[#12396f]'}">
                         <span class="material-symbols-outlined text-lg">${unavailable ? 'block' : 'add_shopping_cart'}</span>${unavailable ? 'No disponible' : 'Añadir al pedido'}
                     </button>
-                    <button onclick="openDetail('${safeName}')" class="mt-2 w-full py-2 text-[10px] font-black uppercase text-slate-500 hover:text-[#1a4789]">Ver información completa</button>
+                    <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="mt-2 block w-full py-2 text-center text-[10px] font-black uppercase text-slate-500 hover:text-[#1a4789]">Ver información completa</a>
                 </div>
             </article>`;
     }).join('');
@@ -5489,15 +5512,13 @@ function renderProducts() {
 // 3. DETALLE DE PRODUCTO (CON INTERCEPTORES DE B2B Y PANELES + HERRAMIENTAS RESTAURADAS)
 function openDetail(name, skipSolarCheck = false) {
     // === SEO DINÁMICO ===
-    const detailUrl = new URL(window.location.href);
-    detailUrl.searchParams.set('search', name);
-    history.pushState({producto: name}, '', `${detailUrl.pathname}${detailUrl.search}${detailUrl.hash}`);
-    document.title = `${name.replace(/&quot;/g, '"')} | Comprar en Cuba - ParaTuHogar`;
-    
     const nombreReal = name.replace(/&quot;/g, '"');
     selectedProduct = productosRaw.find(p => p.nombre === nombreReal);
     
     if(!selectedProduct) return; 
+
+    history.pushState({producto: name}, '', getPermanentProductUrl(selectedProduct));
+    document.title = `${nombreReal} | Comprar en Cuba - ParaTuHogar`;
 
     // === EJECUCIÓN NORMAL (BLOQUEOS ELIMINADOS) ===
     tiempoInicioLectura = Date.now();
@@ -6348,9 +6369,7 @@ function renderFloatingWA(nombre, telefono) {
 }
     function closeDetail() {
     // === NUEVO: RESTAURAR SEO DINÁMICO ===
-    const catalogUrl = new URL(window.location.href);
-    catalogUrl.searchParams.delete('search');
-    history.pushState(null, '', `${catalogUrl.pathname}${catalogUrl.search}${catalogUrl.hash}`);
+    history.pushState(null, '', '/');
     document.title = "ParaTuHogar | Electrodomésticos para Cuba";
     closeDetailImagePreview();
     // ==========================================
@@ -6538,7 +6557,7 @@ function getGestorStoreLink() {
     if (generatedLink) return generatedLink;
     const data = window.currentUserData || {};
     const base = window.location.origin + window.location.pathname;
-    return `${base}?gestor=${encodeURIComponent(window.gestorName || '')}&tel=${encodeURIComponent(data.telefono || '')}`;
+    return `${base}?ref=${encodeURIComponent(window.gestorName || '')}&contact=${encodeURIComponent(data.telefono || '')}`;
 }
 
 async function copyGestorStoreLink() {
@@ -8134,8 +8153,8 @@ function showSection(section) {
         const tel = document.getElementById('gen-tel').value.trim();
         if(!name || !tel) return alert("Faltan datos");
         const base = window.location.origin + window.location.pathname;
-        const adminLongLink = `${base}?gestor=${encodeURIComponent(name)}&tel=${tel}&admin=true`;
-        const clientLongLink = `${base}?gestor=${encodeURIComponent(name)}&tel=${tel}`;
+        const adminLongLink = `${base}?ref=${encodeURIComponent(name)}&contact=${tel}&admin=true`;
+        const clientLongLink = `${base}?ref=${encodeURIComponent(name)}&contact=${tel}`;
         const [adminLink, clientLink] = await Promise.all([
             getOrGenerateShortLink(name, adminLongLink),
             getOrGenerateShortLink(name, clientLongLink)
@@ -8496,7 +8515,7 @@ async function approveAndWelcomeGestor(id, nombre, telefono, password) {
 
         // 3. Generar Link Corto
         const baseUrl = window.location.origin + window.location.pathname;
-        const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+        const longLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${telLimpio}`;
         let affiliateLink = longLink;
         
         try {
@@ -9714,7 +9733,7 @@ async function requestShortLink(gestor, longLink) {
         .maybeSingle();
     if (fetchError) throw fetchError;
     if (existing?.slug) {
-        return `${window.location.origin}${window.location.pathname}?s=${existing.slug}`;
+        return `${window.location.origin}/?s=${existing.slug}`;
     }
 
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -9724,7 +9743,7 @@ async function requestShortLink(gestor, longLink) {
             original_url: longLink,
             gestor
         }]);
-        if (!error) return `${window.location.origin}${window.location.pathname}?s=${slug}`;
+        if (!error) return `${window.location.origin}/?s=${slug}`;
         if (error.code !== '23505') throw error;
     }
     throw new Error('No fue posible generar un código corto único.');
@@ -9749,7 +9768,9 @@ async function getOrGenerateShortLink(gestor, longLink) {
         })
         .catch(error => {
             console.error('Error generando enlace corto:', error);
-            return cleanLongLink;
+            // Respaldo opaco: conserva la atribución sin mostrar nombres de
+            // parámetros, nombre del gestor ni teléfono en la dirección.
+            return makeOpaqueAttributedFallback(cleanLongLink);
         })
         .finally(() => pendingShortLinkRequests.delete(requestKey));
 
@@ -9765,8 +9786,11 @@ async function getOrGenerateShortLink(gestor, longLink) {
     const gestor = window.gestorName || 'Ventas';
     const miTelefono = getAgentPhone(); // Usamos tu función inteligente
     
-    // IMPORTANTE: Asegurarnos de que el teléfono vaya en el link original
-    let longLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(selectedProduct.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    // La atribución viaja dentro del destino almacenado, pero el cliente solo ve ?s=.
+    const permanentUrl = new URL(getPermanentProductUrl(selectedProduct, true));
+    permanentUrl.searchParams.set('ref', gestor);
+    permanentUrl.searchParams.set('contact', String(miTelefono || '').replace(/\D/g, ''));
+    const longLink = permanentUrl.toString();
     
     // El link corto ahora guardará la dirección COMPLETA con el teléfono
     const finalLink = await getOrGenerateShortLink(gestor, longLink);
@@ -9928,7 +9952,12 @@ async function buildProductOfferText(product) {
     }
     const agent = window.gestorName || 'ParaTuHogar';
     const phone = String(getAgentPhone() || '').replace(/\D/g, '');
-    const longProductUrl = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(product.nombre)}${window.gestorName ? `&gestor=${encodeURIComponent(window.gestorName)}&tel=${phone}` : ''}`;
+    const permanentUrl = new URL(getPermanentProductUrl(product, true));
+    if (window.gestorName) {
+        permanentUrl.searchParams.set('ref', window.gestorName);
+        permanentUrl.searchParams.set('contact', phone);
+    }
+    const longProductUrl = permanentUrl.toString();
     const productUrl = await getOrGenerateShortLink(agent, longProductUrl);
     return `🔥 *OFERTA DISPONIBLE*
 
@@ -10632,7 +10661,7 @@ window.doLogout = function() {
 
     for (const p of visibleProducts) {
         // Construimos link con TU teléfono
-        let rawLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+        let rawLink = `${getPermanentProductUrl(p, true)}?ref=${encodeURIComponent(gestor)}&contact=${miTelefono}`;
         let linkInteligente = await getOrGenerateShortLink(gestor, rawLink);
 
         textoFinal += `📦 *${p.nombre}*\n`;
@@ -10734,7 +10763,7 @@ window.doLogout = function() {
     const miTelefono = userData.telefono || new URLSearchParams(window.location.search).get('tel') || '';
     
     let rawLink = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(p.nombre)}`;
-    if (gestor) rawLink += `&gestor=${encodeURIComponent(gestor)}&tel=${miTelefono}`;
+    if (gestor) rawLink += `&ref=${encodeURIComponent(gestor)}&contact=${miTelefono}`;
 
     // Generar link corto antes de compartir
     const finalLink = await getOrGenerateShortLink(gestor, rawLink);
@@ -11584,7 +11613,7 @@ async function legacyGenerateFlashResponse() {
         // 4. CONSTRUIR EL LINK LARGO
         const gestor = window.gestorName || '';
         const tel = window.currentUserData?.telefono || '';
-        const longLink = `${baseUrl}?search=${encodeURIComponent(query)}&gestor=${encodeURIComponent(gestor)}&tel=${tel}`;
+        const longLink = `${baseUrl}?search=${encodeURIComponent(query)}&ref=${encodeURIComponent(gestor)}&contact=${tel}`;
 
         // 5. ¡MAGIA! GENERAR EL LINK CORTO (Esperamos a Supabase)
         const shortLink = await getOrGenerateShortLink(gestor, longLink);
@@ -12600,8 +12629,8 @@ function alertLockedInfo(title, desc) {
 
 async function initSmartReferral() {
     const urlParams = new URLSearchParams(window.location.search);
-    const urlGestor = urlParams.get('gestor');
-    let urlTel = urlParams.get('tel');
+    const urlGestor = urlParams.get('ref') || urlParams.get('gestor');
+    let urlTel = urlParams.get('contact') || urlParams.get('tel');
 
     // CASO 1: HAY NUEVOS DATOS EN LA URL (Sobrescribir)
     if (urlGestor) {
@@ -13139,7 +13168,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
     // Construcción del Link Personalizado
     let linkPersonal = window.location.origin + window.location.pathname;
     if (nombreFinal !== "ASESOR DE VENTAS") {
-        linkPersonal += `?gestor=${encodeURIComponent(nombreFinal)}&tel=${telfFinal}`;
+        linkPersonal += `?ref=${encodeURIComponent(nombreFinal)}&contact=${telfFinal}`;
         linkPersonal = await getOrGenerateShortLink(nombreFinal, linkPersonal);
     } else {
         linkPersonal += `?s=oficial`;
@@ -13868,7 +13897,7 @@ async function legacyCopyCategoryOffersV2() {
         for (let p of limit) {
             // Construir link limpio
             let cleanName = encodeURIComponent(p.nombre.trim());
-            let link = `${window.location.origin}${window.location.pathname}?search=${cleanName}&gestor=${encodeURIComponent(gestor)}`;
+            let link = `${window.location.origin}${window.location.pathname}?search=${cleanName}&ref=${encodeURIComponent(gestor)}`;
             
             // Si tienes la función de link corto, úsala, si no, usa el largo
             if (typeof getOrGenerateShortLink === 'function') {
@@ -14504,7 +14533,7 @@ function captureGhostLead() {
         
         for (const p of productsToPromote) {
              const cleanName = encodeURIComponent(p.nombre.trim());
-             const longLink = `${window.location.origin}${window.location.pathname}?search=${cleanName}&gestor=${encodeURIComponent(gestor)}&tel=${tel}`;
+             const longLink = `${window.location.origin}${window.location.pathname}?search=${cleanName}&ref=${encodeURIComponent(gestor)}&contact=${tel}`;
              
              // Intentamos generar corto, si falla usamos largo
              let finalLink = longLink;
@@ -17558,7 +17587,7 @@ async function sendWelcomeBackMsg(id, nombre, telefono, password) {
     if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
 
     const baseUrl = window.location.origin + window.location.pathname;
-    const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+    const longLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${telLimpio}`;
     
     let affiliateLink = longLink;
     try {

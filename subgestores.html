@@ -1014,7 +1014,7 @@ async function getOrGenerateShortLink(gestor, longLink) {
                 if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
 
                 const baseUrl = window.location.origin + window.location.pathname.replace('subgestores.html', 'index.html');
-                const longLink = `${baseUrl}?gestor=${encodeURIComponent(nombre)}&tel=${telLimpio}`;
+                const longLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${telLimpio}`;
                 
                 let affiliateLink = longLink;
                 try {

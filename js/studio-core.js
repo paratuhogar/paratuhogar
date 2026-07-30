@@ -341,7 +341,7 @@ async function loadStudioShortSlug() {
     }
 
     const phone = String(gestorData.telefono || '5356071095').replace(/\D/g, '');
-    const originalUrl = `https://paratuhogar.org/?gestor=${encodeURIComponent(gestorData.nombre)}&tel=${phone}`;
+    const originalUrl = `https://paratuhogar.org/?ref=${encodeURIComponent(gestorData.nombre)}&contact=${phone}`;
     try {
         const { data } = await supabaseClient.from('short_links')
             .select('slug')

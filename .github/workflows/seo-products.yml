@@ -1,0 +1,37 @@
+name: Actualizar páginas SEO de productos
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seo-product-pages
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generar fichas y sitemap
+        run: node scripts/generate-product-pages.mjs
+      - name: Validar metadatos, JSON-LD y sitemap
+        run: node scripts/validate-seo-pages.mjs
+      - name: Guardar solamente cambios reales
+        run: |
+          if git diff --quiet -- producto categoria sitemap.xml; then
+            echo "El catálogo SEO ya está actualizado."
+            exit 0
+          fi
+          git config user.name "paratuhogar-seo-bot"
+          git config user.email "seo-bot@users.noreply.github.com"
+          git add producto categoria sitemap.xml
+          git commit -m "Actualizar páginas SEO de productos"
+          git push
