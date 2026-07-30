@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import process from 'node:process';
 
@@ -28,7 +28,19 @@ const stripHtml = value => String(value ?? '')
   .replace(/\s+/g, ' ').trim();
 const truncate = (value, max) => {
   const clean = stripHtml(value);
-  return clean.length <= max ? clean : `${clean.slice(0, max - 1).replace(/\s+\S*$/, '')}…`;
+  return clean.length <= max ? clean : clean.slice(0, max).replace(/\s+\S*$/, '').replace(/[,:;.!?\s]+$/, '');
+};
+const metaDescription = (value, fallback, max = 158) => {
+  const clean = stripHtml(value);
+  if (clean.length >= 45 && clean.length <= max) return clean;
+  if (clean.length > max) {
+    const sentences = clean.match(/[^.!?]+[.!?]+/g) || [];
+    const complete = sentences.reduce((result, sentence) => (
+      `${result} ${sentence}`.trim().length <= max ? `${result} ${sentence}`.trim() : result
+    ), '');
+    if (complete.length >= 70) return complete;
+  }
+  return truncate(fallback, max);
 };
 const slugify = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
@@ -129,11 +141,8 @@ function render(template, values) {
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key) => values[key] ?? '');
 }
 
-function renderProduct(template, product, products, reviews, usedSlugs) {
-  const baseSlug = slugify(product.slug || product.nombre) || `producto-${product.id || usedSlugs.size + 1}`;
-  let slug = baseSlug, suffix = 2;
-  while (usedSlugs.has(slug)) slug = `${baseSlug}-${suffix++}`;
-  usedSlugs.add(slug);
+function renderProduct(template, product, products, reviews, slugMap) {
+  const slug = slugMap.get(product);
 
   const name = String(product.nombre || product.name || 'Producto ParaTuHogar').trim();
   const category = String(product.categoria || product.category || 'Productos').trim();
@@ -144,11 +153,9 @@ function renderProduct(template, product, products, reviews, usedSlugs) {
   const canonical = `${SITE_URL}/producto/${slug}/`;
   const categoryCanonical = `${SITE_URL}/categoria/${slugify(category) || 'productos'}/`;
   const rawDescription = stripHtml(product.seo_description || product.descripcion || '');
-  const descriptionText = truncate(
-    rawDescription.length >= 45
-      ? rawDescription
-      : `${name} disponible en ParaTuHogar, Cuba. Consulta precio en USD, fotografías, garantía, entrega y atención personalizada.`,
-    158
+  const descriptionText = metaDescription(
+    rawDescription,
+    `${name} en ParaTuHogar, Cuba. Consulta precio en USD, fotos reales, garantía, entrega y atención personalizada. Disponibilidad actualizada.`
   );
   const seoTitle = truncate(product.seo_title || `${name} | Precio y detalles en Cuba`, 60);
   const warranty = String(product.garantia || 'Garantía disponible').trim();
@@ -177,7 +184,7 @@ function renderProduct(template, product, products, reviews, usedSlugs) {
         image: images.length ? images : [mainImage],
         sku: String(product.sku || product.id || slug),
         category,
-        offers: {
+        ...(price > 0 ? { offers: {
           '@type': 'Offer',
           url: canonical,
           priceCurrency: 'USD',
@@ -185,7 +192,7 @@ function renderProduct(template, product, products, reviews, usedSlugs) {
           availability: available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
           seller: { '@type': 'Organization', name: 'ParaTuHogar', url: SITE_URL }
-        }
+        } } : {})
       },
       {
         '@type': 'BreadcrumbList',
@@ -236,7 +243,7 @@ function renderProduct(template, product, products, reviews, usedSlugs) {
   const datasheetSection = sheet ? `<section class="section"><h2>Ficha técnica</h2><div class="sheet"><div><strong>Documento oficial del equipo</strong><br><small>Consulta o descarga sus especificaciones completas.</small></div><a class="js-attributed-link" href="${attr(sheet)}" target="_blank" rel="noopener">Abrir PDF</a></div></section>` : '';
   const relatedSection = related.length ? `<section class="section"><h2>También podría interesarte</h2><div class="related">${
     related.map(item => {
-      const itemSlug = slugify(item.slug || item.nombre);
+      const itemSlug = slugMap.get(item);
       const image = getImages(item)[0] || `${SITE_URL}/log.jpeg`;
       return `<a class="card" href="/producto/${attr(itemSlug)}/"><img src="${attr(image)}" alt="${attr(item.nombre)}" width="320" height="320" loading="lazy"><div class="cardbody"><h3>${htmlEscape(item.nombre)}</h3><strong>$${(Number(item.precio) || 0).toFixed(0)} USD</strong></div></a>`;
     }).join('')
@@ -266,6 +273,9 @@ function renderProduct(template, product, products, reviews, usedSlugs) {
     html: render(template, {
       SEO_TITLE: htmlEscape(seoTitle),
       SEO_DESCRIPTION: attr(descriptionText),
+      ROBOTS_DIRECTIVE: available && price > 0
+        ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
+        : 'noindex,follow,max-image-preview:large',
       CANONICAL_URL: attr(canonical),
       SOCIAL_IMAGE: attr(mainImage),
       PRODUCT_NAME: htmlEscape(name),
@@ -308,9 +318,17 @@ async function main() {
   if (!products.length) throw new Error('No se encontraron productos para generar.');
   await mkdir(OUTPUT_ROOT, { recursive: true });
   const usedSlugs = new Set();
+  const slugMap = new Map();
+  for (const product of products) {
+    const baseSlug = slugify(product.slug || product.nombre) || `producto-${product.id || usedSlugs.size + 1}`;
+    let slug = baseSlug, suffix = 2;
+    while (usedSlugs.has(slug)) slug = `${baseSlug}-${suffix++}`;
+    usedSlugs.add(slug);
+    slugMap.set(product, slug);
+  }
   const generated = [];
   for (const product of products) {
-    const page = renderProduct(template, product, products, reviews, usedSlugs);
+    const page = renderProduct(template, product, products, reviews, slugMap);
     const directory = join(OUTPUT_ROOT, page.slug);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), page.html, 'utf8');
@@ -328,11 +346,11 @@ async function main() {
     if (!categoryProducts.length) continue;
     const canonical = `${SITE_URL}/categoria/${categorySlug}/`;
     const title = truncate(`${category} en Cuba | Precios y equipos disponibles`, 60);
-    const description = truncate(`Compra ${category.toLowerCase()} en Cuba con precios en USD, fotografías reales, garantía, entrega coordinada y atención personalizada de ParaTuHogar.`, 158);
+    const description = metaDescription('', `Compra ${category.toLowerCase()} en Cuba con precios en USD, fotografías reales, garantía, entrega coordinada y atención personalizada de ParaTuHogar.`);
     const itemList = categoryProducts.slice(0, 50).map((product, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      url: `${SITE_URL}/producto/${slugify(product.slug || product.nombre)}/`,
+      url: `${SITE_URL}/producto/${slugMap.get(product)}/`,
       name: product.nombre
     }));
     const jsonLd = {
@@ -350,7 +368,7 @@ async function main() {
       ]
     };
     const cards = categoryProducts.map(product => {
-      const productSlug = slugify(product.slug || product.nombre);
+      const productSlug = slugMap.get(product);
       const image = getImages(product)[0] || `${SITE_URL}/log.jpeg`;
       return `<article class="card"><a href="/producto/${attr(productSlug)}/"><img src="${attr(image)}" alt="${attr(product.nombre)}" width="420" height="420" loading="lazy"><div><h2>${htmlEscape(product.nombre)}</h2><strong>$${(Number(product.precio) || 0).toFixed(0)} USD</strong><span>Ver detalles</span></div></a></article>`;
     }).join('');
@@ -359,6 +377,7 @@ async function main() {
       SEO_DESCRIPTION: attr(description),
       CANONICAL_URL: attr(canonical),
       CATEGORY: htmlEscape(category),
+      CATEGORY_SLUG: attr(categorySlug),
       PRODUCT_COUNT: String(categoryProducts.length),
       PRODUCT_CARDS: cards,
       JSON_LD: JSON.stringify(jsonLd).replace(/</g, '\\u003c')
@@ -366,7 +385,12 @@ async function main() {
     const directory = join(CATEGORY_OUTPUT_ROOT, categorySlug);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), html, 'utf8');
-    generatedCategories.push({ canonical, category });
+    const lastmod = categoryProducts
+      .map(product => product.inventario_actualizado_en || product.updated_at || product.fecha_actualizacion)
+      .filter(Boolean)
+      .sort()
+      .at(-1) || '';
+    generatedCategories.push({ canonical, category, lastmod });
   }
   const xmlEscape = value => String(value ?? '')
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -375,14 +399,17 @@ async function main() {
     const date = new Date(value || 0);
     return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
   };
+  const fileDate = async filename => {
+    try { return toIsoDate((await stat(join(ROOT, filename))).mtime); } catch { return ''; }
+  };
   const staticUrls = [
-    { loc: `${SITE_URL}/`, lastmod: toIsoDate(new Date()) },
-    { loc: `${SITE_URL}/gestores.html`, lastmod: toIsoDate(new Date()) }
+    { loc: `${SITE_URL}/`, lastmod: await fileDate('index.html') },
+    { loc: `${SITE_URL}/gestores.html`, lastmod: await fileDate('gestores.html') }
   ];
   const sitemapEntries = [
     ...staticUrls.map(item => `  <url><loc>${xmlEscape(item.loc)}</loc><lastmod>${item.lastmod}</lastmod></url>`),
-    ...generatedCategories.map(item => `  <url><loc>${xmlEscape(item.canonical)}</loc><lastmod>${toIsoDate(new Date())}</lastmod></url>`),
-    ...generated.map(page => {
+    ...generatedCategories.map(item => `  <url><loc>${xmlEscape(item.canonical)}</loc><lastmod>${toIsoDate(item.lastmod) || staticUrls[0].lastmod}</lastmod></url>`),
+    ...generated.filter(page => page.available && Number(page.product.precio) > 0).map(page => {
       const lastmod = toIsoDate(page.updated) || toIsoDate(new Date());
       const image = page.mainImage
         ? `<image:image><image:loc>${xmlEscape(page.mainImage)}</image:loc><image:title>${xmlEscape(page.product.nombre)}</image:title></image:image>`

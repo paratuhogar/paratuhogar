@@ -21,6 +21,7 @@ for (const folder of folders) {
   const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
   const title = html.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.trim();
   const description = html.match(/<meta name="description" content="([^"]*)"/)?.[1];
+  const robots = html.match(/<meta name="robots" content="([^"]*)"/)?.[1] || '';
   const h1 = html.match(/<h1>([\s\S]*?)<\/h1>/)?.[1]?.trim();
   const jsonText = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
 
@@ -39,8 +40,11 @@ for (const folder of folders) {
       const data = JSON.parse(jsonText);
       const product = data['@graph']?.find(item => item['@type'] === 'Product');
       const breadcrumbs = data['@graph']?.find(item => item['@type'] === 'BreadcrumbList');
-      if (!product?.offers?.priceCurrency || !product?.offers?.availability) errors.push(`${folder}: Offer incompleto`);
+      if (product?.offers && (!product.offers.priceCurrency || !product.offers.availability)) errors.push(`${folder}: Offer incompleto`);
       if (!breadcrumbs?.itemListElement?.length) errors.push(`${folder}: breadcrumbs incompletos`);
+      if (product?.offers?.availability === 'https://schema.org/OutOfStock' && !robots.includes('noindex')) {
+        errors.push(`${folder}: producto agotado debe usar noindex`);
+      }
     } catch (error) {
       errors.push(`${folder}: JSON-LD inválido`);
     }
@@ -49,7 +53,11 @@ for (const folder of folders) {
 
 const sitemap = await readFile(join(ROOT, 'sitemap.xml'), 'utf8');
 for (const canonical of canonicals) {
-  if (!sitemap.includes(`<loc>${canonical}</loc>`)) errors.push(`${canonical}: ausente del sitemap`);
+  const folder = canonical.match(/\/producto\/([^/]+)\/$/)?.[1];
+  const html = folder ? await readFile(join(PRODUCT_ROOT, folder, 'index.html'), 'utf8') : '';
+  const indexable = !/<meta name="robots" content="[^"]*noindex/i.test(html);
+  if (indexable && !sitemap.includes(`<loc>${canonical}</loc>`)) errors.push(`${canonical}: página indexable ausente del sitemap`);
+  if (!indexable && sitemap.includes(`<loc>${canonical}</loc>`)) errors.push(`${canonical}: página noindex presente en el sitemap`);
 }
 
 const categoryFolders = (await readdir(CATEGORY_ROOT, { withFileTypes: true }))

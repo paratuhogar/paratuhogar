@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>{{SEO_TITLE}}</title>
   <meta name="description" content="{{SEO_DESCRIPTION}}">
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="robots" content="{{ROBOTS_DIRECTIVE}}">
   <link rel="canonical" href="{{CANONICAL_URL}}">
   <meta property="og:locale" content="es_CU">
   <meta property="og:type" content="product">
@@ -75,7 +75,7 @@
     {{REVIEWS_SECTION}}
     {{RELATED_SECTION}}
   </main>
-  <footer><div class="shell foot"><div><strong>ParaTuHogar</strong><br><small>Equipos para el hogar y soluciones de energía en Cuba.</small></div><a href="/">Explorar catálogo</a></div></footer>
+  <footer><div class="shell foot"><div><strong>ParaTuHogar</strong><br><small>Equipos para el hogar y soluciones de energía en Cuba.</small></div><div><a href="{{CATEGORY_URL}}">Más de {{CATEGORY}}</a> · <a href="/">Explorar catálogo</a></div></div></footer>
   <script>
   (() => {
     const SB_URL={{SUPABASE_URL_JSON}}, SB_KEY={{SUPABASE_ANON_KEY_JSON}};
