@@ -1007,6 +1007,9 @@
                                 <p class="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-600">Pulso de venta</p>
                                 <h2 class="mt-1 text-lg font-black text-slate-900">Qué cambió y qué vender ahora</h2>
                                 <p id="gestor-pulse-summary" class="mt-1 text-[11px] font-medium text-slate-500">Revisando el catálogo guardado en este dispositivo…</p>
+                                <p id="gestor-pulse-freshness" class="mt-1 flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                    <span class="material-symbols-outlined text-sm">sync</span> Verificando actualización…
+                                </p>
                             </div>
                         </div>
                         <span id="gestor-pulse-count" class="hidden min-w-9 rounded-full bg-indigo-600 px-3 py-2 text-center text-xs font-black text-white">0</span>
@@ -1014,9 +1017,12 @@
                     <div id="gestor-pulse-list" class="divide-y divide-slate-100">
                         <div class="p-6 text-center text-xs font-bold text-slate-400">El pulso aparecerá cuando termine de cargar el catálogo.</div>
                     </div>
-                    <div id="gestor-pulse-footer" class="hidden border-t border-slate-100 bg-slate-50 p-3">
-                        <button onclick="markGestorPulseRead()" class="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase text-slate-600">
+                    <div id="gestor-pulse-footer" class="grid grid-cols-1 gap-2 border-t border-slate-100 bg-slate-50 p-3 sm:grid-cols-2">
+                        <button id="gestor-pulse-mark-read" onclick="markGestorPulseRead()" class="hidden min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase text-slate-600">
                             <span class="material-symbols-outlined text-lg">done_all</span> Marcar cambios como revisados
+                        </button>
+                        <button onclick="showInventoryHistory()" class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white text-[10px] font-black uppercase text-indigo-700">
+                            <span class="material-symbols-outlined text-lg">history</span> Ver historial real
                         </button>
                     </div>
                 </section>
@@ -1318,6 +1324,20 @@
                     <strong id="performance-repeat-rate" class="mt-1 block text-xl font-black text-violet-700">0%</strong>
                 </article>
             </div>
+
+            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-100 p-5 md:flex md:items-center md:justify-between md:px-6">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Posventa responsable</p>
+                        <h3 class="mt-1 text-lg font-black text-slate-900">Garantías de mis clientes</h3>
+                        <p class="mt-1 text-[10px] font-bold text-slate-500">Organiza el caso, coordina con Ángel y mantén informado al cliente.</p>
+                    </div>
+                    <span id="gestor-warranty-count" class="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-2 text-[9px] font-black uppercase text-amber-700 md:mt-0">0 casos activos</span>
+                </div>
+                <div id="gestor-warranty-list" class="divide-y divide-slate-100">
+                    <div class="p-8 text-center text-xs font-bold text-slate-400">Cargando casos de garantía…</div>
+                </div>
+            </section>
 
             <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex flex-col gap-3 border-b border-slate-100 p-5 md:flex-row md:items-center md:justify-between md:px-6">
@@ -3144,7 +3164,8 @@ checkShortLinks();
     const getAccess = () => atob(_0xaf21).split('').reverse().join('');
 
     
-    let productosRaw = [], cart = [], selectedProduct = null;
+    let productosRaw = [], catalogSourceProducts = [], cart = [], selectedProduct = null;
+    let catalogLastSyncAt = null;
     let comparisonProductIds = [];
     let detailRelatedProducts = [];
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
@@ -3698,14 +3719,14 @@ async function loadProDashboard(nombreGestor) {
         // 1. Obtener pedidos aprobados (de la tabla 'pedidos')
         const { data: aprobados, error: errAprobados } = await supabaseClient
             .from('pedidos')
-            .select('id, fecha, estado, total, comision_subgestor, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_subgestor, origen')
+            .select('*')
             .eq('subgestor_nombre', nombreGestor)
             .order('fecha', { ascending: false });
             
         // 2. Obtener pedidos pendientes de aprobación (de 'pedidos_subgestores')
         const { data: pendientes, error: errPendientes } = await supabaseClient
             .from('pedidos_subgestores')
-            .select('id, created_at, cliente, telefono, ci, direccion, municipio, producto, total, costo_mensajeria, comision_subgestor, orden_dia, proveedor')
+            .select('*')
             .eq('subgestor_nombre', nombreGestor)
             .order('created_at', { ascending: false });
 
@@ -3731,7 +3752,7 @@ async function loadProDashboard(nombreGestor) {
         // Comportamiento original para Gestores Principales
         const { data, error } = await supabaseClient
             .from('pedidos')
-            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, municipio, cliente, telefono, ci, direccion, orden_dia, pago_gestor, origen')
+            .select('*')
             .eq('gestor', nombreGestor)
             .order('fecha', { ascending: false });
             
@@ -3766,6 +3787,7 @@ async function loadProDashboard(nombreGestor) {
         porCobrar,
         cobrado
     });
+    await loadGestorWarrantyCases();
 
     // 3. RENDERIZAR TABLA DE MIS PEDIDOS
     renderMyOrdersList(misVentas);
@@ -4377,6 +4399,12 @@ function renderMyOrdersList(lista) {
                         <span class="material-symbols-outlined text-sm">share</span>
                     </button>
 
+                    ${p.estado === 'Entregado' ? `
+                    <button onclick="openWarrantyCaseModal('${p.id}')" title="Reportar garantía"
+                        class="h-7 w-7 bg-orange-50 text-orange-600 border border-orange-100 rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-sm">health_and_safety</span>
+                    </button>` : ''}
+
                     <!-- 4. BOTONES NUEVOS -->
                     ${actionBtns}  <!-- CAMBIO AQUÍ: Usamos actionBtns en vez de deleteBtn -->
                 </div>
@@ -4630,7 +4658,11 @@ async function loadProducts() {
             console.log("☁️ Catálogo actualizado desde Supabase (Nueva versión detectada)");
         }
 
-        productosRaw = productos; 
+        // La copia oficial nunca recibe precios o comisiones personalizados.
+        // Es la referencia de disponibilidad, frescura e historial comercial.
+        catalogSourceProducts = productos.map(product => ({ ...product }));
+        productosRaw = productos.map(product => ({ ...product }));
+        catalogLastSyncAt = ultimoCambioNube || (cacheTime ? new Date(Number(cacheTime)).toISOString() : new Date().toISOString());
         // =========================================================
 
         // Fusionar precios personalizados de gestores (Se mantiene intacto)
@@ -4707,7 +4739,11 @@ async function loadProducts() {
         const searchParam = urlParams.get('search');
         if (searchParam) {
             const existe = productosRaw.find(p => p.nombre === searchParam);
-            if (existe) setTimeout(() => { openDetail(searchParam); }, 500);
+            if (isProductCurrentlyAvailable(existe)) {
+                setTimeout(() => { openDetail(searchParam); }, 500);
+            } else if (existe) {
+                setTimeout(() => showUnavailableSharedOffer(existe), 350);
+            }
         }
 
     } catch (e) { 
@@ -4961,11 +4997,11 @@ function isRecentCatalogProduct(product) {
 }
 
 function matchesGestorCatalogFilter(product) {
-    if (!isGestorCatalogMode()) return product.disponible === 'SI';
-    if (gestorCatalogFilter === 'todos') return product.disponible === 'SI';
-    if (gestorCatalogFilter === 'nuevos') return product.disponible === 'SI' && isRecentCatalogProduct(product);
-    if (gestorCatalogFilter === 'comision') return product.disponible === 'SI' && Number(product.comision || 0) > 10;
-    return product.disponible === 'SI';
+    if (!isProductCurrentlyAvailable(product)) return false;
+    if (!isGestorCatalogMode() || gestorCatalogFilter === 'todos') return true;
+    if (gestorCatalogFilter === 'nuevos') return isRecentCatalogProduct(product);
+    if (gestorCatalogFilter === 'comision') return Number(product.comision || 0) > 10;
+    return true;
 }
 
 function getFilteredCatalogProducts() {
@@ -4983,7 +5019,7 @@ function getFilteredCatalogProducts() {
 
 function renderGestorCatalogSummary(visibleCount) {
     if (!isGestorCatalogMode()) return;
-    const available = productosRaw.filter(product => product.disponible === 'SI');
+    const available = productosRaw.filter(isProductCurrentlyAvailable);
     const values = {
         'gestor-catalog-available': available.length,
         'gestor-catalog-new': available.filter(isRecentCatalogProduct).length,
@@ -5023,7 +5059,7 @@ function setGestorCatalogView(view) {
 
 function getCatalogProductBadges(product) {
     const badges = [];
-    if (product.disponible !== 'SI') badges.push('<span class="rounded-full bg-rose-50 px-2 py-1 text-[8px] font-black uppercase text-rose-700">Agotado</span>');
+    if (!isProductCurrentlyAvailable(product)) badges.push('<span class="rounded-full bg-rose-50 px-2 py-1 text-[8px] font-black uppercase text-rose-700">Agotado</span>');
     else badges.push('<span class="rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-black uppercase text-emerald-700">Disponible</span>');
     if (isRecentCatalogProduct(product)) badges.push('<span class="rounded-full bg-blue-50 px-2 py-1 text-[8px] font-black uppercase text-blue-700">Nuevo</span>');
     if (product.precio_flexible === 'SI') badges.push('<span class="rounded-full bg-violet-50 px-2 py-1 text-[8px] font-black uppercase text-violet-700">Precio flexible</span>');
@@ -5269,7 +5305,7 @@ function renderDetailRelatedProducts(product) {
     const category = normalizeCategory(product.categoria);
     const currentPrice = Number(product.precio) || 0;
     const available = productosRaw.filter(item =>
-        item.disponible === 'SI' && item.nombre !== product.nombre);
+        isProductCurrentlyAvailable(item) && item.nombre !== product.nombre);
     const sameCategory = available.filter(item => {
         const itemCategory = normalizeCategory(item.categoria);
         return itemCategory === category
@@ -5330,7 +5366,7 @@ function applyDetailAudienceMode(product) {
     updated?.classList.toggle('hidden', !internal);
     updated?.classList.toggle('flex', internal);
     if (internal && updatedText) {
-        const dateValue = product?.updated_at || product?.created_at;
+        const dateValue = product?.inventario_actualizado_en || product?.updated_at || product?.created_at;
         updatedText.textContent = dateValue
             ? `Producto actualizado el ${new Date(dateValue).toLocaleDateString('es-CU', { day: '2-digit', month: 'short', year: 'numeric' })}`
             : 'Este producto no tiene fecha de actualización registrada';
@@ -5396,11 +5432,9 @@ function renderCatalogProducts(list) {
                 </article>`;
         }
 
-        const unavailable = product.disponible !== 'SI';
-        const updatedAt = product.updated_at || product.created_at;
-        const updatedLabel = updatedAt
-            ? new Date(updatedAt).toLocaleDateString('es-CU', { day: '2-digit', month: 'short' })
-            : 'Sin fecha';
+        const unavailable = !isProductCurrentlyAvailable(product);
+        const updatedAt = product.inventario_actualizado_en || product.updated_at || product.created_at;
+        const updatedLabel = updatedAt ? formatRelativeCatalogTime(updatedAt) : 'Revisión pendiente';
         const cardLayout = isList ? 'md:grid md:grid-cols-[150px_1fr_250px] md:items-stretch' : 'flex flex-col';
         const imageLayout = isList ? 'aspect-[4/3] md:aspect-auto md:min-h-[180px]' : 'aspect-square';
         return `
@@ -5425,7 +5459,7 @@ function renderCatalogProducts(list) {
                     <div class="mt-3 space-y-1.5 text-[10px] font-bold text-slate-500">
                         <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">verified</span><span class="truncate">${product.garantia || 'Garantía por confirmar'}</span></p>
                         <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">local_shipping</span><span class="truncate">${product.mensajeria || 'Mensajería por confirmar'}</span></p>
-                        <p class="flex items-center gap-1.5 text-slate-400"><span class="material-symbols-outlined text-sm">update</span><span>Actualizado ${updatedLabel}</span></p>
+                        <p class="flex items-center gap-1.5 text-slate-400"><span class="material-symbols-outlined text-sm">update</span><span>${updatedLabel}</span></p>
                     </div>
                 </div>
                 <div class="border-t border-slate-100 bg-slate-50/80 p-3 ${isList ? 'md:flex md:flex-col md:justify-center md:border-l md:border-t-0' : ''}">
@@ -5753,7 +5787,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             cart.forEach(cartItem => {
                 const dbProd = dbProducts.find(p => p.id === cartItem.id);
                 // Si el producto no existe en la DB o su estado disponible no es "SI"
-                if (!dbProd || dbProd.disponible !== 'SI') {
+                if (!dbProd || !isProductCurrentlyAvailable(dbProd)) {
                     noDisponibles.push(cartItem.nombre);
                 }
             });
@@ -6035,6 +6069,15 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (vueltoC !== "no") notasExtended += (notasExtended ? ` ` : ``) + `[VUELTO: ${vueltoC}]`;
 
         const direccionFinalDB = notasExtended ? `${dirC} (${localidadC}) [NOTA: ${notasExtended}]` : `${dirC} (${localidadC})`;
+        const garantiasDelVale = productos.map(item => ({
+            nombre: item.nombre,
+            garantia: String(item.garantia || 'Por confirmar').trim()
+        }));
+        const garantiaVentaVale = garantiasDelVale
+            .map(item => `${item.nombre}: ${item.garantia}`)
+            .join(' | ');
+        const garantiasUnicas = [...new Set(garantiasDelVale.map(item => item.garantia))];
+        const garantiaDiasVale = garantiasUnicas.length === 1 ? parseWarrantyDays(garantiasUnicas[0]) : null;
 
         // --- INTERCEPTOR DE ÓRDENES DE SUBGESTORES ---
         const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
@@ -6058,7 +6101,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 comision_total: comisionOriginalPoolVale, // <-- Guardamos la comisión completa original de la tienda ($5)
                 comision_subgestor: comisionTotalVale,   // <-- Guardamos la comisión del subgestor por separado ($3)
                 orden_dia: codPedido,                     // <-- Guardamos el consecutivo generado para que no se pierda
-                proveedor: prov
+                proveedor: prov,
+                garantia_venta: garantiaVentaVale,
+                garantia_dias: garantiaDiasVale
             }]);
         } else {
             // Pedido normal (va directo al Almacén Central)
@@ -6077,7 +6122,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 pago_gestor: 'Pendiente',
                 proveedor: prov, 
                 orden_dia: codPedido, 
-                origen: origenPedido
+                origen: origenPedido,
+                garantia_venta: garantiaVentaVale,
+                garantia_dias: garantiaDiasVale
             }]);
         }
         promesas.push(insertPromise);
@@ -6458,7 +6505,7 @@ function renderGestorDailyOpportunity() {
     const container = document.getElementById('gestor-daily-opportunity');
     if (!container || !Array.isArray(productosRaw)) return;
     const candidates = productosRaw
-        .filter(product => product.disponible === 'SI')
+        .filter(isProductCurrentlyAvailable)
         .sort((a, b) => {
             const recentDifference = Number(isRecentCatalogProduct(b)) - Number(isRecentCatalogProduct(a));
             if (recentDifference) return recentDifference;
@@ -6792,15 +6839,29 @@ function getGestorPulseStorageKey() {
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9áéíóúñ]+/g, '-');
-    return `pth_sales_pulse_${identity || 'gestor'}`;
+    // v4 descarta pendientes guardados por la versión que comparaba
+    // precio y comisión como texto.
+    return `pth_sales_pulse_v4_${identity || 'gestor'}`;
 }
 
 function isProductCurrentlyAvailable(product) {
     return String(product?.disponible || '').trim().toUpperCase() === 'SI';
 }
 
+function parseCommercialNumber(value) {
+    if (value === null || value === undefined || String(value).trim() === '') return null;
+    const parsed = Number(String(value).trim().replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function sameCommercialNumber(left, right) {
+    const a = parseCommercialNumber(left);
+    const b = parseCommercialNumber(right);
+    return a !== null && b !== null && Math.abs(a - b) < 0.01;
+}
+
 function buildGestorCatalogSnapshot() {
-    return (Array.isArray(productosRaw) ? productosRaw : []).reduce((snapshot, product) => {
+    return (Array.isArray(catalogSourceProducts) ? catalogSourceProducts : []).reduce((snapshot, product) => {
         const id = String(product.id ?? product.nombre ?? '').trim();
         if (!id) return snapshot;
         snapshot[id] = {
@@ -6811,66 +6872,107 @@ function buildGestorCatalogSnapshot() {
             comision: Number(product.comision) || 0,
             categoria: String(product.categoria || 'OTROS'),
             thumbnail: String(product.thumbnail || ''),
-            updatedAt: String(product.updated_at || product.fecha_actualizacion || '')
+            updatedAt: String(product.inventario_actualizado_en || product.updated_at || product.fecha_actualizacion || '')
         };
         return snapshot;
     }, {});
 }
 
-function detectGestorCatalogChanges(previous = {}, current = {}) {
-    const changes = [];
-    Object.values(current).forEach(product => {
-        const before = previous[product.id];
-        if (!before) {
-            if (product.disponible) changes.push({ type: 'new', product, label: 'Nuevo en catálogo' });
-            return;
-        }
-        if (!before.disponible && product.disponible) {
-            changes.push({ type: 'restock', product, label: 'Disponible nuevamente' });
-        } else if (before.disponible && !product.disponible) {
-            changes.push({ type: 'soldout', product, label: 'Ya no está disponible' });
-        }
-        if (product.disponible && before.precio !== product.precio) {
-            changes.push({
-                type: 'price',
-                product,
-                label: product.precio > before.precio ? 'Precio actualizado' : 'Precio más atractivo',
-                detail: `$${before.precio.toFixed(0)} → $${product.precio.toFixed(0)}`
-            });
-        }
-        if (product.disponible && before.comision !== product.comision) {
-            changes.push({
-                type: 'commission',
-                product,
-                label: product.comision > before.comision ? 'Mejor comisión' : 'Comisión actualizada',
-                detail: `Ahora ganas $${product.comision.toFixed(0)}`
-            });
-        }
-    });
-    return changes;
-}
-
 function getGestorPulseChangeKey(change) {
-    return [
+    return String(change.eventId || [
         change.type,
         change.product?.id,
-        change.product?.disponible,
-        change.product?.precio,
-        change.product?.comision
-    ].join(':');
+        change.occurredAt,
+        change.previousValue,
+        change.newValue
+    ].join(':'));
 }
 
 function getGestorPulseOpportunities(limit = 3) {
-    return Object.values(buildGestorCatalogSnapshot())
-        .filter(product => product.disponible)
+    return (Array.isArray(productosRaw) ? productosRaw : [])
+        .filter(isProductCurrentlyAvailable)
+        .map(product => ({
+            ...product,
+            precio: Number(product.precio) || 0,
+            comision: Number(product.comision) || 0,
+            disponible: true
+        }))
         .sort((a, b) => (b.comision - a.comision) || (b.precio - a.precio))
         .slice(0, limit)
         .map(product => ({
             type: 'opportunity',
             product,
-            label: 'Oportunidad disponible',
+            label: 'Disponible para vender',
             detail: product.comision > 0 ? `Puedes ganar $${product.comision.toFixed(0)}` : `Precio $${product.precio.toFixed(0)}`
         }));
+}
+
+function formatInventoryEvent(event) {
+    const official = catalogSourceProducts.find(product =>
+        String(product.id) === String(event.producto_id)
+        || product.nombre === event.producto_nombre
+    );
+    const commercial = productosRaw.find(product =>
+        String(product.id) === String(event.producto_id)
+        || product.nombre === event.producto_nombre
+    );
+    const raw = commercial || official || event.datos_producto || {};
+    const product = {
+        ...raw,
+        id: String(event.producto_id || raw.id || event.producto_nombre),
+        nombre: event.producto_nombre || raw.nombre || 'Producto',
+        precio: Number(raw.precio ?? event.datos_producto?.precio) || 0,
+        comision: Number(raw.comision ?? event.datos_producto?.comision) || 0,
+        disponible: isProductCurrentlyAvailable(official || raw)
+    };
+    const previous = parseCommercialNumber(event.valor_anterior);
+    const current = parseCommercialNumber(event.valor_nuevo);
+    const map = {
+        nuevo: { type: 'new', label: 'Nuevo en catálogo', detail: 'Disponible para vender' },
+        reposicion: { type: 'restock', label: 'Disponible nuevamente', detail: 'Inventario repuesto' },
+        agotado: { type: 'soldout', label: 'Producto agotado', detail: 'Deja de compartir esta oferta' },
+        precio: {
+            type: 'price',
+            label: current < previous ? 'Precio reducido' : 'Precio cambió',
+            detail: previous !== null && current !== null
+                ? `$${previous.toFixed(2).replace(/\.00$/, '')} → $${current.toFixed(2).replace(/\.00$/, '')}`
+                : ''
+        },
+        comision: {
+            type: 'commission',
+            label: current > previous ? 'Comisión aumentó' : 'Comisión cambió',
+            detail: previous !== null && current !== null
+                ? `$${previous.toFixed(2).replace(/\.00$/, '')} → $${current.toFixed(2).replace(/\.00$/, '')}`
+                : ''
+        }
+    };
+    const wasShared = getSharedProductIds().has(String(product.id))
+        || getSharedProductIds().has(product.nombre);
+    if (event.tipo === 'agotado' && wasShared) {
+        map.agotado.label = 'Oferta que compartiste agotada';
+        map.agotado.detail = 'El enlace ya no permite pedir este producto';
+    }
+    return {
+        ...(map[event.tipo] || { type: event.tipo, label: 'Cambio de inventario', detail: '' }),
+        eventId: event.id,
+        occurredAt: event.ocurrido_en,
+        previousValue: event.valor_anterior,
+        newValue: event.valor_nuevo,
+        product
+    };
+}
+
+async function fetchRealInventoryEvents(afterDate) {
+    const query = supabaseClient
+        .from('inventario_eventos')
+        .select('id, producto_id, producto_nombre, tipo, valor_anterior, valor_nuevo, datos_producto, ocurrido_en, confiable')
+        .eq('confiable', true)
+        .order('ocurrido_en', { ascending: false })
+        .limit(60);
+    if (afterDate) query.gt('ocurrido_en', afterDate);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(formatInventoryEvent);
 }
 
 function getGestorPulseVisual(type) {
@@ -6894,28 +6996,84 @@ function reconcileGestorPulseItems(items = []) {
     );
 
     return items.reduce((validItems, change) => {
-        if (change?.type === 'soldout') return validItems;
         const currentProduct = currentById.get(String(change?.product?.id || ''))
             || currentByName.get(String(change?.product?.nombre || ''));
+        if (change?.type === 'soldout') {
+            if (currentProduct?.disponible) return validItems;
+            validItems.push(change);
+            return validItems;
+        }
         if (!currentProduct?.disponible) return validItems;
-        validItems.push({ ...change, product: currentProduct });
+        if (change?.type === 'price' || change?.type === 'commission') {
+            const previous = parseCommercialNumber(change.previousValue);
+            const next = parseCommercialNumber(change.newValue);
+            if (previous === null || next === null || sameCommercialNumber(previous, next)) return validItems;
+            const officialValue = change.type === 'price' ? currentProduct.precio : currentProduct.comision;
+            // Un aviso comercial pendiente solo es válido si el valor registrado
+            // sigue siendo exactamente el valor oficial vigente.
+            if (!sameCommercialNumber(next, officialValue)) return validItems;
+        }
+        const commercial = productosRaw.find(product =>
+            String(product.id) === String(currentProduct.id) || product.nombre === currentProduct.nombre
+        );
+        validItems.push({
+            ...change,
+            product: {
+                ...(commercial || currentProduct),
+                precio: Number(commercial?.precio ?? currentProduct.precio) || 0,
+                comision: Number(commercial?.comision ?? currentProduct.comision) || 0,
+                disponible: true
+            }
+        });
         return validItems;
     }, []);
 }
 
-function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun = false) {
+function formatRelativeCatalogTime(value) {
+    const timestamp = new Date(value || 0).getTime();
+    if (!timestamp) return 'Hora de actualización no disponible';
+    const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (minutes < 1) return 'Actualizado hace menos de 1 minuto';
+    if (minutes < 60) return `Actualizado hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Actualizado hace ${hours} h`;
+    const days = Math.floor(hours / 24);
+    return `Última revisión hace ${days} ${days === 1 ? 'día' : 'días'}`;
+}
+
+function renderCatalogFreshness() {
+    const freshness = document.getElementById('gestor-pulse-freshness');
+    if (!freshness) return;
+    const datedProducts = catalogSourceProducts
+        .map(product => new Date(product.inventario_actualizado_en || product.updated_at || product.fecha_actualizacion || 0).getTime())
+        .filter(Boolean);
+    const newestProductUpdate = datedProducts.length ? Math.max(...datedProducts) : 0;
+    const reference = catalogLastSyncAt || newestProductUpdate;
+    const staleLimit = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const staleCount = catalogSourceProducts.filter(product => {
+        const changed = new Date(product.inventario_actualizado_en || product.updated_at || product.fecha_actualizacion || 0).getTime();
+        return isProductCurrentlyAvailable(product) && (!changed || changed < staleLimit);
+    }).length;
+    freshness.innerHTML = `<span class="material-symbols-outlined text-sm">${staleCount ? 'warning' : 'verified'}</span>
+        ${gestorSafeText(formatRelativeCatalogTime(reference))}${staleCount ? ` · ${staleCount} productos requieren revisión interna` : ' · Inventario verificado'}`;
+    freshness.className = `mt-1 flex items-center gap-1 text-[9px] font-bold ${staleCount ? 'text-amber-600' : 'text-emerald-600'}`;
+}
+
+function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun = false, preserveHistory = false) {
     const list = document.getElementById('gestor-pulse-list');
     const summary = document.getElementById('gestor-pulse-summary');
     const count = document.getElementById('gestor-pulse-count');
     const footer = document.getElementById('gestor-pulse-footer');
+    const markRead = document.getElementById('gestor-pulse-mark-read');
     if (!list || !summary || !count || !footer) return;
 
-    const relevantItems = reconcileGestorPulseItems(items);
+    const relevantItems = preserveHistory ? items : reconcileGestorPulseItems(items);
     const displayItems = relevantItems.length ? relevantItems.slice(0, 8) : getGestorPulseOpportunities(3);
     const pendingCount = hasPendingChanges ? relevantItems.length : 0;
     count.textContent = String(pendingCount);
     count.classList.toggle('hidden', !pendingCount);
-    footer.classList.toggle('hidden', !pendingCount);
+    markRead?.classList.toggle('hidden', !pendingCount);
+    markRead?.classList.toggle('flex', Boolean(pendingCount));
     summary.textContent = pendingCount
         ? `${pendingCount} ${pendingCount === 1 ? 'cambio importante pendiente' : 'cambios importantes pendientes'} de revisar.`
         : firstRun
@@ -6934,7 +7092,7 @@ function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun 
         const product = change.product;
         const visual = getGestorPulseVisual(change.type);
         const encodedName = encodeURIComponent(product.nombre);
-        const canPromote = product.disponible;
+        const canPromote = change.type !== 'soldout' && product.disponible;
         const fallbackDetail = `$${product.precio.toFixed(0)} USD${product.comision > 0 ? ` · ganas $${product.comision.toFixed(0)}` : ''}`;
         return `
             <article class="grid grid-cols-[44px_minmax(0,1fr)] gap-3 p-4 md:grid-cols-[48px_minmax(0,1fr)_auto] md:items-center md:px-6">
@@ -6959,40 +7117,58 @@ function renderGestorSalesPulse(items = [], hasPendingChanges = false, firstRun 
     }).join('');
 }
 
-function updateGestorSalesPulse() {
+async function updateGestorSalesPulse() {
     if (!document.getElementById('gestor-sales-pulse') || !localStorage.getItem('pth_session') || !productosRaw.length) return;
+    renderCatalogFreshness();
     const key = getGestorPulseStorageKey();
-    const current = buildGestorCatalogSnapshot();
     let state = null;
     try { state = JSON.parse(localStorage.getItem(key) || 'null'); } catch (error) {}
 
-    if (!state?.snapshot) {
-        localStorage.setItem(key, JSON.stringify({ snapshot: current, pending: [], visitedAt: Date.now() }));
+    if (!state?.lastSeenAt) {
+        localStorage.setItem(key, JSON.stringify({ lastSeenAt: new Date().toISOString(), pending: [] }));
         renderGestorSalesPulse([], false, true);
         return;
     }
 
-    const detected = detectGestorCatalogChanges(state.snapshot, current);
-    const merged = [...(Array.isArray(state.pending) ? state.pending : []), ...detected];
-    const pending = reconcileGestorPulseItems(
-        Array.from(new Map(merged.map(change => [getGestorPulseChangeKey(change), change])).values())
-    )
-        .sort((a, b) => {
-            const priority = { restock: 5, new: 4, commission: 3, price: 2, soldout: 1 };
-            return (priority[b.type] || 0) - (priority[a.type] || 0);
-        });
-    localStorage.setItem(key, JSON.stringify({ snapshot: current, pending, visitedAt: Date.now() }));
-    renderGestorSalesPulse(pending, pending.length > 0);
+    try {
+        const detected = await fetchRealInventoryEvents(state.lastSeenAt);
+        const merged = [...(Array.isArray(state.pending) ? state.pending : []), ...detected];
+        const pending = reconcileGestorPulseItems(
+            Array.from(new Map(merged.map(change => [getGestorPulseChangeKey(change), change])).values())
+        ).sort((a, b) => new Date(b.occurredAt || 0) - new Date(a.occurredAt || 0));
+        localStorage.setItem(key, JSON.stringify({ lastSeenAt: state.lastSeenAt, pending }));
+        renderGestorSalesPulse(pending, pending.length > 0);
+    } catch (error) {
+        console.info('Historial de inventario pendiente de activar:', error.message);
+        renderGestorSalesPulse([], false);
+        const summary = document.getElementById('gestor-pulse-summary');
+        if (summary) summary.textContent = 'Inventario disponible verificado. El historial real se activará al ejecutar el nuevo SQL.';
+    }
 }
 
 function markGestorPulseRead() {
     const key = getGestorPulseStorageKey();
     localStorage.setItem(key, JSON.stringify({
-        snapshot: buildGestorCatalogSnapshot(),
+        lastSeenAt: new Date().toISOString(),
         pending: [],
-        visitedAt: Date.now()
     }));
     renderGestorSalesPulse([], false);
+}
+
+async function showInventoryHistory() {
+    const summary = document.getElementById('gestor-pulse-summary');
+    if (summary) summary.textContent = 'Consultando cambios confirmados directamente por Supabase…';
+    try {
+        const history = await fetchRealInventoryEvents();
+        renderGestorSalesPulse(history.slice(0, 30), false, false, true);
+        if (summary) {
+            summary.textContent = history.length
+                ? `Últimos ${Math.min(history.length, 30)} movimientos reales del inventario.`
+                : 'Todavía no hay movimientos registrados desde que se activó el historial.';
+        }
+    } catch (error) {
+        if (summary) summary.textContent = 'Ejecuta el archivo SQL del inventario para activar el historial confiable.';
+    }
 }
 
 function openGestorPulseProduct(encodedName) {
@@ -7137,6 +7313,306 @@ function requestVerifiedReview(orderId) {
     const product = String(order.producto || 'tu compra').replace(/\s*\[.*?\]\s*/g, '').trim();
     const message = `Hola ${firstName}. Esperamos que estés disfrutando tu compra de *${product}* en ParaTuHogar.\n\nQueremos conocer tu experiencia:\n\n1️⃣ ¿Cómo valoras nuestra atención del 1 al 5?\n2️⃣ ¿Cómo valoras la mensajería del 1 al 5?\n3️⃣ ¿Qué comentario deseas compartir?\n\nSi estás de acuerdo con que publiquemos tu opinión de forma anónima, responde también: *AUTORIZO SU PUBLICACIÓN*.\n\nSolo mostraremos el producto y la fecha aproximada. El municipio y cualquier foto se publicarán únicamente si los autorizas por separado. Nunca publicaremos tu nombre, teléfono ni esta conversación.`;
     window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+const WARRANTY_ANGEL_PHONE = '5355386602';
+const WARRANTY_CASE_STATES = [
+    'Pendiente de enviar a Ángel',
+    'Enviado a Ángel',
+    'Esperando respuesta',
+    'Esperando información del cliente',
+    'Coordinando con proveedor',
+    'Revisión técnica',
+    'Reparación',
+    'Cambio autorizado',
+    'Resuelto',
+    'Fuera de garantía',
+    'Cerrado'
+];
+let gestorWarrantyCases = [];
+
+function parseWarrantyDays(warrantyText) {
+    const value = String(warrantyText || '').trim().toLowerCase();
+    const number = Number((value.match(/\d+(?:[.,]\d+)?/) || [0])[0].replace(',', '.')) || 0;
+    if (!number) return null;
+    if (value.includes('año')) return Math.round(number * 365);
+    if (value.includes('mes')) return Math.round(number * 30);
+    if (value.includes('semana')) return Math.round(number * 7);
+    if (value.includes('día') || value.includes('dia')) return Math.round(number);
+    return null;
+}
+
+function normalizeWarrantyProductName(value) {
+    return String(value || '')
+        .replace(/\[[^\]]*]/g, '')
+        .replace(/^\s*\d+\s*x\s*/i, '')
+        .trim()
+        .toLowerCase();
+}
+
+function getWarrantyProductForOrder(order) {
+    const orderText = normalizeWarrantyProductName(order?.producto);
+    if (!orderText) return null;
+    return (Array.isArray(productosRaw) ? productosRaw : []).find(product => {
+        const name = normalizeWarrantyProductName(product.nombre);
+        return name && (orderText.includes(name) || name.includes(orderText));
+    }) || null;
+}
+
+function getOrderWarrantySnapshot(order) {
+    const product = getWarrantyProductForOrder(order);
+    const warrantyText = String(order?.garantia_venta || product?.garantia || 'Garantía por confirmar con Ángel').trim();
+    const warrantyDays = Number(order?.garantia_dias)
+        || (warrantyText.includes('|') ? null : parseWarrantyDays(warrantyText));
+    const startSource = order?.fecha_entrega || order?.fecha;
+    const start = startSource ? new Date(startSource) : null;
+    const validStart = start && !Number.isNaN(start.getTime()) ? start : null;
+    const end = validStart && warrantyDays ? new Date(validStart.getTime() + warrantyDays * 86400000) : null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const active = end ? end >= today : null;
+    return {
+        product,
+        text: warrantyText,
+        days: warrantyDays || null,
+        start: validStart,
+        end,
+        active,
+        provider: order?.proveedor || product?.proveedor || 'Por confirmar'
+    };
+}
+
+function formatWarrantyDate(date) {
+    if (!date || Number.isNaN(date.getTime())) return 'Por confirmar';
+    return date.toLocaleDateString('es-CU', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function openWarrantyCaseModal(orderId) {
+    const order = (Array.isArray(myOrdersData) ? myOrdersData : []).find(item => String(item.id) === String(orderId));
+    if (!order || order.estado !== 'Entregado') {
+        return alert('Solo se puede reportar una garantía desde un pedido entregado.');
+    }
+    const snapshot = getOrderWarrantySnapshot(order);
+    document.getElementById('warranty-order-id').value = String(order.id);
+    document.getElementById('warranty-modal-order').textContent = `${order.orden_dia || 'Pedido'} · ${order.cliente || 'Cliente'}`;
+    document.getElementById('warranty-summary').innerHTML = `
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined rounded-xl bg-white p-2 text-amber-600">verified_user</span>
+            <div class="min-w-0">
+                <p class="text-xs font-black text-slate-800">${gestorSafeText(order.producto || 'Producto')}</p>
+                <p class="mt-1 text-[10px] font-bold text-slate-600">Garantía registrada: ${gestorSafeText(snapshot.text)}</p>
+                <p class="mt-1 text-[9px] font-bold text-slate-500">Inicio usado: ${formatWarrantyDate(snapshot.start)} · Vencimiento estimado: ${formatWarrantyDate(snapshot.end)}</p>
+                <p class="mt-2 text-[9px] font-black uppercase ${snapshot.active === false ? 'text-rose-600' : snapshot.active === true ? 'text-emerald-600' : 'text-amber-700'}">
+                    ${snapshot.active === false ? 'Período estimado vencido: requiere revisión' : snapshot.active === true ? 'Dentro del período estimado' : 'Vigencia por confirmar con Ángel'}
+                </p>
+            </div>
+        </div>`;
+    document.getElementById('warranty-case-form').reset();
+    document.getElementById('warranty-order-id').value = String(order.id);
+    const modal = document.getElementById('modal-caso-garantia');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeWarrantyCaseModal() {
+    document.getElementById('modal-caso-garantia')?.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function buildWarrantyWhatsAppMessage(order, warranty, formData, caseId) {
+    const status = warranty.active === false
+        ? 'Período estimado vencido — requiere revisión'
+        : warranty.active === true ? 'Dentro del período estimado' : 'Vigencia por confirmar';
+    return `🛠️ *SOLICITUD DE GARANTÍA*
+
+*Caso:* ${caseId ? String(caseId).slice(0, 8).toUpperCase() : 'Recién creado'}
+*Pedido:* ${order.orden_dia || order.id}
+*Gestor:* ${window.gestorName || order.gestor || 'Gestor'}
+*Cliente:* ${order.cliente || 'No informado'}
+*Teléfono:* ${order.telefono || 'No informado'}
+*Producto:* ${order.producto || 'No informado'}
+*Proveedor:* ${warranty.provider}
+*Garantía registrada:* ${warranty.text}
+*Inicio usado:* ${formatWarrantyDate(warranty.start)}
+*Vencimiento estimado:* ${formatWarrantyDate(warranty.end)}
+*Estado estimado:* ${status}
+
+*Problema informado:*
+${formData.problema}
+
+*Comenzó:* ${formData.fecha_inicio_problema || 'No informado'}
+*El equipo enciende:* ${formData.enciende}
+*Daño visible:* ${formData.dano_visible}
+*Probado al recibir:* ${formData.probado_al_recibir}
+*Instalación:* ${formData.instalacion_tecnica}
+*Factura/certificado:* ${formData.tiene_factura}
+*Solución esperada:* ${formData.solucion_esperada || 'No informada'}
+*Notas del gestor:* ${formData.notas_gestor || 'Sin notas'}
+
+Solicito indicaciones para coordinar el caso con el proveedor.
+
+📎 Las fotos, videos, audios o documentos se enviarán directamente en esta conversación de WhatsApp.`;
+}
+
+async function submitWarrantyCase(event) {
+    event.preventDefault();
+    const orderId = document.getElementById('warranty-order-id').value;
+    const order = (Array.isArray(myOrdersData) ? myOrdersData : []).find(item => String(item.id) === String(orderId));
+    if (!order) return alert('No se encontró el pedido.');
+    const warranty = getOrderWarrantySnapshot(order);
+    const formData = {
+        problema: document.getElementById('warranty-problem').value.trim(),
+        fecha_inicio_problema: document.getElementById('warranty-problem-date').value || null,
+        enciende: document.getElementById('warranty-powers-on').value,
+        dano_visible: document.getElementById('warranty-visible-damage').value,
+        probado_al_recibir: document.getElementById('warranty-tested-delivery').value,
+        instalacion_tecnica: document.getElementById('warranty-installation').value,
+        tiene_factura: document.getElementById('warranty-has-document').value,
+        solucion_esperada: document.getElementById('warranty-expected-solution').value.trim(),
+        notas_gestor: document.getElementById('warranty-manager-notes').value.trim()
+    };
+    if (!formData.problema) return alert('Describe el problema informado por el cliente.');
+
+    const button = document.getElementById('warranty-submit-button');
+    button.disabled = true;
+    button.innerHTML = '<span class="loader"></span> Guardando caso…';
+    try {
+        const payload = {
+            pedido_id: String(order.id),
+            gestor: window.gestorName || order.gestor || 'Gestor',
+            producto: order.producto || 'Producto',
+            proveedor: warranty.provider,
+            garantia_texto: warranty.text,
+            garantia_dias: warranty.days,
+            garantia_inicio: warranty.start ? warranty.start.toISOString().slice(0, 10) : null,
+            garantia_fin: warranty.end ? warranty.end.toISOString().slice(0, 10) : null,
+            ...formData,
+            estado: 'Enviado a Ángel'
+        };
+        const { data, error } = await supabaseClient
+            .from('casos_garantia')
+            .insert(payload)
+            .select('id')
+            .single();
+        if (error) throw error;
+        const message = buildWarrantyWhatsAppMessage(order, warranty, formData, data?.id);
+        closeWarrantyCaseModal();
+        await loadGestorWarrantyCases();
+        window.open(`https://wa.me/${WARRANTY_ANGEL_PHONE}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+    } catch (error) {
+        console.error('No se pudo crear el caso de garantía:', error);
+        alert(`No se pudo guardar el caso. Verifica que ejecutaste centro-posventa-garantias.sql.\n\n${error.message || ''}`);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fab fa-whatsapp text-base"></i> Guardar y enviar a Ángel';
+    }
+}
+
+function getWarrantyCaseStatusClass(status) {
+    if (['Resuelto', 'Cerrado'].includes(status)) return 'bg-emerald-50 text-emerald-700';
+    if (status === 'Fuera de garantía') return 'bg-rose-50 text-rose-700';
+    if (['Revisión técnica', 'Reparación', 'Cambio autorizado'].includes(status)) return 'bg-blue-50 text-blue-700';
+    return 'bg-amber-50 text-amber-700';
+}
+
+async function updateWarrantyCaseStatus(caseId, status) {
+    if (!WARRANTY_CASE_STATES.includes(status)) return;
+    const { error } = await supabaseClient
+        .from('casos_garantia')
+        .update({ estado: status })
+        .eq('id', caseId)
+        .eq('gestor', window.gestorName);
+    if (error) {
+        console.error(error);
+        return alert('No se pudo actualizar el estado del caso.');
+    }
+    await loadGestorWarrantyCases();
+}
+
+function contactWarrantyCustomer(orderId) {
+    const order = (Array.isArray(myOrdersData) ? myOrdersData : []).find(item => String(item.id) === String(orderId));
+    const phone = String(order?.telefono || '').replace(/\D/g, '');
+    if (!phone) return alert('Este pedido no tiene un teléfono válido.');
+    const normalized = phone.startsWith('53') ? phone : `53${phone}`;
+    const firstName = String(order.cliente || 'cliente').trim().split(/\s+/)[0];
+    const message = `Hola ${firstName}, te escribo de ParaTuHogar para actualizarte sobre el caso de garantía de tu equipo.`;
+    window.open(`https://wa.me/${normalized}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+function resendWarrantyCaseToAngel(caseId) {
+    const warrantyCase = gestorWarrantyCases.find(item => String(item.id) === String(caseId));
+    const order = (Array.isArray(myOrdersData) ? myOrdersData : []).find(item => String(item.id) === String(warrantyCase?.pedido_id));
+    if (!warrantyCase || !order) return alert('No se encontraron los datos completos del caso.');
+    const warranty = {
+        text: warrantyCase.garantia_texto,
+        days: warrantyCase.garantia_dias,
+        start: warrantyCase.garantia_inicio ? new Date(`${warrantyCase.garantia_inicio}T00:00:00`) : null,
+        end: warrantyCase.garantia_fin ? new Date(`${warrantyCase.garantia_fin}T00:00:00`) : null,
+        active: warrantyCase.garantia_fin ? new Date(`${warrantyCase.garantia_fin}T23:59:59`) >= new Date() : null,
+        provider: warrantyCase.proveedor || 'Por confirmar'
+    };
+    const message = buildWarrantyWhatsAppMessage(order, warranty, warrantyCase, warrantyCase.id);
+    window.open(`https://wa.me/${WARRANTY_ANGEL_PHONE}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+}
+
+function renderGestorWarrantyCases() {
+    const container = document.getElementById('gestor-warranty-list');
+    const count = document.getElementById('gestor-warranty-count');
+    if (!container || !count) return;
+    const activeCases = gestorWarrantyCases.filter(item => !['Resuelto', 'Cerrado'].includes(item.estado));
+    count.textContent = `${activeCases.length} ${activeCases.length === 1 ? 'caso activo' : 'casos activos'}`;
+    if (!gestorWarrantyCases.length) {
+        container.innerHTML = `
+            <div class="p-8 text-center">
+                <span class="material-symbols-outlined text-3xl text-slate-300">health_and_safety</span>
+                <p class="mt-2 text-xs font-black text-slate-700">No tienes casos de garantía</p>
+                <p class="mt-1 text-[10px] font-bold text-slate-400">Cuando un cliente reporte un problema, abre el caso desde su pedido entregado.</p>
+            </div>`;
+        return;
+    }
+    container.innerHTML = gestorWarrantyCases.slice(0, 8).map(item => {
+        const updated = item.ultima_actualizacion
+            ? new Date(item.ultima_actualizacion).toLocaleDateString('es-CU', { day: '2-digit', month: 'short' })
+            : 'Sin fecha';
+        const options = WARRANTY_CASE_STATES.map(status =>
+            `<option value="${gestorSafeText(status)}" ${status === item.estado ? 'selected' : ''}>${gestorSafeText(status)}</option>`
+        ).join('');
+        return `
+            <article class="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-full px-2 py-1 text-[8px] font-black uppercase ${getWarrantyCaseStatusClass(item.estado)}">${gestorSafeText(item.estado)}</span>
+                        <span class="text-[9px] font-bold text-slate-400">Actualizado ${updated}</span>
+                    </div>
+                    <p class="mt-2 truncate text-xs font-black text-slate-800">${gestorSafeText(item.producto)}</p>
+                    <p class="mt-1 line-clamp-2 text-[10px] font-bold text-slate-500">${gestorSafeText(item.problema)}</p>
+                    <p class="mt-1 text-[9px] font-bold text-slate-400">${gestorSafeText(item.garantia_texto)} · ${gestorSafeText(item.proveedor || 'Proveedor por confirmar')}</p>
+                </div>
+                <div class="flex items-center gap-2 overflow-x-auto">
+                    <select onchange="updateWarrantyCaseStatus('${item.id}', this.value)" class="h-10 min-w-[170px] rounded-xl border-slate-200 bg-white text-[9px] font-black text-slate-600">${options}</select>
+                    <button onclick="contactWarrantyCustomer('${gestorSafeText(item.pedido_id)}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="Actualizar al cliente"><i class="fab fa-whatsapp"></i></button>
+                    <button onclick="resendWarrantyCaseToAngel('${item.id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600" title="Reenviar a Ángel"><span class="material-symbols-outlined text-lg">forward_to_inbox</span></button>
+                </div>
+            </article>`;
+    }).join('');
+}
+
+async function loadGestorWarrantyCases() {
+    const container = document.getElementById('gestor-warranty-list');
+    if (!container || !window.gestorName) return;
+    const { data, error } = await supabaseClient
+        .from('casos_garantia')
+        .select('*')
+        .eq('gestor', window.gestorName)
+        .order('ultima_actualizacion', { ascending: false })
+        .limit(20);
+    if (error) {
+        console.error('Centro de garantía no disponible:', error);
+        container.innerHTML = '<div class="p-6 text-center text-[10px] font-bold text-slate-400">Ejecuta el archivo SQL del centro de posventa para activar esta sección.</div>';
+        return;
+    }
+    gestorWarrantyCases = data || [];
+    renderGestorWarrantyCases();
 }
 
 function getGestorOrderSource(order) {
@@ -7555,6 +8031,7 @@ function renderGestorPerformance(orders = myOrdersData) {
                 <div class="flex gap-2 overflow-x-auto">
                     ${phone ? `<button onclick="contactGestorOrder('${phone}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>` : ''}
                     ${order.estado === 'Entregado' && phone ? `<button onclick="requestVerifiedReview('${id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600" title="Solicitar opinión verificada"><span class="material-symbols-outlined text-lg">reviews</span></button>` : ''}
+                    ${order.estado === 'Entregado' ? `<button onclick="openWarrantyCaseModal('${id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600" title="Reportar garantía"><span class="material-symbols-outlined text-lg">health_and_safety</span></button>` : ''}
                     <button onclick="reenviarPedidoAdmin('${id}')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600" title="Reenviar pedido"><span class="material-symbols-outlined text-lg">send</span></button>
                     <button onclick="prepararPDFDesdeHistorial('${id}','descargar')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600" title="Descargar factura"><span class="material-symbols-outlined text-lg">download</span></button>
                     <button onclick="prepararPDFDesdeHistorial('${id}','compartir')" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600" title="Compartir factura"><span class="material-symbols-outlined text-lg">share</span></button>
@@ -9378,7 +9855,77 @@ function getProductForQuickAction(name) {
     return productosRaw.find(product => product.nombre === realName) || null;
 }
 
+const SHARED_PRODUCTS_STORAGE_KEY = 'pth_shared_products_v1';
+
+function getSharedProductIds() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(SHARED_PRODUCTS_STORAGE_KEY) || '[]').map(String));
+    } catch (error) {
+        return new Set();
+    }
+}
+
+function rememberSharedProduct(product) {
+    const ids = getSharedProductIds();
+    ids.add(String(product.id || product.nombre));
+    ids.add(String(product.nombre));
+    localStorage.setItem(SHARED_PRODUCTS_STORAGE_KEY, JSON.stringify(Array.from(ids).slice(-250)));
+}
+
+function getAvailableProductSubstitutes(product, limit = 3) {
+    const price = Number(product?.precio) || 0;
+    const category = String(product?.categoria || '').trim().toUpperCase();
+    const available = productosRaw.filter(candidate =>
+        isProductCurrentlyAvailable(candidate)
+        && String(candidate.id) !== String(product?.id)
+        && candidate.nombre !== product?.nombre
+    );
+    const sameCategory = available.filter(candidate =>
+        String(candidate.categoria || '').trim().toUpperCase() === category
+    );
+    return (sameCategory.length ? sameCategory : available)
+        .map(candidate => ({
+            ...candidate,
+            priceDistance: price ? Math.abs((Number(candidate.precio) || 0) - price) / price : 0
+        }))
+        .filter(candidate => !price || candidate.priceDistance <= 0.35)
+        .sort((a, b) => a.priceDistance - b.priceDistance)
+        .slice(0, limit);
+}
+
+function showUnavailableSharedOffer(product) {
+    const alternatives = getAvailableProductSubstitutes(product);
+    const container = document.getElementById('productos-container');
+    if (!container) return;
+    const cards = alternatives.length
+        ? alternatives.map(item => {
+            const safeName = String(item.nombre).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return `<button onclick="openDetail('${safeName}')" class="flex min-w-0 items-center gap-3 rounded-2xl border border-amber-200 bg-white p-3 text-left shadow-sm">
+                <img src="${fixDriveUrl(item.thumbnail)}" alt="" class="h-14 w-14 rounded-xl bg-slate-50 object-contain">
+                <span class="min-w-0"><strong class="block truncate text-xs text-slate-900">${gestorSafeText(item.nombre)}</strong>
+                <small class="mt-1 block font-black text-[#1a4789]">$${Number(item.precio).toFixed(0)} USD</small></span>
+            </button>`;
+        }).join('')
+        : `<p class="rounded-xl bg-white p-3 text-xs font-bold text-slate-600">Por ahora no hay un sustituto equivalente confirmado.</p>`;
+    container.insertAdjacentHTML('beforebegin', `
+        <section id="unavailable-shared-offer" class="col-span-full mx-auto mb-5 w-full max-w-5xl rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined rounded-2xl bg-amber-100 p-3 text-amber-700">inventory_2</span>
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-amber-700">Inventario actualizado</p>
+                    <h2 class="mt-1 text-lg font-black text-slate-900">Esta oferta acaba de agotarse</h2>
+                    <p class="mt-1 text-xs font-medium text-slate-600">${gestorSafeText(product.nombre)} ya no puede añadirse al pedido. Te mostramos opciones disponibles en un rango de precio similar.</p>
+                </div>
+            </div>
+            <div class="mt-4 grid gap-2 md:grid-cols-3">${cards}</div>
+        </section>`);
+    document.getElementById('unavailable-shared-offer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 async function buildProductOfferText(product) {
+    if (!isProductCurrentlyAvailable(product)) {
+        throw new Error('PRODUCT_UNAVAILABLE');
+    }
     const agent = window.gestorName || 'ParaTuHogar';
     const phone = String(getAgentPhone() || '').replace(/\D/g, '');
     const longProductUrl = `${window.location.origin}${window.location.pathname}?search=${encodeURIComponent(product.nombre)}${window.gestorName ? `&gestor=${encodeURIComponent(window.gestorName)}&tel=${phone}` : ''}`;
@@ -9399,9 +9946,14 @@ ${productUrl}
 async function copyProductOffer(name, button) {
     const product = getProductForQuickAction(name);
     if (!product) return;
+    if (!isProductCurrentlyAvailable(product)) {
+        updateGestorSalesPulse();
+        return alert('Este producto está agotado. La oferta no se puede copiar ni compartir.');
+    }
     try {
         const offerText = await buildProductOfferText(product);
         await navigator.clipboard.writeText(offerText);
+        rememberSharedProduct(product);
         trackSpy('COPIO_OFERTA', product.nombre);
         if (button) {
             const previous = button.innerHTML;
@@ -9420,9 +9972,14 @@ async function copyProductOffer(name, button) {
 async function shareProductWhatsApp(name) {
     const product = getProductForQuickAction(name);
     if (!product) return;
+    if (!isProductCurrentlyAvailable(product)) {
+        updateGestorSalesPulse();
+        return alert('Este producto está agotado. Su enlace fue retirado de las ofertas compartibles.');
+    }
     trackSpy('COMPARTIO_WHATSAPP', product.nombre);
     const shareWindow = window.open('about:blank', '_blank');
     const offerText = await buildProductOfferText(product);
+    rememberSharedProduct(product);
     const shareUrl = `https://wa.me/?text=${encodeURIComponent(offerText)}`;
     if (shareWindow) shareWindow.location.replace(shareUrl);
     else window.location.href = shareUrl;
@@ -17584,6 +18141,100 @@ async function contactarGestorAtribuido(mensajeOpcional) {
 </div>
 
 <!-- === MODAL TÉRMINOS DE GARANTÍA === -->
+<div id="modal-caso-garantia" class="fixed inset-0 z-[650] hidden bg-slate-950/80 backdrop-blur-sm p-3 md:p-6">
+    <div class="mx-auto flex max-h-[calc(100dvh-24px)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl md:max-h-[calc(100dvh-48px)]">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-5 md:p-6">
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-[0.18em] text-amber-600">Centro de posventa</p>
+                <h2 class="mt-1 text-xl font-black text-slate-900">Reportar una garantía</h2>
+                <p id="warranty-modal-order" class="mt-1 text-[10px] font-bold text-slate-500"></p>
+            </div>
+            <button type="button" onclick="closeWarrantyCaseModal()" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form id="warranty-case-form" onsubmit="submitWarrantyCase(event)" class="overflow-y-auto p-5 md:p-6">
+            <input type="hidden" id="warranty-order-id">
+            <div id="warranty-summary" class="mb-5 rounded-2xl border border-amber-100 bg-amber-50 p-4"></div>
+
+            <div class="space-y-4">
+                <label class="block">
+                    <span class="text-[9px] font-black uppercase text-slate-500">Problema informado por el cliente *</span>
+                    <textarea id="warranty-problem" required maxlength="1000" rows="4" placeholder="Describe exactamente qué sucede, sin emitir un diagnóstico." class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold"></textarea>
+                </label>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <label class="block">
+                        <span class="text-[9px] font-black uppercase text-slate-500">¿Cuándo comenzó?</span>
+                        <input id="warranty-problem-date" type="date" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                    </label>
+                    <label class="block">
+                        <span class="text-[9px] font-black uppercase text-slate-500">¿El equipo enciende?</span>
+                        <select id="warranty-powers-on" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                            <option value="No informado">No informado</option>
+                            <option value="Sí">Sí</option>
+                            <option value="No">No</option>
+                            <option value="Intermitente">Intermitente</option>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-[9px] font-black uppercase text-slate-500">¿Daño visible?</span>
+                        <select id="warranty-visible-damage" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                            <option value="No informado">No informado</option>
+                            <option value="No">No</option>
+                            <option value="Sí">Sí</option>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-[9px] font-black uppercase text-slate-500">¿Se probó al recibir?</span>
+                        <select id="warranty-tested-delivery" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                            <option value="No informado">No informado</option>
+                            <option value="Sí">Sí</option>
+                            <option value="No">No</option>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-[9px] font-black uppercase text-slate-500">Instalación</span>
+                        <select id="warranty-installation" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                            <option value="No aplica / no informado">No aplica / no informado</option>
+                            <option value="Técnico recomendado">Técnico recomendado</option>
+                            <option value="Técnico externo revisado">Técnico externo revisado</option>
+                            <option value="Técnico externo no revisado">Técnico externo no revisado</option>
+                            <option value="Instalado por el cliente">Instalado por el cliente</option>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-[9px] font-black uppercase text-slate-500">Factura o certificado</span>
+                        <select id="warranty-has-document" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                            <option value="No confirmado">No confirmado</option>
+                            <option value="Sí">Sí</option>
+                            <option value="No">No</option>
+                        </select>
+                    </label>
+                </div>
+
+                <label class="block">
+                    <span class="text-[9px] font-black uppercase text-slate-500">Solución que espera el cliente</span>
+                    <input id="warranty-expected-solution" maxlength="400" placeholder="Revisión, reparación, orientación…" class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold">
+                </label>
+                <label class="block">
+                    <span class="text-[9px] font-black uppercase text-slate-500">Notas internas del gestor</span>
+                    <textarea id="warranty-manager-notes" maxlength="700" rows="2" placeholder="Información útil para Ángel o el proveedor." class="mt-1 w-full rounded-xl border-slate-200 text-xs font-bold"></textarea>
+                </label>
+
+                <div class="rounded-2xl bg-blue-50 p-4 text-[10px] font-bold leading-relaxed text-blue-800">
+                    Las fotos, videos, audios o documentos no se guardarán en la web. Después de generar el caso, envíalos directamente a Ángel en la conversación de WhatsApp.
+                </div>
+            </div>
+
+            <button id="warranty-submit-button" type="submit" class="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1a4789] px-5 text-xs font-black uppercase tracking-wide text-white shadow-lg">
+                <i class="fab fa-whatsapp text-base"></i> Guardar y enviar a Ángel
+            </button>
+        </form>
+    </div>
+</div>
+
 <div id="modal-garantia" class="fixed inset-0 z-[600] hidden bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] p-6 md:p-8 border border-blue-500/30 shadow-2xl relative animate-pop-in max-h-[90vh] flex flex-col">
         
