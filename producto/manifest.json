@@ -94,9 +94,9 @@
     "slug": "backups-marsriva-1500va-900w",
     "nombre": "Backups - Marsriva 1500VA/900W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/backups-marsriva-1500va-900w/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-07-30T16:58:47.39998+00:00"
   },
   {
     "id": "784396ff-146d-458b-a97c-aca64c0c0487",
@@ -1930,9 +1930,9 @@
     "slug": "mini-dc-ups-nemo",
     "nombre": "Mini DC UPS - Nemo",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/mini-dc-ups-nemo/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-07-30T18:07:41.495517+00:00"
   },
   {
     "id": "ea1d36eb-eb79-405a-8d25-ed17a6da4f97",
@@ -2155,9 +2155,9 @@
     "slug": "nevera-7-8-pies-premium",
     "nombre": "Nevera 7.8 pies Premium",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-premium/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-07-30T17:30:26.343382+00:00"
   },
   {
     "id": "3c6e5510-336e-4a47-956c-a0b4bf2199f1",
