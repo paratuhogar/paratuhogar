@@ -747,6 +747,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "6555a3de-17a2-4ba2-91eb-93727549a6e8",
+    "slug": "ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w",
+    "nombre": "EcoFlow Estación de Energía DELTA 3 Max 2048Wh 2400W",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w/",
+    "updated_at": "2026-07-31T19:39:25.88048+00:00"
+  },
+  {
     "id": "d6bd5241-f984-4ca1-a33c-ac5f7c1fd139",
     "slug": "estacion-de-energia-1kw-must",
     "nombre": "Estación de energía 1kw MUST",
@@ -2155,9 +2164,9 @@
     "slug": "nevera-7-8-pies-premium",
     "nombre": "Nevera 7.8 pies Premium",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-premium/",
-    "updated_at": "2026-07-30T17:30:26.343382+00:00"
+    "updated_at": "2026-07-31T16:59:35.959088+00:00"
   },
   {
     "id": "3c6e5510-336e-4a47-956c-a0b4bf2199f1",
@@ -2248,6 +2257,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-isunaru-4-2-pies-128l/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "b479a9ed-adc4-4dfc-8848-5c6b950876e3",
+    "slug": "nox-fuente-atx-urano-pro-650w-bronze",
+    "nombre": "NOX  Fuente ATX Urano PRO 650W Bronze",
+    "categoria": "TECNOLOGÍA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nox-fuente-atx-urano-pro-650w-bronze/",
+    "updated_at": "2026-07-31T18:58:14.838821+00:00"
   },
   {
     "id": "a3e0fbc2-02b6-40be-9bee-7c99a9715d9e",
