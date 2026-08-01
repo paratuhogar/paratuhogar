@@ -117,6 +117,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "a39630b1-7e4b-4625-89b3-952abd86400d",
+    "slug": "base-solar-1-panel",
+    "nombre": "Base para panel solar [ 1 panel ]",
+    "categoria": "MISCELANEA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/base-solar-1-panel/",
+    "updated_at": "2026-08-01T16:57:04.554918+00:00"
+  },
+  {
     "id": "634391c9-129c-4ea4-a9a8-7f99a372441e",
     "slug": "bateria-12v-7ah-innpo",
     "nombre": "Bateria 12v 7ah - INNPO",
@@ -1321,6 +1330,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/inversor-bateria-5kw-15-36kwh-voltia/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "dd657549-dc56-4c71-ab37-2a347a456794",
+    "slug": "inversor-12-kw-must",
+    "nombre": "Inversor 12 kw Must",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/inversor-12-kw-must/",
+    "updated_at": "2026-08-01T16:49:52.72465+00:00"
   },
   {
     "id": "a6203c84-67a8-4987-9cf8-0859872fd39e",
