@@ -2164,9 +2164,9 @@
     "slug": "nevera-7-8-pies-premium",
     "nombre": "Nevera 7.8 pies Premium",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-premium/",
-    "updated_at": "2026-07-31T16:59:35.959088+00:00"
+    "updated_at": "2026-08-01T03:30:42.324322+00:00"
   },
   {
     "id": "3c6e5510-336e-4a47-956c-a0b4bf2199f1",
@@ -2515,9 +2515,9 @@
     "slug": "refrigerador-11-7-pies-premium",
     "nombre": "Refrigerador 11.7 pies Premium",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-11-7-pies-premium/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-08-01T00:08:08.752409+00:00"
   },
   {
     "id": "a4646c7d-7634-4c44-a2ff-c2428a40f9d8",

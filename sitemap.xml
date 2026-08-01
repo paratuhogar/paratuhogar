@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-07-31</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-07-31</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-08-01</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-08-01</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-07-30</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-07-30</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-08-01</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-07-31</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/ventiladores/</loc><lastmod>2026-07-30</lastmod></url>
@@ -63,6 +63,7 @@
   <url><loc>https://paratuhogar.org/producto/monitor-iggual-21-5/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Monitoriggyal21.5.jpg</image:loc><image:title>Monitor Iggual 21.5&quot;</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/movil-redmi-a5/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/RedmiA5.jpeg</image:loc><image:title>Movil Redmi A5</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/mppt-sun-dy-mlue-1000w-para-triciclo/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/mppt1000W.png</image:loc><image:title>MPPT SUN DY-MLUE-1000W para Triciclo</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/nevera-7-8-pies-premium/</loc><lastmod>2026-08-01</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/nevera78piespremium.jpeg</image:loc><image:title>Nevera 7.8 pies Premium</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/nox-fuente-atx-urano-pro-650w-bronze/</loc><lastmod>2026-07-31</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Fuenteuranopro650.jpg</image:loc><image:title>NOX  Fuente ATX Urano PRO 650W Bronze</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/olla-reina-4l-eko-junta-extra/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/OllaReina4LEKO%2BJuntaextra.jpeg</image:loc><image:title>Olla Reina 4L EKO + Junta extra</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/olla-reina-5l-decakila/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/OllaReina5L_Decakila.jpeg</image:loc><image:title>Olla reina 5L Decakila</image:title></image:image></url>
@@ -72,7 +73,6 @@
   <url><loc>https://paratuhogar.org/producto/procesador-amd-ryzen-3-3200g/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/AMD_ryzen3G2.webp</image:loc><image:title>PROCESADOR AMD RYZEN 3 3200G</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/reflector-solar-120w/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Reflectorsolar-120W.jpeg</image:loc><image:title>Reflector solar - 120W</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/reflector-solar-80w/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Reflectorsolar-80w.jpeg</image:loc><image:title>Reflector solar - 80w</image:title></image:image></url>
-  <url><loc>https://paratuhogar.org/producto/refrigerador-11-7-pies-premium/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Refri11.7pies_Premium.jpeg</image:loc><image:title>Refrigerador 11.7 pies Premium</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/refrigerador-9-43-pies-sankey/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Refrigeradorsankey943pies.jpg</image:loc><image:title>Refrigerador 9.43 pies Sankey</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-mini-dc-ups-marsriva-kp1-ec/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Miniupsmarsriva.jpeg</image:loc><image:title>Smart mini DC UPS - Marsriva KP1 EC</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-43-lg-uhd-ai/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTV43-LGUHDAI.jpeg</image:loc><image:title>Smart TV 43 - LG UHD AI</image:title></image:image></url>
