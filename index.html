@@ -4535,6 +4535,8 @@ window.addEventListener('load', prepareClientExperience);
 // =====================================================
 // CARGA DE PRODUCTOS CON CACHE BUSTING INTELIGENTE (CORREGIDO)
 // =====================================================
+let productsLoadInProgress = false;
+
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -4543,6 +4545,10 @@ async function loadProducts() {
 
     // --- RECUPERAR GESTOR DESDE MEMORIA (SANEADO) ---
     let memoriaGestor = null;
+    // Evita que varios eventos de inicio reconstruyan el catálogo al mismo tiempo.
+    if (productsLoadInProgress) return;
+    productsLoadInProgress = true;
+
     try {
         const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
         if (stored && stored.nombre) {
@@ -4721,6 +4727,8 @@ async function loadProducts() {
     } catch (e) { 
         console.error("Error cargando catálogo:", e);
         document.getElementById('productos-container').innerHTML = `<div class="col-span-full py-10 text-center text-gray-400">Error de conexión.</div>`;
+    } finally {
+        productsLoadInProgress = false;
     }
 }
 
@@ -5423,7 +5431,10 @@ function renderCatalogProducts(list) {
         return;
     }
 
-    container.innerHTML = list.map(product => {
+    const visibleList = list.slice(0, catalogVisibleCount);
+    const hasMoreProducts = visibleList.length < list.length;
+
+    const productCardsHtml = visibleList.map(product => {
         const price = Number(product.precio) || 0;
         const commission = Number(product.comision) || 0;
         const safeName = String(product.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -5433,7 +5444,7 @@ function renderCatalogProducts(list) {
             return `
                 <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
                     <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
-                        <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
+                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
                     </a>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
                         <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
@@ -5463,7 +5474,7 @@ function renderCatalogProducts(list) {
         return `
             <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
                 <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
-                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
+                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
                 </a>
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                     <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
@@ -5499,9 +5510,27 @@ function renderCatalogProducts(list) {
                 </div>
             </article>`;
     }).join('');
+
+    const loadMoreHtml = hasMoreProducts ? `
+        <div class="col-span-full flex justify-center py-5">
+            <button type="button" onclick="loadMoreCatalogProducts()" class="min-h-12 rounded-2xl bg-[#1a4789] px-8 text-sm font-black text-white shadow-md hover:bg-[#12396f]">
+                Cargar más productos (${visibleList.length} de ${list.length})
+            </button>
+        </div>` : '';
+
+    container.innerHTML = productCardsHtml + loadMoreHtml;
 }
 
+const CATALOG_PAGE_SIZE = 24;
+let catalogVisibleCount = CATALOG_PAGE_SIZE;
+
 function renderProducts() {
+    catalogVisibleCount = CATALOG_PAGE_SIZE;
+    renderCatalogProducts(getFilteredCatalogProducts());
+}
+
+function loadMoreCatalogProducts() {
+    catalogVisibleCount += CATALOG_PAGE_SIZE;
     renderCatalogProducts(getFilteredCatalogProducts());
 }
 
@@ -5849,9 +5878,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (!confirmarGratis) return;
     }
 
+    // Un producto sin garantía no puede llegar a la inserción del pedido. La base
+    // de datos necesita una duración válida para conservar la cobertura vendida.
+    const productosSinGarantia = cart.filter(item => !String(item.garantia || '').trim());
+    if (productosSinGarantia.length > 0) {
+        alert(`⚠️ PEDIDO DETENIDO POR DATOS INCOMPLETOS:\n\nFalta configurar la garantía de:\n\n• ${productosSinGarantia.map(item => item.nombre).join('\n• ')}\n\nUn administrador debe completar la garantía del producto antes de venderlo.`);
+        return;
+    }
+
     const btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
     btn.innerText = "PROCESANDO...";
+
+    let checkoutFinished = false;
+
+    try {
 
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session; 
@@ -6205,7 +6246,19 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             toggleCartModal(false);
             location.reload();
         }, 2000); 
-    }, 1500); 
+    }, 1500);
+    checkoutFinished = true;
+    } catch (checkoutError) {
+        console.error("Error inesperado al procesar el pedido:", checkoutError);
+        alert("❌ No pudimos completar el pedido. No cierres esta pantalla y vuelve a intentarlo. Si el problema continúa, informa al administrador.");
+    } finally {
+        // Ante cualquier validación, error de red o excepción, el cliente puede
+        // volver a intentarlo en lugar de quedar atrapado en “PROCESANDO…”.
+        if (!checkoutFinished && btn) {
+            btn.disabled = false;
+            btn.innerText = "Confirmar Pedido";
+        }
+    }
 };
 
     // 6. FUNCIONES AUXILIARES
