@@ -3378,7 +3378,6 @@ checkShortLinks();
     }
 
     initAutoSaveSystem(); 
-    loadClientCRM();
     initAgentFloatingButton();
 
     // --- SENSOR DE INICIO DE SESIÓN CON BLOQUEO DE DUPLICADOS ---
@@ -3750,9 +3749,9 @@ async function processRegister() {
         // El gestor entra directamente a su centro de trabajo.
         await Promise.all([
             loadProducts(),
-            loadProDashboard(name),
-            loadClientCRM()
+            loadProDashboard(name)
         ]);
+        await loadClientCRM();
         if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
         showSection('dashboard');
     }
@@ -3830,6 +3829,7 @@ async function processRegister() {
 
     // Variable global para guardar los pedidos del gestor y poder filtrar
 let myOrdersData = [];
+let myOrdersLoadedFor = null;
 
 // Campos que realmente consumen el historial, las comisiones, el CRM,
 // las facturas y el centro de garantía del gestor. Evita descargar columnas
@@ -3920,7 +3920,8 @@ async function loadProDashboard(nombreGestor) {
         misVentas = data || [];
     }
     
-    myOrdersData = misVentas; 
+    myOrdersData = misVentas;
+    myOrdersLoadedFor = nombreGestor;
 
     // 2. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
@@ -5125,19 +5126,46 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
 
     // Variable global para guardar las categorías de la tienda
 let categoriasPúblicas = [];
+let categoriasCache = null;
+let categoriasCachePromise = null;
+const CATEGORIAS_CACHE_MS = 10 * 60 * 1000;
+
+function invalidateCategoriasCache() {
+    categoriasCache = null;
+    categoriasCachePromise = null;
+}
+
+async function getCategoriasCached({ force = false } = {}) {
+    if (!force && categoriasCache && Date.now() < categoriasCache.expiresAt) {
+        return categoriasCache.data;
+    }
+    if (!force && categoriasCachePromise) return categoriasCachePromise;
+
+    categoriasCachePromise = (async () => {
+        const { data, error } = await supabaseClient
+            .from('categorias')
+            .select('id, nombre, orden')
+            .order('orden', { ascending: true });
+        if (error) throw error;
+        const rows = data || [];
+        categoriasCache = {
+            data: rows,
+            expiresAt: Date.now() + CATEGORIAS_CACHE_MS
+        };
+        return rows;
+    })().finally(() => {
+        categoriasCachePromise = null;
+    });
+    return categoriasCachePromise;
+}
 
 // REEMPLAZAR LA ACTUAL renderCategories() POR ESTA:
 async function renderCategories() {
     // 1. Cargamos el orden oficial del Jefe desde la Base de Datos
     let categoriasOficiales = [];
     try {
-        const { data } = await supabaseClient
-            .from('categorias')
-            .select('nombre')
-            .order('orden', { ascending: true });
-        if (data) {
-            categoriasOficiales = data.map(c => c.nombre.toUpperCase().trim());
-        }
+        const data = await getCategoriasCached();
+        categoriasOficiales = data.map(c => c.nombre.toUpperCase().trim());
     } catch(e) { console.error("Error cargando categorías oficiales"); }
 
     // 2. Extraemos TODAS las categorías que tienen tus productos actualmente (Modo rescate)
@@ -11785,13 +11813,11 @@ async function updateFormCategories() {
     const datalist = document.getElementById('lista-categorias');
     if (!datalist) return;
 
-    const { data } = await supabaseClient
-            .from('categorias')
-            .select('nombre')
-            .order('orden', { ascending: true });
-            
-    if (data) {
+    try {
+        const data = await getCategoriasCached();
         datalist.innerHTML = data.map(c => `<option value="${c.nombre}">`).join('');
+    } catch (error) {
+        console.error('Error cargando categorías del formulario:', error);
     }
 }
     // --- FUNCIÓN DE EXPORTACIÓN EXCEL AVANZADA (LOGÍSTICA) ---
@@ -12264,19 +12290,22 @@ async function loadClientCRM() {
         return;
     }
 
-    // Preparamos la consulta
-    let query = supabaseClient
-        .from('pedidos')
-        .select('cliente, ci, telefono, direccion')
-        .order('fecha', { ascending: false })
-        .limit(300); // Revisamos los últimos 1000
-
-    // FILTRO DE ORO: Si NO es admin, filtra solo sus ventas
-    if (!esAdmin && gestorActual) {
-        query = query.eq('gestor', gestorActual);
+    let data = null;
+    if (!esAdmin && gestorActual && myOrdersLoadedFor === gestorActual) {
+        // El dashboard ya descargó estos pedidos con los mismos datos.
+        data = myOrdersData.slice(0, 300).map(({ cliente, ci, telefono, direccion }) => ({
+            cliente, ci, telefono, direccion
+        }));
+    } else {
+        let query = supabaseClient
+            .from('pedidos')
+            .select('cliente, ci, telefono, direccion')
+            .order('fecha', { ascending: false })
+            .limit(300);
+        if (!esAdmin && gestorActual) query = query.eq('gestor', gestorActual);
+        const result = await query;
+        data = result.data;
     }
-
-    const { data, error } = await query;
 
     if (!data) return;
 
@@ -16251,15 +16280,13 @@ function renderAdminReports() {
 let categoriasAdminBD = [];
 
 // 1. CARGAR CATEGORÍAS (Llama a esta función dentro de tu 'loadAdminData()')
-async function loadAdminCategorias() {
-    const { data, error } = await supabaseClient
-        .from('categorias')
-        .select('*')
-        .order('orden', { ascending: true });
-
-    if (!error && data) {
+async function loadAdminCategorias(force = false) {
+    try {
+        const data = await getCategoriasCached({ force });
         categoriasAdminBD = data;
         renderAdminCategorias();
+    } catch (error) {
+        console.error('Error cargando categorías del administrador:', error);
     }
 }
 
@@ -16320,8 +16347,8 @@ async function adminAddCategoria() {
 
     const { error } = await supabaseClient.from('categorias').insert([{ nombre: nombre, orden: nuevoOrden }]);
     if (error) return alert("Error: Posiblemente ya existe una categoría con ese nombre.");
-    
-    loadAdminCategorias();
+    invalidateCategoriasCache();
+    loadAdminCategorias(true);
 }
 
 // 4. EDITAR / RENOMBRAR (¡Mágia! Cambia la categoría de los productos automáticamente)
@@ -16337,8 +16364,8 @@ async function adminEditCategoria(id, nombreViejo) {
     await supabaseClient.from('productos').update({ categoria: nuevoNombre }).eq('categoria', nombreViejo);
 
     alert(`✅ Categoría renombrada a ${nuevoNombre} y productos actualizados.`);
+    invalidateCategoriasCache();
     loadAdminData(); // Recargamos todo para actualizar inventario
-    loadAdminCategorias();
 }
 
 // 5. ELIMINAR CATEGORÍA
@@ -16354,8 +16381,8 @@ async function adminDeleteCategoria(id, nombre, cantidadEquipos) {
     }
 
     await supabaseClient.from('categorias').delete().eq('id', id);
+    invalidateCategoriasCache();
     loadAdminData();
-    loadAdminCategorias();
 }
 
 // 6. REORDENAR (Subir o Bajar)
@@ -16378,7 +16405,8 @@ async function moverCategoria(idActual, direccion, ordenActual) {
     await supabaseClient.from('categorias').update({ orden: nuevoOrdenParaActual }).eq('id', catActual.id);
     await supabaseClient.from('categorias').update({ orden: nuevoOrdenParaVecina }).eq('id', catVecina.id);
 
-    loadAdminCategorias();
+    invalidateCategoriasCache();
+    loadAdminCategorias(true);
 }
 
 
