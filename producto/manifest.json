@@ -931,9 +931,9 @@
     "slug": "estacion-portatil-ecoflow-delta-3-clasica",
     "nombre": "Estación portátil - Ecoflow Delta 3 Clásica",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3-clasica/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-08-02T02:20:57.247096+00:00"
   },
   {
     "id": "4756718f-2263-4b41-8990-81708f50d980",
@@ -958,9 +958,9 @@
     "slug": "estacion-portatil-3600w-delta-pro",
     "nombre": "Estación portátil 3600W DELTA Pro",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-3600w-delta-pro/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-08-02T02:22:01.436461+00:00"
   },
   {
     "id": "837cc1f5-12a8-4bd8-9454-1d531e5a3b52",
@@ -1003,9 +1003,9 @@
     "slug": "estacion-portatil-ecoflow-delta-2",
     "nombre": "Estación portátil Ecoflow Delta 2",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-2/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-08-02T02:21:00.504312+00:00"
   },
   {
     "id": "f488f6df-fe95-4629-b435-5640f532625d",
