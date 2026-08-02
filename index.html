@@ -12,7 +12,15 @@
     <meta name="keywords" content="electrodomésticos Cuba, comprar split en La Habana, refrigeradores Cuba, plantas eléctricas Sankey, estaciones de energía Ecoflow, baterías de litio Topmaq, envío a Cuba, tienda online Cuba, ollas reina EKO, televisores inteligentes Cuba">
     <meta name="author" content="paratuhogar.org">
     <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#1a4789">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ParaTuHogar">
     <link rel="canonical" href="https://paratuhogar.org/" />
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
     <!-- Open Graph (Para previsualización en WhatsApp y Facebook) -->
     <meta property="og:title" content="ParaTuHogar | Equipos para tu familia en Cuba">
@@ -35,6 +43,7 @@
     <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/image-variants.js?v=2026-08-02" defer></script>
+    <script src="js/pwa.js?v=2026-08-02-pwa1" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -3127,7 +3136,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807a"; 
+const versionActual = "2807b";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {

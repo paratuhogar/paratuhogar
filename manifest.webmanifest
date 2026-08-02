@@ -1,0 +1,29 @@
+{
+  "id": "/",
+  "name": "ParaTuHogar Cuba",
+  "short_name": "ParaTuHogar",
+  "description": "Catálogo de equipos para el hogar con atención y entrega en Cuba.",
+  "lang": "es-CU",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#1a4789",
+  "categories": ["shopping", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
