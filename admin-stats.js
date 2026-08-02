@@ -119,15 +119,27 @@ async function initTrafficDashboard() {
             .select('agent_name, pais, timestamp, os')
             .order('timestamp', { ascending: false });
 
-        // B. Ventas (Para conversión)
-        const { count: totalVentas } = await supabaseClient
-            .from('pedidos')
-            .select('*', { count: 'exact', head: true });
+        // B/C. El panel maestro ya cargó estos datos. Reutilizarlos evita dos
+        // consultas adicionales cada vez que se abre la pestaña de tráfico.
+        const pedidosEnMemoria = typeof pedidosRawAdmin !== 'undefined' ? pedidosRawAdmin : [];
+        const vistasEnMemoria = typeof vistasRawAdmin !== 'undefined' ? vistasRawAdmin : [];
+        let totalVentas = pedidosEnMemoria.length;
+        let vistasProductos = vistasEnMemoria;
 
-        // C. Vistas de Productos
-        const { data: vistasProductos } = await supabaseClient
-            .from('metricas_vistas')
-            .select('nombre_producto');
+        // Si la pestaña se abre antes de que termine la carga maestra,
+        // conservamos el comportamiento anterior como respaldo.
+        if (!pedidosEnMemoria.length || !vistasEnMemoria.length) {
+            const [ventasResult, vistasResult] = await Promise.all([
+                pedidosEnMemoria.length
+                    ? Promise.resolve({ count: pedidosEnMemoria.length })
+                    : supabaseClient.from('pedidos').select('id', { count: 'exact', head: true }),
+                vistasEnMemoria.length
+                    ? Promise.resolve({ data: vistasEnMemoria })
+                    : supabaseClient.from('metricas_vistas').select('nombre_producto')
+            ]);
+            totalVentas = ventasResult.count || 0;
+            vistasProductos = vistasResult.data || [];
+        }
 
         if (!analytics || analytics.length === 0) {
             container.innerHTML = `<div class="p-10 text-center text-gray-400">No hay datos suficientes para generar inteligencia.</div>`;
