@@ -552,6 +552,32 @@
         URL.revokeObjectURL(link.href);
     }
 
+    function helpStorageKey() {
+        return `${storageKey}_guide_seen`;
+    }
+
+    function isHelpSeen() {
+        try {
+            return localStorage.getItem(helpStorageKey()) === '1';
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function setHelpVisible(visible, remember = false) {
+        const help = root?.querySelector('.pth-followup-help');
+        if (!help) return;
+        help.classList.toggle('is-hidden', !visible);
+        const trigger = root?.querySelector('[data-action="toggle-help"]');
+        if (trigger) {
+            trigger.textContent = visible ? 'Ocultar guía' : 'Cómo funciona';
+            trigger.setAttribute('aria-expanded', String(visible));
+        }
+        if (remember && !visible) {
+            try { localStorage.setItem(helpStorageKey(), '1'); } catch (_) { /* La guía seguirá visible si no hay almacenamiento. */ }
+        }
+    }
+
     function handleClick(event) {
         const actionNode = event.target.closest('[data-action]');
         if (!actionNode) return;
@@ -561,6 +587,12 @@
         if (action === 'close-form') return closeForm();
         if (action === 'sync') return sync(true);
         if (action === 'export') return exportBackup();
+        if (action === 'toggle-help') {
+            const help = root?.querySelector('.pth-followup-help');
+            const willShow = help?.classList.contains('is-hidden');
+            return setHelpVisible(willShow, !willShow);
+        }
+        if (action === 'dismiss-help') return setHelpVisible(false, true);
         if (action === 'whatsapp-form') {
             const editId = actionNode.closest('form')?.dataset.editId;
             const formItem = items.find(row => row.id === editId);
@@ -591,10 +623,34 @@
                         <div class="pth-followup-stat is-interest"><small>Interesados</small><strong data-stat="interested">0</strong></div>
                     </div>
                 </header>
+                <section class="pth-followup-help ${isHelpSeen() ? 'is-hidden' : ''}" aria-label="Cómo usar Seguimientos">
+                    <div class="pth-followup-help-head">
+                        <div>
+                            <p class="pth-followup-help-kicker">Tu herramienta de recompra</p>
+                            <h3>Vuelve a venderle a quien ya confió en ti</h3>
+                        </div>
+                        <button class="pth-followup-icon-btn" data-action="dismiss-help" aria-label="Ocultar explicación">✕</button>
+                    </div>
+                    <p class="pth-followup-help-intro">Seguimientos organiza tus clientes y te recuerda a quién escribir y cuándo. Úsalo para saludar después de una compra, conocer su experiencia y recomendarle algo nuevo o relacionado.</p>
+                    <div class="pth-followup-help-steps">
+                        <article><b>1</b><span><strong>Revisa “Hoy”</strong>Empieza por los contactos que ya corresponden.</span></article>
+                        <article><b>2</b><span><strong>Escribe por WhatsApp</strong>Te preparamos un mensaje que puedes personalizar.</span></article>
+                        <article><b>3</b><span><strong>Deja el próximo paso</strong>Cambia el estado y programa cuándo volverás a contactar.</span></article>
+                    </div>
+                    <div class="pth-followup-help-legend">
+                        <span><strong>Atrasado:</strong> pasó la fecha prevista</span>
+                        <span><strong>Interesado:</strong> hay una oportunidad activa</span>
+                        <span><strong>Esperando pago:</strong> el cierre está avanzado</span>
+                        <span><strong>Vendido:</strong> la nueva venta se completó</span>
+                    </div>
+                    <p class="pth-followup-help-protection"><span>🛡</span><span><strong>Tu cliente continúa siendo tuyo sin vencimiento.</strong> Darle seguimiento te ayuda a conservar la relación y evita que otro gestor consiga antes un nuevo cierre completo.</span></p>
+                    <button class="pth-followup-primary pth-followup-help-cta" data-action="dismiss-help">Entendido, ver mi agenda</button>
+                </section>
                 <div class="pth-followup-toolbar">
                     <div class="pth-followup-actions">
                         <button class="pth-followup-primary" data-action="new">+ Nuevo</button>
                         <button class="pth-followup-secondary" data-action="sync">Actualizar</button>
+                        <button class="pth-followup-secondary" data-action="toggle-help" aria-expanded="${String(!isHelpSeen())}">${isHelpSeen() ? 'Cómo funciona' : 'Ocultar guía'}</button>
                         <button class="pth-followup-secondary" data-action="export">Copia</button>
                         <span class="pth-followup-sync">Preparando…</span>
                     </div>
