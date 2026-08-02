@@ -1164,7 +1164,7 @@
                         <p id="msg-instrucciones-seguro" class="text-xs text-indigo-700"></p>
                     </div>
                     <!-- BOTÓN AUTO-ASIGNAR -->
-                    <button onclick="autoAssignHalfCommissions()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs uppercase rounded-xl transition-all shadow-md shadow-emerald-500/20 hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5 shrink-0">
+                    <button id="btn-auto-assign-subcommissions" onclick="autoAssignHalfCommissions()" class="hidden w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs uppercase rounded-xl transition-all shadow-md shadow-emerald-500/20 hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5 shrink-0">
                         <span class="material-symbols-outlined text-sm">bolt</span> Auto-Asignar 50% a Vacíos
                     </button>
                 </div>
@@ -3662,8 +3662,12 @@ async function processRegister() {
         const isSubgestor = window.currentUserData && window.currentUserData.parent_id;
         const btnSub = document.getElementById('btn-open-subgestores');
         const btnPrices = document.getElementById('btn-dash-precios');
+        const btnAutoAssign = document.getElementById('btn-auto-assign-subcommissions');
         if (btnPrices) {
             btnPrices.textContent = isSubgestor ? '🏷️ Precios asignados' : '🏷️ Mis Precios (Config)';
+        }
+        if (btnAutoAssign) {
+            btnAutoAssign.classList.toggle('hidden', Boolean(isSubgestor));
         }
         if (btnSub) {
             if (isSubgestor) {
@@ -16544,6 +16548,11 @@ function agregarNuevoProveedor() {
     async function autoAssignHalfCommissions() {
         const gestorActual = window.gestorName;
         if (!gestorActual) return alert("Error de sesión. Por favor recarga la página.");
+
+        const hierarchy = await resolveSalesHierarchy(gestorActual);
+        if (hierarchy?.isSubgestor) {
+            return alert(`🔒 Solo ${hierarchy.parent.nombre}, como gestor principal, puede asignar comisiones.`);
+        }
 
         const confirmar = confirm("¿Deseas asignar automáticamente el 50% de la comisión de todos los productos en stock donde aún no has definido una comisión para tus subgestores?\n\n(Las comisiones que ya configuraste de manera manual se mantendrán intactas).");
         if (!confirmar) return;
