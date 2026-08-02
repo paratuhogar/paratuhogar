@@ -3070,6 +3070,41 @@ if (urlParamsVersion.get('v') !== versionActual) {
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Alertas del Radar para gestores conectados en cualquier sección de la tienda.
+    supabaseClient
+        .channel('global-blacklist-alerts')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blacklist' }, payload => {
+            let activeSession = null;
+            try {
+                activeSession = JSON.parse(localStorage.getItem('pth_session') || 'null');
+            } catch (error) {
+                console.warn('No se pudo leer la sesión para la alerta del Radar.', error);
+            }
+            if (!activeSession) return;
+
+            const reportedBy = payload.new?.reportado_por || 'Otro gestor';
+            if (reportedBy === activeSession.name) return;
+
+            const phoneDigits = String(payload.new?.telefono || '').replace(/\D/g, '');
+            const phoneLabel = phoneDigits.length === 8 ? `+53 ${phoneDigits}` : `+${phoneDigits}`;
+            const alertBox = document.createElement('div');
+            alertBox.setAttribute('role', 'alert');
+            alertBox.className = 'fixed bottom-4 left-4 right-4 md:left-auto md:w-96 z-[1000] rounded-2xl border border-red-400 bg-red-950 px-5 py-4 text-white shadow-2xl';
+
+            const title = document.createElement('p');
+            title.className = 'font-black uppercase tracking-wide text-sm';
+            title.textContent = '🚨 Nuevo número problemático';
+            const detail = document.createElement('p');
+            detail.className = 'mt-1 text-xs font-bold text-red-100';
+            detail.textContent = `${reportedBy} reportó ${phoneLabel}. Ya quedó bloqueado para comprar.`;
+            alertBox.append(title, detail);
+            document.body.appendChild(alertBox);
+            setTimeout(() => alertBox.remove(), 9000);
+        })
+        .subscribe(status => {
+            if (status === 'CHANNEL_ERROR') console.warn('Las alertas del Radar en tiempo real no están disponibles.');
+        });
+
 async function checkShortLinks() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -5546,7 +5581,12 @@ function openDetail(name, skipSolarCheck = false) {
     
     if(!selectedProduct) return; 
 
-    history.pushState({producto: name}, '', getPermanentProductUrl(selectedProduct));
+    // Las rutas limpias solo pueden escribirse cuando la página se sirve por
+    // HTTP(S). Chrome bloquea pushState hacia /producto/... al abrir el HTML
+    // directamente mediante file:// durante las pruebas locales.
+    if (window.location.protocol !== 'file:') {
+        history.pushState({producto: name}, '', getPermanentProductUrl(selectedProduct));
+    }
     document.title = `${nombreReal} | Comprar en Cuba - ParaTuHogar`;
 
     // === EJECUCIÓN NORMAL (BLOQUEOS ELIMINADOS) ===
@@ -5904,16 +5944,30 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const telC = document.getElementById('check-tel').value;
 
     // 👇 INICIO DEL ESCUDO PROTECTOR (LISTA NEGRA) 👇
-    let telLimpioCheck = telC.replace(/\D/g, '');
+    const telLimpioCheck = telC.replace(/\D/g, '');
+    const blacklistCandidates = new Set([telLimpioCheck]);
+
+    // Compatibilidad con registros cubanos antiguos (8 dígitos) y nuevos (+53).
     if (telLimpioCheck.startsWith('53') && telLimpioCheck.length === 10) {
-        telLimpioCheck = telLimpioCheck.substring(2);
+        blacklistCandidates.add(telLimpioCheck.substring(2));
+    } else if (telLimpioCheck.length === 8) {
+        blacklistCandidates.add('53' + telLimpioCheck);
     }
 
-    const { data: isBlocked } = await supabaseClient
+    const { data: blockedMatches, error: blacklistError } = await supabaseClient
         .from('blacklist')
-        .select('tipo, motivo')
-        .eq('telefono', telLimpioCheck)
-        .maybeSingle();
+        .select('tipo, motivo, telefono')
+        .in('telefono', [...blacklistCandidates])
+        .limit(1);
+
+    if (blacklistError) {
+        alert('⚠️ No pudimos verificar el teléfono en el Radar de Riesgos. Por seguridad, intenta confirmar el pedido nuevamente.');
+        btn.disabled = false;
+        btn.innerText = 'Confirmar Pedido';
+        return;
+    }
+
+    const isBlocked = blockedMatches?.[0];
 
     if (isBlocked) {
         alert(`🚨 ALERTA DE SEGURIDAD 🚨\n\nEste número de teléfono está registrado en nuestra base de datos como Cliente ${isBlocked.tipo.toUpperCase()}.\n\nMotivo del reporte: ${isBlocked.motivo}\n\nPor seguridad del equipo, este pedido no puede ser procesado.`);
@@ -6422,7 +6476,9 @@ function renderFloatingWA(nombre, telefono) {
 }
     function closeDetail() {
     // === NUEVO: RESTAURAR SEO DINÁMICO ===
-    history.pushState(null, '', '/');
+    if (window.location.protocol !== 'file:') {
+        history.pushState(null, '', '/');
+    }
     document.title = "ParaTuHogar | Electrodomésticos para Cuba";
     closeDetailImagePreview();
     // ==========================================

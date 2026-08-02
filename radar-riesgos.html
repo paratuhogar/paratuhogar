@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radar de Riesgos | ParaTuHogar</title>
     
     <!-- Librerías base -->
@@ -22,6 +22,11 @@
             animation: scan 8s linear infinite;
         }
         @keyframes scan { 0% { top: -100px; } 100% { top: 100vh; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+            .scanline { display: none; }
+        }
         
         /* Scrollbar elegante para la tabla en móvil */
         .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
@@ -49,7 +54,7 @@
                     <p class="text-[10px] md:text-xs font-bold text-red-400 uppercase tracking-[0.2em]">Sistema Anti-Fraude / Lista Negra</p>
                 </div>
             </div>
-            <button onclick="window.close()" class="h-10 w-10 bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700/50 hover:border-red-500/50 rounded-full flex items-center justify-center transition-all absolute md:static top-4 right-4">
+            <button id="close-radar" type="button" aria-label="Volver a la tienda" class="h-10 w-10 bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700/50 hover:border-red-500/50 rounded-full flex items-center justify-center transition-all absolute md:static top-4 right-4">
                 <span class="material-symbols-outlined text-xl">close</span>
             </button>
         </div>
@@ -65,7 +70,7 @@
                 
                 <form id="form-report" class="space-y-4">
                     <div>
-                        <label class="text-[9px] font-black text-slate-500 uppercase ml-1">País y Teléfono</label>
+                        <label for="r-tel" class="text-xs font-black text-slate-400 uppercase ml-1">País y Teléfono</label>
                         <div class="flex gap-2">
                             <!-- Selector de País -->
                             <select id="r-pais" onchange="updatePlaceholder()" class="w-1/3 bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all appearance-none cursor-pointer">
@@ -81,15 +86,15 @@
                         </div>
                     </div>
                     <div>
-                        <label class="text-[9px] font-black text-slate-500 uppercase ml-1">Gravedad</label>
+                        <label for="r-tipo" class="text-xs font-black text-slate-400 uppercase ml-1">Gravedad</label>
                         <select id="r-tipo" class="w-full bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all appearance-none cursor-pointer">
                             <option value="Estafador">🛑 ESTAFADOR / Falso Comprador</option>
                             <option value="Complicado">⚠️ COMPLICADO / Problemático</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-[9px] font-black text-slate-500 uppercase ml-1">¿Qué sucedió?</label>
-                        <textarea id="r-motivo" rows="2" placeholder="Breve descripción del problema..." class="w-full bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 placeholder:text-slate-600 transition-all resize-none" required></textarea>
+                        <label for="r-motivo" class="text-xs font-black text-slate-400 uppercase ml-1">¿Qué sucedió?</label>
+                        <textarea id="r-motivo" rows="2" maxlength="500" placeholder="Breve descripción del problema..." class="w-full bg-[#0a0f18] border border-slate-700 rounded-xl p-3.5 text-sm font-bold text-white focus:border-red-500 focus:ring-1 focus:ring-red-500/50 placeholder:text-slate-600 transition-all resize-none" required></textarea>
                     </div>
                     <button type="submit" class="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)] active:scale-95 mt-2">
                         Añadir a Lista Negra
@@ -125,18 +130,27 @@
 
         <!-- PANEL INFERIOR: TABLA -->
         <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="p-5 border-b border-slate-800 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <h3 class="font-black text-white uppercase text-sm tracking-widest flex items-center gap-2">
                     <span class="material-symbols-outlined text-slate-500 text-lg">database</span>
                     Base de Datos Restringida
                 </h3>
-                <span id="total-count" class="bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                    0 Registros
-                </span>
+                <div class="flex flex-col sm:flex-row w-full lg:w-auto gap-2">
+                    <label for="risk-search" class="sr-only">Buscar por teléfono, motivo o gestor</label>
+                    <input id="risk-search" type="search" placeholder="Buscar teléfono o motivo…" class="w-full sm:w-64 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-red-500 focus:ring-1 focus:ring-red-500/50">
+                    <label for="risk-filter" class="sr-only">Filtrar por gravedad</label>
+                    <select id="risk-filter" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm font-bold text-white focus:border-red-500">
+                        <option value="Todos">Todos</option>
+                        <option value="Estafador">Estafador</option>
+                        <option value="Complicado">Complicado</option>
+                    </select>
+                    <span id="total-count" class="shrink-0 bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest">0 Registros</span>
+                </div>
             </div>
             
             <!-- CONTENEDOR CON SCROLL HORIZONTAL PARA MÓVIL -->
-            <div class="overflow-x-auto max-h-[500px] custom-scrollbar">
+            <div id="blacklist-cards" class="md:hidden divide-y divide-slate-800/60"></div>
+            <div class="hidden md:block overflow-x-auto max-h-[500px] custom-scrollbar">
                 <table class="w-full text-left border-collapse min-w-[700px]">
                     <thead class="bg-slate-950 text-[9px] font-black uppercase text-slate-500 sticky top-0 z-10 shadow-sm">
                         <tr>
@@ -156,6 +170,8 @@
 
     </div>
 
+    <div id="toast-region" aria-live="polite" aria-atomic="true" class="fixed z-50 right-4 bottom-4 left-4 sm:left-auto sm:w-96 space-y-2"></div>
+
     <!-- Script para iconos de WhatsApp -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
@@ -167,15 +183,84 @@
 
         let blacklistData = [];
         let gestorActivo = "Anónimo";
+        let lastKnownKey = null;
+        let justReportedPhone = null;
+
+        const COUNTRY_RULES = {
+            '53': { length: 8, label: 'Cuba' },
+            '1': { length: 10, label: 'EE.UU.' },
+            '34': { length: 9, label: 'España' },
+            '52': { length: 10, label: 'México' }
+        };
+
+        function digitsOnly(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
+
+        function normalizeReportedPhone(prefix, value) {
+            let national = digitsOnly(value);
+            const rule = COUNTRY_RULES[prefix];
+
+            if (!rule) {
+                if (national.length < 8 || national.length > 15) {
+                    throw new Error('Para otro país, escribe el código de país y el número completo (8 a 15 dígitos).');
+                }
+                return national;
+            }
+
+            if (national.startsWith(prefix) && national.length === prefix.length + rule.length) {
+                national = national.slice(prefix.length);
+            }
+            if (national.length !== rule.length) {
+                throw new Error(`${rule.label}: el número debe tener exactamente ${rule.length} dígitos sin el prefijo.`);
+            }
+            return prefix + national;
+        }
+
+        function phoneCandidates(storedPhone) {
+            const phone = digitsOnly(storedPhone);
+            const values = new Set([phone]);
+            if (phone.startsWith('53') && phone.length === 10) values.add(phone.slice(2));
+            if (phone.length === 8) values.add('53' + phone);
+            return [...values];
+        }
+
+        function displayPhone(value) {
+            const phone = digitsOnly(value);
+            return phone.length === 8 ? `+53 ${phone}` : `+${phone}`;
+        }
+
+        function showToast(message, tone = 'info') {
+            const toast = document.createElement('div');
+            const colors = tone === 'error'
+                ? 'border-red-500/50 bg-red-950 text-red-100'
+                : tone === 'success'
+                    ? 'border-emerald-500/50 bg-emerald-950 text-emerald-100'
+                    : 'border-sky-500/50 bg-slate-900 text-slate-100';
+            toast.className = `border ${colors} rounded-xl px-4 py-3 shadow-2xl text-sm font-bold`;
+            toast.textContent = message;
+            document.getElementById('toast-region').appendChild(toast);
+            setTimeout(() => toast.remove(), 5500);
+        }
 
         window.onload = async () => {
             const sessionData = localStorage.getItem('pth_session');
             if (sessionData) {
-                const s = JSON.parse(sessionData);
-                gestorActivo = s.name || "Agente";
+                try {
+                    const s = JSON.parse(sessionData);
+                    gestorActivo = String(s.name || 'Agente').slice(0, 80);
+                } catch (error) {
+                    console.warn('Sesión local inválida', error);
+                }
             }
             await loadBlacklist();
+            subscribeToRiskAlerts();
         };
+
+        document.getElementById('close-radar').addEventListener('click', () => {
+            if (window.history.length > 1) window.history.back();
+            else window.location.href = 'index.html';
+        });
 
         // Cambiar Placeholder según el país
         function updatePlaceholder() {
@@ -191,46 +276,111 @@
 
         // Cargar Base de Datos
         async function loadBlacklist() {
+            const tbody = document.getElementById('blacklist-table');
+            const cards = document.getElementById('blacklist-cards');
             const { data, error } = await supabaseClient
                 .from('blacklist')
-                .select('*')
+                .select('telefono, tipo, motivo, reportado_por, created_at')
                 .order('created_at', { ascending: false });
 
-            if (error) { console.error(error); return; }
-
-            blacklistData = data;
-            document.getElementById('total-count').innerText = `${data.length} REGISTROS`;
-            
-            const tbody = document.getElementById('blacklist-table');
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-600 font-bold uppercase tracking-widest">No hay registros aún.</td></tr>`;
+            if (error) {
+                console.error(error);
+                tbody.replaceChildren(createTableMessage('No se pudo cargar la base de datos. Intenta nuevamente.'));
+                cards.replaceChildren(createCardMessage('No se pudo cargar la base de datos.'));
+                showToast('No se pudo cargar el Radar de Riesgos.', 'error');
                 return;
             }
 
-            tbody.innerHTML = data.map(row => {
-                const isEstafador = row.tipo === 'Estafador';
-                const colorBadge = isEstafador ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-                const icon = isEstafador ? '🛑' : '⚠️';
-                
-                // Formateo visual del teléfono
-                let displayPhone = row.telefono;
-                if (displayPhone.length === 8) displayPhone = "+53 " + displayPhone; // Si son 8 digitos, seguro es Cuba
-                else displayPhone = "+" + displayPhone; // Cualquier otro, le ponemos el +
-
-                return `
-                <tr class="hover:bg-slate-800/40 transition-colors">
-                    <td class="p-4 font-mono font-bold text-white text-sm whitespace-nowrap">${displayPhone}</td>
-                    <td class="p-4">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[9px] font-black uppercase border ${colorBadge} whitespace-nowrap">
-                            ${icon} ${row.tipo}
-                        </span>
-                    </td>
-                    <td class="p-4 text-slate-300 font-medium leading-relaxed max-w-xs break-words">${row.motivo}</td>
-                    <td class="p-4 text-slate-500 font-bold text-[10px] uppercase tracking-wider">${row.reportado_por}</td>
-                    <td class="p-4 text-right text-slate-600 font-bold text-[10px]">${new Date(row.created_at).toLocaleDateString()}</td>
-                </tr>`;
-            }).join('');
+            blacklistData = data || [];
+            lastKnownKey = blacklistData[0] ? `${blacklistData[0].telefono}|${blacklistData[0].created_at}` : null;
+            renderBlacklist();
         }
+
+        function createTableMessage(message) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 5;
+            td.className = 'p-10 text-center text-slate-500 font-bold uppercase tracking-widest';
+            td.textContent = message;
+            tr.appendChild(td);
+            return tr;
+        }
+
+        function createCardMessage(message) {
+            const div = document.createElement('div');
+            div.className = 'p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-xs';
+            div.textContent = message;
+            return div;
+        }
+
+        function filteredBlacklist() {
+            const query = digitsOnly(document.getElementById('risk-search').value);
+            const rawQuery = document.getElementById('risk-search').value.trim().toLocaleLowerCase('es');
+            const type = document.getElementById('risk-filter').value;
+            return blacklistData.filter(row => {
+                const matchesType = type === 'Todos' || row.tipo === type;
+                const text = `${row.motivo || ''} ${row.reportado_por || ''}`.toLocaleLowerCase('es');
+                const matchesSearch = !rawQuery || (query && digitsOnly(row.telefono).includes(query)) || text.includes(rawQuery);
+                return matchesType && matchesSearch;
+            });
+        }
+
+        function makeBadge(row) {
+            const isHigh = row.tipo === 'Estafador';
+            const badge = document.createElement('span');
+            badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase border whitespace-nowrap ${isHigh ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`;
+            badge.textContent = `${isHigh ? '🛑' : '⚠️'} ${row.tipo || 'Complicado'}`;
+            return badge;
+        }
+
+        function renderBlacklist() {
+            const rows = filteredBlacklist();
+            const tbody = document.getElementById('blacklist-table');
+            const cards = document.getElementById('blacklist-cards');
+            tbody.replaceChildren();
+            cards.replaceChildren();
+            document.getElementById('total-count').textContent = `${rows.length} DE ${blacklistData.length}`;
+
+            if (!rows.length) {
+                tbody.appendChild(createTableMessage(blacklistData.length ? 'No hay coincidencias.' : 'No hay registros aún.'));
+                cards.appendChild(createCardMessage(blacklistData.length ? 'No hay coincidencias.' : 'No hay registros aún.'));
+                return;
+            }
+
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40 transition-colors';
+                const values = [displayPhone(row.telefono), '', row.motivo || 'Sin motivo', row.reportado_por || 'Sin identificar', new Date(row.created_at).toLocaleDateString('es-CU')];
+                values.forEach((value, index) => {
+                    const td = document.createElement('td');
+                    td.className = index === 0 ? 'p-4 font-mono font-bold text-white text-sm whitespace-nowrap' : index === 4 ? 'p-4 text-right text-slate-500 font-bold text-[10px]' : 'p-4 text-slate-300 font-medium leading-relaxed break-words';
+                    if (index === 1) td.appendChild(makeBadge(row));
+                    else td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+
+                const card = document.createElement('article');
+                card.className = 'p-5 space-y-3';
+                const top = document.createElement('div');
+                top.className = 'flex items-center justify-between gap-3';
+                const phone = document.createElement('strong');
+                phone.className = 'font-mono text-base text-white';
+                phone.textContent = displayPhone(row.telefono);
+                top.append(phone, makeBadge(row));
+                const reason = document.createElement('p');
+                reason.className = 'text-sm text-slate-300 leading-relaxed break-words';
+                reason.textContent = row.motivo || 'Sin motivo';
+                const meta = document.createElement('p');
+                meta.className = 'text-[11px] text-slate-500 font-bold uppercase tracking-wide';
+                meta.textContent = `${row.reportado_por || 'Sin identificar'} · ${new Date(row.created_at).toLocaleDateString('es-CU')}`;
+                card.append(top, reason, meta);
+                cards.appendChild(card);
+            });
+        }
+
+        document.getElementById('risk-search').addEventListener('input', renderBlacklist);
+        document.getElementById('risk-filter').addEventListener('change', renderBlacklist);
 
         // GUARDAR REPORTE (Con Validaciones Exactas por País)
         document.getElementById('form-report').addEventListener('submit', async (e) => {
@@ -242,55 +392,39 @@
             btn.disabled = true;
 
             const prefijo = document.getElementById('r-pais').value;
-            let telRaw = document.getElementById('r-tel').value.replace(/\D/g, ''); // Quitamos espacios, guiones, etc.
-
-            // Lógica auto-correctora por si pegan el número con todo y código de país en el input
-            if (prefijo === '53' && telRaw.startsWith('53') && telRaw.length === 10) telRaw = telRaw.substring(2);
-            if (prefijo === '1' && telRaw.startsWith('1') && telRaw.length === 11) telRaw = telRaw.substring(1);
-            if (prefijo === '34' && telRaw.startsWith('34') && telRaw.length === 11) telRaw = telRaw.substring(2);
-            if (prefijo === '52' && telRaw.startsWith('52') && telRaw.length === 12) telRaw = telRaw.substring(2);
-
-            let numeroFinal_BD = "";
-
-            // VALIDACIONES ESTRICTAS SEGÚN EL PAÍS
-            if (prefijo === '53') {
-                if (telRaw.length !== 8) {
-                    btn.innerHTML = originalText; btn.disabled = false;
-                    return alert("❌ Cuba: El número debe tener exactamente 8 dígitos.");
-                }
-                numeroFinal_BD = telRaw; // Cuba se guarda SIN 53 para encajar con la lógica del Carrito
-            } 
-            else if (prefijo === '1') {
-                if (telRaw.length !== 10) {
-                    btn.innerHTML = originalText; btn.disabled = false;
-                    return alert("❌ EE.UU: El número debe tener exactamente 10 dígitos (Ej: 3051234567).");
-                }
-                numeroFinal_BD = "1" + telRaw; // Se guarda con prefijo
-            } 
-            else if (prefijo === '34') {
-                if (telRaw.length !== 9) {
-                    btn.innerHTML = originalText; btn.disabled = false;
-                    return alert("❌ España: El número debe tener exactamente 9 dígitos.");
-                }
-                numeroFinal_BD = "34" + telRaw;
-            } 
-            else if (prefijo === '52') {
-                if (telRaw.length !== 10) {
-                    btn.innerHTML = originalText; btn.disabled = false;
-                    return alert("❌ México: El número debe tener exactamente 10 dígitos.");
-                }
-                numeroFinal_BD = "52" + telRaw;
-            } 
-            else { // Caso "Otro"
-                if (telRaw.length < 7) {
-                    btn.innerHTML = originalText; btn.disabled = false;
-                    return alert("❌ Ingresa un número válido con código de país.");
-                }
-                numeroFinal_BD = telRaw; // Se guarda tal cual lo puso
+            let numeroFinal_BD;
+            try {
+                numeroFinal_BD = normalizeReportedPhone(prefijo, document.getElementById('r-tel').value);
+            } catch (error) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                showToast(error.message, 'error');
+                document.getElementById('r-tel').focus();
+                return;
             }
 
             const tipo = document.getElementById('r-tipo').value;
-            const motivo = document.getElementById('r-motivo').value;
+            const motivo = document.getElementById('r-motivo').value.trim();
+
+            const candidates = phoneCandidates(numeroFinal_BD);
+            const { data: existing, error: checkError } = await supabaseClient
+                .from('blacklist')
+                .select('telefono')
+                .in('telefono', candidates)
+                .limit(1);
+
+            if (checkError) {
+                showToast('No se pudo verificar si el número ya existe.', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+            if (existing?.length) {
+                showToast('Este número ya estaba reportado en el Radar.', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
 
             // ENVIAR A SUPABASE
             const { error } = await supabaseClient.from('blacklist').insert([{
@@ -301,12 +435,13 @@
             }]);
 
             if (error) {
-                if (error.code === '23505') alert("⚠️ Este número ya estaba reportado en la lista negra.");
-                else alert("Error guardando el dato: " + error.message);
+                if (error.code === '23505') showToast('Este número ya estaba reportado en el Radar.', 'error');
+                else showToast('No se pudo bloquear el número: ' + error.message, 'error');
             } else {
-                alert("✅ Número bloqueado exitosamente.\n\nEse cliente ya no podrá confirmar pedidos en la tienda.");
+                justReportedPhone = numeroFinal_BD;
+                showToast('Número bloqueado. Los demás gestores recibirán la alerta.', 'success');
                 document.getElementById('form-report').reset();
-                loadBlacklist();
+                await loadBlacklist();
             }
 
             btn.innerHTML = originalText;
@@ -328,11 +463,13 @@
                 const contactName = `${prefix} PTH ${count}`; 
                 
                 // Aseguramos el +53 para Cuba, o el + para otros
-                const phoneVCF = row.telefono.length === 8 ? `+53${row.telefono}` : `+${row.telefono}`;
+                const phoneVCF = displayPhone(row.telefono).replace(/\s/g, '');
 
                 // LIMPIEZA CRÍTICA: Quitar saltos de línea reales del texto que escribió el gestor
                 // porque rompen el archivo VCF en los teléfonos.
-                let motivoLimpio = row.motivo ? row.motivo.replace(/\r?\n|\r/g, " / ") : "Sin motivo";
+                const escapeVCard = value => String(value || '').replace(/\\/g, '\\\\').replace(/\r?\n|\r/g, '\\n').replace(/;/g, '\\;').replace(/,/g, '\\,');
+                let motivoLimpio = escapeVCard(row.motivo || 'Sin motivo');
+                const reportadoPor = escapeVCard(row.reportado_por || 'Sin identificar');
 
                 // CONSTUCCIÓN DEL VCF CON FORMATO ESTRICTO (\r\n) Y UTF-8
                 vcfContent += "BEGIN:VCARD\r\n";
@@ -340,7 +477,7 @@
                 vcfContent += `N;CHARSET=UTF-8:;${contactName};;;\r\n`;
                 vcfContent += `FN;CHARSET=UTF-8:${contactName}\r\n`;
                 vcfContent += `TEL;TYPE=CELL:${phoneVCF}\r\n`;
-                vcfContent += `NOTE;CHARSET=UTF-8:Motivo: ${motivoLimpio} (Reportado por ${row.reportado_por})\r\n`;
+                vcfContent += `NOTE;CHARSET=UTF-8:Motivo: ${motivoLimpio} (Reportado por ${reportadoPor})\r\n`;
                 vcfContent += "END:VCARD\r\n";
             });
 
@@ -359,19 +496,21 @@
                     });
                     return; // Si funcionó el menú de compartir, terminamos aquí.
                 } catch (e) {
-                    console.log("El usuario canceló el menú de compartir.", e);
+                    if (e?.name === 'AbortError') return;
+                    console.warn('No se pudo compartir el archivo; se descargará.', e);
                 }
             }
 
             // INTENTO 2: Descarga clásica (Para PC o navegadores viejos)
             const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
+            const objectUrl = window.URL.createObjectURL(blob);
+            link.href = objectUrl;
             link.download = fileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
-            alert("✅ Archivo descargado.\n\nÁbrelo desde tu carpeta de Descargas para importar los contactos.");
+            window.URL.revokeObjectURL(objectUrl);
+            showToast('Archivo descargado. Ábrelo para importar los contactos.', 'success');
         }
 
         // COMPARTIR ALERTA A WHATSAPP
@@ -379,11 +518,26 @@
             if (blacklistData.length === 0) return alert("Añade primero a alguien a la lista para generar una alerta.");
             const ultimo = blacklistData[0]; 
             
-            const displayPhone = ultimo.telefono.length === 8 ? `+53 ${ultimo.telefono}` : `+${ultimo.telefono}`;
+            const phoneLabel = displayPhone(ultimo.telefono);
 
-            const texto = `🚨 *ALERTA DE SEGURIDAD (RADAR)* 🚨\n\nAcabo de agregar un número a la Lista Negra:\n\n📱 *Número:* ${displayPhone}\n🏷️ *Tipo:* ${ultimo.tipo.toUpperCase()}\n📝 *Motivo:* ${ultimo.motivo}\n\n_Recomendación: Entren al Radar de Riesgos en la web y descarguen el archivo de Contactos actualizado._`;
+            const texto = `🚨 *ALERTA DE SEGURIDAD (RADAR)* 🚨\n\nSe reportó un número problemático:\n\n📱 *Número:* ${phoneLabel}\n🏷️ *Tipo:* ${String(ultimo.tipo).toUpperCase()}\n📝 *Motivo:* ${ultimo.motivo}\n\n_Recomendación: consulten el Radar de Riesgos y actualicen sus contactos._`;
             
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function subscribeToRiskAlerts() {
+            supabaseClient
+                .channel('blacklist-alerts')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blacklist' }, payload => {
+                    const eventKey = `${payload.new?.telefono}|${payload.new?.created_at}`;
+                    if (eventKey === lastKnownKey || digitsOnly(payload.new?.telefono) === justReportedPhone) return;
+                    const reporter = payload.new?.reportado_por || 'Otro gestor';
+                    showToast(`🚨 ${reporter} reportó ${displayPhone(payload.new?.telefono)} como número problemático.`, 'error');
+                    loadBlacklist();
+                })
+                .subscribe(status => {
+                    if (status === 'CHANNEL_ERROR') console.warn('Las alertas en tiempo real no están disponibles.');
+                });
         }
     </script>
 </body>
