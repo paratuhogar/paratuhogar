@@ -34,6 +34,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
+    <script src="js/image-variants.js?v=2026-08-02" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -5318,6 +5319,7 @@ function openProductCard(event, productName) {
 }
 
 let detailGalleryImages = [];
+let detailGallerySources = [];
 let detailGalleryIndex = 0;
 
 function selectDetailImage(index) {
@@ -5325,7 +5327,7 @@ function selectDetailImage(index) {
     detailGalleryIndex = Math.max(0, Math.min(index, detailGalleryImages.length - 1));
     const image = document.getElementById('detail-main-img');
     const counter = document.getElementById('detail-image-counter');
-    if (image) image.src = detailGalleryImages[detailGalleryIndex];
+    if (image) applyResponsiveImageElement(image, detailGallerySources[detailGalleryIndex], '(max-width: 1023px) 100vw, 50vw');
     if (counter) counter.textContent = `${detailGalleryIndex + 1} / ${detailGalleryImages.length}`;
     document.querySelectorAll('[data-detail-thumbnail]').forEach((thumb, thumbIndex) => {
         thumb.classList.toggle('border-[#1a4789]', thumbIndex === detailGalleryIndex);
@@ -5574,7 +5576,7 @@ function renderDetailRelatedProducts(product) {
         return `
             <button onclick="openDetail('${safeName}')" class="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:shadow-md">
                 <div class="aspect-square overflow-hidden bg-slate-50 p-2">
-                    <img src="${fixDriveUrl(item.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-300 group-hover:scale-105">
+                    ${renderResponsiveProductImage(item.thumbnail, safeName, 'h-full w-full object-contain transition duration-300 group-hover:scale-105', '(max-width: 640px) 42vw, 180px')}
                 </div>
                 <div class="p-2">
                     <p class="line-clamp-2 min-h-[2rem] text-[10px] font-black leading-tight text-slate-700">${item.nombre}</p>
@@ -5645,7 +5647,7 @@ function renderCatalogProducts(list) {
     const visibleList = list.slice(0, catalogVisibleCount);
     const hasMoreProducts = visibleList.length < list.length;
 
-    const productCardsHtml = visibleList.map(product => {
+    const productCardsHtml = visibleList.map((product, productIndex) => {
         const price = Number(product.precio) || 0;
         const commission = Number(product.comision) || 0;
         const safeName = String(product.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -5655,7 +5657,7 @@ function renderCatalogProducts(list) {
             return `
                 <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
                     <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
-                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
+                    ${renderResponsiveProductImage(product.thumbnail, safeName, 'h-full w-full object-contain transition duration-500 group-hover:scale-110', '(max-width: 767px) 42vw, 260px', productIndex < 2)}
                     </a>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
                         <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
@@ -5685,7 +5687,7 @@ function renderCatalogProducts(list) {
         return `
             <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
                 <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
-                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
+                    ${renderResponsiveProductImage(product.thumbnail, safeName, `h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}`, isList ? '150px' : '(max-width: 767px) 42vw, 260px', productIndex < 2)}
                 </a>
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                     <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
@@ -5803,11 +5805,12 @@ function openDetail(name, skipSolarCheck = false) {
     
     // IMÁGENES
     const thumbs = [p.thumbnail, p.image1, p.image2, p.image3].filter(url => url && url.length > 5);
-    detailGalleryImages = [...new Set((thumbs.length ? thumbs : ['']).map(fixDriveUrl))];
+    detailGallerySources = [...new Set(thumbs.length ? thumbs : [''])];
+    detailGalleryImages = detailGallerySources.map(fixDriveUrl);
     document.getElementById('detail-main-img').alt = p.nombre;
-    document.getElementById('detail-thumbnails').innerHTML = detailGalleryImages.map((url, index) => `
+    document.getElementById('detail-thumbnails').innerHTML = detailGallerySources.map((url, index) => `
         <button type="button" data-detail-thumbnail onclick="selectDetailImage(${index})" class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 transition" aria-label="Ver imagen ${index + 1} de ${detailGalleryImages.length}">
-            <img src="${url}" class="h-full w-full object-contain" alt="">
+            ${renderResponsiveProductImage(url, '', 'h-full w-full object-contain', '56px')}
         </button>
     `).join('');
     selectDetailImage(0);
@@ -6529,6 +6532,59 @@ function fixDriveUrl(url) {
 
     // Construimos la URL apuntando al repositorio de fotos
     return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/img_productos/${nombreArchivo}`;
+}
+
+function getProductImageFilename(url) {
+    if (!url || url === 'null' || url === 'undefined') return '';
+    let filename = String(url);
+    if (filename.includes('/')) filename = filename.split('/').pop();
+    filename = filename.split('?')[0];
+    try { filename = decodeURIComponent(filename); } catch (error) {}
+    return filename.trim().replace(/['"]/g, '').replace(/\s+/g, '');
+}
+
+function getProductImageVariants(url) {
+    const filename = getProductImageFilename(url);
+    return window.PTH_IMAGE_VARIANTS?.[filename] || null;
+}
+
+function escapeImageAttribute(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function renderResponsiveProductImage(url, alt, className, sizes, priority = false) {
+    const original = fixDriveUrl(url);
+    const variants = getProductImageVariants(url);
+    const safeAlt = escapeImageAttribute(alt);
+    const safeClass = escapeImageAttribute(className);
+    const safeSizes = escapeImageAttribute(sizes || '100vw');
+    const loading = priority ? 'eager' : 'lazy';
+    const fetchPriority = priority ? ' fetchpriority="high"' : '';
+    const fallback = `<img src="${escapeImageAttribute(original)}" loading="${loading}"${fetchPriority} decoding="async" width="720" height="720" alt="${safeAlt}" class="${safeClass}">`;
+    if (!variants) return fallback;
+
+    return `<picture class="contents">
+        <source type="image/avif" srcset="${variants.avif360} 360w, ${variants.avif720} 720w" sizes="${safeSizes}">
+        <source type="image/webp" srcset="${variants.webp360} 360w, ${variants.webp720} 720w" sizes="${safeSizes}">
+        ${fallback}
+    </picture>`;
+}
+
+function applyResponsiveImageElement(image, url, sizes = '100vw') {
+    if (!image) return;
+    const variants = getProductImageVariants(url);
+    image.src = fixDriveUrl(url);
+    image.decoding = 'async';
+    image.sizes = sizes;
+    if (variants) {
+        image.srcset = `${variants.webp360} 360w, ${variants.webp720} 720w`;
+    } else {
+        image.removeAttribute('srcset');
+    }
 }
 
     // 1. Lógica para decidir si mostrar el botón del Gestor (Nivel 2+)
