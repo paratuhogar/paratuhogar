@@ -431,13 +431,17 @@
         closeForm();
     }
 
-    function whatsapp(item) {
+    async function whatsapp(item) {
         const phone = String(item.telefono || '').replace(/\D/g, '');
         const greeting = `Hola ${String(item.cliente || '').split(' ')[0]}, soy ${owner} de ParaTuHogar. `
-            + `Te escribo para saber si todavía estás interesado/a en ${item.producto || 'el equipo que consultaste'}. `
-            + 'Puedo ayudarte a confirmar disponibilidad, precio y entrega.';
+            + `Quería saludarte y saber cómo te ha ido con ${item.producto || 'tu compra anterior'}. `
+            + 'También puedo mostrarte productos nuevos o complementarios y confirmar disponibilidad, precio y entrega.';
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(greeting)}`, '_blank', 'noopener');
-        persistUpdate(item.id, { ultimo_contacto: new Date().toISOString() });
+        const contactedAt = new Date().toISOString();
+        await persistUpdate(item.id, { ultimo_contacto: contactedAt });
+        if (typeof window.renewCustomerProtection === 'function') {
+            await window.renewCustomerProtection(item.telefono, owner, 'seguimiento_whatsapp');
+        }
     }
 
     function snooze(item, days) {
@@ -445,6 +449,36 @@
         date.setDate(date.getDate() + Number(days));
         date.setHours(10, 0, 0, 0);
         persistUpdate(item.id, { proximo_contacto: date.toISOString() });
+    }
+
+    async function scheduleProtectedCustomer({ cliente, telefono, producto, pedido_id }) {
+        const normalizedPhone = String(telefono || '').replace(/\D/g, '');
+        if (!normalizedPhone || !owner) return;
+        const existing = items.find(item => String(item.telefono || '').replace(/\D/g, '') === normalizedPhone && !isClosed(item));
+        const nextContact = new Date();
+        nextContact.setDate(nextContact.getDate() + 60);
+        nextContact.setHours(10, 0, 0, 0);
+
+        if (existing) {
+            await persistUpdate(existing.id, {
+                cliente: cliente || existing.cliente,
+                producto: producto || existing.producto,
+                pedido_id: pedido_id || existing.pedido_id,
+                estado: 'interesado',
+                proximo_contacto: nextContact.toISOString(),
+                nota_corta: 'Posventa: saludar, comprobar experiencia y recomendar productos relacionados.'
+            });
+            return;
+        }
+
+        const now = new Date().toISOString();
+        await persistNew({
+            id: createId(), gestor: owner, subgestor: session.data?.parent_id ? owner : null,
+            cliente: cliente || 'Cliente', telefono, producto: producto || 'Compra anterior',
+            estado: 'interesado', proximo_contacto: nextContact.toISOString(), ultimo_contacto: null,
+            nota_corta: 'Posventa: saludar, comprobar experiencia y recomendar productos relacionados.',
+            pedido_id: pedido_id || null, created_at: now, updated_at: now
+        });
     }
 
     function exportBackup() {
@@ -578,7 +612,8 @@
     window.PTHFollowups = {
         getStats: () => ({ ...getStats() }),
         open,
-        sync: () => sync(true)
+        sync: () => sync(true),
+        scheduleProtectedCustomer
     };
 
     if (document.readyState === 'loading') {
