@@ -122,6 +122,11 @@
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     box-shadow: 0 10px 28px rgba(99, 102, 241, .24);
 }
+
+.pth-followup-actions .pth-followup-primary.is-whatsapp {
+    background: #25d366;
+    border-color: #25d366;
+}
 .pth-followup-secondary {
     border: 1px solid rgba(148, 163, 184, .16);
     color: #cbd5e1;

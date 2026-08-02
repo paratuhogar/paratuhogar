@@ -7419,6 +7419,22 @@ async function loadProtectedCustomerCount() {
     output.classList.add('text-3xl');
     output.textContent = protectedCustomerCountValue;
 
+    const protectedCustomers = activeRows.map(row => {
+        const matchingOrders = (Array.isArray(myOrdersData) ? myOrdersData : [])
+            .filter(item => customerPhoneCandidates(item.telefono).some(value => customerPhoneCandidates(row.phone).includes(value)))
+            .sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0));
+        const latest = matchingOrders[0];
+        return {
+            telefono: row.phone,
+            cliente: latest?.cliente || row.phone,
+            producto: latest?.producto || 'Compra anterior',
+            pedido_id: latest?.id || null
+        };
+    });
+    if (window.PTHFollowups?.importProtectedCustomers) {
+        window.PTHFollowups.importProtectedCustomers(protectedCustomers).catch(error => console.warn('No se pudo preparar toda la cartera para seguimiento.', error));
+    }
+
     const needsAttention = activeRows
         .map(row => ({ ...row, lastTouch: new Date(row.last_activity_at || row.last_purchase_at || row.updated_at || 0).getTime() }))
         .filter(row => !row.lastTouch || Date.now() - row.lastTouch >= 45 * 86400000)
@@ -7439,14 +7455,17 @@ async function loadProtectedCustomerCount() {
                 const card = document.createElement('button');
                 card.type = 'button';
                 card.className = 'rounded-xl border border-amber-100 bg-amber-50 p-3 text-left transition hover:border-amber-300';
-                card.addEventListener('click', () => openProtectionFollowups());
+                card.addEventListener('click', () => {
+                    if (window.PTHFollowups?.openCustomer) window.PTHFollowups.openCustomer(row.phone);
+                    else openProtectionFollowups();
+                });
                 const name = document.createElement('strong');
                 name.className = 'block truncate text-[11px] text-slate-800';
                 name.textContent = order?.cliente || row.phone;
                 const meta = document.createElement('span');
                 meta.className = 'mt-1 block text-[9px] font-bold text-amber-700';
                 const days = row.lastTouch ? Math.floor((Date.now() - row.lastTouch) / 86400000) : null;
-                meta.textContent = `${days === null ? 'Sin contacto registrado' : `${days} días sin contacto`} · Atender ahora`;
+                meta.textContent = `${days === null ? 'Sin seguimiento registrado en esta herramienta' : `${days} días sin contacto`} · Atender ahora`;
                 card.append(name, meta);
                 attentionList.appendChild(card);
             });
