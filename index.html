@@ -43,7 +43,7 @@
     <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/image-variants.js?v=2026-08-02" defer></script>
-    <script src="js/pwa.js?v=2026-08-02-pwa4" defer></script>
+    <script src="js/pwa.js?v=2026-08-02-pwa5" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -3141,7 +3141,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807e";
+const versionActual = "2807f";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -10073,6 +10073,28 @@ function openAdminMasterFromGestor() {
 
 // --- FUNCIONES PARA EL FORMULARIO DE PRODUCTOS ---
 
+function getProductDescriptionHtml() {
+    if (typeof quill !== 'undefined' && quill?.root) {
+        return quill.root.innerHTML;
+    }
+    const editor = document.querySelector('#editor-container .ql-editor');
+    if (editor) return editor.innerHTML;
+    return document.getElementById('editor-container')?.innerHTML || '';
+}
+
+function setProductDescriptionHtml(html = '') {
+    if (typeof quill !== 'undefined' && quill?.root) {
+        quill.root.innerHTML = html;
+        return;
+    }
+    const editor = document.querySelector('#editor-container .ql-editor');
+    if (editor) editor.innerHTML = html;
+    else {
+        const container = document.getElementById('editor-container');
+        if (container) container.innerHTML = html;
+    }
+}
+
 function openModalProd() { 
         updateFormCategories(); // <--- AGREGAR ESTA LÍNEA AQUÍ
         updateFormProviders();
@@ -10087,9 +10109,7 @@ function openModalProd() {
     if(form) form.reset();
     
     // 3. Limpiar el editor de texto (Quill)
-    if (typeof quill !== 'undefined' && quill !== null) {
-        quill.root.innerHTML = "";
-    }
+    setProductDescriptionHtml('');
 
     // 4. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
     for (let i = 0; i < 4; i++) {
@@ -10291,7 +10311,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
         categoria: categoriaInput,
-        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
+        descripcion: getProductDescriptionHtml(),
         
         thumbnail: document.getElementById('img-path-0').value || imgName,
         image1: document.getElementById('img-path-1').value,
@@ -10486,14 +10506,10 @@ function clearImageSlot(event, index) {
         if(btnSave) btnSave.innerText = "Actualizar Producto";
 
         // 4. Cargar Descripción en el Editor Quill
-        if (typeof quill !== 'undefined' && quill) {
-            quill.root.innerHTML = p.descripcion || "";
-        } else {
+        if (typeof quill === 'undefined' || !quill?.root) {
             console.warn("Editor Quill no activo o no definido.");
-            // Intento de recuperación si no existe:
-            const editorDiv = document.getElementById('editor-container');
-            if(editorDiv) editorDiv.innerHTML = p.descripcion || ""; 
         }
+        setProductDescriptionHtml(p.descripcion || '');
 
         // 5. Cargar Fotos (Modo GitHub Texto)
         const fotos = [p.thumbnail, p.image1, p.image2, p.image3];
@@ -13704,9 +13720,7 @@ async function magicPasteProduct() {
         document.getElementById('p-comision').value = (precio > 100) ? 15 : 5;
 
         // Descripción en Editor
-        if (typeof quill !== 'undefined') {
-            quill.root.innerHTML = cleanText.replace(/\n/g, '<br>');
-        }
+        setProductDescriptionHtml(cleanText.replace(/\n/g, '<br>'));
 
     } catch (err) {
         console.error(err);
@@ -14051,7 +14065,7 @@ async function superMagicAI() {
         const precioNum = parseFloat(resultado.precio) || 0;
         document.getElementById('p-comision').value = (precioNum > 100) ? 15 : 5;
 
-        if (typeof quill !== 'undefined') quill.root.innerHTML = resultado.descripcion_html || "";
+        setProductDescriptionHtml(resultado.descripcion_html || '');
 
         btn.className = "w-2/3 bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2";
         btn.innerHTML = `¡ÉXITO!`;
