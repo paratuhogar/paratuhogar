@@ -1778,7 +1778,7 @@ window.loadAdvancedAnalytics = async function() {
         // 1. DESCARGA MASIVA PARALELA (4 Tablas a la vez)
         const [resPedidos, resGestores, resClics, resLogs] = await Promise.all([
             supabaseClient.from('pedidos').select('gestor, estado, total, comision_total'),
-            supabaseClient.from('gestores').select('nombre'),
+            supabaseClient.from('gestores').select('nombre, parent_id').is('parent_id', null),
             supabaseClient.from('link_analytics').select('agent_name').gte('timestamp', fechaFiltro).limit(5000),
             supabaseClient.from('log_espia').select('gestor_atribuido, accion').eq('accion', 'INICIO_SESION').gte('timestamp', fechaFiltro).limit(5000)
         ]);

@@ -3661,6 +3661,10 @@ async function processRegister() {
         // --- ENMASCARAR BOTÓN RED DE SUBGESTORES AL SUBGESTOR ---
         const isSubgestor = window.currentUserData && window.currentUserData.parent_id;
         const btnSub = document.getElementById('btn-open-subgestores');
+        const btnPrices = document.getElementById('btn-dash-precios');
+        if (btnPrices) {
+            btnPrices.textContent = isSubgestor ? '🏷️ Precios asignados' : '🏷️ Mis Precios (Config)';
+        }
         if (btnSub) {
             if (isSubgestor) {
                 btnSub.classList.add('hidden');
@@ -4613,6 +4617,47 @@ window.addEventListener('load', prepareClientExperience);
 // =====================================================
 let productsLoadInProgress = false;
 
+const salesHierarchyCache = new Map();
+
+async function resolveSalesHierarchy(agentName) {
+    const cleanName = String(agentName || '').trim();
+    if (!cleanName || cleanName === 'Venta Directa') return null;
+    if (salesHierarchyCache.has(cleanName)) return salesHierarchyCache.get(cleanName);
+
+    const { data: agent, error } = await supabaseClient
+        .from('gestores')
+        .select('id, nombre, telefono, estado, parent_id')
+        .eq('nombre', cleanName)
+        .maybeSingle();
+
+    if (error || !agent) {
+        if (error) console.error('No se pudo resolver la jerarquía comercial:', error);
+        return null;
+    }
+
+    let parent = null;
+    if (agent.parent_id) {
+        const { data: parentData, error: parentError } = await supabaseClient
+            .from('gestores')
+            .select('id, nombre, telefono, estado, parent_id')
+            .eq('id', agent.parent_id)
+            .maybeSingle();
+        if (parentError || !parentData) {
+            throw new Error(`El subgestor ${agent.nombre} no tiene un gestor principal válido.`);
+        }
+        parent = parentData;
+    }
+
+    const hierarchy = {
+        agent,
+        parent,
+        isSubgestor: Boolean(parent),
+        pricingOwnerName: parent?.nombre || agent.nombre
+    };
+    salesHierarchyCache.set(cleanName, hierarchy);
+    return hierarchy;
+}
+
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -4634,6 +4679,8 @@ async function loadProducts() {
 
     // Declarar activeGestor con prioridad de sesión, URL o memoria
     const activeGestor = sessionGestor || urlGestor || memoriaGestor;
+    const salesHierarchy = await resolveSalesHierarchy(activeGestor);
+    window.activeSalesHierarchy = salesHierarchy;
 
     // Saneamiento de variables y redirección (Se mantiene intacto)
     if (slug) {
@@ -4721,8 +4768,8 @@ async function loadProducts() {
 
         // Fusionar precios personalizados de gestores (Se mantiene intacto)
         if (activeGestor) {
-            const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
-            const gestorConsultar = esSubgestor ? window.currentUserData.parent_nombre : activeGestor;
+            const esSubgestor = Boolean(salesHierarchy?.isSubgestor);
+            const gestorConsultar = salesHierarchy?.pricingOwnerName || activeGestor;
 
             const { data: preciosCustom } = await supabaseClient
                 .from('precios_personalizados')
@@ -6033,52 +6080,30 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN
     let activeGestor = await obtenerDuenoReal(telC);
+    const checkoutHierarchy = await resolveSalesHierarchy(activeGestor);
+    const orderSubgestor = checkoutHierarchy?.isSubgestor ? checkoutHierarchy : null;
     
     // --- CORRECCIÓN ENRUTAMIENTO DE WHATSAPP ---
     const PHONE_DUENO_TIENDA = "5356071095"; 
     let whatsappDestino = PHONE_DUENO_TIENDA; 
 
-    const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
-
-    if (esSubgestor && window.currentUserData.parent_telefono) {
-        // 1. Si es un subgestor logueado haciendo pedido, el WhatsApp va a su Gestor Principal
-        let parentTel = window.currentUserData.parent_telefono.replace(/\D/g, '');
+    if (orderSubgestor?.parent?.telefono) {
+        // Tanto el pedido manual como el realizado desde el enlace de un
+        // subgestor se comunican exclusivamente con su gestor principal.
+        let parentTel = orderSubgestor.parent.telefono.replace(/\D/g, '');
         if (parentTel.length === 8) parentTel = "53" + parentTel;
         whatsappDestino = parentTel;
-        console.log("➡️ Pedido manual del subgestor enrutado a su Gestor Principal:", parentTel);
+        console.log("➡️ Pedido de subgestor enrutado a su Gestor Principal:", parentTel);
     } else if (isLogged) {
         // 2. Si es un Gestor Principal logueado, va al dueño de la tienda
         whatsappDestino = PHONE_DUENO_TIENDA; 
     } else {
         // 3. Si es un cliente final comprando por el link de la tienda
         if (activeGestor !== "Venta Directa") {
-            const { data: gDB } = await supabaseClient
-                .from('gestores')
-                .select('telefono, parent_id')
-                .eq('nombre', activeGestor)
-                .maybeSingle();
-            
-            if (gDB) {
-                if (gDB.parent_id) {
-                    // El dueño del enlace es un subgestor -> El pedido del cliente va a su Gestor Principal
-                    const { data: parentData } = await supabaseClient
-                        .from('gestores')
-                        .select('telefono')
-                        .eq('id', gDB.parent_id)
-                        .maybeSingle();
-                    
-                    if (parentData && parentData.telefono) {
-                        let parentW = parentData.telefono.replace(/\D/g, '');
-                        if (parentW.length === 8) parentW = "53" + parentW;
-                        whatsappDestino = parentW;
-                        console.log("➡️ Pedido del cliente enrutado al Gestor Principal:", parentW);
-                    }
-                } else if (gDB.telefono) {
-                    // El dueño del enlace es un Gestor Principal normal -> Va directo a él
-                    let w = gDB.telefono.replace(/\D/g, '');
+            if (checkoutHierarchy?.agent?.telefono) {
+                    let w = checkoutHierarchy.agent.telefono.replace(/\D/g, '');
                     if (w.length === 8) w = "53" + w;
                     whatsappDestino = w;
-                }
             }
         }
     }
@@ -6204,7 +6229,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vueltoC}\n`;
 
-        if (isLogged) {
+        if (orderSubgestor) {
+            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nGestor principal: ${orderSubgestor.parent.nombre}\nSubgestor: ${orderSubgestor.agent.nombre}\nComisión subgestor: $${comisionTotalVale}\nComisión gestor principal: $${Math.max(0, comisionOriginalPoolVale - comisionTotalVale)}\n`;
+        } else if (isLogged) {
             mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
         }
         
@@ -6229,16 +6256,15 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         const garantiaDiasVale = garantiasUnicas.length === 1 ? parseWarrantyDays(garantiasUnicas[0]) : null;
 
         // --- INTERCEPTOR DE ÓRDENES DE SUBGESTORES ---
-        const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
         let insertPromise;
 
-        if (esSubgestor) {
+        if (orderSubgestor) {
             // El pedido va a la cola de aprobación del Gestor Principal
             insertPromise = supabaseClient.from('pedidos_subgestores').insert([{
-                subgestor_id: window.currentUserData.id,
-                subgestor_nombre: window.currentUserData.nombre,
-                parent_gestor_id: window.currentUserData.parent_id,
-                parent_gestor_nombre: window.currentUserData.parent_nombre || 'Gestor Principal',
+                subgestor_id: orderSubgestor.agent.id,
+                subgestor_nombre: orderSubgestor.agent.nombre,
+                parent_gestor_id: orderSubgestor.parent.id,
+                parent_gestor_nombre: orderSubgestor.parent.nombre,
                 cliente: nombreC,
                 telefono: telC,
                 ci: ciC,
@@ -12617,12 +12643,17 @@ async function checkGamificationStatus() {
         return;
     }
 
-    // Consulta de ventas (Sin filtros de fecha agresivos para evitar errores de zona horaria en pruebas)
-    const { data, count, error } = await supabaseClient
+    // Un subgestor conserva su progreso por sus propias ventas, aunque el
+    // pedido financiero pertenezca a su gestor principal.
+    const hierarchy = await resolveSalesHierarchy(gestor);
+    let levelQuery = supabaseClient
         .from('pedidos')
         .select('id', { count: 'exact' }) 
-        .eq('gestor', gestor)
         .eq('estado', 'Entregado');
+    levelQuery = hierarchy?.isSubgestor
+        ? levelQuery.eq('subgestor_nombre', gestor)
+        : levelQuery.eq('gestor', gestor);
+    const { count, error } = await levelQuery;
 
     if (error) {
         console.error("Error obteniendo nivel:", error);
@@ -12985,12 +13016,16 @@ async function getActiveReferrer() {
     const today = new Date();
     today.setDate(today.getDate() - 30);
     
-    const { count } = await supabaseClient
+    const hierarchy = await resolveSalesHierarchy(data.nombre);
+    let referralSalesQuery = supabaseClient
         .from('pedidos')
         .select('*', { count: 'exact', head: true })
-        .eq('gestor', data.nombre)
         .eq('estado', 'Entregado')
         .gte('created_at', today.toISOString());
+    referralSalesQuery = hierarchy?.isSubgestor
+        ? referralSalesQuery.eq('subgestor_nombre', data.nombre)
+        : referralSalesQuery.eq('gestor', data.nombre);
+    const { count } = await referralSalesQuery;
     
     const currentSales = count || 0;
     const currentData = getLevelData(currentSales);
@@ -13872,10 +13907,16 @@ function showDashSection(section) {
         document.getElementById('sub-dash-precios').classList.remove('hidden');
         document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
         
-        // Inyección del texto prohibido para Facebook
-        const textoSecreto = `Aquí puedes subir el precio de los productos marcados como "Flexibles". 
-        <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
-        Cuando los clientes entren por tu link, verán los precios que tú estableciste.`;
+        const esSubgestor = Boolean(window.currentUserData?.parent_id);
+        const textoSecreto = esSubgestor
+            ? `Estos son los precios, productos visibles y comisiones asignados por tu gestor principal.
+               <br><b>No puedes modificarlos.</b> Cualquier ajuste debes coordinarlo directamente con tu gestor.`
+            : `Aquí puedes subir el precio de los productos marcados como "Flexibles".
+               <br>Todo lo que subas por encima del precio base es <b>100% ganancia extra para ti</b>.
+               Cuando los clientes entren por tu link, verán los precios que tú estableciste.`;
+
+        const pricingTitle = document.querySelector('#sub-dash-precios h3');
+        if (pricingTitle) pricingTitle.textContent = esSubgestor ? 'Precios y comisiones asignados' : 'Configurador de Precios';
         
         const elMsg = document.getElementById('msg-instrucciones-seguro');
         if(elMsg) elMsg.innerHTML = textoSecreto;
@@ -13890,6 +13931,10 @@ async function renderGestorPricing() {
     const container = document.getElementById('list-gestor-precios');
     if(!container) return;
 
+    const hierarchy = await resolveSalesHierarchy(window.gestorName);
+    const esSubgestor = Boolean(hierarchy?.isSubgestor);
+    const gestorConfigurador = hierarchy?.pricingOwnerName || window.gestorName;
+
     // 1. Filtrar TODOS los productos disponibles en stock
     const { data: productosBase, error: errProd } = await supabaseClient
         .from('productos')
@@ -13902,15 +13947,23 @@ async function renderGestorPricing() {
         return;
     }
 
-    // 2. Obtener precios personalizados y visibilidades guardadas por este gestor
+    // Los subgestores siempre leen la configuración de su gestor principal.
+    // Nunca poseen una tabla de precios/comisiones independiente.
     const { data: misPrecios, error: errPrecios } = await supabaseClient
         .from('precios_personalizados')
         .select('*')
-        .eq('gestor', window.gestorName);
+        .eq('gestor', gestorConfigurador);
 
     if (errPrecios) return;
 
-    container.innerHTML = productosBase.map(p => {
+    const productosConfigurables = esSubgestor
+        ? productosBase.filter(p => {
+            const saved = misPrecios.find(c => c.producto_id === p.id);
+            return !saved || saved.visible_subgestor !== false;
+        })
+        : productosBase;
+
+    container.innerHTML = productosConfigurables.map(p => {
         const saved = misPrecios.find(c => c.producto_id === p.id);
         const isFlexible = p.precio_flexible === 'SI';
         
@@ -13931,7 +13984,7 @@ async function renderGestorPricing() {
         const nombreSafe = p.nombre.replace(/"/g, '&quot;');
         const minPricePermitido = parseFloat(p.precio) - gananciaBase;
 
-        const priceInputHtml = isFlexible
+        const priceInputHtml = isFlexible && !esSubgestor
             ? `<input type="number" id="input-price-${p.id}" value="${precioActual}" min="${minPricePermitido}" 
                   oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision}, true)"
                   class="w-full rounded-lg border-gray-200 text-xs font-black text-slate-700 px-3 py-1.5">`
@@ -13942,14 +13995,12 @@ async function renderGestorPricing() {
             ? `<span class="bg-blue-100 text-blue-700 text-[8px] font-black px-1.5 py-0.5 rounded">📈 PRECIO LIBRE</span>`
             : `<span class="bg-slate-100 text-slate-600 text-[8px] font-black px-1.5 py-0.5 rounded">🔒 PRECIO FIJO</span>`;
 
-        // Validación de rol para ocultar subcomisiones
-        const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
-
         const subgestorCommInputHtml = esSubgestor 
             ? `<div class="flex justify-between items-center pt-2">
-                    <span class="text-xs font-black text-emerald-500">Tu Ganancia: $${gananciaTotal.toFixed(0)}</span>
-                    <button onclick="saveMyPrice('${p.id}', ${p.precio})" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-all flex items-center gap-1"><span class="material-symbols-outlined text-sm">save</span> Guardar</button>
-                    <input type="hidden" id="input-sub-com-${p.id}" value="0">
+                    <div>
+                        <span class="block text-[9px] font-black uppercase text-slate-400">Comisión asignada por ${gestorSafeText(hierarchy.parent.nombre)}</span>
+                        <span class="text-xs font-black text-emerald-500">Tu Ganancia: $${comisionSubgestor.toFixed(0)}</span>
+                    </div>
                </div>`
             : `<div>
                     <!-- INTERRUPTOR VISIBILIDAD PARA EL SUBGESTOR (AUTO-GUARDADO AL CAMBIAR) -->
@@ -14033,6 +14084,11 @@ window.calcGainUI = function(id, basePrice, baseComm, isFlexible) {
 // Hacemos la función global asignándola a window
 // --- GUARDAR PRECIO Y COMISIÓN CON SOPORTE PARA DESCUENTOS ---
 window.saveMyPrice = async function(prodId, basePrice, baseComm) {
+    const hierarchy = await resolveSalesHierarchy(window.gestorName);
+    if (hierarchy?.isSubgestor) {
+        return alert(`🔒 Tus precios y comisiones los configura ${hierarchy.parent.nombre}.`);
+    }
+
     const inputPrice = document.getElementById(`input-price-${prodId}`);
     const inputSubCom = document.getElementById(`input-sub-com-${prodId}`);
     const inputVisible = document.getElementById(`input-visible-${prodId}`);
@@ -17719,6 +17775,9 @@ async function loadPendingGestores() {
     const salvadosUpdate = [];
 
     gestoresDB.forEach(g => {
+        // Los subgestores pertenecen exclusivamente al panel de su gestor
+        // principal; no participan en la clasificación ni rescate central.
+        if (g.parent_id) return;
         if (g.estado === 'activo' && g.fecha_rescate) {
             const fechaRescate = new Date(g.fecha_rescate);
             const diasPasados = (now - fechaRescate) / (1000 * 60 * 60 * 24);
@@ -17742,8 +17801,8 @@ async function loadPendingGestores() {
     if (zombiesUpdate.length > 0) supabaseClient.from('gestores').update({ estado: 'ausente_definitivo' }).in('id', zombiesUpdate).then();
     if (salvadosUpdate.length > 0) supabaseClient.from('gestores').update({ fecha_rescate: null }).in('id', salvadosUpdate).then();
 
-    const pendientes = gestoresDB.filter(g => g.estado === 'pendiente');
-    const activos = gestoresDB.filter(g => g.estado === 'activo' || g.estado === 'ausente_definitivo');
+    const pendientes = gestoresDB.filter(g => !g.parent_id && g.estado === 'pendiente');
+    const activos = gestoresDB.filter(g => !g.parent_id && (g.estado === 'activo' || g.estado === 'ausente_definitivo'));
 
     const containerPendientes = document.getElementById('list-admin-aprobaciones');
     if (containerPendientes) {

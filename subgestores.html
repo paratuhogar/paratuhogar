@@ -526,7 +526,9 @@
                         const extraParent = (nuevoPrecioParent > basePrice) ? (nuevoPrecioParent - basePrice) : 0;
                         
                         const itemTotalComm = baseComm + extraParent;
-                        const itemSubComm = custom ? parseFloat(custom.comision_subgestor) : (itemTotalComm * 0.70);
+                        // Sin una asignación explícita del gestor principal, la
+                        // comisión del subgestor es cero. Nunca se inventa un 70%.
+                        const itemSubComm = custom ? (parseFloat(custom.comision_subgestor) || 0) : 0;
 
                         calculatedTotalComm += (itemTotalComm * qty);
                         calculatedSubgestorComm += (itemSubComm * qty);
@@ -565,9 +567,8 @@
                             <div class="grid grid-cols-2 gap-3 items-center">
                                 <div>
                                     <label class="text-[8px] text-slate-500 uppercase font-bold">Comisión Subgestor ($)</label>
-                                    <input type="number" id="com-sub-${p.id}" value="${calculatedSubgestorComm}" 
-                                        oninput="calcCutUI('${p.id}', ${calculatedTotalComm})"
-                                        class="w-full bg-slate-900 border-slate-700 text-xs text-white rounded p-1.5 font-bold focus:ring-0">
+                                    <input type="number" id="com-sub-${p.id}" value="${calculatedSubgestorComm}" readonly
+                                        class="w-full bg-slate-950 border-slate-800 text-xs text-slate-400 rounded p-1.5 font-bold cursor-not-allowed focus:ring-0">
                                 </div>
                                 <div class="text-right">
                                     <p class="text-[8px] text-slate-500 uppercase font-bold">Tu Ganancia Pasiva ($)</p>
@@ -623,9 +624,9 @@
             const p = pedidosPendientes.find(item => item.id === pedidoId);
             if (!p) return;
 
-            // Obtener el valor ingresado por el gestor para el subgestor
-            const inputComSub = document.getElementById(`com-sub-${p.id}`);
-            const comisionSub = parseFloat(inputComSub.value);
+            // La comisión aprobada es exactamente la configurada en el panel
+            // del gestor principal; no se puede modificar pedido por pedido.
+            const comisionSub = Number(p.comision_subgestor_calculada) || 0;
 
             // Utilizamos el valor calculado en tiempo real
             const totalCommReal = p.comision_total_calculada || p.comision_total || 0;
