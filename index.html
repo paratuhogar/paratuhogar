@@ -3161,7 +3161,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807g";
+const versionActual = "2807h";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3771,6 +3771,8 @@ async function processRegister() {
         // MODO GESTOR o SUBGESTOR (Ventas)
         const commandCenter = document.getElementById('gestor-command-center');
         if (commandCenter) commandCenter.classList.remove('hidden');
+        // Colocar el menú arriba aunque Supabase tarde o falle al cargar.
+        prepareGestorDashboardLayout();
 
         const publicFilters = document.getElementById('public-filters-bar');
         if (publicFilters) publicFilters.classList.add('hidden');
@@ -3926,7 +3928,7 @@ let myOrdersLoadedFor = null;
 // las facturas y el centro de garantía del gestor. Evita descargar columnas
 // administrativas que estas pantallas nunca muestran.
 const GESTOR_ORDER_COLUMNS = [
-    'id', 'gestor', 'subgestor_nombre', 'fecha', 'created_at', 'fecha_entrega',
+    'id', 'gestor', 'subgestor_nombre', 'fecha', 'fecha_entrega',
     'estado', 'cliente', 'telefono', 'ci', 'direccion', 'municipio', 'producto',
     'total', 'costo_mensajeria', 'comision_total', 'comision_subgestor',
     'pago_gestor', 'pago_subgestor', 'origen', 'orden_dia', 'proveedor',
@@ -3981,6 +3983,12 @@ async function loadProDashboard(nombreGestor) {
             .eq('subgestor_nombre', nombreGestor)
             .order('created_at', { ascending: false });
 
+        if (errAprobados || errPendientes) {
+            console.error('Error cargando el historial del subgestor:', errAprobados || errPendientes);
+            renderGestorDashboardLoadError();
+            return;
+        }
+
         // Adaptar campos de aprobados y pendientes para unificar la visualización
         const listaAprobados = (aprobados || []).map(p => ({
             ...p,
@@ -4007,7 +4015,11 @@ async function loadProDashboard(nombreGestor) {
             .eq('gestor', nombreGestor)
             .order('fecha', { ascending: false });
             
-        if(error) { console.error(error); return; }
+        if(error) {
+            console.error('Error cargando el historial del gestor:', error);
+            renderGestorDashboardLoadError();
+            return;
+        }
         misVentas = data || [];
     }
     
@@ -4039,6 +4051,7 @@ async function loadProDashboard(nombreGestor) {
         porCobrar,
         cobrado
     });
+    toggleGestorAdvanced(true);
     await loadGestorWarrantyCases();
 
     // 3. RENDERIZAR TABLA DE MIS PEDIDOS
@@ -8955,6 +8968,22 @@ function renderGestorHomeFromCache() {
         .filter(order => order.pago_gestor === 'Pendiente' || !order.pago_gestor)
         .reduce((sum, order) => sum + (Number(order.comision_total) || 0), 0);
     renderGestorHome({ ventas, entregados, pendientes, porCobrar });
+    toggleGestorAdvanced(true);
+}
+
+function renderGestorDashboardLoadError() {
+    prepareGestorDashboardLayout();
+    const summary = document.getElementById('gestor-home-summary');
+    const list = document.getElementById('gestor-home-orders');
+    if (summary) summary.textContent = 'No pudimos actualizar tus datos. Revisa la conexión e intenta nuevamente.';
+    if (list) {
+        list.innerHTML = `
+            <div class="p-8 text-center">
+                <span class="material-symbols-outlined text-3xl text-amber-500">cloud_off</span>
+                <p class="mt-2 text-xs font-black text-slate-700">No se pudo cargar el historial</p>
+                <button type="button" onclick="loadProDashboard(window.gestorName)" class="mt-3 rounded-xl bg-[#1a4789] px-4 py-2 text-[10px] font-black uppercase text-white">Reintentar</button>
+            </div>`;
+    }
 }
 
 function openGestorTool(tool) {
@@ -11440,7 +11469,7 @@ async function loadAnalyticsPro(nombreGestor) {
             // y únicamente las tres columnas utilizadas por la herramienta.
             const { data: pedidosTendencia, error } = await supabaseClient
                 .from('pedidos')
-                .select('fecha, created_at, producto');
+                .select('fecha, producto');
             if (error) {
                 console.error('Error cargando tendencias:', error);
                 return;
@@ -14524,7 +14553,7 @@ function showDashSection(section) {
     if(section === 'resumen') {
         document.getElementById('gestor-home')?.classList.remove('hidden');
         document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
-        document.getElementById('gestor-advanced-icon')?.classList.remove('rotate-180');
+        toggleGestorAdvanced(true);
     } else if (section === 'comisiones') {
         document.getElementById('sub-dash-comisiones').classList.remove('hidden');
         document.getElementById('btn-dash-comisiones').className = "shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black uppercase text-white shadow-md transition-all";
