@@ -3831,6 +3831,44 @@ async function processRegister() {
     // Variable global para guardar los pedidos del gestor y poder filtrar
 let myOrdersData = [];
 
+// Campos que realmente consumen el historial, las comisiones, el CRM,
+// las facturas y el centro de garantía del gestor. Evita descargar columnas
+// administrativas que estas pantallas nunca muestran.
+const GESTOR_ORDER_COLUMNS = [
+    'id', 'gestor', 'subgestor_nombre', 'fecha', 'created_at', 'fecha_entrega',
+    'estado', 'cliente', 'telefono', 'ci', 'direccion', 'municipio', 'producto',
+    'total', 'costo_mensajeria', 'comision_total', 'comision_subgestor',
+    'pago_gestor', 'pago_subgestor', 'origen', 'orden_dia', 'proveedor',
+    'garantia_venta', 'garantia_dias'
+].join(',');
+
+const gestorSalesCountCache = new Map();
+
+async function getDeliveredSalesCount(nombre, scope = 'gestor') {
+    const key = `${scope}:${nombre}`;
+    const cached = gestorSalesCountCache.get(key);
+    if (cached && Date.now() - cached.createdAt < 60000) {
+        return cached.promise;
+    }
+
+    const promise = (async () => {
+        let query = supabaseClient
+            .from('pedidos')
+            .select('id', { count: 'exact', head: true })
+            .eq('estado', 'Entregado');
+        query = scope === 'subgestor'
+            ? query.eq('subgestor_nombre', nombre)
+            : query.eq('gestor', nombre);
+        const { count, error } = await query;
+        if (error) throw error;
+        return count || 0;
+    })();
+
+    gestorSalesCountCache.set(key, { createdAt: Date.now(), promise });
+    promise.catch(() => gestorSalesCountCache.delete(key));
+    return promise;
+}
+
 async function loadProDashboard(nombreGestor) {
     // --- DETECTAR ROL EN TIEMPO REAL ---
     const esSubgestor = window.currentUserData && window.currentUserData.parent_id;
@@ -3841,7 +3879,7 @@ async function loadProDashboard(nombreGestor) {
         // 1. Obtener pedidos aprobados (de la tabla 'pedidos')
         const { data: aprobados, error: errAprobados } = await supabaseClient
             .from('pedidos')
-            .select('*')
+            .select(GESTOR_ORDER_COLUMNS)
             .eq('subgestor_nombre', nombreGestor)
             .order('fecha', { ascending: false });
             
@@ -3874,7 +3912,7 @@ async function loadProDashboard(nombreGestor) {
         // Comportamiento original para Gestores Principales
         const { data, error } = await supabaseClient
             .from('pedidos')
-            .select('*')
+            .select(GESTOR_ORDER_COLUMNS)
             .eq('gestor', nombreGestor)
             .order('fecha', { ascending: false });
             
@@ -4578,12 +4616,7 @@ function renderMyOrdersList(lista) {
 } else {
         // CORRECCIÓN: Contar TODAS las ventas entregadas sin límite de 30 días
         // Esto asegura que el botón VIP lea el historial correcto (Ej: las 8 ventas de Elías)
-        const { count } = await supabaseClient
-            .from('pedidos')
-            .select('id', { count: 'exact', head: true })
-            .eq('gestor', nombre)
-            .eq('estado', 'Entregado');
-        sales = count || 0;
+        sales = await getDeliveredSalesCount(nombre, 'gestor');
     }
 
     window.gestorSalesCount = sales;
@@ -10929,15 +10962,11 @@ async function generateQuickStoryForProduct(name, button) {
 // --- 2. LÓGICA DE ANALÍTICA (HORARIOS Y TENDENCIAS) ---
 
 async function loadAnalyticsPro(nombreGestor) {
-    // Esta analítica solo necesita estos campos; excluir datos de cliente,
-    // direcciones y demás columnas reduce notablemente la transferencia.
-    const { data: pedidos, error } = await supabaseClient
-        .from('pedidos')
-        .select('gestor, subgestor_nombre, estado, fecha, producto');
-    if (error || !pedidos) return;
-
     const level = window.currentGestorLevel || 0;
-    const misPedidos = pedidos.filter(p => p.gestor === nombreGestor && p.estado !== 'Cancelado');
+    // El historial propio acaba de cargarse para construir el dashboard.
+    // Reutilizarlo evita descargar nuevamente todos los pedidos del sistema.
+    const misPedidos = (Array.isArray(myOrdersData) ? myOrdersData : [])
+        .filter(p => p.estado !== 'Cancelado');
 
     // --- MEJOR HORARIO (EL ORÁCULO DE VENTAS) ---
     const elHorario = document.getElementById('ana-hora-pico');
@@ -10961,7 +10990,16 @@ async function loadAnalyticsPro(nombreGestor) {
     const elTendencia = document.getElementById('ana-tendencia-global');
     if (elTendencia) {
         if (level >= 3) {
-            const tendencias = getGlobalTrendRadar(pedidos);
+            // Solo los niveles que pueden ver el radar solicitan datos globales,
+            // y únicamente las tres columnas utilizadas por la herramienta.
+            const { data: pedidosTendencia, error } = await supabaseClient
+                .from('pedidos')
+                .select('fecha, created_at, producto');
+            if (error) {
+                console.error('Error cargando tendencias:', error);
+                return;
+            }
+            const tendencias = getGlobalTrendRadar(pedidosTendencia || []);
             elTendencia.innerHTML = tendencias.map((t, i) => `
                 <div class="flex justify-between items-center mb-1 group">
                     <span class="text-[10px] font-black uppercase text-gray-500">#${i+1} ${t.name}</span>
@@ -12530,13 +12568,7 @@ async function showAgentWelcomeModal(nombre) {
         if (nombre === "Marcel Montano") {
             salesCount = 80; 
         } else {
-            const { count, error } = await supabaseClient
-                .from('pedidos')
-                .select('id', { count: 'exact', head: true })
-                .eq('gestor', nombre)
-                .eq('estado', 'Entregado');
-            if (error) throw error;
-            salesCount = count || 0;
+            salesCount = await getDeliveredSalesCount(nombre, 'gestor');
         }
 
         const lvlData = getLevelData(salesCount);
@@ -12806,21 +12838,16 @@ async function checkGamificationStatus() {
     // Un subgestor conserva su progreso por sus propias ventas, aunque el
     // pedido financiero pertenezca a su gestor principal.
     const hierarchy = await resolveSalesHierarchy(gestor);
-    let levelQuery = supabaseClient
-        .from('pedidos')
-        .select('id', { count: 'exact' }) 
-        .eq('estado', 'Entregado');
-    levelQuery = hierarchy?.isSubgestor
-        ? levelQuery.eq('subgestor_nombre', gestor)
-        : levelQuery.eq('gestor', gestor);
-    const { count, error } = await levelQuery;
-
-    if (error) {
+    let sales = 0;
+    try {
+        sales = await getDeliveredSalesCount(
+            gestor,
+            hierarchy?.isSubgestor ? 'subgestor' : 'gestor'
+        );
+    } catch (error) {
         console.error("Error obteniendo nivel:", error);
         return;
     }
-
-    const sales = count || 0;
     
     // 1. Guardar el nivel en una variable global para que todos la vean
     const levelData = getLevelData(sales);
