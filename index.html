@@ -936,6 +936,42 @@
                     </div>
                 </section>
 
+                <section id="gestor-customer-protection" class="overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-blue-50 shadow-sm">
+                    <div class="grid gap-5 p-5 md:grid-cols-[auto_1fr_auto] md:items-center md:p-6">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
+                            <span class="material-symbols-outlined text-3xl">shield_person</span>
+                        </div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Protección permanente del gestor</p>
+                                <span class="rounded-full bg-emerald-100 px-2 py-1 text-[8px] font-black uppercase text-emerald-700">La tienda nunca se apropia del cliente</span>
+                            </div>
+                            <h2 class="mt-1 text-lg font-black text-slate-900">El cliente es tuyo mientras tú conserves la relación</h2>
+                            <p class="mt-1 max-w-3xl text-[11px] font-medium leading-relaxed text-slate-600">Cuando captas y cierras una venta, el cliente queda asociado a ti sin fecha de vencimiento. La tienda no lo convertirá en venta directa. Solo cambia de gestor si otro asesor lo atiende y consigue un cierre completo; por eso te ayudamos a mantener el contacto y fidelizarlo.</p>
+                        </div>
+                        <div class="rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-center shadow-sm">
+                            <strong id="gestor-protected-customer-count" class="block text-3xl font-black text-emerald-700">—</strong>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-500">Clientes tuyos</span>
+                            <button onclick="openProtectionFollowups()" class="mt-2 block w-full text-[8px] font-black uppercase text-blue-700">Abrir seguimientos</button>
+                        </div>
+                    </div>
+                    <details class="border-t border-emerald-100 bg-white/70">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 text-[10px] font-black uppercase text-slate-600 md:px-6">
+                            Cómo funciona la protección
+                            <span class="material-symbols-outlined text-lg text-emerald-600">expand_more</span>
+                        </summary>
+                        <div class="grid gap-px border-t border-slate-100 bg-slate-100 sm:grid-cols-3">
+                            <div class="bg-white p-4"><strong class="text-xs text-slate-900">1. Captas</strong><p class="mt-1 text-[10px] leading-relaxed text-slate-500">Compartes tu tienda o registras personalmente al nuevo cliente.</p></div>
+                            <div class="bg-white p-4"><strong class="text-xs text-slate-900">2. Registras</strong><p class="mt-1 text-[10px] leading-relaxed text-slate-500">Con su primer pedido, el teléfono queda protegido automáticamente.</p></div>
+                            <div class="bg-white p-4"><strong class="text-xs text-slate-900">3. Fidelizas</strong><p class="mt-1 text-[10px] leading-relaxed text-slate-500">La tienda respeta siempre tu cliente. Solo un nuevo cierre completo de otro gestor cambia la atribución.</p></div>
+                        </div>
+                        <div class="border-t border-slate-100 bg-white p-4 md:px-6">
+                            <div class="flex items-center justify-between gap-3"><strong class="text-xs text-slate-900">Clientes que necesitan contacto</strong><span id="gestor-protection-attention-count" class="rounded-full bg-amber-50 px-2 py-1 text-[9px] font-black text-amber-700">0</span></div>
+                            <div id="gestor-protection-attention-list" class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3"><p class="text-[10px] text-slate-400">Analizando tu última comunicación…</p></div>
+                        </div>
+                    </details>
+                </section>
+
                 <section aria-label="Indicadores principales" class="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                         <div class="mb-4 flex items-center justify-between">
@@ -1980,6 +2016,11 @@
         onblur="verificarDuenioAlEscribir(this.value)" 
         placeholder="5xxx-xxxx" 
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required>
+    <p id="customer-owner-status" class="hidden mt-2 rounded-xl border px-3 py-2 text-[10px] font-black leading-relaxed"></p>
+    <label id="assisted-sale-option" class="hidden mt-2 cursor-pointer items-start gap-2 rounded-xl border border-violet-200 bg-violet-50 p-3">
+        <input id="assisted-sale-checkbox" type="checkbox" class="mt-0.5 rounded border-violet-300 text-violet-600 focus:ring-violet-500">
+        <span class="text-[10px] font-bold leading-relaxed text-violet-800"><b>Cierre asistido 70/30:</b> estoy realizando esta nueva venta con autorización. Recibo 70% de la comisión y el gestor que originó el cliente conserva 30%.</span>
+    </label>
 </div>
         </div>
 
@@ -5991,7 +6032,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
     // EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN
-    const activeGestor = await obtenerDuenoReal(telC);
+    let activeGestor = await obtenerDuenoReal(telC);
     
     // --- CORRECCIÓN ENRUTAMIENTO DE WHATSAPP ---
     const PHONE_DUENO_TIENDA = "5356071095"; 
@@ -6044,18 +6085,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // ... (El resto de tu código de la línea: // LÓGICA DE BINDEO (MODO DIOS) hacia abajo se queda exactamente igual)
 
-    // LÓGICA DE BINDEO (MODO DIOS)
-    if (activeGestor !== "Venta Directa") {
-        const lvl = getLevelData(window.gestorSalesCount || 0).lvl;
-        if (activeGestor === "Marcel Montano" || lvl >= 5) {
-            try {
-                await supabaseClient.from('customer_bindings').upsert({
-                    phone: telC.replace(/\D/g, ''), 
-                    agent_name: activeGestor
-                });
-            } catch (err) { console.error("Error bind:", err); }
-        }
-    }
+    // La protección se actualiza únicamente después de guardar el pedido.
+    // Así, quien realiza el cierre completo recibe la comisión y la nueva ventana.
 
     let origenPedido = "Directo/Web";
     if (isLogged) {
@@ -6074,6 +6105,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     let mensajeRaw = ""; 
     const promesas = [];
+    const protectionOrderIds = [];
     const agentPhone = getAgentPhone(); 
     
     // Bandera para asignar el envío global SOLO a un vale (por si hay múltiples proveedores)
@@ -6129,6 +6161,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             const random = Math.floor(1000 + Math.random() * 9000);
             codPedido = `${prov}-TEMP-${random}`;
         }
+        protectionOrderIds.push(codPedido);
 
         let detalleCuerpo = "";
         let subtotalProductos = 0; 
@@ -6259,6 +6292,23 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 finalBtn.innerText = "Confirmar Pedido";
             }
             return; // Detiene la ejecución para que no abra WhatsApp si falló la base de datos
+        }
+    }
+
+    if (activeGestor !== 'Venta Directa') {
+        const protection = await recordCustomerClosure(telC, activeGestor, protectionOrderIds.join(','));
+        if (protection.transferred) {
+            console.log(`🔄 Cliente transferido por cierre completo: ${protection.previousOwner} → ${activeGestor}`);
+        }
+        if (activeGestor === window.gestorName) {
+            protectedCustomerCountOwner = null;
+            protectedCustomerCountValue = null;
+            window.PTHFollowups?.scheduleProtectedCustomer?.({
+                cliente: nombreC,
+                telefono: telC,
+                producto: cart.map(item => item.nombre).join(', '),
+                pedido_id: protectionOrderIds.join(',')
+            });
         }
     }
 
@@ -7329,6 +7379,89 @@ function shareGestorPulseProduct(encodedName) {
     shareProductWhatsApp(name);
 }
 
+let protectedCustomerCountOwner = null;
+let protectedCustomerCountValue = null;
+
+async function loadProtectedCustomerCount() {
+    const gestor = String(window.gestorName || '').trim();
+    const output = document.getElementById('gestor-protected-customer-count');
+    if (!gestor || !output) return;
+
+    if (protectedCustomerCountOwner === gestor && protectedCustomerCountValue !== null) {
+        output.textContent = protectedCustomerCountValue;
+        return;
+    }
+
+    output.textContent = '…';
+    let { data, error } = await supabaseClient
+        .from('customer_bindings')
+        .select('phone, protected_until, last_activity_at, last_purchase_at, updated_at')
+        .eq('agent_name', gestor);
+
+    if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+        const legacy = await supabaseClient.from('customer_bindings').select('phone').eq('agent_name', gestor);
+        data = legacy.data;
+        error = legacy.error;
+    }
+
+    if (error) {
+        console.error('No se pudo cargar el total de clientes protegidos:', error);
+        output.textContent = 'Activo';
+        output.classList.remove('text-3xl');
+        output.classList.add('text-lg');
+        return;
+    }
+
+    const activeRows = data || [];
+    protectedCustomerCountOwner = gestor;
+    protectedCustomerCountValue = activeRows.length;
+    output.classList.remove('text-lg');
+    output.classList.add('text-3xl');
+    output.textContent = protectedCustomerCountValue;
+
+    const needsAttention = activeRows
+        .map(row => ({ ...row, lastTouch: new Date(row.last_activity_at || row.last_purchase_at || row.updated_at || 0).getTime() }))
+        .filter(row => !row.lastTouch || Date.now() - row.lastTouch >= 45 * 86400000)
+        .sort((a, b) => a.lastTouch - b.lastTouch);
+    const attentionCount = document.getElementById('gestor-protection-attention-count');
+    const attentionList = document.getElementById('gestor-protection-attention-list');
+    if (attentionCount) attentionCount.textContent = needsAttention.length;
+    if (attentionList) {
+        attentionList.replaceChildren();
+        if (!needsAttention.length) {
+            const empty = document.createElement('p');
+            empty.className = 'text-[10px] font-bold text-emerald-600';
+            empty.textContent = 'Tus clientes tienen seguimiento reciente.';
+            attentionList.appendChild(empty);
+        } else {
+            needsAttention.slice(0, 6).forEach(row => {
+                const order = (Array.isArray(myOrdersData) ? myOrdersData : []).find(item => customerPhoneCandidates(item.telefono).some(value => customerPhoneCandidates(row.phone).includes(value)));
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'rounded-xl border border-amber-100 bg-amber-50 p-3 text-left transition hover:border-amber-300';
+                card.addEventListener('click', () => openProtectionFollowups());
+                const name = document.createElement('strong');
+                name.className = 'block truncate text-[11px] text-slate-800';
+                name.textContent = order?.cliente || row.phone;
+                const meta = document.createElement('span');
+                meta.className = 'mt-1 block text-[9px] font-bold text-amber-700';
+                const days = row.lastTouch ? Math.floor((Date.now() - row.lastTouch) / 86400000) : null;
+                meta.textContent = `${days === null ? 'Sin contacto registrado' : `${days} días sin contacto`} · Atender ahora`;
+                card.append(name, meta);
+                attentionList.appendChild(card);
+            });
+        }
+    }
+}
+
+function openProtectionFollowups() {
+    if (window.PTHFollowups?.open) {
+        window.PTHFollowups.open('hoy');
+        return;
+    }
+    showDashSection('rendimiento');
+}
+
 function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCobrar = 0 }) {
     prepareGestorDashboardLayout();
 
@@ -7368,6 +7501,7 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
     updateGestorSalesPulse();
     renderCommissionCenter();
     renderGestorPerformance(ventas);
+    loadProtectedCustomerCount();
 
     const list = document.getElementById('gestor-home-orders');
     if (!list) return;
@@ -12994,40 +13128,154 @@ ${descLimpia.trim()}
     });
 }
 
+function customerPhoneCandidates(phone) {
+    const digits = String(phone || '').replace(/\D/g, '');
+    const candidates = new Set();
+    if (!digits) return [];
+
+    candidates.add(digits);
+    // La tabla histórica usa 8 dígitos para Cuba. Conservamos ambos formatos.
+    if (digits.startsWith('53') && digits.length === 10) candidates.add(digits.slice(2));
+    if (digits.length === 8) candidates.add('53' + digits);
+    return [...candidates];
+}
+
+function canonicalCustomerPhone(phone) {
+    const candidates = customerPhoneCandidates(phone);
+    if (!candidates.length) return '';
+    const cubanLocal = candidates.find(value => value.length === 8);
+    return cubanLocal || candidates[0];
+}
+
+async function findPermanentCustomerOwner(phone) {
+    const candidates = customerPhoneCandidates(phone);
+    if (!candidates.length) return null;
+
+    let { data, error } = await supabaseClient
+        .from('customer_bindings')
+        .select('phone, agent_name, protected_until, last_activity_at, last_activity_type, last_purchase_at')
+        .in('phone', candidates)
+        .limit(1);
+
+    // Compatibilidad mientras se ejecuta customer-protection.sql en Supabase.
+    if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+        const legacy = await supabaseClient
+            .from('customer_bindings')
+            .select('phone, agent_name')
+            .in('phone', candidates)
+            .limit(1);
+        data = legacy.data;
+        error = legacy.error;
+    }
+
+    if (error) {
+        console.error('No se pudo consultar la protección del cliente:', error);
+        return null;
+    }
+    const binding = data?.[0] || null;
+    if (!binding) return null;
+    return {
+        ...binding,
+        isActive: true,
+        daysRemaining: null
+    };
+}
+
+async function recordCustomerClosure(phone, agentName, orderId = null) {
+    const validAgent = typeof agentName === 'string' && agentName.trim() && agentName !== 'Venta Directa' && agentName !== 'Directo';
+    const canonicalPhone = canonicalCustomerPhone(phone);
+    if (!validAgent || !canonicalPhone) return { owner: null, created: false };
+
+    const existing = await findPermanentCustomerOwner(phone);
+    const newOwner = agentName.trim();
+    const now = new Date();
+    const transferred = Boolean(existing?.agent_name && existing.agent_name !== newOwner);
+    const payload = {
+        agent_name: newOwner,
+        protected_until: null,
+        last_activity_at: now.toISOString(),
+        last_activity_type: transferred ? 'cierre_nuevo_gestor' : (existing ? 'compra_recurrente' : 'primera_compra'),
+        last_purchase_at: now.toISOString(),
+        last_order_id: orderId ? String(orderId) : null,
+        previous_agent_name: transferred ? existing.agent_name : (existing?.previous_agent_name || null),
+        transferred_at: transferred ? now.toISOString() : (existing?.transferred_at || null),
+        updated_at: now.toISOString()
+    };
+
+    let mutation;
+    if (existing) {
+        mutation = await supabaseClient.from('customer_bindings').update(payload).in('phone', customerPhoneCandidates(phone));
+    } else {
+        mutation = await supabaseClient.from('customer_bindings').insert([{ phone: canonicalPhone, ...payload }]);
+    }
+
+    // Sin la migración, mantenemos al menos la reasignación por cierre.
+    if (mutation.error && (mutation.error.code === '42703' || mutation.error.code === 'PGRST204')) {
+        mutation = existing
+            ? await supabaseClient.from('customer_bindings').update({ agent_name: newOwner }).in('phone', customerPhoneCandidates(phone))
+            : await supabaseClient.from('customer_bindings').insert([{ phone: canonicalPhone, agent_name: newOwner }]);
+    }
+
+    if (mutation.error) {
+        console.error('No se pudo registrar el cierre del cliente:', mutation.error);
+        return { owner: existing?.agent_name || null, created: false, error: mutation.error };
+    }
+
+    // Auditoría no bloqueante; requiere customer-protection.sql.
+    supabaseClient.from('customer_binding_events').insert([{
+        phone: canonicalPhone,
+        previous_agent_name: transferred ? existing.agent_name : null,
+        agent_name: newOwner,
+        event_type: payload.last_activity_type,
+        order_id: orderId ? String(orderId) : null,
+        protected_until: null
+    }]).then(({ error }) => { if (error) console.warn('Auditoría de atribución no disponible.', error); });
+
+    return { owner: newOwner, previousOwner: existing?.agent_name || null, created: !existing, transferred };
+}
+
+async function renewCustomerProtection(phone, agentName, activityType = 'seguimiento_registrado') {
+    const binding = await findPermanentCustomerOwner(phone);
+    if (!binding?.agent_name || binding.agent_name !== agentName) return { renewed: false, reason: 'not_owner' };
+
+    const now = new Date();
+    const { error } = await supabaseClient.from('customer_bindings').update({
+        protected_until: null,
+        last_activity_at: now.toISOString(),
+        last_activity_type: activityType,
+        updated_at: now.toISOString()
+    }).in('phone', customerPhoneCandidates(phone)).eq('agent_name', agentName);
+
+    if (error) return { renewed: false, error };
+    supabaseClient.from('customer_binding_events').insert([{
+        phone: canonicalCustomerPhone(phone), agent_name: agentName, event_type: activityType,
+        protected_until: null
+    }]).then(() => {});
+    protectedCustomerCountOwner = null;
+    return { renewed: true };
+}
+
+window.renewCustomerProtection = renewCustomerProtection;
+
 async function obtenerDuenoReal(telefonoCliente) {
     // Escudo protector: Solo acepta nombres reales, rechaza espacios en blanco
     const esValido = (nombre) => nombre && typeof nombre === 'string' && nombre.trim() !== "";
 
-    // 1. PRIORIDAD MÁXIMA: GESTOR LOGUEADO (Manual)
+    // 1. Quien realiza el cierre completo recibe la nueva comisión.
     if (esValido(window.gestorName)) return window.gestorName;
 
-    // 2. PRIORIDAD ALTA: DUEÑO ETERNO (Base de Datos)
-    if (telefonoCliente) {
-        let cleanPhone = telefonoCliente.replace(/\D/g, '');
-        if (cleanPhone.startsWith('53') && cleanPhone.length === 10) cleanPhone = cleanPhone.substring(2);
-
-        if (cleanPhone.length === 8) {
-            const { data: binding } = await supabaseClient
-                .from('customer_bindings')
-                .select('agent_name')
-                .eq('phone', cleanPhone)
-                .maybeSingle();
-
-            if (binding && esValido(binding.agent_name)) {
-                return binding.agent_name; 
-            }
-        }
-    }
-
-    // 3. PRIORIDAD MEDIA: LINK TEMPORAL (Referrer)
+    // 2. Un cliente que compra desde el enlace del gestor está siendo cerrado por él.
     const referrer = await getActiveReferrer();
     if (referrer && esValido(referrer.nombre)) return referrer.nombre;
 
-    // 4. PRIORIDAD BAJA: RASTRO POR IP
-    const duenoIP = await buscarDuenoPorIP();
-    if (esValido(duenoIP)) return duenoIP;
+    // 3. Si compra directamente, conserva para siempre al gestor que lo captó.
+    if (telefonoCliente) {
+        const binding = await findPermanentCustomerOwner(telefonoCliente);
+        if (binding?.isActive && esValido(binding.agent_name)) return binding.agent_name;
+    }
 
-    // 5. SIN DUEÑO (TRÁFICO ORGÁNICO)
+    // 4. SIN DUEÑO (TRÁFICO ORGÁNICO)
+    // La IP no decide comisiones: puede representar una casa o red compartida.
     // Si nadie trajo a este cliente, la venta va directamente a la tienda.
     return "Venta Directa";
 }
@@ -14456,15 +14704,34 @@ async function downloadCatalogPDF() {
 }
 
 async function verificarDuenioAlEscribir(telefono) {
-    if (!telefono || telefono.length < 7) return;
+    const status = document.getElementById('customer-owner-status');
+    if (!telefono || telefono.replace(/\D/g, '').length < 8) {
+        if (status) status.classList.add('hidden');
+        return;
+    }
     
     console.log("🔍 Verificando dueño para el teléfono:", telefono);
     
-    // Llamamos a la función maestra que ya tienes
+    const binding = await findPermanentCustomerOwner(telefono);
     const dueno = await obtenerDuenoReal(telefono);
     
     if (dueno && dueno !== "Venta Directa") {
         console.log("✅ Cliente reconocido. El dueño es: " + dueno);
+
+        if (status) {
+            const isInternal = Boolean(localStorage.getItem('pth_session'));
+            const isCurrentOwner = binding?.agent_name === window.gestorName;
+            const hasOtherOwner = Boolean(binding?.agent_name && !isCurrentOwner);
+            status.className = `mt-2 rounded-xl border px-3 py-2 text-[10px] font-black leading-relaxed ${isCurrentOwner ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : hasOtherOwner ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-blue-200 bg-blue-50 text-blue-700'}`;
+            if (isInternal && isCurrentOwner) {
+                status.textContent = '🔐 Este cliente es tuyo sin fecha de vencimiento. Mantén el seguimiento para que otro gestor no tenga la oportunidad de recuperarlo con un nuevo cierre.';
+            } else if (isInternal && hasOtherOwner) {
+                status.textContent = `ℹ️ Cliente atendido anteriormente por ${binding.agent_name}. Si tú realizas el cierre completo, esta venta, la comisión y la nueva protección serán tuyas.`;
+            } else {
+                status.textContent = `🤝 Esta compra será atendida por ${dueno}.`;
+            }
+            status.classList.remove('hidden');
+        }
         
         // Buscamos el teléfono del gestor en la base de datos para pintar el botón flotante
         const { data } = await supabaseClient
@@ -14477,6 +14744,12 @@ async function verificarDuenioAlEscribir(telefono) {
             // Pintamos el botón de WhatsApp con la cara/nombre del gestor dueño
             renderFloatingWA(dueno, data.telefono);
         }
+    } else if (status) {
+        status.className = 'mt-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-[10px] font-black leading-relaxed text-blue-700';
+        status.textContent = window.gestorName
+            ? 'Nuevo cliente: quedará protegido para ti cuando registres su primer pedido.'
+            : 'Cliente nuevo: su asesor quedará asociado cuando complete el pedido.';
+        status.classList.remove('hidden');
     }
 }
 // === MOTOR DEL PROYECTO RADAR (MODO ESPIA) ===
@@ -14562,11 +14835,7 @@ function captureGhostLead() {
         let gestorAtribuido = 'Directo';
 
         // 1. Verificar si este teléfono YA tiene dueño en la base de datos (Amarre)
-        const { data: binding } = await supabaseClient
-            .from('customer_bindings')
-            .select('agent_name')
-            .eq('phone', telLimpio)
-            .maybeSingle();
+        const binding = await findPermanentCustomerOwner(telLimpio);
 
         if (binding && binding.agent_name) {
             gestorAtribuido = binding.agent_name; // ¡Es de un gestor, rescatarlo para él!
@@ -14693,19 +14962,11 @@ function captureGhostLead() {
 // Se usa en el Checkout para verificar si el cliente tiene dueño
 async function checkCustomerOwnership(phone) {
     if (!phone) return null;
-    let cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.startsWith('53')) cleanPhone = cleanPhone.substring(2);
-
     try {
-        const { data, error } = await supabaseClient
-            .from('customer_bindings')
-            .select('agent_name')
-            .eq('phone', cleanPhone)
-            .maybeSingle(); // Usamos maybeSingle para no dar error si no existe
-        
-        if (data && data.agent_name) {
-            console.log("💎 AMARRE DETECTADO: Comisión para", data.agent_name);
-            return data.agent_name;
+        const binding = await findPermanentCustomerOwner(phone);
+        if (binding?.agent_name) {
+            console.log("💎 PROTECCIÓN DETECTADA: Comisión para", binding.agent_name);
+            return binding.agent_name;
         }
     } catch (e) { console.error(e); }
     return null;
