@@ -1,7 +1,7 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-08-02-pwa3';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-08-02-pwa4';
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=2807d';
+const PTH_SHELL_URL = '/index.html?v=2807e';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
@@ -9,7 +9,7 @@ const PTH_PUBLIC_ASSETS = [
   '/css/tailwind.min.css?v=2026-08-02',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=2026-08-02',
-  '/js/pwa.js?v=2026-08-02-pwa3',
+  '/js/pwa.js?v=2026-08-02-pwa4',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
