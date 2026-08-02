@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-labelledby="title description">
+  <title id="title">Imagen no disponible sin conexión</title>
+  <desc id="description">Marcador ligero para productos cuya fotografía requiere conexión.</desc>
+  <rect width="720" height="720" rx="48" fill="#f1f5f9"/>
+  <path d="M222 208h276a42 42 0 0 1 42 42v220a42 42 0 0 1-42 42H222a42 42 0 0 1-42-42V250a42 42 0 0 1 42-42Z" fill="#fff" stroke="#cbd5e1" stroke-width="18"/>
+  <circle cx="287" cy="301" r="35" fill="#dbeafe"/>
+  <path d="m205 456 111-109 76 70 54-53 69 92" fill="none" stroke="#94a3b8" stroke-linecap="round" stroke-linejoin="round" stroke-width="22"/>
+  <path d="M284 567h152" stroke="#1e4f91" stroke-linecap="round" stroke-width="18"/>
+</svg>

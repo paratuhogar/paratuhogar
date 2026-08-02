@@ -43,7 +43,7 @@
     <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/image-variants.js?v=2026-08-02" defer></script>
-    <script src="js/pwa.js?v=2026-08-02-pwa1" defer></script>
+    <script src="js/pwa.js?v=2026-08-02-pwa2" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -3136,7 +3136,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807b";
+const versionActual = "2807c";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3181,10 +3181,12 @@ if (urlParamsVersion.get('v') !== versionActual) {
     // Cambiamos el nombre de la constante a 'supabaseClient' para evitar errores
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.supabase?.createClient
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+        : null;
 
     // Alertas del Radar para gestores conectados en cualquier sección de la tienda.
-    supabaseClient
+    if (supabaseClient) supabaseClient
         .channel('global-blacklist-alerts')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blacklist' }, payload => {
             let activeSession = null;
@@ -3356,6 +3358,18 @@ checkShortLinks();
         }
     }
     // === FIN LÓGICA SPLASH SCREEN ===
+
+    // La PWA offline siempre abre como catálogo público. No restaura sesiones,
+    // roles administrativos ni herramientas internas sin conexión verificable.
+    if (!navigator.onLine || !supabaseClient) {
+        const overlay = document.getElementById('login-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        window.gestorName = null;
+        window.isAdmin = false;
+        window.currentUserData = null;
+        loadProducts();
+        return;
+    }
 
     // ... aquí sigue tu código original (await checkShortLinks(); etc...)
     // 1. Procesar identificación (Link corto y Referral) primero
@@ -4771,6 +4785,27 @@ async function resolveSalesHierarchy(agentName) {
     return hierarchy;
 }
 
+function loadOfflineCatalogFromCache() {
+    const cached = localStorage.getItem('pth_catalogo_cache');
+    if (!cached) return false;
+
+    try {
+        const productos = JSON.parse(cached);
+        if (!Array.isArray(productos) || !productos.length) return false;
+        catalogSourceProducts = productos.map(product => ({ ...product }));
+        productosRaw = productos.map(product => ({ ...product }));
+        const cacheTime = Number(localStorage.getItem('pth_catalogo_cache_time')) || Date.now();
+        catalogLastSyncAt = new Date(cacheTime).toISOString();
+        window.activeSalesHierarchy = null;
+        renderCategories();
+        renderProducts();
+        return true;
+    } catch (error) {
+        console.warn('La copia local del catálogo no pudo recuperarse:', error);
+        return false;
+    }
+}
+
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -4782,6 +4817,18 @@ async function loadProducts() {
     // Evita que varios eventos de inicio reconstruyan el catálogo al mismo tiempo.
     if (productsLoadInProgress) return;
     productsLoadInProgress = true;
+
+    if (!navigator.onLine || !supabaseClient) {
+        const restored = loadOfflineCatalogFromCache();
+        if (!restored) {
+            const container = document.getElementById('productos-container');
+            if (container) {
+                container.innerHTML = '<div class="col-span-full py-10 text-center text-gray-400">Conéctate una vez para preparar el catálogo sin conexión.</div>';
+            }
+        }
+        productsLoadInProgress = false;
+        return;
+    }
 
     try {
         const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
@@ -5172,10 +5219,12 @@ async function getCategoriasCached({ force = false } = {}) {
 async function renderCategories() {
     // 1. Cargamos el orden oficial del Jefe desde la Base de Datos
     let categoriasOficiales = [];
-    try {
-        const data = await getCategoriasCached();
-        categoriasOficiales = data.map(c => c.nombre.toUpperCase().trim());
-    } catch(e) { console.error("Error cargando categorías oficiales"); }
+    if (navigator.onLine && supabaseClient) {
+        try {
+            const data = await getCategoriasCached();
+            categoriasOficiales = data.map(c => c.nombre.toUpperCase().trim());
+        } catch(e) { console.error("Error cargando categorías oficiales"); }
+    }
 
     // 2. Extraemos TODAS las categorías que tienen tus productos actualmente (Modo rescate)
     const categoriasEnProductos = [...new Set(productosRaw.map(p => p.categoria ? p.categoria.toUpperCase().trim() : 'VARIOS'))];
@@ -6091,6 +6140,11 @@ function changeQty(index, delta) {
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
 
+    if (!navigator.onLine || !supabaseClient) {
+        alert('Para confirmar el pedido necesitamos conexión y verificar el inventario actualizado. Tu selección seguirá aquí para intentarlo cuando regresen los datos.');
+        return;
+    }
+
     // === NUEVO: SABER SI ES RECOGIDA EN ALMACÉN ===
     const isRecogida = document.getElementById('check-recogida') ? document.getElementById('check-recogida').checked : false;
 
@@ -6627,7 +6681,7 @@ function renderResponsiveProductImage(url, alt, className, sizes, priority = fal
     const safeSizes = escapeImageAttribute(sizes || '100vw');
     const loading = priority ? 'eager' : 'lazy';
     const fetchPriority = priority ? ' fetchpriority="high"' : '';
-    const fallback = `<img src="${escapeImageAttribute(original)}" loading="${loading}"${fetchPriority} decoding="async" width="720" height="720" alt="${safeAlt}" class="${safeClass}">`;
+    const fallback = `<img src="${escapeImageAttribute(original)}" loading="${loading}"${fetchPriority} decoding="async" width="720" height="720" alt="${safeAlt}" class="${safeClass}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/icons/product-placeholder.svg';">`;
     if (!variants) return fallback;
 
     return `<picture class="contents">
