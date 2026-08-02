@@ -3,7 +3,7 @@
 
     const TABLE = 'seguimientos_clientes';
     const SYNC_INTERVAL = 15 * 60 * 1000;
-    const MAX_REMOTE_ROWS = 50;
+    const MAX_REMOTE_ROWS = 200;
     const MAX_LOCAL_ROWS = 200;
     const CLOSED_STATES = new Set(['vendido', 'no_interesado', 'cerrado']);
     const STATE_LABELS = {
@@ -373,6 +373,7 @@
                 <label class="pth-followup-field"><span>Nota breve</span><textarea name="nota_corta" maxlength="300" placeholder="Qué necesita, objeción o próximo paso…">${escapeHtml(item?.nota_corta || '')}</textarea></label>
                 <div class="pth-followup-actions">
                     <button type="submit" class="pth-followup-primary">${item ? 'Guardar cambios' : 'Crear recordatorio'}</button>
+                    ${item?.id ? '<button type="button" class="pth-followup-primary is-whatsapp" data-action="whatsapp-form">Contactar por WhatsApp</button>' : ''}
                     <button type="button" class="pth-followup-secondary" data-action="close-form">Cancelar</button>
                 </div>
                 <p class="pth-followup-mode">Solo se guardan datos comerciales mínimos. No incluye comisión, CI ni dirección.</p>
@@ -481,6 +482,65 @@
         });
     }
 
+    async function importProtectedCustomers(customers = []) {
+        if (!owner || !Array.isArray(customers) || !customers.length) return { imported: 0 };
+        await sync(true);
+
+        const knownPhones = new Set(items.map(item => String(item.telefono || '').replace(/\D/g, '')).filter(Boolean));
+        if (remoteAvailable && typeof supabaseClient !== 'undefined') {
+            const { data } = await supabaseClient.from(TABLE)
+                .select('telefono').eq('gestor', owner).limit(500);
+            (data || []).forEach(row => knownPhones.add(String(row.telefono || '').replace(/\D/g, '')));
+        }
+
+        const missing = customers.filter(customer => {
+            const phone = String(customer.telefono || '').replace(/\D/g, '');
+            return phone && !knownPhones.has(phone) && (knownPhones.add(phone), true);
+        });
+        if (!missing.length) return { imported: 0 };
+
+        const now = new Date();
+        const created = missing.map((customer, index) => {
+            // Distribuye la cartera en grupos de cinco por día para que sea atendible.
+            const next = new Date(now);
+            next.setDate(next.getDate() + 1 + Math.floor(index / 5));
+            next.setHours(10, 0, 0, 0);
+            const iso = now.toISOString();
+            return {
+                id: createId(), gestor: owner, subgestor: session.data?.parent_id ? owner : null,
+                cliente: customer.cliente || 'Cliente protegido', telefono: customer.telefono,
+                producto: customer.producto || 'Compra anterior', estado: 'interesado',
+                proximo_contacto: next.toISOString(), ultimo_contacto: null,
+                nota_corta: 'Cliente protegido importado. Saludar, comprobar su experiencia y recomendar algo relacionado.',
+                pedido_id: customer.pedido_id || null, created_at: iso, updated_at: iso
+            };
+        });
+
+        if (remoteAvailable && typeof supabaseClient !== 'undefined') {
+            const { error } = await supabaseClient.from(TABLE).insert(created.map(remoteRow));
+            if (error) created.forEach(item => { item._pending = true; });
+        } else {
+            created.forEach(item => { item._pending = true; });
+        }
+        mergeItems(created);
+        saveLocal();
+        render();
+        return { imported: created.length };
+    }
+
+    function openCustomer(phone) {
+        const normalizedPhone = String(phone || '').replace(/\D/g, '');
+        const item = items.find(row => String(row.telefono || '').replace(/\D/g, '') === normalizedPhone);
+        root?.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        if (item) openForm(item);
+        else {
+            openForm();
+            const form = root?.querySelector('.pth-followup-form');
+            if (form?.elements?.telefono) form.elements.telefono.value = phone;
+        }
+    }
+
     function exportBackup() {
         const blob = new Blob([JSON.stringify({ owner, exportedAt: new Date().toISOString(), items }, null, 2)], {
             type: 'application/json'
@@ -501,6 +561,12 @@
         if (action === 'close-form') return closeForm();
         if (action === 'sync') return sync(true);
         if (action === 'export') return exportBackup();
+        if (action === 'whatsapp-form') {
+            const editId = actionNode.closest('form')?.dataset.editId;
+            const formItem = items.find(row => row.id === editId);
+            if (formItem) whatsapp(formItem);
+            return;
+        }
         const card = actionNode.closest('[data-id]');
         const item = items.find(row => row.id === card?.dataset.id);
         if (!item) return;
@@ -613,7 +679,9 @@
         getStats: () => ({ ...getStats() }),
         open,
         sync: () => sync(true),
-        scheduleProtectedCustomer
+        scheduleProtectedCustomer,
+        importProtectedCustomers,
+        openCustomer
     };
 
     if (document.readyState === 'loading') {
