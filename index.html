@@ -6545,7 +6545,19 @@ function getProductImageFilename(url) {
 
 function getProductImageVariants(url) {
     const filename = getProductImageFilename(url);
-    return window.PTH_IMAGE_VARIANTS?.[filename] || null;
+    const variants = window.PTH_IMAGE_VARIANTS?.[filename];
+    if (!variants) return null;
+
+    // GitHub Pages necesita rutas desde la raíz del dominio. Cuando el
+    // administrador abre index.html directamente, file:// necesita rutas
+    // relativas a la carpeta del proyecto.
+    const resolvePath = path => window.location.protocol === 'file:'
+        ? path.replace(/^\/+/, '')
+        : path;
+
+    return Object.fromEntries(
+        Object.entries(variants).map(([format, path]) => [format, resolvePath(path)])
+    );
 }
 
 function escapeImageAttribute(value) {
