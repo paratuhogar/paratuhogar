@@ -8612,15 +8612,32 @@ let pedidosRawAdmin = []; // Añade esta línea antes de la función
 
 
 let inventoryRawAdmin = []; // Variable global vital para el inventario
+let vistasRawAdmin = []; // Reutilizada por el panel de tráfico para no descargarla dos veces
+let adminDataLoadPromise = null;
 
-async function loadAdminData() {
+function loadAdminData() {
+    // Algunos botones y restauraciones de sesión pueden solicitar la carga casi
+    // al mismo tiempo. Compartimos la petición activa para evitar egress duplicado.
+    if (adminDataLoadPromise) return adminDataLoadPromise;
+    adminDataLoadPromise = loadAdminDataOnce().finally(() => {
+        adminDataLoadPromise = null;
+    });
+    return adminDataLoadPromise;
+}
+
+async function loadAdminDataOnce() {
     // 1. CARGA PRIORITARIA: MENSAJEROS (Se cargan primero para tenerlos listos antes de dibujar la logística)
     await loadMensajerosEnAdmin();
 
     // 2. Cargamos los datos masivos de pedidos, productos y visitas
-    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
-    const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
-    const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
+    const [pedidosResult, productosResult, vistasResult] = await Promise.all([
+        supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false}),
+        supabaseClient.from('productos').select('*').order('nombre', {ascending: true}),
+        supabaseClient.from('metricas_vistas').select('producto_id, nombre_producto')
+    ]);
+    const pedidos = pedidosResult.data;
+    const productos = productosResult.data;
+    const vistas = vistasResult.data;
 
     // 3. Procesar Pedidos
     if (pedidos) {
@@ -8645,6 +8662,8 @@ async function loadAdminData() {
         populateInventarioProveedorFilter();
         renderAdminInventario(productos); // Pasamos los datos
     }
+
+    if (vistas) vistasRawAdmin = vistas;
     
     // 5. Procesar Cruce de datos
     if (pedidos && productos) {
@@ -10910,7 +10929,11 @@ async function generateQuickStoryForProduct(name, button) {
 // --- 2. LÓGICA DE ANALÍTICA (HORARIOS Y TENDENCIAS) ---
 
 async function loadAnalyticsPro(nombreGestor) {
-    const { data: pedidos, error } = await supabaseClient.from('pedidos').select('*');
+    // Esta analítica solo necesita estos campos; excluir datos de cliente,
+    // direcciones y demás columnas reduce notablemente la transferencia.
+    const { data: pedidos, error } = await supabaseClient
+        .from('pedidos')
+        .select('gestor, subgestor_nombre, estado, fecha, producto');
     if (error || !pedidos) return;
 
     const level = window.currentGestorLevel || 0;
