@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '2026-08-02-pwa2';
+  const SW_VERSION = '2026-08-02-pwa3';
   let registration = null;
   let reloadingForUpdate = false;
 

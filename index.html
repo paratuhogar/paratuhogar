@@ -43,7 +43,7 @@
     <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/image-variants.js?v=2026-08-02" defer></script>
-    <script src="js/pwa.js?v=2026-08-02-pwa2" defer></script>
+    <script src="js/pwa.js?v=2026-08-02-pwa3" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -2037,6 +2037,7 @@
 
 <!-- CAMBIO: flex-1 en lugar de h-full para que el form se expanda sin romperse -->
 <form id="checkout-form" class="flex-1 flex flex-col mt-4">
+    <div id="offline-order-status" class="hidden mb-4 rounded-2xl border px-4 py-3 text-xs font-bold" role="status"></div>
     <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
         <div class="flex items-start gap-3">
             <span class="material-symbols-outlined text-emerald-600">verified_user</span>
@@ -3136,7 +3137,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807c";
+const versionActual = "2807d";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3359,15 +3360,23 @@ checkShortLinks();
     }
     // === FIN LÓGICA SPLASH SCREEN ===
 
-    // La PWA offline siempre abre como catálogo público. No restaura sesiones,
-    // roles administrativos ni herramientas internas sin conexión verificable.
+    // Offline solo recuperamos la identidad mínima de una sesión previamente
+    // validada para que un gestor pueda preparar pedidos. Los paneles, reportes
+    // y privilegios administrativos siguen deshabilitados hasta volver a conectar.
     if (!navigator.onLine || !supabaseClient) {
         const overlay = document.getElementById('login-overlay');
         if (overlay) overlay.classList.add('hidden');
-        window.gestorName = null;
+        let offlineSession = null;
+        try {
+            offlineSession = JSON.parse(localStorage.getItem('pth_session') || 'null');
+        } catch (error) {
+            console.warn('No se pudo recuperar la identidad offline del gestor.', error);
+        }
+        window.gestorName = offlineSession?.name || null;
         window.isAdmin = false;
-        window.currentUserData = null;
+        window.currentUserData = offlineSession ? getMinimalOfflineSessionData(offlineSession.data) : null;
         loadProducts();
+        initOfflineOrderQueue();
         return;
     }
 
@@ -3402,6 +3411,7 @@ checkShortLinks();
 
     initAutoSaveSystem(); 
     initAgentFloatingButton();
+    initOfflineOrderQueue();
 
     // --- SENSOR DE INICIO DE SESIÓN CON BLOQUEO DE DUPLICADOS ---
     // Si ya enviamos el rastro en esta pestaña, no lo repetimos
@@ -6133,6 +6143,203 @@ function changeQty(index, delta) {
     
 
 
+const PTH_OFFLINE_ORDER_DB = 'pth-offline-orders-v1';
+const PTH_OFFLINE_ORDER_STORE = 'orders';
+let activeOfflineOrderId = null;
+let activeOfflineOrderRecord = null;
+
+function getMinimalOfflineSessionData(data = {}) {
+    return {
+        id: data.id || null,
+        nombre: data.nombre || null,
+        telefono: data.telefono || null,
+        parent_id: data.parent_id || null,
+        parent_nombre: data.parent_nombre || null,
+        parent_telefono: data.parent_telefono || null
+    };
+}
+
+function openOfflineOrderDatabase() {
+    return new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject(new Error('Este navegador no permite guardar pedidos offline.'));
+        const request = indexedDB.open(PTH_OFFLINE_ORDER_DB, 1);
+        request.onupgradeneeded = () => {
+            const database = request.result;
+            if (!database.objectStoreNames.contains(PTH_OFFLINE_ORDER_STORE)) {
+                database.createObjectStore(PTH_OFFLINE_ORDER_STORE, { keyPath: 'id' });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('No se pudo abrir la cola offline.'));
+    });
+}
+
+async function offlineOrderStore(mode, value) {
+    const database = await openOfflineOrderDatabase();
+    return new Promise((resolve, reject) => {
+        const transaction = database.transaction(PTH_OFFLINE_ORDER_STORE, mode === 'getAll' ? 'readonly' : 'readwrite');
+        const store = transaction.objectStore(PTH_OFFLINE_ORDER_STORE);
+        const request = mode === 'put' ? store.put(value) : mode === 'delete' ? store.delete(value) : store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('No se pudo actualizar la cola offline.'));
+        transaction.oncomplete = () => database.close();
+    });
+}
+
+async function getPendingOfflineOrders() {
+    const orders = await offlineOrderStore('getAll');
+    return (orders || []).sort((a, b) => a.createdAt - b.createdAt);
+}
+
+function getOfflineOrderFormSnapshot() {
+    const fieldIds = ['check-nombre', 'check-ci', 'check-tel', 'check-municipio', 'check-localidad', 'check-dir', 'check-notas', 'check-moneda-pago', 'check-vuelto'];
+    const fields = Object.fromEntries(fieldIds.map(id => [id, document.getElementById(id)?.value || '']));
+    fields['check-recogida'] = Boolean(document.getElementById('check-recogida')?.checked);
+    return fields;
+}
+
+function buildOfflineOrderId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `offline-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+async function queueOfflineOrder() {
+    let session = null;
+    try { session = JSON.parse(localStorage.getItem('pth_session') || 'null'); } catch (error) {}
+    if (!session?.name) {
+        alert('Los pedidos offline solo están disponibles para gestores que hayan iniciado sesión previamente en este dispositivo.');
+        return false;
+    }
+    if (!cart.length) {
+        alert('Añade al menos un producto antes de guardar el pedido.');
+        return false;
+    }
+
+    const productsWithoutWarranty = cart.filter(item => !String(item.garantia || '').trim());
+    if (productsWithoutWarranty.length) {
+        alert(`Falta configurar la garantía de:\n\n• ${productsWithoutWarranty.map(item => item.nombre).join('\n• ')}`);
+        return false;
+    }
+
+    const order = {
+        id: buildOfflineOrderId(),
+        createdAt: Date.now(),
+        gestor: session.name,
+        sessionData: getMinimalOfflineSessionData(session.data),
+        cart: cart.map(item => ({ ...item })),
+        fields: getOfflineOrderFormSnapshot(),
+        status: 'pending'
+    };
+    await offlineOrderStore('put', order);
+    cart = [];
+    clearAutoSave();
+    document.getElementById('cart-count').innerText = '0';
+    toggleCartModal(false);
+    await renderOfflineOrderStatus();
+    alert('✅ Pedido guardado en este dispositivo. Cuando vuelva la conexión se subirá automáticamente; después la app te avisará para abrir WhatsApp. No necesitas copiarlo ni enviarlo manualmente.');
+    return true;
+}
+
+async function restoreOfflineOrder(order) {
+    if (!order) return false;
+    activeOfflineOrderId = order.id;
+    activeOfflineOrderRecord = order;
+    cart = (order.cart || []).map(item => ({ ...item }));
+    window.gestorName = order.gestor;
+    window.currentUserData = order.sessionData || {};
+    document.getElementById('cart-count').innerText = String(cart.reduce((sum, item) => sum + Number(item.qty || 0), 0));
+
+    const fields = order.fields || {};
+    const pickup = document.getElementById('check-recogida');
+    if (pickup) pickup.checked = Boolean(fields['check-recogida']);
+    if (typeof toggleRecogidaEnAlmacen === 'function') toggleRecogidaEnAlmacen();
+    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-notas', 'check-moneda-pago', 'check-vuelto']) {
+        const element = document.getElementById(id);
+        if (element) element.value = fields[id] || '';
+    }
+    const municipality = document.getElementById('check-municipio');
+    if (municipality) municipality.value = fields['check-municipio'] || '';
+    if (typeof actualizarLocalidades === 'function') actualizarLocalidades();
+    const locality = document.getElementById('check-localidad');
+    if (locality) locality.value = fields['check-localidad'] || '';
+    renderCart();
+    toggleCartModal(true);
+    return true;
+}
+
+async function syncNextOfflineOrder(automatic = false) {
+    if (!navigator.onLine || !supabaseClient) {
+        alert('Todavía no hay conexión. El pedido continúa guardado de forma segura en este dispositivo.');
+        return;
+    }
+    const orders = await getPendingOfflineOrders();
+    const order = orders.find(item => item.status === 'pending');
+    if (!order) return renderOfflineOrderStatus();
+    let session = null;
+    try { session = JSON.parse(localStorage.getItem('pth_session') || 'null'); } catch (error) {}
+    if (!session?.name || session.name !== order.gestor) {
+        if (!automatic) alert(`Este pedido pertenece a ${order.gestor}. Inicia esa sesión antes de sincronizarlo.`);
+        return;
+    }
+    await restoreOfflineOrder(order);
+    const form = document.getElementById('checkout-form');
+    if (form?.reportValidity()) form.requestSubmit();
+}
+
+async function sendNextOfflineOrderWhatsApp() {
+    const orders = await getPendingOfflineOrders();
+    const order = orders.find(item => item.gestor === window.gestorName && item.status === 'synced' && item.whatsappUrl);
+    if (!order) return renderOfflineOrderStatus();
+    window.open(order.whatsappUrl, '_blank');
+    await offlineOrderStore('delete', order.id);
+    await renderOfflineOrderStatus();
+}
+
+async function renderOfflineOrderStatus() {
+    const status = document.getElementById('offline-order-status');
+    let floating = document.getElementById('offline-order-floating');
+    if (!floating) {
+        floating = document.createElement('button');
+        floating.id = 'offline-order-floating';
+        floating.type = 'button';
+        floating.onclick = syncNextOfflineOrder;
+        floating.className = 'hidden fixed bottom-20 right-4 z-[105] max-w-[260px] rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-left text-xs font-black text-amber-950 shadow-2xl';
+        document.body.appendChild(floating);
+    }
+    let orders = [];
+    try { orders = await getPendingOfflineOrders(); } catch (error) { console.warn(error); }
+    const ownOrders = orders.filter(order => order.gestor === window.gestorName);
+    if (!ownOrders.length) {
+        if (status) status.classList.add('hidden');
+        floating.classList.add('hidden');
+        return;
+    }
+    const syncedOrder = ownOrders.find(order => order.status === 'synced' && order.whatsappUrl);
+    const pendingCount = ownOrders.filter(order => order.status === 'pending').length;
+    const summary = syncedOrder
+        ? 'Pedido registrado · falta abrir WhatsApp'
+        : `${pendingCount} pedido${pendingCount === 1 ? '' : 's'} pendiente${pendingCount === 1 ? '' : 's'} ${navigator.onLine ? 'de sincronizar' : 'guardado en este dispositivo'}`;
+    const action = syncedOrder ? 'sendNextOfflineOrderWhatsApp()' : 'syncNextOfflineOrder()';
+    const actionLabel = syncedOrder ? 'Abrir WhatsApp' : (navigator.onLine ? 'Sincronizar pedido' : 'Sin conexión');
+    if (status) {
+        status.className = `mb-4 rounded-2xl border px-4 py-3 text-xs font-bold ${navigator.onLine ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-blue-300 bg-blue-50 text-blue-900'}`;
+        status.innerHTML = `<div class="flex items-center justify-between gap-3"><span>${summary}</span><button type="button" onclick="${action}" class="rounded-xl bg-slate-900 px-3 py-2 text-[10px] font-black uppercase text-white">${actionLabel}</button></div>`;
+    }
+    floating.classList.remove('hidden');
+    floating.onclick = syncedOrder ? sendNextOfflineOrderWhatsApp : syncNextOfflineOrder;
+    floating.innerHTML = `<span class="material-symbols-outlined mr-2 align-middle text-base">${syncedOrder ? 'chat' : (navigator.onLine ? 'sync' : 'cloud_off')}</span>${summary}<span class="mt-1 block text-[9px] uppercase tracking-wide">${syncedOrder ? 'Toca para enviar el mensaje' : (navigator.onLine ? 'Toca para sincronizar' : 'Se subirá cuando vuelvan los datos')}</span>`;
+}
+
+function initOfflineOrderQueue() {
+    renderOfflineOrderStatus();
+    window.addEventListener('online', () => {
+        renderOfflineOrderStatus();
+        setTimeout(() => syncNextOfflineOrder(true), 500);
+    });
+    window.addEventListener('offline', renderOfflineOrderStatus);
+    if (navigator.onLine) setTimeout(() => syncNextOfflineOrder(true), 800);
+}
+
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
 // 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
@@ -6141,7 +6348,12 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
 
     if (!navigator.onLine || !supabaseClient) {
-        alert('Para confirmar el pedido necesitamos conexión y verificar el inventario actualizado. Tu selección seguirá aquí para intentarlo cuando regresen los datos.');
+        try {
+            await queueOfflineOrder();
+        } catch (queueError) {
+            console.error('No se pudo guardar el pedido offline:', queueError);
+            alert('No pudimos guardar el pedido en este dispositivo. No cierres esta pantalla y vuelve a intentarlo.');
+        }
         return;
     }
 
@@ -6535,12 +6747,26 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
 
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`;
+    const isOfflineQueueSync = Boolean(activeOfflineOrderId && activeOfflineOrderRecord);
+
+    if (isOfflineQueueSync) {
+        await offlineOrderStore('put', {
+            ...activeOfflineOrderRecord,
+            status: 'synced',
+            syncedAt: Date.now(),
+            whatsappUrl
+        });
+        activeOfflineOrderId = null;
+        activeOfflineOrderRecord = null;
+        await renderOfflineOrderStatus();
+    }
     
     if (!isLogged) {
         trackSpy('COMPRA_CONFIRMADA', nombreC);
     }
 
-    window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
+    if (!isOfflineQueueSync) window.open(whatsappUrl, '_blank');
 
     // Generar PDF para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
@@ -6560,10 +6786,14 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const isB2BOrder = cart.some(item => (item.categoria || "").toUpperCase().includes('MAYORISTA') || (item.categoria || "").toUpperCase().includes('B2B') || (item.categoria || "").toUpperCase().includes('MIPYME'));
 
     setTimeout(() => { 
-        if(isB2BOrder) {
-            generarComprobanteB2B(datosParaPDF, 'descargar'); 
-        } else {
-            generarComprobanteVenta(datosParaPDF, 'descargar'); 
+        // Una sincronización automática no debe forzar una descarga. El pedido
+        // y su WhatsApp quedan disponibles en la bandeja local del gestor.
+        if (!isOfflineQueueSync) {
+            if(isB2BOrder) {
+                generarComprobanteB2B(datosParaPDF, 'descargar');
+            } else {
+                generarComprobanteVenta(datosParaPDF, 'descargar');
+            }
         }
         
         setTimeout(() => {
@@ -6571,7 +6801,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             clearAutoSave();
             toggleCartModal(false);
             location.reload();
-        }, 2000); 
+        }, isOfflineQueueSync ? 250 : 2000);
     }, 1500);
     checkoutFinished = true;
     } catch (checkoutError) {
@@ -6791,6 +7021,10 @@ function renderFloatingWA(nombre, telefono) {
 
     // 1. Abre o cierra el modal
     cartModal.classList.toggle('hidden', !show);
+    if (!show) {
+        activeOfflineOrderId = null;
+        activeOfflineOrderRecord = null;
+    }
     
     if(show) {
         // 2. Dibuja los productos del carrito
@@ -15962,11 +16196,7 @@ let tarifasMensajeriaAdminRaw =[]; // Para el panel de administrador
 // ==========================================
 
 // 1. CARGAR DATOS (Se llama al cargar la página)
-async function loadTarifasMensajeria() {
-    const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
-    
-    if (error || !data) return console.error("Error cargando tarifas");
-
+function applyTarifasMensajeria(data) {
     tarifasMensajeriaAdminRaw = data;
     tarifasMensajeria = {}; // Reseteamos el objeto
 
@@ -16003,6 +16233,24 @@ async function loadTarifasMensajeria() {
 
     // Si el admin está logueado, dibujamos la tabla
     renderAdminMensajeria();
+}
+
+async function loadTarifasMensajeria(force = false) {
+    const cacheKey = 'pth_shipping_rates_cache';
+    const cacheTimeKey = 'pth_shipping_rates_cache_time';
+    let cached = [];
+    try { cached = JSON.parse(localStorage.getItem(cacheKey) || '[]'); } catch (error) {}
+    if (Array.isArray(cached) && cached.length) applyTarifasMensajeria(cached);
+
+    if (!navigator.onLine || !supabaseClient) return;
+    const cacheAge = Date.now() - Number(localStorage.getItem(cacheTimeKey) || 0);
+    if (!force && cached.length && cacheAge < 2 * 60 * 60 * 1000) return;
+
+    const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
+    if (error || !data) return console.error("Error cargando tarifas");
+    applyTarifasMensajeria(data);
+    localStorage.setItem(cacheKey, JSON.stringify(data));
+    localStorage.setItem(cacheTimeKey, String(Date.now()));
 }
 
 // Para asegurarnos de que cargue siempre al entrar a la web:
@@ -16081,7 +16329,7 @@ async function adminSaveMensajeria() {
         }
 
         limpiarFormMensajeria();
-        await loadTarifasMensajeria(); // Recargar datos desde la nube
+        await loadTarifasMensajeria(true); // Recargar datos desde la nube
 
     } catch(e) {
         alert("Error al guardar: " + e.message);
@@ -16096,7 +16344,7 @@ async function adminDeleteMensajeria(id, localidad) {
     if (!confirm(`¿Estás seguro de eliminar el costo de envío para "${localidad}"?`)) return;
 
     await supabaseClient.from('tarifas_mensajeria').delete().eq('id', id);
-    loadTarifasMensajeria(); // Recargar de la nube
+    loadTarifasMensajeria(true); // Recargar de la nube
 }
 
 // 5. PREPARAR FORMULARIO PARA EDICIÓN
