@@ -43,7 +43,7 @@
     <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/image-variants.js?v=2026-08-02" defer></script>
-    <script src="js/pwa.js?v=2026-08-02-pwa3" defer></script>
+    <script src="js/pwa.js?v=2026-08-02-pwa4" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -825,6 +825,10 @@
             <p id="public-catalog-result-label" class="truncate text-xs font-bold text-slate-600">Preparando productos disponibles…</p>
         </div>
         <div class="flex min-w-[145px] items-center gap-2 md:min-w-0">
+        <button id="data-saver-toggle" type="button" onclick="toggleDataSaverMode()" aria-pressed="false" class="flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 text-[9px] font-black uppercase text-[#1a4789]" title="Controlar la carga automática de fotografías">
+            <span class="material-symbols-outlined text-base">data_saver_on</span>
+            <span id="data-saver-label" class="hidden sm:inline">Ahorro OFF</span>
+        </button>
         <label for="sort-selector-public" class="sr-only">Ordenar productos</label>
         <select id="sort-selector-public" onchange="applySort()" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-primary p-2 cursor-pointer w-full md:w-auto" aria-label="Ordenar productos">
             <option value="nuevo">🆕 Lo Más Nuevo</option>
@@ -3137,7 +3141,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807d";
+const versionActual = "2807e";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3292,6 +3296,39 @@ checkShortLinks();
     let comparisonProductIds = [];
     let detailRelatedProducts = [];
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
+
+    const PTH_DATA_SAVER_KEY = 'pth_data_saver_preference';
+    const storedDataSaverPreference = localStorage.getItem(PTH_DATA_SAVER_KEY);
+    let dataSaverEnabled = storedDataSaverPreference === 'on'
+        || (storedDataSaverPreference === null && navigator.connection?.saveData === true);
+
+    function updateDataSaverControl() {
+        const button = document.getElementById('data-saver-toggle');
+        const label = document.getElementById('data-saver-label');
+        if (!button) return;
+        button.setAttribute('aria-pressed', String(dataSaverEnabled));
+        button.classList.toggle('border-emerald-300', dataSaverEnabled);
+        button.classList.toggle('bg-emerald-50', dataSaverEnabled);
+        button.classList.toggle('text-emerald-800', dataSaverEnabled);
+        button.classList.toggle('border-blue-200', !dataSaverEnabled);
+        button.classList.toggle('bg-blue-50', !dataSaverEnabled);
+        button.classList.toggle('text-[#1a4789]', !dataSaverEnabled);
+        if (label) label.textContent = dataSaverEnabled ? 'Ahorro ON' : 'Ahorro OFF';
+        button.title = dataSaverEnabled
+            ? 'Las fotos se cargan solamente cuando las solicitas'
+            : 'Activar ahorro de datos y cargar fotos manualmente';
+    }
+
+    function toggleDataSaverMode() {
+        dataSaverEnabled = !dataSaverEnabled;
+        localStorage.setItem(PTH_DATA_SAVER_KEY, dataSaverEnabled ? 'on' : 'off');
+        updateDataSaverControl();
+        if (productosRaw.length) renderProducts();
+        if (selectedProduct && !document.getElementById('detail-modal')?.classList.contains('hidden')) {
+            selectDetailImage(detailGalleryIndex);
+            renderDetailRelatedProducts(selectedProduct);
+        }
+    }
     
     
 
@@ -3324,6 +3361,7 @@ checkShortLinks();
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
    window.addEventListener('load', async () => {
+    updateDataSaverControl();
     
     // === INICIO LÓGICA SPLASH SCREEN ===
     const splash = document.getElementById('splash-screen');
@@ -4899,7 +4937,7 @@ async function loadProducts() {
             .maybeSingle();
 
         const ultimoCambioNube = ctrlData ? ctrlData.valor : null;
-        const CACHE_EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 horas de respaldo automático
+        const CACHE_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 horas; la marca de control detecta cambios antes
 
         // Si la marca de tiempo de la base de datos es diferente a la local, se fuerza la descarga
         const hayNuevaVersion = ultimoCambioNube && (ultimoCambioNube !== ultimoCambioLocal);
@@ -5449,6 +5487,11 @@ function selectDetailImage(index) {
 
 function openDetailImagePreview() {
     if (!detailGalleryImages.length) return;
+    const mainImage = document.getElementById('detail-main-img');
+    if (dataSaverEnabled && mainImage?.dataset.pthOriginal) {
+        loadDeferredImageElement(mainImage);
+        return;
+    }
     let preview = document.getElementById('detail-image-preview');
     if (!preview) {
         preview = document.createElement('div');
@@ -6903,7 +6946,7 @@ function escapeImageAttribute(value) {
         .replace(/>/g, '&gt;');
 }
 
-function renderResponsiveProductImage(url, alt, className, sizes, priority = false) {
+function renderResponsiveProductImage(url, alt, className, sizes, priority = false, forceLoad = false) {
     const original = fixDriveUrl(url);
     const variants = getProductImageVariants(url);
     const safeAlt = escapeImageAttribute(alt);
@@ -6911,6 +6954,13 @@ function renderResponsiveProductImage(url, alt, className, sizes, priority = fal
     const safeSizes = escapeImageAttribute(sizes || '100vw');
     const loading = priority ? 'eager' : 'lazy';
     const fetchPriority = priority ? ' fetchpriority="high"' : '';
+    if (dataSaverEnabled && !forceLoad) {
+        const payload = escapeImageAttribute(encodeURIComponent(JSON.stringify({ url, alt, className, sizes, priority })));
+        return `<span data-pth-deferred-image="${payload}" onclick="event.preventDefault();event.stopPropagation();loadDeferredProductImage(this)" class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg bg-slate-100 p-3 text-center text-[#1a4789]" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();loadDeferredProductImage(this)}">
+            <img src="/icons/product-placeholder.svg" width="720" height="720" alt="" class="max-h-[70%] w-full object-contain opacity-70">
+            <span class="text-[9px] font-black uppercase tracking-wide">Mostrar foto</span>
+        </span>`;
+    }
     const fallback = `<img src="${escapeImageAttribute(original)}" loading="${loading}"${fetchPriority} decoding="async" width="720" height="720" alt="${safeAlt}" class="${safeClass}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/icons/product-placeholder.svg';">`;
     if (!variants) return fallback;
 
@@ -6921,9 +6971,44 @@ function renderResponsiveProductImage(url, alt, className, sizes, priority = fal
     </picture>`;
 }
 
-function applyResponsiveImageElement(image, url, sizes = '100vw') {
+function loadDeferredProductImage(wrapper) {
+    if (!wrapper?.dataset.pthDeferredImage) return;
+    try {
+        const payload = JSON.parse(decodeURIComponent(wrapper.dataset.pthDeferredImage));
+        wrapper.onclick = null;
+        wrapper.onkeydown = null;
+        wrapper.removeAttribute('role');
+        wrapper.removeAttribute('tabindex');
+        delete wrapper.dataset.pthDeferredImage;
+        wrapper.innerHTML = renderResponsiveProductImage(payload.url, payload.alt, payload.className, payload.sizes, payload.priority, true);
+    } catch (error) {
+        console.warn('No se pudo cargar la fotografía solicitada.', error);
+    }
+}
+
+function loadDeferredImageElement(image) {
+    if (!image?.dataset.pthOriginal) return;
+    const original = image.dataset.pthOriginal;
+    const sizes = image.dataset.pthSizes || '100vw';
+    delete image.dataset.pthOriginal;
+    delete image.dataset.pthSizes;
+    applyResponsiveImageElement(image, original, sizes, true);
+}
+
+function applyResponsiveImageElement(image, url, sizes = '100vw', forceLoad = false) {
     if (!image) return;
+    if (dataSaverEnabled && !forceLoad) {
+        image.src = '/icons/product-placeholder.svg';
+        image.removeAttribute('srcset');
+        image.dataset.pthOriginal = String(url || '');
+        image.dataset.pthSizes = sizes;
+        image.title = 'Toca para cargar esta fotografía';
+        return;
+    }
     const variants = getProductImageVariants(url);
+    delete image.dataset.pthOriginal;
+    delete image.dataset.pthSizes;
+    image.removeAttribute('title');
     image.src = fixDriveUrl(url);
     image.decoding = 'async';
     image.sizes = sizes;
@@ -16244,7 +16329,7 @@ async function loadTarifasMensajeria(force = false) {
 
     if (!navigator.onLine || !supabaseClient) return;
     const cacheAge = Date.now() - Number(localStorage.getItem(cacheTimeKey) || 0);
-    if (!force && cached.length && cacheAge < 2 * 60 * 60 * 1000) return;
+    if (!force && cached.length && cacheAge < 24 * 60 * 60 * 1000) return;
 
     const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
     if (error || !data) return console.error("Error cargando tarifas");
