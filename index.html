@@ -2,9 +2,8 @@
 <html class="light" lang="es">
 <head>
     <meta charset="utf-8"/>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <!-- La caché se controla mediante versiones de recursos. Evitamos no-store
+         para que los teléfonos reutilicen archivos durante cortes de datos. -->
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     
     <!-- === 1. INICIO OPTIMIZACIÓN SEO PREMIUM === -->
@@ -36,22 +35,93 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
 
-    <!-- 3. Librería para Gráficas (Chart.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- 4. Librerías de Funcionalidad (Supabase, Excel, Editor) -->
+    <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SheetJS (Excel) -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    <!-- Quill (Editor de Texto) -->
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    <!-- JSZip (Para descargar packs de fotos) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- jsPDF (Generador de PDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Las librerías pesadas de gestor/administración se cargan únicamente
+         cuando existe una sesión interna. Un cliente público ya no descarga
+         gráficas, Excel, editor, ZIP ni PDF para consultar el catálogo. -->
+    <script>
+        const PTH_INTERNAL_ASSETS_VERSION = '2026-08-02-f1';
+        const PTH_ASSET_TIMEOUT_MS = 8000;
+        let pthInternalAssetsPromise = null;
+
+        function pthLoadStylesheet(href, id) {
+            if (document.getElementById(id)) return Promise.resolve();
+            return new Promise((resolve, reject) => {
+                const link = document.createElement('link');
+                let settled = false;
+                const finish = (callback, value) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timeout);
+                    callback(value);
+                };
+                const timeout = setTimeout(() => {
+                    finish(reject, new Error(`Tiempo agotado al cargar ${href}`));
+                }, PTH_ASSET_TIMEOUT_MS);
+                link.id = id;
+                link.rel = 'stylesheet';
+                link.href = href;
+                link.onload = () => finish(resolve);
+                link.onerror = () => finish(reject, new Error(`No se pudo cargar ${href}`));
+                document.head.appendChild(link);
+            });
+        }
+
+        function pthLoadScript(src, id) {
+            const existing = document.getElementById(id);
+            if (existing?.dataset.loaded === 'true') return Promise.resolve();
+            return new Promise((resolve, reject) => {
+                const script = existing || document.createElement('script');
+                let settled = false;
+                const finish = (callback, value) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timeout);
+                    callback(value);
+                };
+                const timeout = setTimeout(() => {
+                    finish(reject, new Error(`Tiempo agotado al cargar ${src}`));
+                }, PTH_ASSET_TIMEOUT_MS);
+                script.id = id;
+                script.src = src;
+                script.async = true;
+                script.onload = () => {
+                    script.dataset.loaded = 'true';
+                    finish(resolve);
+                };
+                script.onerror = () => finish(reject, new Error(`No se pudo cargar ${src}`));
+                if (!existing) document.head.appendChild(script);
+            });
+        }
+
+        function loadInternalAssets() {
+            if (pthInternalAssetsPromise) return pthInternalAssetsPromise;
+            pthInternalAssetsPromise = (async () => {
+                const version = encodeURIComponent(PTH_INTERNAL_ASSETS_VERSION);
+                await Promise.all([
+                    pthLoadStylesheet('https://cdn.quilljs.com/1.3.6/quill.snow.css', 'pth-quill-css'),
+                    pthLoadScript('https://cdn.jsdelivr.net/npm/chart.js', 'pth-chart-js'),
+                    pthLoadScript('https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js', 'pth-xlsx-js'),
+                    pthLoadScript('https://cdn.quilljs.com/1.3.6/quill.js', 'pth-quill-js'),
+                    pthLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'pth-jszip-js'),
+                    pthLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'pth-jspdf-js')
+                ]);
+                await pthLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js', 'pth-jspdf-autotable-js');
+                await Promise.all([
+                    pthLoadScript(`admin-stats.js?v=${version}`, 'pth-admin-stats-js'),
+                    pthLoadScript(`subgestor-tutorial.js?v=${version}`, 'pth-subgestor-tutorial-js'),
+                    pthLoadScript(`js/client-followup.js?v=${version}`, 'pth-client-followup-js')
+                ]);
+            })().catch(error => {
+                console.warn('Algunas herramientas internas no pudieron prepararse:', error.message);
+                pthInternalAssetsPromise = null;
+            });
+            return pthInternalAssetsPromise;
+        }
+    </script>
 
     <!-- === 5. DATOS ESTRUCTURADOS DE GOOGLE (LOCAL BUSINESS) === -->
     <script type="application/ld+json">
@@ -437,6 +507,17 @@
         </h1>
     </div>
 </div>
+
+<script>
+    // Salvavidas independiente: el catálogo nunca queda oculto si una CDN,
+    // Supabase o cualquier script secundario tarda o falla.
+    window.setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (!splash) return;
+        splash.classList.add('splash-active');
+        window.setTimeout(() => splash.remove(), 1100);
+    }, 2200);
+</script>
 
     <!-- Header / Navbar -->
     <!-- Header con Diseño Wave -->
@@ -3290,17 +3371,18 @@ checkShortLinks();
     await checkShortLinks();
     await initSmartReferral();
 
-    // 2. Inicializar el resto del sistema
-    if(document.getElementById('editor-container')) {
-        quill = new Quill('#editor-container', {
-            theme: 'snow',
-            placeholder: 'Descripción...',
-            modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
-        });
-    }
-
     const savedSession = localStorage.getItem('pth_session');
     if (savedSession) {
+        // Solo los usuarios internos necesitan gráficas, Excel, editor, ZIP y PDF.
+        // La sesión puede continuar aunque una herramienta secundaria no cargue.
+        await loadInternalAssets();
+        if (document.getElementById('editor-container') && typeof Quill !== 'undefined') {
+            quill = new Quill('#editor-container', {
+                theme: 'snow',
+                placeholder: 'Descripción...',
+                modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
+            });
+        }
         const s = JSON.parse(savedSession);
         window.currentUserData = s.data || {}; 
         setupSession(s.name, s.isAdmin);
@@ -3320,8 +3402,10 @@ checkShortLinks();
     // --- SENSOR DE INICIO DE SESIÓN CON BLOQUEO DE DUPLICADOS ---
     // Si ya enviamos el rastro en esta pestaña, no lo repetimos
     if (!sessionStorage.getItem('pth_entry_logged')) {
-        await trackSpy('INICIO_SESION', 'Cliente entró a la tienda');
         sessionStorage.setItem('pth_entry_logged', 'true');
+        const scheduleTracking = () => trackSpy('INICIO_SESION', 'Cliente entró a la tienda');
+        if ('requestIdleCallback' in window) requestIdleCallback(scheduleTracking, { timeout: 4000 });
+        else setTimeout(scheduleTracking, 1200);
     }
 });
 
@@ -4690,16 +4774,16 @@ async function loadProducts() {
     if (slug) {
         const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
         if (data) {
-            await registrarRastroIP(data.gestor);
+            registrarRastroIP(data.gestor);
             window.location.href = data.original_url;
             return;
         }
     }
     
     if (urlGestor) {
-        await registrarRastroIP(urlGestor);
+        registrarRastroIP(urlGestor);
     } else {
-        await registrarRastroIP("Directo"); 
+        registrarRastroIP("Directo");
     }
 
     try {
@@ -18548,8 +18632,7 @@ async function contactarGestorAtribuido(mensajeOpcional) {
     </div>
 </div>
 
-<!-- Script de Estadísticas -->
-    <script src="admin-stats.js"></script>
+<!-- Las estadísticas se cargan bajo demanda para usuarios internos. -->
 <!-- === MODAL INTRODUCCIÓN: RADAR DE RIESGOS === -->
 <div id="modal-intro-radar" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
     
@@ -18769,8 +18852,7 @@ async function contactarGestorAtribuido(mensajeOpcional) {
 </div>
 
 <!-- MÓDULO ADICIONAL: Tutorial Onboarding para Subgestores -->
-    <script src="subgestor-tutorial.js"></script>
-    <script src="js/client-followup.js?v=2"></script>
+    <!-- Tutorial y seguimiento se cargan bajo demanda para usuarios internos. -->
 </body>
 
 </body>

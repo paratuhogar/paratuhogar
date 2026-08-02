@@ -198,7 +198,12 @@ function closeOnboardingTutorial() {
     localStorage.setItem('pth_subgestor_onboarding_v1', 'true');
 }
 
-// Ejecución con delay controlado para asegurar que los scripts de index.html hayan cargado
-window.addEventListener('load', () => {
-    setTimeout(checkOnboardingStatus, 3500); // 3.5 segundos después de la carga
-});
+// Este archivo puede cargarse bajo demanda cuando el evento load ya ocurrió.
+// En ambos casos conservamos el mismo retraso para no interrumpir la entrada al panel.
+if (document.readyState === 'complete') {
+    setTimeout(checkOnboardingStatus, 3500);
+} else {
+    window.addEventListener('load', () => {
+        setTimeout(checkOnboardingStatus, 3500);
+    }, { once: true });
+}
