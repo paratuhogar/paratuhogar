@@ -43,7 +43,7 @@
     <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/image-variants.js?v=2026-08-02" defer></script>
-    <script src="js/pwa.js?v=2026-08-02-pwa5" defer></script>
+    <script src="js/pwa.js?v=2026-08-02-pwa6" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -247,7 +247,27 @@
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* ESTILOS DEL EDITOR WORD */
-        .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+        #product-description-field { min-height: 0; overflow: hidden; }
+        #product-description-field .ql-container {
+            box-sizing: border-box;
+            height: 240px !important;
+            max-height: 240px !important;
+            overflow: hidden;
+            font-family: 'Manrope', sans-serif;
+            font-size: 14px;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        #product-description-field .ql-editor { height: 100%; overflow-y: auto; }
+        #editor-container:not(.ql-container) {
+            min-height: 200px;
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 14px;
+        }
         .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
         
         /* CORRECCIONES MÓVIL */
@@ -2862,8 +2882,8 @@
 </footer>
 
     <!-- MODAL NUEVO PRODUCTO -->
-<div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-center">
-    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative my-auto">
+<div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-start">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative my-4 md:my-8">
 
         <button onclick="closeModalProd()" class="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
         
@@ -3050,12 +3070,12 @@
 </div>
 
     <!-- EDITOR TIPO WORD -->
-    <div class="md:col-span-2 space-y-2">
+    <div id="product-description-field" class="md:col-span-2 space-y-2">
         <label class="text-[10px] font-black text-gray-400 uppercase italic">Descripción Detallada</label>
         <div id="editor-container"></div>
     </div>
     
-    <button type="submit" id="btn-save-prod" class="md:col-span-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30 mt-4">Guardar Cambios</button>
+    <button type="submit" id="btn-save-prod" class="relative z-10 md:col-span-2 mt-2 w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30">Guardar Cambios</button>
 </form>
     </div>
 </div>
@@ -3141,7 +3161,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807f";
+const versionActual = "2807g";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
