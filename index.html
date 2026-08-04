@@ -12,15 +12,7 @@
     <meta name="keywords" content="electrodomésticos Cuba, comprar split en La Habana, refrigeradores Cuba, plantas eléctricas Sankey, estaciones de energía Ecoflow, baterías de litio Topmaq, envío a Cuba, tienda online Cuba, ollas reina EKO, televisores inteligentes Cuba">
     <meta name="author" content="paratuhogar.org">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#1a4789">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="ParaTuHogar">
     <link rel="canonical" href="https://paratuhogar.org/" />
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
     <!-- Open Graph (Para previsualización en WhatsApp y Facebook) -->
     <meta property="og:title" content="ParaTuHogar | Equipos para tu familia en Cuba">
@@ -37,13 +29,11 @@
     <!-- === FIN OPTIMIZACIÓN SEO PREMIUM === -->
 
     <!-- 2. Estilos y Fuentes -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/tailwind.min.css?v=2026-08-02">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
-    <script src="js/image-variants.js?v=2026-08-02" defer></script>
-    <script src="js/pwa.js?v=2026-08-02-pwa6" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -151,8 +141,27 @@
     }
     </script>
 
-    <!-- 6. Estilos propios complementarios -->
-    <style>
+    <!-- 6. Configuración de Diseño (ANEB Theme) -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a4789", // Azul ANEB
+                        "secondary": "#2c6fb5", // Azul Claro
+                        "accent": "#cbd5e1", 
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: { "display": ["Manrope", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+
+    <style type="text/tailwindcss">
 
        /* === EFECTOS HIGH-END === */
 
@@ -247,27 +256,7 @@
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* ESTILOS DEL EDITOR WORD */
-        #product-description-field { min-height: 0; overflow: hidden; }
-        #product-description-field .ql-container {
-            box-sizing: border-box;
-            height: 240px !important;
-            max-height: 240px !important;
-            overflow: hidden;
-            font-family: 'Manrope', sans-serif;
-            font-size: 14px;
-            border-bottom-left-radius: 12px;
-            border-bottom-right-radius: 12px;
-        }
-        #product-description-field .ql-editor { height: 100%; overflow-y: auto; }
-        #editor-container:not(.ql-container) {
-            min-height: 200px;
-            max-height: 240px;
-            overflow-y: auto;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 14px;
-        }
+        .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
         .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
         
         /* CORRECCIONES MÓVIL */
@@ -518,7 +507,6 @@
         </h1>
     </div>
 </div>
-
 <script>
     // Salvavidas independiente: el catálogo nunca queda oculto si una CDN,
     // Supabase o cualquier script secundario tarda o falla.
@@ -845,10 +833,6 @@
             <p id="public-catalog-result-label" class="truncate text-xs font-bold text-slate-600">Preparando productos disponibles…</p>
         </div>
         <div class="flex min-w-[145px] items-center gap-2 md:min-w-0">
-        <button id="data-saver-toggle" type="button" onclick="toggleDataSaverMode()" aria-pressed="false" class="flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 text-[9px] font-black uppercase text-[#1a4789]" title="Controlar la carga automática de fotografías">
-            <span class="material-symbols-outlined text-base">data_saver_on</span>
-            <span id="data-saver-label" class="hidden sm:inline">Ahorro OFF</span>
-        </button>
         <label for="sort-selector-public" class="sr-only">Ordenar productos</label>
         <select id="sort-selector-public" onchange="applySort()" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-700 dark:text-gray-300 focus:ring-primary p-2 cursor-pointer w-full md:w-auto" aria-label="Ordenar productos">
             <option value="nuevo">🆕 Lo Más Nuevo</option>
@@ -2061,7 +2045,6 @@
 
 <!-- CAMBIO: flex-1 en lugar de h-full para que el form se expanda sin romperse -->
 <form id="checkout-form" class="flex-1 flex flex-col mt-4">
-    <div id="offline-order-status" class="hidden mb-4 rounded-2xl border px-4 py-3 text-xs font-bold" role="status"></div>
     <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
         <div class="flex items-start gap-3">
             <span class="material-symbols-outlined text-emerald-600">verified_user</span>
@@ -2882,8 +2865,8 @@
 </footer>
 
     <!-- MODAL NUEVO PRODUCTO -->
-<div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-start">
-    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative my-4 md:my-8">
+<div id="modal-producto" class="fixed inset-0 z-[300] hidden bg-black/80 backdrop-blur-sm p-4 overflow-y-auto flex justify-center items-center">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] p-6 md:p-8 shadow-2xl relative my-auto">
 
         <button onclick="closeModalProd()" class="absolute top-6 right-6 p-2 bg-gray-100 rounded-full"><span class="material-symbols-outlined">close</span></button>
         
@@ -3070,12 +3053,12 @@
 </div>
 
     <!-- EDITOR TIPO WORD -->
-    <div id="product-description-field" class="md:col-span-2 space-y-2">
+    <div class="md:col-span-2 space-y-2">
         <label class="text-[10px] font-black text-gray-400 uppercase italic">Descripción Detallada</label>
         <div id="editor-container"></div>
     </div>
     
-    <button type="submit" id="btn-save-prod" class="relative z-10 md:col-span-2 mt-2 w-full bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30">Guardar Cambios</button>
+    <button type="submit" id="btn-save-prod" class="md:col-span-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-primary/30 mt-4">Guardar Cambios</button>
 </form>
     </div>
 </div>
@@ -3161,7 +3144,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807h";
+const versionActual = "2807a"; 
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3206,12 +3189,10 @@ if (urlParamsVersion.get('v') !== versionActual) {
     // Cambiamos el nombre de la constante a 'supabaseClient' para evitar errores
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
-    const supabaseClient = window.supabase?.createClient
-        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-        : null;
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Alertas del Radar para gestores conectados en cualquier sección de la tienda.
-    if (supabaseClient) supabaseClient
+    supabaseClient
         .channel('global-blacklist-alerts')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blacklist' }, payload => {
             let activeSession = null;
@@ -3316,39 +3297,6 @@ checkShortLinks();
     let comparisonProductIds = [];
     let detailRelatedProducts = [];
     let cupRate = 450, showInCUP = false, activeCategory = 'TODOS';
-
-    const PTH_DATA_SAVER_KEY = 'pth_data_saver_preference';
-    const storedDataSaverPreference = localStorage.getItem(PTH_DATA_SAVER_KEY);
-    let dataSaverEnabled = storedDataSaverPreference === 'on'
-        || (storedDataSaverPreference === null && navigator.connection?.saveData === true);
-
-    function updateDataSaverControl() {
-        const button = document.getElementById('data-saver-toggle');
-        const label = document.getElementById('data-saver-label');
-        if (!button) return;
-        button.setAttribute('aria-pressed', String(dataSaverEnabled));
-        button.classList.toggle('border-emerald-300', dataSaverEnabled);
-        button.classList.toggle('bg-emerald-50', dataSaverEnabled);
-        button.classList.toggle('text-emerald-800', dataSaverEnabled);
-        button.classList.toggle('border-blue-200', !dataSaverEnabled);
-        button.classList.toggle('bg-blue-50', !dataSaverEnabled);
-        button.classList.toggle('text-[#1a4789]', !dataSaverEnabled);
-        if (label) label.textContent = dataSaverEnabled ? 'Ahorro ON' : 'Ahorro OFF';
-        button.title = dataSaverEnabled
-            ? 'Las fotos se cargan solamente cuando las solicitas'
-            : 'Activar ahorro de datos y cargar fotos manualmente';
-    }
-
-    function toggleDataSaverMode() {
-        dataSaverEnabled = !dataSaverEnabled;
-        localStorage.setItem(PTH_DATA_SAVER_KEY, dataSaverEnabled ? 'on' : 'off');
-        updateDataSaverControl();
-        if (productosRaw.length) renderProducts();
-        if (selectedProduct && !document.getElementById('detail-modal')?.classList.contains('hidden')) {
-            selectDetailImage(detailGalleryIndex);
-            renderDetailRelatedProducts(selectedProduct);
-        }
-    }
     
     
 
@@ -3381,7 +3329,6 @@ checkShortLinks();
 
     // --- LÓGICA DE INICIO Y RECUPERACIÓN DE SESIÓN ---
    window.addEventListener('load', async () => {
-    updateDataSaverControl();
     
     // === INICIO LÓGICA SPLASH SCREEN ===
     const splash = document.getElementById('splash-screen');
@@ -3418,26 +3365,6 @@ checkShortLinks();
     }
     // === FIN LÓGICA SPLASH SCREEN ===
 
-    // Offline solo recuperamos la identidad mínima de una sesión previamente
-    // validada para que un gestor pueda preparar pedidos. Los paneles, reportes
-    // y privilegios administrativos siguen deshabilitados hasta volver a conectar.
-    if (!navigator.onLine || !supabaseClient) {
-        const overlay = document.getElementById('login-overlay');
-        if (overlay) overlay.classList.add('hidden');
-        let offlineSession = null;
-        try {
-            offlineSession = JSON.parse(localStorage.getItem('pth_session') || 'null');
-        } catch (error) {
-            console.warn('No se pudo recuperar la identidad offline del gestor.', error);
-        }
-        window.gestorName = offlineSession?.name || null;
-        window.isAdmin = false;
-        window.currentUserData = offlineSession ? getMinimalOfflineSessionData(offlineSession.data) : null;
-        loadProducts();
-        initOfflineOrderQueue();
-        return;
-    }
-
     // ... aquí sigue tu código original (await checkShortLinks(); etc...)
     // 1. Procesar identificación (Link corto y Referral) primero
     await checkShortLinks();
@@ -3468,8 +3395,8 @@ checkShortLinks();
     }
 
     initAutoSaveSystem(); 
+    loadClientCRM();
     initAgentFloatingButton();
-    initOfflineOrderQueue();
 
     // --- SENSOR DE INICIO DE SESIÓN CON BLOQUEO DE DUPLICADOS ---
     // Si ya enviamos el rastro en esta pestaña, no lo repetimos
@@ -3771,8 +3698,6 @@ async function processRegister() {
         // MODO GESTOR o SUBGESTOR (Ventas)
         const commandCenter = document.getElementById('gestor-command-center');
         if (commandCenter) commandCenter.classList.remove('hidden');
-        // Colocar el menú arriba aunque Supabase tarde o falle al cargar.
-        prepareGestorDashboardLayout();
 
         const publicFilters = document.getElementById('public-filters-bar');
         if (publicFilters) publicFilters.classList.add('hidden');
@@ -3842,9 +3767,9 @@ async function processRegister() {
         // El gestor entra directamente a su centro de trabajo.
         await Promise.all([
             loadProducts(),
-            loadProDashboard(name)
+            loadProDashboard(name),
+            loadClientCRM()
         ]);
-        await loadClientCRM();
         if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
         showSection('dashboard');
     }
@@ -3922,45 +3847,6 @@ async function processRegister() {
 
     // Variable global para guardar los pedidos del gestor y poder filtrar
 let myOrdersData = [];
-let myOrdersLoadedFor = null;
-
-// Campos que realmente consumen el historial, las comisiones, el CRM,
-// las facturas y el centro de garantía del gestor. Evita descargar columnas
-// administrativas que estas pantallas nunca muestran.
-const GESTOR_ORDER_COLUMNS = [
-    'id', 'gestor', 'subgestor_nombre', 'fecha', 'fecha_entrega',
-    'estado', 'cliente', 'telefono', 'ci', 'direccion', 'municipio', 'producto',
-    'total', 'costo_mensajeria', 'comision_total', 'comision_subgestor',
-    'pago_gestor', 'pago_subgestor', 'origen', 'orden_dia', 'proveedor',
-    'garantia_venta', 'garantia_dias'
-].join(',');
-
-const gestorSalesCountCache = new Map();
-
-async function getDeliveredSalesCount(nombre, scope = 'gestor') {
-    const key = `${scope}:${nombre}`;
-    const cached = gestorSalesCountCache.get(key);
-    if (cached && Date.now() - cached.createdAt < 60000) {
-        return cached.promise;
-    }
-
-    const promise = (async () => {
-        let query = supabaseClient
-            .from('pedidos')
-            .select('id', { count: 'exact', head: true })
-            .eq('estado', 'Entregado');
-        query = scope === 'subgestor'
-            ? query.eq('subgestor_nombre', nombre)
-            : query.eq('gestor', nombre);
-        const { count, error } = await query;
-        if (error) throw error;
-        return count || 0;
-    })();
-
-    gestorSalesCountCache.set(key, { createdAt: Date.now(), promise });
-    promise.catch(() => gestorSalesCountCache.delete(key));
-    return promise;
-}
 
 async function loadProDashboard(nombreGestor) {
     // --- DETECTAR ROL EN TIEMPO REAL ---
@@ -3972,7 +3858,7 @@ async function loadProDashboard(nombreGestor) {
         // 1. Obtener pedidos aprobados (de la tabla 'pedidos')
         const { data: aprobados, error: errAprobados } = await supabaseClient
             .from('pedidos')
-            .select(GESTOR_ORDER_COLUMNS)
+            .select('*')
             .eq('subgestor_nombre', nombreGestor)
             .order('fecha', { ascending: false });
             
@@ -3982,12 +3868,6 @@ async function loadProDashboard(nombreGestor) {
             .select('*')
             .eq('subgestor_nombre', nombreGestor)
             .order('created_at', { ascending: false });
-
-        if (errAprobados || errPendientes) {
-            console.error('Error cargando el historial del subgestor:', errAprobados || errPendientes);
-            renderGestorDashboardLoadError();
-            return;
-        }
 
         // Adaptar campos de aprobados y pendientes para unificar la visualización
         const listaAprobados = (aprobados || []).map(p => ({
@@ -4011,20 +3891,15 @@ async function loadProDashboard(nombreGestor) {
         // Comportamiento original para Gestores Principales
         const { data, error } = await supabaseClient
             .from('pedidos')
-            .select(GESTOR_ORDER_COLUMNS)
+            .select('*')
             .eq('gestor', nombreGestor)
             .order('fecha', { ascending: false });
             
-        if(error) {
-            console.error('Error cargando el historial del gestor:', error);
-            renderGestorDashboardLoadError();
-            return;
-        }
+        if(error) { console.error(error); return; }
         misVentas = data || [];
     }
     
-    myOrdersData = misVentas;
-    myOrdersLoadedFor = nombreGestor;
+    myOrdersData = misVentas; 
 
     // 2. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
@@ -4051,7 +3926,6 @@ async function loadProDashboard(nombreGestor) {
         porCobrar,
         cobrado
     });
-    toggleGestorAdvanced(true);
     await loadGestorWarrantyCases();
 
     // 3. RENDERIZAR TABLA DE MIS PEDIDOS
@@ -4721,7 +4595,12 @@ function renderMyOrdersList(lista) {
 } else {
         // CORRECCIÓN: Contar TODAS las ventas entregadas sin límite de 30 días
         // Esto asegura que el botón VIP lea el historial correcto (Ej: las 8 ventas de Elías)
-        sales = await getDeliveredSalesCount(nombre, 'gestor');
+        const { count } = await supabaseClient
+            .from('pedidos')
+            .select('id', { count: 'exact', head: true })
+            .eq('gestor', nombre)
+            .eq('estado', 'Entregado');
+        sales = count || 0;
     }
 
     window.gestorSalesCount = sales;
@@ -4866,27 +4745,6 @@ async function resolveSalesHierarchy(agentName) {
     return hierarchy;
 }
 
-function loadOfflineCatalogFromCache() {
-    const cached = localStorage.getItem('pth_catalogo_cache');
-    if (!cached) return false;
-
-    try {
-        const productos = JSON.parse(cached);
-        if (!Array.isArray(productos) || !productos.length) return false;
-        catalogSourceProducts = productos.map(product => ({ ...product }));
-        productosRaw = productos.map(product => ({ ...product }));
-        const cacheTime = Number(localStorage.getItem('pth_catalogo_cache_time')) || Date.now();
-        catalogLastSyncAt = new Date(cacheTime).toISOString();
-        window.activeSalesHierarchy = null;
-        renderCategories();
-        renderProducts();
-        return true;
-    } catch (error) {
-        console.warn('La copia local del catálogo no pudo recuperarse:', error);
-        return false;
-    }
-}
-
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -4898,18 +4756,6 @@ async function loadProducts() {
     // Evita que varios eventos de inicio reconstruyan el catálogo al mismo tiempo.
     if (productsLoadInProgress) return;
     productsLoadInProgress = true;
-
-    if (!navigator.onLine || !supabaseClient) {
-        const restored = loadOfflineCatalogFromCache();
-        if (!restored) {
-            const container = document.getElementById('productos-container');
-            if (container) {
-                container.innerHTML = '<div class="col-span-full py-10 text-center text-gray-400">Conéctate una vez para preparar el catálogo sin conexión.</div>';
-            }
-        }
-        productsLoadInProgress = false;
-        return;
-    }
 
     try {
         const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
@@ -4936,7 +4782,7 @@ async function loadProducts() {
     if (urlGestor) {
         registrarRastroIP(urlGestor);
     } else {
-        registrarRastroIP("Directo");
+        registrarRastroIP("Directo"); 
     }
 
     try {
@@ -4970,7 +4816,7 @@ async function loadProducts() {
             .maybeSingle();
 
         const ultimoCambioNube = ctrlData ? ctrlData.valor : null;
-        const CACHE_EXPIRATION_MS = 24 * 60 * 60 * 1000; // 24 horas; la marca de control detecta cambios antes
+        const CACHE_EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2 horas de respaldo automático
 
         // Si la marca de tiempo de la base de datos es diferente a la local, se fuerza la descarga
         const hayNuevaVersion = ultimoCambioNube && (ultimoCambioNube !== ultimoCambioLocal);
@@ -5263,49 +5109,20 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
 
     // Variable global para guardar las categorías de la tienda
 let categoriasPúblicas = [];
-let categoriasCache = null;
-let categoriasCachePromise = null;
-const CATEGORIAS_CACHE_MS = 10 * 60 * 1000;
-
-function invalidateCategoriasCache() {
-    categoriasCache = null;
-    categoriasCachePromise = null;
-}
-
-async function getCategoriasCached({ force = false } = {}) {
-    if (!force && categoriasCache && Date.now() < categoriasCache.expiresAt) {
-        return categoriasCache.data;
-    }
-    if (!force && categoriasCachePromise) return categoriasCachePromise;
-
-    categoriasCachePromise = (async () => {
-        const { data, error } = await supabaseClient
-            .from('categorias')
-            .select('id, nombre, orden')
-            .order('orden', { ascending: true });
-        if (error) throw error;
-        const rows = data || [];
-        categoriasCache = {
-            data: rows,
-            expiresAt: Date.now() + CATEGORIAS_CACHE_MS
-        };
-        return rows;
-    })().finally(() => {
-        categoriasCachePromise = null;
-    });
-    return categoriasCachePromise;
-}
 
 // REEMPLAZAR LA ACTUAL renderCategories() POR ESTA:
 async function renderCategories() {
     // 1. Cargamos el orden oficial del Jefe desde la Base de Datos
     let categoriasOficiales = [];
-    if (navigator.onLine && supabaseClient) {
-        try {
-            const data = await getCategoriasCached();
+    try {
+        const { data } = await supabaseClient
+            .from('categorias')
+            .select('nombre')
+            .order('orden', { ascending: true });
+        if (data) {
             categoriasOficiales = data.map(c => c.nombre.toUpperCase().trim());
-        } catch(e) { console.error("Error cargando categorías oficiales"); }
-    }
+        }
+    } catch(e) { console.error("Error cargando categorías oficiales"); }
 
     // 2. Extraemos TODAS las categorías que tienen tus productos actualmente (Modo rescate)
     const categoriasEnProductos = [...new Set(productosRaw.map(p => p.categoria ? p.categoria.toUpperCase().trim() : 'VARIOS'))];
@@ -5500,7 +5317,6 @@ function openProductCard(event, productName) {
 }
 
 let detailGalleryImages = [];
-let detailGallerySources = [];
 let detailGalleryIndex = 0;
 
 function selectDetailImage(index) {
@@ -5508,7 +5324,7 @@ function selectDetailImage(index) {
     detailGalleryIndex = Math.max(0, Math.min(index, detailGalleryImages.length - 1));
     const image = document.getElementById('detail-main-img');
     const counter = document.getElementById('detail-image-counter');
-    if (image) applyResponsiveImageElement(image, detailGallerySources[detailGalleryIndex], '(max-width: 1023px) 100vw, 50vw');
+    if (image) image.src = detailGalleryImages[detailGalleryIndex];
     if (counter) counter.textContent = `${detailGalleryIndex + 1} / ${detailGalleryImages.length}`;
     document.querySelectorAll('[data-detail-thumbnail]').forEach((thumb, thumbIndex) => {
         thumb.classList.toggle('border-[#1a4789]', thumbIndex === detailGalleryIndex);
@@ -5520,11 +5336,6 @@ function selectDetailImage(index) {
 
 function openDetailImagePreview() {
     if (!detailGalleryImages.length) return;
-    const mainImage = document.getElementById('detail-main-img');
-    if (dataSaverEnabled && mainImage?.dataset.pthOriginal) {
-        loadDeferredImageElement(mainImage);
-        return;
-    }
     let preview = document.getElementById('detail-image-preview');
     if (!preview) {
         preview = document.createElement('div');
@@ -5762,7 +5573,7 @@ function renderDetailRelatedProducts(product) {
         return `
             <button onclick="openDetail('${safeName}')" class="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:shadow-md">
                 <div class="aspect-square overflow-hidden bg-slate-50 p-2">
-                    ${renderResponsiveProductImage(item.thumbnail, safeName, 'h-full w-full object-contain transition duration-300 group-hover:scale-105', '(max-width: 640px) 42vw, 180px')}
+                    <img src="${fixDriveUrl(item.thumbnail)}" loading="lazy" alt="${safeName}" class="h-full w-full object-contain transition duration-300 group-hover:scale-105">
                 </div>
                 <div class="p-2">
                     <p class="line-clamp-2 min-h-[2rem] text-[10px] font-black leading-tight text-slate-700">${item.nombre}</p>
@@ -5833,7 +5644,7 @@ function renderCatalogProducts(list) {
     const visibleList = list.slice(0, catalogVisibleCount);
     const hasMoreProducts = visibleList.length < list.length;
 
-    const productCardsHtml = visibleList.map((product, productIndex) => {
+    const productCardsHtml = visibleList.map(product => {
         const price = Number(product.precio) || 0;
         const commission = Number(product.comision) || 0;
         const safeName = String(product.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -5843,7 +5654,7 @@ function renderCatalogProducts(list) {
             return `
                 <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
                     <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
-                    ${renderResponsiveProductImage(product.thumbnail, safeName, 'h-full w-full object-contain transition duration-500 group-hover:scale-110', '(max-width: 767px) 42vw, 260px', productIndex < 2)}
+                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
                     </a>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
                         <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
@@ -5873,7 +5684,7 @@ function renderCatalogProducts(list) {
         return `
             <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
                 <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
-                    ${renderResponsiveProductImage(product.thumbnail, safeName, `h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}`, isList ? '150px' : '(max-width: 767px) 42vw, 260px', productIndex < 2)}
+                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
                 </a>
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                     <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
@@ -5991,12 +5802,11 @@ function openDetail(name, skipSolarCheck = false) {
     
     // IMÁGENES
     const thumbs = [p.thumbnail, p.image1, p.image2, p.image3].filter(url => url && url.length > 5);
-    detailGallerySources = [...new Set(thumbs.length ? thumbs : [''])];
-    detailGalleryImages = detailGallerySources.map(fixDriveUrl);
+    detailGalleryImages = [...new Set((thumbs.length ? thumbs : ['']).map(fixDriveUrl))];
     document.getElementById('detail-main-img').alt = p.nombre;
-    document.getElementById('detail-thumbnails').innerHTML = detailGallerySources.map((url, index) => `
+    document.getElementById('detail-thumbnails').innerHTML = detailGalleryImages.map((url, index) => `
         <button type="button" data-detail-thumbnail onclick="selectDetailImage(${index})" class="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 transition" aria-label="Ver imagen ${index + 1} de ${detailGalleryImages.length}">
-            ${renderResponsiveProductImage(url, '', 'h-full w-full object-contain', '56px')}
+            <img src="${url}" class="h-full w-full object-contain" alt="">
         </button>
     `).join('');
     selectDetailImage(0);
@@ -6093,15 +5903,9 @@ function renderCart() {
 
     // 1. Renderizar Productos
     let htmlItems = cart.map((item, index) => {
-        const minPrice = Number(item.precio) - Number(item.comision);
-        const maxPrice = (item.precio_flexible === 'SI') ? 100000 : Number(item.precio);
-        
-        // Input de Precio del Equipo (Tu lógica original intacta)
-        const precioInput = isGestor ? 
-            `<input type="number" value="${item.precio_venta}" min="${minPrice}" max="${maxPrice}" 
-                   onchange="updateCartItemPrice(${index}, this.value)"
-                   class="w-20 text-right font-black text-primary border-gray-200 rounded-lg py-0 px-1 text-xs h-6 mb-1">` 
-            : `<p class="text-primary font-black text-sm mb-1">$${item.precio_venta}</p>`;
+        // El checkout respeta siempre el precio publicado/configurado. Los
+        // cambios se realizan en “Mis precios”, nunca pedido por pedido.
+        const precioInput = `<p class="text-primary font-black text-sm mb-1">$${item.precio_venta}</p>`;
 
         // --- NUEVO: Lógica del botón de consulta (Solo para clientes) ---
         let botonConsultar = '';
@@ -6219,219 +6023,12 @@ function changeQty(index, delta) {
     
 
 
-const PTH_OFFLINE_ORDER_DB = 'pth-offline-orders-v1';
-const PTH_OFFLINE_ORDER_STORE = 'orders';
-let activeOfflineOrderId = null;
-let activeOfflineOrderRecord = null;
-
-function getMinimalOfflineSessionData(data = {}) {
-    return {
-        id: data.id || null,
-        nombre: data.nombre || null,
-        telefono: data.telefono || null,
-        parent_id: data.parent_id || null,
-        parent_nombre: data.parent_nombre || null,
-        parent_telefono: data.parent_telefono || null
-    };
-}
-
-function openOfflineOrderDatabase() {
-    return new Promise((resolve, reject) => {
-        if (!window.indexedDB) return reject(new Error('Este navegador no permite guardar pedidos offline.'));
-        const request = indexedDB.open(PTH_OFFLINE_ORDER_DB, 1);
-        request.onupgradeneeded = () => {
-            const database = request.result;
-            if (!database.objectStoreNames.contains(PTH_OFFLINE_ORDER_STORE)) {
-                database.createObjectStore(PTH_OFFLINE_ORDER_STORE, { keyPath: 'id' });
-            }
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error('No se pudo abrir la cola offline.'));
-    });
-}
-
-async function offlineOrderStore(mode, value) {
-    const database = await openOfflineOrderDatabase();
-    return new Promise((resolve, reject) => {
-        const transaction = database.transaction(PTH_OFFLINE_ORDER_STORE, mode === 'getAll' ? 'readonly' : 'readwrite');
-        const store = transaction.objectStore(PTH_OFFLINE_ORDER_STORE);
-        const request = mode === 'put' ? store.put(value) : mode === 'delete' ? store.delete(value) : store.getAll();
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error('No se pudo actualizar la cola offline.'));
-        transaction.oncomplete = () => database.close();
-    });
-}
-
-async function getPendingOfflineOrders() {
-    const orders = await offlineOrderStore('getAll');
-    return (orders || []).sort((a, b) => a.createdAt - b.createdAt);
-}
-
-function getOfflineOrderFormSnapshot() {
-    const fieldIds = ['check-nombre', 'check-ci', 'check-tel', 'check-municipio', 'check-localidad', 'check-dir', 'check-notas', 'check-moneda-pago', 'check-vuelto'];
-    const fields = Object.fromEntries(fieldIds.map(id => [id, document.getElementById(id)?.value || '']));
-    fields['check-recogida'] = Boolean(document.getElementById('check-recogida')?.checked);
-    return fields;
-}
-
-function buildOfflineOrderId() {
-    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
-    return `offline-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-async function queueOfflineOrder() {
-    let session = null;
-    try { session = JSON.parse(localStorage.getItem('pth_session') || 'null'); } catch (error) {}
-    if (!session?.name) {
-        alert('Los pedidos offline solo están disponibles para gestores que hayan iniciado sesión previamente en este dispositivo.');
-        return false;
-    }
-    if (!cart.length) {
-        alert('Añade al menos un producto antes de guardar el pedido.');
-        return false;
-    }
-
-    const productsWithoutWarranty = cart.filter(item => !String(item.garantia || '').trim());
-    if (productsWithoutWarranty.length) {
-        alert(`Falta configurar la garantía de:\n\n• ${productsWithoutWarranty.map(item => item.nombre).join('\n• ')}`);
-        return false;
-    }
-
-    const order = {
-        id: buildOfflineOrderId(),
-        createdAt: Date.now(),
-        gestor: session.name,
-        sessionData: getMinimalOfflineSessionData(session.data),
-        cart: cart.map(item => ({ ...item })),
-        fields: getOfflineOrderFormSnapshot(),
-        status: 'pending'
-    };
-    await offlineOrderStore('put', order);
-    cart = [];
-    clearAutoSave();
-    document.getElementById('cart-count').innerText = '0';
-    toggleCartModal(false);
-    await renderOfflineOrderStatus();
-    alert('✅ Pedido guardado en este dispositivo. Cuando vuelva la conexión se subirá automáticamente; después la app te avisará para abrir WhatsApp. No necesitas copiarlo ni enviarlo manualmente.');
-    return true;
-}
-
-async function restoreOfflineOrder(order) {
-    if (!order) return false;
-    activeOfflineOrderId = order.id;
-    activeOfflineOrderRecord = order;
-    cart = (order.cart || []).map(item => ({ ...item }));
-    window.gestorName = order.gestor;
-    window.currentUserData = order.sessionData || {};
-    document.getElementById('cart-count').innerText = String(cart.reduce((sum, item) => sum + Number(item.qty || 0), 0));
-
-    const fields = order.fields || {};
-    const pickup = document.getElementById('check-recogida');
-    if (pickup) pickup.checked = Boolean(fields['check-recogida']);
-    if (typeof toggleRecogidaEnAlmacen === 'function') toggleRecogidaEnAlmacen();
-    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-notas', 'check-moneda-pago', 'check-vuelto']) {
-        const element = document.getElementById(id);
-        if (element) element.value = fields[id] || '';
-    }
-    const municipality = document.getElementById('check-municipio');
-    if (municipality) municipality.value = fields['check-municipio'] || '';
-    if (typeof actualizarLocalidades === 'function') actualizarLocalidades();
-    const locality = document.getElementById('check-localidad');
-    if (locality) locality.value = fields['check-localidad'] || '';
-    renderCart();
-    toggleCartModal(true);
-    return true;
-}
-
-async function syncNextOfflineOrder(automatic = false) {
-    if (!navigator.onLine || !supabaseClient) {
-        alert('Todavía no hay conexión. El pedido continúa guardado de forma segura en este dispositivo.');
-        return;
-    }
-    const orders = await getPendingOfflineOrders();
-    const order = orders.find(item => item.status === 'pending');
-    if (!order) return renderOfflineOrderStatus();
-    let session = null;
-    try { session = JSON.parse(localStorage.getItem('pth_session') || 'null'); } catch (error) {}
-    if (!session?.name || session.name !== order.gestor) {
-        if (!automatic) alert(`Este pedido pertenece a ${order.gestor}. Inicia esa sesión antes de sincronizarlo.`);
-        return;
-    }
-    await restoreOfflineOrder(order);
-    const form = document.getElementById('checkout-form');
-    if (form?.reportValidity()) form.requestSubmit();
-}
-
-async function sendNextOfflineOrderWhatsApp() {
-    const orders = await getPendingOfflineOrders();
-    const order = orders.find(item => item.gestor === window.gestorName && item.status === 'synced' && item.whatsappUrl);
-    if (!order) return renderOfflineOrderStatus();
-    window.open(order.whatsappUrl, '_blank');
-    await offlineOrderStore('delete', order.id);
-    await renderOfflineOrderStatus();
-}
-
-async function renderOfflineOrderStatus() {
-    const status = document.getElementById('offline-order-status');
-    let floating = document.getElementById('offline-order-floating');
-    if (!floating) {
-        floating = document.createElement('button');
-        floating.id = 'offline-order-floating';
-        floating.type = 'button';
-        floating.onclick = syncNextOfflineOrder;
-        floating.className = 'hidden fixed bottom-20 right-4 z-[105] max-w-[260px] rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-left text-xs font-black text-amber-950 shadow-2xl';
-        document.body.appendChild(floating);
-    }
-    let orders = [];
-    try { orders = await getPendingOfflineOrders(); } catch (error) { console.warn(error); }
-    const ownOrders = orders.filter(order => order.gestor === window.gestorName);
-    if (!ownOrders.length) {
-        if (status) status.classList.add('hidden');
-        floating.classList.add('hidden');
-        return;
-    }
-    const syncedOrder = ownOrders.find(order => order.status === 'synced' && order.whatsappUrl);
-    const pendingCount = ownOrders.filter(order => order.status === 'pending').length;
-    const summary = syncedOrder
-        ? 'Pedido registrado · falta abrir WhatsApp'
-        : `${pendingCount} pedido${pendingCount === 1 ? '' : 's'} pendiente${pendingCount === 1 ? '' : 's'} ${navigator.onLine ? 'de sincronizar' : 'guardado en este dispositivo'}`;
-    const action = syncedOrder ? 'sendNextOfflineOrderWhatsApp()' : 'syncNextOfflineOrder()';
-    const actionLabel = syncedOrder ? 'Abrir WhatsApp' : (navigator.onLine ? 'Sincronizar pedido' : 'Sin conexión');
-    if (status) {
-        status.className = `mb-4 rounded-2xl border px-4 py-3 text-xs font-bold ${navigator.onLine ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-blue-300 bg-blue-50 text-blue-900'}`;
-        status.innerHTML = `<div class="flex items-center justify-between gap-3"><span>${summary}</span><button type="button" onclick="${action}" class="rounded-xl bg-slate-900 px-3 py-2 text-[10px] font-black uppercase text-white">${actionLabel}</button></div>`;
-    }
-    floating.classList.remove('hidden');
-    floating.onclick = syncedOrder ? sendNextOfflineOrderWhatsApp : syncNextOfflineOrder;
-    floating.innerHTML = `<span class="material-symbols-outlined mr-2 align-middle text-base">${syncedOrder ? 'chat' : (navigator.onLine ? 'sync' : 'cloud_off')}</span>${summary}<span class="mt-1 block text-[9px] uppercase tracking-wide">${syncedOrder ? 'Toca para enviar el mensaje' : (navigator.onLine ? 'Toca para sincronizar' : 'Se subirá cuando vuelvan los datos')}</span>`;
-}
-
-function initOfflineOrderQueue() {
-    renderOfflineOrderStatus();
-    window.addEventListener('online', () => {
-        renderOfflineOrderStatus();
-        setTimeout(() => syncNextOfflineOrder(true), 500);
-    });
-    window.addEventListener('offline', renderOfflineOrderStatus);
-    if (navigator.onLine) setTimeout(() => syncNextOfflineOrder(true), 800);
-}
-
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
 // 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
 // 5. ENVÍO DE PEDIDO (CON CANDADO DE SEGURIDAD PARA ENVÍO $0)
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
-
-    if (!navigator.onLine || !supabaseClient) {
-        try {
-            await queueOfflineOrder();
-        } catch (queueError) {
-            console.error('No se pudo guardar el pedido offline:', queueError);
-            alert('No pudimos guardar el pedido en este dispositivo. No cierres esta pantalla y vuelve a intentarlo.');
-        }
-        return;
-    }
 
     // === NUEVO: SABER SI ES RECOGIDA EN ALMACÉN ===
     const isRecogida = document.getElementById('check-recogida') ? document.getElementById('check-recogida').checked : false;
@@ -6566,6 +6163,64 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     let activeGestor = await obtenerDuenoReal(telC);
     const checkoutHierarchy = await resolveSalesHierarchy(activeGestor);
     const orderSubgestor = checkoutHierarchy?.isSubgestor ? checkoutHierarchy : null;
+
+    // Revalidar precios contra Supabase antes de guardar. Esto bloquea carritos
+    // antiguos, cachés desactualizadas o cualquier edición manual del HTML.
+    const cartProductIds = [...new Set(cart.map(item => item.id).filter(Boolean))];
+    const { data: checkoutBaseProducts, error: checkoutProductsError } = await supabaseClient
+        .from('productos')
+        .select('id, nombre, precio, comision, precio_flexible')
+        .in('id', cartProductIds);
+    if (checkoutProductsError || !checkoutBaseProducts) {
+        throw new Error('No se pudieron validar los precios vigentes del pedido.');
+    }
+
+    let checkoutCustomPrices = [];
+    const pricingOwner = checkoutHierarchy?.pricingOwnerName;
+    if (pricingOwner) {
+        const { data: customRows, error: customRowsError } = await supabaseClient
+            .from('precios_personalizados')
+            .select('producto_id, nuevo_precio, comision_subgestor')
+            .eq('gestor', pricingOwner)
+            .in('producto_id', cartProductIds);
+        if (customRowsError) throw customRowsError;
+        checkoutCustomPrices = customRows || [];
+    }
+
+    const priceMismatches = [];
+    cart.forEach(item => {
+        const base = checkoutBaseProducts.find(product => product.id === item.id);
+        if (!base) {
+            priceMismatches.push(item.nombre);
+            return;
+        }
+        const custom = checkoutCustomPrices.find(row => row.producto_id === item.id);
+        const basePrice = Number(base.precio) || 0;
+        const customPrice = Number(custom?.nuevo_precio);
+        const expectedPrice = base.precio_flexible === 'SI' && Number.isFinite(customPrice) && customPrice >= basePrice
+            ? customPrice
+            : basePrice;
+        const expectedPoolCommission = (Number(base.comision) || 0) + (expectedPrice - basePrice);
+        const expectedSellerCommission = orderSubgestor
+            ? (Number(custom?.comision_subgestor) || 0)
+            : expectedPoolCommission;
+
+        if (Math.abs(Number(item.precio_venta) - expectedPrice) > 0.001) {
+            priceMismatches.push(`${item.nombre}: $${item.precio_venta} → $${expectedPrice}`);
+            item.precio = expectedPrice;
+            item.precio_venta = expectedPrice;
+        }
+        item.comision = expectedSellerCommission;
+        item.comision_actual = expectedSellerCommission;
+        item.comision_original_pool = expectedPoolCommission;
+        item.comision_original_pool_base = expectedPoolCommission;
+    });
+
+    if (priceMismatches.length > 0) {
+        renderCart();
+        alert(`⚠️ EL PRECIO DEL CARRITO NO COINCIDÍA CON LA CONFIGURACIÓN VIGENTE:\n\n• ${priceMismatches.join('\n• ')}\n\nEl carrito fue corregido. Revisa el total y confirma nuevamente.`);
+        return;
+    }
     
     // --- CORRECCIÓN ENRUTAMIENTO DE WHATSAPP ---
     const PHONE_DUENO_TIENDA = "5356071095"; 
@@ -6823,26 +6478,12 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
 
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`;
-    const isOfflineQueueSync = Boolean(activeOfflineOrderId && activeOfflineOrderRecord);
-
-    if (isOfflineQueueSync) {
-        await offlineOrderStore('put', {
-            ...activeOfflineOrderRecord,
-            status: 'synced',
-            syncedAt: Date.now(),
-            whatsappUrl
-        });
-        activeOfflineOrderId = null;
-        activeOfflineOrderRecord = null;
-        await renderOfflineOrderStatus();
-    }
     
     if (!isLogged) {
         trackSpy('COMPRA_CONFIRMADA', nombreC);
     }
 
-    if (!isOfflineQueueSync) window.open(whatsappUrl, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
 
     // Generar PDF para el cliente
     const totalGlobalProductos = cart.reduce((acc, i) => acc + (i.precio_venta * i.qty), 0);
@@ -6862,14 +6503,10 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const isB2BOrder = cart.some(item => (item.categoria || "").toUpperCase().includes('MAYORISTA') || (item.categoria || "").toUpperCase().includes('B2B') || (item.categoria || "").toUpperCase().includes('MIPYME'));
 
     setTimeout(() => { 
-        // Una sincronización automática no debe forzar una descarga. El pedido
-        // y su WhatsApp quedan disponibles en la bandeja local del gestor.
-        if (!isOfflineQueueSync) {
-            if(isB2BOrder) {
-                generarComprobanteB2B(datosParaPDF, 'descargar');
-            } else {
-                generarComprobanteVenta(datosParaPDF, 'descargar');
-            }
+        if(isB2BOrder) {
+            generarComprobanteB2B(datosParaPDF, 'descargar'); 
+        } else {
+            generarComprobanteVenta(datosParaPDF, 'descargar'); 
         }
         
         setTimeout(() => {
@@ -6877,7 +6514,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             clearAutoSave();
             toggleCartModal(false);
             location.reload();
-        }, isOfflineQueueSync ? 250 : 2000);
+        }, 2000); 
     }, 1500);
     checkoutFinished = true;
     } catch (checkoutError) {
@@ -6943,113 +6580,6 @@ function fixDriveUrl(url) {
 
     // Construimos la URL apuntando al repositorio de fotos
     return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/img_productos/${nombreArchivo}`;
-}
-
-function getProductImageFilename(url) {
-    if (!url || url === 'null' || url === 'undefined') return '';
-    let filename = String(url);
-    if (filename.includes('/')) filename = filename.split('/').pop();
-    filename = filename.split('?')[0];
-    try { filename = decodeURIComponent(filename); } catch (error) {}
-    return filename.trim().replace(/['"]/g, '').replace(/\s+/g, '');
-}
-
-function getProductImageVariants(url) {
-    const filename = getProductImageFilename(url);
-    const variants = window.PTH_IMAGE_VARIANTS?.[filename];
-    if (!variants) return null;
-
-    // GitHub Pages necesita rutas desde la raíz del dominio. Cuando el
-    // administrador abre index.html directamente, file:// necesita rutas
-    // relativas a la carpeta del proyecto.
-    const resolvePath = path => window.location.protocol === 'file:'
-        ? path.replace(/^\/+/, '')
-        : path;
-
-    return Object.fromEntries(
-        Object.entries(variants).map(([format, path]) => [format, resolvePath(path)])
-    );
-}
-
-function escapeImageAttribute(value) {
-    return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-}
-
-function renderResponsiveProductImage(url, alt, className, sizes, priority = false, forceLoad = false) {
-    const original = fixDriveUrl(url);
-    const variants = getProductImageVariants(url);
-    const safeAlt = escapeImageAttribute(alt);
-    const safeClass = escapeImageAttribute(className);
-    const safeSizes = escapeImageAttribute(sizes || '100vw');
-    const loading = priority ? 'eager' : 'lazy';
-    const fetchPriority = priority ? ' fetchpriority="high"' : '';
-    if (dataSaverEnabled && !forceLoad) {
-        const payload = escapeImageAttribute(encodeURIComponent(JSON.stringify({ url, alt, className, sizes, priority })));
-        return `<span data-pth-deferred-image="${payload}" onclick="event.preventDefault();event.stopPropagation();loadDeferredProductImage(this)" class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg bg-slate-100 p-3 text-center text-[#1a4789]" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();loadDeferredProductImage(this)}">
-            <img src="/icons/product-placeholder.svg" width="720" height="720" alt="" class="max-h-[70%] w-full object-contain opacity-70">
-            <span class="text-[9px] font-black uppercase tracking-wide">Mostrar foto</span>
-        </span>`;
-    }
-    const fallback = `<img src="${escapeImageAttribute(original)}" loading="${loading}"${fetchPriority} decoding="async" width="720" height="720" alt="${safeAlt}" class="${safeClass}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src='/icons/product-placeholder.svg';">`;
-    if (!variants) return fallback;
-
-    return `<picture class="contents">
-        <source type="image/avif" srcset="${variants.avif360} 360w, ${variants.avif720} 720w" sizes="${safeSizes}">
-        <source type="image/webp" srcset="${variants.webp360} 360w, ${variants.webp720} 720w" sizes="${safeSizes}">
-        ${fallback}
-    </picture>`;
-}
-
-function loadDeferredProductImage(wrapper) {
-    if (!wrapper?.dataset.pthDeferredImage) return;
-    try {
-        const payload = JSON.parse(decodeURIComponent(wrapper.dataset.pthDeferredImage));
-        wrapper.onclick = null;
-        wrapper.onkeydown = null;
-        wrapper.removeAttribute('role');
-        wrapper.removeAttribute('tabindex');
-        delete wrapper.dataset.pthDeferredImage;
-        wrapper.innerHTML = renderResponsiveProductImage(payload.url, payload.alt, payload.className, payload.sizes, payload.priority, true);
-    } catch (error) {
-        console.warn('No se pudo cargar la fotografía solicitada.', error);
-    }
-}
-
-function loadDeferredImageElement(image) {
-    if (!image?.dataset.pthOriginal) return;
-    const original = image.dataset.pthOriginal;
-    const sizes = image.dataset.pthSizes || '100vw';
-    delete image.dataset.pthOriginal;
-    delete image.dataset.pthSizes;
-    applyResponsiveImageElement(image, original, sizes, true);
-}
-
-function applyResponsiveImageElement(image, url, sizes = '100vw', forceLoad = false) {
-    if (!image) return;
-    if (dataSaverEnabled && !forceLoad) {
-        image.src = '/icons/product-placeholder.svg';
-        image.removeAttribute('srcset');
-        image.dataset.pthOriginal = String(url || '');
-        image.dataset.pthSizes = sizes;
-        image.title = 'Toca para cargar esta fotografía';
-        return;
-    }
-    const variants = getProductImageVariants(url);
-    delete image.dataset.pthOriginal;
-    delete image.dataset.pthSizes;
-    image.removeAttribute('title');
-    image.src = fixDriveUrl(url);
-    image.decoding = 'async';
-    image.sizes = sizes;
-    if (variants) {
-        image.srcset = `${variants.webp360} 360w, ${variants.webp720} 720w`;
-    } else {
-        image.removeAttribute('srcset');
-    }
 }
 
     // 1. Lógica para decidir si mostrar el botón del Gestor (Nivel 2+)
@@ -7139,10 +6669,6 @@ function renderFloatingWA(nombre, telefono) {
 
     // 1. Abre o cierra el modal
     cartModal.classList.toggle('hidden', !show);
-    if (!show) {
-        activeOfflineOrderId = null;
-        activeOfflineOrderRecord = null;
-    }
     
     if(show) {
         // 2. Dibuja los productos del carrito
@@ -8968,22 +8494,6 @@ function renderGestorHomeFromCache() {
         .filter(order => order.pago_gestor === 'Pendiente' || !order.pago_gestor)
         .reduce((sum, order) => sum + (Number(order.comision_total) || 0), 0);
     renderGestorHome({ ventas, entregados, pendientes, porCobrar });
-    toggleGestorAdvanced(true);
-}
-
-function renderGestorDashboardLoadError() {
-    prepareGestorDashboardLayout();
-    const summary = document.getElementById('gestor-home-summary');
-    const list = document.getElementById('gestor-home-orders');
-    if (summary) summary.textContent = 'No pudimos actualizar tus datos. Revisa la conexión e intenta nuevamente.';
-    if (list) {
-        list.innerHTML = `
-            <div class="p-8 text-center">
-                <span class="material-symbols-outlined text-3xl text-amber-500">cloud_off</span>
-                <p class="mt-2 text-xs font-black text-slate-700">No se pudo cargar el historial</p>
-                <button type="button" onclick="loadProDashboard(window.gestorName)" class="mt-3 rounded-xl bg-[#1a4789] px-4 py-2 text-[10px] font-black uppercase text-white">Reintentar</button>
-            </div>`;
-    }
 }
 
 function openGestorTool(tool) {
@@ -9104,32 +8614,15 @@ let pedidosRawAdmin = []; // Añade esta línea antes de la función
 
 
 let inventoryRawAdmin = []; // Variable global vital para el inventario
-let vistasRawAdmin = []; // Reutilizada por el panel de tráfico para no descargarla dos veces
-let adminDataLoadPromise = null;
 
-function loadAdminData() {
-    // Algunos botones y restauraciones de sesión pueden solicitar la carga casi
-    // al mismo tiempo. Compartimos la petición activa para evitar egress duplicado.
-    if (adminDataLoadPromise) return adminDataLoadPromise;
-    adminDataLoadPromise = loadAdminDataOnce().finally(() => {
-        adminDataLoadPromise = null;
-    });
-    return adminDataLoadPromise;
-}
-
-async function loadAdminDataOnce() {
+async function loadAdminData() {
     // 1. CARGA PRIORITARIA: MENSAJEROS (Se cargan primero para tenerlos listos antes de dibujar la logística)
     await loadMensajerosEnAdmin();
 
     // 2. Cargamos los datos masivos de pedidos, productos y visitas
-    const [pedidosResult, productosResult, vistasResult] = await Promise.all([
-        supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false}),
-        supabaseClient.from('productos').select('*').order('nombre', {ascending: true}),
-        supabaseClient.from('metricas_vistas').select('producto_id, nombre_producto')
-    ]);
-    const pedidos = pedidosResult.data;
-    const productos = productosResult.data;
-    const vistas = vistasResult.data;
+    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
+    const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
+    const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
 
     // 3. Procesar Pedidos
     if (pedidos) {
@@ -9154,8 +8647,6 @@ async function loadAdminDataOnce() {
         populateInventarioProveedorFilter();
         renderAdminInventario(productos); // Pasamos los datos
     }
-
-    if (vistas) vistasRawAdmin = vistas;
     
     // 5. Procesar Cruce de datos
     if (pedidos && productos) {
@@ -10122,28 +9613,6 @@ function openAdminMasterFromGestor() {
 
 // --- FUNCIONES PARA EL FORMULARIO DE PRODUCTOS ---
 
-function getProductDescriptionHtml() {
-    if (typeof quill !== 'undefined' && quill?.root) {
-        return quill.root.innerHTML;
-    }
-    const editor = document.querySelector('#editor-container .ql-editor');
-    if (editor) return editor.innerHTML;
-    return document.getElementById('editor-container')?.innerHTML || '';
-}
-
-function setProductDescriptionHtml(html = '') {
-    if (typeof quill !== 'undefined' && quill?.root) {
-        quill.root.innerHTML = html;
-        return;
-    }
-    const editor = document.querySelector('#editor-container .ql-editor');
-    if (editor) editor.innerHTML = html;
-    else {
-        const container = document.getElementById('editor-container');
-        if (container) container.innerHTML = html;
-    }
-}
-
 function openModalProd() { 
         updateFormCategories(); // <--- AGREGAR ESTA LÍNEA AQUÍ
         updateFormProviders();
@@ -10158,7 +9627,9 @@ function openModalProd() {
     if(form) form.reset();
     
     // 3. Limpiar el editor de texto (Quill)
-    setProductDescriptionHtml('');
+    if (typeof quill !== 'undefined' && quill !== null) {
+        quill.root.innerHTML = "";
+    }
 
     // 4. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
     for (let i = 0; i < 4; i++) {
@@ -10360,7 +9831,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
         categoria: categoriaInput,
-        descripcion: getProductDescriptionHtml(),
+        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
         
         thumbnail: document.getElementById('img-path-0').value || imgName,
         image1: document.getElementById('img-path-1').value,
@@ -10555,10 +10026,14 @@ function clearImageSlot(event, index) {
         if(btnSave) btnSave.innerText = "Actualizar Producto";
 
         // 4. Cargar Descripción en el Editor Quill
-        if (typeof quill === 'undefined' || !quill?.root) {
+        if (typeof quill !== 'undefined' && quill) {
+            quill.root.innerHTML = p.descripcion || "";
+        } else {
             console.warn("Editor Quill no activo o no definido.");
+            // Intento de recuperación si no existe:
+            const editorDiv = document.getElementById('editor-container');
+            if(editorDiv) editorDiv.innerHTML = p.descripcion || ""; 
         }
-        setProductDescriptionHtml(p.descripcion || '');
 
         // 5. Cargar Fotos (Modo GitHub Texto)
         const fotos = [p.thumbnail, p.image1, p.image2, p.image3];
@@ -11437,11 +10912,11 @@ async function generateQuickStoryForProduct(name, button) {
 // --- 2. LÓGICA DE ANALÍTICA (HORARIOS Y TENDENCIAS) ---
 
 async function loadAnalyticsPro(nombreGestor) {
+    const { data: pedidos, error } = await supabaseClient.from('pedidos').select('*');
+    if (error || !pedidos) return;
+
     const level = window.currentGestorLevel || 0;
-    // El historial propio acaba de cargarse para construir el dashboard.
-    // Reutilizarlo evita descargar nuevamente todos los pedidos del sistema.
-    const misPedidos = (Array.isArray(myOrdersData) ? myOrdersData : [])
-        .filter(p => p.estado !== 'Cancelado');
+    const misPedidos = pedidos.filter(p => p.gestor === nombreGestor && p.estado !== 'Cancelado');
 
     // --- MEJOR HORARIO (EL ORÁCULO DE VENTAS) ---
     const elHorario = document.getElementById('ana-hora-pico');
@@ -11465,16 +10940,7 @@ async function loadAnalyticsPro(nombreGestor) {
     const elTendencia = document.getElementById('ana-tendencia-global');
     if (elTendencia) {
         if (level >= 3) {
-            // Solo los niveles que pueden ver el radar solicitan datos globales,
-            // y únicamente las tres columnas utilizadas por la herramienta.
-            const { data: pedidosTendencia, error } = await supabaseClient
-                .from('pedidos')
-                .select('fecha, producto');
-            if (error) {
-                console.error('Error cargando tendencias:', error);
-                return;
-            }
-            const tendencias = getGlobalTrendRadar(pedidosTendencia || []);
+            const tendencias = getGlobalTrendRadar(pedidos);
             elTendencia.innerHTML = tendencias.map((t, i) => `
                 <div class="flex justify-between items-center mb-1 group">
                     <span class="text-[10px] font-black uppercase text-gray-500">#${i+1} ${t.name}</span>
@@ -12260,11 +11726,13 @@ async function updateFormCategories() {
     const datalist = document.getElementById('lista-categorias');
     if (!datalist) return;
 
-    try {
-        const data = await getCategoriasCached();
+    const { data } = await supabaseClient
+            .from('categorias')
+            .select('nombre')
+            .order('orden', { ascending: true });
+            
+    if (data) {
         datalist.innerHTML = data.map(c => `<option value="${c.nombre}">`).join('');
-    } catch (error) {
-        console.error('Error cargando categorías del formulario:', error);
     }
 }
     // --- FUNCIÓN DE EXPORTACIÓN EXCEL AVANZADA (LOGÍSTICA) ---
@@ -12347,36 +11815,14 @@ function exportLogisticaExcel() {
 
 // --- FUNCIÓN PARA ACTUALIZAR PRECIO Y COMISIÓN ---
 function updateCartItemPrice(index, newValue) {
+    // Compatibilidad defensiva ante páginas antiguas o llamadas manuales.
+    // El carrito ya no permite alterar el precio configurado del producto.
     const item = cart[index];
-    let newPrice = parseFloat(newValue);
-
-    // 1. Validaciones de Seguridad
-    const minPrice = Number(item.precio) - Number(item.comision);
-    const maxPrice = (item.precio_flexible === 'SI') ? 100000 : Number(item.precio);
-
-    // Si intenta bajar del costo, lo corregimos al mínimo
-    if (newPrice < minPrice) {
-        alert("⚠️ No puedes rebajar más allá de tu comisión.");
-        newPrice = minPrice;
-    }
-    // Si intenta subir y no es flexible, lo corregimos al máximo
-    if (newPrice > maxPrice) {
-        alert("🔒 Este producto tiene precio fijo. No puedes aumentarlo.");
-        newPrice = maxPrice;
-    }
-
-    // 2. Aplicar cambios
-    item.precio_venta = newPrice;
-    
-    // 3. Recalcular Comisión
-    // Fórmula: Comisión Original + (Sobreprecio) o - (Descuento)
-    // Matemáticamente: Comisión Original + (PrecioVenta - PrecioOriginal)
-    const diferencia = newPrice - Number(item.precio);
-    item.comision_actual = Number(item.comision) + diferencia;
-    item.comision_original_pool = Number(item.comision_original_pool_base || item.comision_original_pool) + diferencia;
-
-    // 4. Actualizar vista
-    renderCart(); // Vuelve a pintar para mostrar la nueva ganancia y validar input
+    if (!item) return;
+    item.precio_venta = Number(item.precio);
+    item.comision_actual = Number(item.comision) || 0;
+    item.comision_original_pool = Number(item.comision_original_pool_base || item.comision_original_pool || item.comision) || 0;
+    renderCart();
 }
 // Variable global para la tasa
 let globalCUPRate = 450; 
@@ -12737,22 +12183,19 @@ async function loadClientCRM() {
         return;
     }
 
-    let data = null;
-    if (!esAdmin && gestorActual && myOrdersLoadedFor === gestorActual) {
-        // El dashboard ya descargó estos pedidos con los mismos datos.
-        data = myOrdersData.slice(0, 300).map(({ cliente, ci, telefono, direccion }) => ({
-            cliente, ci, telefono, direccion
-        }));
-    } else {
-        let query = supabaseClient
-            .from('pedidos')
-            .select('cliente, ci, telefono, direccion')
-            .order('fecha', { ascending: false })
-            .limit(300);
-        if (!esAdmin && gestorActual) query = query.eq('gestor', gestorActual);
-        const result = await query;
-        data = result.data;
+    // Preparamos la consulta
+    let query = supabaseClient
+        .from('pedidos')
+        .select('cliente, ci, telefono, direccion')
+        .order('fecha', { ascending: false })
+        .limit(300); // Revisamos los últimos 1000
+
+    // FILTRO DE ORO: Si NO es admin, filtra solo sus ventas
+    if (!esAdmin && gestorActual) {
+        query = query.eq('gestor', gestorActual);
     }
+
+    const { data, error } = await query;
 
     if (!data) return;
 
@@ -13044,7 +12487,13 @@ async function showAgentWelcomeModal(nombre) {
         if (nombre === "Marcel Montano") {
             salesCount = 80; 
         } else {
-            salesCount = await getDeliveredSalesCount(nombre, 'gestor');
+            const { count, error } = await supabaseClient
+                .from('pedidos')
+                .select('id', { count: 'exact', head: true })
+                .eq('gestor', nombre)
+                .eq('estado', 'Entregado');
+            if (error) throw error;
+            salesCount = count || 0;
         }
 
         const lvlData = getLevelData(salesCount);
@@ -13314,16 +12763,21 @@ async function checkGamificationStatus() {
     // Un subgestor conserva su progreso por sus propias ventas, aunque el
     // pedido financiero pertenezca a su gestor principal.
     const hierarchy = await resolveSalesHierarchy(gestor);
-    let sales = 0;
-    try {
-        sales = await getDeliveredSalesCount(
-            gestor,
-            hierarchy?.isSubgestor ? 'subgestor' : 'gestor'
-        );
-    } catch (error) {
+    let levelQuery = supabaseClient
+        .from('pedidos')
+        .select('id', { count: 'exact' }) 
+        .eq('estado', 'Entregado');
+    levelQuery = hierarchy?.isSubgestor
+        ? levelQuery.eq('subgestor_nombre', gestor)
+        : levelQuery.eq('gestor', gestor);
+    const { count, error } = await levelQuery;
+
+    if (error) {
         console.error("Error obteniendo nivel:", error);
         return;
     }
+
+    const sales = count || 0;
     
     // 1. Guardar el nivel en una variable global para que todos la vean
     const levelData = getLevelData(sales);
@@ -13769,7 +13223,9 @@ async function magicPasteProduct() {
         document.getElementById('p-comision').value = (precio > 100) ? 15 : 5;
 
         // Descripción en Editor
-        setProductDescriptionHtml(cleanText.replace(/\n/g, '<br>'));
+        if (typeof quill !== 'undefined') {
+            quill.root.innerHTML = cleanText.replace(/\n/g, '<br>');
+        }
 
     } catch (err) {
         console.error(err);
@@ -14114,7 +13570,7 @@ async function superMagicAI() {
         const precioNum = parseFloat(resultado.precio) || 0;
         document.getElementById('p-comision').value = (precioNum > 100) ? 15 : 5;
 
-        setProductDescriptionHtml(resultado.descripcion_html || '');
+        if (typeof quill !== 'undefined') quill.root.innerHTML = resultado.descripcion_html || "";
 
         btn.className = "w-2/3 bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2";
         btn.innerHTML = `¡ÉXITO!`;
@@ -14553,7 +14009,7 @@ function showDashSection(section) {
     if(section === 'resumen') {
         document.getElementById('gestor-home')?.classList.remove('hidden');
         document.getElementById('btn-dash-resumen').className = "px-4 py-2 bg-[#1a4789] text-white rounded-xl text-xs font-black uppercase shadow-md transition-all";
-        toggleGestorAdvanced(true);
+        document.getElementById('gestor-advanced-icon')?.classList.remove('rotate-180');
     } else if (section === 'comisiones') {
         document.getElementById('sub-dash-comisiones').classList.remove('hidden');
         document.getElementById('btn-dash-comisiones').className = "shrink-0 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black uppercase text-white shadow-md transition-all";
@@ -16344,7 +15800,11 @@ let tarifasMensajeriaAdminRaw =[]; // Para el panel de administrador
 // ==========================================
 
 // 1. CARGAR DATOS (Se llama al cargar la página)
-function applyTarifasMensajeria(data) {
+async function loadTarifasMensajeria() {
+    const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
+    
+    if (error || !data) return console.error("Error cargando tarifas");
+
     tarifasMensajeriaAdminRaw = data;
     tarifasMensajeria = {}; // Reseteamos el objeto
 
@@ -16381,24 +15841,6 @@ function applyTarifasMensajeria(data) {
 
     // Si el admin está logueado, dibujamos la tabla
     renderAdminMensajeria();
-}
-
-async function loadTarifasMensajeria(force = false) {
-    const cacheKey = 'pth_shipping_rates_cache';
-    const cacheTimeKey = 'pth_shipping_rates_cache_time';
-    let cached = [];
-    try { cached = JSON.parse(localStorage.getItem(cacheKey) || '[]'); } catch (error) {}
-    if (Array.isArray(cached) && cached.length) applyTarifasMensajeria(cached);
-
-    if (!navigator.onLine || !supabaseClient) return;
-    const cacheAge = Date.now() - Number(localStorage.getItem(cacheTimeKey) || 0);
-    if (!force && cached.length && cacheAge < 24 * 60 * 60 * 1000) return;
-
-    const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
-    if (error || !data) return console.error("Error cargando tarifas");
-    applyTarifasMensajeria(data);
-    localStorage.setItem(cacheKey, JSON.stringify(data));
-    localStorage.setItem(cacheTimeKey, String(Date.now()));
 }
 
 // Para asegurarnos de que cargue siempre al entrar a la web:
@@ -16477,7 +15919,7 @@ async function adminSaveMensajeria() {
         }
 
         limpiarFormMensajeria();
-        await loadTarifasMensajeria(true); // Recargar datos desde la nube
+        await loadTarifasMensajeria(); // Recargar datos desde la nube
 
     } catch(e) {
         alert("Error al guardar: " + e.message);
@@ -16492,7 +15934,7 @@ async function adminDeleteMensajeria(id, localidad) {
     if (!confirm(`¿Estás seguro de eliminar el costo de envío para "${localidad}"?`)) return;
 
     await supabaseClient.from('tarifas_mensajeria').delete().eq('id', id);
-    loadTarifasMensajeria(true); // Recargar de la nube
+    loadTarifasMensajeria(); // Recargar de la nube
 }
 
 // 5. PREPARAR FORMULARIO PARA EDICIÓN
@@ -16739,13 +16181,15 @@ function renderAdminReports() {
 let categoriasAdminBD = [];
 
 // 1. CARGAR CATEGORÍAS (Llama a esta función dentro de tu 'loadAdminData()')
-async function loadAdminCategorias(force = false) {
-    try {
-        const data = await getCategoriasCached({ force });
+async function loadAdminCategorias() {
+    const { data, error } = await supabaseClient
+        .from('categorias')
+        .select('*')
+        .order('orden', { ascending: true });
+
+    if (!error && data) {
         categoriasAdminBD = data;
         renderAdminCategorias();
-    } catch (error) {
-        console.error('Error cargando categorías del administrador:', error);
     }
 }
 
@@ -16806,8 +16250,8 @@ async function adminAddCategoria() {
 
     const { error } = await supabaseClient.from('categorias').insert([{ nombre: nombre, orden: nuevoOrden }]);
     if (error) return alert("Error: Posiblemente ya existe una categoría con ese nombre.");
-    invalidateCategoriasCache();
-    loadAdminCategorias(true);
+    
+    loadAdminCategorias();
 }
 
 // 4. EDITAR / RENOMBRAR (¡Mágia! Cambia la categoría de los productos automáticamente)
@@ -16823,8 +16267,8 @@ async function adminEditCategoria(id, nombreViejo) {
     await supabaseClient.from('productos').update({ categoria: nuevoNombre }).eq('categoria', nombreViejo);
 
     alert(`✅ Categoría renombrada a ${nuevoNombre} y productos actualizados.`);
-    invalidateCategoriasCache();
     loadAdminData(); // Recargamos todo para actualizar inventario
+    loadAdminCategorias();
 }
 
 // 5. ELIMINAR CATEGORÍA
@@ -16840,8 +16284,8 @@ async function adminDeleteCategoria(id, nombre, cantidadEquipos) {
     }
 
     await supabaseClient.from('categorias').delete().eq('id', id);
-    invalidateCategoriasCache();
     loadAdminData();
+    loadAdminCategorias();
 }
 
 // 6. REORDENAR (Subir o Bajar)
@@ -16864,8 +16308,7 @@ async function moverCategoria(idActual, direccion, ordenActual) {
     await supabaseClient.from('categorias').update({ orden: nuevoOrdenParaActual }).eq('id', catActual.id);
     await supabaseClient.from('categorias').update({ orden: nuevoOrdenParaVecina }).eq('id', catVecina.id);
 
-    invalidateCategoriasCache();
-    loadAdminCategorias(true);
+    loadAdminCategorias();
 }
 
 
@@ -19218,7 +18661,7 @@ async function contactarGestorAtribuido(mensajeOpcional) {
     </div>
 </div>
 
-<!-- Las estadísticas se cargan bajo demanda para usuarios internos. -->
+    <!-- Las estadísticas se cargan bajo demanda al iniciar una sesión interna. -->
 <!-- === MODAL INTRODUCCIÓN: RADAR DE RIESGOS === -->
 <div id="modal-intro-radar" class="fixed inset-0 z-[500] hidden bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300">
     
@@ -19437,8 +18880,7 @@ async function contactarGestorAtribuido(mensajeOpcional) {
     </div>
 </div>
 
-<!-- MÓDULO ADICIONAL: Tutorial Onboarding para Subgestores -->
-    <!-- Tutorial y seguimiento se cargan bajo demanda para usuarios internos. -->
+<!-- Tutorial y seguimiento se cargan bajo demanda para usuarios internos. -->
 </body>
 
 </body>
