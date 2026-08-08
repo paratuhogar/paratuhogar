@@ -199,7 +199,7 @@ function calculateDevFee(precioVenta) {
                             <th class="p-3"><input type="checkbox" id="check-all-conc" onchange="toggleAllConc(this)"></th>
                             <th class="p-3">Pedido</th>
                             <th class="p-3">Producto</th>
-                            <th class="p-3">Total Venta</th>
+                            <th class="p-3">Venta producto<br><span class="normal-case text-[9px] text-slate-500">Sin mensajería</span></th>
                             <th class="p-3">Costo Prov.</th>
                             <th class="p-3 text-emerald-400">A PAGARLE AL PROV.</th>
                         </tr>
@@ -823,9 +823,9 @@ async function updateCosto(id, nuevoCosto, inputElement) {
 // --- FUNCIONES AUXILIARES PARA EL CÁLCULO MANUAL EN CONCILIACIÓN ---
 
 // 1. Recalcular una sola fila al escribir
-function recalcRow(id, totalVenta, inputElement) {
+function recalcRow(id, totalProducto, inputElement) {
     const nuevoCosto = parseFloat(inputElement.value) || 0;
-    const nuevaGanancia = totalVenta - nuevoCosto;
+    const nuevaGanancia = totalProducto - nuevoCosto;
     
     // Actualizar celda de ganancia
     const cell = document.getElementById(`cell-ganancia-${id}`);
@@ -964,20 +964,23 @@ async function loadConciliacion() {
 
         // --- CAMBIO CLAVE: INPUT EDITABLE EN LUGAR DE TEXTO FIJO ---
         return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalVenta}">
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalEquipos}" data-total-cliente="${totalVenta}" data-mensajeria="${costoMensajeria}">
             <td class="p-3"><input type="checkbox" class="chk-conc" value="${p.id}"></td>
             <td class="p-3 text-xs text-slate-400">${p.orden_dia || '---'}</td>
             <td class="p-3 font-bold text-white">
                 ${p.producto}
                 <div class="text-[10px] text-amber-500 uppercase">${p.proveedor || 'General'}</div>
             </td>
-            <td class="p-3 text-slate-300 font-mono">$${totalVenta}</td>
+            <td class="p-3 font-mono">
+                <span class="font-black text-white">$${totalEquipos.toFixed(2)}</span>
+                ${costoMensajeria > 0 ? `<span class="mt-1 block text-[9px] font-bold text-amber-400">+$${costoMensajeria.toFixed(2)} mensajería aparte</span>` : '<span class="mt-1 block text-[9px] text-slate-500">Sin mensajería</span>'}
+            </td>
             
             <!-- CASILLA EDITABLE DE COSTO -->
             <td class="p-3">
                 <input type="number" 
                        value="${totalCosto}" 
-                       oninput="recalcRow('${p.id}', ${totalVenta}, this)"
+                       oninput="recalcRow('${p.id}', ${totalEquipos}, this)"
                        class="input-costo-conciliacion bg-slate-900 border ${borderClass} rounded px-2 py-1 w-24 text-right font-mono text-sm focus:outline-none focus:border-blue-500">
             </td>
 

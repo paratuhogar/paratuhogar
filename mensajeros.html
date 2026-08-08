@@ -260,14 +260,19 @@
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                            <span class="text-[9px] font-black text-slate-500 uppercase">A cobrar al cliente</span>
-                            <span class="mt-1 block text-lg font-black text-slate-800">$${Number(p.total || 0).toFixed(2)} USD</span>
-                        </div>
-                        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                            <span class="text-[9px] font-black text-emerald-700 uppercase">Tu ganancia</span>
-                            <span class="mt-1 block text-lg font-black text-emerald-700">$${Number(p.costo_mensajeria || 0).toFixed(2)} USD</span>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-2"><span class="text-[9px] font-black uppercase text-slate-500">Cobrar al cliente</span><strong class="text-lg text-slate-900">$${Number(p.total || 0).toFixed(2)} USD</strong></div>
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <div class="rounded-xl bg-blue-50 p-3 text-center border border-blue-100">
+                                <span class="text-[8px] font-black text-blue-700 uppercase">Debes depositar</span>
+                                <span class="mt-1 block text-lg font-black text-blue-800">$${Math.max(0, Number(p.total || 0) - Number(p.costo_mensajeria || 0)).toFixed(2)}</span>
+                                <span class="text-[8px] font-bold text-blue-600">Solo producto</span>
+                            </div>
+                            <div class="rounded-xl bg-emerald-50 p-3 text-center border border-emerald-100">
+                                <span class="text-[8px] font-black text-emerald-700 uppercase">Tu mensajería</span>
+                                <span class="mt-1 block text-lg font-black text-emerald-700">$${Number(p.costo_mensajeria || 0).toFixed(2)}</span>
+                                <span class="text-[8px] font-bold text-emerald-600">La conservas tú</span>
+                            </div>
                         </div>
                     </div>
 
