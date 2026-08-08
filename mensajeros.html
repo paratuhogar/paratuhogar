@@ -61,9 +61,15 @@
             </div>
 
             <!-- Contador -->
-            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex justify-between items-center">
-                <span class="text-xs font-black uppercase text-indigo-800">Pendientes de cobro hoy:</span>
-                <span id="pending-counter" class="text-2xl font-black text-indigo-600">0</span>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+                    <span class="text-[9px] font-black uppercase text-indigo-800">Entregas pendientes</span>
+                    <span id="pending-counter" class="mt-1 block text-2xl font-black text-indigo-600">0</span>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                    <span class="text-[9px] font-black uppercase text-emerald-800">Ganancia pendiente</span>
+                    <span id="pending-earnings" class="mt-1 block text-2xl font-black text-emerald-600">$0.00</span>
+                </div>
             </div>
 
             <div id="orders-container" class="space-y-4"></div>
@@ -181,7 +187,9 @@
                 }
             });
 
-            document.getElementById('pending-counter').innerText = ordersList.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado').length;
+            const pendingOrders = ordersList.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
+            document.getElementById('pending-counter').innerText = pendingOrders.length;
+            document.getElementById('pending-earnings').innerText = `$${pendingOrders.reduce((sum,p) => sum + (Number(p.costo_mensajeria) || 0), 0).toFixed(2)}`;
 
             if (filtrados.length === 0) {
                 container.innerHTML = `
@@ -252,9 +260,15 @@
                         </p>
                     </div>
 
-                    <div class="bg-slate-50 p-3 rounded-2xl flex justify-between items-center border border-slate-100">
-                        <span class="text-xs font-black text-slate-500 uppercase">A cobrar en destino:</span>
-                        <span class="text-xl font-black text-emerald-600">$${p.total} USD</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <span class="text-[9px] font-black text-slate-500 uppercase">A cobrar al cliente</span>
+                            <span class="mt-1 block text-lg font-black text-slate-800">$${Number(p.total || 0).toFixed(2)} USD</span>
+                        </div>
+                        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                            <span class="text-[9px] font-black text-emerald-700 uppercase">Tu ganancia</span>
+                            <span class="mt-1 block text-lg font-black text-emerald-700">$${Number(p.costo_mensajeria || 0).toFixed(2)} USD</span>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">

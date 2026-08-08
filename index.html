@@ -994,6 +994,26 @@
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
             <!-- === INICIO OPERATIVO DEL GESTOR === -->
             <div id="gestor-home" class="space-y-6">
+                <div id="gestor-inactivity-warning" class="hidden overflow-hidden rounded-3xl border border-amber-300 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 p-5 text-white shadow-xl">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined rounded-xl bg-amber-500 p-2 text-slate-950">timer</span>
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300">Tiempo de actividad restante en la tienda</p>
+                            <h3 class="mt-1 text-lg font-black">Mantén activa tu cuenta realizando pedidos</h3>
+                            <p class="mt-2 max-w-3xl text-[11px] font-bold leading-relaxed text-slate-300">Este reloj indica cuánto tiempo queda antes de que tu cuenta pueda darse de baja por inactividad. Cada pedido nuevo no cancelado reinicia automáticamente el periodo completo de 30 días.</p>
+                        </div>
+                    </div>
+                    <div id="gestor-inactivity-clock" class="mt-5 grid grid-cols-4 gap-2" aria-label="Cuenta regresiva de actividad">
+                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-days" class="block text-2xl font-black text-amber-300">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Días</span></div>
+                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-hours" class="block text-2xl font-black text-white">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Horas</span></div>
+                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-minutes" class="block text-2xl font-black text-white">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Minutos</span></div>
+                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-seconds" class="block text-2xl font-black text-white">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Segundos</span></div>
+                    </div>
+                    <div class="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-3">
+                        <p id="gestor-last-order-notice" class="text-[11px] font-black text-amber-100">Calculando tu último pedido…</p>
+                        <p id="gestor-inactivity-deadline" class="mt-1 text-[10px] font-bold text-slate-300"></p>
+                    </div>
+                </div>
                 <section class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0f2d57] via-[#174b89] to-[#2563a8] text-white shadow-xl shadow-blue-950/15">
                     <div class="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
                         <div>
@@ -1221,6 +1241,7 @@
                 <button onclick="showDashSection('comisiones')" id="btn-dash-comisiones" class="shrink-0 rounded-xl border border-emerald-100 bg-white px-4 py-2 text-xs font-black uppercase text-emerald-700 transition-all">💰 Mis comisiones</button>
                 <button onclick="showDashSection('rendimiento')" id="btn-dash-rendimiento" class="shrink-0 rounded-xl border border-blue-100 bg-white px-4 py-2 text-xs font-black uppercase text-blue-700 transition-all">📈 Mi rendimiento</button>
                 <button onclick="showDashSection('precios')" id="btn-dash-precios" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all">🏷️ Mis Precios (Config)</button>
+                <button onclick="showDashSection('liquidaciones')" id="btn-dash-liquidaciones" class="hidden shrink-0 rounded-xl border border-violet-200 bg-white px-4 py-2 text-xs font-black uppercase text-violet-700 transition-all">🧾 Solicitudes de cobro</button>
             
             <!-- NUEVO BOTÓN DE ACCESO A SUBGESTORES CON ID -->
             <button id="btn-open-subgestores" onclick="window.location.href='subgestores.html'" class="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-black uppercase border border-indigo-200 transition-all flex items-center gap-1 shrink-0">
@@ -1268,7 +1289,7 @@
                         <p id="commission-center-role-note" class="mt-3 max-w-2xl text-sm leading-relaxed text-emerald-50">Aquí puedes comprobar qué ventas ya generaron comisión y cuáles fueron liquidadas.</p>
                     </div>
                     <button id="commission-request-button" onclick="requestCommissionSettlement()" class="inline-flex min-h-12 items-center justify-center gap-2 self-center rounded-xl bg-white px-5 py-3 text-xs font-black text-[#0b5d4e] shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50">
-                        <i class="fab fa-whatsapp text-lg"></i>
+                        <span class="material-symbols-outlined text-lg">payments</span>
                         Solicitar liquidación
                     </button>
                 </div>
@@ -1318,7 +1339,7 @@
                             <p id="commission-center-summary" class="mt-1 text-[10px] font-bold text-slate-500">Preparando tu historial…</p>
                         </div>
                         <button onclick="downloadCommissionStatement()" class="mt-3 flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[9px] font-black uppercase text-slate-600 md:mt-0">
-                            <span class="material-symbols-outlined text-base">download</span> Descargar estado
+                            <span class="material-symbols-outlined text-base">download</span> Exportar resumen de pagos
                         </button>
                     </div>
                     <div class="flex gap-2 overflow-x-auto border-b border-slate-100 p-3">
@@ -1342,7 +1363,7 @@
                             </li>
                             <li class="flex gap-3">
                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">2</span>
-                                <p id="commission-center-step-two" class="text-[11px] font-bold leading-relaxed text-slate-600">Cuando quieras cobrar, solicita la liquidación por WhatsApp.</p>
+                                <p id="commission-center-step-two" class="text-[11px] font-bold leading-relaxed text-slate-600">Elige cuánto cobrar y tu forma de pago.</p>
                             </li>
                             <li class="flex gap-3">
                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-black text-white">3</span>
@@ -1362,6 +1383,44 @@
                 </aside>
             </div>
         </section>
+
+        <!-- BANDEJA DE LIQUIDACIONES: acceso exclusivo de Beatriz Barrero -->
+        <section id="sub-dash-liquidaciones" class="hidden animate-fade-in space-y-5">
+            <div class="rounded-[28px] bg-gradient-to-br from-violet-950 via-violet-800 to-indigo-700 p-6 text-white shadow-xl md:p-8">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-200">Administración de pagos</p>
+                        <h2 class="mt-2 text-2xl font-black">Solicitudes recibidas de miércoles a domingo</h2>
+                        <p class="mt-2 text-sm text-violet-100">Los pagos están previstos para el martes. El historial no se elimina: al limpiar, se archiva.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="runGestorInactivityPolicy()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase">Revisar 30 días</button>
+                        <button onclick="archivePaidPayoutRequests()" class="rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase text-violet-800">Archivar pagadas</button>
+                    </div>
+                </div>
+            </div>
+            <div id="payout-admin-summary" class="grid grid-cols-2 gap-3 md:grid-cols-4"></div>
+            <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-100 p-5">
+                    <div><h3 class="font-black text-slate-900">Pagos de la semana</h3><p class="text-[10px] font-bold text-slate-500">Nombre, teléfono, importe, método, fecha prevista y estado.</p></div>
+                    <button onclick="loadBeatrizPayoutRequests()" class="rounded-xl bg-slate-100 px-3 py-2 text-[9px] font-black uppercase text-slate-600">Actualizar</button>
+                </div>
+                <div class="overflow-x-auto"><table class="w-full min-w-[900px] text-left text-xs"><thead class="bg-slate-50 text-[9px] uppercase text-slate-500"><tr><th class="p-4">Gestor</th><th class="p-4">Teléfono</th><th class="p-4">Solicitado</th><th class="p-4">Método</th><th class="p-4">Solicitud / pago</th><th class="p-4">Estado</th><th class="p-4 text-right">Acciones</th></tr></thead><tbody id="payout-admin-list"><tr><td colspan="7" class="p-10 text-center text-slate-400">Cargando…</td></tr></tbody></table></div>
+            </div>
+        </section>
+
+        <div id="commission-request-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+                <div class="flex items-start justify-between"><div><p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Solicitud semanal</p><h3 class="mt-1 text-xl font-black text-slate-900">¿Cuánto deseas cobrar?</h3></div><button onclick="closeCommissionRequestModal()" class="rounded-full bg-slate-100 p-2"><span class="material-symbols-outlined">close</span></button></div>
+                <div class="mt-5 rounded-2xl bg-emerald-50 p-4"><span class="text-[9px] font-black uppercase text-emerald-700">Saldo disponible</span><strong id="commission-modal-available" class="mt-1 block text-2xl font-black text-emerald-900">$0.00</strong></div>
+                <label class="mt-5 block text-[10px] font-black uppercase text-slate-600">Importe en USD</label>
+                <div class="mt-2 flex gap-2"><input id="commission-request-amount" type="number" min="0.01" step="0.01" class="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 font-black outline-none focus:border-emerald-500"><button onclick="fillFullCommissionAmount()" class="rounded-xl bg-emerald-100 px-3 text-[9px] font-black uppercase text-emerald-800">Todo</button></div>
+                <label class="mt-4 block text-[10px] font-black uppercase text-slate-600">Forma de pago</label>
+                <select id="commission-request-method" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-bold"><option value="efectivo_usd">Efectivo en USD</option><option value="transferencia_cup">Transferencia en CUP</option></select>
+                <p class="mt-4 rounded-xl bg-amber-50 p-3 text-[10px] font-bold leading-relaxed text-amber-800">Puedes solicitar hasta el domingo. Lunes y martes el sistema no acepta solicitudes. El pago se realiza el martes.</p>
+                <button id="commission-submit-request" onclick="submitCommissionPayoutRequest()" class="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-4 text-xs font-black uppercase text-white">Enviar solicitud</button>
+            </div>
+        </div>
 
         <!-- 4. RENDIMIENTO, CLIENTES Y GESTIÓN COMERCIAL -->
         <section id="sub-dash-rendimiento" class="hidden animate-fade-in space-y-5">
@@ -3764,6 +3823,8 @@ async function processRegister() {
                 btnSub.style.display = 'inline-flex';
             }
         }
+        const payoutAdminButton = document.getElementById('btn-dash-liquidaciones');
+        if (payoutAdminButton) payoutAdminButton.classList.toggle('hidden', !isBeatrizPayoutAdmin());
 
         // Cargar la información una sola vez, ya con el rol correcto resuelto.
         // El gestor entra directamente a su centro de trabajo.
@@ -3772,6 +3833,7 @@ async function processRegister() {
             loadProDashboard(name),
             loadClientCRM()
         ]);
+        loadMyPayoutRequests();
         if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
         showSection('dashboard');
     }
@@ -3902,6 +3964,7 @@ async function loadProDashboard(nombreGestor) {
     }
     
     myOrdersData = misVentas; 
+    renderGestorInactivityCountdown();
 
     // 2. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
@@ -6977,6 +7040,33 @@ function openGestorFollowups(filter = 'hoy') {
 }
 
 let commissionCenterFilter = 'pending';
+let commissionPayoutRequests = [];
+
+function isBeatrizPayoutAdmin() {
+    return String(window.currentUserData?.nombre || window.gestorName || '').trim().toLowerCase() === 'beatriz barrero'
+        && !window.currentUserData?.parent_id;
+}
+
+function getHavanaWeekday() {
+    const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Havana', weekday: 'short' }).format(new Date());
+    return { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 }[weekday] || 0;
+}
+
+function isPayoutRequestWindowOpen() {
+    return ![1, 2].includes(getHavanaWeekday());
+}
+
+async function loadMyPayoutRequests() {
+    const user = window.currentUserData || {};
+    if (!user.id || !user.password) return;
+    const { data, error } = await supabaseClient.rpc('mis_solicitudes_cobro', { p_gestor_id: user.id, p_password: user.password });
+    if (error) {
+        if (!/function|schema cache|does not exist/i.test(error.message || '')) console.error('No se pudieron cargar solicitudes:', error);
+        return;
+    }
+    commissionPayoutRequests = data || [];
+    renderCommissionCenter();
+}
 
 function isCommissionPaid(order) {
     return String(order?.pago_gestor || '').trim().toLowerCase() === 'pagado';
@@ -6996,13 +7086,19 @@ function getCommissionCenterData() {
         && order.estado !== 'Cancelado'
         && getOrderCommission(order) > 0);
     const sum = list => list.reduce((total, order) => total + getOrderCommission(order), 0);
+    const reservedTotal = commissionPayoutRequests
+        .filter(request => !['rechazado'].includes(String(request.estado || '').toLowerCase()))
+        .reduce((total, request) => total + (Number(request.importe_usd) || 0), 0);
+    const requestedPaidTotal = commissionPayoutRequests
+        .filter(request => ['pagado', 'archivado'].includes(String(request.estado || '').toLowerCase()))
+        .reduce((total, request) => total + (Number(request.importe_usd) || 0), 0);
     return {
         delivered,
         pending,
         paid,
         pipeline,
-        pendingTotal: sum(pending),
-        paidTotal: sum(paid),
+        pendingTotal: Math.max(0, sum(pending) - reservedTotal),
+        paidTotal: sum(paid) + requestedPaidTotal,
         pipelineTotal: sum(pipeline)
     };
 }
@@ -7039,6 +7135,7 @@ function renderCommissionCenter() {
     if (!list) return;
     const data = getCommissionCenterData();
     const contact = getCommissionSettlementContact();
+    const requestWindowOpen = isPayoutRequestWindowOpen();
     const amountValues = {
         'commission-center-pending': `$${data.pendingTotal.toFixed(2)}`,
         'commission-center-paid': `$${data.paidTotal.toFixed(2)}`,
@@ -7055,17 +7152,19 @@ function renderCommissionCenter() {
     const requestButton = document.getElementById('commission-request-button');
     if (note) {
         note.textContent = contact.isSubmanager
-            ? `Tus comisiones se liquidan con ${contact.name}. Cada importe está respaldado por una venta entregada.`
-            : 'Cada importe está respaldado por una venta entregada. Tú decides cuándo solicitar la liquidación a Ángel.';
+            ? `Tus comisiones están respaldadas por ventas entregadas. Puedes solicitarlas de miércoles a domingo; el pago se procesa el martes.`
+            : 'Cada importe está respaldado por una venta entregada. Solicita el cobro de miércoles a domingo; el pago se realiza el martes.';
     }
     if (step) {
-        step.textContent = `Cuando quieras cobrar, solicita la liquidación directamente a ${contact.name} por WhatsApp.`;
+        step.textContent = 'Elige cuánto cobrar y si lo recibirás en efectivo USD o por transferencia en CUP.';
     }
     if (requestButton) {
-        requestButton.disabled = data.pendingTotal <= 0;
-        requestButton.innerHTML = data.pendingTotal > 0
-            ? '<i class="fab fa-whatsapp text-lg"></i> Solicitar cobro'
-            : '<span class="material-symbols-outlined text-lg">check_circle</span> Sin saldo pendiente';
+        requestButton.disabled = data.pendingTotal <= 0 || !requestWindowOpen;
+        requestButton.innerHTML = !requestWindowOpen
+            ? '<span class="material-symbols-outlined text-lg">event_busy</span> Disponible el miércoles'
+            : data.pendingTotal > 0
+                ? '<span class="material-symbols-outlined text-lg">payments</span> Solicitar cobro'
+                : '<span class="material-symbols-outlined text-lg">check_circle</span> Sin saldo disponible';
     }
 
     document.querySelectorAll('.commission-filter').forEach(button => {
@@ -7140,16 +7239,152 @@ function setCommissionCenterFilter(filter) {
 
 function requestCommissionSettlement() {
     const data = getCommissionCenterData();
-    if (!data.pending.length || data.pendingTotal <= 0) return;
-    const contact = getCommissionSettlementContact();
-    const managerName = window.gestorName || 'Gestor';
-    const message = `Hola ${contact.name}, soy *${managerName}*.\n\nQuisiera cobrar mis comisiones pendientes. Por favor, avísame cuándo puedo pasar a cobrar.`;
-    window.open(`https://wa.me/${contact.phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+    if (!isPayoutRequestWindowOpen()) return alert('Las solicitudes se reciben de miércoles a domingo. Los lunes y martes el botón permanece cerrado.');
+    if (data.pendingTotal <= 0) return alert('No tienes saldo disponible para solicitar.');
+    const modal = document.getElementById('commission-request-modal');
+    document.getElementById('commission-modal-available').textContent = `$${data.pendingTotal.toFixed(2)}`;
+    const amount = document.getElementById('commission-request-amount');
+    amount.max = data.pendingTotal.toFixed(2);
+    amount.value = data.pendingTotal.toFixed(2);
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+}
+
+function closeCommissionRequestModal() {
+    const modal = document.getElementById('commission-request-modal');
+    modal?.classList.add('hidden'); modal?.classList.remove('flex');
+}
+
+function fillFullCommissionAmount() {
+    const data = getCommissionCenterData();
+    document.getElementById('commission-request-amount').value = data.pendingTotal.toFixed(2);
+}
+
+async function submitCommissionPayoutRequest() {
+    const user = window.currentUserData || {};
+    const amount = Math.round((Number(document.getElementById('commission-request-amount')?.value) || 0) * 100) / 100;
+    const method = document.getElementById('commission-request-method')?.value;
+    const available = getCommissionCenterData().pendingTotal;
+    if (!user.id || !user.password) return alert('Tu sesión no contiene los datos necesarios. Cierra sesión y vuelve a entrar.');
+    if (amount <= 0 || amount > available + 0.001) return alert(`Escribe un importe entre $0.01 y $${available.toFixed(2)}.`);
+    const button = document.getElementById('commission-submit-request');
+    const original = button.innerHTML; button.disabled = true; button.innerHTML = 'Enviando…';
+    try {
+        const { data, error } = await supabaseClient.rpc('solicitar_cobro_comision', { p_gestor_id: user.id, p_password: user.password, p_importe_usd: amount, p_metodo_pago: method });
+        if (error) throw error;
+        closeCommissionRequestModal();
+        await loadMyPayoutRequests();
+        alert(`✅ Solicitud registrada por $${amount.toFixed(2)} USD. Pago previsto para el martes ${data?.fecha_pago_prevista || ''}.`);
+    } catch (error) {
+        alert(`No se pudo registrar la solicitud: ${error.message || error}`);
+    } finally { button.disabled = false; button.innerHTML = original; }
+}
+
+async function loadBeatrizPayoutRequests() {
+    if (!isBeatrizPayoutAdmin()) return;
+    const user = window.currentUserData || {};
+    const list = document.getElementById('payout-admin-list');
+    if (list) list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-400">Actualizando…</td></tr>';
+    const { data, error } = await supabaseClient.rpc('listar_solicitudes_cobro_beatriz', { p_admin_id: user.id, p_password: user.password, p_incluir_archivadas: false });
+    if (error) {
+        if (list) list.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">${gestorSafeText(error.message)}</td></tr>`;
+        return;
+    }
+    const rows = data || [];
+    const totals = rows.reduce((acc, item) => { const state=String(item.estado); acc.total += Number(item.importe_usd)||0; acc[state]=(acc[state]||0)+1; return acc; }, { total:0 });
+    const summary = document.getElementById('payout-admin-summary');
+    if (summary) summary.innerHTML = [
+        ['Pendientes', totals.pendiente || 0, 'amber'], ['Procesando', totals.procesando || 0, 'blue'],
+        ['Pagadas', totals.pagado || 0, 'emerald'], ['Total visible', `$${totals.total.toFixed(2)}`, 'violet']
+    ].map(([label,value,color]) => `<article class="rounded-2xl border border-${color}-100 bg-${color}-50 p-4"><span class="text-[9px] font-black uppercase text-${color}-700">${label}</span><strong class="mt-2 block text-2xl font-black text-${color}-950">${value}</strong></article>`).join('');
+    if (!list) return;
+    if (!rows.length) { list.innerHTML='<tr><td colspan="7" class="p-10 text-center font-bold text-slate-400">No hay solicitudes activas.</td></tr>'; return; }
+    list.innerHTML = rows.map(item => {
+        const method = item.metodo_pago === 'transferencia_cup' ? 'Transferencia CUP' : 'Efectivo USD';
+        const requested = new Date(item.creado_en).toLocaleString('es-CU', { timeZone:'America/Havana', dateStyle:'short', timeStyle:'short' });
+        const role = item.tipo_solicitante === 'subgestor' ? `<span class="block text-[8px] font-black uppercase text-violet-600">Subgestor de ${gestorSafeText(item.parent_nombre || 'gestor')}</span>` : '<span class="block text-[8px] font-black uppercase text-slate-400">Gestor principal</span>';
+        const actions = item.estado === 'pendiente'
+            ? `<button onclick="managePayoutRequest('${item.id}','procesando')" class="rounded-lg bg-blue-50 px-2 py-2 text-[8px] font-black uppercase text-blue-700">Procesar</button> <button onclick="managePayoutRequest('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-2 py-2 text-[8px] font-black uppercase text-white">Pagado</button>`
+            : item.estado === 'procesando' ? `<button onclick="managePayoutRequest('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-2 py-2 text-[8px] font-black uppercase text-white">Marcar pagado</button>` : '—';
+        return `<tr class="border-t border-slate-100"><td class="p-4 font-black text-slate-800">${gestorSafeText(item.gestor_nombre)}${role}</td><td class="p-4">${gestorSafeText(item.gestor_telefono || '—')}</td><td class="p-4 text-base font-black text-emerald-700">$${Number(item.importe_usd).toFixed(2)}</td><td class="p-4 font-bold">${method}</td><td class="p-4 text-[10px]">${requested}<span class="block font-black text-violet-700">Martes ${gestorSafeText(item.fecha_pago_prevista)}</span></td><td class="p-4"><span class="rounded-full bg-slate-100 px-2 py-1 text-[8px] font-black uppercase">${gestorSafeText(item.estado)}</span></td><td class="p-4 text-right">${actions}</td></tr>`;
+    }).join('');
+}
+
+async function managePayoutRequest(id, action) {
+    const reference = action === 'pagado' ? (prompt('Referencia o nota del pago (opcional):') || '') : '';
+    const user = window.currentUserData || {};
+    const { error } = await supabaseClient.rpc('gestionar_solicitud_cobro_beatriz', { p_admin_id:user.id, p_password:user.password, p_solicitud_id:id, p_accion:action, p_referencia:reference });
+    if (error) return alert(error.message);
+    await loadBeatrizPayoutRequests();
+}
+
+async function archivePaidPayoutRequests() {
+    if (!confirm('Se archivarán las solicitudes pagadas/rechazadas. El historial se conservará. ¿Continuar?')) return;
+    const user = window.currentUserData || {};
+    const { data, error } = await supabaseClient.rpc('archivar_solicitudes_pagadas_beatriz', { p_admin_id:user.id, p_password:user.password });
+    if (error) return alert(error.message);
+    alert(`✅ ${data || 0} solicitudes archivadas.`); await loadBeatrizPayoutRequests();
+}
+
+async function runGestorInactivityPolicy() {
+    if (!confirm('Se bloquearán únicamente gestores principales con 30 días sin pedidos, contando desde el 6 de agosto de 2026. ¿Revisar ahora?')) return;
+    const user = window.currentUserData || {};
+    const { data, error } = await supabaseClient.rpc('aplicar_inactividad_gestores', { p_admin_id:user.id, p_password:user.password });
+    if (error) return alert(error.message);
+    alert(`Revisión terminada: ${data || 0} cuentas bloqueadas. La baja del grupo de WhatsApp debe realizarla manualmente un administrador del grupo.`);
+}
+
+let gestorInactivityTimer = null;
+
+function renderGestorInactivityCountdown() {
+    const warning = document.getElementById('gestor-inactivity-warning');
+    if (!warning) return;
+    const user = window.currentUserData || {};
+    if (user.parent_id) {
+        warning.classList.add('hidden');
+        return;
+    }
+    const validOrders = (Array.isArray(myOrdersData) ? myOrdersData : [])
+        .filter(order => String(order.estado || '').toLowerCase() !== 'cancelado')
+        .map(order => new Date(order.fecha || order.created_at || 0))
+        .filter(date => !Number.isNaN(date.getTime()))
+        .sort((a,b) => b-a);
+    const policyStart = new Date('2026-08-06T00:00:00-04:00');
+    const createdAt = user.created_at ? new Date(user.created_at) : policyStart;
+    const lastOrder = validOrders[0] || null;
+    const activityBase = new Date(Math.max(policyStart.getTime(), Number.isNaN(createdAt.getTime()) ? 0 : createdAt.getTime(), lastOrder?.getTime() || 0));
+    const deadline = new Date(activityBase.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const dateFormat = new Intl.DateTimeFormat('es-CU', { timeZone:'America/Havana', day:'2-digit', month:'long', year:'numeric' });
+    document.getElementById('gestor-last-order-notice').textContent = lastOrder
+        ? `Tu último pedido registrado fue el ${dateFormat.format(lastOrder)}.`
+        : 'Todavía no tienes pedidos registrados; el conteo comenzó el 6 de agosto de 2026.';
+    document.getElementById('gestor-inactivity-deadline').textContent = `Si no registras otro pedido antes del ${dateFormat.format(deadline)}, tu cuenta podrá darse de baja por inactividad.`;
+    warning.classList.remove('hidden');
+    const update = () => {
+        const remaining = deadline.getTime() - Date.now();
+        const safeRemaining = Math.max(0, remaining);
+        const values = {
+            'gestor-countdown-days': Math.floor(safeRemaining / 86400000),
+            'gestor-countdown-hours': Math.floor((safeRemaining % 86400000) / 3600000),
+            'gestor-countdown-minutes': Math.floor((safeRemaining % 3600000) / 60000),
+            'gestor-countdown-seconds': Math.floor((safeRemaining % 60000) / 1000)
+        };
+        Object.entries(values).forEach(([id,value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = String(value).padStart(2,'0');
+        });
+        const clock = document.getElementById('gestor-inactivity-clock');
+        if (clock) clock.classList.toggle('ring-2', remaining <= 5 * 86400000);
+        if (clock) clock.classList.toggle('ring-red-500', remaining <= 5 * 86400000);
+        if (remaining <= 0) document.getElementById('gestor-inactivity-deadline').textContent = 'El periodo está vencido. Realiza un pedido cuanto antes o contacta con la administración.';
+    };
+    update();
+    if (gestorInactivityTimer) clearInterval(gestorInactivityTimer);
+    gestorInactivityTimer = setInterval(update, 1000);
 }
 
 function downloadCommissionStatement() {
     const data = getCommissionCenterData();
-    const rows = [...data.delivered, ...data.pipeline]
+    const movementRows = [...data.delivered, ...data.pipeline]
         .sort((a, b) => new Date(b.fecha || b.created_at || 0) - new Date(a.fecha || a.created_at || 0))
         .map(order => {
             const state = order.estado === 'Entregado'
@@ -7163,16 +7398,41 @@ function downloadCommissionStatement() {
                 state
             ];
         });
-    if (!rows.length) return alert('Todavía no tienes movimientos de comisión para descargar.');
+    const paymentRows = [...commissionPayoutRequests]
+        .sort((a,b) => new Date(b.creado_en || 0)-new Date(a.creado_en || 0))
+        .map(request => [
+            request.id || '',
+            request.creado_en ? new Date(request.creado_en).toLocaleString('es-CU',{timeZone:'America/Havana'}) : '',
+            Number(request.importe_usd || 0).toFixed(2),
+            request.metodo_pago === 'transferencia_cup' ? 'Transferencia CUP' : 'Efectivo USD',
+            request.estado || '',
+            request.fecha_pago_prevista || '',
+            request.pagado_en ? new Date(request.pagado_en).toLocaleString('es-CU',{timeZone:'America/Havana'}) : '',
+            request.referencia_pago || ''
+        ]);
+    if (!movementRows.length && !paymentRows.length) return alert('Todavía no tienes movimientos de comisión para descargar.');
     const csvEscape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const csv = [
+    const summary = [
+        ['RESUMEN DE COMISIONES'],
+        ['Gestor', window.gestorName || ''],
+        ['Generado', new Date().toLocaleString('es-CU',{timeZone:'America/Havana'})],
+        ['Saldo disponible USD', data.pendingTotal.toFixed(2)],
+        ['Liquidado USD', data.paidTotal.toFixed(2)],
+        ['Comisión potencial USD', data.pipelineTotal.toFixed(2)],
+        [],
+        ['SOLICITUDES Y PAGOS'],
+        ['ID solicitud','Fecha solicitud','Importe base USD','Forma de pago','Estado','Pago previsto','Fecha pagada','Referencia'],
+        ...paymentRows,
+        [],
+        ['MOVIMIENTOS POR PEDIDO'],
         ['Referencia', 'Fecha del pedido', 'Producto', 'Comisión USD', 'Estado'],
-        ...rows
-    ].map(row => row.map(csvEscape).join(',')).join('\n');
+        ...movementRows
+    ];
+    const csv = summary.map(row => row.map(csvEscape).join(',')).join('\n');
     const blobUrl = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = `Estado_comisiones_${String(window.gestorName || 'gestor').replace(/[^a-z0-9]+/gi, '_')}.csv`;
+    link.download = `Resumen_pagos_comisiones_${String(window.gestorName || 'gestor').replace(/[^a-z0-9]+/gi, '_')}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -11585,15 +11845,7 @@ async function processLogin() {
             if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
             if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
 
-        // =================================================================
-        // NUEVO: SI EL GESTOR ERA UN "ZOMBIE", LO REVIVIMOS AUTOMÁTICAMENTE
-        // =================================================================
-        if (data.estado === 'ausente_definitivo') {
-            // Actualizamos en la base de datos silenciosamente
-            supabaseClient.from('gestores').update({ estado: 'activo', fecha_rescate: null }).eq('id', data.id).then();
-            data.estado = 'activo'; // Lo corregimos en la memoria local
-            console.log("🧟‍♂️ Gestor Zombie revivido con éxito.");
-        }
+        if (data.estado === 'ausente_definitivo') return alert('🚫 Cuenta dada de baja por inactividad. Contacta a la administración para solicitar una reactivación.');
 
         gestorAprobado = data;
 
@@ -14015,6 +14267,7 @@ function showDashSection(section) {
     document.getElementById('sub-dash-precios').classList.add('hidden');
     document.getElementById('sub-dash-comisiones').classList.add('hidden');
     document.getElementById('sub-dash-rendimiento').classList.add('hidden');
+    document.getElementById('sub-dash-liquidaciones')?.classList.add('hidden');
     document.getElementById('gestor-home')?.classList.add('hidden');
     document.querySelectorAll('#sec-dashboard > .gestor-legacy-block').forEach(block => block.classList.add('hidden'));
     
@@ -14023,6 +14276,9 @@ function showDashSection(section) {
     document.getElementById('btn-dash-precios').className = "px-4 py-2 bg-white text-gray-500 rounded-xl text-xs font-black uppercase border border-gray-100 transition-all";
     document.getElementById('btn-dash-comisiones').className = "shrink-0 rounded-xl border border-emerald-100 bg-white px-4 py-2 text-xs font-black uppercase text-emerald-700 transition-all";
     document.getElementById('btn-dash-rendimiento').className = "shrink-0 rounded-xl border border-blue-100 bg-white px-4 py-2 text-xs font-black uppercase text-blue-700 transition-all";
+    const payoutAdminButton = document.getElementById('btn-dash-liquidaciones');
+    if (payoutAdminButton) payoutAdminButton.className = "hidden shrink-0 rounded-xl border border-violet-200 bg-white px-4 py-2 text-xs font-black uppercase text-violet-700 transition-all";
+    if (payoutAdminButton && isBeatrizPayoutAdmin()) payoutAdminButton.classList.remove('hidden');
 
     // Activar selección
     if(section === 'resumen') {
@@ -14037,6 +14293,10 @@ function showDashSection(section) {
         document.getElementById('sub-dash-rendimiento').classList.remove('hidden');
         document.getElementById('btn-dash-rendimiento').className = "shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-xs font-black uppercase text-white shadow-md transition-all";
         renderGestorPerformance();
+    } else if (section === 'liquidaciones' && isBeatrizPayoutAdmin()) {
+        document.getElementById('sub-dash-liquidaciones').classList.remove('hidden');
+        payoutAdminButton.className = "shrink-0 rounded-xl bg-violet-700 px-4 py-2 text-xs font-black uppercase text-white shadow-md transition-all";
+        loadBeatrizPayoutRequests();
     } else {
         // === AQUÍ INYECTAMOS EL TEXTO SECRETO ===
         // Solo se escribe cuando el usuario entra a esta sección
@@ -17911,36 +18171,9 @@ async function loadPendingGestores() {
     .order('timestamp', { ascending: false })
     .limit(2000); // <-- AGREGAR LÍMITE EVITA EL ERROR 400
 
-    const now = new Date();
-    const zombiesUpdate = [];
-    const salvadosUpdate = [];
-
-    gestoresDB.forEach(g => {
-        // Los subgestores pertenecen exclusivamente al panel de su gestor
-        // principal; no participan en la clasificación ni rescate central.
-        if (g.parent_id) return;
-        if (g.estado === 'activo' && g.fecha_rescate) {
-            const fechaRescate = new Date(g.fecha_rescate);
-            const diasPasados = (now - fechaRescate) / (1000 * 60 * 60 * 24);
-
-            let ultimoAcceso = new Date(g.created_at);
-            const misClics = clicsDB ? clicsDB.filter(c => (c.agent_name || "").trim().toLowerCase() === g.nombre.trim().toLowerCase()) : [];
-            if (misClics.length > 0) {
-                ultimoAcceso = new Date(misClics[0].timestamp);
-            }
-
-            if (ultimoAcceso > fechaRescate) {
-                salvadosUpdate.push(g.id);
-                g.fecha_rescate = null; 
-            } else if (diasPasados >= 3) {
-                zombiesUpdate.push(g.id);
-                g.estado = 'ausente_definitivo'; 
-            }
-        }
-    });
-
-    if (zombiesUpdate.length > 0) supabaseClient.from('gestores').update({ estado: 'ausente_definitivo' }).in('id', zombiesUpdate).then();
-    if (salvadosUpdate.length > 0) supabaseClient.from('gestores').update({ fecha_rescate: null }).in('id', salvadosUpdate).then();
+    // La política anterior de “zombies” a los 3 días fue retirada. La baja por
+    // inactividad ahora se ejecuta mediante la función SQL auditada de 30 días,
+    // con fecha base 6 de agosto de 2026 y solo para gestores principales.
 
     const pendientes = gestoresDB.filter(g => !g.parent_id && g.estado === 'pendiente');
     const activos = gestoresDB.filter(g => !g.parent_id && (g.estado === 'activo' || g.estado === 'ausente_definitivo'));
@@ -18208,7 +18441,7 @@ Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (inclu
 
 ¡Anímate a probarlo hoy! Quedo al pendiente por si necesitas ayuda. 😉`;
 
-    alert(`⏳ Contador activado.\n\nSi ${nombre} no entra a su enlace en 3 días, será movido a la lista de "Zombies" automáticamente.`);
+    alert(`✅ Recordatorio preparado para ${nombre}.\n\nEste mensaje no activa ninguna baja automática. La política comercial se basa en 30 días sin pedidos, contando desde el 6 de agosto de 2026.`);
     
     // --- LÓGICA INTELIGENTE PARA ABRIR WHATSAPP DIRECTO ---
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
