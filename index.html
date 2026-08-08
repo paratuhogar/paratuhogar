@@ -3853,7 +3853,13 @@ async function processRegister() {
     // 🛡️ LÓGICA DE BOTÓN MAESTRO (FINANCIERO) (RESTAURADA)
     // ============================================================
     const userData = window.currentUserData || {};
-    const esSuperAdmin = userData.rol === 'superadmin' || name === 'Administrador' || name === 'Marcel Montano'; 
+    const VAULT_ADMIN_IDS = new Set([
+        'a5cd1515-47dc-4379-a392-cb09459b3686' // Jomil
+    ]);
+    const esSuperAdmin = userData.rol === 'superadmin'
+        || name === 'Administrador'
+        || name === 'Marcel Montano'
+        || (userData.rol === 'admin' && VAULT_ADMIN_IDS.has(String(userData.id || ''))); 
 
     if (esSuperAdmin) {
         // Localizamos el contenedor de los botones del header al lado del botón de salida

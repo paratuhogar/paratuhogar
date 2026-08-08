@@ -70,6 +70,10 @@
     const sessionName = (session.name || '').trim().toLowerCase();
     const sessionRol = (session.data?.rol || '').trim().toLowerCase();
     const sessionDataName = (session.data?.nombre || '').trim().toLowerCase();
+    const sessionUserId = String(session.data?.id || '');
+    const VAULT_ADMIN_IDS = new Set([
+        'a5cd1515-47dc-4379-a392-cb09459b3686' // Jomil
+    ]);
 
     // Verificación robusta que protege el acceso solo para Ángel y Marcel
     const isSuperBoss = 
@@ -78,7 +82,8 @@
         sessionName === 'administrador supremo' ||
         sessionDataName.includes('ángel') || 
         sessionDataName.includes('angel') ||
-        sessionDataName.includes('marcel');
+        sessionDataName.includes('marcel') ||
+        (sessionRol === 'admin' && VAULT_ADMIN_IDS.has(sessionUserId));
 
     if (!isSuperBoss) {
         alert("⛔ ACCESO DENEGADO: Área Financiera Restringida.\n\nTu nivel de administrador (Logística) no tiene permiso para ver el dinero.");
