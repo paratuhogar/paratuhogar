@@ -602,6 +602,14 @@ function calculateVaultOrderCost(order) {
     }, 0);
 }
 
+function getVaultOrderProvider(order) {
+    const orderCode = String(order?.orden_dia || '').trim().toUpperCase();
+    const prefixMatch = orderCode.match(/^([A-Z]{1,5})-/);
+    // El consecutivo identifica el proveedor histórico. El campo proveedor se
+    // conserva como respaldo para pedidos antiguos sin un consecutivo válido.
+    return prefixMatch ? prefixMatch[1] : String(order?.proveedor || 'General').trim().toUpperCase();
+}
+
 // --- LA FUNCIÓN QUE FALTABA (OPTIMIZADA PARA CONTROLAR EL EGRESS) ---
 async function loadAdminData() {
     console.log("🔄 Actualizando datos del Sistema...");
@@ -916,7 +924,7 @@ async function loadConciliacion() {
     const select = document.getElementById('filter-prov-conc');
     const valorActual = select ? select.value : 'TODOS';
 
-    const proveedoresUnicos = [...new Set(data.map(p => (p.proveedor || 'General').trim().toUpperCase()))].sort();
+    const proveedoresUnicos = [...new Set(data.map(getVaultOrderProvider))].sort();
     
     if (select && (select.options.length <= 1 || valorActual === 'TODOS')) {
         select.innerHTML = `<option value="TODOS">Todos los Proveedores</option>` +
@@ -927,7 +935,7 @@ async function loadConciliacion() {
     // Filtrar lista (AJUSTE: Compara limpiando espacios en blanco)
     let pedidosFiltrados = data;
     if (valorActual !== 'TODOS') {
-        pedidosFiltrados = data.filter(p => (p.proveedor || 'General').trim().toUpperCase() === valorActual.trim().toUpperCase());
+        pedidosFiltrados = data.filter(p => getVaultOrderProvider(p) === valorActual.trim().toUpperCase());
     }
 
     // --- NUEVO: Ordenar por Nuevos o Viejos ---
@@ -969,7 +977,7 @@ async function loadConciliacion() {
             <td class="p-3 text-xs text-slate-400">${p.orden_dia || '---'}</td>
             <td class="p-3 font-bold text-white">
                 ${p.producto}
-                <div class="text-[10px] text-amber-500 uppercase">${p.proveedor || 'General'}</div>
+                <div class="text-[10px] text-amber-500 uppercase">${getVaultOrderProvider(p)}</div>
             </td>
             <td class="p-3 font-mono">
                 <span class="font-black text-white">$${totalEquipos.toFixed(2)}</span>
