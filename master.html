@@ -563,6 +563,45 @@ function calculateDevFee(precioVenta) {
         // --- VARIABLE GLOBAL NECESARIA ---
 let pedidosRawAdmin = []; 
 
+function normalizeVaultProductName(value) {
+    return String(value || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ').trim();
+}
+
+function parseVaultOrderLines(orderText) {
+    const text = String(orderText || '').trim();
+    const lines = [];
+    const pattern = /(\d+)x\s+(.+?)\s*\[(?:USD|CUP)\](?=\s*\+|$)/gi;
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+        lines.push({ qty: Math.max(1, Number(match[1]) || 1), name: match[2].trim() });
+    }
+    if (!lines.length && text) {
+        const fallback = text.match(/^\s*(\d+)x\s+(.+?)(?:\s*\[[^\]]+\])?\s*$/i);
+        lines.push({ qty: fallback ? Math.max(1, Number(fallback[1]) || 1) : 1, name: fallback ? fallback[2].trim() : text });
+    }
+    return lines;
+}
+
+function resolveVaultInventoryProduct(productName, orderProvider = '') {
+    const normalizedName = normalizeVaultProductName(productName);
+    const exact = inventario.filter(item => normalizeVaultProductName(item.nombre) === normalizedName);
+    if (!exact.length) return null;
+    if (exact.length === 1) return exact[0];
+    const normalizedProvider = normalizeVaultProductName(orderProvider);
+    return exact.find(item => normalizeVaultProductName(item.proveedor) === normalizedProvider)
+        || exact.find(item => String(item.disponible || '').toUpperCase() === 'SI')
+        || exact[0];
+}
+
+function calculateVaultOrderCost(order) {
+    return parseVaultOrderLines(order?.producto).reduce((total, line) => {
+        const product = resolveVaultInventoryProduct(line.name, order?.proveedor);
+        return total + (Number(product?.costo_proveedor) || 0) * line.qty;
+    }, 0);
+}
+
 // --- LA FUNCIÓN QUE FALTABA (OPTIMIZADA PARA CONTROLAR EL EGRESS) ---
 async function loadAdminData() {
     console.log("🔄 Actualizando datos del Sistema...");
@@ -905,38 +944,9 @@ async function loadConciliacion() {
     
     const filasHTML = pedidosFiltrados.map(p => {
         
-        // --- 1. NUEVA LÓGICA: SEPARAR MULTIPLES PRODUCTOS POR EL SIGNO "+" ---
-        const lineasProductos = p.producto.split('+');
-        // --- CÁLCULO MEJORADO DE COSTO (Anti-error de signo +) ---
-        // --- CÁLCULO ULTRA-FLEXIBLE DE COSTO (Limpia acentos y espacios) ---
-        let totalCosto = 0;
-
-        // Función interna para normalizar el texto (quita acentos y espacios raros)
-        const normalizarTexto = (txt) => {
-            return (txt || "").toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos (Lámpara -> lampara)
-                .replace(/\s+/g, ' ') // Convierte múltiples espacios o saltos de línea en uno solo
-                .trim();
-        };
-
-        const pedidoLimpio = normalizarTexto(p.producto);
-
-        inventario.forEach(itemInv => {
-            const nombreInvLimpio = normalizarTexto(itemInv.nombre);
-            
-            // Si el nombre del inventario (limpio) está dentro del pedido (limpio)
-            if (pedidoLimpio.includes(nombreInvLimpio)) {
-                
-                // Buscamos la cantidad (ej: "1x")
-                const escapedName = itemInv.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regexQty = new RegExp(`(\\d+)x\\s*`, 'i');
-                const matchQty = p.producto.match(regexQty);
-                
-                let qty = matchQty ? parseInt(matchQty[1]) : 1;
-                
-                totalCosto += (Number(itemInv.costo_proveedor || 0) * qty);
-            }
-        });
+        // Cada línea se resuelve contra un único producto por nombre exacto.
+        // Esto impide sumar, por ejemplo, "Delta 3" y "Delta 3 Clásica".
+        const totalCosto = calculateVaultOrderCost(p);
 
         const totalVenta = parseFloat(p.total);
         const costoMensajeria = parseFloat(p.costo_mensajeria || 0);
@@ -1363,21 +1373,16 @@ function calculateMetrics(orders) {
         
         totalSales += ventaTotalPedido;
 
-        const lineas = p.producto.split('+');
+        const lineas = parseVaultOrderLines(p.producto);
         
         // 1. Calculamos el COSTO TOTAL de todos los productos en este pedido
         let costoTotalProductos = 0;
         let totalUnidadesPedido = 0;
         
         lineas.forEach(linea => {
-            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
-            if (match) {
-                const qty = parseInt(match[1]);
-                const nombre = match[2].trim();
-                const prodInv = inventario.find(i => i.nombre.trim() === nombre);
-                costoTotalProductos += (prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0) * qty;
-                totalUnidadesPedido += qty;
-            }
+            const prodInv = resolveVaultInventoryProduct(linea.name, p.proveedor);
+            costoTotalProductos += (prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0) * linea.qty;
+            totalUnidadesPedido += linea.qty;
         });
 
         // 2. TARIFA TECNOLÓGICA (Basada en el precio neto del equipo)
@@ -1393,17 +1398,10 @@ function calculateMetrics(orders) {
 
         // 4. DISTRIBUIR UTILIDAD POR PRODUCTO (Para el Ranking)
         lineas.forEach(linea => {
-            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
-            if (match) {
-                const qty = parseInt(match[1]);
-                const nombre = match[2].trim();
-                
-                if (!prodStats[nombre]) prodStats[nombre] = { qty: 0, profit: 0 };
-                prodStats[nombre].qty += qty;
-                
-                // Prorrateamos la utilidad del pedido entre los productos
-                prodStats[nombre].profit += (utilidadRealPedido / totalUnidadesPedido) * qty;
-            }
+            const nombre = linea.name;
+            if (!prodStats[nombre]) prodStats[nombre] = { qty: 0, profit: 0 };
+            prodStats[nombre].qty += linea.qty;
+            prodStats[nombre].profit += (utilidadRealPedido / totalUnidadesPedido) * linea.qty;
         });
 
         // Gráficos
