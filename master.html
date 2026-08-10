@@ -1158,7 +1158,7 @@ async function loadNomina() {
     // haya sido conciliado con el proveedor.
     const { data: pedidos, error: errP } = await supabaseClient
         .from('pedidos')
-        .select('id, orden_dia, gestor, comision_total, comision_parent, comision_subgestor, subgestor_nombre, producto, pago_gestor, cliente, total, estado, estado_financiero')
+        .select('id, orden_dia, gestor, comision_total, comision_parent, comision_subgestor, subgestor_nombre, producto, pago_gestor, pago_subgestor, cliente, total, estado, estado_financiero')
         .eq('estado', 'Entregado')
         .or('pago_gestor.is.null,pago_gestor.neq.Pagado');
 
@@ -1174,8 +1174,9 @@ async function loadNomina() {
         const g = p.gestor || 'Sin Gestor';
         if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] };
         
+        const subgestorYaLiquidado = String(p.pago_subgestor || '').trim().toLowerCase() === 'pagado';
         const comisionGestor = p.subgestor_nombre
-            ? Number(p.comision_parent || 0)
+            ? (subgestorYaLiquidado ? Number(p.comision_total || 0) : Number(p.comision_parent || 0))
             : Number(p.comision_total || 0);
         nomina[g].comision += comisionGestor;
         nomina[g].ventasCount++;

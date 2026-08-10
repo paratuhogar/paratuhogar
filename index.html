@@ -3091,8 +3091,8 @@
         <div id="editor-container"></div>
     </div>
     
-    <div class="md:col-span-2 sticky bottom-2 z-30 mt-4 rounded-2xl bg-white/95 p-1 shadow-xl backdrop-blur dark:bg-gray-800/95">
-        <button type="submit" id="btn-save-prod" class="relative z-40 min-h-14 w-full cursor-pointer touch-manipulation rounded-2xl bg-primary px-4 py-4 font-black uppercase tracking-widest text-white shadow-lg shadow-primary/30 disabled:cursor-wait disabled:opacity-60">Guardar Cambios</button>
+    <div class="md:col-span-2 relative mt-6 rounded-2xl bg-white p-1 shadow-xl dark:bg-gray-800">
+        <button type="submit" id="btn-save-prod" class="min-h-14 w-full cursor-pointer touch-manipulation rounded-2xl bg-primary px-4 py-4 font-black uppercase tracking-widest text-white shadow-lg shadow-primary/30 disabled:cursor-wait disabled:opacity-60">Guardar Cambios</button>
     </div>
 </form>
     </div>
@@ -7065,6 +7065,7 @@ function getOrderCommission(order) {
     // le corresponde comision_parent. Esta es la misma regla usada por el RPC
     // solicitar_cobro_comision en Supabase.
     if (String(order?.subgestor_nombre || '').trim()) {
+        if (String(order?.pago_subgestor || '').trim().toLowerCase() === 'pagado') return total;
         const parent = Number(order?.comision_parent);
         if (Number.isFinite(parent)) return Math.max(0, parent);
         return Math.max(0, total - (Number(order?.comision_subgestor) || 0));
