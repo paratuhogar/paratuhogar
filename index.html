@@ -3950,11 +3950,11 @@ async function loadProDashboard(nombreGestor) {
 
     const porCobrar = misEntregados
         .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
-        .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+        .reduce((acc, curr) => acc + getOrderCommission(curr), 0);
 
     const cobrado = misEntregados
         .filter(p => p.pago_gestor === 'Pagado')
-        .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+        .reduce((acc, curr) => acc + getOrderCommission(curr), 0);
 
     // Actualizar HTML Financiero
     if(document.getElementById('dash-money-pending')) document.getElementById('dash-money-pending').innerText = `$${porCobrar.toFixed(2)}`;
@@ -6804,7 +6804,7 @@ async function loadFullDashboard() {
     const pendientes = data.filter(p => p.estado === 'Pendiente' || p.estado === 'Asignado Mensajero' || p.estado === 'Recogida Almacén');
     
     // Calculamos comisiones
-    const ganancia = entregados.reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+    const ganancia = entregados.reduce((acc, curr) => acc + getOrderCommission(curr), 0);
 
     // --- AQUÍ ESTABA EL ERROR: VALIDAMOS QUE EXISTAN LOS ELEMENTOS ANTES DE ESCRIBIR ---
     
@@ -6824,11 +6824,11 @@ async function loadFullDashboard() {
     if (elMoneyPending || elMoneyPaid) {
         const porCobrar = entregados
             .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
-            .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+            .reduce((acc, curr) => acc + getOrderCommission(curr), 0);
 
         const cobrado = entregados
             .filter(p => p.pago_gestor === 'Pagado')
-            .reduce((acc, curr) => acc + (Number(curr.comision_total) || 0), 0);
+            .reduce((acc, curr) => acc + getOrderCommission(curr), 0);
             
         if(elMoneyPending) elMoneyPending.innerText = `$${porCobrar.toFixed(2)}`;
         if(elMoneyPaid) elMoneyPaid.innerText = `$${cobrado.toFixed(2)}`;
@@ -7056,7 +7056,20 @@ function isCommissionPaid(order) {
 }
 
 function getOrderCommission(order) {
-    return Math.max(0, Number(order?.comision_total) || 0);
+    const total = Math.max(0, Number(order?.comision_total) || 0);
+    // En la sesión de un subgestor, loadProDashboard ya transforma
+    // comision_total en su comisión individual.
+    if (window.currentUserData?.parent_id) return total;
+
+    // Si el pedido fue ejecutado por un subgestor, al gestor principal solo
+    // le corresponde comision_parent. Esta es la misma regla usada por el RPC
+    // solicitar_cobro_comision en Supabase.
+    if (String(order?.subgestor_nombre || '').trim()) {
+        const parent = Number(order?.comision_parent);
+        if (Number.isFinite(parent)) return Math.max(0, parent);
+        return Math.max(0, total - (Number(order?.comision_subgestor) || 0));
+    }
+    return total;
 }
 
 function getCommissionCenterData() {
