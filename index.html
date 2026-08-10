@@ -7031,6 +7031,11 @@ function getHavanaWeekday() {
 }
 
 function isPayoutRequestWindowOpen() {
+    const havanaDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Havana', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(new Date());
+    // Excepción extraordinaria: el lunes 10/08/2026 se reciben solicitudes.
+    if (havanaDate === '2026-08-10') return true;
     return ![1, 2].includes(getHavanaWeekday());
 }
 
