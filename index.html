@@ -11782,7 +11782,7 @@ async function processLogin() {
     // CASO A: NIVEL DUEÑO (SUPERADMIN)
     if (pass === KEY_DUENO) { 
         closeLogin();
-        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin' };
+        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin', password: pass };
         window.currentUserData = bossData;
         saveSessionToMemory("Administrador Supremo", true, bossData); 
         setupSession("Administrador Supremo", true);

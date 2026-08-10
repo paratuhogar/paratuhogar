@@ -1073,13 +1073,13 @@ async function loadVaultPayoutRequests() {
     const user = session.data || {};
     const list = document.getElementById('vault-payout-list');
     if (!list) return;
-    if (!user.id || !user.password) {
-        list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-amber-400">Esta sesión administrativa no está vinculada a una cuenta de gestor. Entra con la cuenta de Beatriz para gestionar las solicitudes.</td></tr>';
+    if (!user.password) {
+        list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-amber-400">La sesión no contiene una credencial válida. Cierra sesión y vuelve a entrar.</td></tr>';
         return;
     }
     list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-400">Actualizando solicitudes…</td></tr>';
     const { data, error } = await supabaseClient.rpc('listar_solicitudes_cobro_beatriz', {
-        p_admin_id: user.id,
+        p_admin_id: user.id || null,
         p_password: user.password,
         p_incluir_archivadas: false
     });
@@ -1124,7 +1124,7 @@ async function manageVaultPayout(id, action) {
     const reference = action === 'pagado' ? (prompt('Referencia o nota del pago (opcional):') || '') : '';
     const user = session.data || {};
     const { error } = await supabaseClient.rpc('gestionar_solicitud_cobro_beatriz', {
-        p_admin_id:user.id,p_password:user.password,p_solicitud_id:id,p_accion:action,p_referencia:reference
+        p_admin_id:user.id || null,p_password:user.password,p_solicitud_id:id,p_accion:action,p_referencia:reference
     });
     if (error) return alert(error.message);
     await loadVaultPayoutRequests();
@@ -1133,7 +1133,7 @@ async function manageVaultPayout(id, action) {
 async function archiveVaultPaidRequests() {
     if (!confirm('Se archivarán las solicitudes pagadas o rechazadas. El historial se conservará. ¿Continuar?')) return;
     const user = session.data || {};
-    const { data, error } = await supabaseClient.rpc('archivar_solicitudes_pagadas_beatriz', {p_admin_id:user.id,p_password:user.password});
+    const { data, error } = await supabaseClient.rpc('archivar_solicitudes_pagadas_beatriz', {p_admin_id:user.id || null,p_password:user.password});
     if (error) return alert(error.message);
     alert(`✅ ${data || 0} solicitudes archivadas.`);
     await loadVaultPayoutRequests();
@@ -1142,9 +1142,9 @@ async function archiveVaultPaidRequests() {
 async function runVaultInactivityPolicy() {
     if (!confirm('Se revisarán los gestores sin pedidos ejecutados durante 30 días desde el 6 de agosto. ¿Continuar?')) return;
     const user = session.data || {};
-    if (!user.id || !user.password) return alert('Entra con la cuenta de Beatriz para ejecutar esta revisión.');
+    if (!user.password) return alert('Cierra sesión y vuelve a entrar para validar tu acceso administrativo.');
     const { data, error } = await supabaseClient.rpc('aplicar_inactividad_gestores', {
-        p_admin_id: user.id,
+        p_admin_id: user.id || null,
         p_password: user.password
     });
     if (error) return alert(error.message);
