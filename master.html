@@ -72,7 +72,8 @@
     const sessionDataName = (session.data?.nombre || '').trim().toLowerCase();
     const sessionUserId = String(session.data?.id || '');
     const VAULT_ADMIN_IDS = new Set([
-        'a5cd1515-47dc-4379-a392-cb09459b3686' // Jomil
+        'a5cd1515-47dc-4379-a392-cb09459b3686', // Jomil
+        '19db1f25-8615-418c-b092-1548e8f92abd'  // Beatriz Barrero
     ]);
 
     // Verificación robusta que protege el acceso solo para Ángel y Marcel
@@ -134,8 +135,9 @@ function calculateDevFee(precioVenta) {
         <div class="flex gap-4 border-b border-slate-800 pb-4">
             <button onclick="switchTab('costos')" id="btn-costos" class="tab-btn px-4 py-2 bg-slate-800 rounded-lg text-sm font-bold hover:bg-slate-700">1. Gestión Costos</button>
             <button onclick="switchTab('conciliacion')" id="btn-conciliacion" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">2. Conciliación (Viernes)</button>
-            <button onclick="switchTab('nomina')" id="btn-nomina" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">3. Nómina Gestores (Sábado)</button>
-            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">4. Inteligencia (BI)</button>
+            <button onclick="switchTab('solicitudes')" id="btn-solicitudes" class="tab-btn px-4 py-2 text-violet-300 text-sm font-bold hover:text-white">3. Solicitudes de cobro</button>
+            <button onclick="switchTab('nomina')" id="btn-nomina" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">4. Nómina Gestores</button>
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">5. Inteligencia (BI)</button>
             <button onclick="window.location.href='estadisticas.html'" class="tab-btn px-4 py-2 text-blue-400 text-sm font-bold hover:text-white border border-blue-500/30 rounded-lg hover:bg-blue-900/30 transition-all">
                 📊 Intel Center
             </button>
@@ -206,6 +208,32 @@ function calculateDevFee(precioVenta) {
                     </thead>
                     <tbody id="list-conciliacion"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <section id="sec-solicitudes" class="tab-content hidden space-y-5">
+            <div class="rounded-3xl border border-violet-500/30 bg-gradient-to-br from-violet-950 via-slate-900 to-indigo-950 p-6 shadow-xl">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300">Bóveda financiera</p>
+                        <h2 class="mt-2 text-2xl font-black text-white">Solicitudes de cobro</h2>
+                        <p class="mt-2 text-sm text-slate-300">Solicitudes recibidas de miércoles a domingo. Los pagos se preparan para el martes y el historial nunca se elimina.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadVaultPayoutRequests()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Actualizar</button>
+                        <button onclick="runVaultInactivityPolicy()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Revisar 30 días</button>
+                        <button onclick="archiveVaultPaidRequests()" class="rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase text-violet-900">Archivar pagadas</button>
+                    </div>
+                </div>
+            </div>
+            <div id="vault-payout-summary" class="grid grid-cols-2 gap-3 md:grid-cols-4"></div>
+            <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/70 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[980px] text-left text-xs">
+                        <thead class="bg-slate-800 text-[9px] uppercase text-slate-400"><tr><th class="p-4">Gestor</th><th class="p-4">Teléfono</th><th class="p-4">Cantidad</th><th class="p-4">Forma de pago</th><th class="p-4">Solicitud / pago</th><th class="p-4">Estado</th><th class="p-4 text-right">Acciones</th></tr></thead>
+                        <tbody id="vault-payout-list"><tr><td colspan="7" class="p-10 text-center text-slate-500">Abre esta sección para cargar las solicitudes.</td></tr></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -655,6 +683,7 @@ async function loadAdminData() {
 
     if(tabId === 'costos') loadCostos();
     if(tabId === 'conciliacion') loadConciliacion();
+    if(tabId === 'solicitudes') loadVaultPayoutRequests();
     if(tabId === 'nomina') loadNomina(); // Asegúrate de tener esto
     if(tabId === 'dashboard') loadDashboard(); // <--- AGREGAR ESTA LÍNEA NUEVA
 }
@@ -1035,6 +1064,92 @@ async function loadConciliacion() {
         }
 
         // --- 3. LÓGICA DE NÓMINA Y CAJA ---
+
+function vaultSafeText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+
+async function loadVaultPayoutRequests() {
+    const user = session.data || {};
+    const list = document.getElementById('vault-payout-list');
+    if (!list) return;
+    if (!user.id || !user.password) {
+        list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-amber-400">Esta sesión administrativa no está vinculada a una cuenta de gestor. Entra con la cuenta de Beatriz para gestionar las solicitudes.</td></tr>';
+        return;
+    }
+    list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-400">Actualizando solicitudes…</td></tr>';
+    const { data, error } = await supabaseClient.rpc('listar_solicitudes_cobro_beatriz', {
+        p_admin_id: user.id,
+        p_password: user.password,
+        p_incluir_archivadas: false
+    });
+    if (error) {
+        list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-400">${vaultSafeText(error.message)}</td></tr>`;
+        return;
+    }
+    const rows = data || [];
+    const totals = rows.reduce((acc,item) => {
+        const state = String(item.estado || 'pendiente');
+        acc.total += Number(item.importe_usd) || 0;
+        acc[state] = (acc[state] || 0) + 1;
+        return acc;
+    }, { total: 0 });
+    const summary = document.getElementById('vault-payout-summary');
+    if (summary) summary.innerHTML = [
+        ['Pendientes',totals.pendiente||0,'amber'],
+        ['Procesando',totals.procesando||0,'blue'],
+        ['Pagadas',totals.pagado||0,'emerald'],
+        ['Total visible',`$${totals.total.toFixed(2)}`,'violet']
+    ].map(([label,value,color]) => `<article class="rounded-2xl border border-${color}-500/20 bg-${color}-950/30 p-4"><span class="text-[9px] font-black uppercase text-${color}-400">${label}</span><strong class="mt-2 block text-2xl font-black text-white">${value}</strong></article>`).join('');
+    if (!rows.length) {
+        list.innerHTML = '<tr><td colspan="7" class="p-10 text-center font-bold text-slate-500">No hay solicitudes activas.</td></tr>';
+        return;
+    }
+    list.innerHTML = rows.map(item => {
+        const method = item.metodo_pago === 'transferencia_cup' ? 'Transferencia CUP' : 'Efectivo USD';
+        const requested = new Date(item.creado_en).toLocaleString('es-CU',{timeZone:'America/Havana',dateStyle:'short',timeStyle:'short'});
+        const role = item.tipo_solicitante === 'subgestor'
+            ? `<span class="block text-[8px] font-black uppercase text-violet-400">Subgestor de ${vaultSafeText(item.parent_nombre || 'gestor')}</span>`
+            : '<span class="block text-[8px] font-black uppercase text-slate-500">Gestor principal</span>';
+        const actions = item.estado === 'pendiente'
+            ? `<button onclick="manageVaultPayout('${item.id}','procesando')" class="rounded-lg bg-blue-950 px-2 py-2 text-[8px] font-black uppercase text-blue-300">Procesar</button> <button onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-2 py-2 text-[8px] font-black uppercase text-white">Pagado</button>`
+            : item.estado === 'procesando'
+                ? `<button onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-2 py-2 text-[8px] font-black uppercase text-white">Marcar pagado</button>`
+                : '—';
+        return `<tr class="border-t border-slate-800"><td class="p-4 font-black text-white">${vaultSafeText(item.gestor_nombre)}${role}</td><td class="p-4 text-slate-300">${vaultSafeText(item.gestor_telefono || '—')}</td><td class="p-4 text-base font-black text-emerald-400">$${Number(item.importe_usd).toFixed(2)}</td><td class="p-4 font-bold text-slate-300">${method}</td><td class="p-4 text-[10px] text-slate-400">${requested}<span class="block font-black text-violet-400">Martes ${vaultSafeText(item.fecha_pago_prevista)}</span></td><td class="p-4"><span class="rounded-full bg-slate-800 px-2 py-1 text-[8px] font-black uppercase text-slate-300">${vaultSafeText(item.estado)}</span></td><td class="p-4 text-right">${actions}</td></tr>`;
+    }).join('');
+}
+
+async function manageVaultPayout(id, action) {
+    const reference = action === 'pagado' ? (prompt('Referencia o nota del pago (opcional):') || '') : '';
+    const user = session.data || {};
+    const { error } = await supabaseClient.rpc('gestionar_solicitud_cobro_beatriz', {
+        p_admin_id:user.id,p_password:user.password,p_solicitud_id:id,p_accion:action,p_referencia:reference
+    });
+    if (error) return alert(error.message);
+    await loadVaultPayoutRequests();
+}
+
+async function archiveVaultPaidRequests() {
+    if (!confirm('Se archivarán las solicitudes pagadas o rechazadas. El historial se conservará. ¿Continuar?')) return;
+    const user = session.data || {};
+    const { data, error } = await supabaseClient.rpc('archivar_solicitudes_pagadas_beatriz', {p_admin_id:user.id,p_password:user.password});
+    if (error) return alert(error.message);
+    alert(`✅ ${data || 0} solicitudes archivadas.`);
+    await loadVaultPayoutRequests();
+}
+
+async function runVaultInactivityPolicy() {
+    if (!confirm('Se revisarán los gestores sin pedidos ejecutados durante 30 días desde el 6 de agosto. ¿Continuar?')) return;
+    const user = session.data || {};
+    if (!user.id || !user.password) return alert('Entra con la cuenta de Beatriz para ejecutar esta revisión.');
+    const { data, error } = await supabaseClient.rpc('aplicar_inactividad_gestores', {
+        p_admin_id: user.id,
+        p_password: user.password
+    });
+    if (error) return alert(error.message);
+    alert(`✅ Revisión completada. ${Number(data) || 0} gestores dados de baja.`);
+}
 
         // 3. CARGA DE NÓMINA (CON DETALLE DE PRODUCTOS)
 async function loadNomina() {
