@@ -1387,8 +1387,10 @@
             <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between"><div><p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Solicitud semanal</p><h3 class="mt-1 text-xl font-black text-slate-900">¿Cuánto deseas cobrar?</h3></div><button onclick="closeCommissionRequestModal()" class="rounded-full bg-slate-100 p-2"><span class="material-symbols-outlined">close</span></button></div>
                 <div class="mt-5 rounded-2xl bg-emerald-50 p-4"><span class="text-[9px] font-black uppercase text-emerald-700">Saldo disponible</span><strong id="commission-modal-available" class="mt-1 block text-2xl font-black text-emerald-900">$0.00</strong></div>
-                <label class="mt-5 block text-[10px] font-black uppercase text-slate-600">Importe en USD</label>
-                <div class="mt-2 flex gap-2"><input id="commission-request-amount" type="number" min="0.01" step="0.01" class="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 font-black outline-none focus:border-emerald-500"><button onclick="fillFullCommissionAmount()" class="rounded-xl bg-emerald-100 px-3 text-[9px] font-black uppercase text-emerald-800">Todo</button></div>
+                <div class="mt-5 flex items-center justify-between"><label class="block text-[10px] font-black uppercase text-slate-600">Pedidos que deseas cobrar</label><button type="button" onclick="fillFullCommissionAmount()" class="rounded-lg bg-emerald-100 px-3 py-2 text-[9px] font-black uppercase text-emerald-800">Seleccionar todos</button></div>
+                <div id="commission-request-orders" class="mt-2 max-h-48 space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 p-2"></div>
+                <label class="mt-4 block text-[10px] font-black uppercase text-slate-600">Total de pedidos seleccionados</label>
+                <input id="commission-request-amount" type="number" readonly class="mt-2 w-full rounded-xl border-slate-200 bg-slate-100 px-4 py-3 font-black text-slate-800">
                 <label class="mt-4 block text-[10px] font-black uppercase text-slate-600">Forma de pago</label>
                 <select id="commission-request-method" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-bold"><option value="efectivo_usd">Efectivo en USD</option><option value="transferencia_cup">Transferencia en CUP</option></select>
                 <p class="mt-4 rounded-xl bg-amber-50 p-3 text-[10px] font-bold leading-relaxed text-amber-800">Puedes solicitar hasta el domingo. Lunes y martes el sistema no acepta solicitudes. El pago se realiza el martes.</p>
@@ -7019,6 +7021,7 @@ function openGestorFollowups(filter = 'hoy') {
 
 let commissionCenterFilter = 'pending';
 let commissionPayoutRequests = [];
+let commissionSelectedOrderIds = new Set();
 
 function isBeatrizPayoutAdmin() {
     return String(window.currentUserData?.nombre || window.gestorName || '').trim().toLowerCase() === 'beatriz barrero'
@@ -7061,15 +7064,8 @@ function getOrderCommission(order) {
     // comision_total en su comisión individual.
     if (window.currentUserData?.parent_id) return total;
 
-    // Si el pedido fue ejecutado por un subgestor, al gestor principal solo
-    // le corresponde comision_parent. Esta es la misma regla usada por el RPC
-    // solicitar_cobro_comision en Supabase.
-    if (String(order?.subgestor_nombre || '').trim()) {
-        if (String(order?.pago_subgestor || '').trim().toLowerCase() === 'pagado') return total;
-        const parent = Number(order?.comision_parent);
-        if (Number.isFinite(parent)) return Math.max(0, parent);
-        return Math.max(0, total - (Number(order?.comision_subgestor) || 0));
-    }
+    // La Bóveda paga la comisión completa al gestor principal; este liquida
+    // por separado la parte de su subgestor desde la red privada.
     return total;
 }
 
@@ -7236,13 +7232,28 @@ function setCommissionCenterFilter(filter) {
 
 function requestCommissionSettlement() {
     const data = getCommissionCenterData();
+    if (window.currentUserData?.parent_id) {
+        const contact = getCommissionSettlementContact();
+        const phone = String(contact.phone || '').replace(/\D/g, '');
+        if (!phone) return alert('No está registrado el teléfono de tu gestor principal. Contacta con él directamente.');
+        const message = `Hola ${contact.name}, deseo solicitar el cobro de mis comisiones disponibles por $${data.pendingTotal.toFixed(2)} USD. Por favor, revisa mi nómina de subgestor.`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        return;
+    }
     if (!isPayoutRequestWindowOpen()) return alert('Las solicitudes se reciben de miércoles a domingo. Los lunes y martes el botón permanece cerrado.');
     if (data.pendingTotal <= 0) return alert('No tienes saldo disponible para solicitar.');
+    commissionSelectedOrderIds = new Set();
+    const ordersContainer = document.getElementById('commission-request-orders');
+    ordersContainer.innerHTML = data.pending.map(order => `
+        <label class="flex cursor-pointer items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
+            <input type="checkbox" class="commission-order-check rounded border-slate-300 text-emerald-600" value="${gestorSafeText(order.id)}" onchange="toggleCommissionOrder('${gestorSafeText(order.id)}',this.checked)">
+            <span class="min-w-0 flex-1"><strong class="block truncate text-[10px] text-slate-800">${gestorSafeText(order.producto || 'Pedido')}</strong><small class="text-[9px] font-bold text-slate-400">${getCommissionOrderReference(order)}</small></span>
+            <strong class="text-sm text-emerald-700">$${getOrderCommission(order).toFixed(2)}</strong>
+        </label>`).join('');
     const modal = document.getElementById('commission-request-modal');
     document.getElementById('commission-modal-available').textContent = `$${data.pendingTotal.toFixed(2)}`;
     const amount = document.getElementById('commission-request-amount');
-    amount.max = data.pendingTotal.toFixed(2);
-    amount.value = data.pendingTotal.toFixed(2);
+    amount.value = '0.00';
     modal.classList.remove('hidden'); modal.classList.add('flex');
 }
 
@@ -7253,7 +7264,22 @@ function closeCommissionRequestModal() {
 
 function fillFullCommissionAmount() {
     const data = getCommissionCenterData();
-    document.getElementById('commission-request-amount').value = data.pendingTotal.toFixed(2);
+    commissionSelectedOrderIds = new Set(data.pending.map(order => String(order.id)));
+    document.querySelectorAll('.commission-order-check').forEach(check => { check.checked = true; });
+    updateSelectedCommissionTotal();
+}
+
+function toggleCommissionOrder(orderId, checked) {
+    if (checked) commissionSelectedOrderIds.add(String(orderId));
+    else commissionSelectedOrderIds.delete(String(orderId));
+    updateSelectedCommissionTotal();
+}
+
+function updateSelectedCommissionTotal() {
+    const orders = getCommissionCenterData().pending;
+    const total = orders.filter(order => commissionSelectedOrderIds.has(String(order.id)))
+        .reduce((sum, order) => sum + getOrderCommission(order), 0);
+    document.getElementById('commission-request-amount').value = total.toFixed(2);
 }
 
 async function submitCommissionPayoutRequest() {
@@ -7262,11 +7288,12 @@ async function submitCommissionPayoutRequest() {
     const method = document.getElementById('commission-request-method')?.value;
     const available = getCommissionCenterData().pendingTotal;
     if (!user.id || !user.password) return alert('Tu sesión no contiene los datos necesarios. Cierra sesión y vuelve a entrar.');
-    if (amount <= 0 || amount > available + 0.001) return alert(`Escribe un importe entre $0.01 y $${available.toFixed(2)}.`);
+    const selectedIds = [...commissionSelectedOrderIds];
+    if (!selectedIds.length || amount <= 0 || amount > available + 0.001) return alert('Selecciona al menos un pedido completo para solicitar su comisión.');
     const button = document.getElementById('commission-submit-request');
     const original = button.innerHTML; button.disabled = true; button.innerHTML = 'Enviando…';
     try {
-        const { data, error } = await supabaseClient.rpc('solicitar_cobro_comision', { p_gestor_id: user.id, p_password: user.password, p_importe_usd: amount, p_metodo_pago: method });
+        const { data, error } = await supabaseClient.rpc('solicitar_cobro_comision_pedidos', { p_gestor_id: user.id, p_password: user.password, p_pedidos_ids: selectedIds, p_metodo_pago: method });
         if (error) throw error;
         closeCommissionRequestModal();
         await loadMyPayoutRequests();

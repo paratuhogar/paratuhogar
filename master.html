@@ -217,7 +217,7 @@ function calculateDevFee(precioVenta) {
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300">Bóveda financiera</p>
                         <h2 class="mt-2 text-2xl font-black text-white">Solicitudes de cobro</h2>
-                        <p class="mt-2 text-sm text-slate-300">Solicitudes recibidas de miércoles a domingo. Los pagos se preparan para el martes y el historial nunca se elimina.</p>
+                        <p class="mt-2 text-sm text-slate-300">Solicitudes recibidas de miércoles a domingo. Marca “Pagado” únicamente cuando el dinero haya sido entregado.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="loadVaultPayoutRequests()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Actualizar</button>
@@ -1090,7 +1090,7 @@ async function loadVaultPayoutRequests() {
     const rows = data || [];
     const totals = rows.reduce((acc,item) => {
         const state = String(item.estado || 'pendiente');
-        acc.total += Number(item.importe_usd) || 0;
+        if (['pendiente','procesando'].includes(state)) acc.total += Number(item.importe_usd) || 0;
         acc[state] = (acc[state] || 0) + 1;
         return acc;
     }, { total: 0 });
@@ -1099,7 +1099,7 @@ async function loadVaultPayoutRequests() {
         ['Pendientes',totals.pendiente||0,'amber'],
         ['Procesando',totals.procesando||0,'blue'],
         ['Pagadas',totals.pagado||0,'emerald'],
-        ['Total visible',`$${totals.total.toFixed(2)}`,'violet']
+        ['Total por pagar',`$${totals.total.toFixed(2)}`,'violet']
     ].map(([label,value,color]) => `<article class="rounded-2xl border border-${color}-500/20 bg-${color}-950/30 p-4"><span class="text-[9px] font-black uppercase text-${color}-400">${label}</span><strong class="mt-2 block text-2xl font-black text-white">${value}</strong></article>`).join('');
     if (!rows.length) {
         list.innerHTML = '<tr><td colspan="7" class="p-10 text-center font-bold text-slate-500">No hay solicitudes activas.</td></tr>';
@@ -1111,11 +1111,9 @@ async function loadVaultPayoutRequests() {
         const role = item.tipo_solicitante === 'subgestor'
             ? `<span class="block text-[8px] font-black uppercase text-violet-400">Subgestor de ${vaultSafeText(item.parent_nombre || 'gestor')}</span>`
             : '<span class="block text-[8px] font-black uppercase text-slate-500">Gestor principal</span>';
-        const actions = item.estado === 'pendiente'
-            ? `<button onclick="manageVaultPayout('${item.id}','procesando')" class="rounded-lg bg-blue-950 px-2 py-2 text-[8px] font-black uppercase text-blue-300">Procesar</button> <button onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-2 py-2 text-[8px] font-black uppercase text-white">Pagado</button>`
-            : item.estado === 'procesando'
-                ? `<button onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-2 py-2 text-[8px] font-black uppercase text-white">Marcar pagado</button>`
-                : '—';
+        const actions = ['pendiente','procesando'].includes(String(item.estado || '').toLowerCase())
+            ? `<button title="Confirmar que el dinero ya fue entregado" onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-3 py-2 text-[8px] font-black uppercase text-white">Marcar pagado</button>`
+            : '—';
         return `<tr class="border-t border-slate-800"><td class="p-4 font-black text-white">${vaultSafeText(item.gestor_nombre)}${role}</td><td class="p-4 text-slate-300">${vaultSafeText(item.gestor_telefono || '—')}</td><td class="p-4 text-base font-black text-emerald-400">$${Number(item.importe_usd).toFixed(2)}</td><td class="p-4 font-bold text-slate-300">${method}</td><td class="p-4 text-[10px] text-slate-400">${requested}<span class="block font-black text-violet-400">Martes ${vaultSafeText(item.fecha_pago_prevista)}</span></td><td class="p-4"><span class="rounded-full bg-slate-800 px-2 py-1 text-[8px] font-black uppercase text-slate-300">${vaultSafeText(item.estado)}</span></td><td class="p-4 text-right">${actions}</td></tr>`;
     }).join('');
 }
@@ -1174,10 +1172,9 @@ async function loadNomina() {
         const g = p.gestor || 'Sin Gestor';
         if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] };
         
-        const subgestorYaLiquidado = String(p.pago_subgestor || '').trim().toLowerCase() === 'pagado';
-        const comisionGestor = p.subgestor_nombre
-            ? (subgestorYaLiquidado ? Number(p.comision_total || 0) : Number(p.comision_parent || 0))
-            : Number(p.comision_total || 0);
+        // La Bóveda liquida la comisión completa al gestor principal.
+        // El principal controla aparte el pago acordado con su subgestor.
+        const comisionGestor = Number(p.comision_total || 0);
         nomina[g].comision += comisionGestor;
         nomina[g].ventasCount++;
         nomina[g].pedidosIds.push(p.id);
