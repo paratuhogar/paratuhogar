@@ -653,11 +653,14 @@ async function loadAdminData() {
     console.log("🔄 Actualizando datos del Sistema...");
 
     try {
-        // 1. Cargar todos los pedidos ENTREGADOS (Optimizado seleccionando solo columnas de cálculo)
-        const { data, error } = await supabaseClient
-            .from('pedidos')
-            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema, orden_dia')
-            .eq('estado', 'Entregado');
+        // 1. La Bóveda usa una lectura administrativa protegida. Consultar
+        // pedidos directamente con la clave pública puede ocultar filas por RLS.
+        const user = session.data || {};
+        if (!user.password) throw new Error('La sesión no contiene una credencial administrativa válida.');
+        const { data, error } = await supabaseClient.rpc('listar_pedidos_boveda', {
+            p_admin_id: user.id || null,
+            p_password: user.password
+        });
 
         if (error) throw error;
 
