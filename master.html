@@ -590,6 +590,11 @@ function calculateDevFee(precioVenta) {
         let inventario = [];
         // --- VARIABLE GLOBAL NECESARIA ---
 let pedidosRawAdmin = []; 
+let vaultDebtChannel = null;
+let vaultDebtRefreshTimer = null;
+let vaultDebtPollingTimer = null;
+let vaultDebtLoadInProgress = false;
+let vaultDebtRefreshPending = false;
 
 function normalizeVaultProductName(value) {
     return String(value || '').toLowerCase()
@@ -640,37 +645,85 @@ function getVaultOrderProvider(order) {
 
 // --- LA FUNCIÓN QUE FALTABA (OPTIMIZADA PARA CONTROLAR EL EGRESS) ---
 async function loadAdminData() {
-    console.log("🔄 Actualizando datos del Sistema...");
-
-    // 1. Cargar todos los pedidos ENTREGADOS (Optimizado seleccionando solo columnas de cálculo)
-    const { data, error } = await supabaseClient
-        .from('pedidos')
-        .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema, orden_dia')
-        .eq('estado', 'Entregado');
-
-    if (error) {
-        console.error("Error cargando pedidos maestros:", error);
+    if (vaultDebtLoadInProgress) {
+        vaultDebtRefreshPending = true;
         return;
     }
+    vaultDebtLoadInProgress = true;
+    console.log("🔄 Actualizando datos del Sistema...");
 
-    // 2. Guardar en memoria
-    pedidosRawAdmin = data;
+    try {
+        // 1. Cargar todos los pedidos ENTREGADOS (Optimizado seleccionando solo columnas de cálculo)
+        const { data, error } = await supabaseClient
+            .from('pedidos')
+            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema, orden_dia')
+            .eq('estado', 'Entregado');
 
-    // 3. Renderizar la tarjeta de deuda del sistema (Tu pago)
-    renderSystemDebt();
-    
-    // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
-    if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
-        // Actualizamos el caché del dashboard también
-        allOrdersCache = data; 
-        filterDash('total');
+        if (error) throw error;
+
+        // 2. Guardar en memoria
+        pedidosRawAdmin = data || [];
+
+        // 3. Renderizar la tarjeta de deuda del sistema (Tu pago)
+        renderSystemDebt();
+        
+        // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
+        if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
+            allOrdersCache = pedidosRawAdmin;
+            filterDash('total');
+        }
+    } catch (error) {
+        console.error("Error cargando pedidos maestros:", error);
+    } finally {
+        vaultDebtLoadInProgress = false;
+        if (vaultDebtRefreshPending) {
+            vaultDebtRefreshPending = false;
+            scheduleVaultDebtRefresh();
+        }
+    }
+}
+
+function scheduleVaultDebtRefresh() {
+    clearTimeout(vaultDebtRefreshTimer);
+    vaultDebtRefreshTimer = setTimeout(() => loadAdminData(), 350);
+}
+
+function startVaultDebtAutoRefresh() {
+    if (vaultDebtChannel) return;
+
+    vaultDebtChannel = supabaseClient
+        .channel('vault-system-debt-live')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'pedidos'
+        }, scheduleVaultDebtRefresh)
+        .subscribe();
+
+    // Respaldo ante una desconexión temporal de Realtime.
+    vaultDebtPollingTimer = setInterval(scheduleVaultDebtRefresh, 60000);
+}
+
+function stopVaultDebtAutoRefresh() {
+    clearTimeout(vaultDebtRefreshTimer);
+    clearInterval(vaultDebtPollingTimer);
+    vaultDebtRefreshPending = false;
+    if (vaultDebtChannel) {
+        supabaseClient.removeChannel(vaultDebtChannel);
+        vaultDebtChannel = null;
     }
 }
 
         async function initMaster() {
     await loadCostos();
     await loadAdminData(); // <--- AGREGAR ESTO PARA QUE CARGUE TU DEUDA AL INICIAR
+    startVaultDebtAutoRefresh();
 }
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') scheduleVaultDebtRefresh();
+});
+window.addEventListener('beforeunload', stopVaultDebtAutoRefresh);
 
         function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
