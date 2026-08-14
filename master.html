@@ -595,6 +595,8 @@ let vaultDebtRefreshTimer = null;
 let vaultDebtPollingTimer = null;
 let vaultDebtLoadInProgress = false;
 let vaultDebtRefreshPending = false;
+let deudaSistemaLineas = [];
+let deudaSistemaResumen = null;
 
 function normalizeVaultProductName(value) {
     return String(value || '').toLowerCase()
@@ -677,8 +679,8 @@ async function loadAdminData() {
         // 2. Guardar en memoria
         pedidosRawAdmin = data || [];
 
-        // 3. Renderizar la tarjeta de deuda del sistema (Tu pago)
-        renderSystemDebt();
+        // 3. La deuda se obtiene del libro contable central de Supabase.
+        await loadSystemDebtLedger();
         
         // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
         if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
@@ -687,10 +689,20 @@ async function loadAdminData() {
         }
     } catch (error) {
         console.error("Error cargando pedidos maestros:", error);
+        deudaSistemaResumen = null;
+        deudaSistemaLineas = [];
         const amount = document.getElementById('sys-debt-amount');
         const count = document.getElementById('sys-debt-count');
+        const btn = document.getElementById('btn-pay-sys');
+        const btnDetails = document.getElementById('btn-details-sys');
         if (amount) amount.textContent = 'Error al actualizar';
         if (count) count.textContent = 'La deuda no pudo cargarse. Reintenta en unos segundos.';
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50','cursor-not-allowed');
+            btn.textContent = 'ERROR CONTABLE';
+        }
+        if (btnDetails) btnDetails.classList.add('hidden');
     } finally {
         vaultDebtLoadInProgress = false;
         if (vaultDebtRefreshPending) {
@@ -698,6 +710,33 @@ async function loadAdminData() {
             scheduleVaultDebtRefresh();
         }
     }
+}
+
+async function loadSystemDebtLedger() {
+    const user = session.data || {};
+    if (!user.password) throw new Error('La sesión no contiene una credencial administrativa válida.');
+    const auth = { p_admin_id: user.id || null, p_password: user.password };
+    const [detailResponse, summaryResponse] = await Promise.all([
+        supabaseClient.rpc('listar_deuda_sistema', auth),
+        supabaseClient.rpc('resumen_deuda_sistema', auth)
+    ]);
+    if (detailResponse.error) throw detailResponse.error;
+    if (summaryResponse.error) throw summaryResponse.error;
+
+    const lines = detailResponse.data || [];
+    const summary = (summaryResponse.data || [])[0] || { pedidos: 0, lineas: 0, incidencias: 0, total: 0 };
+    const detailTotal = lines
+        .filter(line => line.estado === 'pendiente')
+        .reduce((sum, line) => sum + (Number(line.tarifa_total) || 0), 0);
+    if (Number(summary.incidencias) > 0) {
+        throw new Error(`Error contable: existen ${summary.incidencias} líneas que requieren revisión.`);
+    }
+    if (Math.abs(detailTotal - Number(summary.total || 0)) > 0.001) {
+        throw new Error(`Error contable: el detalle ($${detailTotal.toFixed(2)}) no coincide con el resumen ($${Number(summary.total || 0).toFixed(2)}).`);
+    }
+    deudaSistemaLineas = lines;
+    deudaSistemaResumen = summary;
+    renderSystemDebt();
 }
 
 function scheduleVaultDebtRefresh() {
@@ -1680,58 +1719,27 @@ function renderRankingLists(stats) {
 // --- VERSIÓN CORREGIDA: DETECTA CANTIDADES (5x, 2x...) ---
 // --- VERSIÓN MEJORADA: CALCULA Y GENERA EL DESGLOSE ---
 function renderSystemDebt() {
-    if (!pedidosRawAdmin) return;
-
-    // Filtramos: Entregados Y que no te hayan pagado el fee
-    const deudaOrders = pedidosRawAdmin.filter(p => 
-        p.estado === 'Entregado' && 
-        (p.pago_sistema === 'Pendiente' || !p.pago_sistema)
-    );
-
-    let totalDeuda = 0;
-    const idsDeuda =[];
-    let htmlDetalles = ''; // <-- NUEVO: Variable para armar la tabla
-
-    deudaOrders.forEach(p => {
-        // 1. Detectar Cantidad (Qty)
-        let qty = 1;
-        const match = p.producto.match(/^(\d+)x/);
-        if (match) qty = parseInt(match[1]);
-
-        // 2. Limpiar valores monetarios
-        const totalVenta = parseFloat(p.total) || 0;
-        const mensajeria = parseFloat(p.costo_mensajeria) || 0;
-
-        // 3. Calcular Precio Unitario Real del Equipo
-        const precioUnitario = (totalVenta - mensajeria) / qty;
-
-        // 4. Calcular Tarifa Unitaria
-        const feeUnitario = calculateDevFee(precioUnitario);
-        
-        // 5. Calcular Tarifa Total del Pedido
-        const feeTotalPedido = feeUnitario * qty;
-        
-        if (feeTotalPedido > 0) { // Solo sumamos y mostramos si la tarifa es mayor a 0
-            totalDeuda += feeTotalPedido;
-            idsDeuda.push(p.id);
-
-            // <-- NUEVO: Vamos dibujando la fila para el Modal
-            const fecha = new Date(p.fecha).toLocaleDateString();
-            htmlDetalles += `
+    if (!deudaSistemaResumen) return;
+    const totalDeuda = Number(deudaSistemaResumen.total) || 0;
+    const pedidosCount = Number(deudaSistemaResumen.pedidos) || 0;
+    const htmlDetalles = deudaSistemaLineas
+        .filter(line => line.estado === 'pendiente')
+        .map(line => {
+            const fecha = new Date(line.fecha_pedido).toLocaleDateString();
+            const producto = vaultSafeText(line.producto);
+            return `
                 <tr class="hover:bg-slate-800/50 transition-colors">
                     <td class="p-3 align-middle">
-                        <span class="font-black text-slate-200">#${p.orden_dia || 'S/N'}</span><br>
+                        <span class="font-black text-slate-200">#${vaultSafeText(line.orden_dia || 'S/N')}</span><br>
                         <span class="text-[9px] text-slate-500">${fecha}</span>
                     </td>
-                    <td class="p-3 align-middle font-bold text-xs truncate max-w-[200px]" title="${p.producto}">${p.producto}</td>
-                    <td class="p-3 align-middle text-right font-mono text-slate-400">$${precioUnitario.toFixed(2)}</td>
-                    <td class="p-3 align-middle text-right font-mono text-indigo-400">$${feeUnitario.toFixed(2)}</td>
-                    <td class="p-3 align-middle text-center font-bold text-slate-300">x${qty}</td>
-                    <td class="p-3 align-middle text-right font-mono font-black text-emerald-400">$${feeTotalPedido.toFixed(2)}</td>
-                </tr>
-            `;
-        }
-    });
+                    <td class="p-3 align-middle font-bold text-xs truncate max-w-[200px]" title="${producto}">${producto}</td>
+                    <td class="p-3 align-middle text-right font-mono text-slate-400">$${Number(line.precio_unitario).toFixed(2)}</td>
+                    <td class="p-3 align-middle text-right font-mono text-indigo-400">$${Number(line.tarifa_unitaria).toFixed(2)}</td>
+                    <td class="p-3 align-middle text-center font-bold text-slate-300">x${Number(line.cantidad)}</td>
+                    <td class="p-3 align-middle text-right font-mono font-black text-emerald-400">$${Number(line.tarifa_total).toFixed(2)}</td>
+                </tr>`;
+        }).join('');
 
     // Actualizar UI de la Tarjeta Principal
     const elAmount = document.getElementById('sys-debt-amount');
@@ -1740,7 +1748,7 @@ function renderSystemDebt() {
     const btnDetails = document.getElementById('btn-details-sys');
 
     if(elAmount) elAmount.innerText = `$${totalDeuda.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-    if(elCount) elCount.innerText = `${idsDeuda.length} pedidos por procesar`;
+    if(elCount) elCount.innerText = `${pedidosCount} pedidos por procesar`;
 
     // Actualizar UI del Modal de Desglose
     const listContainer = document.getElementById('list-sys-details');
@@ -1753,7 +1761,6 @@ function renderSystemDebt() {
     }
 
     if(btn) {
-        btn.dataset.ids = JSON.stringify(idsDeuda);
         if (totalDeuda === 0) {
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -1788,13 +1795,11 @@ function closeSystemDebtDetails() {
 // 2. FUNCIÓN PARA COBRAR (LIQUIDAR)
 async function liquidarSystemFee() {
     const btn = document.getElementById('btn-pay-sys');
-    const ids = JSON.parse(btn.dataset.ids || "[]");
-    
-    if (ids.length === 0) return;
+    if (!deudaSistemaResumen || Number(deudaSistemaResumen.pedidos) === 0) return;
 
     const monto = document.getElementById('sys-debt-amount').innerText;
 
-    const confirmacion = confirm(`¿Confirmas que Ángel te ha pagado ${monto} por el uso de la plataforma?\n\nEsto marcará ${ids.length} pedidos como "Pagado al Sistema".`);
+    const confirmacion = confirm(`¿Confirmas que Ángel te ha pagado ${monto} por el uso de la plataforma?\n\nEsto liquidará ${deudaSistemaResumen.pedidos} pedidos y generará un comprobante contable.`);
     
     if (!confirmacion) return;
 
@@ -1802,15 +1807,17 @@ async function liquidarSystemFee() {
     btn.disabled = true;
 
     try {
-        // Actualizamos en lote en Supabase
-        const { error } = await supabaseClient
-            .from('pedidos')
-            .update({ pago_sistema: 'Pagado' })
-            .in('id', ids);
+        const reference = prompt('Referencia o nota del pago (opcional):') || '';
+        const user = session.data || {};
+        const { data, error } = await supabaseClient.rpc('liquidar_deuda_sistema', {
+            p_admin_id: user.id || null,
+            p_password: user.password,
+            p_referencia: reference
+        });
 
         if (error) throw error;
 
-        alert("✅ ¡Pago Registrado! El contador se ha reiniciado.");
+        alert(`✅ Pago registrado.\nComprobante: ${data.id}\nPedidos: ${data.pedidos}\nTotal: $${Number(data.total).toFixed(2)}`);
         
         // Recargar datos
         loadAdminData(); 
