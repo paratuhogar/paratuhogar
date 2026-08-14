@@ -21,6 +21,9 @@ test('la bóveda escucha cambios de pedidos y refresca la deuda', async () => {
   assert.match(html, /removeChannel/);
   assert.match(html, /vaultDebtRefreshPending/);
   assert.match(html, /rpc\(['"]listar_pedidos_boveda['"]/);
+  assert.match(html, /\.range\(pageStart,\s*pageStart\s*\+\s*pageSize\s*-\s*1\)/);
+  assert.match(html, /while\s*\(page\.length\s*===\s*pageSize\)/);
+  assert.match(html, /Error al actualizar/);
   assert.match(sql, /alter publication supabase_realtime add table public\.pedidos/i);
   assert.match(secureSql, /es_admin_boveda\(p_admin_id,p_password\)/i);
   assert.match(secureSql, /security definer/i);

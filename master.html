@@ -657,12 +657,22 @@ async function loadAdminData() {
         // pedidos directamente con la clave pública puede ocultar filas por RLS.
         const user = session.data || {};
         if (!user.password) throw new Error('La sesión no contiene una credencial administrativa válida.');
-        const { data, error } = await supabaseClient.rpc('listar_pedidos_boveda', {
-            p_admin_id: user.id || null,
-            p_password: user.password
-        });
-
-        if (error) throw error;
+        const pageSize = 1000;
+        let pageStart = 0;
+        let page = [];
+        const data = [];
+        do {
+            const response = await supabaseClient
+                .rpc('listar_pedidos_boveda', {
+                    p_admin_id: user.id || null,
+                    p_password: user.password
+                })
+                .range(pageStart, pageStart + pageSize - 1);
+            if (response.error) throw response.error;
+            page = response.data || [];
+            data.push(...page);
+            pageStart += pageSize;
+        } while (page.length === pageSize);
 
         // 2. Guardar en memoria
         pedidosRawAdmin = data || [];
@@ -677,6 +687,10 @@ async function loadAdminData() {
         }
     } catch (error) {
         console.error("Error cargando pedidos maestros:", error);
+        const amount = document.getElementById('sys-debt-amount');
+        const count = document.getElementById('sys-debt-count');
+        if (amount) amount.textContent = 'Error al actualizar';
+        if (count) count.textContent = 'La deuda no pudo cargarse. Reintenta en unos segundos.';
     } finally {
         vaultDebtLoadInProgress = false;
         if (vaultDebtRefreshPending) {
