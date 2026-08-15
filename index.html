@@ -34,6 +34,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
+    <script src="js/product-description-editor.js?v=20260815-1"></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -46,6 +47,8 @@
         const PTH_INTERNAL_ASSETS_VERSION = '2026-08-02-f1';
         const PTH_ASSET_TIMEOUT_MS = 8000;
         let pthInternalAssetsPromise = null;
+        let pthProductEditorAssetsPromise = null;
+        let quill = null;
 
         function pthLoadStylesheet(href, id) {
             if (document.getElementById(id)) return Promise.resolve();
@@ -97,15 +100,25 @@
             });
         }
 
+        function loadProductEditorAssets() {
+            if (pthProductEditorAssetsPromise) return pthProductEditorAssetsPromise;
+            pthProductEditorAssetsPromise = Promise.all([
+                pthLoadStylesheet('https://cdn.quilljs.com/1.3.6/quill.snow.css', 'pth-quill-css'),
+                pthLoadScript('https://cdn.quilljs.com/1.3.6/quill.js', 'pth-quill-js')
+            ]).catch(error => {
+                console.warn('Editor enriquecido no disponible; se usará el editor básico:', error.message);
+                return null;
+            });
+            return pthProductEditorAssetsPromise;
+        }
+
         function loadInternalAssets() {
             if (pthInternalAssetsPromise) return pthInternalAssetsPromise;
             pthInternalAssetsPromise = (async () => {
                 const version = encodeURIComponent(PTH_INTERNAL_ASSETS_VERSION);
                 await Promise.all([
-                    pthLoadStylesheet('https://cdn.quilljs.com/1.3.6/quill.snow.css', 'pth-quill-css'),
                     pthLoadScript('https://cdn.jsdelivr.net/npm/chart.js', 'pth-chart-js'),
                     pthLoadScript('https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js', 'pth-xlsx-js'),
-                    pthLoadScript('https://cdn.quilljs.com/1.3.6/quill.js', 'pth-quill-js'),
                     pthLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'pth-jszip-js'),
                     pthLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'pth-jspdf-js')
                 ]);
@@ -258,9 +271,15 @@
         /* ESTILOS DEL EDITOR WORD */
         .ql-container { height: 200px; font-family: 'Manrope', sans-serif; font-size: 14px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
         .ql-toolbar { border-top-left-radius: 12px; border-top-right-radius: 12px; background: #f9fafb; }
+        #editor-container.product-description-fallback { min-height: 200px; max-height: 55vh; overflow-y: auto; padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; color: #111827; line-height: 1.6; white-space: pre-wrap; -webkit-user-select: text; user-select: text; touch-action: manipulation; }
+        #editor-container.product-description-fallback:focus { outline: 2px solid #1a4789; outline-offset: 2px; }
         
         /* CORRECCIONES MÓVIL */
         @media (max-width: 768px) {
+            #modal-producto { padding: 8px 8px max(24px, env(safe-area-inset-bottom)); }
+            #modal-producto > div { padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 20px)); }
+            #editor-container, #editor-container .ql-editor { min-height: 240px; }
+            #editor-container.product-description-fallback { max-height: none; }
             #sec-admin-master .grid-cols-1, #sec-admin-master .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
             .overflow-x-auto { margin: 0 -15px; padding: 0 15px; }
             table { min-width: 500px !important; }
@@ -3411,14 +3430,9 @@ checkShortLinks();
     if (savedSession) {
         // Solo los usuarios internos necesitan gráficas, Excel, editor, ZIP y PDF.
         // La sesión puede continuar aunque una herramienta secundaria no cargue.
-        await loadInternalAssets();
-        if (document.getElementById('editor-container') && typeof Quill !== 'undefined') {
-            quill = new Quill('#editor-container', {
-                theme: 'snow',
-                placeholder: 'Descripción...',
-                modules: { toolbar: [['bold', 'italic'], [{ 'color': [] }]] }
-            });
-        }
+        quill = ProductDescriptionEditorApi.ensureProductDescriptionEditor({ currentEditor: quill });
+        await Promise.all([loadProductEditorAssets(), loadInternalAssets()]);
+        quill = ProductDescriptionEditorApi.ensureProductDescriptionEditor({ QuillCtor: window.Quill, currentEditor: quill });
         const s = JSON.parse(savedSession);
         window.currentUserData = s.data || {}; 
         setupSession(s.name, s.isAdmin);
@@ -9913,9 +9927,7 @@ function openModalProd() {
     if(form) form.reset();
     
     // 3. Limpiar el editor de texto (Quill)
-    if (typeof quill !== 'undefined' && quill !== null) {
-        quill.root.innerHTML = "";
-    }
+    ProductDescriptionEditorApi.writeProductDescription('', { editor: quill });
 
     // 4. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
     for (let i = 0; i < 4; i++) {
@@ -10120,7 +10132,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         precio: parseFloat(document.getElementById('p-precio').value),
         comision: parseFloat(document.getElementById('p-comision').value) || 0,
         categoria: categoriaInput,
-        descripcion: (typeof quill !== 'undefined') ? quill.root.innerHTML : document.getElementById('p-desc').value, 
+        descripcion: ProductDescriptionEditorApi.readProductDescription({ editor: quill }),
         
         thumbnail: document.getElementById('img-path-0').value || imgName,
         image1: document.getElementById('img-path-1').value,
@@ -10327,14 +10339,8 @@ function clearImageSlot(event, index) {
         }
 
         // 4. Cargar Descripción en el Editor Quill
-        if (typeof quill !== 'undefined' && quill) {
-            quill.root.innerHTML = p.descripcion || "";
-        } else {
-            console.warn("Editor Quill no activo o no definido.");
-            // Intento de recuperación si no existe:
-            const editorDiv = document.getElementById('editor-container');
-            if(editorDiv) editorDiv.innerHTML = p.descripcion || ""; 
-        }
+        quill = ProductDescriptionEditorApi.ensureProductDescriptionEditor({ QuillCtor: window.Quill, currentEditor: quill });
+        ProductDescriptionEditorApi.writeProductDescription(p.descripcion || '', { editor: quill });
 
         // 5. Cargar Fotos (Modo GitHub Texto)
         const fotos = [p.thumbnail, p.image1, p.image2, p.image3];
@@ -13518,9 +13524,7 @@ async function magicPasteProduct() {
         document.getElementById('p-comision').value = (precio > 100) ? 15 : 5;
 
         // Descripción en Editor
-        if (typeof quill !== 'undefined') {
-            quill.root.innerHTML = cleanText.replace(/\n/g, '<br>');
-        }
+        ProductDescriptionEditorApi.writeProductDescription(cleanText.replace(/\n/g, '<br>'), { editor: quill });
 
     } catch (err) {
         console.error(err);
@@ -13865,7 +13869,7 @@ async function superMagicAI() {
         const precioNum = parseFloat(resultado.precio) || 0;
         document.getElementById('p-comision').value = (precioNum > 100) ? 15 : 5;
 
-        if (typeof quill !== 'undefined') quill.root.innerHTML = resultado.descripcion_html || "";
+        ProductDescriptionEditorApi.writeProductDescription(resultado.descripcion_html || '', { editor: quill });
 
         btn.className = "w-2/3 bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2";
         btn.innerHTML = `¡ÉXITO!`;
