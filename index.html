@@ -6082,6 +6082,14 @@ function changeQty(index, delta) {
     
 
 
+function buildSubgestorWhatsappSummary(orderSubgestor, totalCommission) {
+    const parentName = String(orderSubgestor?.parent?.nombre || 'No asignado').trim();
+    const subgestorName = String(orderSubgestor?.agent?.nombre || 'No asignado').trim();
+    const commission = Number(totalCommission) || 0;
+
+    return `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nGestor responsable: ${parentName}\nSubgestor: ${subgestorName}\nComisión total del pedido: $${commission}\n`;
+}
+
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
 // 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
@@ -6428,7 +6436,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vueltoC}\n`;
 
         if (orderSubgestor) {
-            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nGestor principal: ${orderSubgestor.parent.nombre}\nSubgestor: ${orderSubgestor.agent.nombre}\nComisión subgestor: $${comisionTotalVale}\nComisión gestor principal: $${Math.max(0, comisionOriginalPoolVale - comisionTotalVale)}\n`;
+            mensajeRaw += buildSubgestorWhatsappSummary(orderSubgestor, comisionOriginalPoolVale);
         } else if (isLogged) {
             mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
         }
