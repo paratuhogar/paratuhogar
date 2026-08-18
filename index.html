@@ -1412,7 +1412,7 @@
                 <input id="commission-request-amount" type="number" readonly class="mt-2 w-full rounded-xl border-slate-200 bg-slate-100 px-4 py-3 font-black text-slate-800">
                 <label class="mt-4 block text-[10px] font-black uppercase text-slate-600">Forma de pago</label>
                 <select id="commission-request-method" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-bold"><option value="efectivo_usd">Efectivo en USD</option><option value="transferencia_cup">Transferencia en CUP</option></select>
-                <p class="mt-4 rounded-xl bg-amber-50 p-3 text-[10px] font-bold leading-relaxed text-amber-800">Puedes solicitar hasta el domingo. Lunes y martes el sistema no acepta solicitudes. El pago se realiza el martes.</p>
+                <p class="mt-4 rounded-xl bg-amber-50 p-3 text-[10px] font-bold leading-relaxed text-amber-800">Puedes solicitar de miércoles a lunes. El martes el sistema procesa los pagos y no acepta solicitudes.</p>
                 <button id="commission-submit-request" onclick="submitCommissionPayoutRequest()" class="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-4 text-xs font-black uppercase text-white">Enviar solicitud</button>
             </div>
         </div>
@@ -7048,12 +7048,9 @@ function getHavanaWeekday() {
 }
 
 function isPayoutRequestWindowOpen() {
-    const havanaDate = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Havana', year: 'numeric', month: '2-digit', day: '2-digit'
-    }).format(new Date());
-    // Excepción extraordinaria: el lunes 10/08/2026 se reciben solicitudes.
-    if (havanaDate === '2026-08-10') return true;
-    return ![1, 2].includes(getHavanaWeekday());
+    // Ventana semanal: miércoles 00:00 a lunes 23:59, hora de La Habana.
+    // El martes se reserva para procesar los pagos.
+    return getHavanaWeekday() !== 2;
 }
 
 async function loadMyPayoutRequests() {
@@ -7159,8 +7156,8 @@ function renderCommissionCenter() {
     const requestButton = document.getElementById('commission-request-button');
     if (note) {
         note.textContent = contact.isSubmanager
-            ? `Tus comisiones están respaldadas por ventas entregadas. Puedes solicitarlas de miércoles a domingo; el pago se procesa el martes.`
-            : 'Cada importe está respaldado por una venta entregada. Solicita el cobro de miércoles a domingo; el pago se realiza el martes.';
+            ? `Tus comisiones están respaldadas por ventas entregadas. Puedes solicitarlas de miércoles a lunes; el pago se procesa el martes.`
+            : 'Cada importe está respaldado por una venta entregada. Solicita el cobro de miércoles a lunes; el pago se realiza el martes.';
     }
     if (step) {
         step.textContent = 'Elige cuánto cobrar y si lo recibirás en efectivo USD o por transferencia en CUP.';
@@ -7254,7 +7251,7 @@ function requestCommissionSettlement() {
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
         return;
     }
-    if (!isPayoutRequestWindowOpen()) return alert('Las solicitudes se reciben de miércoles a domingo. Los lunes y martes el botón permanece cerrado.');
+    if (!isPayoutRequestWindowOpen()) return alert('Las solicitudes se reciben de miércoles a lunes. El martes el sistema procesa los pagos y no acepta solicitudes.');
     if (data.pendingTotal <= 0) return alert('No tienes saldo disponible para solicitar.');
     commissionSelectedOrderIds = new Set();
     const ordersContainer = document.getElementById('commission-request-orders');
