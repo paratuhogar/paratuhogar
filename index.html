@@ -34,7 +34,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
-    <script src="js/product-description-editor.js?v=20260815-1"></script>
+    <script src="js/product-description-editor.js?v=20260818-1"></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -9931,8 +9931,12 @@ function openModalProd() {
     const form = document.getElementById('form-nuevo-prod');
     if(form) form.reset();
     
-    // 3. Limpiar el editor de texto (Quill)
-    ProductDescriptionEditorApi.writeProductDescription('', { editor: quill });
+    // 3. Preparar el editor cada vez que se crea un producto. Si Quill no
+    // está disponible, se activa el modo básico para que siga siendo escribible.
+    quill = ProductDescriptionEditorApi.resetProductDescriptionEditor({
+        QuillCtor: window.Quill,
+        currentEditor: quill
+    });
 
     // 4. Limpiar las 4 imágenes (Rutas, Previsualizaciones e Iconos)
     for (let i = 0; i < 4; i++) {

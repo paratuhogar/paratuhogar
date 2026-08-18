@@ -35,9 +35,14 @@
     if (editor?.root) editor.root.innerHTML = value;
     else { const element = getElement(documentRef); if (element) element.innerHTML = value; }
   }
+  function resetProductDescriptionEditor({ documentRef = typeof document !== 'undefined' ? document : null, QuillCtor = typeof Quill !== 'undefined' ? Quill : undefined, currentEditor = null } = {}) {
+    const editor = ensureProductDescriptionEditor({ documentRef, QuillCtor, currentEditor });
+    writeProductDescription('', { documentRef, editor });
+    return editor;
+  }
   function readProductDescription({ documentRef = typeof document !== 'undefined' ? document : null, editor = null } = {}) {
     if (editor?.root) return editor.root.innerHTML;
     return getElement(documentRef)?.innerHTML || '';
   }
-  return { ensureProductDescriptionEditor, readProductDescription, writeProductDescription };
+  return { ensureProductDescriptionEditor, readProductDescription, resetProductDescriptionEditor, writeProductDescription };
 });

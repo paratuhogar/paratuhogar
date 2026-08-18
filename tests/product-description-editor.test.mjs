@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { ensureProductDescriptionEditor, readProductDescription, writeProductDescription } = require('../js/product-description-editor.js');
+const { ensureProductDescriptionEditor, readProductDescription, resetProductDescriptionEditor, writeProductDescription } = require('../js/product-description-editor.js');
 
 function makeEditorElement() {
   const attributes = new Map();
@@ -36,4 +36,15 @@ test('usa la raíz de Quill cuando el editor enriquecido está activo', () => {
   assert.equal(editor.root.innerHTML, '<p>Con formato</p>');
   assert.equal(readProductDescription({ documentRef, editor }), '<p>Con formato</p>');
   assert.notEqual(element.getAttribute('contenteditable'), 'true');
+});
+
+test('al abrir un producto nuevo reactiva el editor básico y limpia la descripción', () => {
+  const element = makeEditorElement();
+  element.innerHTML = '<p>Descripción anterior</p>';
+  const documentRef = { getElementById: id => id === 'editor-container' ? element : null };
+  const editor = resetProductDescriptionEditor({ documentRef, QuillCtor: undefined });
+
+  assert.equal(editor, null);
+  assert.equal(element.getAttribute('contenteditable'), 'true');
+  assert.equal(element.innerHTML, '');
 });
