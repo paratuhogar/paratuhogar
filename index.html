@@ -6087,7 +6087,7 @@ function buildSubgestorWhatsappSummary(orderSubgestor, totalCommission) {
     const subgestorName = String(orderSubgestor?.agent?.nombre || 'No asignado').trim();
     const commission = Number(totalCommission) || 0;
 
-    return `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nGestor responsable: ${parentName}\nSubgestor: ${subgestorName}\nComisión total del pedido: $${commission}\n`;
+    return `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${parentName}\nSubgestor: ${subgestorName}\nComisión total del pedido: $${commission}\n`;
 }
 
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)

@@ -18,16 +18,17 @@ async function formatSubgestorWhatsappSummary({ parentName, subgestorName, total
   return context.result;
 }
 
-test('el aviso de WhatsApp de subgestor muestra responsable y total sin revelar el reparto', async () => {
+test('el aviso de WhatsApp de subgestor muestra comercial y total sin revelar el reparto', async () => {
   const message = await formatSubgestorWhatsappSummary({
     parentName: 'Beatriz Barrero',
     subgestorName: 'Raiselys',
     totalCommission: 3
   });
 
-  assert.match(message, /Gestor responsable: Beatriz Barrero/);
+  assert.match(message, /Comercial: Beatriz Barrero/);
   assert.match(message, /Subgestor: Raiselys/);
   assert.match(message, /Comisión total del pedido: \$3/);
+  assert.doesNotMatch(message, /Gestor responsable:/);
   assert.doesNotMatch(message, /Comisión subgestor:/);
   assert.doesNotMatch(message, /Comisión gestor principal:/);
 });
