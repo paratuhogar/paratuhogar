@@ -1402,8 +1402,8 @@
             </div>
         </section>
 
-        <div id="commission-request-modal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
-            <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+        <div id="commission-request-modal" class="fixed inset-0 z-[200] hidden items-start justify-center overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm sm:items-center">
+            <div class="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between"><div><p class="text-[10px] font-black uppercase tracking-widest text-emerald-700">Solicitud semanal</p><h3 class="mt-1 text-xl font-black text-slate-900">¿Cuánto deseas cobrar?</h3></div><button onclick="closeCommissionRequestModal()" class="rounded-full bg-slate-100 p-2"><span class="material-symbols-outlined">close</span></button></div>
                 <div class="mt-5 rounded-2xl bg-emerald-50 p-4"><span class="text-[9px] font-black uppercase text-emerald-700">Saldo disponible</span><strong id="commission-modal-available" class="mt-1 block text-2xl font-black text-emerald-900">$0.00</strong></div>
                 <div class="mt-5 flex items-center justify-between"><label class="block text-[10px] font-black uppercase text-slate-600">Pedidos que deseas cobrar</label><button type="button" onclick="fillFullCommissionAmount()" class="rounded-lg bg-emerald-100 px-3 py-2 text-[9px] font-black uppercase text-emerald-800">Seleccionar todos</button></div>
