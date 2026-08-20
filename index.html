@@ -7088,6 +7088,12 @@ function getOrderCommission(order) {
     return total;
 }
 
+function getActiveCommissionReservationTotal(requests) {
+    return (Array.isArray(requests) ? requests : [])
+        .filter(request => ['pendiente', 'procesando'].includes(String(request?.estado || '').toLowerCase()))
+        .reduce((total, request) => total + (Number(request?.importe_usd) || 0), 0);
+}
+
 function getCommissionCenterData() {
     const orders = Array.isArray(myOrdersData) ? myOrdersData : [];
     const delivered = orders.filter(order => order.estado === 'Entregado' && getOrderCommission(order) > 0);
@@ -7098,9 +7104,7 @@ function getCommissionCenterData() {
         && order.estado !== 'Cancelado'
         && getOrderCommission(order) > 0);
     const sum = list => list.reduce((total, order) => total + getOrderCommission(order), 0);
-    const reservedTotal = commissionPayoutRequests
-        .filter(request => !['rechazado'].includes(String(request.estado || '').toLowerCase()))
-        .reduce((total, request) => total + (Number(request.importe_usd) || 0), 0);
+    const reservedTotal = getActiveCommissionReservationTotal(commissionPayoutRequests);
     const requestedPaidTotal = commissionPayoutRequests
         .filter(request => ['pagado', 'archivado'].includes(String(request.estado || '').toLowerCase()))
         .reduce((total, request) => total + (Number(request.importe_usd) || 0), 0);
