@@ -17024,7 +17024,10 @@ function agregarNuevoProveedor() {
                             gestor: gestorActual,
                             producto_id: p.id,
                             nuevo_precio: saved.nuevo_precio,
-                            comision_subgestor: halfComm
+                            comision_subgestor: halfComm,
+                            // No se debe perder una decisión expresa de ocultar un producto.
+                            // Las filas antiguas sin decisión se normalizan como visibles.
+                            visible_subgestor: saved.visible_subgestor !== false
                         });
                     } else {
                         // Si es un producto totalmente nuevo para este gestor, va a la lista de INSERT (absolutamente sin ID)
@@ -17032,7 +17035,9 @@ function agregarNuevoProveedor() {
                             gestor: gestorActual,
                             producto_id: p.id,
                             nuevo_precio: p.precio,
-                            comision_subgestor: halfComm
+                            comision_subgestor: halfComm,
+                            // No dependemos del valor por defecto de la base de datos.
+                            visible_subgestor: true
                         });
                     }
                 }
