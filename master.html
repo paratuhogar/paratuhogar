@@ -1178,6 +1178,14 @@ function vaultSafeText(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
 
+function getVaultPayoutAdvance(item) {
+    return Math.max(0, Number(item?.adelantado_usd) || 0);
+}
+
+function getVaultPayoutRemaining(item) {
+    return Math.max(0, (Number(item?.importe_usd) || 0) - getVaultPayoutAdvance(item));
+}
+
 async function loadVaultPayoutRequests() {
     const user = session.data || {};
     const list = document.getElementById('vault-payout-list');
@@ -1199,7 +1207,7 @@ async function loadVaultPayoutRequests() {
     const rows = data || [];
     const totals = rows.reduce((acc,item) => {
         const state = String(item.estado || 'pendiente');
-        if (['pendiente','procesando'].includes(state)) acc.total += Number(item.importe_usd) || 0;
+        if (['pendiente','procesando'].includes(state)) acc.total += getVaultPayoutRemaining(item);
         acc[state] = (acc[state] || 0) + 1;
         return acc;
     }, { total: 0 });
@@ -1220,11 +1228,32 @@ async function loadVaultPayoutRequests() {
         const role = item.tipo_solicitante === 'subgestor'
             ? `<span class="block text-[8px] font-black uppercase text-violet-400">Subgestor de ${vaultSafeText(item.parent_nombre || 'gestor')}</span>`
             : '<span class="block text-[8px] font-black uppercase text-slate-500">Gestor principal</span>';
-        const actions = ['pendiente','procesando'].includes(String(item.estado || '').toLowerCase())
-            ? `<button title="Confirmar que el dinero ya fue entregado" onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-3 py-2 text-[8px] font-black uppercase text-white">Marcar pagado</button>`
+        const active = ['pendiente','procesando'].includes(String(item.estado || '').toLowerCase());
+        const requestedAmount = Number(item.importe_usd) || 0;
+        const advancedAmount = getVaultPayoutAdvance(item);
+        const remainingAmount = getVaultPayoutRemaining(item);
+        const actions = active
+            ? `<div class="flex justify-end gap-2"><button title="Registrar un dinero entregado antes del pago final" onclick="registerVaultPayoutAdvance('${item.id}',${remainingAmount})" class="rounded-lg bg-amber-500 px-3 py-2 text-[8px] font-black uppercase text-slate-950">Adelantar</button><button title="Confirmar la liquidación del saldo restante" onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-3 py-2 text-[8px] font-black uppercase text-white">Liquidar $${remainingAmount.toFixed(2)}</button></div>`
             : '—';
-        return `<tr class="border-t border-slate-800"><td class="p-4 font-black text-white">${vaultSafeText(item.gestor_nombre)}${role}</td><td class="p-4 text-slate-300">${vaultSafeText(item.gestor_telefono || '—')}</td><td class="p-4 text-base font-black text-emerald-400">$${Number(item.importe_usd).toFixed(2)}</td><td class="p-4 font-bold text-slate-300">${method}</td><td class="p-4 text-[10px] text-slate-400">${requested}<span class="block font-black text-violet-400">Martes ${vaultSafeText(item.fecha_pago_prevista)}</span></td><td class="p-4"><span class="rounded-full bg-slate-800 px-2 py-1 text-[8px] font-black uppercase text-slate-300">${vaultSafeText(item.estado)}</span></td><td class="p-4 text-right">${actions}</td></tr>`;
+        return `<tr class="border-t border-slate-800"><td class="p-4 font-black text-white">${vaultSafeText(item.gestor_nombre)}${role}</td><td class="p-4 text-slate-300">${vaultSafeText(item.gestor_telefono || '—')}</td><td class="p-4 text-base font-black text-emerald-400"><span class="block">Restante $${remainingAmount.toFixed(2)}</span><span class="mt-1 block text-[9px] font-bold text-slate-400">Solicitado $${requestedAmount.toFixed(2)} · Adelantado $${advancedAmount.toFixed(2)}</span></td><td class="p-4 font-bold text-slate-300">${method}</td><td class="p-4 text-[10px] text-slate-400">${requested}<span class="block font-black text-violet-400">Martes ${vaultSafeText(item.fecha_pago_prevista)}</span></td><td class="p-4"><span class="rounded-full bg-slate-800 px-2 py-1 text-[8px] font-black uppercase text-slate-300">${vaultSafeText(item.estado)}</span></td><td class="p-4 text-right">${actions}</td></tr>`;
     }).join('');
+}
+
+async function registerVaultPayoutAdvance(id, remaining) {
+    const amount = Number(prompt(`Adelanto a registrar (máximo $${Number(remaining).toFixed(2)}):`) || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (amount > Number(remaining) + 0.001) return alert(`El adelanto no puede superar $${Number(remaining).toFixed(2)}.`);
+    const note = prompt('Nota o motivo del adelanto (opcional):') || '';
+    const user = session.data || {};
+    const { error } = await supabaseClient.rpc('registrar_adelanto_solicitud_cobro', {
+        p_admin_id: user.id || null,
+        p_password: user.password,
+        p_solicitud_id: id,
+        p_importe_usd: Math.round(amount * 100) / 100,
+        p_nota: note
+    });
+    if (error) return alert(error.message);
+    await Promise.all([loadVaultPayoutRequests(), loadNomina()]);
 }
 
 async function manageVaultPayout(id, action) {
@@ -1234,7 +1263,7 @@ async function manageVaultPayout(id, action) {
         p_admin_id:user.id || null,p_password:user.password,p_solicitud_id:id,p_accion:action,p_referencia:reference
     });
     if (error) return alert(error.message);
-    await loadVaultPayoutRequests();
+    await Promise.all([loadVaultPayoutRequests(), loadNomina()]);
 }
 
 async function archiveVaultPaidRequests() {
@@ -1271,15 +1300,19 @@ async function loadNomina() {
 
     // B. Cargar Movimientos de Caja
     const { data: caja, error: errC } = await supabaseClient.from('caja_gestores').select('*');
+    const { data: adelantosSolicitudes, error: errA } = await supabaseClient
+        .from('solicitudes_cobro')
+        .select('gestor_nombre, adelantado_usd, estado')
+        .in('estado', ['pendiente', 'procesando']);
 
-    if(errP || errC) return console.error("Error datos nómina");
+    if(errP || errC || errA) return console.error("Error datos nómina");
 
     // C. Agrupar por Gestor
     const nomina = {};
 
     pedidos.forEach(p => {
         const g = p.gestor || 'Sin Gestor';
-        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] };
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [], tieneAdelantoSolicitud: false };
         
         // La Bóveda liquida la comisión completa al gestor principal.
         // El principal controla aparte el pago acordado con su subgestor.
@@ -1300,10 +1333,19 @@ async function loadNomina() {
 
     caja.forEach(c => {
         const g = c.gestor;
-        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] }; 
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [], tieneAdelantoSolicitud: false };
         
         if(c.tipo === 'Adelanto' || c.tipo === 'Multa') nomina[g].adelantos += Number(c.monto);
         else if (c.tipo === 'Bono') nomina[g].comision += Number(c.monto); 
+    });
+
+    (adelantosSolicitudes || []).forEach(solicitud => {
+        const g = solicitud.gestor_nombre;
+        const adelantado = Number(solicitud.adelantado_usd) || 0;
+        if (!adelantado) return;
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [], tieneAdelantoSolicitud: false };
+        nomina[g].adelantos += adelantado;
+        nomina[g].tieneAdelantoSolicitud = true;
     });
 
     // D. Renderizar Tabla
@@ -1338,10 +1380,10 @@ async function loadNomina() {
                     ${item.producto} 
                     <span class="text-emerald-400 font-mono inline-block ml-1">($${item.comision})</span>
                 </div>
-                <button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')" 
+                ${datos.tieneAdelantoSolicitud ? '<span class="text-[9px] font-bold text-amber-400">Gestionar desde solicitudes</span>' : `<button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')"
                     class="bg-slate-700 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[9px] font-bold uppercase transition-all shadow-sm active:scale-95 flex items-center gap-1">
                     <span class="material-symbols-outlined text-[10px]">payments</span> Pagar
-                </button>
+                </button>`}
             </div>
         `).join('');
         
@@ -1360,7 +1402,9 @@ async function loadNomina() {
                 $${totalPagar.toFixed(2)}
             </td>
             <td class="p-3 align-top text-center">
-                ${totalPagar > 0 ? 
+                ${datos.tieneAdelantoSolicitud ?
+                    `<button onclick="switchTab('solicitudes')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all w-full mb-1">VER SOLICITUD</button>`
+                    : totalPagar > 0 ?
                     `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
                         class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all w-full mb-1">
                         PAGAR TODO
