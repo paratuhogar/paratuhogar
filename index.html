@@ -7044,6 +7044,8 @@ function openGestorFollowups(filter = 'hoy') {
 let commissionCenterFilter = 'pending';
 let commissionPayoutRequests = [];
 let commissionSelectedOrderIds = new Set();
+let commissionReservedOrderIds = new Set();
+let commissionPayoutDetailsLoaded = false;
 
 function isBeatrizPayoutAdmin() {
     return String(window.currentUserData?.nombre || window.gestorName || '').trim().toLowerCase() === 'beatriz barrero'
@@ -7064,12 +7066,24 @@ function isPayoutRequestWindowOpen() {
 async function loadMyPayoutRequests() {
     const user = window.currentUserData || {};
     if (!user.id || !user.password) return;
-    const { data, error } = await supabaseClient.rpc('mis_solicitudes_cobro', { p_gestor_id: user.id, p_password: user.password });
-    if (error) {
+    commissionPayoutDetailsLoaded = false;
+    const [requestsResult, detailsResult] = await Promise.all([
+        supabaseClient.rpc('mis_solicitudes_cobro', { p_gestor_id: user.id, p_password: user.password }),
+        supabaseClient.rpc('mis_pedidos_solicitudes_cobro', { p_gestor_id: user.id, p_password: user.password })
+    ]);
+    if (requestsResult.error || detailsResult.error) {
+        const error = requestsResult.error || detailsResult.error;
         if (!/function|schema cache|does not exist/i.test(error.message || '')) console.error('No se pudieron cargar solicitudes:', error);
+        commissionPayoutRequests = [];
+        commissionReservedOrderIds = new Set();
+        closeCommissionRequestModal();
+        renderCommissionCenter();
         return;
     }
-    commissionPayoutRequests = data || [];
+    commissionPayoutRequests = requestsResult.data || [];
+    commissionReservedOrderIds = new Set((detailsResult.data || []).map(detail => String(detail.pedido_id)));
+    commissionPayoutDetailsLoaded = true;
+    closeCommissionRequestModal();
     renderCommissionCenter();
 }
 
@@ -7097,14 +7111,14 @@ function getActiveCommissionReservationTotal(requests) {
 function getCommissionCenterData() {
     const orders = Array.isArray(myOrdersData) ? myOrdersData : [];
     const delivered = orders.filter(order => order.estado === 'Entregado' && getOrderCommission(order) > 0);
-    const pending = delivered.filter(order => !isCommissionPaid(order));
+    const pending = delivered.filter(order =>
+        !isCommissionPaid(order) && !commissionReservedOrderIds.has(String(order.id)));
     const paid = delivered.filter(isCommissionPaid);
     const pipeline = orders.filter(order =>
         order.estado !== 'Entregado'
         && order.estado !== 'Cancelado'
         && getOrderCommission(order) > 0);
     const sum = list => list.reduce((total, order) => total + getOrderCommission(order), 0);
-    const reservedTotal = getActiveCommissionReservationTotal(commissionPayoutRequests);
     const requestedPaidTotal = commissionPayoutRequests
         .filter(request => ['pagado', 'archivado'].includes(String(request.estado || '').toLowerCase()))
         .reduce((total, request) => total + (Number(request.importe_usd) || 0), 0);
@@ -7113,7 +7127,7 @@ function getCommissionCenterData() {
         pending,
         paid,
         pipeline,
-        pendingTotal: Math.max(0, sum(pending) - reservedTotal),
+        pendingTotal: commissionPayoutDetailsLoaded ? sum(pending) : 0,
         paidTotal: sum(paid) + requestedPaidTotal,
         pipelineTotal: sum(pipeline)
     };
@@ -7175,9 +7189,11 @@ function renderCommissionCenter() {
         step.textContent = 'Elige cuánto cobrar y si lo recibirás en efectivo USD o por transferencia en CUP.';
     }
     if (requestButton) {
-        requestButton.disabled = data.pendingTotal <= 0 || !requestWindowOpen;
+        requestButton.disabled = data.pendingTotal <= 0 || !requestWindowOpen || !commissionPayoutDetailsLoaded;
         requestButton.innerHTML = !requestWindowOpen
             ? '<span class="material-symbols-outlined text-lg">event_busy</span> Disponible el miércoles'
+            : !commissionPayoutDetailsLoaded
+                ? '<span class="material-symbols-outlined text-lg">sync</span> Actualizando saldo'
             : data.pendingTotal > 0
                 ? '<span class="material-symbols-outlined text-lg">payments</span> Solicitar cobro'
                 : '<span class="material-symbols-outlined text-lg">check_circle</span> Sin saldo disponible';
@@ -7264,8 +7280,12 @@ function requestCommissionSettlement() {
         return;
     }
     if (!isPayoutRequestWindowOpen()) return alert('Las solicitudes se reciben de miércoles a lunes. El martes el sistema procesa los pagos y no acepta solicitudes.');
-    if (data.pendingTotal <= 0) return alert('No tienes saldo disponible para solicitar.');
-    commissionSelectedOrderIds = new Set();
+    if (!commissionPayoutDetailsLoaded) return alert('Estamos actualizando tus pedidos; inténtalo nuevamente en unos segundos.');
+    if (data.pendingTotal <= 0) {
+        closeCommissionRequestModal();
+        return alert('No tienes saldo disponible para solicitar.');
+    }
+    resetCommissionRequestForm();
     const ordersContainer = document.getElementById('commission-request-orders');
     ordersContainer.innerHTML = data.pending.map(order => `
         <label class="flex cursor-pointer items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
@@ -7281,9 +7301,23 @@ function requestCommissionSettlement() {
 }
 
 function closeCommissionRequestModal() {
+    resetCommissionRequestForm(true);
+}
+
+function resetCommissionRequestForm(closeModal = false) {
+    commissionSelectedOrderIds = new Set();
+    const ordersContainer = document.getElementById('commission-request-orders');
+    if (ordersContainer) ordersContainer.innerHTML = '';
+    const available = document.getElementById('commission-modal-available');
+    if (available) available.textContent = '$0.00';
+    const amount = document.getElementById('commission-request-amount');
+    if (amount) amount.value = '0.00';
+    if (!closeModal) return;
     const modal = document.getElementById('commission-request-modal');
     modal?.classList.add('hidden'); modal?.classList.remove('flex');
 }
+
+window.addEventListener('pageshow', () => resetCommissionRequestForm(true));
 
 function fillFullCommissionAmount() {
     const data = getCommissionCenterData();
