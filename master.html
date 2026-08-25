@@ -1289,6 +1289,7 @@ async function runVaultInactivityPolicy() {
 
         // 3. CARGA DE NÓMINA (CON DETALLE DE PRODUCTOS)
 async function loadNomina() {
+    const user = session.data || {};
     // A. Política vigente: toda comisión de un pedido ENTREGADO y no pagado
     // entra en nómina, aunque el pedido sea anterior al cambio o todavía no
     // haya sido conciliado con el proveedor.
@@ -1300,12 +1301,22 @@ async function loadNomina() {
 
     // B. Cargar Movimientos de Caja
     const { data: caja, error: errC } = await supabaseClient.from('caja_gestores').select('*');
-    const { data: adelantosSolicitudes, error: errA } = await supabaseClient
-        .from('solicitudes_cobro')
-        .select('gestor_nombre, adelantado_usd, estado')
-        .in('estado', ['pendiente', 'procesando']);
+    const { data: adelantosSolicitudes, error: errA } = await supabaseClient.rpc(
+        'listar_adelantos_solicitudes_nomina',
+        { p_admin_id: user.id || null, p_password: user.password || null }
+    );
 
-    if(errP || errC || errA) return console.error("Error datos nómina");
+    if(errP || errC || errA) {
+        const error = errP || errC || errA;
+        console.error("Error datos nómina", error);
+        const tbody = document.getElementById('list-nomina');
+        const selectGestor = document.getElementById('wallet-gestor');
+        const elTotalGlobal = document.getElementById('total-global-nomina');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-amber-300 font-semibold">No se pudo cargar la nómina en este momento. Actualiza la página; si persiste, contacte a un administrador.</td></tr>';
+        if (selectGestor) selectGestor.innerHTML = '<option value="">No disponible temporalmente</option>';
+        if (elTotalGlobal) elTotalGlobal.innerText = '$0.00';
+        return;
+    }
 
     // C. Agrupar por Gestor
     const nomina = {};
