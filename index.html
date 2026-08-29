@@ -11949,16 +11949,31 @@ async function processLogin() {
     let gestorAprobado = null;
 
     try {
-            // Limpiamos caracteres no numéricos por si escribe su número de teléfono
+            // Limpiamos caracteres no numéricos por si escribe su número de teléfono.
+            // El primer nombre también es válido (p. ej. "Juanita" para Juanita García).
             const phoneSearch = user.replace(/\D/g, '');
+            const loginIdentity = user.replace(/["(),]/g, '').trim();
+            const loginNamePrefix = loginIdentity.split(/\s+/)[0];
 
-            // Buscamos por nombre (ilike), email o por teléfono limpio
-            const { data, error } = await supabaseClient
+            // Buscamos por nombre completo o prefijo de nombre, email o teléfono.
+            const exactResult = await supabaseClient
                 .from('gestores')
                 .select('*')
                 .eq('password', pass)
-                .or(`nombre.ilike."${user}",email.eq."${user}",telefono.eq."${phoneSearch || 'XYZ_NONE'}"`)
+                .or(`nombre.ilike."${loginIdentity}",email.eq."${loginIdentity}",telefono.eq."${phoneSearch || 'XYZ_NONE'}"`)
                 .maybeSingle();
+            let data = exactResult.data;
+            let error = exactResult.error;
+            if (!data && !error && loginNamePrefix && loginNamePrefix !== loginIdentity) {
+                const prefixResult = await supabaseClient
+                    .from('gestores')
+                    .select('*')
+                    .eq('password', pass)
+                    .ilike('nombre', `${loginNamePrefix}%`)
+                    .maybeSingle();
+                data = prefixResult.data;
+                error = prefixResult.error;
+            }
 
             if (error || !data) {
                 return alert("❌ Usuario o contraseña incorrectos.");
