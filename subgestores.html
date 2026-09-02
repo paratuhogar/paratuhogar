@@ -1308,7 +1308,7 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
             // Recuperación defensiva: nunca duplicar ni dejar un velo huérfano.
             removeTourOverlay();
             // Fondo atenuador
-            const backdrop = `<div id="tour-backdrop" class="fixed inset-0 bg-black/60 z-[4000] pointer-events-none transition-opacity duration-300"></div>`;
+            const backdrop = `<div id="tour-backdrop" class="fixed inset-0 bg-transparent z-[4000] pointer-events-none transition-opacity duration-300"></div>`;
             
             // Cartel Flotante
             const card = `
@@ -1364,13 +1364,15 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
                 document.getElementById('tour-card-step').innerText = `PASO ${currentTourStep + 1} DE ${tourSteps.length}`;
 
                 // Calcular posiciones
-                let topPos = rect.bottom + window.scrollY + 12;
-                let leftPos = rect.left + window.scrollX;
+                let topPos = rect.bottom + 12;
+                let leftPos = rect.left;
 
                 // Si se sale de la pantalla por abajo, lo colocamos arriba del elemento
-                if (topPos + card.offsetHeight > document.documentElement.scrollHeight) {
-                    topPos = rect.top + window.scrollY - card.offsetHeight - 12;
+                if (topPos + card.offsetHeight > window.innerHeight - 12) {
+                    topPos = rect.top - card.offsetHeight - 12;
                 }
+
+                topPos = Math.max(12, Math.min(topPos, window.innerHeight - card.offsetHeight - 12));
 
                 // Asegurar que no se salga por la derecha en móviles
                 if (leftPos + card.offsetWidth > window.innerWidth) {

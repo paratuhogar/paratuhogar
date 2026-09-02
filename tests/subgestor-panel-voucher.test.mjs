@@ -40,3 +40,11 @@ test('la nómina de subgestores ofrece reenviar el vale por WhatsApp', async () 
   assert.match(html, /sendSubgestorVoucher\(/);
   assert.match(html, /ENVIAR VALE/);
 });
+
+test('el tour móvil no oscurece la página y posiciona su tarjeta dentro de la ventana', async () => {
+  const html = await readFile(new URL('subgestores.html', root), 'utf8');
+
+  assert.doesNotMatch(html, /bg-black\/60/);
+  assert.match(html, /let topPos = rect\.bottom \+ 12;/);
+  assert.doesNotMatch(html, /let topPos = rect\.bottom \+ window\.scrollY \+ 12;/);
+});
