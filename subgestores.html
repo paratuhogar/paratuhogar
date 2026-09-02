@@ -620,6 +620,39 @@
             }
         }
 
+        function buildSubgestorApprovalVoucher(pedido, commercialName) {
+            const orderCode = String(pedido?.orden_dia || pedido?.id || '---').trim();
+            const dateValue = pedido?.fecha || pedido?.created_at || new Date().toISOString();
+            const date = new Date(dateValue).toLocaleDateString('es-CU');
+            const customer = String(pedido?.cliente || 'No especificado').trim();
+            const phone = String(pedido?.telefono || 'No especificado').trim();
+            const address = String(pedido?.direccion || 'No especificada').trim();
+            const municipality = String(pedido?.municipio || '').trim();
+            const product = String(pedido?.producto || 'No especificado').trim();
+            const total = Number(pedido?.total) || 0;
+            const shipping = Number(pedido?.costo_mensajeria) || 0;
+            const equipmentTotal = Math.max(0, total - shipping);
+            const commission = Number(pedido?.comision_total) || 0;
+            const formatAmount = value => Number.isInteger(value) ? String(value) : value.toFixed(2);
+            const location = municipality ? ` (${municipality})` : '';
+
+            return `🧾 *NUEVO PEDIDO #${orderCode}*\n📅 Fecha: ${date}\n\n👤 *CLIENTE*\nNombre: ${customer}\nTel: ${phone}\nDirección: ${address}${location}\n\n🛒 *DETALLE*\n📦 ${product}\n💰 *TOTAL A PAGAR: $${formatAmount(total)} USD*\n(Equipos: $${formatAmount(equipmentTotal)} + Envío: $${formatAmount(shipping)})\n\n💳 *MÉTODO PAGO:* Por confirmar\n\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${String(commercialName || 'No asignado').trim()}\nSubgestor: ${String(pedido?.subgestor_nombre || 'No asignado').trim()}\nComisión total del pedido: $${formatAmount(commission)}\n------------------------------------`;
+        }
+
+        function openSubgestorVoucher(pedido) {
+            const message = buildSubgestorApprovalVoucher(pedido, currentParent?.nombre);
+            const destination = '5356071095';
+            const url = `https://api.whatsapp.com/send?phone=${destination}&text=${encodeURIComponent(message)}`;
+            const popup = window.open(url, '_blank', 'noopener');
+            if (!popup) window.location.href = url;
+        }
+
+        window.sendSubgestorVoucher = function(pedidoId) {
+            const pedido = nominasList.find(item => item.id === pedidoId);
+            if (!pedido) return alert('No se encontró el pedido para generar el vale. Recarga la página e inténtalo de nuevo.');
+            openSubgestorVoucher(pedido);
+        };
+
         async function aprobarPedido(pedidoId) {
             const p = pedidosPendientes.find(item => item.id === pedidoId);
             if (!p) return;
@@ -682,7 +715,8 @@
                     .delete()
                     .eq('id', p.id);
 
-                alert("✅ Pedido aprobado y enviado exitosamente a administración.");
+                openSubgestorVoucher({ ...p, comision_total: totalCommReal });
+                alert("✅ Pedido aprobado y vale enviado a administración.");
                 loadData();
 
             } catch (e) {
@@ -1153,6 +1187,7 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
 
             container.innerHTML = nominasList.map(n => {
                 const esPagado = n.pago_subgestor === 'Pagado';
+                const voucherHtml = `<button onclick="sendSubgestorVoucher('${n.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl font-black uppercase text-[9px]">ENVIAR VALE</button>`;
                 const buttonHtml = esPagado 
                     ? `<span class="px-2 py-1 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-900 font-black uppercase text-[10px]">LIQUIDADO</span>`
                     : `<button onclick="liquidarPagoSubgestor('${n.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-xl font-black uppercase text-[9px] (p-4)">PAGAR</button>`;
@@ -1166,7 +1201,7 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
                     </td>
                     <td class="p-4 text-slate-300 font-bold">$${n.total}</td>
                     <td class="p-4 text-emerald-400 font-black">$${n.comision_subgestor}</td>
-                    <td class="p-4 text-right">${buttonHtml}</td>
+                    <td class="p-4 text-right"><div class="flex flex-wrap justify-end gap-2">${voucherHtml}${buttonHtml}</div></td>
                 </tr>`;
             }).join('');
         }
@@ -1240,7 +1275,7 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
                 desc: "En esta pestaña verás tu lista de vendedores activos, sus estadísticas en tiempo real (ventas completadas y pedidos pendientes) y podrás suspender o activar sus accesos en un clic."
             },
             {
-                target: "#tab-nomina",
+                target: "#tab-nominas",
                 title: "Control de Nómina y Liquidaciones 💰",
                 desc: "Cuando la tienda te liquide las comisiones de tu equipo, ven aquí para consultar cuánto debes transferirle a cada uno de tus subgestores y márcalo como pagado para llevar tu contabilidad al día."
             }
@@ -1248,10 +1283,21 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
 
         let currentTourStep = 0;
 
+        function removeTourOverlay() {
+            document.querySelectorAll('.tour-highlight').forEach(el => {
+                el.classList.remove('tour-highlight', 'ring-4', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-950', 'animate-pulse');
+            });
+            document.getElementById('tour-backdrop')?.remove();
+            document.getElementById('tour-floating-card')?.remove();
+        }
+
         function checkTourStatus() {
             // Solo iniciar si el usuario es el Gestor Principal y no ha hecho el tour antes
             const tourDone = localStorage.getItem('pth_subgestores_tour_v1');
-            if (tourDone) return;
+            if (tourDone) {
+                removeTourOverlay();
+                return;
+            }
 
             // Crear e inyectar el contenedor del cartel del tour y el fondo atenuador
             injectTourHTML();
@@ -1259,6 +1305,8 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
         }
 
         function injectTourHTML() {
+            // Recuperación defensiva: nunca duplicar ni dejar un velo huérfano.
+            removeTourOverlay();
             // Fondo atenuador
             const backdrop = `<div id="tour-backdrop" class="fixed inset-0 bg-black/60 z-[4000] pointer-events-none transition-opacity duration-300"></div>`;
             
@@ -1287,7 +1335,12 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
             const step = tourSteps[currentTourStep];
             const target = document.querySelector(step.target);
 
-            if (!target) return;
+            if (!target) {
+                // Nunca dejar un velo huérfano si un paso no existe en la página.
+                removeTourOverlay();
+                localStorage.setItem('pth_subgestores_tour_v1', 'true');
+                return;
+            }
 
             // 1. Limpiar brillos de pasos anteriores
             document.querySelectorAll('.tour-highlight').forEach(el => {
@@ -1350,16 +1403,7 @@ Cualquier duda que tengas sobre un equipo, precios de envío o el funcionamiento
         }
 
         function finishTour() {
-            // Limpiar clases de enfoque
-            document.querySelectorAll('.tour-highlight').forEach(el => {
-                el.classList.remove('tour-highlight', 'ring-4', 'ring-blue-500', 'ring-offset-2', 'ring-offset-slate-950', 'animate-pulse');
-            });
-
-            // Remover elementos del DOM
-            const backdrop = document.getElementById('tour-backdrop');
-            const card = document.getElementById('tour-floating-card');
-            if (backdrop) backdrop.remove();
-            if (card) card.remove();
+            removeTourOverlay();
 
             // Guardar marca para que no vuelva a aparecer
             localStorage.setItem('pth_subgestores_tour_v1', 'true');
