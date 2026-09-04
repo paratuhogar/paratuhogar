@@ -380,6 +380,7 @@ function calculateDevFee(precioVenta) {
                                     <th class="p-3">Pedido</th>
                                     <th class="p-3">Gestor</th>
                                     <th class="p-3 text-right">Comisión</th>
+                                    <th class="p-3 text-right">Fecha de pago</th>
                                     <th class="p-3 text-right">Acción</th>
                                 </tr>
                             </thead>
@@ -1186,6 +1187,17 @@ function getVaultPayoutRemaining(item) {
     return Math.max(0, (Number(item?.importe_usd) || 0) - getVaultPayoutAdvance(item));
 }
 
+function formatVaultPaymentDate(value) {
+    if (!value) return 'No registrada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'No registrada';
+    return date.toLocaleString('es-CU', {
+        timeZone: 'America/Havana',
+        dateStyle: 'short',
+        timeStyle: 'short'
+    });
+}
+
 async function loadVaultPayoutRequests() {
     const user = session.data || {};
     const list = document.getElementById('vault-payout-list');
@@ -1429,23 +1441,26 @@ async function loadNomina() {
         
     const elTotalGlobal = document.getElementById('total-global-nomina');
     if (elTotalGlobal) elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
-    // --- NUEVO: CARGAR LOS ÚLTIMOS 100 PAGADOS PARA PODER DESHACER ---
-    const { data: pagados } = await supabaseClient
-        .from('pedidos')
-        .select('id, orden_dia, gestor, comision_total, producto')
-        .eq('pago_gestor', 'Pagado')
-        .order('id', { ascending: false }) // Trae los últimos procesados
-        .limit(100);
+    // Cargar los últimos 200 pagos, incluidos los de solicitudes archivadas.
+    // La fecha proviene de la transición real a "Pagado" (pagado_en).
+    const { data: pagados, error: errPagados } = await supabaseClient.rpc('listar_historial_pagos_gestores', {
+        p_admin_id: user.id || null,
+        p_password: user.password || null,
+        p_limit: 200
+    });
 
     const tbodyPagados = document.getElementById('list-nomina-pagados');
-    if (tbodyPagados && pagados) {
+    if (tbodyPagados && errPagados) {
+        tbodyPagados.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-amber-300 font-semibold">No se pudo cargar el historial de pagos. Actualiza la página.</td></tr>';
+    } else if (tbodyPagados && pagados) {
         tbodyPagados.innerHTML = pagados.map(p => `
             <tr class="hover:bg-slate-800/50 transition-colors">
                 <td class="p-2 font-bold text-slate-300 text-xs">#${p.orden_dia || 'S/N'}</td>
                 <td class="p-2 text-xs">${p.gestor}</td>
-                <td class="p-2 text-xs text-emerald-500 font-mono text-right">$${p.comision_total}</td>
+                <td class="p-2 text-xs text-emerald-500 font-mono text-right">$${Number(p.comision || 0).toFixed(2)}</td>
+                <td class="p-2 text-xs text-slate-300 text-right whitespace-nowrap">${formatVaultPaymentDate(p.pagado_en)}</td>
                 <td class="p-2 text-right">
-                    <button onclick="revertirPago('${p.id}', '${p.orden_dia}')" class="bg-red-950/50 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm flex items-center gap-1 ml-auto">
+                    <button onclick="revertirPago('${p.pedido_id}', '${p.orden_dia}')" class="bg-red-950/50 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm flex items-center gap-1 ml-auto">
                         <span class="material-symbols-outlined text-[12px]">undo</span> Deshacer
                     </button>
                 </td>
