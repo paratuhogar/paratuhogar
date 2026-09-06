@@ -342,6 +342,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "8c25a884-f672-4998-bf0b-c78975632d2d",
+    "slug": "butacon-reclinable",
+    "nombre": "Butacon reclinable",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/butacon-reclinable/",
+    "updated_at": "2026-09-06T00:56:14.680545+00:00"
+  },
+  {
     "id": "cf091c90-3713-472b-acbc-3d1baaf69f8f",
     "slug": "cable-fotovoltaico-x-rollo-25m",
     "nombre": "Cable fotovoltaico 25m  Negro y 25m Rojo",
@@ -1485,6 +1494,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "dd1681e8-57ae-4f86-bd9d-6cc67ce0c435",
+    "slug": "inversor-6kw-con-bateria-15kwh-saco-todo-en-1",
+    "nombre": "Inversor 6kw con batería 15kwh SACO (Todo en 1)",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/inversor-6kw-con-bateria-15kwh-saco-todo-en-1/",
+    "updated_at": "2026-09-05T22:15:20.525434+00:00"
+  },
+  {
     "id": "f53effe6-4422-4f54-a4f5-5a49170f280d",
     "slug": "inversor-6kw-must",
     "nombre": "Inversor 6kW Must",
@@ -2083,18 +2101,18 @@
     "slug": "minibar-exhibidor-reymo-frente-cristal",
     "nombre": "Minibar Exhibidor Reymo (frente cristal)",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/minibar-exhibidor-reymo-frente-cristal/",
-    "updated_at": "2026-08-22T22:17:22.192724+00:00"
+    "updated_at": "2026-09-05T20:46:18.647855+00:00"
   },
   {
     "id": "382fd256-3df4-4d0b-8155-6f0b72718e83",
     "slug": "minibar-reymo",
     "nombre": "Minibar Reymo",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/minibar-reymo/",
-    "updated_at": "2026-09-01T19:07:31.021419+00:00"
+    "updated_at": "2026-09-05T20:46:23.944549+00:00"
   },
   {
     "id": "ffa969b1-3d99-4586-ad2b-f97c200d76da",
@@ -2142,6 +2160,15 @@
     "updated_at": "2026-08-24T20:22:09.740953+00:00"
   },
   {
+    "id": "1e0ff4fb-0984-49ec-8b5e-fef3b3c1e3a2",
+    "slug": "moto-yoazaki-galactica-2026",
+    "nombre": "Moto Yoazaki Galáctica 2026",
+    "categoria": "TRANSPORTE",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/moto-yoazaki-galactica-2026/",
+    "updated_at": "2026-09-06T00:41:27.78225+00:00"
+  },
+  {
     "id": "4939c10d-f692-4eed-be43-17cc9ed95cfe",
     "slug": "mouse-gaming-tron-maxell",
     "nombre": "Mouse Gaming Tron - Maxell",
@@ -2185,6 +2212,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-10-5-pies-hisense/",
     "updated_at": "2026-09-05T13:41:35.216529+00:00"
+  },
+  {
+    "id": "ecb594bc-33a2-427d-a1a3-4fcb80750de0",
+    "slug": "nevera-10-7-pies-sanmax",
+    "nombre": "Nevera 10.7 pies SANMAX",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-10-7-pies-sanmax/",
+    "updated_at": "2026-09-06T00:12:30.698467+00:00"
   },
   {
     "id": "83959666-c6e5-41c4-bd4e-8e146effe8be",
@@ -2340,6 +2376,15 @@
     "updated_at": "2026-08-14T01:38:28.300631+00:00"
   },
   {
+    "id": "b60245c8-ae5f-41e2-b82a-341ac3ceea17",
+    "slug": "nevera-8-8-pies-sanmax",
+    "nombre": "Nevera 8.8 pies SANMAX",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-8-8-pies-sanmax/",
+    "updated_at": "2026-09-05T23:56:55.807121+00:00"
+  },
+  {
     "id": "3c6e5510-336e-4a47-956c-a0b4bf2199f1",
     "slug": "nevera-9-pies-sankey",
     "nombre": "Nevera 9 pies Sankey",
@@ -2481,7 +2526,7 @@
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/olla-de-presion-7l-impronta/",
-    "updated_at": "2026-09-05T02:36:52.484883+00:00"
+    "updated_at": "2026-09-05T22:17:53.644656+00:00"
   },
   {
     "id": "216dde2c-e55f-459f-bede-194b73b812f8",
@@ -3168,6 +3213,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "70d0b615-dc8b-44fd-8e11-d0b36ba23870",
+    "slug": "sofa-cama",
+    "nombre": "Sofa cama",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/sofa-cama/",
+    "updated_at": "2026-09-06T00:51:36.045596+00:00"
+  },
+  {
     "id": "aef39a5f-8d13-4c00-8397-9d91923054ef",
     "slug": "sombrilla-para-piscina",
     "nombre": "Sombrilla para piscina",
@@ -3184,6 +3238,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/spirit-of-gamer-pack-teclado-mouse-alfombrilla/",
     "updated_at": "2026-08-09T23:19:36.538615+00:00"
+  },
+  {
+    "id": "6f7f4046-f8d4-4bf8-91b2-5d9127a41a65",
+    "slug": "split-eko-2t",
+    "nombre": "Split  2T EKO",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/split-eko-2t/",
+    "updated_at": "2026-09-05T22:36:20.495169+00:00"
   },
   {
     "id": "7fc47e6b-214b-4f1a-b8ed-b7e3148fa24f",
@@ -3229,6 +3292,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-godline-venta-mayorista/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "7306dce3-836a-494a-bf58-a4c6a8aa41c7",
+    "slug": "split-1t-reymo",
+    "nombre": "Split 1T  Reymo",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/split-1t-reymo/",
+    "updated_at": "2026-09-06T00:25:38.206003+00:00"
   },
   {
     "id": "4e3225fb-8964-47f5-8f85-1dbb1996d935",
@@ -3436,6 +3508,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/ventilador-de-pedestal-16-premium/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "b97955cd-f9da-4f6d-8067-295ccef6c798",
+    "slug": "ventilador-de-pedestal-16-midea",
+    "nombre": "Ventilador de pedestal 16\" Midea",
+    "categoria": "VENTILADORES",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/ventilador-de-pedestal-16-midea/",
+    "updated_at": "2026-09-05T21:50:30.87499+00:00"
   },
   {
     "id": "c52849e6-710d-4c4d-b476-61705b3efc6f",
