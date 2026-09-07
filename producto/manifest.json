@@ -346,9 +346,9 @@
     "slug": "butacon-reclinable",
     "nombre": "Butacon reclinable",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/butacon-reclinable/",
-    "updated_at": "2026-09-06T00:56:14.680545+00:00"
+    "updated_at": "2026-09-06T20:41:28.597093+00:00"
   },
   {
     "id": "cf091c90-3713-472b-acbc-3d1baaf69f8f",
@@ -1030,9 +1030,9 @@
     "slug": "estacion-portatil-3600w-delta-pro",
     "nombre": "Estación portátil 3600W DELTA Pro",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-3600w-delta-pro/",
-    "updated_at": "2026-08-29T22:29:02.635267+00:00"
+    "updated_at": "2026-09-07T04:13:09.771317+00:00"
   },
   {
     "id": "837cc1f5-12a8-4bd8-9454-1d531e5a3b52",
@@ -1174,9 +1174,9 @@
     "slug": "filtro-de-agua",
     "nombre": "Filtro de agua",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/filtro-de-agua/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-06T20:50:09.149913+00:00"
   },
   {
     "id": "9c92dbd8-c735-4ebd-86f7-3d595f8d75a9",
@@ -2164,9 +2164,9 @@
     "slug": "moto-yoazaki-galactica-2026",
     "nombre": "Moto Yoazaki Galáctica 2026",
     "categoria": "TRANSPORTE",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/moto-yoazaki-galactica-2026/",
-    "updated_at": "2026-09-06T00:41:27.78225+00:00"
+    "updated_at": "2026-09-06T20:40:09.692448+00:00"
   },
   {
     "id": "4939c10d-f692-4eed-be43-17cc9ed95cfe",
@@ -3217,9 +3217,9 @@
     "slug": "sofa-cama",
     "nombre": "Sofa cama",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/sofa-cama/",
-    "updated_at": "2026-09-06T00:51:36.045596+00:00"
+    "updated_at": "2026-09-06T20:43:19.631438+00:00"
   },
   {
     "id": "aef39a5f-8d13-4c00-8397-9d91923054ef",
@@ -3298,9 +3298,9 @@
     "slug": "split-1t-reymo",
     "nombre": "Split 1T  Reymo",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-reymo/",
-    "updated_at": "2026-09-06T00:25:38.206003+00:00"
+    "updated_at": "2026-09-06T20:38:12.079426+00:00"
   },
   {
     "id": "4e3225fb-8964-47f5-8f85-1dbb1996d935",
