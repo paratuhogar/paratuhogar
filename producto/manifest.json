@@ -2110,9 +2110,9 @@
     "slug": "minibar-reymo",
     "nombre": "Minibar Reymo",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/minibar-reymo/",
-    "updated_at": "2026-09-05T20:46:23.944549+00:00"
+    "updated_at": "2026-09-07T19:02:44.860874+00:00"
   },
   {
     "id": "ffa969b1-3d99-4586-ad2b-f97c200d76da",
@@ -2211,7 +2211,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-10-5-pies-hisense/",
-    "updated_at": "2026-09-07T11:42:47.775531+00:00"
+    "updated_at": "2026-09-07T19:02:07.555099+00:00"
   },
   {
     "id": "ecb594bc-33a2-427d-a1a3-4fcb80750de0",
@@ -2220,7 +2220,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-10-7-pies-sanmax/",
-    "updated_at": "2026-09-06T00:12:30.698467+00:00"
+    "updated_at": "2026-09-07T19:08:51.798874+00:00"
   },
   {
     "id": "83959666-c6e5-41c4-bd4e-8e146effe8be",
@@ -3307,9 +3307,9 @@
     "slug": "split-1t-milexus",
     "nombre": "Split 1T -MILEXUS",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-milexus/",
-    "updated_at": "2026-09-04T13:02:02.340061+00:00"
+    "updated_at": "2026-09-07T14:44:17.613818+00:00"
   },
   {
     "id": "1f71a083-a501-45e5-b9ca-0bfa8e11e56b",
@@ -3525,7 +3525,7 @@
     "categoria": "VENTILADORES",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-12-eko/",
-    "updated_at": "2026-09-05T15:56:54.816707+00:00"
+    "updated_at": "2026-09-07T20:29:46.913987+00:00"
   },
   {
     "id": "83715a1f-084b-4009-9fa6-86f86f1332f6",
@@ -3550,9 +3550,9 @@
     "slug": "ventilador-recargable-eko",
     "nombre": "Ventilador recargable EKO",
     "categoria": "VENTILADORES",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-eko/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-07T20:29:46.81717+00:00"
   },
   {
     "id": "5c9eb09f-33df-46f8-a3aa-c28746be9815",
