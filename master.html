@@ -70,6 +70,12 @@
     const sessionName = (session.name || '').trim().toLowerCase();
     const sessionRol = (session.data?.rol || '').trim().toLowerCase();
     const sessionDataName = (session.data?.nombre || '').trim().toLowerCase();
+    const sessionUserId = String(session.data?.id || '');
+    let paidPayoutHistoryRows = [];
+    const VAULT_ADMIN_IDS = new Set([
+        'a5cd1515-47dc-4379-a392-cb09459b3686', // Jomil
+        '19db1f25-8615-418c-b092-1548e8f92abd'  // Beatriz Barrero
+    ]);
 
     // Verificación robusta que protege el acceso solo para Ángel y Marcel
     const isSuperBoss = 
@@ -78,7 +84,8 @@
         sessionName === 'administrador supremo' ||
         sessionDataName.includes('ángel') || 
         sessionDataName.includes('angel') ||
-        sessionDataName.includes('marcel');
+        sessionDataName.includes('marcel') ||
+        (sessionRol === 'admin' && VAULT_ADMIN_IDS.has(sessionUserId));
 
     if (!isSuperBoss) {
         alert("⛔ ACCESO DENEGADO: Área Financiera Restringida.\n\nTu nivel de administrador (Logística) no tiene permiso para ver el dinero.");
@@ -129,8 +136,9 @@ function calculateDevFee(precioVenta) {
         <div class="flex gap-4 border-b border-slate-800 pb-4">
             <button onclick="switchTab('costos')" id="btn-costos" class="tab-btn px-4 py-2 bg-slate-800 rounded-lg text-sm font-bold hover:bg-slate-700">1. Gestión Costos</button>
             <button onclick="switchTab('conciliacion')" id="btn-conciliacion" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">2. Conciliación (Viernes)</button>
-            <button onclick="switchTab('nomina')" id="btn-nomina" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">3. Nómina Gestores (Sábado)</button>
-            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">4. Inteligencia (BI)</button>
+            <button onclick="switchTab('solicitudes')" id="btn-solicitudes" class="tab-btn px-4 py-2 text-violet-300 text-sm font-bold hover:text-white">3. Solicitudes de cobro</button>
+            <button onclick="switchTab('nomina')" id="btn-nomina" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">4. Nómina Gestores</button>
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 text-slate-400 text-sm font-bold hover:text-white">5. Inteligencia (BI)</button>
             <button onclick="window.location.href='estadisticas.html'" class="tab-btn px-4 py-2 text-blue-400 text-sm font-bold hover:text-white border border-blue-500/30 rounded-lg hover:bg-blue-900/30 transition-all">
                 📊 Intel Center
             </button>
@@ -194,13 +202,39 @@ function calculateDevFee(precioVenta) {
                             <th class="p-3"><input type="checkbox" id="check-all-conc" onchange="toggleAllConc(this)"></th>
                             <th class="p-3">Pedido</th>
                             <th class="p-3">Producto</th>
-                            <th class="p-3">Total Venta</th>
+                            <th class="p-3">Venta producto<br><span class="normal-case text-[9px] text-slate-500">Sin mensajería</span></th>
                             <th class="p-3">Costo Prov.</th>
                             <th class="p-3 text-emerald-400">A PAGARLE AL PROV.</th>
                         </tr>
                     </thead>
                     <tbody id="list-conciliacion"></tbody>
                 </table>
+            </div>
+        </section>
+
+        <section id="sec-solicitudes" class="tab-content hidden space-y-5">
+            <div class="rounded-3xl border border-violet-500/30 bg-gradient-to-br from-violet-950 via-slate-900 to-indigo-950 p-6 shadow-xl">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-violet-300">Bóveda financiera</p>
+                        <h2 class="mt-2 text-2xl font-black text-white">Solicitudes de cobro</h2>
+                        <p class="mt-2 text-sm text-slate-300">Solicitudes recibidas de miércoles a domingo. Marca “Pagado” únicamente cuando el dinero haya sido entregado.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadVaultPayoutRequests()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Actualizar</button>
+                        <button onclick="runVaultInactivityPolicy()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Revisar 30 días</button>
+                        <button onclick="archiveVaultPaidRequests()" class="rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase text-violet-900">Archivar pagadas</button>
+                    </div>
+                </div>
+            </div>
+            <div id="vault-payout-summary" class="grid grid-cols-2 gap-3 md:grid-cols-4"></div>
+            <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/70 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[980px] text-left text-xs">
+                        <thead class="bg-slate-800 text-[9px] uppercase text-slate-400"><tr><th class="p-4">Gestor</th><th class="p-4">Teléfono</th><th class="p-4">Cantidad</th><th class="p-4">Forma de pago</th><th class="p-4">Solicitud / pago</th><th class="p-4">Estado</th><th class="p-4 text-right">Acciones</th></tr></thead>
+                        <tbody id="vault-payout-list"><tr><td colspan="7" class="p-10 text-center text-slate-500">Abre esta sección para cargar las solicitudes.</td></tr></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -347,11 +381,49 @@ function calculateDevFee(precioVenta) {
                                     <th class="p-3">Pedido</th>
                                     <th class="p-3">Gestor</th>
                                     <th class="p-3 text-right">Comisión</th>
+                                    <th class="p-3 text-right">Fecha de pago</th>
                                     <th class="p-3 text-right">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="list-nomina-pagados" class="divide-y divide-slate-700/50 bg-slate-900/30">
                                 <!-- JS llenará esto -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- HISTORIAL AGRUPADO DE SOLICITUDES PAGADAS -->
+                <div id="paid-payout-history" class="mt-8 pt-6 border-t border-violet-500/30">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-violet-300 flex items-center gap-2">
+                                <span class="material-symbols-outlined">receipt_long</span>
+                                Historial de solicitudes pagadas
+                            </h4>
+                            <p class="text-[10px] text-slate-500 mt-1">Conserva el importe, la fecha y todos los pedidos de cada solicitud.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="paid-payout-history-gestor" onchange="filtrarHistorialSolicitudes()" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[10px] font-bold text-slate-200">
+                                <option value="">Todos los gestores</option>
+                            </select>
+                            <button onclick="loadPaidPayoutHistory()" class="rounded-lg bg-slate-700 px-3 py-2 text-[10px] font-black uppercase text-white">Actualizar</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[980px] text-left text-xs text-slate-300">
+                            <thead class="bg-slate-800 text-[9px] uppercase font-black text-slate-300">
+                                <tr>
+                                    <th class="p-3">Gestor</th>
+                                    <th class="p-3 text-right">Importe</th>
+                                    <th class="p-3">Forma de pago</th>
+                                    <th class="p-3">Solicitud</th>
+                                    <th class="p-3">Fecha de pago</th>
+                                    <th class="p-3">Estado</th>
+                                    <th class="p-3 text-right">Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paid-payout-history-list" class="divide-y divide-slate-700/50 bg-slate-900/30">
+                                <tr><td colspan="7" class="p-6 text-center text-slate-500">Actualiza para cargar el historial.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -557,40 +629,196 @@ function calculateDevFee(precioVenta) {
         let inventario = [];
         // --- VARIABLE GLOBAL NECESARIA ---
 let pedidosRawAdmin = []; 
+let vaultDebtChannel = null;
+let vaultDebtRefreshTimer = null;
+let vaultDebtPollingTimer = null;
+let vaultDebtLoadInProgress = false;
+let vaultDebtRefreshPending = false;
+let deudaSistemaLineas = [];
+let deudaSistemaResumen = null;
+
+function normalizeVaultProductName(value) {
+    return String(value || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ').trim();
+}
+
+function parseVaultOrderLines(orderText) {
+    const text = String(orderText || '').trim();
+    const lines = [];
+    const pattern = /(\d+)x\s+(.+?)\s*\[(?:USD|CUP)\](?=\s*\+|$)/gi;
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+        lines.push({ qty: Math.max(1, Number(match[1]) || 1), name: match[2].trim() });
+    }
+    if (!lines.length && text) {
+        const fallback = text.match(/^\s*(\d+)x\s+(.+?)(?:\s*\[[^\]]+\])?\s*$/i);
+        lines.push({ qty: fallback ? Math.max(1, Number(fallback[1]) || 1) : 1, name: fallback ? fallback[2].trim() : text });
+    }
+    return lines;
+}
+
+function resolveVaultInventoryProduct(productName, orderProvider = '') {
+    const normalizedName = normalizeVaultProductName(productName);
+    const exact = inventario.filter(item => normalizeVaultProductName(item.nombre) === normalizedName);
+    if (!exact.length) return null;
+    if (exact.length === 1) return exact[0];
+    const normalizedProvider = normalizeVaultProductName(orderProvider);
+    return exact.find(item => normalizeVaultProductName(item.proveedor) === normalizedProvider)
+        || exact.find(item => String(item.disponible || '').toUpperCase() === 'SI')
+        || exact[0];
+}
+
+function calculateVaultOrderCost(order) {
+    return parseVaultOrderLines(order?.producto).reduce((total, line) => {
+        const product = resolveVaultInventoryProduct(line.name, order?.proveedor);
+        return total + (Number(product?.costo_proveedor) || 0) * line.qty;
+    }, 0);
+}
+
+function getVaultOrderProvider(order) {
+    const orderCode = String(order?.orden_dia || '').trim().toUpperCase();
+    const prefixMatch = orderCode.match(/^([A-Z]{1,5})-/);
+    // El consecutivo identifica el proveedor histórico. El campo proveedor se
+    // conserva como respaldo para pedidos antiguos sin un consecutivo válido.
+    return prefixMatch ? prefixMatch[1] : String(order?.proveedor || 'General').trim().toUpperCase();
+}
 
 // --- LA FUNCIÓN QUE FALTABA (OPTIMIZADA PARA CONTROLAR EL EGRESS) ---
 async function loadAdminData() {
-    console.log("🔄 Actualizando datos del Sistema...");
-
-    // 1. Cargar todos los pedidos ENTREGADOS (Optimizado seleccionando solo columnas de cálculo)
-    const { data, error } = await supabaseClient
-        .from('pedidos')
-        .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema, orden_dia')
-        .eq('estado', 'Entregado');
-
-    if (error) {
-        console.error("Error cargando pedidos maestros:", error);
+    if (vaultDebtLoadInProgress) {
+        vaultDebtRefreshPending = true;
         return;
     }
+    vaultDebtLoadInProgress = true;
+    console.log("🔄 Actualizando datos del Sistema...");
 
-    // 2. Guardar en memoria
-    pedidosRawAdmin = data;
+    try {
+        // 1. La Bóveda usa una lectura administrativa protegida. Consultar
+        // pedidos directamente con la clave pública puede ocultar filas por RLS.
+        const user = session.data || {};
+        if (!user.password) throw new Error('La sesión no contiene una credencial administrativa válida.');
+        const pageSize = 1000;
+        let pageStart = 0;
+        let page = [];
+        const data = [];
+        do {
+            const response = await supabaseClient
+                .rpc('listar_pedidos_boveda', {
+                    p_admin_id: user.id || null,
+                    p_password: user.password
+                })
+                .range(pageStart, pageStart + pageSize - 1);
+            if (response.error) throw response.error;
+            page = response.data || [];
+            data.push(...page);
+            pageStart += pageSize;
+        } while (page.length === pageSize);
 
-    // 3. Renderizar la tarjeta de deuda del sistema (Tu pago)
+        // 2. Guardar en memoria
+        pedidosRawAdmin = data || [];
+
+        // 3. La deuda se obtiene del libro contable central de Supabase.
+        await loadSystemDebtLedger();
+        
+        // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
+        if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
+            allOrdersCache = pedidosRawAdmin;
+            filterDash('total');
+        }
+    } catch (error) {
+        console.error("Error cargando pedidos maestros:", error);
+        deudaSistemaResumen = null;
+        deudaSistemaLineas = [];
+        const amount = document.getElementById('sys-debt-amount');
+        const count = document.getElementById('sys-debt-count');
+        const btn = document.getElementById('btn-pay-sys');
+        const btnDetails = document.getElementById('btn-details-sys');
+        if (amount) amount.textContent = 'Error al actualizar';
+        if (count) count.textContent = 'La deuda no pudo cargarse. Reintenta en unos segundos.';
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50','cursor-not-allowed');
+            btn.textContent = 'ERROR CONTABLE';
+        }
+        if (btnDetails) btnDetails.classList.add('hidden');
+    } finally {
+        vaultDebtLoadInProgress = false;
+        if (vaultDebtRefreshPending) {
+            vaultDebtRefreshPending = false;
+            scheduleVaultDebtRefresh();
+        }
+    }
+}
+
+async function loadSystemDebtLedger() {
+    const user = session.data || {};
+    if (!user.password) throw new Error('La sesión no contiene una credencial administrativa válida.');
+    const auth = { p_admin_id: user.id || null, p_password: user.password };
+    const [detailResponse, summaryResponse] = await Promise.all([
+        supabaseClient.rpc('listar_deuda_sistema', auth),
+        supabaseClient.rpc('resumen_deuda_sistema', auth)
+    ]);
+    if (detailResponse.error) throw detailResponse.error;
+    if (summaryResponse.error) throw summaryResponse.error;
+
+    const lines = detailResponse.data || [];
+    const summary = (summaryResponse.data || [])[0] || { pedidos: 0, lineas: 0, incidencias: 0, total: 0 };
+    const detailTotal = lines
+        .filter(line => line.estado === 'pendiente')
+        .reduce((sum, line) => sum + (Number(line.tarifa_total) || 0), 0);
+    if (Number(summary.incidencias) > 0) {
+        throw new Error(`Error contable: existen ${summary.incidencias} líneas que requieren revisión.`);
+    }
+    if (Math.abs(detailTotal - Number(summary.total || 0)) > 0.001) {
+        throw new Error(`Error contable: el detalle ($${detailTotal.toFixed(2)}) no coincide con el resumen ($${Number(summary.total || 0).toFixed(2)}).`);
+    }
+    deudaSistemaLineas = lines;
+    deudaSistemaResumen = summary;
     renderSystemDebt();
-    
-    // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
-    if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
-        // Actualizamos el caché del dashboard también
-        allOrdersCache = data; 
-        filterDash('total');
+}
+
+function scheduleVaultDebtRefresh() {
+    clearTimeout(vaultDebtRefreshTimer);
+    vaultDebtRefreshTimer = setTimeout(() => loadAdminData(), 350);
+}
+
+function startVaultDebtAutoRefresh() {
+    if (vaultDebtChannel) return;
+
+    vaultDebtChannel = supabaseClient
+        .channel('vault-system-debt-live')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'pedidos'
+        }, scheduleVaultDebtRefresh)
+        .subscribe();
+
+    // Respaldo ante una desconexión temporal de Realtime.
+    vaultDebtPollingTimer = setInterval(scheduleVaultDebtRefresh, 60000);
+}
+
+function stopVaultDebtAutoRefresh() {
+    clearTimeout(vaultDebtRefreshTimer);
+    clearInterval(vaultDebtPollingTimer);
+    vaultDebtRefreshPending = false;
+    if (vaultDebtChannel) {
+        supabaseClient.removeChannel(vaultDebtChannel);
+        vaultDebtChannel = null;
     }
 }
 
         async function initMaster() {
     await loadCostos();
     await loadAdminData(); // <--- AGREGAR ESTO PARA QUE CARGUE TU DEUDA AL INICIAR
+    startVaultDebtAutoRefresh();
 }
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') scheduleVaultDebtRefresh();
+});
+window.addEventListener('beforeunload', stopVaultDebtAutoRefresh);
 
         function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -603,6 +831,7 @@ async function loadAdminData() {
 
     if(tabId === 'costos') loadCostos();
     if(tabId === 'conciliacion') loadConciliacion();
+    if(tabId === 'solicitudes') loadVaultPayoutRequests();
     if(tabId === 'nomina') loadNomina(); // Asegúrate de tener esto
     if(tabId === 'dashboard') loadDashboard(); // <--- AGREGAR ESTA LÍNEA NUEVA
 }
@@ -779,9 +1008,9 @@ async function updateCosto(id, nuevoCosto, inputElement) {
 // --- FUNCIONES AUXILIARES PARA EL CÁLCULO MANUAL EN CONCILIACIÓN ---
 
 // 1. Recalcular una sola fila al escribir
-function recalcRow(id, totalVenta, inputElement) {
+function recalcRow(id, totalProducto, inputElement) {
     const nuevoCosto = parseFloat(inputElement.value) || 0;
-    const nuevaGanancia = totalVenta - nuevoCosto;
+    const nuevaGanancia = totalProducto - nuevoCosto;
     
     // Actualizar celda de ganancia
     const cell = document.getElementById(`cell-ganancia-${id}`);
@@ -872,7 +1101,7 @@ async function loadConciliacion() {
     const select = document.getElementById('filter-prov-conc');
     const valorActual = select ? select.value : 'TODOS';
 
-    const proveedoresUnicos = [...new Set(data.map(p => (p.proveedor || 'General').trim().toUpperCase()))].sort();
+    const proveedoresUnicos = [...new Set(data.map(getVaultOrderProvider))].sort();
     
     if (select && (select.options.length <= 1 || valorActual === 'TODOS')) {
         select.innerHTML = `<option value="TODOS">Todos los Proveedores</option>` +
@@ -883,7 +1112,7 @@ async function loadConciliacion() {
     // Filtrar lista (AJUSTE: Compara limpiando espacios en blanco)
     let pedidosFiltrados = data;
     if (valorActual !== 'TODOS') {
-        pedidosFiltrados = data.filter(p => (p.proveedor || 'General').trim().toUpperCase() === valorActual.trim().toUpperCase());
+        pedidosFiltrados = data.filter(p => getVaultOrderProvider(p) === valorActual.trim().toUpperCase());
     }
 
     // --- NUEVO: Ordenar por Nuevos o Viejos ---
@@ -900,38 +1129,9 @@ async function loadConciliacion() {
     
     const filasHTML = pedidosFiltrados.map(p => {
         
-        // --- 1. NUEVA LÓGICA: SEPARAR MULTIPLES PRODUCTOS POR EL SIGNO "+" ---
-        const lineasProductos = p.producto.split('+');
-        // --- CÁLCULO MEJORADO DE COSTO (Anti-error de signo +) ---
-        // --- CÁLCULO ULTRA-FLEXIBLE DE COSTO (Limpia acentos y espacios) ---
-        let totalCosto = 0;
-
-        // Función interna para normalizar el texto (quita acentos y espacios raros)
-        const normalizarTexto = (txt) => {
-            return (txt || "").toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos (Lámpara -> lampara)
-                .replace(/\s+/g, ' ') // Convierte múltiples espacios o saltos de línea en uno solo
-                .trim();
-        };
-
-        const pedidoLimpio = normalizarTexto(p.producto);
-
-        inventario.forEach(itemInv => {
-            const nombreInvLimpio = normalizarTexto(itemInv.nombre);
-            
-            // Si el nombre del inventario (limpio) está dentro del pedido (limpio)
-            if (pedidoLimpio.includes(nombreInvLimpio)) {
-                
-                // Buscamos la cantidad (ej: "1x")
-                const escapedName = itemInv.nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regexQty = new RegExp(`(\\d+)x\\s*`, 'i');
-                const matchQty = p.producto.match(regexQty);
-                
-                let qty = matchQty ? parseInt(matchQty[1]) : 1;
-                
-                totalCosto += (Number(itemInv.costo_proveedor || 0) * qty);
-            }
-        });
+        // Cada línea se resuelve contra un único producto por nombre exacto.
+        // Esto impide sumar, por ejemplo, "Delta 3" y "Delta 3 Clásica".
+        const totalCosto = calculateVaultOrderCost(p);
 
         const totalVenta = parseFloat(p.total);
         const costoMensajeria = parseFloat(p.costo_mensajeria || 0);
@@ -949,20 +1149,23 @@ async function loadConciliacion() {
 
         // --- CAMBIO CLAVE: INPUT EDITABLE EN LUGAR DE TEXTO FIJO ---
         return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalVenta}">
+        <tr class="border-b border-slate-800 hover:bg-slate-800/50 row-conciliacion" data-id="${p.id}" data-venta="${totalEquipos}" data-total-cliente="${totalVenta}" data-mensajeria="${costoMensajeria}">
             <td class="p-3"><input type="checkbox" class="chk-conc" value="${p.id}"></td>
             <td class="p-3 text-xs text-slate-400">${p.orden_dia || '---'}</td>
             <td class="p-3 font-bold text-white">
                 ${p.producto}
-                <div class="text-[10px] text-amber-500 uppercase">${p.proveedor || 'General'}</div>
+                <div class="text-[10px] text-amber-500 uppercase">${getVaultOrderProvider(p)}</div>
             </td>
-            <td class="p-3 text-slate-300 font-mono">$${totalVenta}</td>
+            <td class="p-3 font-mono">
+                <span class="font-black text-white">$${totalEquipos.toFixed(2)}</span>
+                ${costoMensajeria > 0 ? `<span class="mt-1 block text-[9px] font-bold text-amber-400">+$${costoMensajeria.toFixed(2)} mensajería aparte</span>` : '<span class="mt-1 block text-[9px] text-slate-500">Sin mensajería</span>'}
+            </td>
             
             <!-- CASILLA EDITABLE DE COSTO -->
             <td class="p-3">
                 <input type="number" 
                        value="${totalCosto}" 
-                       oninput="recalcRow('${p.id}', ${totalVenta}, this)"
+                       oninput="recalcRow('${p.id}', ${totalEquipos}, this)"
                        class="input-costo-conciliacion bg-slate-900 border ${borderClass} rounded px-2 py-1 w-24 text-right font-mono text-sm focus:outline-none focus:border-blue-500">
             </td>
 
@@ -1010,28 +1213,172 @@ async function loadConciliacion() {
 
         // --- 3. LÓGICA DE NÓMINA Y CAJA ---
 
+function vaultSafeText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+
+function getVaultPayoutAdvance(item) {
+    return Math.max(0, Number(item?.adelantado_usd) || 0);
+}
+
+function getVaultPayoutRemaining(item) {
+    return Math.max(0, (Number(item?.importe_usd) || 0) - getVaultPayoutAdvance(item));
+}
+
+function formatVaultPaymentDate(value) {
+    if (!value) return 'No registrada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'No registrada';
+    return date.toLocaleString('es-CU', {
+        timeZone: 'America/Havana',
+        dateStyle: 'short',
+        timeStyle: 'short'
+    });
+}
+
+async function loadVaultPayoutRequests() {
+    const user = session.data || {};
+    const list = document.getElementById('vault-payout-list');
+    if (!list) return;
+    if (!user.password) {
+        list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-amber-400">La sesión no contiene una credencial válida. Cierra sesión y vuelve a entrar.</td></tr>';
+        return;
+    }
+    list.innerHTML = '<tr><td colspan="7" class="p-10 text-center text-slate-400">Actualizando solicitudes…</td></tr>';
+    const { data, error } = await supabaseClient.rpc('listar_solicitudes_cobro_beatriz', {
+        p_admin_id: user.id || null,
+        p_password: user.password,
+        p_incluir_archivadas: false
+    });
+    if (error) {
+        list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-red-400">${vaultSafeText(error.message)}</td></tr>`;
+        return;
+    }
+    const rows = data || [];
+    const totals = rows.reduce((acc,item) => {
+        const state = String(item.estado || 'pendiente');
+        if (['pendiente','procesando'].includes(state)) acc.total += getVaultPayoutRemaining(item);
+        acc[state] = (acc[state] || 0) + 1;
+        return acc;
+    }, { total: 0 });
+    const summary = document.getElementById('vault-payout-summary');
+    if (summary) summary.innerHTML = [
+        ['Pendientes',totals.pendiente||0,'amber'],
+        ['Procesando',totals.procesando||0,'blue'],
+        ['Pagadas',totals.pagado||0,'emerald'],
+        ['Total por pagar',`$${totals.total.toFixed(2)}`,'violet']
+    ].map(([label,value,color]) => `<article class="rounded-2xl border border-${color}-500/20 bg-${color}-950/30 p-4"><span class="text-[9px] font-black uppercase text-${color}-400">${label}</span><strong class="mt-2 block text-2xl font-black text-white">${value}</strong></article>`).join('');
+    if (!rows.length) {
+        list.innerHTML = '<tr><td colspan="7" class="p-10 text-center font-bold text-slate-500">No hay solicitudes activas.</td></tr>';
+        return;
+    }
+    list.innerHTML = rows.map(item => {
+        const method = item.metodo_pago === 'transferencia_cup' ? 'Transferencia CUP' : 'Efectivo USD';
+        const requested = new Date(item.creado_en).toLocaleString('es-CU',{timeZone:'America/Havana',dateStyle:'short',timeStyle:'short'});
+        const role = item.tipo_solicitante === 'subgestor'
+            ? `<span class="block text-[8px] font-black uppercase text-violet-400">Subgestor de ${vaultSafeText(item.parent_nombre || 'gestor')}</span>`
+            : '<span class="block text-[8px] font-black uppercase text-slate-500">Gestor principal</span>';
+        const active = ['pendiente','procesando'].includes(String(item.estado || '').toLowerCase());
+        const requestedAmount = Number(item.importe_usd) || 0;
+        const advancedAmount = getVaultPayoutAdvance(item);
+        const remainingAmount = getVaultPayoutRemaining(item);
+        const actions = active
+            ? `<div class="flex justify-end gap-2"><button title="Registrar un dinero entregado antes del pago final" onclick="registerVaultPayoutAdvance('${item.id}',${remainingAmount})" class="rounded-lg bg-amber-500 px-3 py-2 text-[8px] font-black uppercase text-slate-950">Adelantar</button><button title="Confirmar la liquidación del saldo restante" onclick="manageVaultPayout('${item.id}','pagado')" class="rounded-lg bg-emerald-600 px-3 py-2 text-[8px] font-black uppercase text-white">Liquidar $${remainingAmount.toFixed(2)}</button></div>`
+            : '—';
+        return `<tr class="border-t border-slate-800"><td class="p-4 font-black text-white">${vaultSafeText(item.gestor_nombre)}${role}</td><td class="p-4 text-slate-300">${vaultSafeText(item.gestor_telefono || '—')}</td><td class="p-4 text-base font-black text-emerald-400"><span class="block">Restante $${remainingAmount.toFixed(2)}</span><span class="mt-1 block text-[9px] font-bold text-slate-400">Solicitado $${requestedAmount.toFixed(2)} · Adelantado $${advancedAmount.toFixed(2)}</span></td><td class="p-4 font-bold text-slate-300">${method}</td><td class="p-4 text-[10px] text-slate-400">${requested}<span class="block font-black text-violet-400">Martes ${vaultSafeText(item.fecha_pago_prevista)}</span></td><td class="p-4"><span class="rounded-full bg-slate-800 px-2 py-1 text-[8px] font-black uppercase text-slate-300">${vaultSafeText(item.estado)}</span></td><td class="p-4 text-right">${actions}</td></tr>`;
+    }).join('');
+}
+
+async function registerVaultPayoutAdvance(id, remaining) {
+    const amount = Number(prompt(`Adelanto a registrar (máximo $${Number(remaining).toFixed(2)}):`) || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (amount > Number(remaining) + 0.001) return alert(`El adelanto no puede superar $${Number(remaining).toFixed(2)}.`);
+    const note = prompt('Nota o motivo del adelanto (opcional):') || '';
+    const user = session.data || {};
+    const { error } = await supabaseClient.rpc('registrar_adelanto_solicitud_cobro', {
+        p_admin_id: user.id || null,
+        p_password: user.password,
+        p_solicitud_id: id,
+        p_importe_usd: Math.round(amount * 100) / 100,
+        p_nota: note
+    });
+    if (error) return alert(error.message);
+    await Promise.all([loadVaultPayoutRequests(), loadNomina()]);
+}
+
+async function manageVaultPayout(id, action) {
+    const reference = action === 'pagado' ? (prompt('Referencia o nota del pago (opcional):') || '') : '';
+    const user = session.data || {};
+    const { error } = await supabaseClient.rpc('gestionar_solicitud_cobro_beatriz', {
+        p_admin_id:user.id || null,p_password:user.password,p_solicitud_id:id,p_accion:action,p_referencia:reference
+    });
+    if (error) return alert(error.message);
+    await Promise.all([loadVaultPayoutRequests(), loadNomina()]);
+}
+
+async function archiveVaultPaidRequests() {
+    if (!confirm('Se archivarán las solicitudes pagadas o rechazadas. El historial se conservará. ¿Continuar?')) return;
+    const user = session.data || {};
+    const { data, error } = await supabaseClient.rpc('archivar_solicitudes_pagadas_beatriz', {p_admin_id:user.id || null,p_password:user.password});
+    if (error) return alert(error.message);
+    alert(`✅ ${data || 0} solicitudes archivadas.`);
+    await loadVaultPayoutRequests();
+}
+
+async function runVaultInactivityPolicy() {
+    if (!confirm('Se revisarán los gestores sin pedidos ejecutados durante 30 días desde el 6 de agosto. ¿Continuar?')) return;
+    const user = session.data || {};
+    if (!user.password) return alert('Cierra sesión y vuelve a entrar para validar tu acceso administrativo.');
+    const { data, error } = await supabaseClient.rpc('aplicar_inactividad_gestores', {
+        p_admin_id: user.id || null,
+        p_password: user.password
+    });
+    if (error) return alert(error.message);
+    alert(`✅ Revisión completada. ${Number(data) || 0} gestores dados de baja.`);
+}
+
         // 3. CARGA DE NÓMINA (CON DETALLE DE PRODUCTOS)
 async function loadNomina() {
-    // A. Cargar Pedidos CONCILIADOS (Listos para pagar al gestor) pero NO LIQUIDADOS
+    const user = session.data || {};
+    // A. Política vigente: toda comisión de un pedido ENTREGADO y no pagado
+    // entra en nómina, aunque el pedido sea anterior al cambio o todavía no
+    // haya sido conciliado con el proveedor.
     const { data: pedidos, error: errP } = await supabaseClient
         .from('pedidos')
-        .select('id, orden_dia, gestor, comision_total, producto, pago_gestor, cliente, total')
-        .eq('estado_financiero', 'Conciliado_Prov') 
-        .neq('pago_gestor', 'Pagado');
+        .select('id, orden_dia, gestor, comision_total, comision_parent, comision_subgestor, subgestor_nombre, producto, pago_gestor, pago_subgestor, cliente, total, estado, estado_financiero')
+        .eq('estado', 'Entregado')
+        .or('pago_gestor.is.null,pago_gestor.neq.Pagado');
 
     // B. Cargar Movimientos de Caja
     const { data: caja, error: errC } = await supabaseClient.from('caja_gestores').select('*');
+    const { data: adelantosSolicitudes, error: errA } = await supabaseClient.rpc(
+        'listar_adelantos_solicitudes_nomina',
+        { p_admin_id: user.id || null, p_password: user.password || null }
+    );
 
-    if(errP || errC) return console.error("Error datos nómina");
+    if(errP || errC || errA) {
+        const error = errP || errC || errA;
+        console.error("Error datos nómina", error);
+        const tbody = document.getElementById('list-nomina');
+        const selectGestor = document.getElementById('wallet-gestor');
+        const elTotalGlobal = document.getElementById('total-global-nomina');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-amber-300 font-semibold">No se pudo cargar la nómina en este momento. Actualiza la página; si persiste, contacte a un administrador.</td></tr>';
+        if (selectGestor) selectGestor.innerHTML = '<option value="">No disponible temporalmente</option>';
+        if (elTotalGlobal) elTotalGlobal.innerText = '$0.00';
+        return;
+    }
 
     // C. Agrupar por Gestor
     const nomina = {};
 
     pedidos.forEach(p => {
         const g = p.gestor || 'Sin Gestor';
-        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] };
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [], tieneAdelantoSolicitud: false };
         
-        nomina[g].comision += Number(p.comision_total || 0);
+        // La Bóveda liquida la comisión completa al gestor principal.
+        // El principal controla aparte el pago acordado con su subgestor.
+        const comisionGestor = Number(p.comision_total || 0);
+        nomina[g].comision += comisionGestor;
         nomina[g].ventasCount++;
         nomina[g].pedidosIds.push(p.id);
 
@@ -1041,16 +1388,25 @@ async function loadNomina() {
             id: p.id,
             producto: nombreLimpio,
             orden_dia: p.orden_dia || 'S/N', 
-            comision: Number(p.comision_total || 0)
+            comision: comisionGestor
         });
     });
 
     caja.forEach(c => {
         const g = c.gestor;
-        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [] }; 
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [], tieneAdelantoSolicitud: false };
         
         if(c.tipo === 'Adelanto' || c.tipo === 'Multa') nomina[g].adelantos += Number(c.monto);
         else if (c.tipo === 'Bono') nomina[g].comision += Number(c.monto); 
+    });
+
+    (adelantosSolicitudes || []).forEach(solicitud => {
+        const g = solicitud.gestor_nombre;
+        const adelantado = Number(solicitud.adelantado_usd) || 0;
+        if (!adelantado) return;
+        if(!nomina[g]) nomina[g] = { comision: 0, adelantos: 0, pedidosIds: [], ventasCount: 0, listaProductos: [], tieneAdelantoSolicitud: false };
+        nomina[g].adelantos += adelantado;
+        nomina[g].tieneAdelantoSolicitud = true;
     });
 
     // D. Renderizar Tabla
@@ -1085,10 +1441,10 @@ async function loadNomina() {
                     ${item.producto} 
                     <span class="text-emerald-400 font-mono inline-block ml-1">($${item.comision})</span>
                 </div>
-                <button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')" 
+                ${datos.tieneAdelantoSolicitud ? '<span class="text-[9px] font-bold text-amber-400">Gestionar desde solicitudes</span>' : `<button onclick="liquidarUnicoPedido('${item.id}', '${item.orden_dia}', '${item.comision}', '${gestor}')"
                     class="bg-slate-700 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-[9px] font-bold uppercase transition-all shadow-sm active:scale-95 flex items-center gap-1">
                     <span class="material-symbols-outlined text-[10px]">payments</span> Pagar
-                </button>
+                </button>`}
             </div>
         `).join('');
         
@@ -1107,7 +1463,9 @@ async function loadNomina() {
                 $${totalPagar.toFixed(2)}
             </td>
             <td class="p-3 align-top text-center">
-                ${totalPagar > 0 ? 
+                ${datos.tieneAdelantoSolicitud ?
+                    `<button onclick="switchTab('solicitudes')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all w-full mb-1">VER SOLICITUD</button>`
+                    : totalPagar > 0 ?
                     `<button onclick="liquidarGestor('${gestor}', '${idsString}', ${totalPagar})" 
                         class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-lg uppercase transition-all w-full mb-1">
                         PAGAR TODO
@@ -1121,29 +1479,95 @@ async function loadNomina() {
         
     const elTotalGlobal = document.getElementById('total-global-nomina');
     if (elTotalGlobal) elTotalGlobal.innerText = `$${granTotalNomina.toFixed(2)}`;
-    // --- NUEVO: CARGAR LOS ÚLTIMOS 100 PAGADOS PARA PODER DESHACER ---
-    const { data: pagados } = await supabaseClient
-        .from('pedidos')
-        .select('id, orden_dia, gestor, comision_total, producto')
-        .eq('pago_gestor', 'Pagado')
-        .order('id', { ascending: false }) // Trae los últimos procesados
-        .limit(100);
+    // Cargar los últimos 200 pagos, incluidos los de solicitudes archivadas.
+    // La fecha proviene de la transición real a "Pagado" (pagado_en).
+    const { data: pagados, error: errPagados } = await supabaseClient.rpc('listar_historial_pagos_gestores', {
+        p_admin_id: user.id || null,
+        p_password: user.password || null,
+        p_limit: 200
+    });
 
     const tbodyPagados = document.getElementById('list-nomina-pagados');
-    if (tbodyPagados && pagados) {
+    if (tbodyPagados && errPagados) {
+        tbodyPagados.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-amber-300 font-semibold">No se pudo cargar el historial de pagos. Actualiza la página.</td></tr>';
+    } else if (tbodyPagados && pagados) {
         tbodyPagados.innerHTML = pagados.map(p => `
             <tr class="hover:bg-slate-800/50 transition-colors">
                 <td class="p-2 font-bold text-slate-300 text-xs">#${p.orden_dia || 'S/N'}</td>
                 <td class="p-2 text-xs">${p.gestor}</td>
-                <td class="p-2 text-xs text-emerald-500 font-mono text-right">$${p.comision_total}</td>
+                <td class="p-2 text-xs text-emerald-500 font-mono text-right">$${Number(p.comision || 0).toFixed(2)}</td>
+                <td class="p-2 text-xs text-slate-300 text-right whitespace-nowrap">${formatVaultPaymentDate(p.pagado_en)}</td>
                 <td class="p-2 text-right">
-                    <button onclick="revertirPago('${p.id}', '${p.orden_dia}')" class="bg-red-950/50 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm flex items-center gap-1 ml-auto">
+                    <button onclick="revertirPago('${p.pedido_id}', '${p.orden_dia}')" class="bg-red-950/50 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase transition-all shadow-sm flex items-center gap-1 ml-auto">
                         <span class="material-symbols-outlined text-[12px]">undo</span> Deshacer
                     </button>
                 </td>
             </tr>
         `).join('');
     }
+
+    await loadPaidPayoutHistory();
+}
+
+function renderPaidPayoutHistory() {
+    const list = document.getElementById('paid-payout-history-list');
+    const select = document.getElementById('paid-payout-history-gestor');
+    if (!list || !select) return;
+
+    const selected = select.value || '';
+    const gestores = [...new Set(paidPayoutHistoryRows.map(row => String(row.gestor_nombre || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'es'));
+    select.innerHTML = '<option value="">Todos los gestores</option>' + gestores
+        .map(nombre => `<option value="${vaultSafeText(nombre)}">${vaultSafeText(nombre)}</option>`).join('');
+    if (gestores.includes(selected)) select.value = selected;
+
+    const filtered = select.value
+        ? paidPayoutHistoryRows.filter(row => String(row.gestor_nombre || '').trim() === select.value)
+        : paidPayoutHistoryRows;
+    if (!filtered.length) {
+        list.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">No hay solicitudes pagadas o archivadas.</td></tr>';
+        return;
+    }
+
+    list.innerHTML = filtered.map((item, index) => {
+        const pedidos = Array.isArray(item.pedidos) ? item.pedidos : [];
+        const details = pedidos.length
+            ? `<ul class="mt-3 space-y-1 text-left">${pedidos.map(pedido => `<li><span class="font-bold text-amber-400">[#${vaultSafeText(pedido.orden_dia || pedido.pedido_id || 'S/N')}]</span> ${vaultSafeText(pedido.producto || 'Pedido')} <span class="font-mono text-emerald-400">$${Number(pedido.importe_usd || 0).toFixed(2)}</span></li>`).join('')}</ul>`
+            : '<p class="mt-3 text-left text-slate-500">La solicitud no tiene pedidos detallados.</p>';
+        const method = item.metodo_pago === 'transferencia_cup' ? 'Transferencia CUP' : 'Efectivo USD';
+        const status = String(item.estado || '').toLowerCase();
+        const statusLabel = status === 'archivado' ? 'Archivada' : 'Pagada';
+        return `<tr class="border-t border-slate-800 align-top">
+            <td class="p-3 font-bold text-white">${vaultSafeText(item.gestor_nombre || '—')}<span class="block text-[8px] uppercase text-slate-500">${item.tipo_solicitante === 'subgestor' ? 'Subgestor' : 'Gestor principal'}</span></td>
+            <td class="p-3 text-right font-black text-emerald-400">$${Number(item.importe_usd || 0).toFixed(2)}</td>
+            <td class="p-3 font-bold text-slate-300">${method}</td>
+            <td class="p-3 text-[10px] text-slate-400">${formatVaultPaymentDate(item.creado_en)}</td>
+            <td class="p-3 text-[10px] text-slate-300">${formatVaultPaymentDate(item.pagado_en)}${item.referencia_pago ? `<span class="block text-[9px] text-violet-300">${vaultSafeText(item.referencia_pago)}</span>` : ''}</td>
+            <td class="p-3"><span class="rounded-full bg-emerald-950/60 px-2 py-1 text-[8px] font-black uppercase text-emerald-300">${statusLabel}</span></td>
+            <td class="p-3 text-right"><details class="relative"><summary class="cursor-pointer list-none rounded-lg bg-violet-600/80 px-3 py-2 text-[9px] font-black uppercase text-white">Ver detalle</summary><div class="absolute right-0 z-10 mt-2 w-[min(520px,80vw)] rounded-xl border border-slate-700 bg-slate-950 p-4 shadow-2xl"><p class="text-left text-[9px] uppercase tracking-wider text-slate-500">Pedidos incluidos (${pedidos.length})</p>${details}</div></details></td>
+        </tr>`;
+    }).join('');
+}
+
+function filtrarHistorialSolicitudes() {
+    renderPaidPayoutHistory();
+}
+
+async function loadPaidPayoutHistory() {
+    const list = document.getElementById('paid-payout-history-list');
+    if (!list) return;
+    const user = session.data || {};
+    const { data, error } = await supabaseClient.rpc('listar_historial_solicitudes_cobro_beatriz', {
+        p_admin_id: user.id || null,
+        p_password: user.password || null,
+        p_limit: 200
+    });
+    if (error) {
+        list.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-amber-300">El historial agrupado necesita ejecutar la migración de Supabase. El historial por pedido sigue disponible arriba.</td></tr>';
+        return;
+    }
+    paidPayoutHistoryRows = Array.isArray(data) ? data : [];
+    renderPaidPayoutHistory();
 }
 
         // GUARDAR ADELANTO
@@ -1358,21 +1782,16 @@ function calculateMetrics(orders) {
         
         totalSales += ventaTotalPedido;
 
-        const lineas = p.producto.split('+');
+        const lineas = parseVaultOrderLines(p.producto);
         
         // 1. Calculamos el COSTO TOTAL de todos los productos en este pedido
         let costoTotalProductos = 0;
         let totalUnidadesPedido = 0;
         
         lineas.forEach(linea => {
-            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
-            if (match) {
-                const qty = parseInt(match[1]);
-                const nombre = match[2].trim();
-                const prodInv = inventario.find(i => i.nombre.trim() === nombre);
-                costoTotalProductos += (prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0) * qty;
-                totalUnidadesPedido += qty;
-            }
+            const prodInv = resolveVaultInventoryProduct(linea.name, p.proveedor);
+            costoTotalProductos += (prodInv ? parseFloat(prodInv.costo_proveedor || 0) : 0) * linea.qty;
+            totalUnidadesPedido += linea.qty;
         });
 
         // 2. TARIFA TECNOLÓGICA (Basada en el precio neto del equipo)
@@ -1388,17 +1807,10 @@ function calculateMetrics(orders) {
 
         // 4. DISTRIBUIR UTILIDAD POR PRODUCTO (Para el Ranking)
         lineas.forEach(linea => {
-            const match = linea.trim().match(/^(\d+)x\s+(.+?)(\[|$)/);
-            if (match) {
-                const qty = parseInt(match[1]);
-                const nombre = match[2].trim();
-                
-                if (!prodStats[nombre]) prodStats[nombre] = { qty: 0, profit: 0 };
-                prodStats[nombre].qty += qty;
-                
-                // Prorrateamos la utilidad del pedido entre los productos
-                prodStats[nombre].profit += (utilidadRealPedido / totalUnidadesPedido) * qty;
-            }
+            const nombre = linea.name;
+            if (!prodStats[nombre]) prodStats[nombre] = { qty: 0, profit: 0 };
+            prodStats[nombre].qty += linea.qty;
+            prodStats[nombre].profit += (utilidadRealPedido / totalUnidadesPedido) * linea.qty;
         });
 
         // Gráficos
@@ -1478,58 +1890,27 @@ function renderRankingLists(stats) {
 // --- VERSIÓN CORREGIDA: DETECTA CANTIDADES (5x, 2x...) ---
 // --- VERSIÓN MEJORADA: CALCULA Y GENERA EL DESGLOSE ---
 function renderSystemDebt() {
-    if (!pedidosRawAdmin) return;
-
-    // Filtramos: Entregados Y que no te hayan pagado el fee
-    const deudaOrders = pedidosRawAdmin.filter(p => 
-        p.estado === 'Entregado' && 
-        (p.pago_sistema === 'Pendiente' || !p.pago_sistema)
-    );
-
-    let totalDeuda = 0;
-    const idsDeuda =[];
-    let htmlDetalles = ''; // <-- NUEVO: Variable para armar la tabla
-
-    deudaOrders.forEach(p => {
-        // 1. Detectar Cantidad (Qty)
-        let qty = 1;
-        const match = p.producto.match(/^(\d+)x/);
-        if (match) qty = parseInt(match[1]);
-
-        // 2. Limpiar valores monetarios
-        const totalVenta = parseFloat(p.total) || 0;
-        const mensajeria = parseFloat(p.costo_mensajeria) || 0;
-
-        // 3. Calcular Precio Unitario Real del Equipo
-        const precioUnitario = (totalVenta - mensajeria) / qty;
-
-        // 4. Calcular Tarifa Unitaria
-        const feeUnitario = calculateDevFee(precioUnitario);
-        
-        // 5. Calcular Tarifa Total del Pedido
-        const feeTotalPedido = feeUnitario * qty;
-        
-        if (feeTotalPedido > 0) { // Solo sumamos y mostramos si la tarifa es mayor a 0
-            totalDeuda += feeTotalPedido;
-            idsDeuda.push(p.id);
-
-            // <-- NUEVO: Vamos dibujando la fila para el Modal
-            const fecha = new Date(p.fecha).toLocaleDateString();
-            htmlDetalles += `
+    if (!deudaSistemaResumen) return;
+    const totalDeuda = Number(deudaSistemaResumen.total) || 0;
+    const pedidosCount = Number(deudaSistemaResumen.pedidos) || 0;
+    const htmlDetalles = deudaSistemaLineas
+        .filter(line => line.estado === 'pendiente')
+        .map(line => {
+            const fecha = new Date(line.fecha_pedido).toLocaleDateString();
+            const producto = vaultSafeText(line.producto);
+            return `
                 <tr class="hover:bg-slate-800/50 transition-colors">
                     <td class="p-3 align-middle">
-                        <span class="font-black text-slate-200">#${p.orden_dia || 'S/N'}</span><br>
+                        <span class="font-black text-slate-200">#${vaultSafeText(line.orden_dia || 'S/N')}</span><br>
                         <span class="text-[9px] text-slate-500">${fecha}</span>
                     </td>
-                    <td class="p-3 align-middle font-bold text-xs truncate max-w-[200px]" title="${p.producto}">${p.producto}</td>
-                    <td class="p-3 align-middle text-right font-mono text-slate-400">$${precioUnitario.toFixed(2)}</td>
-                    <td class="p-3 align-middle text-right font-mono text-indigo-400">$${feeUnitario.toFixed(2)}</td>
-                    <td class="p-3 align-middle text-center font-bold text-slate-300">x${qty}</td>
-                    <td class="p-3 align-middle text-right font-mono font-black text-emerald-400">$${feeTotalPedido.toFixed(2)}</td>
-                </tr>
-            `;
-        }
-    });
+                    <td class="p-3 align-middle font-bold text-xs truncate max-w-[200px]" title="${producto}">${producto}</td>
+                    <td class="p-3 align-middle text-right font-mono text-slate-400">$${Number(line.precio_unitario).toFixed(2)}</td>
+                    <td class="p-3 align-middle text-right font-mono text-indigo-400">$${Number(line.tarifa_unitaria).toFixed(2)}</td>
+                    <td class="p-3 align-middle text-center font-bold text-slate-300">x${Number(line.cantidad)}</td>
+                    <td class="p-3 align-middle text-right font-mono font-black text-emerald-400">$${Number(line.tarifa_total).toFixed(2)}</td>
+                </tr>`;
+        }).join('');
 
     // Actualizar UI de la Tarjeta Principal
     const elAmount = document.getElementById('sys-debt-amount');
@@ -1538,7 +1919,7 @@ function renderSystemDebt() {
     const btnDetails = document.getElementById('btn-details-sys');
 
     if(elAmount) elAmount.innerText = `$${totalDeuda.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-    if(elCount) elCount.innerText = `${idsDeuda.length} pedidos por procesar`;
+    if(elCount) elCount.innerText = `${pedidosCount} pedidos por procesar`;
 
     // Actualizar UI del Modal de Desglose
     const listContainer = document.getElementById('list-sys-details');
@@ -1551,7 +1932,6 @@ function renderSystemDebt() {
     }
 
     if(btn) {
-        btn.dataset.ids = JSON.stringify(idsDeuda);
         if (totalDeuda === 0) {
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -1586,13 +1966,11 @@ function closeSystemDebtDetails() {
 // 2. FUNCIÓN PARA COBRAR (LIQUIDAR)
 async function liquidarSystemFee() {
     const btn = document.getElementById('btn-pay-sys');
-    const ids = JSON.parse(btn.dataset.ids || "[]");
-    
-    if (ids.length === 0) return;
+    if (!deudaSistemaResumen || Number(deudaSistemaResumen.pedidos) === 0) return;
 
     const monto = document.getElementById('sys-debt-amount').innerText;
 
-    const confirmacion = confirm(`¿Confirmas que Ángel te ha pagado ${monto} por el uso de la plataforma?\n\nEsto marcará ${ids.length} pedidos como "Pagado al Sistema".`);
+    const confirmacion = confirm(`¿Confirmas que Ángel te ha pagado ${monto} por el uso de la plataforma?\n\nEsto liquidará ${deudaSistemaResumen.pedidos} pedidos y generará un comprobante contable.`);
     
     if (!confirmacion) return;
 
@@ -1600,15 +1978,17 @@ async function liquidarSystemFee() {
     btn.disabled = true;
 
     try {
-        // Actualizamos en lote en Supabase
-        const { error } = await supabaseClient
-            .from('pedidos')
-            .update({ pago_sistema: 'Pagado' })
-            .in('id', ids);
+        const reference = prompt('Referencia o nota del pago (opcional):') || '';
+        const user = session.data || {};
+        const { data, error } = await supabaseClient.rpc('liquidar_deuda_sistema', {
+            p_admin_id: user.id || null,
+            p_password: user.password,
+            p_referencia: reference
+        });
 
         if (error) throw error;
 
-        alert("✅ ¡Pago Registrado! El contador se ha reiniciado.");
+        alert(`✅ Pago registrado.\nComprobante: ${data.id}\nPedidos: ${data.pedidos}\nTotal: $${Number(data.total).toFixed(2)}`);
         
         // Recargar datos
         loadAdminData(); 
