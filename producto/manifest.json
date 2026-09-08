@@ -121,9 +121,9 @@
     "slug": "base-solar-1-panel",
     "nombre": "Base para panel solar [ 1 panel ]",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/base-solar-1-panel/",
-    "updated_at": "2026-08-18T01:21:43.460004+00:00"
+    "updated_at": "2026-09-08T15:46:20.541638+00:00"
   },
   {
     "id": "634391c9-129c-4ea4-a9a8-7f99a372441e",
