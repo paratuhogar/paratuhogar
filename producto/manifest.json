@@ -2196,13 +2196,22 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "6b47995e-9e19-429e-855d-e333fa74539b",
+    "slug": "nevera-milexus-7-pies-sin-llave",
+    "nombre": "Nevera  7 pies Milexus",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-milexus-7-pies-sin-llave/",
+    "updated_at": "2026-09-08T17:35:27.522976+00:00"
+  },
+  {
     "id": "485fb70c-1f8b-4fe2-b2ba-4891613f5258",
     "slug": "nevera-10-pies-royal",
     "nombre": "Nevera 10 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-10-pies-royal/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-08T18:00:25.040356+00:00"
   },
   {
     "id": "52c0e7a5-de6e-4655-8208-1d9374cdb601",
@@ -2250,15 +2259,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "96ff4cc4-743b-40c2-bef1-43eb7fc0b9f5",
-    "slug": "nevera-3-5-pies-milexus",
-    "nombre": "Nevera 3.5 pies Milexus",
-    "categoria": "MUNDO FRIO",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
-    "updated_at": "2026-09-05T14:42:53.117969+00:00"
-  },
-  {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
     "slug": "nevera-3-5-pies-sankey",
     "nombre": "Nevera 3.5 pies Sankey",
@@ -2275,6 +2275,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-stelectric/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "96ff4cc4-743b-40c2-bef1-43eb7fc0b9f5",
+    "slug": "nevera-3-5-pies-milexus",
+    "nombre": "Nevera 4.2 pies Milexus",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
+    "updated_at": "2026-09-08T17:10:40.753505+00:00"
   },
   {
     "id": "64248c2d-5ed0-43c4-b1d3-57726b929943",
@@ -2484,13 +2493,31 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "cfa92aaa-ace6-4083-877d-453010dd0d85",
+    "slug": "nevera-milexus-11-2-pies",
+    "nombre": "Nevera Milexus 11.2 pies",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-milexus-11-2-pies/",
+    "updated_at": "2026-09-08T17:33:32.765521+00:00"
+  },
+  {
     "id": "0de3f115-92f9-4ce7-b710-785a00395a76",
     "slug": "nevera-milexus-6-pies",
     "nombre": "Nevera MILEXUS 6 PIES",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-milexus-6-pies/",
-    "updated_at": "2026-09-01T20:46:23.908752+00:00"
+    "updated_at": "2026-09-08T17:15:46.260966+00:00"
+  },
+  {
+    "id": "7168fa9f-b71a-4650-9030-20263b1543a0",
+    "slug": "nevera-reymo-15-pies",
+    "nombre": "Nevera Reymo 15 pies",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-reymo-15-pies/",
+    "updated_at": "2026-09-08T17:18:11.215997+00:00"
   },
   {
     "id": "b479a9ed-adc4-4dfc-8848-5c6b950876e3",
@@ -2970,6 +2997,15 @@
     "updated_at": "2026-08-28T16:07:04.638432+00:00"
   },
   {
+    "id": "9ff065b8-5b55-46f3-8130-d50b5792cacc",
+    "slug": "refrigerador-royal-side-by-side-20-pies",
+    "nombre": "Refrigerador Royal Side by Side 20 pies",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/refrigerador-royal-side-by-side-20-pies/",
+    "updated_at": "2026-09-08T17:28:19.723716+00:00"
+  },
+  {
     "id": "c3bfc469-0799-4eb3-a861-6c9945604a73",
     "slug": "refrigerador-sankey-7-pies",
     "nombre": "Refrigerador SANKEY - 7 pies",
@@ -3253,9 +3289,9 @@
     "slug": "split-1-tonelada-eko",
     "nombre": "Split 1 tonelada EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1-tonelada-eko/",
-    "updated_at": "2026-09-07T22:57:40.313883+00:00"
+    "updated_at": "2026-09-08T19:11:29.192224+00:00"
   },
   {
     "id": "8adbed80-8c00-48f3-9e4a-c1377c744ac2",
@@ -3316,9 +3352,9 @@
     "slug": "split-1t-milexus-inverter",
     "nombre": "Split 1T Milexus inverter",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-milexus-inverter/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-08T17:12:36.037014+00:00"
   },
   {
     "id": "2db9fd9c-0780-4385-b6b3-8bd54a0b82c4",
