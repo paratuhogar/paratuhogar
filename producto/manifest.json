@@ -672,7 +672,7 @@
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/colchon-camero-eko/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-08T01:35:33.083023+00:00"
   },
   {
     "id": "3d35a4d0-5b84-4337-aa4a-e4d464c83670",
@@ -2533,9 +2533,9 @@
     "slug": "olla-reina-4l-eko-junta-extra",
     "nombre": "Olla Reina 4L EKO + Junta extra",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/olla-reina-4l-eko-junta-extra/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-07T22:14:30.074067+00:00"
   },
   {
     "id": "594e2a01-703b-48ae-9061-30dee1e4c646",
@@ -3253,9 +3253,9 @@
     "slug": "split-1-tonelada-eko",
     "nombre": "Split 1 tonelada EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1-tonelada-eko/",
-    "updated_at": "2026-09-05T00:47:09.180731+00:00"
+    "updated_at": "2026-09-07T22:57:40.313883+00:00"
   },
   {
     "id": "8adbed80-8c00-48f3-9e4a-c1377c744ac2",
@@ -3550,9 +3550,9 @@
     "slug": "ventilador-recargable-eko",
     "nombre": "Ventilador recargable EKO",
     "categoria": "VENTILADORES",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-eko/",
-    "updated_at": "2026-09-07T20:29:46.81717+00:00"
+    "updated_at": "2026-09-07T21:38:46.939279+00:00"
   },
   {
     "id": "5c9eb09f-33df-46f8-a3aa-c28746be9815",
