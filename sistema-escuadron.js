@@ -286,14 +286,20 @@ async function approveSubOrder(id) {
         const { data: pedido } = await supabaseClient.from('pedidos').select('*').eq('id', id).single();
         const prov = pedido.proveedor || 'General';
         
-        // --- TU CÁLCULO MATEMÁTICO INTACTO ---
-        const { data: ultimos } = await supabaseClient.from('pedidos').select('orden_dia').eq('proveedor', prov).not('orden_dia', 'like', '%TEMP%').order('fecha', { ascending: false }).limit(20);
-        let maxNum = 0;
-        if(ultimos) maxNum = Math.max(...ultimos.map(p => { const s = p.orden_dia.split('-'); return parseInt(s[s.length-1]) || 0; }), 0);
-        const codFinal = `${prov}-${maxNum + 1}`;
-        // -------------------------------------
+        // El consecutivo se reserva en Supabase con bloqueo transaccional.
+        // La aprobación usa el mismo generador que la tienda principal para
+        // que el vale, la web y WhatsApp conserven exactamente el mismo código.
+        const { data: codFinal, error: errConsecutivo } = await supabaseClient
+            .rpc('reservar_consecutivo_pedido', { p_proveedor: prov });
+        if (errConsecutivo || !codFinal) {
+            throw errConsecutivo || new Error('Supabase no devolvió un consecutivo');
+        }
 
-        await supabaseClient.from('pedidos').update({ orden_dia: codFinal, estado_interno: 'aprobado' }).eq('id', id);
+        const { error: errUpdate } = await supabaseClient
+            .from('pedidos')
+            .update({ orden_dia: String(codFinal).trim(), estado_interno: 'aprobado' })
+            .eq('id', id);
+        if (errUpdate) throw errUpdate;
 
         // Mensaje WhatsApp
         const miTel = getAgentPhone(); 

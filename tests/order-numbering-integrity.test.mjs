@@ -6,6 +6,7 @@ const root = new URL('../', import.meta.url);
 
 test('los consecutivos se reservan de forma atómica y se reutilizan en el pedido', async () => {
   const html = await readFile(new URL('index.html', root), 'utf8');
+  const squadron = await readFile(new URL('sistema-escuadron.js', root), 'utf8');
   const sql = await readFile(
     new URL('supabase/migrations/20260909_consecutivos_pedidos_atomicos.sql', root),
     'utf8'
@@ -23,4 +24,12 @@ test('los consecutivos se reservan de forma atómica y se reutilizan en el pedid
   assert.doesNotMatch(numberingBlock, /\.limit\(20\)\s*;/);
   assert.doesNotMatch(numberingBlock, /TEMP-\$\{random\}/);
   assert.match(numberingBlock, /No se pudo reservar el consecutivo/i);
+
+  assert.match(squadron, /rpc\(['"]reservar_consecutivo_pedido['"]/);
+  const approvalBlock = squadron.slice(
+    squadron.indexOf('async function approveSubOrder'),
+    squadron.indexOf('// Mensaje WhatsApp', squadron.indexOf('async function approveSubOrder'))
+  );
+  assert.doesNotMatch(approvalBlock, /\.limit\(20\)\s*;/);
+  assert.doesNotMatch(approvalBlock, /maxNum/);
 });
