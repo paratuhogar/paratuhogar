@@ -166,9 +166,9 @@
     "slug": "bateria-2560w-gnercell",
     "nombre": "Batería 2560W Gnercell",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-2560w-gnercell/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-08T22:08:25.159333+00:00"
   },
   {
     "id": "0ad88cf0-5493-4054-a06d-5b588fa12836",
@@ -202,9 +202,9 @@
     "slug": "bateria-infinisolar-de-5k-52v-100amp",
     "nombre": "Bateria InfiniSolar de 5k 52v 100amp",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-infinisolar-de-5k-52v-100amp/",
-    "updated_at": "2026-09-04T15:43:25.100188+00:00"
+    "updated_at": "2026-09-08T21:40:21.852326+00:00"
   },
   {
     "id": "172cbce1-e7a2-4af3-85ec-69807efba685",
@@ -238,9 +238,9 @@
     "slug": "bateria-must-10kw",
     "nombre": "Bateria Must 10Kw",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-must-10kw/",
-    "updated_at": "2026-08-05T00:05:40.427312+00:00"
+    "updated_at": "2026-09-08T21:43:02.942612+00:00"
   },
   {
     "id": "027605c8-21f0-41a3-a620-21a74a7018ae",
