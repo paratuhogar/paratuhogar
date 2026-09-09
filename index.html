@@ -6347,50 +6347,20 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 
         let codPedido = "";
         try {
-            // 1. Consultamos los últimos consecutivos de la tabla principal
-            const { data: ultimosPedidos, error: errLast } = await supabaseClient
-                .from('pedidos')
-                .select('orden_dia')
-                .eq('proveedor', prov) 
-                .not('orden_dia', 'like', '%TEMP%') 
-                .order('fecha', { ascending: false }) 
-                .limit(20); 
+            // El consecutivo se reserva en Supabase con bloqueo transaccional.
+            // Así nunca depende de una lectura parcial del navegador ni de los últimos 20 pedidos.
+            const { data: consecutivo, error: errConsecutivo } = await supabaseClient
+                .rpc('reservar_consecutivo_pedido', { p_proveedor: prov });
 
-            if (errLast) throw errLast;
+            if (errConsecutivo || !consecutivo) {
+                throw errConsecutivo || new Error('Supabase no devolvió un consecutivo');
+            }
 
-            // 2. Consultamos los últimos consecutivos pendientes en la cola de subgestores
-            const { data: ultimosSub, error: errSub } = await supabaseClient
-                .from('pedidos_subgestores')
-                .select('orden_dia')
-                .eq('proveedor', prov)
-                .not('orden_dia', 'like', '%TEMP%')
-                .order('created_at', { ascending: false })
-                .limit(20);
-
-            let maximoNumero = 0;
-            
-            // Función interna para extraer y comparar el número más alto de ambas tablas
-            const procesarNumeros = (lista) => {
-                if (lista && lista.length > 0) {
-                    lista.forEach(p => {
-                        if (!p.orden_dia) return;
-                        const partes = p.orden_dia.split('-');
-                        const num = parseInt(partes[partes.length - 1]);
-                        if (!isNaN(num) && num > maximoNumero) {
-                            maximoNumero = num;
-                        }
-                    });
-                }
-            };
-
-            procesarNumeros(ultimosPedidos);
-            procesarNumeros(ultimosSub);
-
-            // Generamos el consecutivo real asegurando que no choque con ningún pendiente
-            codPedido = `${prov}-${maximoNumero + 1}`;
+            codPedido = String(consecutivo).trim();
         } catch (e) {
-            const random = Math.floor(1000 + Math.random() * 9000);
-            codPedido = `${prov}-TEMP-${random}`;
+            console.error('No se pudo reservar el consecutivo del pedido:', e);
+            alert('❌ No se pudo reservar el consecutivo del pedido. No se envió a WhatsApp ni se guardó un código temporal. Vuelve a intentarlo.');
+            throw e;
         }
         protectionOrderIds.push(codPedido);
 
