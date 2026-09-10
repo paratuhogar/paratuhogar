@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-09-09</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-09-09</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-09-10</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-09-10</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-09-05</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-09-08</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-09-10</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-09-08</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-09-08</lastmod></url>
@@ -13,6 +13,7 @@
   <url><loc>https://paratuhogar.org/categoria/ventiladores/</loc><lastmod>2026-09-07</lastmod></url>
   <url><loc>https://paratuhogar.org/producto/arrocera-decakila-1-litros-con-vaporera/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/ArroceraDecakila1L_1.8L.jpeg</image:loc><image:title>Arrocera Decakila – 1 litros con vaporera</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/arrocera-decakila-1-8-litros-con-vaporera/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/ArroceraDecakila1L_1.8L.jpeg</image:loc><image:title>Arrocera Decakila – 1.8 litros con vaporera</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/backups-marsriva-1000va-600w/</loc><lastmod>2026-09-10</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/marsiva_front.jpeg</image:loc><image:title>Backups - Marsriva 1000VA/600W</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/backups-marsriva-1500va-900w/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/marsiva_front.jpeg</image:loc><image:title>Backups - Marsriva 1500VA/900W</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/bateria-infinisolar-de-5k-52v-100amp/</loc><lastmod>2026-09-08</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/InfinisolarLifepo4_5kw52v100amp.jpg</image:loc><image:title>Bateria InfiniSolar de 5k 52v 100amp</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/bateria-must-10kw/</loc><lastmod>2026-09-08</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Bateria5kwhMUST.jpeg</image:loc><image:title>Bateria Must 10Kw</image:title></image:image></url>
