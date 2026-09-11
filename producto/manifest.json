@@ -1030,9 +1030,9 @@
     "slug": "estacion-portatil-3600w-delta-pro",
     "nombre": "Estación portátil 3600W DELTA Pro",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-3600w-delta-pro/",
-    "updated_at": "2026-09-07T04:13:09.771317+00:00"
+    "updated_at": "2026-09-11T19:16:43.138702+00:00"
   },
   {
     "id": "837cc1f5-12a8-4bd8-9454-1d531e5a3b52",
@@ -2713,9 +2713,9 @@
     "slug": "panel-solar-sun-630w",
     "nombre": "Panel Solar SUN 630W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-solar-sun-630w/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-11T19:08:43.982391+00:00"
   },
   {
     "id": "a7070633-aef0-4a3e-ac8e-0b39474dc9fd",
@@ -2839,9 +2839,9 @@
     "slug": "refrigerador-11-48-pies-hisense",
     "nombre": "Refrigerador 11.48 pies Hisense Inverter",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-11-48-pies-hisense/",
-    "updated_at": "2026-09-02T20:22:57.992501+00:00"
+    "updated_at": "2026-09-11T20:18:51.165599+00:00"
   },
   {
     "id": "6f3db91e-89f2-4f9f-a7a7-6f3b25d8d6a8",
@@ -3334,9 +3334,9 @@
     "slug": "split-1t-reymo",
     "nombre": "Split 1T  Reymo",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-reymo/",
-    "updated_at": "2026-09-06T20:38:12.079426+00:00"
+    "updated_at": "2026-09-11T20:18:24.462021+00:00"
   },
   {
     "id": "4e3225fb-8964-47f5-8f85-1dbb1996d935",
