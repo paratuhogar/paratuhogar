@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-09-11</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-09-11</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-09-12</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-09-12</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-09-05</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-09-11</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-09-08</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-09-10</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-09-08</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-08-18</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/transporte/</loc><lastmod>2026-09-06</lastmod></url>
@@ -93,7 +93,6 @@
   <url><loc>https://paratuhogar.org/producto/sofa-cama/</loc><lastmod>2026-09-06</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Sofacamacarmelita.jpg</image:loc><image:title>Sofa cama</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/split-eko-2t/</loc><lastmod>2026-09-05</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Split2teko.jpg</image:loc><image:title>Split  2T EKO</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/split-1-tonelada-eko/</loc><lastmod>2026-09-08</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/1768941098714_0_Split_1_tonelada_EKO_jpg.jpg</image:loc><image:title>Split 1 tonelada EKO</image:title></image:image></url>
-  <url><loc>https://paratuhogar.org/producto/split-2t-milexus-inverter/</loc><lastmod>2026-09-10</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Split2Tmilexusinverter.jpg</image:loc><image:title>Split 2T Milexus inverter</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/switch-planet-gsd-503-5-puertos/</loc><lastmod>2026-08-18</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Switchplanet5puertos_.jpg</image:loc><image:title>Switch Planet GSD - 503 5 puertos</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/ventilador-de-pedestal-16-midea/</loc><lastmod>2026-09-05</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Ventilador16midea.jpeg</image:loc><image:title>Ventilador de pedestal 16&quot; Midea</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/ventilador-recargable-12-eko/</loc><lastmod>2026-09-07</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/VentiladorEKO12litio.jpg</image:loc><image:title>Ventilador recargable 12&quot; EKO</image:title></image:image></url>
