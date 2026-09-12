@@ -121,9 +121,9 @@
     "slug": "base-solar-1-panel",
     "nombre": "Base para panel solar [ 1 panel ]",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/base-solar-1-panel/",
-    "updated_at": "2026-09-10T20:08:43.767708+00:00"
+    "updated_at": "2026-09-12T16:57:22.290613+00:00"
   },
   {
     "id": "634391c9-129c-4ea4-a9a8-7f99a372441e",
@@ -2551,9 +2551,9 @@
     "slug": "olla-de-presion-7l-impronta",
     "nombre": "Olla de presión 7L Impronta",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/olla-de-presion-7l-impronta/",
-    "updated_at": "2026-09-12T15:14:44.403417+00:00"
+    "updated_at": "2026-09-12T17:01:53.558325+00:00"
   },
   {
     "id": "216dde2c-e55f-459f-bede-194b73b812f8",
