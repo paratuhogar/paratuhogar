@@ -1444,9 +1444,9 @@
     "slug": "inversor-3kw-must",
     "nombre": "Inversor 3kw Must",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/inversor-3kw-must/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-13T14:42:46.676242+00:00"
   },
   {
     "id": "aa8bbdd9-ca26-43cc-bd9c-3ea1286dcd59",
