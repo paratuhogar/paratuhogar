@@ -436,9 +436,9 @@
     "slug": "calentador-de-agua-ruden-30-l",
     "nombre": "Calentador de agua Ruden - 30 L",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/calentador-de-agua-ruden-30-l/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-14T18:10:16.461586+00:00"
   },
   {
     "id": "ce40f401-3ddb-4d75-94f8-bb26c0cb61ca",
@@ -2259,6 +2259,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "96ff4cc4-743b-40c2-bef1-43eb7fc0b9f5",
+    "slug": "nevera-3-5-pies-milexus",
+    "nombre": "Nevera 3.5 pies Milexus",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
+    "updated_at": "2026-09-14T20:16:46.308613+00:00"
+  },
+  {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
     "slug": "nevera-3-5-pies-sankey",
     "nombre": "Nevera 3.5 pies Sankey",
@@ -2275,15 +2284,6 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-stelectric/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
-  },
-  {
-    "id": "96ff4cc4-743b-40c2-bef1-43eb7fc0b9f5",
-    "slug": "nevera-3-5-pies-milexus",
-    "nombre": "Nevera 4.2 pies Milexus",
-    "categoria": "MUNDO FRIO",
-    "disponible": true,
-    "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
-    "updated_at": "2026-09-08T17:10:40.753505+00:00"
   },
   {
     "id": "64248c2d-5ed0-43c4-b1d3-57726b929943",
@@ -2517,7 +2517,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-reymo-15-pies/",
-    "updated_at": "2026-09-08T17:18:11.215997+00:00"
+    "updated_at": "2026-09-14T14:10:32.065445+00:00"
   },
   {
     "id": "b479a9ed-adc4-4dfc-8848-5c6b950876e3",
@@ -3289,9 +3289,9 @@
     "slug": "split-1-tonelada-eko",
     "nombre": "Split 1 tonelada EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1-tonelada-eko/",
-    "updated_at": "2026-09-08T19:11:29.192224+00:00"
+    "updated_at": "2026-09-14T18:39:33.193357+00:00"
   },
   {
     "id": "8adbed80-8c00-48f3-9e4a-c1377c744ac2",
