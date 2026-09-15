@@ -2092,9 +2092,9 @@
     "slug": "mini-proyector-steren-pro-260",
     "nombre": "Mini Proyector Steren PRO-260",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/mini-proyector-steren-pro-260/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-15T17:11:25.626531+00:00"
   },
   {
     "id": "923522df-dfb9-46ea-b720-5a958b98bedf",
@@ -2227,9 +2227,9 @@
     "slug": "nevera-10-7-pies-sanmax",
     "nombre": "Nevera 10.7 pies SANMAX",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-10-7-pies-sanmax/",
-    "updated_at": "2026-09-14T02:32:44.368921+00:00"
+    "updated_at": "2026-09-15T17:21:43.944557+00:00"
   },
   {
     "id": "83959666-c6e5-41c4-bd4e-8e146effe8be",
@@ -3267,15 +3267,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "03c16bc8-899d-46ea-8d7d-bc93725118e1",
-    "slug": "spirit-of-gamer-pack-teclado-mouse-alfombrilla",
-    "nombre": "Spirit of Gamer Pack Teclado | Mouse | Alfombrilla",
-    "categoria": "TECNOLOGÍA",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/spirit-of-gamer-pack-teclado-mouse-alfombrilla/",
-    "updated_at": "2026-09-10T14:40:56.024117+00:00"
-  },
-  {
     "id": "6f7f4046-f8d4-4bf8-91b2-5d9127a41a65",
     "slug": "split-eko-2t",
     "nombre": "Split  2T EKO",
@@ -3508,6 +3499,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/taza-tanque-monolitica/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "03c16bc8-899d-46ea-8d7d-bc93725118e1",
+    "slug": "spirit-of-gamer-pack-teclado-mouse-alfombrilla",
+    "nombre": "Teclado | Mouse | Alfombrilla Spirit of Gamer Pack",
+    "categoria": "TECNOLOGÍA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/spirit-of-gamer-pack-teclado-mouse-alfombrilla/",
+    "updated_at": "2026-09-15T20:37:27.251128+00:00"
   },
   {
     "id": "e5c54b8f-80d9-49d0-b1dc-a57e71c22cef",
