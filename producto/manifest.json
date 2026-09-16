@@ -1440,6 +1440,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "b94640bc-543e-4857-9355-7f14a718abe3",
+    "slug": "inversor-3kw-infinisolar",
+    "nombre": "Inversor 3kw InfiniSolar",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/inversor-3kw-infinisolar/",
+    "updated_at": "2026-09-16T16:40:15.1246+00:00"
+  },
+  {
     "id": "9a074578-48ab-4011-8749-0062883eaf37",
     "slug": "inversor-3kw-must",
     "nombre": "Inversor 3kw Must",
@@ -2200,18 +2209,18 @@
     "slug": "nevera-milexus-7-pies-sin-llave",
     "nombre": "Nevera  7 pies Milexus",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-milexus-7-pies-sin-llave/",
-    "updated_at": "2026-09-08T17:35:27.522976+00:00"
+    "updated_at": "2026-09-16T15:04:54.969623+00:00"
   },
   {
     "id": "485fb70c-1f8b-4fe2-b2ba-4891613f5258",
     "slug": "nevera-10-pies-royal",
     "nombre": "Nevera 10 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-10-pies-royal/",
-    "updated_at": "2026-09-08T18:00:25.040356+00:00"
+    "updated_at": "2026-09-16T15:04:42.502242+00:00"
   },
   {
     "id": "52c0e7a5-de6e-4655-8208-1d9374cdb601",
@@ -2715,7 +2724,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-solar-sun-630w/",
-    "updated_at": "2026-09-11T19:08:43.982391+00:00"
+    "updated_at": "2026-09-16T13:06:09.900097+00:00"
   },
   {
     "id": "a7070633-aef0-4a3e-ac8e-0b39474dc9fd",
@@ -3280,9 +3289,9 @@
     "slug": "split-1-tonelada-eko",
     "nombre": "Split 1 tonelada EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1-tonelada-eko/",
-    "updated_at": "2026-09-14T18:39:33.193357+00:00"
+    "updated_at": "2026-09-16T13:53:48.556054+00:00"
   },
   {
     "id": "8adbed80-8c00-48f3-9e4a-c1377c744ac2",
