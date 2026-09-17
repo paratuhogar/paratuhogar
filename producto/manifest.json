@@ -202,9 +202,9 @@
     "slug": "bateria-infinisolar-de-5k-52v-100amp",
     "nombre": "Bateria InfiniSolar de 5k 52v 100amp",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-infinisolar-de-5k-52v-100amp/",
-    "updated_at": "2026-09-14T01:50:16.426573+00:00"
+    "updated_at": "2026-09-16T23:04:36.765262+00:00"
   },
   {
     "id": "172cbce1-e7a2-4af3-85ec-69807efba685",
@@ -2128,9 +2128,9 @@
     "slug": "monitor-iggual-21-5",
     "nombre": "Monitor Iggual 21.5\"",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/monitor-iggual-21-5/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-16T23:04:46.288233+00:00"
   },
   {
     "id": "1348e597-7177-4368-b75e-7104a5631912",
@@ -3298,9 +3298,9 @@
     "slug": "split-1-5-t-reymo-inverter",
     "nombre": "Split 1.5 T REYMO (inverter)",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1-5-t-reymo-inverter/",
-    "updated_at": "2026-08-07T14:12:28.958943+00:00"
+    "updated_at": "2026-09-16T21:37:02.11463+00:00"
   },
   {
     "id": "6a0a9cec-64f8-4aff-b93e-ea82577874b9",
@@ -3355,6 +3355,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-milexus-inverter/",
     "updated_at": "2026-09-10T11:57:53.027045+00:00"
+  },
+  {
+    "id": "18d4a52b-25ef-4df8-b4a2-ec3314f4d278",
+    "slug": "split-1t-reymo-inverter",
+    "nombre": "Split 1T Reymo Inverter",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/split-1t-reymo-inverter/",
+    "updated_at": "2026-09-17T01:52:55.186984+00:00"
   },
   {
     "id": "2db9fd9c-0780-4385-b6b3-8bd54a0b82c4",
