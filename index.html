@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <script src="js/product-description-editor.js?v=20260818-1"></script>
+    <script src="js/checkout-submit-guard.js?v=20260918-1"></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
@@ -6093,9 +6094,27 @@ function buildSubgestorWhatsappSummary(orderSubgestor, totalCommission) {
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
 // 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
-// 5. ENVÍO DE PEDIDO (CON CANDADO DE SEGURIDAD PARA ENVÍO $0)
+    // 5. ENVÍO DE PEDIDO (CON CANDADO DE SEGURIDAD PARA ENVÍO $0)
+    const checkoutStorage = (() => {
+        try { return window.sessionStorage; } catch (_) { return null; }
+    })();
+    const checkoutSubmitGuard = window.PTHCheckoutSubmitGuard.createCheckoutSubmitGuard(checkoutStorage);
+
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
+
+    // Debe ejecutarse antes del primer await. Así un doble clic o un reintento
+    // mientras carga la red no inicia dos flujos de inserción simultáneos.
+    const submissionAttempt = checkoutSubmitGuard.acquire();
+    if (!submissionAttempt.accepted) {
+        alert('⏳ Este pedido ya se está procesando. Espera la confirmación.');
+        return;
+    }
+    const submissionToken = submissionAttempt.token;
+    let checkoutFinished = false;
+    let btn = null;
+
+    try {
 
     // === NUEVO: SABER SI ES RECOGIDA EN ALMACÉN ===
     const isRecogida = document.getElementById('check-recogida') ? document.getElementById('check-recogida').checked : false;
@@ -6162,13 +6181,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         return;
     }
 
-    const btn = document.getElementById('final-submit-btn');
+    btn = document.getElementById('final-submit-btn');
     btn.disabled = true; 
     btn.innerText = "PROCESANDO...";
-
-    let checkoutFinished = false;
-
-    try {
 
     const session = localStorage.getItem('pth_session');
     const isLogged = !!session; 
@@ -6454,7 +6469,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 orden_dia: codPedido,                     // <-- Guardamos el consecutivo generado para que no se pierda
                 proveedor: prov,
                 garantia_venta: garantiaVentaVale,
-                garantia_dias: garantiaDiasVale
+                garantia_dias: garantiaDiasVale,
+                submission_token: submissionToken
             }]);
         } else {
             // Pedido normal (va directo al Almacén Central)
@@ -6475,7 +6491,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 orden_dia: codPedido, 
                 origen: origenPedido,
                 garantia_venta: garantiaVentaVale,
-                garantia_dias: garantiaDiasVale
+                garantia_dias: garantiaDiasVale,
+                submission_token: submissionToken
             }]);
         }
         promesas.push(insertPromise);
@@ -6485,6 +6502,12 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const resultados = await Promise.all(promesas);
     for (let r of resultados) {
         if (r && r.error) {
+            if (r.error.code === '23505') {
+                alert('ℹ️ Este pedido ya había sido registrado. No se creó un duplicado.');
+                checkoutSubmitGuard.succeed();
+                checkoutFinished = true;
+                return;
+            }
             alert("❌ ERROR AL GUARDAR EN BASE DE DATOS:\n\n" + r.error.message + "\n\nCódigo: " + r.error.code + "\nDetalles: " + (r.error.details || "Ninguno"));
             
             // Reactivamos el botón para que puedas corregir
@@ -6553,11 +6576,13 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             location.reload();
         }, 2000); 
     }, 1500);
+    checkoutSubmitGuard.succeed();
     checkoutFinished = true;
     } catch (checkoutError) {
         console.error("Error inesperado al procesar el pedido:", checkoutError);
         alert("❌ No pudimos completar el pedido. No cierres esta pantalla y vuelve a intentarlo. Si el problema continúa, informa al administrador.");
     } finally {
+        if (!checkoutFinished) checkoutSubmitGuard.fail();
         // Ante cualquier validación, error de red o excepción, el cliente puede
         // volver a intentarlo en lugar de quedar atrapado en “PROCESANDO…”.
         if (!checkoutFinished && btn) {
