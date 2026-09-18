@@ -2304,6 +2304,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "51ac92d3-ccfc-4a7d-9cb6-2a796858aa24",
+    "slug": "nevera-5-pies-eko",
+    "nombre": "Nevera 5 pies EKO",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-5-pies-eko/",
+    "updated_at": "2026-09-18T17:00:29.272919+00:00"
+  },
+  {
     "id": "46b0ae55-8789-450b-ac80-a6c8ea3e9700",
     "slug": "nevera-5-pies-sankey",
     "nombre": "Nevera 5 pies Sankey",
@@ -2362,9 +2371,9 @@
     "slug": "nevera-7pies-eko",
     "nombre": "Nevera 7 pies EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7pies-eko/",
-    "updated_at": "2026-09-16T20:22:47.060829+00:00"
+    "updated_at": "2026-09-18T17:38:01.797358+00:00"
   },
   {
     "id": "91f566ca-3063-4a6d-8302-6f3c89b86a3e",
@@ -2515,9 +2524,9 @@
     "slug": "nevera-milexus-6-pies",
     "nombre": "Nevera MILEXUS 6 PIES",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-milexus-6-pies/",
-    "updated_at": "2026-09-08T17:15:46.260966+00:00"
+    "updated_at": "2026-09-18T16:35:05.58886+00:00"
   },
   {
     "id": "7168fa9f-b71a-4650-9030-20263b1543a0",
