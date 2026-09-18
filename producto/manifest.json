@@ -166,9 +166,9 @@
     "slug": "bateria-2560w-gnercell",
     "nombre": "Batería 2560W Gnercell",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-2560w-gnercell/",
-    "updated_at": "2026-09-08T22:08:25.159333+00:00"
+    "updated_at": "2026-09-18T14:48:30.399568+00:00"
   },
   {
     "id": "0ad88cf0-5493-4054-a06d-5b588fa12836",
@@ -2274,7 +2274,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
-    "updated_at": "2026-09-14T20:16:46.308613+00:00"
+    "updated_at": "2026-09-18T13:52:17.278401+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
