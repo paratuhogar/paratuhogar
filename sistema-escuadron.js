@@ -373,14 +373,7 @@ async function renderSquadMonitor() {
             </div>
             <div class="flex gap-2">
                 <button onclick="showDashSection('precios')" class="flex-1 py-1.5 rounded text-[9px] font-bold text-indigo-500 bg-indigo-50 border border-indigo-100">⚙️ Configurar Comisiones</button>
-                ${dias >= 30 ? `<button onclick="kickSoldier('${s.id}')" class="flex-1 py-1.5 rounded text-[9px] font-bold text-red-500 bg-red-50 border border-red-100">🚫 BAJA</button>` : ''}
             </div>
         </div>`;
     }).join('');
-}
-
-async function kickSoldier(id) {
-    if(!confirm("¿Dar de baja por inactividad?")) return;
-    await supabaseClient.from('gestores').update({ estado: 'bloqueado' }).eq('id', id);
-    renderSquadMonitor();
 }

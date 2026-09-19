@@ -222,7 +222,6 @@ function calculateDevFee(precioVenta) {
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="loadVaultPayoutRequests()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Actualizar</button>
-                        <button onclick="runVaultInactivityPolicy()" class="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-[10px] font-black uppercase text-white">Revisar 30 días</button>
                         <button onclick="archiveVaultPaidRequests()" class="rounded-xl bg-white px-4 py-3 text-[10px] font-black uppercase text-violet-900">Archivar pagadas</button>
                     </div>
                 </div>
@@ -1323,18 +1322,6 @@ async function archiveVaultPaidRequests() {
     if (error) return alert(error.message);
     alert(`✅ ${data || 0} solicitudes archivadas.`);
     await loadVaultPayoutRequests();
-}
-
-async function runVaultInactivityPolicy() {
-    if (!confirm('Se revisarán los gestores sin pedidos ejecutados durante 30 días desde el 6 de agosto. ¿Continuar?')) return;
-    const user = session.data || {};
-    if (!user.password) return alert('Cierra sesión y vuelve a entrar para validar tu acceso administrativo.');
-    const { data, error } = await supabaseClient.rpc('aplicar_inactividad_gestores', {
-        p_admin_id: user.id || null,
-        p_password: user.password
-    });
-    if (error) return alert(error.message);
-    alert(`✅ Revisión completada. ${Number(data) || 0} gestores dados de baja.`);
 }
 
         // 3. CARGA DE NÓMINA (CON DETALLE DE PRODUCTOS)

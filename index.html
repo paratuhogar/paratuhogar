@@ -1014,26 +1014,6 @@
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
             <!-- === INICIO OPERATIVO DEL GESTOR === -->
             <div id="gestor-home" class="space-y-6">
-                <div id="gestor-inactivity-warning" class="hidden overflow-hidden rounded-3xl border border-amber-300 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 p-5 text-white shadow-xl">
-                    <div class="flex items-start gap-3">
-                        <span class="material-symbols-outlined rounded-xl bg-amber-500 p-2 text-slate-950">timer</span>
-                        <div>
-                            <p class="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300">Tiempo de actividad restante en la tienda</p>
-                            <h3 class="mt-1 text-lg font-black">Mantén activa tu cuenta realizando pedidos</h3>
-                            <p class="mt-2 max-w-3xl text-[11px] font-bold leading-relaxed text-slate-300">Este reloj indica cuánto tiempo queda antes de que tu cuenta pueda darse de baja por inactividad. Cada pedido nuevo no cancelado reinicia automáticamente el periodo completo de 30 días.</p>
-                        </div>
-                    </div>
-                    <div id="gestor-inactivity-clock" class="mt-5 grid grid-cols-4 gap-2" aria-label="Cuenta regresiva de actividad">
-                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-days" class="block text-2xl font-black text-amber-300">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Días</span></div>
-                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-hours" class="block text-2xl font-black text-white">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Horas</span></div>
-                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-minutes" class="block text-2xl font-black text-white">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Minutos</span></div>
-                        <div class="rounded-2xl border border-white/10 bg-white/10 p-3 text-center"><strong id="gestor-countdown-seconds" class="block text-2xl font-black text-white">00</strong><span class="text-[8px] font-black uppercase text-slate-400">Segundos</span></div>
-                    </div>
-                    <div class="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-3">
-                        <p id="gestor-last-order-notice" class="text-[11px] font-black text-amber-100">Calculando tu último pedido…</p>
-                        <p id="gestor-inactivity-deadline" class="mt-1 text-[10px] font-bold text-slate-300"></p>
-                    </div>
-                </div>
                 <section class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0f2d57] via-[#174b89] to-[#2563a8] text-white shadow-xl shadow-blue-950/15">
                     <div class="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:p-8">
                         <div>
@@ -3958,8 +3938,7 @@ async function loadProDashboard(nombreGestor) {
         misVentas = data || [];
     }
     
-    myOrdersData = misVentas; 
-    renderGestorInactivityCountdown();
+    myOrdersData = misVentas;
 
     // 2. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
@@ -7444,63 +7423,6 @@ async function archivePaidPayoutRequests() {
     const { data, error } = await supabaseClient.rpc('archivar_solicitudes_pagadas_beatriz', { p_admin_id:user.id, p_password:user.password });
     if (error) return alert(error.message);
     alert(`✅ ${data || 0} solicitudes archivadas.`); await loadBeatrizPayoutRequests();
-}
-
-async function runGestorInactivityPolicy() {
-    if (!confirm('Se bloquearán únicamente gestores principales con 30 días sin pedidos, contando desde el 6 de agosto de 2026. ¿Revisar ahora?')) return;
-    const user = window.currentUserData || {};
-    const { data, error } = await supabaseClient.rpc('aplicar_inactividad_gestores', { p_admin_id:user.id, p_password:user.password });
-    if (error) return alert(error.message);
-    alert(`Revisión terminada: ${data || 0} cuentas bloqueadas. La baja del grupo de WhatsApp debe realizarla manualmente un administrador del grupo.`);
-}
-
-let gestorInactivityTimer = null;
-
-function renderGestorInactivityCountdown() {
-    const warning = document.getElementById('gestor-inactivity-warning');
-    if (!warning) return;
-    const user = window.currentUserData || {};
-    if (user.parent_id) {
-        warning.classList.add('hidden');
-        return;
-    }
-    const validOrders = (Array.isArray(myOrdersData) ? myOrdersData : [])
-        .filter(order => String(order.estado || '').toLowerCase() !== 'cancelado')
-        .map(order => new Date(order.fecha || order.created_at || 0))
-        .filter(date => !Number.isNaN(date.getTime()))
-        .sort((a,b) => b-a);
-    const policyStart = new Date('2026-08-06T00:00:00-04:00');
-    const createdAt = user.created_at ? new Date(user.created_at) : policyStart;
-    const lastOrder = validOrders[0] || null;
-    const activityBase = new Date(Math.max(policyStart.getTime(), Number.isNaN(createdAt.getTime()) ? 0 : createdAt.getTime(), lastOrder?.getTime() || 0));
-    const deadline = new Date(activityBase.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const dateFormat = new Intl.DateTimeFormat('es-CU', { timeZone:'America/Havana', day:'2-digit', month:'long', year:'numeric' });
-    document.getElementById('gestor-last-order-notice').textContent = lastOrder
-        ? `Tu último pedido registrado fue el ${dateFormat.format(lastOrder)}.`
-        : 'Todavía no tienes pedidos registrados; el conteo comenzó el 6 de agosto de 2026.';
-    document.getElementById('gestor-inactivity-deadline').textContent = `Si no registras otro pedido antes del ${dateFormat.format(deadline)}, tu cuenta podrá darse de baja por inactividad.`;
-    warning.classList.remove('hidden');
-    const update = () => {
-        const remaining = deadline.getTime() - Date.now();
-        const safeRemaining = Math.max(0, remaining);
-        const values = {
-            'gestor-countdown-days': Math.floor(safeRemaining / 86400000),
-            'gestor-countdown-hours': Math.floor((safeRemaining % 86400000) / 3600000),
-            'gestor-countdown-minutes': Math.floor((safeRemaining % 3600000) / 60000),
-            'gestor-countdown-seconds': Math.floor((safeRemaining % 60000) / 1000)
-        };
-        Object.entries(values).forEach(([id,value]) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = String(value).padStart(2,'0');
-        });
-        const clock = document.getElementById('gestor-inactivity-clock');
-        if (clock) clock.classList.toggle('ring-2', remaining <= 5 * 86400000);
-        if (clock) clock.classList.toggle('ring-red-500', remaining <= 5 * 86400000);
-        if (remaining <= 0) document.getElementById('gestor-inactivity-deadline').textContent = 'El periodo está vencido. Realiza un pedido cuanto antes o contacta con la administración.';
-    };
-    update();
-    if (gestorInactivityTimer) clearInterval(gestorInactivityTimer);
-    gestorInactivityTimer = setInterval(update, 1000);
 }
 
 function downloadCommissionStatement() {
@@ -11976,8 +11898,6 @@ async function processLogin() {
             
             if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
             if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
-
-        if (data.estado === 'ausente_definitivo') return alert('🚫 Cuenta dada de baja por inactividad. Contacta a la administración para solicitar una reactivación.');
 
         gestorAprobado = data;
 
@@ -18568,7 +18488,7 @@ Compártelo en tus grupos y estados. Si alguien entra a ese link y compra (inclu
 
 ¡Anímate a probarlo hoy! Quedo al pendiente por si necesitas ayuda. 😉`;
 
-    alert(`✅ Recordatorio preparado para ${nombre}.\n\nEste mensaje no activa ninguna baja automática. La política comercial se basa en 30 días sin pedidos, contando desde el 6 de agosto de 2026.`);
+    alert(`✅ Recordatorio preparado para ${nombre}.\n\nEste mensaje es solo un recordatorio comercial; las cuentas no se dan de baja automáticamente por falta de ventas.`);
     
     // --- LÓGICA INTELIGENTE PARA ABRIR WHATSAPP DIRECTO ---
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
