@@ -324,6 +324,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "5d7ad2de-31b6-4483-a3c1-941e9a3dc8a6",
+    "slug": "bomba-turbina-sumergible-solar-cr-turbo",
+    "nombre": "BOMBA / TURBINA SUMERGIBLE SOLAR CR-TURBO",
+    "categoria": "MISCELANEA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/bomba-turbina-sumergible-solar-cr-turbo/",
+    "updated_at": "2026-09-19T23:19:14.397752+00:00"
+  },
+  {
     "id": "be693e8a-1db5-4dda-b522-d96f823d244e",
     "slug": "bomba-de-agua-rudenkov-1-2-hp",
     "nombre": "Bomba de agua RUDENKOV - 1/2 HP",
@@ -2101,9 +2110,9 @@
     "slug": "mini-proyector-steren-pro-260",
     "nombre": "Mini Proyector Steren PRO-260",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mini-proyector-steren-pro-260/",
-    "updated_at": "2026-09-15T17:11:25.626531+00:00"
+    "updated_at": "2026-09-20T00:49:43.911347+00:00"
   },
   {
     "id": "923522df-dfb9-46ea-b720-5a958b98bedf",
