@@ -2283,7 +2283,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
-    "updated_at": "2026-09-18T13:52:17.278401+00:00"
+    "updated_at": "2026-09-20T18:18:16.102959+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
@@ -2659,9 +2659,9 @@
     "slug": "panel-30v-400w",
     "nombre": "Panel 30V 400W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-30v-400w/",
-    "updated_at": "2026-09-15T16:28:30.63011+00:00"
+    "updated_at": "2026-09-20T18:04:19.277585+00:00"
   },
   {
     "id": "0adb7441-c880-4a38-8379-74916ebda61c",
