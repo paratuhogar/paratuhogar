@@ -1413,6 +1413,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "a69b668c-7219-4146-8de2-2471657318da",
+    "slug": "inversor-10kw-sako",
+    "nombre": "Inversor 10kw Sako",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/inversor-10kw-sako/",
+    "updated_at": "2026-09-22T16:53:43.080801+00:00"
+  },
+  {
     "id": "dd657549-dc56-4c71-ab37-2a347a456794",
     "slug": "inversor-12-kw-must",
     "nombre": "Inversor 12 kw Must",
@@ -1474,6 +1483,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/inversor-5kw-bateria-5kwh-eco-worthy/",
     "updated_at": "2026-09-01T04:00:00.846675+00:00"
+  },
+  {
+    "id": "dd5f6238-6fcb-4bca-ace4-c4f931c9a378",
+    "slug": "inversor-5kw-sako",
+    "nombre": "Inversor 5kw Sako",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/inversor-5kw-sako/",
+    "updated_at": "2026-09-22T16:37:37.473266+00:00"
   },
   {
     "id": "33c43fff-21cd-4804-8a9e-c741e6247ef6",
@@ -2110,9 +2128,9 @@
     "slug": "mini-proyector-steren-pro-260",
     "nombre": "Mini Proyector Steren PRO-260",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/mini-proyector-steren-pro-260/",
-    "updated_at": "2026-09-20T00:49:43.911347+00:00"
+    "updated_at": "2026-09-22T15:10:39.548271+00:00"
   },
   {
     "id": "923522df-dfb9-46ea-b720-5a958b98bedf",
@@ -2173,9 +2191,9 @@
     "slug": "moto-electrica-volta-2026-bateria-de-litio",
     "nombre": "Moto Eléctrica Leiliang 2026 Batería de Litio",
     "categoria": "TRANSPORTE ",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/moto-electrica-volta-2026-bateria-de-litio/",
-    "updated_at": "2026-08-24T20:22:09.740953+00:00"
+    "updated_at": "2026-09-22T16:21:41.126609+00:00"
   },
   {
     "id": "1e0ff4fb-0984-49ec-8b5e-fef3b3c1e3a2",
@@ -2542,9 +2560,9 @@
     "slug": "nevera-reymo-15-pies",
     "nombre": "Nevera Reymo 15 pies",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-reymo-15-pies/",
-    "updated_at": "2026-09-14T14:10:32.065445+00:00"
+    "updated_at": "2026-09-22T15:00:48.854442+00:00"
   },
   {
     "id": "b479a9ed-adc4-4dfc-8848-5c6b950876e3",
@@ -2929,9 +2947,9 @@
     "slug": "refrigerador-7-3-pies-hisense",
     "nombre": "Refrigerador 7.3 pies Hisense",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-7-3-pies-hisense/",
-    "updated_at": "2026-09-02T00:07:28.311626+00:00"
+    "updated_at": "2026-09-22T14:26:11.895781+00:00"
   },
   {
     "id": "c9bc122f-0db0-44a1-bf2a-2cdf94b8db70",
