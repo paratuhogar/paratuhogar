@@ -627,7 +627,6 @@ function calculateDevFee(precioVenta) {
 
         let inventario = [];
         // --- VARIABLE GLOBAL NECESARIA ---
-let pedidosRawAdmin = []; 
 let vaultDebtChannel = null;
 let vaultDebtRefreshTimer = null;
 let vaultDebtPollingTimer = null;
@@ -683,7 +682,8 @@ function getVaultOrderProvider(order) {
     return prefixMatch ? prefixMatch[1] : String(order?.proveedor || 'General').trim().toUpperCase();
 }
 
-// --- LA FUNCIÓN QUE FALTABA (OPTIMIZADA PARA CONTROLAR EL EGRESS) ---
+// Actualiza solo el libro de deuda. El historial completo de pedidos se carga
+// únicamente al abrir el dashboard y no en cada ciclo de actualización.
 async function loadAdminData() {
     if (vaultDebtLoadInProgress) {
         vaultDebtRefreshPending = true;
@@ -693,40 +693,10 @@ async function loadAdminData() {
     console.log("🔄 Actualizando datos del Sistema...");
 
     try {
-        // 1. La Bóveda usa una lectura administrativa protegida. Consultar
-        // pedidos directamente con la clave pública puede ocultar filas por RLS.
-        const user = session.data || {};
-        if (!user.password) throw new Error('La sesión no contiene una credencial administrativa válida.');
-        const pageSize = 1000;
-        let pageStart = 0;
-        let page = [];
-        const data = [];
-        do {
-            const response = await supabaseClient
-                .rpc('listar_pedidos_boveda', {
-                    p_admin_id: user.id || null,
-                    p_password: user.password
-                })
-                .range(pageStart, pageStart + pageSize - 1);
-            if (response.error) throw response.error;
-            page = response.data || [];
-            data.push(...page);
-            pageStart += pageSize;
-        } while (page.length === pageSize);
-
-        // 2. Guardar en memoria
-        pedidosRawAdmin = data || [];
-
-        // 3. La deuda se obtiene del libro contable central de Supabase.
+        // La deuda se obtiene del libro contable central de Supabase.
         await loadSystemDebtLedger();
-        
-        // 4. Si estamos en la pestaña dashboard, aprovechar para actualizarla
-        if(!document.getElementById('sec-dashboard').classList.contains('hidden')) {
-            allOrdersCache = pedidosRawAdmin;
-            filterDash('total');
-        }
     } catch (error) {
-        console.error("Error cargando pedidos maestros:", error);
+        console.error("Error cargando deuda del sistema:", error);
         deudaSistemaResumen = null;
         deudaSistemaLineas = [];
         const amount = document.getElementById('sys-debt-amount');
@@ -791,7 +761,10 @@ function startVaultDebtAutoRefresh() {
             event: '*',
             schema: 'public',
             table: 'pedidos'
-        }, scheduleVaultDebtRefresh)
+        }, payload => {
+            scheduleVaultDebtRefresh();
+            updateDashboardOrderCache(payload);
+        })
         .subscribe();
 
     // Respaldo ante una desconexión temporal de Realtime.
@@ -1698,19 +1671,47 @@ window.revertirPago = async function(idPedido, ordenDia) {
 
         // --- 4. LÓGICA BI (DASHBOARD) ---
 
-        // Variable global para almacenar todos los pedidos y poder filtrar
+// Variable global para almacenar todos los pedidos y poder filtrar
 let allOrdersCache = [];
+let dashboardOrdersLoaded = false;
+let dashboardOrdersLoadedAt = 0;
+let dashboardFilter = 'total';
+const DASHBOARD_CACHE_TTL_MS = 5 * 60 * 1000;
 
 async function loadDashboard() {
-    // 1. Cargar datos si no están cacheados
-    if(allOrdersCache.length === 0) {
-        const { data } = await supabaseClient
-            .from('pedidos')
-            .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema')
-            .eq('estado', 'Entregado')
-            .order('fecha', { ascending: true }); // Ordenar por fecha para el gráfico
-        
-        if(data) allOrdersCache = data;
+    // El histórico se descarga al entrar al dashboard y se renueva al volver
+    // después de 5 minutos. La Bóveda no lo vuelve a pedir cada minuto.
+    const cacheIsStale = !dashboardOrdersLoaded
+        || Date.now() - dashboardOrdersLoadedAt >= DASHBOARD_CACHE_TTL_MS;
+    if (cacheIsStale) {
+        const orders = [];
+        const pageSize = 1000;
+        let pageStart = 0;
+        let page = [];
+        let loadError = null;
+        do {
+            const response = await supabaseClient
+                .from('pedidos')
+                .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema')
+                .eq('estado', 'Entregado')
+                .order('fecha', { ascending: true })
+                .range(pageStart, pageStart + pageSize - 1);
+            if (response.error) {
+                loadError = response.error;
+                break;
+            }
+            page = response.data || [];
+            orders.push(...page);
+            pageStart += pageSize;
+        } while (page.length === pageSize);
+
+        if (loadError) {
+            console.error('Error actualizando pedidos del dashboard:', loadError);
+        } else {
+            allOrdersCache = orders;
+            dashboardOrdersLoaded = true;
+            dashboardOrdersLoadedAt = Date.now();
+        }
         
         // Cargar inventario si no existe (para saber costos)
         if(typeof inventario === 'undefined' || inventario.length === 0) {
@@ -1722,8 +1723,47 @@ async function loadDashboard() {
     filterDash('total');
 }
 
+function updateDashboardOrderCache(payload) {
+    if (!dashboardOrdersLoaded || !payload) return;
+
+    const eventType = String(payload.eventType || '').toUpperCase();
+    const incoming = payload.new || {};
+    const previous = payload.old || {};
+    const orderId = String(incoming.id || previous.id || '');
+    if (!orderId) return;
+
+    const existingIndex = allOrdersCache.findIndex(order => String(order.id) === orderId);
+    if (eventType === 'DELETE' || (eventType === 'UPDATE' && incoming.estado !== 'Entregado')) {
+        if (existingIndex !== -1) allOrdersCache.splice(existingIndex, 1);
+    } else if ((eventType === 'INSERT' || eventType === 'UPDATE') && incoming.estado === 'Entregado') {
+        const order = {
+            id: incoming.id,
+            fecha: incoming.fecha,
+            estado: incoming.estado,
+            total: incoming.total,
+            comision_total: incoming.comision_total,
+            costo_mensajeria: incoming.costo_mensajeria,
+            producto: incoming.producto,
+            gestor: incoming.gestor,
+            proveedor: incoming.proveedor,
+            pago_sistema: incoming.pago_sistema
+        };
+        if (existingIndex === -1) allOrdersCache.push(order);
+        else allOrdersCache[existingIndex] = order;
+        allOrdersCache.sort((left, right) => new Date(left.fecha) - new Date(right.fecha));
+    } else {
+        return;
+    }
+
+    dashboardOrdersLoadedAt = Date.now();
+    if (!document.getElementById('sec-dashboard')?.classList.contains('hidden')) {
+        filterDash(dashboardFilter);
+    }
+}
+
 // FUNCIÓN DE FILTRADO Y CÁLCULO
 function filterDash(periodo) {
+    dashboardFilter = periodo;
     // 1. UI: Resetear estilos de botones
     document.querySelectorAll('.dash-filter').forEach(b => {
         b.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg');
