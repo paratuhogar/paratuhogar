@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-09-21</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-09-21</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-09-22</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-09-22</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-09-05</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-09-21</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-09-22</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-07-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-09-19</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-09-20</lastmod></url>
@@ -77,6 +77,7 @@
   <url><loc>https://paratuhogar.org/producto/panel-30v-400w/</loc><lastmod>2026-09-20</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Panel400w.jpeg</image:loc><image:title>Panel 30V 400W</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/panel-solar-590w-waaree/</loc><lastmod>2026-09-21</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Panel590wwaaree.jpeg</image:loc><image:title>Panel Solar 590W WAAREE</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/contenedor-de-panel-solar-longi-hi-mo-x10-545w-lr7-60hvh-792-unidades/</loc><lastmod>2026-09-17</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/panelescontenedor.png</image:loc><image:title>Panel Solar 635W LONGi</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/panel-solar-portatil-400w-ecoflow/</loc><lastmod>2026-09-22</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/1769180549527_0_WhatsApp_Image_2026_01_22_at_9_15_19_PM_jpeg.jpg</image:loc><image:title>Panel solar portátil 400W Ecoflow</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/panel-solar-sun-630w/</loc><lastmod>2026-09-16</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/panel_sun630W.jpg</image:loc><image:title>Panel Solar SUN 630W</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/picas-de-tierra-con-la-grapa/</loc><lastmod>2026-09-03</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Picagrapa.jpg</image:loc><image:title>Picas de tierra con la grapa</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/procesador-amd-ryzen-3-3200g/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/AMD_ryzen3G2.webp</image:loc><image:title>PROCESADOR AMD RYZEN 3 3200G</image:title></image:image></url>
