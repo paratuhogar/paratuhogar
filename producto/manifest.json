@@ -189,6 +189,24 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "8249640d-de66-42da-a086-40d8cbac1619",
+    "slug": "bateria-de-litio-sako-51-2v-200ah-10-24kwh",
+    "nombre": "Batería de Litio SAKO 51.2V 200Ah – 10.24kWh",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-200ah-10-24kwh/",
+    "updated_at": "2026-09-22T17:08:55.968545+00:00"
+  },
+  {
+    "id": "66e416a4-be87-4acf-ac4c-fb8624ee6122",
+    "slug": "bateria-de-litio-sako-51-2v-300ah-15-36-kwh",
+    "nombre": "Batería de Litio SAKO 51.2V 300Ah – 15.36 kWh",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-300ah-15-36-kwh/",
+    "updated_at": "2026-09-22T17:03:13.023667+00:00"
+  },
+  {
     "id": "55c74f91-df1b-4ffa-aa37-89e83c2d45b5",
     "slug": "bateria-de-litio-yoazaki-72v-45ah",
     "nombre": "Batería de Litio Yoazaki 72V 45AH",
@@ -3325,9 +3343,9 @@
     "slug": "split-1-tonelada-eko",
     "nombre": "Split 1 tonelada EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1-tonelada-eko/",
-    "updated_at": "2026-09-16T13:53:48.556054+00:00"
+    "updated_at": "2026-09-22T17:19:09.183124+00:00"
   },
   {
     "id": "8adbed80-8c00-48f3-9e4a-c1377c744ac2",
