@@ -333,6 +333,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "8013f56a-2e9d-4dda-ad92-765701ff043c",
+    "slug": "altavoz-portatil-rgb-bluetooth-5-4-mars-gaming-msb-xt-soundbar",
+    "nombre": "Bocina Portátil RGB Bluetooth 5.4 Mars Gaming MSB-XT Soundbar",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/altavoz-portatil-rgb-bluetooth-5-4-mars-gaming-msb-xt-soundbar/",
+    "updated_at": "2026-09-23T21:01:52.215368+00:00"
+  },
+  {
     "id": "435f9f98-447d-4365-b10b-a5f1ba22cc47",
     "slug": "bocinas-logitech-z150-sonido-estereo",
     "nombre": "Bocinas Logitech Z150 *Sonido Estéreo*",
@@ -1701,6 +1710,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "a506849a-856b-4466-8975-152ebff789ef",
+    "slug": "kit-gaiming-completo-coolbox",
+    "nombre": "Kit Gaiming Completo CoolBox",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/kit-gaiming-completo-coolbox/",
+    "updated_at": "2026-09-23T21:09:33.775949+00:00"
+  },
+  {
     "id": "9f8663d1-19e6-4599-b734-dec79ce697fa",
     "slug": "kit-impresora-termica-tp-easy-58-5-rollos-iggual",
     "nombre": "Kit impresora térmica TP EASY 58 + 5 rollos - Iggual",
@@ -2142,6 +2160,15 @@
     "updated_at": "2026-07-30T18:07:41.495517+00:00"
   },
   {
+    "id": "dc8c8c0c-4e22-4f31-b44c-98d07209471f",
+    "slug": "mini-proyector-mp720p-hdmi-wifi-android-14",
+    "nombre": "Mini proyector MP720p - HDMI WiFi Android 14",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/mini-proyector-mp720p-hdmi-wifi-android-14/",
+    "updated_at": "2026-09-23T20:44:58.218538+00:00"
+  },
+  {
     "id": "ea1d36eb-eb79-405a-8d25-ed17a6da4f97",
     "slug": "mini-proyector-steren-pro-260",
     "nombre": "Mini Proyector Steren PRO-260",
@@ -2167,6 +2194,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/minibar-reymo/",
     "updated_at": "2026-09-07T19:02:44.860874+00:00"
+  },
+  {
+    "id": "d21db876-c96b-46d7-a03c-f376a443a0b3",
+    "slug": "monitor-24-viewsonic-full-hd",
+    "nombre": "Monitor 24\" ViewSonic Full HD",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/monitor-24-viewsonic-full-hd/",
+    "updated_at": "2026-09-23T21:18:48.663731+00:00"
   },
   {
     "id": "ffa969b1-3d99-4586-ad2b-f97c200d76da",
@@ -3501,6 +3537,24 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "fac04f00-13a6-4ebb-ab24-7629fd6d928a",
+    "slug": "switch-gigabit-ethernet-iggual-ges5000-5-puertos-10-100-1000-mbps",
+    "nombre": "Switch Gigabit Ethernet Iggual GES5000 5 Puertos 10/100/1000 Mbps",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/switch-gigabit-ethernet-iggual-ges5000-5-puertos-10-100-1000-mbps/",
+    "updated_at": "2026-09-23T20:51:41.354341+00:00"
+  },
+  {
+    "id": "00385ed2-b2f1-42e0-915f-1457b270f6ae",
+    "slug": "switch-gigabit-ethernet-iggual-ges8000-8-puertos-10-100-1000-mbps",
+    "nombre": "Switch Gigabit Ethernet Iggual GES8000 8 Puertos 10/100/1000 Mbps",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/switch-gigabit-ethernet-iggual-ges8000-8-puertos-10-100-1000-mbps/",
+    "updated_at": "2026-09-23T20:55:18.710981+00:00"
+  },
+  {
     "id": "d2f4630a-2859-41ab-af2d-17124010f31e",
     "slug": "switch-ls-105gp",
     "nombre": "Switch LS-105GP",
@@ -3598,6 +3652,24 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/transfer-q7-de-100-amperes-4-vias/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "35c60be0-c7dc-4ac6-a28d-5aef435cf5b3",
+    "slug": "triciclo-electrico-de-carga-1000w-con-extensor-de-autonomia",
+    "nombre": "Triciclo Eléctrico de Carga 1000W con Extensor de Autonomía",
+    "categoria": "TRANSPORTE",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/triciclo-electrico-de-carga-1000w-con-extensor-de-autonomia/",
+    "updated_at": "2026-09-23T20:36:00.818098+00:00"
+  },
+  {
+    "id": "67c5b41d-3226-4e00-9493-68880eb0831c",
+    "slug": "triciclo-electrico-de-carga-1200w-viento-rapido-72v-500-kg-de-capacidad",
+    "nombre": "Triciclo Eléctrico de Carga 1200W Viento Rápido | 72V | 500 kg de capacidad",
+    "categoria": "TRANSPORTE",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/triciclo-electrico-de-carga-1200w-viento-rapido-72v-500-kg-de-capacidad/",
+    "updated_at": "2026-09-23T20:18:08.892337+00:00"
   },
   {
     "id": "c189a071-df3f-4fc9-979d-0fab3e9ce428",
