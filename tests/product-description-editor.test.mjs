@@ -38,6 +38,31 @@ test('usa la raíz de Quill cuando el editor enriquecido está activo', () => {
   assert.notEqual(element.getAttribute('contenteditable'), 'true');
 });
 
+test('carga HTML de descripción en el modelo de Quill, no escribiendo directamente en el DOM', () => {
+  const element = makeEditorElement();
+  const documentRef = { getElementById: id => id === 'editor-container' ? element : null };
+  const expectedDelta = { ops: [{ insert: 'Características\n' }] };
+  class FakeQuill {
+    constructor() {
+      this.root = { innerHTML: '<p>Estado viejo</p>' };
+      this.clipboard = { convert: html => { this.convertedHtml = html; return expectedDelta; } };
+    }
+    setContents(delta, source) {
+      this.appliedDelta = delta;
+      this.source = source;
+      this.root.innerHTML = '<p>Características</p>';
+    }
+  }
+  const editor = ensureProductDescriptionEditor({ documentRef, QuillCtor: FakeQuill });
+
+  writeProductDescription('<p><strong>Características</strong></p>', { documentRef, editor });
+
+  assert.equal(editor.convertedHtml, '<p><strong>Características</strong></p>');
+  assert.equal(editor.appliedDelta, expectedDelta);
+  assert.equal(editor.source, 'silent');
+  assert.equal(editor.root.innerHTML, '<p>Características</p>');
+});
+
 test('al abrir un producto nuevo reactiva el editor básico y limpia la descripción', () => {
   const element = makeEditorElement();
   element.innerHTML = '<p>Descripción anterior</p>';

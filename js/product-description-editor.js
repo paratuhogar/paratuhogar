@@ -32,7 +32,10 @@
   }
   function writeProductDescription(html, { documentRef = typeof document !== 'undefined' ? document : null, editor = null } = {}) {
     const value = html || '';
-    if (editor?.root) editor.root.innerHTML = value;
+    if (editor?.root && editor?.clipboard?.convert && editor?.setContents) {
+      editor.setContents(editor.clipboard.convert(value), 'silent');
+    }
+    else if (editor?.root) editor.root.innerHTML = value;
     else { const element = getElement(documentRef); if (element) element.innerHTML = value; }
   }
   function resetProductDescriptionEditor({ documentRef = typeof document !== 'undefined' ? document : null, QuillCtor = typeof Quill !== 'undefined' ? Quill : undefined, currentEditor = null } = {}) {
