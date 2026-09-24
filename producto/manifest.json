@@ -855,6 +855,33 @@
     "updated_at": "2026-07-31T19:39:25.88048+00:00"
   },
   {
+    "id": "f63730bb-6ff4-458a-b1e0-1687ab11d6b8",
+    "slug": "escalera-de-tijera-4-pasos",
+    "nombre": "Escalera de tijera  4 pasos",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/escalera-de-tijera-4-pasos/",
+    "updated_at": "2026-09-24T19:34:04.484597+00:00"
+  },
+  {
+    "id": "60118fb2-3ef6-4903-955d-b623e014b738",
+    "slug": "escalera-de-tijera-5-pasos",
+    "nombre": "Escalera de tijera 5 pasos",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/escalera-de-tijera-5-pasos/",
+    "updated_at": "2026-09-24T19:36:38.947559+00:00"
+  },
+  {
+    "id": "e990dc0b-ffdb-48ac-80bf-798198298fd9",
+    "slug": "escalera-de-tijeras-7-pasos",
+    "nombre": "Escalera de Tijeras 7 pasos",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/escalera-de-tijeras-7-pasos/",
+    "updated_at": "2026-09-24T19:39:26.89548+00:00"
+  },
+  {
     "id": "d6bd5241-f984-4ca1-a33c-ac5f7c1fd139",
     "slug": "estacion-de-energia-1kw-must",
     "nombre": "Estación de energía 1kw MUST",
@@ -1890,6 +1917,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "df910a97-8bd5-411f-b83b-0f94502d6820",
+    "slug": "lavadora-automatica-9kg-samsung-inverter",
+    "nombre": "Lavadora Automática 9KG  Samsung Inverter",
+    "categoria": "LAVADORAS",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-samsung-inverter/",
+    "updated_at": "2026-09-24T19:26:11.107748+00:00"
+  },
+  {
     "id": "6e4fb438-9eb6-4244-8e8f-fd5119827c41",
     "slug": "lavadora-automatica-9kg-eko",
     "nombre": "Lavadora automática 9kg EKO",
@@ -2254,9 +2290,9 @@
     "slug": "moto-yoazaki-galactica-2026",
     "nombre": "Moto Yoazaki Galáctica 2026",
     "categoria": "TRANSPORTE",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/moto-yoazaki-galactica-2026/",
-    "updated_at": "2026-09-06T20:40:09.692448+00:00"
+    "updated_at": "2026-09-24T17:34:40.354505+00:00"
   },
   {
     "id": "4939c10d-f692-4eed-be43-17cc9ed95cfe",
@@ -2466,6 +2502,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "c5aad792-47bc-43c6-b398-731a4788b500",
+    "slug": "nevera-7-pies-haitech",
+    "nombre": "Nevera 7 pies Haitech",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
+    "updated_at": "2026-09-24T19:12:58.797594+00:00"
+  },
+  {
     "id": "2ddf15b1-7948-4133-afb5-b9634f0ce3c4",
     "slug": "nevera-7-pies-rukenkov",
     "nombre": "Nevera 7 pies Rukenkov",
@@ -2527,6 +2572,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-exhibidora-doble-20-pies-milexus/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "d973e9b4-8a55-4913-8736-20ecac114a5c",
+    "slug": "nevera-vertical-7pies-aucma",
+    "nombre": "Nevera Exhibidora Vertical 7pies AUCMA",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-vertical-7pies-aucma/",
+    "updated_at": "2026-09-24T17:56:16.96601+00:00"
   },
   {
     "id": "65f40aa4-97dc-4def-a87c-b3a5ef640b94",
@@ -3760,6 +3814,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-stavel/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "32d62e05-ed7d-4886-bda6-7a7b347ef145",
+    "slug": "ventilador-recargable-x11-bateria-20-000-mah",
+    "nombre": "Ventilador Recargable X11 – Batería 20,000 mAh",
+    "categoria": "VENTILADORES",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/ventilador-recargable-x11-bateria-20-000-mah/",
+    "updated_at": "2026-09-24T19:19:55.01681+00:00"
   },
   {
     "id": "a0d80dd5-a984-4793-bd24-e84746294e9a",
