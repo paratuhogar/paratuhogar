@@ -321,7 +321,7 @@
     "categoria": "TRANSPORTE ",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/bicimoto-topmaq-evolution-2026/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-24T13:03:37.325491+00:00"
   },
   {
     "id": "a45013d2-7a92-4388-857e-17f79de69059",
@@ -2290,9 +2290,9 @@
     "slug": "nevera-milexus-7-pies-sin-llave",
     "nombre": "Nevera  7 pies Milexus",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-milexus-7-pies-sin-llave/",
-    "updated_at": "2026-09-24T02:33:24.537509+00:00"
+    "updated_at": "2026-09-24T17:06:45.325447+00:00"
   },
   {
     "id": "485fb70c-1f8b-4fe2-b2ba-4891613f5258",
@@ -2353,9 +2353,9 @@
     "slug": "nevera-3-5-pies-milexus",
     "nombre": "Nevera 3.5 pies Milexus",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-milexus/",
-    "updated_at": "2026-09-20T18:18:16.102959+00:00"
+    "updated_at": "2026-09-24T17:07:08.598271+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
