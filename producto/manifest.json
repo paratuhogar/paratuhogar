@@ -193,18 +193,18 @@
     "slug": "bateria-de-litio-sako-51-2v-200ah-10-24kwh",
     "nombre": "Batería de Litio SAKO 51.2V 200Ah – 10.24kWh",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-200ah-10-24kwh/",
-    "updated_at": "2026-09-22T17:08:55.968545+00:00"
+    "updated_at": "2026-09-24T02:50:39.100925+00:00"
   },
   {
     "id": "66e416a4-be87-4acf-ac4c-fb8624ee6122",
     "slug": "bateria-de-litio-sako-51-2v-300ah-15-36-kwh",
     "nombre": "Batería de Litio SAKO 51.2V 300Ah – 15.36 kWh",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-300ah-15-36-kwh/",
-    "updated_at": "2026-09-22T17:03:13.023667+00:00"
+    "updated_at": "2026-09-24T02:50:02.586256+00:00"
   },
   {
     "id": "55c74f91-df1b-4ffa-aa37-89e83c2d45b5",
@@ -258,7 +258,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-must-10kw/",
-    "updated_at": "2026-09-14T01:51:59.750832+00:00"
+    "updated_at": "2026-09-24T02:30:26.835476+00:00"
   },
   {
     "id": "027605c8-21f0-41a3-a620-21a74a7018ae",
@@ -1444,9 +1444,9 @@
     "slug": "inversor-10kw-sako",
     "nombre": "Inversor 10kw Sako",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/inversor-10kw-sako/",
-    "updated_at": "2026-09-22T16:53:43.080801+00:00"
+    "updated_at": "2026-09-24T02:45:28.336742+00:00"
   },
   {
     "id": "dd657549-dc56-4c71-ab37-2a347a456794",
@@ -1516,9 +1516,9 @@
     "slug": "inversor-5kw-sako",
     "nombre": "Inversor 5kw Sako",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/inversor-5kw-sako/",
-    "updated_at": "2026-09-23T03:37:57.059565+00:00"
+    "updated_at": "2026-09-24T02:48:08.944002+00:00"
   },
   {
     "id": "33c43fff-21cd-4804-8a9e-c741e6247ef6",
@@ -2173,9 +2173,9 @@
     "slug": "mini-proyector-steren-pro-260",
     "nombre": "Mini Proyector Steren PRO-260",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mini-proyector-steren-pro-260/",
-    "updated_at": "2026-09-22T15:10:39.548271+00:00"
+    "updated_at": "2026-09-24T02:28:44.791982+00:00"
   },
   {
     "id": "923522df-dfb9-46ea-b720-5a958b98bedf",
@@ -2290,9 +2290,9 @@
     "slug": "nevera-milexus-7-pies-sin-llave",
     "nombre": "Nevera  7 pies Milexus",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-milexus-7-pies-sin-llave/",
-    "updated_at": "2026-09-16T15:04:54.969623+00:00"
+    "updated_at": "2026-09-24T02:33:24.537509+00:00"
   },
   {
     "id": "485fb70c-1f8b-4fe2-b2ba-4891613f5258",
@@ -2425,9 +2425,9 @@
     "slug": "nevera-5-5-pies-royal",
     "nombre": "Nevera 5.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-5-5-pies-royal/",
-    "updated_at": "2026-08-04T22:10:47.155709+00:00"
+    "updated_at": "2026-09-24T02:34:22.616763+00:00"
   },
   {
     "id": "38a2f993-0e91-45b3-bfce-6fe954c4aff4",
