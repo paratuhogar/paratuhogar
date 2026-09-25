@@ -15,6 +15,45 @@ const TEMPLATE_PATH = join(ROOT, 'templates', 'product-page.html');
 const CATEGORY_TEMPLATE_PATH = join(ROOT, 'templates', 'category-page.html');
 const OUTPUT_ROOT = join(ROOT, 'producto');
 const CATEGORY_OUTPUT_ROOT = join(ROOT, 'categoria');
+const PUBLICATION_HISTORY_PATH = join(OUTPUT_ROOT, 'publicados.json');
+const CATEGORY_COPY = {
+  cocina: {
+    label: 'Equipos de cocina',
+    description: 'Compara equipos de cocina en Cuba: precios en USD, fotos y características. Consulta disponibilidad, garantía y entrega en La Habana con ParaTuHogar.'
+  },
+  energia: {
+    label: 'Baterías, inversores y energía solar',
+    description: 'Consulta baterías, inversores y equipos de energía solar en Cuba. Compara capacidad, potencia y precios en USD; confirma disponibilidad y entrega.'
+  },
+  lavadoras: {
+    label: 'Lavadoras',
+    description: 'Compara lavadoras en Cuba por capacidad, características y precio en USD. Revisa fotos, disponibilidad, garantía y entrega en La Habana con ParaTuHogar.'
+  },
+  'mundo-frio': {
+    label: 'Refrigeradores, congeladores y splits',
+    description: 'Consulta refrigeradores, congeladores y splits en Cuba. Compara capacidad, consumo y precios en USD; confirma disponibilidad, garantía y entrega.'
+  },
+  'smart-tv': {
+    label: 'Televisores Smart TV',
+    description: 'Compara televisores Smart TV en Cuba por tamaño, resolución y precio en USD. Revisa fotos, conexiones, disponibilidad, garantía y opciones de entrega.'
+  },
+  tecnologia: {
+    label: 'Tecnología y accesorios',
+    description: 'Explora tecnología y accesorios en Cuba. Consulta especificaciones, compatibilidad y precios en USD; confirma disponibilidad y entrega con ParaTuHogar.'
+  },
+  transporte: {
+    label: 'Motos y bicicletas',
+    description: 'Consulta motos y bicicletas en Cuba. Compara características, modelos y precios en USD; confirma disponibilidad, garantía y entrega con ParaTuHogar.'
+  },
+  ventiladores: {
+    label: 'Ventiladores',
+    description: 'Compara ventiladores en Cuba: modelos, características y precios en USD. Consulta fotos, disponibilidad, garantía y entrega en La Habana con ParaTuHogar.'
+  },
+  miscelanea: {
+    label: 'Artículos para el hogar',
+    description: 'Encuentra artículos para el hogar en Cuba. Revisa fotos, características y precios en USD; confirma disponibilidad, garantía y opciones de entrega.'
+  }
+};
 
 const htmlEscape = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -62,6 +101,10 @@ const productImageUrl = value => {
 const isAvailable = product => {
   const value = String(product.disponible ?? product.available ?? 'SI').trim().toUpperCase();
   return ['SI', 'SÍ', 'YES', 'TRUE', '1', 'DISPONIBLE', 'EN STOCK'].includes(value);
+};
+const hasValidPrice = product => {
+  const price = Number(product.precio ?? product.price);
+  return Number.isFinite(price) && price > 0;
 };
 const getImages = product => [...new Set([
   product.thumbnail, product.image1, product.image2, product.image3,
@@ -129,7 +172,7 @@ function productDescription(product) {
 
 function relatedProducts(product, products, limit = 4) {
   const price = Number(product.precio) || 0;
-  return products.filter(other => other !== product && isAvailable(other))
+  return products.filter(other => other !== product && isAvailable(other) && hasValidPrice(other))
     .map(other => ({
       product: other,
       score: (String(other.categoria || '').toLowerCase() === String(product.categoria || '').toLowerCase() ? 0 : 4)
@@ -141,7 +184,7 @@ function render(template, values) {
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key) => values[key] ?? '');
 }
 
-function renderProduct(template, product, products, reviews, slugMap) {
+function renderProduct(template, product, products, reviews, slugMap, indexable) {
   const slug = slugMap.get(product);
 
   const name = String(product.nombre || product.name || 'Producto ParaTuHogar').trim();
@@ -269,11 +312,14 @@ function renderProduct(template, product, products, reviews, slugMap) {
     canonical,
     mainImage,
     available,
+    indexable,
     updated: updated || '',
     html: render(template, {
       SEO_TITLE: htmlEscape(seoTitle),
       SEO_DESCRIPTION: attr(descriptionText),
-      ROBOTS_DIRECTIVE: available && price > 0
+      // Conserva los agotados que ya estuvieron publicados, sin indexar borradores.
+      // El estado real sigue en Offer.availability y en el botón de compra.
+      ROBOTS_DIRECTIVE: indexable
         ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
         : 'noindex,follow,max-image-preview:large',
       CANONICAL_URL: attr(canonical),
@@ -316,6 +362,16 @@ async function main() {
     loadVerifiedReviews()
   ]);
   if (!products.length) throw new Error('No se encontraron productos para generar.');
+  let publishedIds = [];
+  try {
+    publishedIds = JSON.parse(await readFile(PUBLICATION_HISTORY_PATH, 'utf8'));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  if (!Array.isArray(publishedIds) || publishedIds.some(id => typeof id !== 'string')) {
+    throw new Error('El historial de publicación debe ser una lista de identificadores.');
+  }
+  const published = new Set(publishedIds);
   await mkdir(OUTPUT_ROOT, { recursive: true });
   const usedSlugs = new Set();
   const slugMap = new Map();
@@ -328,7 +384,10 @@ async function main() {
   }
   const generated = [];
   for (const product of products) {
-    const page = renderProduct(template, product, products, reviews, slugMap);
+    const publicationId = product.id ? `id:${product.id}` : `slug:${slugMap.get(product)}`;
+    if (isAvailable(product)) published.add(publicationId);
+    const indexable = hasValidPrice(product) && published.has(publicationId);
+    const page = renderProduct(template, product, products, reviews, slugMap, indexable);
     const directory = join(OUTPUT_ROOT, page.slug);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), page.html, 'utf8');
@@ -340,13 +399,13 @@ async function main() {
   const generatedCategories = [];
   for (const category of categories) {
     const categorySlug = slugify(category) || 'productos';
-    const categoryProducts = products.filter(product =>
-      String(product.categoria || 'Productos').trim() === category && isAvailable(product)
-    );
-    if (!categoryProducts.length) continue;
+    const categoryInventory = products.filter(product => String(product.categoria || 'Productos').trim() === category);
+    const categoryProducts = categoryInventory.filter(product => isAvailable(product) && hasValidPrice(product));
     const canonical = `${SITE_URL}/categoria/${categorySlug}/`;
-    const title = truncate(`${category} en Cuba | Precios y equipos disponibles`, 60);
-    const description = metaDescription('', `Compra ${category.toLowerCase()} en Cuba con precios en USD, fotografías reales, garantía, entrega coordinada y atención personalizada de ParaTuHogar.`);
+    const categoryCopy = CATEGORY_COPY[categorySlug];
+    const categoryLabel = categoryCopy?.label || category;
+    const title = truncate(`${categoryLabel} en Cuba | ParaTuHogar`, 60);
+    const description = categoryCopy?.description || metaDescription('', `Consulta ${category.toLowerCase()} en Cuba: precios en USD, características, disponibilidad y opciones de entrega. Compara modelos en ParaTuHogar.`);
     const itemList = categoryProducts.slice(0, 50).map((product, index) => ({
       '@type': 'ListItem',
       position: index + 1,
@@ -356,13 +415,13 @@ async function main() {
     const jsonLd = {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'CollectionPage', name: category, url: canonical, description },
+        { '@type': 'CollectionPage', name: categoryLabel, url: canonical, description },
         { '@type': 'ItemList', itemListElement: itemList },
         {
           '@type': 'BreadcrumbList',
           itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${SITE_URL}/` },
-            { '@type': 'ListItem', position: 2, name: category, item: canonical }
+            { '@type': 'ListItem', position: 2, name: categoryLabel, item: canonical }
           ]
         }
       ]
@@ -376,16 +435,17 @@ async function main() {
       SEO_TITLE: htmlEscape(title),
       SEO_DESCRIPTION: attr(description),
       CANONICAL_URL: attr(canonical),
-      CATEGORY: htmlEscape(category),
+      CATEGORY: htmlEscape(categoryLabel),
+      CATEGORY_INTRO: htmlEscape(description),
       CATEGORY_SLUG: attr(categorySlug),
       PRODUCT_COUNT: String(categoryProducts.length),
-      PRODUCT_CARDS: cards,
+      PRODUCT_CARDS: cards || '<p>No hay equipos disponibles en esta categoría por el momento. <a href="/">Consulta otras opciones del catálogo</a>.</p>',
       JSON_LD: JSON.stringify(jsonLd).replace(/</g, '\\u003c')
     });
     const directory = join(CATEGORY_OUTPUT_ROOT, categorySlug);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), html, 'utf8');
-    const lastmod = categoryProducts
+    const lastmod = categoryInventory
       .map(product => product.inventario_actualizado_en || product.updated_at || product.fecha_actualizacion)
       .filter(Boolean)
       .sort()
@@ -409,7 +469,7 @@ async function main() {
   const sitemapEntries = [
     ...staticUrls.map(item => `  <url><loc>${xmlEscape(item.loc)}</loc><lastmod>${item.lastmod}</lastmod></url>`),
     ...generatedCategories.map(item => `  <url><loc>${xmlEscape(item.canonical)}</loc><lastmod>${toIsoDate(item.lastmod) || staticUrls[0].lastmod}</lastmod></url>`),
-    ...generated.filter(page => page.available && Number(page.product.precio) > 0).map(page => {
+    ...generated.filter(page => page.indexable).map(page => {
       const lastmod = toIsoDate(page.updated) || toIsoDate(new Date());
       const image = page.mainImage
         ? `<image:image><image:loc>${xmlEscape(page.mainImage)}</image:loc><image:title>${xmlEscape(page.product.nombre)}</image:title></image:image>`
@@ -430,6 +490,7 @@ async function main() {
     updated_at: page.updated || null
   }));
   await writeFile(join(ROOT, 'producto', 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  await writeFile(PUBLICATION_HISTORY_PATH, `${JSON.stringify([...published].sort(), null, 2)}\n`, 'utf8');
 
   console.log(`SEO: ${generated.length} páginas generadas en ${OUTPUT_ROOT}`);
   console.log(generated.slice(0, 5).map(page => page.canonical).join('\n'));

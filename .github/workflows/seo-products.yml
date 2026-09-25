@@ -22,6 +22,8 @@ jobs:
           node-version: "22"
       - name: Generar fichas y sitemap
         run: node scripts/generate-product-pages.mjs
+      - name: Comprobar indexación y disponibilidad sin servicios externos
+        run: node --test tests/seo-generation.test.mjs
       - name: Validar metadatos, JSON-LD y sitemap
         run: node scripts/validate-seo-pages.mjs
       - name: Guardar solamente cambios reales
