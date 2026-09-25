@@ -859,27 +859,27 @@
     "slug": "escalera-de-tijera-4-pasos",
     "nombre": "Escalera de tijera  4 pasos",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/escalera-de-tijera-4-pasos/",
-    "updated_at": "2026-09-24T19:34:04.484597+00:00"
+    "updated_at": "2026-09-25T14:18:41.692635+00:00"
   },
   {
     "id": "60118fb2-3ef6-4903-955d-b623e014b738",
     "slug": "escalera-de-tijera-5-pasos",
     "nombre": "Escalera de tijera 5 pasos",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/escalera-de-tijera-5-pasos/",
-    "updated_at": "2026-09-24T19:36:38.947559+00:00"
+    "updated_at": "2026-09-25T14:18:44.930233+00:00"
   },
   {
     "id": "e990dc0b-ffdb-48ac-80bf-798198298fd9",
     "slug": "escalera-de-tijeras-7-pasos",
     "nombre": "Escalera de Tijeras 7 pasos",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/escalera-de-tijeras-7-pasos/",
-    "updated_at": "2026-09-24T19:39:26.89548+00:00"
+    "updated_at": "2026-09-25T14:19:16.31482+00:00"
   },
   {
     "id": "d6bd5241-f984-4ca1-a33c-ac5f7c1fd139",
@@ -1921,9 +1921,9 @@
     "slug": "lavadora-automatica-9kg-samsung-inverter",
     "nombre": "Lavadora Automática 9KG  Samsung Inverter",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-samsung-inverter/",
-    "updated_at": "2026-09-24T19:26:11.107748+00:00"
+    "updated_at": "2026-09-25T14:21:30.357038+00:00"
   },
   {
     "id": "6e4fb438-9eb6-4244-8e8f-fd5119827c41",
@@ -2430,6 +2430,15 @@
     "updated_at": "2026-09-18T17:00:29.272919+00:00"
   },
   {
+    "id": "39054296-9de5-410e-90cc-dfb095b4bc00",
+    "slug": "nevera-5-pies-konka",
+    "nombre": "Nevera 5 pies KONKA",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-5-pies-konka/",
+    "updated_at": "2026-09-25T15:15:37.17258+00:00"
+  },
+  {
     "id": "46b0ae55-8789-450b-ac80-a6c8ea3e9700",
     "slug": "nevera-5-pies-sankey",
     "nombre": "Nevera 5 pies Sankey",
@@ -2475,6 +2484,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "c5aad792-47bc-43c6-b398-731a4788b500",
+    "slug": "nevera-7-pies-haitech",
+    "nombre": "Nevera 5.6 pies Haitech",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
+    "updated_at": "2026-09-25T15:45:09.204411+00:00"
+  },
+  {
     "id": "36adbce8-bc55-4f8b-8b60-3a3a0c903ce6",
     "slug": "nevera-7-pies-chiq-mayorista",
     "nombre": "Nevera 7 pies Chiq mayorista",
@@ -2500,15 +2518,6 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-enerlife/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
-  },
-  {
-    "id": "c5aad792-47bc-43c6-b398-731a4788b500",
-    "slug": "nevera-7-pies-haitech",
-    "nombre": "Nevera 7 pies Haitech",
-    "categoria": "MUNDO FRIO",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
-    "updated_at": "2026-09-24T19:12:58.797594+00:00"
   },
   {
     "id": "2ddf15b1-7948-4133-afb5-b9634f0ce3c4",
@@ -2578,9 +2587,9 @@
     "slug": "nevera-vertical-7pies-aucma",
     "nombre": "Nevera Exhibidora Vertical 7pies AUCMA",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-vertical-7pies-aucma/",
-    "updated_at": "2026-09-24T17:56:16.96601+00:00"
+    "updated_at": "2026-09-25T14:11:26.865895+00:00"
   },
   {
     "id": "65f40aa4-97dc-4def-a87c-b3a5ef640b94",
@@ -3820,9 +3829,9 @@
     "slug": "ventilador-recargable-x11-bateria-20-000-mah",
     "nombre": "Ventilador Recargable X11 – Batería 20,000 mAh",
     "categoria": "VENTILADORES",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-x11-bateria-20-000-mah/",
-    "updated_at": "2026-09-24T19:19:55.01681+00:00"
+    "updated_at": "2026-09-25T14:16:51.773344+00:00"
   },
   {
     "id": "a0d80dd5-a984-4793-bd24-e84746294e9a",
