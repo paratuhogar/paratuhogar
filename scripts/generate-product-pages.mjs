@@ -15,6 +15,7 @@ const TEMPLATE_PATH = join(ROOT, 'templates', 'product-page.html');
 const CATEGORY_TEMPLATE_PATH = join(ROOT, 'templates', 'category-page.html');
 const OUTPUT_ROOT = join(ROOT, 'producto');
 const CATEGORY_OUTPUT_ROOT = join(ROOT, 'categoria');
+const PUBLICATION_HISTORY_PATH = join(OUTPUT_ROOT, 'publicados.json');
 const CATEGORY_COPY = {
   cocina: {
     label: 'Equipos de cocina',
@@ -183,7 +184,7 @@ function render(template, values) {
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key) => values[key] ?? '');
 }
 
-function renderProduct(template, product, products, reviews, slugMap) {
+function renderProduct(template, product, products, reviews, slugMap, indexable) {
   const slug = slugMap.get(product);
 
   const name = String(product.nombre || product.name || 'Producto ParaTuHogar').trim();
@@ -311,14 +312,14 @@ function renderProduct(template, product, products, reviews, slugMap) {
     canonical,
     mainImage,
     available,
-    indexable: hasValidPrice(product),
+    indexable,
     updated: updated || '',
     html: render(template, {
       SEO_TITLE: htmlEscape(seoTitle),
       SEO_DESCRIPTION: attr(descriptionText),
-      // El agotamiento temporal no debe eliminar una ficha útil de Google.
+      // Conserva los agotados que ya estuvieron publicados, sin indexar borradores.
       // El estado real sigue en Offer.availability y en el botón de compra.
-      ROBOTS_DIRECTIVE: hasValidPrice(product)
+      ROBOTS_DIRECTIVE: indexable
         ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
         : 'noindex,follow,max-image-preview:large',
       CANONICAL_URL: attr(canonical),
@@ -361,6 +362,16 @@ async function main() {
     loadVerifiedReviews()
   ]);
   if (!products.length) throw new Error('No se encontraron productos para generar.');
+  let publishedIds = [];
+  try {
+    publishedIds = JSON.parse(await readFile(PUBLICATION_HISTORY_PATH, 'utf8'));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  if (!Array.isArray(publishedIds) || publishedIds.some(id => typeof id !== 'string')) {
+    throw new Error('El historial de publicación debe ser una lista de identificadores.');
+  }
+  const published = new Set(publishedIds);
   await mkdir(OUTPUT_ROOT, { recursive: true });
   const usedSlugs = new Set();
   const slugMap = new Map();
@@ -373,7 +384,10 @@ async function main() {
   }
   const generated = [];
   for (const product of products) {
-    const page = renderProduct(template, product, products, reviews, slugMap);
+    const publicationId = product.id ? `id:${product.id}` : `slug:${slugMap.get(product)}`;
+    if (isAvailable(product)) published.add(publicationId);
+    const indexable = hasValidPrice(product) && published.has(publicationId);
+    const page = renderProduct(template, product, products, reviews, slugMap, indexable);
     const directory = join(OUTPUT_ROOT, page.slug);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'index.html'), page.html, 'utf8');
@@ -476,6 +490,7 @@ async function main() {
     updated_at: page.updated || null
   }));
   await writeFile(join(ROOT, 'producto', 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  await writeFile(PUBLICATION_HISTORY_PATH, `${JSON.stringify([...published].sort(), null, 2)}\n`, 'utf8');
 
   console.log(`SEO: ${generated.length} páginas generadas en ${OUTPUT_ROOT}`);
   console.log(generated.slice(0, 5).map(page => page.canonical).join('\n'));

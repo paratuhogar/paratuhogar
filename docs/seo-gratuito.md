@@ -8,7 +8,8 @@ normalmente están agotados temporalmente y que Search Console está verificada.
 
 ## Cambios
 
-- Las fichas con un precio positivo y finito permanecen indexables cuando se agotan.
+- Las fichas que ya estuvieron disponibles públicamente y tienen un precio positivo
+  y finito permanecen indexables cuando se agotan.
   Conservan `OutOfStock`, el aviso de agotamiento y la compra desactivada. Su URL sigue
   incluida en el sitemap. No se cambia el inventario ni el precio en la base de datos.
 - Las categorías permanecen accesibles sin existencias y muestran un aviso honesto.
@@ -16,14 +17,27 @@ normalmente están agotados temporalmente y que Search Console está verificada.
 - Las nueve categorías tienen textos específicos y enlaces HTML desde la portada.
   Se mantienen las URLs actuales y los metadatos particulares de cada producto.
 - El control que abre los términos de garantía es un botón.
-- El validador y cuatro pruebas de integración protegen la política de indexación,
-  las categorías vacías y la correspondencia entre fichas y sitemap.
+- El validador y cinco pruebas de integración protegen la política de indexación,
+  los borradores, las categorías vacías y la correspondencia entre fichas y sitemap.
 
-Esta política presupone agotamiento temporal. Si un modelo se retira definitivamente
-o se necesita un borrador que no aparezca en Google, hay que distinguir ese estado
-de la falta de stock antes de aplicarle una política diferente. Marcar `disponible=NO`
-ya no significa excluir la ficha de los buscadores; sigue excluyéndola de las ofertas
-disponibles del catálogo. No se ha creado un nuevo campo de publicación.
+Un producto nuevo guardado como inactivo conserva `noindex` y queda fuera del
+sitemap. Solo después de que el generador lo observe disponible podrá conservar la
+indexación si más adelante se agota. El historial `producto/publicados.json` guarda
+identificadores estables, sin datos personales; se actualiza con el catálogo y se
+conserva en GitHub. No borrarlo ni sustituirlo por un historial de otro entorno.
+
+El historial inicial contiene 135 identificadores observados como disponibles en
+51 versiones del manifiesto publicadas en la rama principal, desde el 30 de julio
+de 2026. No se dedujo publicación a partir del precio ni de la mera existencia de
+una ficha. Los inactivos sin evidencia permanecen excluidos de Google, incluso si
+alguno es un agotado antiguo anterior al historial recuperado. Esto prioriza la
+protección de los borradores solicitada por el propietario.
+
+Si falta el archivo del historial, el generador comienza de forma conservadora con
+los productos actualmente disponibles. Si el archivo está corrupto, la generación
+falla sin reemplazar las páginas. Para retirar definitivamente de los buscadores un
+producto antes publicado se necesita una política distinta; esta mejora está
+limitada a borradores y agotados temporales. No se creó un campo en la base de datos.
 
 ## Comprobaciones locales, sin API de pago
 
@@ -77,9 +91,10 @@ Una exportación CSV/ZIP permite analizar esos datos sin contratar herramientas.
   advirtió CPU más lenta que la esperada y una redirección a `?v=2807a`. Es una
   medición de laboratorio, no Core Web Vitals de usuarios reales, ni una comparación
   de rendimiento antes/después. No se ha realizado una optimización integral.
-- El catálogo leído contenía 426 productos. El sitemap generado contiene 436 URLs:
-  425 fichas con precio válido, nueve categorías y dos páginas generales. Una ficha
-  sin precio válido conserva `noindex`.
+- El catálogo leído contenía 426 productos. El sitemap generado contiene 146 URLs:
+  135 fichas elegibles, nueve categorías y dos páginas generales. Son 50 fichas más
+  que el sitemap publicado de 96 URLs. Las restantes 291 fichas conservan `noindex`
+  por falta de historial de publicación o de precio válido.
 
 Los informes completos se guardaron en la carpeta local `output/seo-2026-09-25/`.
 La puntuación SEO de Lighthouse no mide la posición en Google ni predice el aumento
