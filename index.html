@@ -14071,7 +14071,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(40);
-    doc.text("PREFACTURA", 15, 35);
+    doc.text("FACTURA", 15, 35);
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -14172,7 +14172,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
     const notas =[
         "• El pago se realiza en efectivo o transferencia al momento de recibir el equipo.",
         "• Verifique el estado del producto antes de que el mensajero se retire.",
-        "• Esta prefactura reserva el producto por un periodo de 24 horas."
+        "• Esta factura reserva el producto por un periodo de 24 horas."
     ];
     doc.text(notas, 15, finalY + 16);
 
@@ -14202,13 +14202,13 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.text("Generado automáticamente por el Sistema de Gestión paratuhogar.cu", 105, 285, { align: "center" });
 
     // --- 6. SALIDA ---
-    const nombreArchivo = `Prefactura_${datosPedido.cliente.replace(/\s+/g, '_')}.pdf`;
+    const nombreArchivo = `Factura_${datosPedido.cliente.replace(/\s+/g, '_')}.pdf`;
 
     if (accion === 'compartir' && navigator.share) {
         const pdfBlob = doc.output('blob');
         const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
         try {
-            await navigator.share({ files: [file], title: 'Su Prefactura - paratuhogar' });
+            await navigator.share({ files: [file], title: 'Su Factura - paratuhogar' });
         } catch (err) { doc.save(nombreArchivo); }
     } else {
         doc.save(nombreArchivo);
