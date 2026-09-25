@@ -369,6 +369,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "de65746b-6948-4f73-9978-b29bca1db87e",
+    "slug": "bomba-sumergible-para-pozo-profundo-cr-turbo",
+    "nombre": "Bomba sumergible para pozo profundo – CR Turbo",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/bomba-sumergible-para-pozo-profundo-cr-turbo/",
+    "updated_at": "2026-09-25T21:32:23.260737+00:00"
+  },
+  {
     "id": "a2499976-d64d-4420-b37a-fb8e431006cc",
     "slug": "bombillo-solar-eko-20w",
     "nombre": "Bombillo solar EKO - 20w",
@@ -1471,9 +1480,9 @@
     "slug": "inversor-10kw-sako",
     "nombre": "Inversor 10kw Sako",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/inversor-10kw-sako/",
-    "updated_at": "2026-09-24T02:45:28.336742+00:00"
+    "updated_at": "2026-09-25T19:13:58.047654+00:00"
   },
   {
     "id": "dd657549-dc56-4c71-ab37-2a347a456794",
