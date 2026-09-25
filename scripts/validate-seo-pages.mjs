@@ -42,8 +42,10 @@ for (const folder of folders) {
       const breadcrumbs = data['@graph']?.find(item => item['@type'] === 'BreadcrumbList');
       if (product?.offers && (!product.offers.priceCurrency || !product.offers.availability)) errors.push(`${folder}: Offer incompleto`);
       if (!breadcrumbs?.itemListElement?.length) errors.push(`${folder}: breadcrumbs incompletos`);
-      if (product?.offers?.availability === 'https://schema.org/OutOfStock' && !robots.includes('noindex')) {
-        errors.push(`${folder}: producto agotado debe usar noindex`);
+      if (!product) errors.push(`${folder}: falta Product`);
+      const offerPrice = Number(product?.offers?.price);
+      if (!robots.includes('noindex') && (!Number.isFinite(offerPrice) || offerPrice <= 0)) {
+        errors.push(`${folder}: ficha indexable sin precio válido`);
       }
     } catch (error) {
       errors.push(`${folder}: JSON-LD inválido`);
