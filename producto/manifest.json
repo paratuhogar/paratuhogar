@@ -877,9 +877,9 @@
     "slug": "escalera-de-tijera-5-pasos",
     "nombre": "Escalera de tijera 5 pasos",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/escalera-de-tijera-5-pasos/",
-    "updated_at": "2026-09-25T14:18:44.930233+00:00"
+    "updated_at": "2026-09-28T14:41:21.951366+00:00"
   },
   {
     "id": "e990dc0b-ffdb-48ac-80bf-798198298fd9",
@@ -1300,9 +1300,9 @@
     "slug": "freidora-de-aire-doble-eko-8-4l",
     "nombre": "Freidora de aire doble  EKO - 8.4L",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/freidora-de-aire-doble-eko-8-4l/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-28T17:18:37.749582+00:00"
   },
   {
     "id": "f19837a3-6a25-446d-8283-f3e71d85aed2",
@@ -1444,9 +1444,9 @@
     "slug": "impresora-epson-ecotank-et-2870",
     "nombre": "Impresora Epson EcoTank ET - 2870",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/impresora-epson-ecotank-et-2870/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-28T14:31:22.800719+00:00"
   },
   {
     "id": "41c003da-1fe3-42e2-9865-44a294673aa3",
@@ -1930,9 +1930,9 @@
     "slug": "lavadora-automatica-9kg-samsung-inverter",
     "nombre": "Lavadora Automática 9KG  Samsung Inverter",
     "categoria": "LAVADORAS",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-samsung-inverter/",
-    "updated_at": "2026-09-25T14:21:30.357038+00:00"
+    "updated_at": "2026-09-28T17:00:53.415927+00:00"
   },
   {
     "id": "6e4fb438-9eb6-4244-8e8f-fd5119827c41",
@@ -2632,9 +2632,9 @@
     "slug": "nevera-horizontal-royal-3-5pies",
     "nombre": "Nevera Horizontal ROYAL - 3.5pies",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-horizontal-royal-3-5pies/",
-    "updated_at": "2026-09-01T18:40:33.004385+00:00"
+    "updated_at": "2026-09-28T16:03:29.307857+00:00"
   },
   {
     "id": "1c4f2b0c-59be-45c9-9aad-e0c354e4038b",
@@ -2758,9 +2758,9 @@
     "slug": "olla-reina-6l-eko",
     "nombre": "Olla reina 6L EKO",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/olla-reina-6l-eko/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-28T15:00:00.586896+00:00"
   },
   {
     "id": "f312de3a-fc2d-4281-8a16-a6414de76a09",
@@ -2817,13 +2817,22 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "d7919bb6-aa2e-4597-9bff-839640fbc23d",
+    "slug": "panel-solar-bifacial-595-w",
+    "nombre": "Panel solar  bifacial 595 W",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/panel-solar-bifacial-595-w/",
+    "updated_at": "2026-09-28T19:10:08.847603+00:00"
+  },
+  {
     "id": "d0c5644d-7be3-4504-be6d-dee3d5d300b8",
     "slug": "panel-solar-590w-waaree",
     "nombre": "Panel Solar 590W WAAREE",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/panel-solar-590w-waaree/",
-    "updated_at": "2026-09-21T01:58:58.130201+00:00"
+    "updated_at": "2026-09-28T19:10:33.237663+00:00"
   },
   {
     "id": "be913ffb-4a2c-46d3-bf41-3b1f829d2586",
