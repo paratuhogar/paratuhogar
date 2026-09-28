@@ -511,6 +511,7 @@
         }
     </style>
 
+<script defer src="/js/google-measurement.js?v=20260928-google-1"></script>
 </head>
 
 <body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
@@ -3723,6 +3724,7 @@ async function processRegister() {
             data: data
         };
         localStorage.setItem('pth_session', JSON.stringify(session));
+        window.PTHAnalytics?.excludeInternal();
     }
 
     function closeLogin() { document.getElementById('login-overlay').classList.add('hidden'); }
@@ -5829,6 +5831,7 @@ function openDetail(name, skipSolarCheck = false) {
     tiempoInicioLectura = Date.now();
     productoActualLectura = name;
     trackSpy('VIO_DETALLE', name);
+    window.PTHAnalytics?.event('view_item');
     
     if (typeof registrarVistaAnalitica === "function") {
         registrarVistaAnalitica(selectedProduct); 
@@ -5941,6 +5944,7 @@ function consultSelectedProduct() {
     }
     
     document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
+    window.PTHAnalytics?.event('add_to_cart');
     closeDetail();         
     toggleCartModal(true); 
 
@@ -6103,6 +6107,7 @@ function buildSubgestorWhatsappSummary(orderSubgestor, totalCommission) {
 
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
+    window.PTHAnalytics?.event('begin_checkout');
 
     // Debe ejecutarse antes del primer await. Así un doble clic o un reintento
     // mientras carga la red no inicia dos flujos de inserción simultáneos.
@@ -6542,6 +6547,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     
     if (!isLogged) {
         trackSpy('COMPRA_CONFIRMADA', nombreC);
+    window.PTHAnalytics?.event('generate_lead');
     }
 
     window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${mensajeCodificado}`, '_blank');
@@ -11990,6 +11996,7 @@ window.togglePassword = function(inputId, iconId) {
     function saveSessionToMemory(name, isAdmin, data) {
         const session = { name: name, isAdmin: isAdmin, data: data };
         localStorage.setItem('pth_session', JSON.stringify(session));
+        window.PTHAnalytics?.excludeInternal();
     }
 
     function closeLogin() { 
