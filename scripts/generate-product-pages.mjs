@@ -134,7 +134,7 @@ async function loadProducts() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('Define PRODUCTS_JSON/--json o SUPABASE_URL + SUPABASE_ANON_KEY.');
   }
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/productos?select=*&order=nombre.asc`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_publico?select=*&order=nombre.asc`, {
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
   });
   if (!response.ok) throw new Error(`Supabase respondió ${response.status}: ${await response.text()}`);

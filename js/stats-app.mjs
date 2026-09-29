@@ -141,6 +141,7 @@ function effectiveFilters() {
 
 async function loadData({ initial = false } = {}) {
   if(ordersInFlight)return;
+  await window.PTHSecureData.restore();
   const session = readSession();
   if (!isOwner(session)) {
     setMessage('error', 'Acceso reservado a Ángel y Marcel.');

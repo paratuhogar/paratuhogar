@@ -41,6 +41,7 @@
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/secure-data.js?v=20260929-privacy1"></script>
 
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
@@ -3204,7 +3205,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "2807a"; 
+const versionActual = "20260929-privacy1";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3430,6 +3431,8 @@ checkShortLinks();
     await checkShortLinks();
     await initSmartReferral();
 
+    try { await window.PTHSecureData.restore(); }
+    catch (error) { alert(error.message); return; }
     const savedSession = localStorage.getItem('pth_session');
     if (savedSession) {
         // Solo los usuarios internos necesitan gráficas, Excel, editor, ZIP y PDF.
@@ -3562,74 +3565,7 @@ function openLoginModal() {
 }
 
 async function processRecovery() {
-    // 1. Obtener datos
-    const telInput = document.getElementById('rec-tel');
-    const emailInput = document.getElementById('rec-email');
-    const newPassInput = document.getElementById('rec-new-pass');
-    const btn = document.querySelector('#form-recover button'); // El botón de confirmar
-
-    const tel = telInput.value.trim();
-    const email = emailInput.value.trim();
-    const newPass = newPassInput.value.trim();
-
-    // 2. Validaciones
-    if (!tel || !email || !newPass) {
-        return alert("⚠️ Por favor completa todos los campos para verificar tu identidad.");
-    }
-
-    if (newPass.length < 4) {
-        return alert("⚠️ La contraseña debe tener al menos 4 caracteres.");
-    }
-
-    // Bloquear botón
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "Verificando...";
-
-    try {
-        // 3. Buscar usuario que coincida EXACTAMENTE con Teléfono Y Email
-        const { data: usuario, error: searchError } = await supabaseClient
-            .from('gestores')
-            .select('id, nombre')
-            .eq('telefono', tel)
-            .eq('email', email)
-            .maybeSingle(); // Usamos maybeSingle para que no de error si no encuentra nada
-
-        if (searchError) throw searchError;
-
-        if (!usuario) {
-            alert("❌ Datos incorrectos. No encontramos un usuario con ese Teléfono y Email combinados.");
-            btn.disabled = false;
-            btn.innerText = originalText;
-            return;
-        }
-
-        // 4. Si encontramos al usuario, actualizamos la contraseña
-        const { error: updateError } = await supabaseClient
-            .from('gestores')
-            .update({ password: newPass })
-            .eq('id', usuario.id);
-
-        if (updateError) throw updateError;
-
-        // 5. Éxito
-        alert(`✅ ¡Contraseña restablecida correctamente, ${usuario.nombre}!\nAhora puedes iniciar sesión con tu nueva clave.`);
-        
-        // Limpiar campos
-        telInput.value = "";
-        emailInput.value = "";
-        newPassInput.value = "";
-        
-        // Volver al login
-        toggleLoginMode('login');
-
-    } catch (e) {
-        console.error("Error recuperación:", e);
-        alert("Ocurrió un error de conexión. Inténtalo más tarde.");
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalText;
-    }
+    alert("Para proteger tu cuenta, contacta con tu gestor principal o un administrador para verificar y restablecer tu acceso.");
 }
 
     // REGISTRO DE NUEVO GESTOR
@@ -4853,9 +4789,10 @@ async function loadProducts() {
         // VERIFICACIÓN RÁPIDA DE VERSIÓN DE INVENTARIO
         // =========================================================
         let productos = [];
-        const cacheKey = 'pth_catalogo_cache';
-        const cacheTimeKey = 'pth_catalogo_cache_time';
-        const cacheLocalKey = 'pth_ultimo_cambio_productos';
+        await window.PTHSecureData.restore();
+        const cacheKey = 'pth_catalogo_cache' + window.PTHSecureData.cacheSuffix();
+        const cacheTimeKey = 'pth_catalogo_cache_time' + window.PTHSecureData.cacheSuffix();
+        const cacheLocalKey = 'pth_ultimo_cambio_productos' + window.PTHSecureData.cacheSuffix();
         const catalogSchemaKey = 'pth_catalogo_schema_version';
         const catalogSchemaVersion = 'technical-sheets-v1';
 
@@ -4885,7 +4822,8 @@ async function loadProducts() {
         const hayNuevaVersion = ultimoCambioNube && (ultimoCambioNube !== ultimoCambioLocal);
         const cacheExpirada = !cacheTime || (Date.now() - parseInt(cacheTime) > CACHE_EXPIRATION_MS);
 
-        const necesitaDescargar = !catalogoCacheado || hayNuevaVersion || cacheExpirada;
+        // Personalized prices and assigned shares can change independently of inventory.
+        const necesitaDescargar = Boolean(window.currentUserData?.parent_id) || !catalogoCacheado || hayNuevaVersion || cacheExpirada;
 
         if (!necesitaDescargar) {
             productos = JSON.parse(catalogoCacheado);
@@ -6088,12 +6026,12 @@ function changeQty(index, delta) {
     
 
 
-function buildSubgestorWhatsappSummary(orderSubgestor, totalCommission) {
+function buildSubgestorWhatsappSummary(orderSubgestor, assignedCommission) {
     const parentName = String(orderSubgestor?.parent?.nombre || 'No asignado').trim();
     const subgestorName = String(orderSubgestor?.agent?.nombre || 'No asignado').trim();
-    const commission = Number(totalCommission) || 0;
+    const commission = Number(assignedCommission) || 0;
 
-    return `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${parentName}\nSubgestor: ${subgestorName}\nComisión total del pedido: $${commission}\n`;
+    return `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${parentName}\nSubgestor: ${subgestorName}\nComisión asignada al subgestor: $${commission}\n`;
 }
 
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
@@ -6426,8 +6364,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
         if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vueltoC}\n`;
 
-        if (orderSubgestor) {
-            mensajeRaw += buildSubgestorWhatsappSummary(orderSubgestor, comisionOriginalPoolVale);
+        if (orderSubgestor && isLogged) {
+            mensajeRaw += buildSubgestorWhatsappSummary(orderSubgestor, comisionTotalVale);
         } else if (isLogged) {
             mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
         }
@@ -6458,6 +6396,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (orderSubgestor) {
             // El pedido va a la cola de aprobación del Gestor Principal
             insertPromise = supabaseClient.from('pedidos_subgestores').insert([{
+                _lineas: productos.map(p => ({ producto_id: p.id, cantidad: p.qty })),
                 subgestor_id: orderSubgestor.agent.id,
                 subgestor_nombre: orderSubgestor.agent.nombre,
                 parent_gestor_id: orderSubgestor.parent.id,
@@ -6481,6 +6420,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         } else {
             // Pedido normal (va directo al Almacén Central)
             insertPromise = supabaseClient.from('pedidos').insert([{
+                _lineas: productos.map(p => ({ producto_id: p.id, cantidad: p.qty })),
                 gestor: activeGestor, 
                 cliente: nombreC, 
                 ci: ciC, 
@@ -7350,6 +7290,7 @@ function isTransientPayoutNetworkError(error) {
 }
 
 function recoverInvalidGestorSession() {
+    window.PTHSecureData.clearSession();
     localStorage.removeItem('pth_session');
     window.currentUserData = null;
     window.gestorName = null;
@@ -9803,7 +9744,7 @@ async function toggleStockAdmin(id, actual) {
         .from('control_sistema')
         .upsert([{ clave: 'ultimo_cambio_productos', valor: new Date().toISOString() }]);
 
-    localStorage.removeItem('pth_catalogo_cache');
+    window.PTHSecureData.clearCaches();
     localStorage.removeItem('pth_catalogo_cache_time');
     loadAdminData();
 }
@@ -10224,7 +10165,7 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
                     .from('control_sistema')
                     .upsert([{ clave: 'ultimo_cambio_productos', valor: new Date().toISOString() }]);
 
-                localStorage.removeItem('pth_catalogo_cache');
+                window.PTHSecureData.clearCaches();
                 localStorage.removeItem('pth_catalogo_cache_time');
                 
                 closeModalProd();
@@ -11418,6 +11359,7 @@ window.doLogout = function() {
     }
 
     // 3. LIMPIEZA Y RECARGA
+    window.PTHSecureData.logout();
     localStorage.removeItem('pth_session');
     window.gestorName = null;
     window.currentUserData = null;
@@ -11794,7 +11736,7 @@ async function downloadCatalogPDF() {
             agent: window.gestorName || "Asesor de Ventas",
             phone: getAgentPhone(), // Tu función inteligente que obtiene el teléfono
             categoryName: activeCategory,
-            products: productsToExport // Pasamos el array de objetos limpio
+            products: productsToExport.map(p => Object.fromEntries(Object.entries(p).filter(([key]) => !/comision|commission|costo_proveedor/i.test(key))))
         };
 
         // 4. Guardar en la memoria del navegador (LocalStorage)
@@ -11871,110 +11813,18 @@ async function downloadCatalogPDF() {
 // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
 // PROCESO DE LOGIN ÚNICO Y SEGURO (ADMIN + GESTORES + ESTADOS)
 async function processLogin() {
-    const userInput = document.getElementById('log-user');
-    const passInput = document.getElementById('log-pass');
-    
-    const user = userInput ? userInput.value.trim() : "";
-    const pass = passInput ? passInput.value.trim() : "";
-
-    // CLAVES MAESTRAS
-    const KEY_LOGISTICA = "PRO_ADMIN_2025"; 
-    const KEY_DUENO = "ANGEL_ORO"; 
-
-    // CASO A: NIVEL DUEÑO (SUPERADMIN)
-    if (pass === KEY_DUENO) { 
-        closeLogin();
-        const bossData = { nombre: "Ángel (Dueño)", telefono: "5356071095", rol: 'superadmin', password: pass };
-        window.currentUserData = bossData;
-        saveSessionToMemory("Administrador Supremo", true, bossData); 
-        setupSession("Administrador Supremo", true);
-        alert("🔓 BÓVEDA FINANCIERA DESBLOQUEADA");
-        return;
-    }
-
-    // CASO B: NIVEL LOGÍSTICA
-    if (pass === KEY_LOGISTICA) { 
-        closeLogin();
-        const adminData = { nombre: "Encargado Logística", telefono: "5356071095", rol: 'logistica' }; 
-        window.currentUserData = adminData;
-        saveSessionToMemory("Logística", true, adminData); 
-        setupSession("Logística", true);
-        return;
-    }
-
-    if (!user || !pass) return alert("Por favor ingresa usuario y contraseña.");
-
-    let gestorAprobado = null;
-
+    const user = document.getElementById("log-user")?.value.trim();
+    const pass = document.getElementById("log-pass")?.value.trim();
+    if (!user || !pass) return alert("Ingresa usuario y contraseña.");
     try {
-            // Limpiamos caracteres no numéricos por si escribe su número de teléfono.
-            // El primer nombre también es válido (p. ej. "Juanita" para Juanita García).
-            const phoneSearch = user.replace(/\D/g, '');
-            const loginIdentity = user.replace(/["(),]/g, '').trim();
-            const loginNamePrefix = loginIdentity.split(/\s+/)[0];
-
-            // Buscamos por nombre completo o prefijo de nombre, email o teléfono.
-            const exactResult = await supabaseClient
-                .from('gestores')
-                .select('*')
-                .eq('password', pass)
-                .or(`nombre.ilike."${loginIdentity}",email.eq."${loginIdentity}",telefono.eq."${phoneSearch || 'XYZ_NONE'}"`)
-                .maybeSingle();
-            let data = exactResult.data;
-            let error = exactResult.error;
-            if (!data && !error && loginNamePrefix && loginNamePrefix !== loginIdentity) {
-                const prefixResult = await supabaseClient
-                    .from('gestores')
-                    .select('*')
-                    .eq('password', pass)
-                    .ilike('nombre', `${loginNamePrefix}%`)
-                    .maybeSingle();
-                data = prefixResult.data;
-                error = prefixResult.error;
-            }
-
-            if (error || !data) {
-                return alert("❌ Usuario o contraseña incorrectos.");
-            } 
-            
-            if (data.estado === 'pendiente') return alert("⏳ Cuenta en revisión.");
-            if (data.estado === 'bloqueado') return alert("🚫 Cuenta suspendida.");
-
-        gestorAprobado = data;
-
-    } catch (e) {
-        console.error("Error de Base de Datos:", e);
-        return alert("Error de conexión con el servidor. Revisa tu internet.");
-    }
-
-    // Si pasó las validaciones de BD, construimos la interfaz:
-    if (gestorAprobado) {
-    try {
+        const profile = await window.PTHSecureData.login(user, pass);
+        const adminMode = !profile.parent_id && ["superadmin", "logistica"].includes(profile.rol);
+        window.currentUserData = profile;
+        saveSessionToMemory(profile.nombre, adminMode, profile);
         closeLogin();
-        document.getElementById('search-bar').value = '';
-        
-        // --- CONFIGURACIÓN DE DATOS DE SUBGESTOR (CON TELÉFONO) ---
-        if (gestorAprobado.parent_id) {
-            const { data: parentData } = await supabaseClient
-                .from('gestores')
-                .select('nombre, telefono')
-                .eq('id', gestorAprobado.parent_id)
-                .maybeSingle();
-            
-            if (parentData) {
-                gestorAprobado.parent_nombre = parentData.nombre;
-                gestorAprobado.parent_telefono = parentData.telefono;
-            }
-        }
-        
-        window.currentUserData = gestorAprobado; 
-        saveSessionToMemory(gestorAprobado.nombre, false, gestorAprobado); 
-        setupSession(gestorAprobado.nombre, false);
-    } catch (uiError) {
-            console.error("Error al construir la pantalla del gestor:", uiError);
-            alert("Iniciaste sesión, pero hubo un error visual. Recarga la página.");
-        }
-    }
+        document.getElementById("search-bar").value = "";
+        setupSession(profile.nombre, adminMode);
+    } catch (error) { alert(error.message); }
 }
 
 window.togglePassword = function(inputId, iconId) {
@@ -14647,12 +14497,12 @@ window.saveMyPrice = async function(prodId, basePrice, baseComm) {
                 btn.classList.replace('bg-emerald-500', 'bg-indigo-600');
                 btn.disabled = false;
                 
-                localStorage.removeItem('pth_catalogo_cache');
+                window.PTHSecureData.clearCaches();
                 localStorage.removeItem('pth_catalogo_cache_time');
                 loadProducts();
             }, 1500);
         } else {
-            localStorage.removeItem('pth_catalogo_cache');
+            window.PTHSecureData.clearCaches();
             localStorage.removeItem('pth_catalogo_cache_time');
             loadProducts();
         }
@@ -17121,7 +16971,7 @@ function agregarNuevoProveedor() {
             alert(`✅ ¡Asignación masiva exitosa!\nSe han configurado ${totalOperaciones} productos con el 50% de comisión para tu red.`);
             
             // Forzar limpieza de caché y refrescar vistas
-            localStorage.removeItem('pth_catalogo_cache');
+            window.PTHSecureData.clearCaches();
             localStorage.removeItem('pth_catalogo_cache_time');
             renderGestorPricing();
             loadProducts();

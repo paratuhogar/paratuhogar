@@ -27,8 +27,14 @@ test('el aviso de WhatsApp de subgestor muestra comercial y total sin revelar el
 
   assert.match(message, /Comercial: Beatriz Barrero/);
   assert.match(message, /Subgestor: Raiselys/);
-  assert.match(message, /Comisión total del pedido: \$3/);
+  assert.match(message, /Comisión asignada al subgestor: \$3/);
+  assert.doesNotMatch(message, /Comisión total del pedido/);
   assert.doesNotMatch(message, /Gestor responsable:/);
   assert.doesNotMatch(message, /Comisión subgestor:/);
   assert.doesNotMatch(message, /Comisión gestor principal:/);
+});
+test('checkout passes only the assigned commission, never the complete pool',async()=>{
+ const html=await readFile(new URL('index.html',root),'utf8');
+ assert.match(html,/buildSubgestorWhatsappSummary\(orderSubgestor, comisionTotalVale\)/);
+ assert.doesNotMatch(html,/buildSubgestorWhatsappSummary\(orderSubgestor, comisionOriginalPoolVale\)/);
 });

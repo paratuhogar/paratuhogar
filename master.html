@@ -16,6 +16,7 @@
     <!-- SheetJS para Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     
+    <script src="js/secure-data.js?v=20260929-privacy1"></script>
     <!-- PEGAR AQUÍ LA LIBRERÍA DE GRÁFICOS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -1691,8 +1692,7 @@ async function loadDashboard() {
         let loadError = null;
         do {
             const response = await supabaseClient
-                .from('pedidos')
-                .select('id, fecha, estado, total, comision_total, costo_mensajeria, producto, gestor, proveedor, pago_sistema')
+                .rpc('listar_pedidos_boveda', { p_admin_id: session.data?.id || null, p_password: session.data?.password || null })
                 .eq('estado', 'Entregado')
                 .order('fecha', { ascending: true })
                 .range(pageStart, pageStart + pageSize - 1);

@@ -51,6 +51,7 @@ const imageCache = {};
 const whiteBgCache = {};
 
 window.addEventListener('load', async () => {
+    try { await window.PTHSecureData.restore(); } catch (error) { alert(error.message); return; }
     const session = JSON.parse(localStorage.getItem('pth_session') || '{}');
     if (!session.name) {
         alert("🔒 Acceso Denegado.");
@@ -201,14 +202,17 @@ async function resolveStudioRole() {
 }
 
 async function loadInventory() {
-    let data = studioReadStorage('pth_catalogo_cache', null);
-    studioCacheInfo.catalogAt = Number(localStorage.getItem('pth_catalogo_cache_time')) || null;
-    if (!Array.isArray(data) || !data.length) {
+    await window.PTHSecureData.restore();
+    const catalogueKey = 'pth_catalogo_cache' + window.PTHSecureData.cacheSuffix();
+    const catalogueTimeKey = 'pth_catalogo_cache_time' + window.PTHSecureData.cacheSuffix();
+    let data = studioReadStorage(catalogueKey, null);
+    studioCacheInfo.catalogAt = Number(localStorage.getItem(catalogueTimeKey)) || null;
+    if (studioRole.isSubgestor || !Array.isArray(data) || !data.length) {
         const response = await supabaseClient.from('productos').select('*').eq('disponible', 'SI').order('nombre');
         if (response.error) return;
         data = response.data || [];
-        localStorage.setItem('pth_catalogo_cache', JSON.stringify(data));
-        localStorage.setItem('pth_catalogo_cache_time', Date.now().toString());
+        localStorage.setItem(catalogueKey, JSON.stringify(data));
+        localStorage.setItem(catalogueTimeKey, Date.now().toString());
         studioCacheInfo.catalogAt = Date.now();
     } else {
         data = data.filter(product => String(product.disponible || '').toUpperCase() === 'SI');
@@ -232,7 +236,7 @@ async function loadInventory() {
         const customCache = studioReadStorage(customCacheKey, null);
         const twelveHours = 12 * 60 * 60 * 1000;
         let pricingLoadFailed = false;
-        let preciosCustom = customCache?.savedAt
+        let preciosCustom = !studioRole.isSubgestor && customCache?.savedAt
             && Date.now() - Number(customCache.savedAt) < twelveHours
             && Array.isArray(customCache.data)
             ? customCache.data

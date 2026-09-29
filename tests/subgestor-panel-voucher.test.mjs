@@ -23,7 +23,7 @@ test('el vale de un pedido aprobado contiene el pedido, total y comercial sin re
 
   const context = {};
   vm.runInNewContext(
-    `${source}; result = buildSubgestorApprovalVoucher({ orden_dia: 'CA-1370', cliente: 'Raiselys', telefono: '52502088', direccion: 'Calle 105/24', municipio: 'Cotorro', producto: '1x Switch LS1005G 5 puertos', total: 37, costo_mensajeria: 10, comision_total: 3, subgestor_nombre: 'Raiselys' }, 'Beatriz Barrero');`,
+    `${source}; result = buildSubgestorApprovalVoucher({ orden_dia: 'CA-1370', cliente: 'Raiselys', telefono: '52502088', direccion: 'Calle 105/24', municipio: 'Cotorro', producto: '1x Switch LS1005G 5 puertos', total: 37, costo_mensajeria: 10, comision_total: 25, comision_subgestor: 3, subgestor_nombre: 'Raiselys' }, 'Beatriz Barrero');`,
     context
   );
 
@@ -31,6 +31,8 @@ test('el vale de un pedido aprobado contiene el pedido, total y comercial sin re
   assert.match(context.result, /TOTAL A PAGAR: \$37 USD/);
   assert.match(context.result, /Comercial: Beatriz Barrero/);
   assert.match(context.result, /Subgestor: Raiselys/);
+  assert.match(context.result, /Comisión asignada al subgestor: \$3/);
+  assert.doesNotMatch(context.result, /\$25/);
   assert.doesNotMatch(context.result, /Comisión subgestor:/);
   assert.doesNotMatch(context.result, /Comisión gestor principal:/);
 });

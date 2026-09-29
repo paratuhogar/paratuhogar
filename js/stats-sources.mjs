@@ -14,7 +14,7 @@ export function sourceState(name, snapshot = {}) {
 
 export async function loadGoogleSources(session,range){
   const response=await fetch(STATS_CONFIG.googleEndpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:STATS_CONFIG.supabaseKey},
-    body:JSON.stringify({id:session?.data?.id||session?.id,password:session?.data?.password||session?.password||'',from:range.from,to:range.to}),signal:AbortSignal.timeout(45000)});
+    body:JSON.stringify({session_token:globalThis.window?.PTHSecureData?.token(),from:range.from,to:range.to}),signal:AbortSignal.timeout(45000)});
   const result=await response.json();
   if(!response.ok)throw Error(result.error||`No se pudo consultar Google (${response.status})`);
   if(!result.analytics?.state||!result.search?.state)throw Error('Respuesta de Google incompleta');
