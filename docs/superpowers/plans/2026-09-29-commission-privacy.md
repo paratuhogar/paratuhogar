@@ -9,4 +9,4 @@ Spec: ../specs/2026-09-29-commission-privacy.md
 - [x] Test anonymous and subgestor data projection, injection/spoofing rejection, canonical monetary calculation, primary approval and legacy session restoration. Run related regression checks.
 - [x] Obtain independent read-only code review; address critical/important findings.
 - [x] Stage gateway and verify deployment before any access restrictions. Prepare isolated commit and coordinated rollout with rollback instructions.
-- [ ] Publish and restrict direct protected access only when all supported pages use the authenticated gateway. Verify live access rules and commission visibility before declaring completion.
+- [x] Publish and restrict direct protected access only when all supported pages use the authenticated gateway. Live public/REST rules and financial preservation verified; automated authenticated-role integration tests pass. Actual-user voucher confirmation remains a user acceptance check, not a performed live impersonation test.

@@ -2,6 +2,12 @@
 
 Production project: `ljqwaovevfatkiigirhf`. Baseline repository: `8975da5182267e85df7022cb1d29e81057ccbce9`.
 
+Executed release: `f79e4a8b822de9d0efa195fe8d4a4e538a8d5807` published to main, GitHub Pages build completed, all ten data consumer pages and the adapter verified live. `secure-data` version 4 and `google-statistics` version 3 active. Both migrations applied successfully. 60 complete automated regressions pass, including 19 security-targeted tests.
+
+Post-restriction live checks: public finance/product-star/password/order/custom-price REST reads and finance RPC return 401; public order gateway returns 403; catalogue view and sanitized gateway return 200. Invalid opaque token reaches the custom session rejection, not platform JWT rejection. Anonymous/authenticated commission column grants are false; service-role order access remains true. Post-restriction counts and order sum exactly match the baseline above.
+
+Security advisors: protected tables no longer have disabled-RLS findings, and the safe catalogue view has no definer-view finding. Pre-existing findings remain for unrelated analytics, customer bindings, logs, categories, shipping tariffs and configuration; they are not silently treated as a completed site-wide security audit. Public delivered-order count and sequence reservation RPCs remain intentionally executable. Reference: https://supabase.com/docs/guides/database/database-linter .
+
 Release order:
 1. Apply additive `commission_sessions` migration and deploy `secure-data` with `verify_jwt=false`. The handler authenticates opaque bearer tokens itself; never expose its service-role key.
 2. Deploy compatible `google-statistics`, publish main, confirm GitHub Pages serves the new privacy adapter and all protected data consumer pages.
