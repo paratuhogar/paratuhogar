@@ -3214,7 +3214,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "20260930-admins2";
+const versionActual = "20260930-productsave1";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -9906,8 +9906,10 @@ function openAdminMasterFromGestor() {
 }
 
 // --- FUNCIONES PARA EL FORMULARIO DE PRODUCTOS ---
+let productSaveInFlight = false;
 
 function openModalProd() { 
+    if (productSaveInFlight) return alert("⏳ Espera a que termine el guardado del producto.");
         updateFormCategories(); // <--- AGREGAR ESTA LÍNEA AQUÍ
         updateFormProviders();
 
@@ -9969,7 +9971,8 @@ function openModalProd() {
     document.body.style.overflow = 'hidden';
 }
 
-function closeModalProd() { 
+function closeModalProd(afterSave = false) {
+    if (productSaveInFlight && !afterSave) return alert("⏳ Espera a que termine el guardado del producto.");
     document.getElementById('modal-producto').classList.add('hidden'); 
     document.body.style.overflow = 'auto';
 }
@@ -10045,163 +10048,158 @@ function getAgentPhone() {
 // --- GUARDAR PRODUCTO CON VERIFICACIÓN INTELIGENTE (FUZZY MATCH) ---
 document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
     const btn = document.getElementById('btn-save-prod');
-    const nombreInput = document.getElementById('p-nombre').value.trim();
-    const categoriaInput = document.getElementById('p-categoria').value;
-    const editId = document.getElementById('p-id-edit').value;
-    const fichaPdfInput = document.getElementById('p-ficha-pdf');
-    const fichaPdfOriginal = fichaPdfInput?.value.trim() || '';
-    const fichaPdfUrl = normalizeTechnicalSheetUrl(fichaPdfOriginal);
+    if (productSaveInFlight || btn.disabled) return;
+    productSaveInFlight = true;
+    const form = document.getElementById('form-nuevo-prod');
+    const previousInert = form.inert;
+    form.inert = true;
+    btn.disabled = true;
+    btn.innerText = "GUARDANDO...";
+    let editId = '';
+    let guardado = false;
 
-    if (fichaPdfOriginal && !fichaPdfUrl) {
-        alert("❌ La ficha técnica debe tener un enlace HTTPS válido que termine en .pdf.");
-        fichaPdfInput?.focus();
-        return;
-    }
-    if (fichaPdfInput && fichaPdfUrl) fichaPdfInput.value = fichaPdfUrl;
+    try {
+        const nombreInput = document.getElementById('p-nombre').value.trim();
+        const categoriaInput = document.getElementById('p-categoria').value;
+        editId = document.getElementById('p-id-edit').value;
+        const fichaPdfInput = document.getElementById('p-ficha-pdf');
+        const fichaPdfOriginal = fichaPdfInput?.value.trim() || '';
+        const fichaPdfUrl = normalizeTechnicalSheetUrl(fichaPdfOriginal);
+
+        if (fichaPdfOriginal && !fichaPdfUrl) {
+            alert("❌ La ficha técnica debe tener un enlace HTTPS válido que termine en .pdf.");
+            fichaPdfInput?.focus();
+            return;
+        }
+        if (fichaPdfInput && fichaPdfUrl) fichaPdfInput.value = fichaPdfUrl;
+
+        // Validar antes de consultar: no gastar una petición si falta la foto.
+        const imgName = document.getElementById('p-img-name')?.value || '';
+        const tieneFoto = [0, 1, 2, 3].some(i => document.getElementById(`img-path-${i}`).value);
+        if (!editId && !tieneFoto && !imgName) {
+            alert("❌ Error: Debes subir al menos una foto.");
+            return;
+        }
     
-    // ============================================================
-    // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
-    // ============================================================
-    if (!editId) { 
-        // A. Limpiamos el nombre para sacar palabras clave importantes
-        // Quitamos palabras comunes que la IA pone siempre (Smart, TV, de, el, con...)
-        const palabrasIgnoradas = ['de', 'el', 'la', 'con', 'para', 'en', 'y', 'un', 'una', 'smart', 'nuevo', 'oferta'];
+        // Capturar un solo borrador antes de la primera consulta asíncrona.
+        const datos = {
+            nombre: nombreInput,
+            precio: parseFloat(document.getElementById('p-precio').value),
+            comision: parseFloat(document.getElementById('p-comision').value) || 0,
+            categoria: categoriaInput,
+            descripcion: ProductDescriptionEditorApi.readProductDescription({ editor: quill }),
+
+            thumbnail: document.getElementById('img-path-0').value || imgName,
+            image1: document.getElementById('img-path-1').value,
+            image2: document.getElementById('img-path-2').value,
+            image3: document.getElementById('img-path-3').value,
+
+            ficha_pdf: fichaPdfUrl || null,
+            ficha_pdf_nombre: fichaPdfUrl
+                ? (document.getElementById('p-ficha-pdf-nombre')?.value.trim() || 'Ficha técnica')
+                : null,
+            ficha_pdf_idioma: fichaPdfUrl
+                ? (document.getElementById('p-ficha-pdf-idioma')?.value || 'ES')
+                : null,
+
+            mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
+            tamaño_envio: document.getElementById('p-tamano-envio').value,
+            disponible: ProductAvailabilityFormApi.getProductAvailability({
+                isEditing: Boolean(editId),
+                currentValue: document.getElementById('p-disponible').value,
+                saveInactive: document.getElementById('p-create-inactive')?.checked
+            }),
+            proveedor: document.getElementById('p-proveedor').value || 'General',
+            precio_flexible: document.getElementById('p-flexible').value || 'NO',
+            garantia: document.getElementById('p-garantia').value,
+            pagos: 'USD, CUP, Zelle'
+        };
+
+        // ============================================================
+        // 1. DETECTOR DE DUPLICADOS INTELIGENTE (Solo si es NUEVO)
+        // ============================================================
+        if (!editId) {
+            // A. Limpiamos el nombre para sacar palabras clave importantes
+            // Quitamos palabras comunes que la IA pone siempre (Smart, TV, de, el, con...)
+            const palabrasIgnoradas = ['de', 'el', 'la', 'con', 'para', 'en', 'y', 'un', 'una', 'smart', 'nuevo', 'oferta'];
         
-        // Separamos el nombre en palabras, filtramos las cortas (<3 letras) y las ignoradas
-        const palabrasClave = nombreInput.toLowerCase()
-            .split(/[\s\-\/\(\)]+/) // Separar por espacios o guiones
-            .filter(w => w.length > 2 && !palabrasIgnoradas.includes(w));
+            // Separamos el nombre en palabras, filtramos las cortas (<3 letras) y las ignoradas
+            const palabrasClave = nombreInput.toLowerCase()
+                .split(/[\s\-\/\(\)]+/) // Separar por espacios o guiones
+                .filter(w => w.length > 2 && !palabrasIgnoradas.includes(w));
 
-        // Tomamos las 3 palabras más "raras" o largas (generalmente Marca y Modelo)
-        // Ejemplo: De "Smart TV Challenger 75 4K" -> busca "Challenger" y "75"
-        const keywords = palabrasClave.slice(0, 3).join(' & '); 
+            const keywords = palabrasClave.slice(0, 3);
 
-        if (keywords.length > 0) {
-            // B. Preguntamos a Supabase usando Búsqueda de Texto Completo
-            // Busca productos que tengan ESAS palabras en CUALQUIER orden
-            const { data: similares, error: errCheck } = await supabaseClient
-                .from('productos')
-                .select('nombre, precio, categoria')
-                .textSearch('nombre', keywords) 
-                .limit(3);
+            if (keywords.length > 0) {
+                // Filtros compatibles con el gateway seguro, en cualquier orden.
+                // Limitar DESPUÉS de filtrar la categoría evita ocultar coincidencias.
+                let consulta = supabaseClient
+                    .from('productos')
+                    .select('nombre, precio, categoria')
+                    .eq('categoria', categoriaInput);
+                for (const palabra of keywords) {
+                    const literal = palabra.replace(/[\\%_]/g, '\\$&');
+                    consulta = consulta.ilike('nombre', `%${literal}%`);
+                }
+                const { data: similares, error: errCheck } = await consulta.limit(3);
+                if (errCheck) throw errCheck;
 
-            // C. Si encuentra coincidencias, ALERTA al administrador
-            if (similares && similares.length > 0) {
-                // Filtramos para asegurar que sean de la misma categoría (para evitar falsos positivos)
-                const duplicadoReal = similares.find(p => p.categoria === categoriaInput);
+                // C. Si encuentra coincidencias, ALERTA al administrador
+                if (similares && similares.length > 0) {
+                    // Filtramos para asegurar que sean de la misma categoría (para evitar falsos positivos)
+                    const duplicadoReal = similares.find(p => p.categoria === categoriaInput);
 
-                if (duplicadoReal) {
-                    const confirmar = confirm(
-                        `⛔ POSIBLE DUPLICADO DETECTADO\n\n` +
-                        `Tú intentas subir: "${nombreInput}"\n\n` +
-                        `Pero ya existe en base de datos:\n` +
-                        `👉 "${duplicadoReal.nombre}" ($${duplicadoReal.precio})\n\n` +
-                        `¿Es el mismo equipo que subió otro admin?\n` +
-                        `[Aceptar] = Cancelar subida (No duplicar)\n` +
-                        `[Cancelar] = Subir de todas formas (Es diferente)`
-                    );
+                    if (duplicadoReal) {
+                        const confirmar = confirm(
+                            `⛔ POSIBLE DUPLICADO DETECTADO\n\n` +
+                            `Tú intentas subir: "${nombreInput}"\n\n` +
+                            `Pero ya existe en base de datos:\n` +
+                            `👉 "${duplicadoReal.nombre}" ($${duplicadoReal.precio})\n\n` +
+                            `¿Es el mismo equipo que subió otro admin?\n` +
+                            `[Aceptar] = Cancelar subida (No duplicar)\n` +
+                            `[Cancelar] = Subir de todas formas (Es diferente)`
+                        );
 
-                    if (confirmar) {
-                        return; // Detiene el proceso, no guarda nada.
+                        if (confirmar) {
+                            return; // Detiene el proceso, no guarda nada.
+                        }
                     }
                 }
             }
         }
-    }
-    // ============================================================
+        // ============================================================
 
-    // 2. Validación de Foto
-    const imgName = document.getElementById('p-img-name') ? document.getElementById('p-img-name').value : '';
-    // Revisamos las 4 casillas por si acaso
-    let tieneFoto = false;
-    for(let i=0; i<4; i++) {
-        if(document.getElementById(`img-path-${i}`).value) tieneFoto = true;
-    }
-    
-    if (!editId && !tieneFoto && !imgName) {
-         alert("❌ Error: Debes subir al menos una foto.");
-         return;
-    }
+        const operacion = editId
+            ? supabaseClient.from('productos').update(datos).eq('id', editId)
+            : supabaseClient.from('productos').insert([datos]);
+        const { error } = await operacion;
+        if (error) throw error;
 
-    btn.disabled = true; 
-    btn.innerText = "GUARDANDO...";
-
-    // 3. Recopilar Datos
-    const datos = {
-        nombre: nombreInput,
-        precio: parseFloat(document.getElementById('p-precio').value),
-        comision: parseFloat(document.getElementById('p-comision').value) || 0,
-        categoria: categoriaInput,
-        descripcion: ProductDescriptionEditorApi.readProductDescription({ editor: quill }),
-        
-        thumbnail: document.getElementById('img-path-0').value || imgName,
-        image1: document.getElementById('img-path-1').value,
-        image2: document.getElementById('img-path-2').value,
-        image3: document.getElementById('img-path-3').value,
-
-        ficha_pdf: fichaPdfUrl || null,
-        ficha_pdf_nombre: fichaPdfUrl
-            ? (document.getElementById('p-ficha-pdf-nombre')?.value.trim() || 'Ficha técnica')
-            : null,
-        ficha_pdf_idioma: fichaPdfUrl
-            ? (document.getElementById('p-ficha-pdf-idioma')?.value || 'ES')
-            : null,
-        
-        mensajeria: document.getElementById('p-mensajeria') ? document.getElementById('p-mensajeria').value : "",
-        tamaño_envio: document.getElementById('p-tamano-envio').value,
-        disponible: ProductAvailabilityFormApi.getProductAvailability({
-            isEditing: Boolean(editId),
-            currentValue: document.getElementById('p-disponible').value,
-            saveInactive: document.getElementById('p-create-inactive')?.checked
-        }),
-        proveedor: document.getElementById('p-proveedor').value || 'General',
-        precio_flexible: document.getElementById('p-flexible').value || 'NO',
-        garantia: document.getElementById('p-garantia').value,
-        pagos: 'USD, CUP, Zelle' 
-    };
-
-    let error;
-    try {
-        if (editId) {
-            // ACTUALIZAR
-            const { error: err } = await supabaseClient.from('productos').update(datos).eq('id', editId);
-            error = err;
+        guardado = true;
+        // El guardado ya se confirmó. Cerrar evita reenviar si falla el refresco.
+        closeModalProd(true);
+        window.PTHSecureData.clearCaches();
+        localStorage.removeItem('pth_catalogo_cache_time');
+        const { error: errorVersion } = await supabaseClient
+            .from('control_sistema')
+            .upsert([{ clave: 'ultimo_cambio_productos', valor: new Date().toISOString() }]);
+        if (errorVersion) throw errorVersion;
+        if (typeof loadAdminData === 'function') await loadAdminData();
+        alert("✅ ¡Guardado correctamente!");
+    } catch (error) {
+        console.error(guardado ? "Error actualizando catálogo:" : "Error guardando producto:", error);
+        if (guardado) {
+            alert("✅ El producto quedó guardado, pero no se pudo actualizar el catálogo. Actualiza la página; no vuelvas a crear el producto.");
         } else {
-            // INSERTAR NUEVO
-            const { error: err } = await supabaseClient.from('productos').insert([datos]);
-            error = err;
+            alert(`❌ No se pudo ${editId ? 'actualizar' : 'guardar'} el producto.\n\n${error?.message || 'Error inesperado.'}\n\nSe conserva lo escrito en este formulario.`);
         }
-    } catch (unexpectedSaveError) {
-        error = unexpectedSaveError;
+    } finally {
+        productSaveInFlight = false;
+        form.inert = previousInert;
+        btn.disabled = false;
+        btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
     }
-
-    if (!error) {
-                alert("✅ ¡Guardado correctamente!");
-                
-                // Forzar actualización de versión para todos los gestores en la nube
-                await supabaseClient
-                    .from('control_sistema')
-                    .upsert([{ clave: 'ultimo_cambio_productos', valor: new Date().toISOString() }]);
-
-                window.PTHSecureData.clearCaches();
-                localStorage.removeItem('pth_catalogo_cache_time');
-                
-                closeModalProd();
-                
-                if (typeof loadAdminData === 'function') {
-                    await loadAdminData(); 
-                }
-
-                btn.disabled = false;
-                btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
-            } else {
-                console.error("Error guardando producto:", error);
-                alert(`❌ No se pudo ${editId ? 'actualizar' : 'guardar'} el producto.\n\n${error.message || 'Error desconocido de Supabase.'}`);
-                btn.disabled = false;
-                btn.innerText = editId ? "Actualizar Producto" : "Guardar Cambios";
-            }
 });
 
 
@@ -10305,6 +10303,7 @@ function clearImageSlot(event, index) {
 // 3. Función para EDITAR producto (Cargar datos en el modal)
 // 3. Función para EDITAR producto (CORREGIDA)
     function editProduct(id) {
+        if (productSaveInFlight) return alert("⏳ Espera a que termine el guardado del producto.");
         // 1. Buscar el producto en la lista de Inventario (Admin) O en la de Catálogo
         // Esto asegura que funcione donde sea que estés
         const p = (typeof inventoryRawAdmin !== 'undefined' ? inventoryRawAdmin.find(prod => prod.id === id) : null) 

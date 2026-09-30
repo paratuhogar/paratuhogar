@@ -1,7 +1,7 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-09-30-admins2';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-09-30-productsave1';
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20260930-admins2';
+const PTH_SHELL_URL = '/index.html?v=20260930-productsave1';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
