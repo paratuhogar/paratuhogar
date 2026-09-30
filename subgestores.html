@@ -322,7 +322,7 @@
 
     <!-- SUPABASE CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/secure-data.js?v=20260929-privacy1"></script>
+    <script src="js/secure-data.js?v=20260930-admins2"></script>
     <script>
         // CONFIGURACIÓN SUPABASE (CORREGIDA)
         const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
@@ -347,11 +347,8 @@
 
             const s = JSON.parse(savedSession);
 
-            // Bloquear si la sesión local dice que es Administrador (es panel de gestores)
-            if (s.isAdmin) {
-                mostrarBloqueo();
-                return;
-            }
+            // El rol administrativo no impide vender ni gestionar una red propia.
+            // La cuenta activa y la ausencia de parent_id se verifican abajo.
 
             let g = null;
             let queryError = null;

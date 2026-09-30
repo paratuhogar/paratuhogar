@@ -35,3 +35,17 @@ test('same account becoming subgestor invalidates its previous financial catalog
  context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'same',rol:'gestor',parent_id:'parent'}},error:null})});
  await context.PTHSecureData.restore();assert.equal(storage.getItem('pth_catalogo_cache:same'),null);
 });
+test('restored administrative sessions keep administrative mode for every server role',async()=>{
+ for(const rol of ['admin','administrador','superadmin','logistica','ADMIN']){
+  const {context,storage}=client();storage.setItem('pth_secure_token','existing-token');
+  context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'existing-admin',nombre:'Admin',rol,parent_id:null,password:'__session__'}},error:null})});
+  await context.PTHSecureData.restore();
+  assert.equal(JSON.parse(storage.getItem('pth_session')).isAdmin,true,rol);
+  assert.equal(storage.getItem('pth_secure_token'),'existing-token');
+ }
+});
+test('a parent-linked admin-labelled profile remains nonadministrative on restore',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','existing-token');
+ context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'sub',rol:'admin',parent_id:'parent'}},error:null})});
+ await context.PTHSecureData.restore();assert.equal(JSON.parse(storage.getItem('pth_session')).isAdmin,false);
+});

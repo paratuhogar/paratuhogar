@@ -41,8 +41,8 @@
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/secure-data.js?v=20260929-privacy1"></script>
-    <script src="js/admin-work-view.js?v=20260930-sales1"></script>
+    <script src="js/secure-data.js?v=20260930-admins2"></script>
+    <script src="js/admin-work-view.js?v=20260930-admins2"></script>
 
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
@@ -3214,7 +3214,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "20260930-sales1";
+const versionActual = "20260930-admins2";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -11838,7 +11838,7 @@ async function processLogin() {
     if (!user || !pass) return alert("Ingresa usuario y contraseña.");
     try {
         const profile = await window.PTHSecureData.login(user, pass);
-        const adminMode = !profile.parent_id && ["superadmin", "logistica"].includes(profile.rol);
+        const adminMode = window.PTHWorkView.canSwitch(profile);
         window.currentUserData = profile;
         saveSessionToMemory(profile.nombre, adminMode, profile);
         closeLogin();

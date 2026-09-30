@@ -13,7 +13,7 @@
  }
  function clearSession(){storage.removeItem(tokenKey);storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;restoration=null;clearCaches();}
  const identity=data=>JSON.stringify([data?.id,data?.rol,data?.parent_id,data?.parent_nombre]);
- function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['superadmin','logistica'].includes(profile.rol),data:profile}));if(identity(previous?.data||previous)!==identity(profile))clearCaches();}
+ function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));if(identity(previous?.data||previous)!==identity(profile))clearCaches();}
  async function send(body,token=storage.getItem(tokenKey)){
   try{
    const response=await root.fetch(url,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});

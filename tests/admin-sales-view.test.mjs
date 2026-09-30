@@ -83,6 +83,56 @@ test('sales preference survives page setup but is isolated to the verified accou
     assert.equal(context.PTHWorkView.isAdminView({ id: 'other-admin', rol: 'superadmin', parent_id: null }), true);
 });
 
+test('Jomil and Beatriz enter the panel and switch views with their existing admin role', async () => {
+    for (const nombre of ['Jomil', 'Beatriz Barrero']) {
+        const profile = { id: 'admin-' + nombre, nombre, rol: 'admin', parent_id: null };
+        const { context, nodes, storage } = page(profile);
+        const session = storage.getItem('pth_session');
+        await context.setupSession(nombre, false);
+        assert.equal(context.isAdmin, true);
+        assert.equal(nodes.get('btn-admin-to-sales').classList.contains('hidden'), false);
+        await context.PTHWorkView.switchView('gestor');
+        assert.equal(context.isAdmin, false);
+        assert.equal(nodes.get('btn-sales-to-admin').classList.contains('hidden'), false);
+        assert.equal(await context.obtenerDuenoReal('5350000000'), nombre);
+        await context.setupSession(nombre, true);
+        assert.equal(context.isAdmin, false, 'reload retains the account sales preference');
+        await context.PTHWorkView.switchView('admin');
+        assert.equal(context.isAdmin, true);
+        assert.equal(context.currentUserData.rol, 'admin');
+        assert.equal(storage.getItem('pth_session'), session);
+        assert.equal(storage.getItem('pth_secure_token'), 'unchanged-token');
+    }
+});
+
+test('every server-recognized administrative role can switch but parent-linked accounts cannot', async () => {
+    for (const rol of ['admin', 'administrador', 'superadmin', 'logistica', 'ADMIN']) {
+        for (const parent_id of [null, 'principal']) {
+            const profile = { id: rol, nombre: 'Admin', rol, parent_id };
+            const { context, nodes } = page(profile);
+            await context.setupSession(profile.nombre, true);
+            assert.equal(context.isAdmin, parent_id === null, rol);
+            assert.equal(nodes.get('btn-admin-to-sales').classList.contains('hidden'), parent_id !== null);
+        }
+    }
+});
+
+test('verified admin login saves administrative mode before opening the panel', async () => {
+    const profile = { id: 'jomil-test', nombre: 'Jomil', rol: 'admin', parent_id: null };
+    const { context, nodes, storage } = page(profile);
+    context.PTHSecureData.login = async () => ({ ...profile });
+    nodes.get('log-user').value = 'Jomil';
+    nodes.get('log-pass').value = 'test-only-credential';
+    const saveStart = html.indexOf('function saveSessionToMemory(');
+    vm.runInNewContext(html.slice(saveStart, html.indexOf('function enterAsClient(', saveStart)), context);
+    const loginStart = html.indexOf('async function processLogin(');
+    vm.runInNewContext(html.slice(loginStart, html.indexOf('window.togglePassword', loginStart)), context);
+    await context.processLogin();
+    assert.equal(JSON.parse(storage.getItem('pth_session')).isAdmin, true);
+    assert.equal(context.isAdmin, true);
+    assert.equal(nodes.get('login-overlay').classList.contains('hidden'), true);
+});
+
 test('gestors and parent-linked accounts cannot select administrative view', async () => {
     for (const profile of [{ id: 'gestor', nombre: 'Normal', rol: 'gestor' }, { ...angel, parent_id: 'principal' }]) {
         const { context, nodes, calls, values } = page(profile);

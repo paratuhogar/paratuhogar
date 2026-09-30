@@ -9,7 +9,7 @@
     const isCurrentSetup = version => version === setupVersion;
 
     function canSwitch(profile = root.currentUserData) {
-        return Boolean(profile?.id && !profile.parent_id && ['superadmin', 'logistica'].includes(profile.rol));
+        return Boolean(profile?.id && !profile.parent_id && ['admin', 'administrador', 'superadmin', 'logistica'].includes(String(profile.rol).toLowerCase()));
     }
     function isAdminView(profile) {
         if (!canSwitch(profile)) return false;
