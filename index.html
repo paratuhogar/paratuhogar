@@ -41,7 +41,7 @@
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/secure-data.js?v=20260930-admins2"></script>
+    <script src="js/secure-data.js?v=20260930-catalogue1"></script>
     <script src="js/admin-work-view.js?v=20260930-admins2"></script>
 
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
@@ -3214,7 +3214,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "20260930-productsave1";
+const versionActual = "20260930-catalogue1";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3441,7 +3441,11 @@ checkShortLinks();
     await initSmartReferral();
 
     try { await window.PTHSecureData.restore(); }
-    catch (error) { alert(error.message); return; }
+    catch (error) {
+        catalogLoadError = { error, reload: true };
+        showCatalogLoadError(error, true);
+        return;
+    }
     const savedSession = localStorage.getItem('pth_session');
     if (savedSession) {
         // Solo los usuarios internos necesitan gráficas, Excel, editor, ZIP y PDF.
@@ -4722,6 +4726,25 @@ window.addEventListener('load', prepareClientExperience);
 // CARGA DE PRODUCTOS CON CACHE BUSTING INTELIGENTE (CORREGIDO)
 // =====================================================
 let productsLoadInProgress = false;
+let catalogLoadError = null;
+
+function showCatalogLoadError(error, reload = false) {
+    const container = document.getElementById('productos-container');
+    if (!container) return;
+    container.innerHTML = `<div class="col-span-full py-10 text-center" role="alert">
+        <p class="font-bold text-gray-700">No se pudo actualizar el catálogo</p>
+        <p data-catalog-error-message class="text-gray-500 mt-2"></p>
+        <button type="button" data-catalog-retry class="mt-4 px-4 py-2 bg-primary text-white rounded-xl">Reintentar catálogo</button>
+    </div>`;
+    // Server messages are text, never executable HTML.
+    container.querySelector('[data-catalog-error-message]').textContent = error?.message || 'Comprueba tu conexión y vuelve a intentar.';
+    const invalidSession = error?.code === 'SESSION_INVALID' || error?.status === 401;
+    const button = container.querySelector('[data-catalog-retry]');
+    if (invalidSession) button.textContent = 'Volver a entrar';
+    button.addEventListener('click', () => invalidSession ? openLoginModal() : reload ? window.location.reload() : loadProducts());
+    const categories = document.getElementById('category-list');
+    if (categories) categories.textContent = 'Catálogo pendiente de actualizar';
+}
 
 const salesHierarchyCache = new Map();
 
@@ -4736,10 +4759,8 @@ async function resolveSalesHierarchy(agentName) {
         .eq('nombre', cleanName)
         .maybeSingle();
 
-    if (error || !agent) {
-        if (error) console.error('No se pudo resolver la jerarquía comercial:', error);
-        return null;
-    }
+    if (error) throw Object.assign(new Error(error.message), error);
+    if (!agent) return null;
 
     let parent = null;
     if (agent.parent_id) {
@@ -4748,7 +4769,8 @@ async function resolveSalesHierarchy(agentName) {
             .select('id, nombre, telefono, estado, parent_id')
             .eq('id', agent.parent_id)
             .maybeSingle();
-        if (parentError || !parentData) {
+        if (parentError) throw Object.assign(new Error(parentError.message), parentError);
+        if (!parentData) {
             throw new Error(`El subgestor ${agent.nombre} no tiene un gestor principal válido.`);
         }
         parent = parentData;
@@ -4777,34 +4799,36 @@ async function loadProducts() {
     productsLoadInProgress = true;
 
     try {
-        const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
-        if (stored && stored.nombre) {
-            memoriaGestor = stored.nombre;
+        catalogLoadError = null;
+
+        try {
+            const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+            if (stored && stored.nombre) {
+                memoriaGestor = stored.nombre;
+            }
+        } catch(e) {}
+
+        // Declarar activeGestor con prioridad de sesión, URL o memoria
+        const activeGestor = sessionGestor || urlGestor || memoriaGestor;
+        const salesHierarchy = await resolveSalesHierarchy(activeGestor);
+        window.activeSalesHierarchy = salesHierarchy;
+
+        // Saneamiento de variables y redirección (Se mantiene intacto)
+        if (slug) {
+            const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
+            if (data) {
+                registrarRastroIP(data.gestor);
+                window.location.href = data.original_url;
+                return;
+            }
         }
-    } catch(e) {}
 
-    // Declarar activeGestor con prioridad de sesión, URL o memoria
-    const activeGestor = sessionGestor || urlGestor || memoriaGestor;
-    const salesHierarchy = await resolveSalesHierarchy(activeGestor);
-    window.activeSalesHierarchy = salesHierarchy;
-
-    // Saneamiento de variables y redirección (Se mantiene intacto)
-    if (slug) {
-        const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
-        if (data) {
-            registrarRastroIP(data.gestor);
-            window.location.href = data.original_url;
-            return;
+        if (urlGestor) {
+            registrarRastroIP(urlGestor);
+        } else {
+            registrarRastroIP("Directo");
         }
-    }
-    
-    if (urlGestor) {
-        registrarRastroIP(urlGestor);
-    } else {
-        registrarRastroIP("Directo"); 
-    }
 
-    try {
         // =========================================================
         // VERIFICACIÓN RÁPIDA DE VERSIÓN DE INVENTARIO
         // =========================================================
@@ -4879,10 +4903,12 @@ async function loadProducts() {
             const esSubgestor = Boolean(salesHierarchy?.isSubgestor);
             const gestorConsultar = salesHierarchy?.pricingOwnerName || activeGestor;
 
-            const { data: preciosCustom } = await supabaseClient
+            const { data: preciosCustom, error: preciosError } = await supabaseClient
                 .from('precios_personalizados')
                 .select('producto_id, nuevo_precio, comision_subgestor, visible_subgestor')
                 .eq('gestor', gestorConsultar);
+
+            if (preciosError) throw preciosError;
 
             if (preciosCustom && preciosCustom.length > 0) {
                 productosRaw = productosRaw.filter(p => {
@@ -4957,7 +4983,8 @@ async function loadProducts() {
 
     } catch (e) { 
         console.error("Error cargando catálogo:", e);
-        document.getElementById('productos-container').innerHTML = `<div class="col-span-full py-10 text-center text-gray-400">Error de conexión.</div>`;
+        catalogLoadError = { error: e, reload: false };
+        showCatalogLoadError(e);
     } finally {
         productsLoadInProgress = false;
     }
@@ -5636,6 +5663,10 @@ function applyDetailAudienceMode(product) {
 }
 
 function renderCatalogProducts(list) {
+    if (catalogLoadError) {
+        showCatalogLoadError(catalogLoadError.error, catalogLoadError.reload);
+        return;
+    }
     const container = document.getElementById('productos-container');
     if (!container) return;
     const seller = isGestorCatalogMode();
@@ -5756,6 +5787,10 @@ const CATALOG_PAGE_SIZE = 24;
 let catalogVisibleCount = CATALOG_PAGE_SIZE;
 
 function renderProducts() {
+    if (catalogLoadError) {
+        showCatalogLoadError(catalogLoadError.error, catalogLoadError.reload);
+        return;
+    }
     catalogVisibleCount = CATALOG_PAGE_SIZE;
     renderCatalogProducts(getFilteredCatalogProducts());
 }

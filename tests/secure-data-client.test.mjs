@@ -49,3 +49,47 @@ test('a parent-linked admin-labelled profile remains nonadministrative on restor
  context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'sub',rol:'admin',parent_id:'parent'}},error:null})});
  await context.PTHSecureData.restore();assert.equal(JSON.parse(storage.getItem('pth_session')).isAdmin,false);
 });
+test('a transient restore failure is not cached forever after the connection recovers',async()=>{
+ const {context,storage,db}=client();storage.setItem('pth_secure_token','a'.repeat(64));
+ let offline=true;const bodies=[];
+ context.fetch=async(url,options)=>{
+  const body=JSON.parse(options.body);bodies.push(body);
+  if(offline)throw Error('Offline');
+  return{status:200,json:async()=>body.action==='session'?{data:{profile:{id:'sub',nombre:'Sub',rol:'gestor',parent_id:'parent'}},error:null}:{data:[{id:'x',comision:15}],error:null}};
+ };
+ await assert.rejects(context.PTHSecureData.restore(),/conectar/);
+ assert.equal(storage.getItem('pth_secure_token'),'a'.repeat(64));
+ offline=false;
+ const result=await db.from('productos').select('*');
+ assert.equal(result.error,null);assert.equal(result.data[0].comision,15);
+ assert.equal(bodies.filter(b=>b.action==='session').length,2);
+ assert.equal(JSON.parse(storage.getItem('pth_session')).data.parent_id,'parent');
+});
+test('server restore errors do not become a public profile or dispatch a protected write',async()=>{
+ const {context,storage,db}=client();storage.setItem('pth_secure_token','a'.repeat(64));let calls=0;
+ context.fetch=async()=>{calls++;return{status:503,json:async()=>({data:null,error:{message:'Servicio temporalmente no disponible',code:'ACCESS_DENIED'}})};};
+ const result=await db.from('productos').insert([{nombre:'No escribir'}]);
+ assert.equal(calls,1);assert.equal(result.data,null);assert.equal(result.error.status,503);
+ assert.equal(storage.getItem('pth_secure_token'),'a'.repeat(64));
+});
+test('invalid sessions are cleared and reported instead of querying as anonymous',async()=>{
+ const {context,storage,db}=client();storage.setItem('pth_secure_token','a'.repeat(64));let calls=0;
+ context.fetch=async()=>{calls++;return{status:401,json:async()=>({data:null,error:{message:'Inicia sesión de nuevo.',code:'SESSION_INVALID'}})};};
+ const result=await db.from('productos').select('*');
+ assert.equal(calls,1);assert.equal(result.error.code,'SESSION_INVALID');assert.equal(storage.getItem('pth_secure_token'),null);
+});
+test('concurrent restore callers share the attempt but can retry together after a failure',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));let calls=0,offline=true;
+ context.fetch=async()=>{calls++;if(offline)throw Error('Offline');return{status:200,json:async()=>({data:{profile:{id:'sub',rol:'gestor',parent_id:'parent'}},error:null})};};
+ const failed=await Promise.allSettled([context.PTHSecureData.restore(),context.PTHSecureData.restore()]);
+ assert.equal(calls,1);assert.ok(failed.every(r=>r.status==='rejected'));offline=false;
+ const recovered=await Promise.all([context.PTHSecureData.restore(),context.PTHSecureData.restore()]);
+ assert.equal(calls,2);assert.ok(recovered.every(p=>p.id==='sub'));
+});
+test('a delayed restore cannot resurrect a session after logout',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));let release;
+ context.fetch=()=>new Promise(resolve=>{release=()=>resolve({status:200,json:async()=>({data:{profile:{id:'old-account',nombre:'Old',rol:'gestor'}},error:null})});});
+ const pending=context.PTHSecureData.restore();context.PTHSecureData.clearSession();release();
+ await assert.rejects(pending);
+ assert.equal(storage.getItem('pth_secure_token'),null);assert.equal(storage.getItem('pth_session'),null);
+});

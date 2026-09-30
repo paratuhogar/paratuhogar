@@ -18,14 +18,15 @@
   try{
    const response=await root.fetch(url,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
    const result=await response.json();
-   if(response.status===401&&body.action!=='login')clearSession();
+   if(result.error)result.error.status=response.status;
+   if(response.status===401&&body.action!=='login'&&token===storage.getItem(tokenKey))clearSession();
    return result;
   }catch(error){return{data:null,error:{message:'No se pudo conectar con el servidor. Intenta de nuevo; no se usará una conexión sin protección.',code:'NETWORK_ERROR'}};}
  }
  async function login(username,password){const result=await send({action:'login',username,password},null);if(result.error)throw Error(result.error.message);saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
  function restore(){
   if(restoration)return restoration;
-  restoration=(async()=>{
+  const attempt=(async()=>{
    const token=storage.getItem(tokenKey);
    let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){clearSession();}
    if(!token){
@@ -34,9 +35,15 @@
     if(previous)clearSession();return null;
    }
    const result=await send({action:'session'},token);
-   if(result.error){if(result.error.code==='NETWORK_ERROR')throw Error(result.error.message);return null;}
+   if(result.error)throw Object.assign(Error(result.error.message),result.error);
+   if(token!==storage.getItem(tokenKey))throw Object.assign(Error('La sesión cambió. Vuelve a intentar.'),{code:'SESSION_CHANGED'});
    saveSession(result.data);return profile;
-  })();return restoration;
+  })();
+  restoration=attempt;
+  // Keep successful restoration shared; failed attempts must be retryable.
+  // Do not invalidate a newer login/restoration when an old attempt settles.
+  attempt.catch(()=>{if(restoration===attempt)restoration=null;});
+  return attempt;
  }
  class Query{
   constructor(body){this.body={filters:[],orders:[],...body};this.promise=null;}
@@ -53,7 +60,7 @@
   not(column,operator,value){this.body.filters.push({method:'not',column,operator,value});return this;}
   or(value){this.body.filters.push({method:'or',value});return this;}
   filter(column,operator,value){if(!['eq','neq','gt','gte','lt','lte','like','ilike','is','in'].includes(operator))throw Error('Filtro no permitido');return this[operator](column,value);}
-  then(resolve,reject){if(!this.promise)this.promise=restore().then(()=>send(this.body)).catch(error=>({data:null,error:{message:error.message,code:'SESSION_UNAVAILABLE'}}));return this.promise.then(resolve,reject);}
+  then(resolve,reject){if(!this.promise)this.promise=restore().then(()=>send(this.body)).catch(error=>({data:null,error:{message:error.message,code:error.code||'SESSION_UNAVAILABLE',status:error.status}}));return this.promise.then(resolve,reject);}
   catch(reject){return this.then(undefined,reject);}
  }
  for(const method of ['eq','neq','gt','gte','lt','lte','like','ilike','is','in'])Query.prototype[method]=function(column,value){this.body.filters.push({method,column,value});return this;};
