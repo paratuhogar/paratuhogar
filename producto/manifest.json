@@ -157,9 +157,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-30T17:17:37.01014+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -1150,6 +1150,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-2/",
     "updated_at": "2026-08-02T02:21:00.504312+00:00"
+  },
+  {
+    "id": "32d04c02-1b3f-427b-ae62-683dfeb6ced1",
+    "slug": "estante-de-metal-5-baldas",
+    "nombre": "Estante de metal 5 baldas",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/estante-de-metal-5-baldas/",
+    "updated_at": "2026-09-30T19:46:03.859032+00:00"
   },
   {
     "id": "f488f6df-fe95-4629-b435-5640f532625d",
@@ -2632,9 +2641,9 @@
     "slug": "nevera-horizontal-royal-3-5pies",
     "nombre": "Nevera Horizontal ROYAL - 3.5pies",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-horizontal-royal-3-5pies/",
-    "updated_at": "2026-09-28T16:03:29.307857+00:00"
+    "updated_at": "2026-09-30T21:13:58.647626+00:00"
   },
   {
     "id": "1c4f2b0c-59be-45c9-9aad-e0c354e4038b",
@@ -3343,9 +3352,9 @@
     "slug": "smart-tv-40-samsung",
     "nombre": "Smart TV 40 Samsung",
     "categoria": "SMART TV",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-09-30T19:06:07.764119+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
