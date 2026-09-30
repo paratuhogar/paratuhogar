@@ -42,6 +42,7 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/secure-data.js?v=20260929-privacy1"></script>
+    <script src="js/admin-work-view.js?v=20260930-sales1"></script>
 
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
@@ -588,6 +589,11 @@
             <!-- Configuración / Gestor -->
             <button id="btn-open-gen" onclick="openGestorGen()" class="hidden flex items-center justify-center rounded-lg h-10 w-10 bg-white/10 text-white hover:bg-white/20 transition-all">
                 <span class="material-symbols-outlined">settings</span>
+            </button>
+
+            <button id="btn-sales-to-admin" type="button" onclick="PTHWorkView.switchView('admin')" class="hidden flex items-center justify-center gap-1 rounded-lg h-10 px-2 bg-white/20 text-white hover:bg-white/30 transition-all text-[11px] font-bold" title="Volver al panel administrativo sin cerrar sesión">
+                <span class="material-symbols-outlined text-lg">admin_panel_settings</span>
+                <span class="leading-tight text-left" style="max-width:72px">Volver al panel</span>
             </button>
 
             <!-- Botón Salir (Logout) -->
@@ -2311,7 +2317,10 @@
             <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Gestión de Logística y Finanzas</p>
         </div>
         <div class="flex items-center gap-4">
-            
+            <button id="btn-admin-to-sales" type="button" onclick="PTHWorkView.switchView('gestor')" class="hidden flex items-center justify-center gap-2 rounded-2xl min-h-12 px-4 py-3 bg-primary text-white font-bold text-xs hover:opacity-90 transition-all" title="Abrir el catálogo para hacer pedidos con tu cuenta">
+                <span class="material-symbols-outlined">storefront</span>
+                <span>Vender como gestor</span>
+            </button>
             <button onclick="location.reload()" class="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all">
                 <span class="material-symbols-outlined">power_settings_new</span>
             </button>
@@ -3205,7 +3214,7 @@
     <script>
         // === 1. CONTROL DE VERSIÓN Y CACHÉ ===
     // === 1. CONTROL DE VERSIÓN Y CACHÉ (PRESERVANDO PARÁMETROS) ===
-const versionActual = "20260929-privacy1";
+const versionActual = "20260930-sales1";
 const urlParamsVersion = new URLSearchParams(window.location.search);
 
 if (urlParamsVersion.get('v') !== versionActual) {
@@ -3667,8 +3676,15 @@ async function processRegister() {
     function enterAsClient() { closeLogin(); loadProducts(); }
 
     async function setupSession(name, adminMode) {
+    const setupVersion = window.PTHWorkView.beginSetup();
+    adminMode = window.PTHWorkView.isAdminView(window.currentUserData);
     window.gestorName = name;
     window.isAdmin = adminMode;
+    // Remove the previous view before rendering the new one. The role/token stay intact.
+    document.getElementById('sec-admin-master')?.classList.toggle('hidden', !adminMode);
+    document.getElementById('sec-dashboard')?.classList.add('hidden');
+    document.getElementById('gestor-command-center')?.classList.toggle('hidden', adminMode);
+    window.PTHWorkView.syncButtons(window.currentUserData, adminMode);
 
     // Forzar limpieza del buscador para eliminar el autocompletado del navegador
     const searchBar = document.getElementById('search-bar');
@@ -3710,6 +3726,7 @@ async function processRegister() {
                 .eq('nombre', name)
                 .single();
 
+            if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
             if (dbGestor) {
                 window.currentUserData = window.currentUserData || {};
                 window.currentUserData.id = dbGestor.id;
@@ -3723,6 +3740,7 @@ async function processRegister() {
                         .eq('id', dbGestor.parent_id)
                         .maybeSingle();
 
+                    if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
                     if (parentData) {
                         window.currentUserData.parent_nombre = parentData.nombre;
                         window.currentUserData.parent_telefono = parentData.telefono;
@@ -3732,6 +3750,7 @@ async function processRegister() {
         } catch (err) {
             console.error("Error sincronizando rol de subgestor:", err);
         }
+        if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
 
         // --- ENMASCARAR BOTÓN RED DE SUBGESTORES AL SUBGESTOR ---
         const isSubgestor = window.currentUserData && window.currentUserData.parent_id;
@@ -3761,9 +3780,10 @@ async function processRegister() {
             loadProDashboard(name),
             loadClientCRM()
         ]);
+        if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
         loadMyPayoutRequests();
         if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
-        showSection('dashboard');
+        showSection(window.PTHWorkView.canSwitch(window.currentUserData) ? 'catalogo' : 'dashboard');
     }
 
     const btnLogout = document.getElementById('btn-logout');
@@ -3835,7 +3855,7 @@ async function processRegister() {
     }
 
     setTimeout(() => {
-        if (!adminMode) {
+        if (!adminMode && window.PTHWorkView.isCurrentSetup(setupVersion)) {
             showRadarIntro();
         }
     }, 2000);
@@ -12806,7 +12826,7 @@ function applyLockedFeatures() {
     const sales = window.gestorSalesCount || 0;
     
     // VALIDACIÓN MODO DIOS: Si eres tú, todo se desbloquea
-    const isGodMode = window.gestorName === "Marcel Montano" || window.gestorName === "Diana" || window.isAdmin;
+    const isGodMode = window.gestorName === "Marcel Montano" || window.gestorName === "Diana" || window.isAdmin || window.PTHWorkView.canSwitch(window.currentUserData);
 
     // Referencias a los botones por ID
     const btnCopy = document.getElementById('btn-copy-bulk');
@@ -15388,7 +15408,7 @@ function renderLockedRanking(allPedidos, nombreGestor) {
     const VENTAS_REQUERIDAS = 40; 
 
     // CASO A: MODO DIOS O NIVEL SUFICIENTE -> MOSTRAR TODO
-    if (nombreGestor === "Marcel Montano" || window.isAdmin || currentLevel >= NIVEL_REQUERIDO) {
+    if (nombreGestor === "Marcel Montano" || window.isAdmin || window.PTHWorkView.canSwitch(window.currentUserData) || currentLevel >= NIVEL_REQUERIDO) {
         renderRankingAnonimo(allPedidos, nombreGestor);
         return;
     }
