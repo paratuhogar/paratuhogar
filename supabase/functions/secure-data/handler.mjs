@@ -1,3 +1,4 @@
+import {announcement} from './announcement.mjs';
 import {feedback} from './feedback.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
@@ -239,6 +240,7 @@ export function createHandler({db}) {
       let result;
       if(body.action==='session') {if(!actor) fail('Inicia sesión.',401);result={data:{profile:cleanProfile(actor)},error:null};}
       else if(body.action==='logout') {if(bearer) await db.from('pth_secure_sessions').delete().eq('token_hash',await hash(bearer));result={data:null,error:null};}
+      else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='query') result=await dataQuery(db,body,actor);
       else if(body.action==='rpc') result=await rpcQuery(db,body,actor);

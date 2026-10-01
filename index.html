@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <link rel="stylesheet" href="css/work-navigation.css?v=20261001-1">
+    <link rel="stylesheet" href="css/feedback-announcement.css?v=20261001-1">
     <script src="js/product-availability-form.js?v=20260924-1"></script>
     <script src="js/product-description-editor.js?v=20260924-1"></script>
     <script src="js/checkout-submit-guard.js?v=20260918-1"></script>
@@ -42,7 +43,8 @@
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/secure-data.js?v=20260930-catalogue1"></script>
+    <script src="js/secure-data.js?v=20261001-announcement1"></script>
+    <script src="js/feedback-announcement.js?v=20261001-1" defer></script>
     <script src="js/admin-work-view.js?v=20260930-admins2"></script>
 
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
@@ -3693,6 +3695,7 @@ async function processRegister() {
 
     async function setupSession(name, adminMode) {
     const setupVersion = window.PTHWorkView.beginSetup();
+    let welcomeNotice = Promise.resolve();
     adminMode = window.PTHWorkView.isAdminView(window.currentUserData);
     window.gestorName = name;
     window.isAdmin = adminMode;
@@ -3731,7 +3734,7 @@ async function processRegister() {
         if (typeof renderFlashButton === "function") renderFlashButton();
         if (typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
-            showAgentWelcomeModal(name);
+            welcomeNotice = showAgentWelcomeModal(name);
         }
 
         // --- VERIFICACIÓN DE SUBGESTOR EN TIEMPO REAL (EL FIX) ---
@@ -3800,6 +3803,9 @@ async function processRegister() {
         loadMyPayoutRequests();
         if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
         showSection(window.PTHWorkView.canSwitch(window.currentUserData) ? 'catalogo' : 'dashboard');
+        Promise.resolve(welcomeNotice).then(() => {
+            if (window.PTHWorkView.isCurrentSetup(setupVersion)) void window.PTHFeedbackAnnouncement?.show();
+        }).catch(() => {});
     }
 
     const btnLogout = document.getElementById('btn-logout');
