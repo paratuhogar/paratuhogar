@@ -23,8 +23,8 @@ def normalized_key(filename: str) -> str:
     return "".join(unquote(filename).strip().replace("'", "").replace('"', "").split())
 
 
-def variant_name(key: str, size: int, extension: str) -> str:
-    digest = hashlib.sha1(key.encode("utf-8")).hexdigest()[:16]
+def variant_name(content: bytes, size: int, extension: str) -> str:
+    digest = hashlib.sha256(b"pth-thumbnails-v2-avif45-webp68:" + content).hexdigest()[:16]
     return f"{digest}-{size}.{extension}"
 
 
@@ -41,17 +41,22 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-dir", type=Path, default=ROOT / "img_productos")
     parser.add_argument("--only-list", type=Path)
+    parser.add_argument("--source-tree", type=Path, required=True, help="Verified Git tree with path and blob SHA; no credentials")
+    parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
+    parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     source_dir = args.source_dir.resolve()
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    for old_variant in OUTPUT_DIR.iterdir():
-        if old_variant.is_file() and old_variant.suffix.lower() in {".webp", ".avif"}:
-            old_variant.unlink()
-    manifest: dict[str, dict[str, str]] = {}
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    # Content-addressed outputs are additive. Never delete originals/older releases.
+    manifest: dict[str, dict] = {}
+    proof = json.loads(args.source_tree.read_text(encoding="utf-8"))
+    verified = {row["path"]: row["sha"] for row in proof["tree"]}
+    generated_bytes = 0
 
     allowed_names = None
     if args.only_list:
@@ -73,29 +78,38 @@ def main() -> None:
 
     for source in sources:
         key = normalized_key(source.name)
-        variants: dict[str, str] = {}
+        content = source.read_bytes()
+        blob_sha = hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
+        if verified.get("img_productos/" + source.name) != blob_sha:
+            raise SystemExit(f"Fuente no verificada: {source.name}")
+        variants: dict = {"sourceBlob": blob_sha, "sourceBytes": len(content)}
         for size in SIZES:
             image = prepare_image(source, size)
-            webp_name = variant_name(key, size, "webp")
-            avif_name = variant_name(key, size, "avif")
-            image.save(OUTPUT_DIR / webp_name, "WEBP", quality=68, method=6)
-            image.save(OUTPUT_DIR / avif_name, "AVIF", quality=45, speed=7)
+            webp_name = variant_name(content, size, "webp")
+            avif_name = variant_name(content, size, "avif")
+            image.save(output_dir / webp_name, "WEBP", quality=68, method=6)
+            image.save(output_dir / avif_name, "AVIF", quality=45, speed=7)
+            generated_bytes += (output_dir / webp_name).stat().st_size + (output_dir / avif_name).stat().st_size
+            variants[f"width{size}"] = image.width
+            variants[f"height{size}"] = image.height
             variants[f"webp{size}"] = f"/img_productos/optimized/{webp_name}"
             variants[f"avif{size}"] = f"/img_productos/optimized/{avif_name}"
         manifest[key] = variants
 
     payload = json.dumps(manifest, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
-    MANIFEST_PATH.write_text(
+    args.manifest.parent.mkdir(parents=True, exist_ok=True)
+    args.manifest.write_text(
         "// Generado por scripts/generate_image_variants.py. No editar manualmente.\n"
-        f"window.PTH_IMAGE_VARIANTS=Object.freeze({payload});\n",
+        f"window.PTH_IMAGE_VARIANTS=Object.freeze({payload});\n"
+        f"window.PTH_IMAGE_VARIANTS_SOURCE=Object.freeze({json.dumps({'repository':'paratuhogar/paratuhogar-fotos','commit':proof.get('commit',proof.get('sha'))})});\n",
         encoding="utf-8",
     )
 
     original_bytes = sum(path.stat().st_size for path in sources)
-    variant_bytes = sum(path.stat().st_size for path in OUTPUT_DIR.iterdir() if path.is_file())
+    variant_bytes = generated_bytes
     print(f"Fuentes: {len(sources)} ({original_bytes / 1024 / 1024:.2f} MiB)")
     print(f"Variantes: {len(sources) * len(SIZES) * 2} ({variant_bytes / 1024 / 1024:.2f} MiB)")
-    print(f"Manifest: {MANIFEST_PATH.relative_to(ROOT)}")
+    print(f"Manifest: {args.manifest}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,425 @@
+{
+  "commit": "c7ac10a7db4ad1fe75f4fbb37fc20395b8fafee2",
+  "tree": [
+    {
+      "path": "img_productos/1768935768726_0_cocina_dayton_4Q_jpg.jpg",
+      "sha": "6ae89eb763f353fc1242390ce4030ea4e34532b6",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/1768938745069_0_juego_EKo_jpg.jpg",
+      "sha": "d58c5cc35821013e969f3570cc282cac701767bf",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/1768941430276_0_WhatsApp_Image_2026_01_16_at_8_33_53_PM_jpeg.jpg",
+      "sha": "dd81847a17989a8ca240fe599a9c127588df95a3",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/1769180549527_0_WhatsApp_Image_2026_01_22_at_9_15_19_PM_jpeg.jpg",
+      "sha": "b1c2ee6a012ffbf6ffc2bdf067df57e91937f612",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/24G411A-BMonitorLG.jpg",
+      "sha": "67f233ccbd2ab384baec24363466f219c4a9067a",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/AMD_ryzen3G2.webp",
+      "sha": "84a168eef89d1da042d1299920ad46b7eae0fac8",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Adata4gb2666.jpeg",
+      "sha": "a83841c7b23d21acd2e67924d80cde0e212e3341",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Adata8gb2666.webp",
+      "sha": "a1dfcc6a61007b4a78072387ee8acc45bdb53fb5",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/ArroceraDecakila1L_1.8L.jpeg",
+      "sha": "e09b28cbd58485fe15c77a51f45798d5377bf871",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Asientorecinable.jpg",
+      "sha": "8ca1eece5ffb4801f5da2501660919285eb7be41",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bateria15kwmust.jpeg",
+      "sha": "f4ae8c7f96932a213d3cf76ad4584aaddc18af50",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bateria5kwhMUST.jpeg",
+      "sha": "5eb55a384ffbb1f045be1d2da2041e04eff93170",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bateriab2560.jpeg",
+      "sha": "ab77a3b4b62b4444f24ac201422e03f2f36e8b39",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bateriasako10kwh.png",
+      "sha": "d1b13cee6e48c0059b07f57dd8e19f37dd0e6a19",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bateriasako15kwh.png",
+      "sha": "fa1108ca45d122bba082cecbe193fef2d4610b22",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bicihuffy24roja.jpg",
+      "sha": "958a96faedfd74d9aab69ecd819f53f074a29ca8",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bicihuffy27.5morada.jpg",
+      "sha": "1eb852ca03d96ba5edfd15b44874fe887066579e",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bicipaseo26.jpg",
+      "sha": "47585c03dfb6416559c1f55c44264742fb0a6740",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Boardasusprime760ma.jpg",
+      "sha": "207b5909103bcbe0fb6a38e03051257c7b28ca94",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/BocinaLogitechZ150front.jpg",
+      "sha": "456ef9c0e84adfacec65acb896c1ed97d74fe0f8",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bombasumergible.jpg",
+      "sha": "272f8f8ee2cfffa91f3a4b80614ee1ef301c71e4",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Bombasumergible2.jpg",
+      "sha": "be406e7bad45d94e37ad641b8b8180bdd7667068",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/BombillosolarEKO-20w.jpeg",
+      "sha": "7a64c42bb4dac974f7bf1c1162c1d322bd4cbfbc",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Cafeterael\u00e9ctricaEKO.jpeg",
+      "sha": "e5a9a6c8c14abc973c95cab8cbb06602b58dc214",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Cajafuertedigital.jpg",
+      "sha": "f75bf4b23af9270fa582276182c067e85293114f",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Calentadorruden1.jpeg",
+      "sha": "54dc90e6421e8583796251886b63fe715bfbb754",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Chasisatxaisens.jpg",
+      "sha": "fb9b34dbb97e7fe8b376f68cd89b50dbeb39b41c",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/CocinaInfrarroja1500W_EKO.jpeg",
+      "sha": "c81398933bb6ceedd3fae88b98d478eb57e3871e",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Cocinaekotg8411.jpeg",
+      "sha": "41712d1bec553ce6eba082aa7f7f70fb63638419",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/ColchoncameroEKO.jpg",
+      "sha": "92f556477a93e1126f87ca68a0b5089d57e82f60",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/CougarSemitorreArchon2.jpg",
+      "sha": "1c5a9729aa9dbd1ca911a3332114d11e972e7a11",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Delta3clasica.jpg",
+      "sha": "20f9af9ef405d3e54adebfc039f58834e5f6791f",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/EEP3200-front.jpg",
+      "sha": "21d51e112b94e3913d66455c8e9465fa9d13a2ef",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/EEP800-front.jpg",
+      "sha": "b3f3a39ed11d1abfc92213ab4efa21f961eaa03b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Escalera4pasos.jpg",
+      "sha": "c87ee127146dc2925a4f34a399e5cc39bc182e2b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/EstacionMp06pro.jpeg",
+      "sha": "364fa7fd795ff2be7561169dedc15362c3c72cc0",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Estanter\u00edaMet\u00e1lica_3baldasajustables7house-80408.jpeg",
+      "sha": "5d3d95e0d240f4cd4b517d9960a64746590a0540",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Estanter\u00edaModularMet\u00e1lica_5BaldasPlateado7house-75949.jpeg",
+      "sha": "5e8900ad908b93cf24adeacc233339546ba8f2f0",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Estanter\u00edametalica4ajustable.jpg",
+      "sha": "ef98d085cf8b0a5326c03b6741109511897955ac",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Fuenteapprox550w.jpeg",
+      "sha": "fc34ce8926549cc292edd2962c1e9e49603b3d3a",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Fuenteuranopro650.jpg",
+      "sha": "d5a198208f66c89ed828b472f778fae02f8da66b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Impresora_EPSON_ECOTANK_ET-2860.jpeg",
+      "sha": "c49348c331d4fdc6567a4996ef195e230e982abf",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Inversor3kwinfinisolar.jpeg",
+      "sha": "7aa0b611f2edd85b0653a7db90b2f5c965c4823c",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Inversor6kw15kwh.jpeg",
+      "sha": "330b2580a92d57b2220242b95de0a7f2957ad985",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Inversormust3kw.jpeg",
+      "sha": "7b056815ac251fc5134dbf6de0aa0e403527b86c",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Inversorsako5kw.png",
+      "sha": "580c8c85d09543609adaf1831bd246a7ab49c5f4",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/KeepOutCajaM-AtxKOXC-200RGBUSB3GlackGlass.jpg",
+      "sha": "32d64a5f7041e2856fd0c4ed1bc4d0dfb218f37b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Lavadoraautomatica9kg.jpg",
+      "sha": "d8efc04ef53fd8479924e7df4da557da64879e3f",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/L\u00e1mparasolar300.jpg",
+      "sha": "e9cd802091ea34c4ca4ec4e2d8c8605628467396",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Minibarreymogris.jpeg",
+      "sha": "456fb97636ee0747fbe45e3831d83e7ea24aedda",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Miniupsmarsriva.jpeg",
+      "sha": "800b260f8c9b28355ae93153d63ed5bbad288eda",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Monitoriggyal21.5.jpg",
+      "sha": "a5500b329d1214155b7b96da735bea343ce1b213",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Nevera5eko.jpeg",
+      "sha": "98daebf4d786847845bc72b7c99ced11ac53c881",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/NeveraAucma7pies.png",
+      "sha": "89d87a5edc6c354891a78d5d568a7a48f76431a9",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Neveravertical39pies.jpeg",
+      "sha": "18f803a0e71b2d07a7327794cadbbaf0f672f693",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Panel400w.jpeg",
+      "sha": "5f755689cfc3f9f8072197da2a4d68089392a4a1",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Panelsolarbifacial595w.jpg",
+      "sha": "72d9f9e48e4a37fcd8e240ab0367f14742943f4b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Picagrapa.jpg",
+      "sha": "c5869e155d38a131ee27d76a2b3c1cfa28910d93",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/RedmiA5.jpeg",
+      "sha": "8863651ebf966da43ca009e6c97b1b61af215a16",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Refrigeradorlg19inverter.jpeg",
+      "sha": "2273e4dba46d859137f4193ff77a7e2fde4ff4de",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/SmartSamsung40.png",
+      "sha": "440c9e7d97f259851bcf8405ad27f92dc4ce20fc",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/SmartTV55-LGUHDAI.jpeg",
+      "sha": "f3908874628998a811bbee1b7d9e88440ace19d4",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Sofacamacarmelita.jpg",
+      "sha": "74fa8a0b4ba38002b7a94769ef4251b424f7ea46",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Soportepaneles1.jpg",
+      "sha": "73effd9a19e0c5b3e51d3791748cdcc6481cdcc9",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Split2teko.jpg",
+      "sha": "898874429fe966aed4674df44509632f50cc3e6b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Splitreymo1tinverter.jpg",
+      "sha": "095662630a6347a6fdb2f9b0e222d32dd8a7e7bd",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Switchplanet5puertos_.jpg",
+      "sha": "24814be5470cbcdc2813f261382e00084e5296cf",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Tintauniversal1L1.jpg",
+      "sha": "27ef013a78be42edefa90ac6222ba7a0c7733db7",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Ventilador16midea.jpeg",
+      "sha": "5cfa27778f09e982f740337779d472fe52fa0d6b",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/VentiladorEKO12litio.jpg",
+      "sha": "92a2b46b21065a934ffcc529edb6f20a35f22366",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/VentiladorRecargableFan.jpg",
+      "sha": "fe3d88fe789e4db06d354326b2f88e1cab3a4e21",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/Ventiladorlitio16EKO.jpeg",
+      "sha": "97714c22cf5360fc094fe10cce0ce41fd2a4a61e",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/cafetera_electrica_6t_eko_1.jpeg",
+      "sha": "6445492ca7f5c717836207439397049287134502",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/feridora6Lgreen.png",
+      "sha": "bc6680de39c056dd0a56a3bd757da941b944cc0a",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/freidora6Lred.png",
+      "sha": "b4e09d54bef74a848ae6cb74a0f1c60f0643f18c",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/fuentehummer500w.webp",
+      "sha": "657008a2b6db57e7f6dfaecdc1fcf9e21ff87b13",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/kitratonteclado.webp",
+      "sha": "dd7a1dd71d20210e9c130e635d2bbfe7b9ebb692",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/kittecladomouseinalmbrico.jpg",
+      "sha": "26088a021c4cf3f4ce7d56209af0908b49495341",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/marsiva_front.jpeg",
+      "sha": "7ed85dd7f5a53e9a91a4c51c1f9add29533603ab",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/mppt1000W.png",
+      "sha": "1f2682ccf827d966892f86ccdd374e56dbcbafb5",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/panel_sun630W.jpg",
+      "sha": "16178fd4fa309fd417bd5eebae3e71317f6d579a",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/panelescontenedor.png",
+      "sha": "27466a8cd2a6c32ff099183260b6bc26ccea40ec",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/refrigerador_royal_side_by_side_20_pies_portada.jpg",
+      "sha": "08370f34a1ec940b77357cad62e6dadb97dab1f9",
+      "type": "blob"
+    },
+    {
+      "path": "img_productos/split1.5REYMO1.jpeg",
+      "sha": "a0f84ecff89175cc6d645c9e3575bf0b9870b613",
+      "type": "blob"
+    }
+  ]
+}

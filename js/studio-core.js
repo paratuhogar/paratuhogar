@@ -207,7 +207,8 @@ async function loadInventory() {
     const catalogueTimeKey = 'pth_catalogo_cache_time' + window.PTHSecureData.cacheSuffix();
     let data = studioReadStorage(catalogueKey, null);
     studioCacheInfo.catalogAt = Number(localStorage.getItem(catalogueTimeKey)) || null;
-    if (studioRole.isSubgestor || !Array.isArray(data) || !data.length) {
+    if (studioRole.isSubgestor || !Array.isArray(data) || !data.length
+        || data.some(product => !Object.prototype.hasOwnProperty.call(product, 'descripcion'))) {
         const response = await supabaseClient.from('productos').select('*').eq('disponible', 'SI').order('nombre');
         if (response.error) return;
         data = response.data || [];

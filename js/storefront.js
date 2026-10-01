@@ -1541,6 +1541,36 @@ async function resolveSalesHierarchy(agentName) {
     return hierarchy;
 }
 
+// Description hydration has no persistent cache and never replaces commercial fields.
+let descriptionCatalogGeneration = 0;
+let descriptionLoader;
+function ensureProductDescriptions(products) {
+    if (!descriptionLoader) descriptionLoader = window.PTHProductDescriptions.create({
+        getScope: () => `${window.PTHSecureData.token() || 'public'}:${descriptionCatalogGeneration}`,
+        fetchRows: async ids => {
+            const { data, error } = await supabaseClient.from('productos').select('id, descripcion').in('id', ids);
+            if (error) throw error;
+            return data || [];
+        }
+    });
+    return descriptionLoader.hydrate(products);
+}
+function loadDetailDescription(product) {
+    const container = document.getElementById('detail-desc');
+    if (Object.prototype.hasOwnProperty.call(product, 'descripcion')) return renderDetailDescription(product.descripcion);
+    container.textContent = 'Cargando descripción…';
+    ensureProductDescriptions([product]).then(() => {
+        if (selectedProduct === product) renderDetailDescription(product.descripcion);
+    }).catch(() => {
+        if (selectedProduct !== product) return;
+        container.textContent = 'No se pudo cargar la descripción. ';
+        const retry = document.createElement('button');
+        retry.type = 'button'; retry.className = 'min-h-11 px-3 font-bold text-primary underline';
+        retry.textContent = 'Reintentar'; retry.onclick = () => loadDetailDescription(product);
+        container.appendChild(retry);
+    });
+}
+
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -1552,6 +1582,7 @@ async function loadProducts() {
     // Evita que varios eventos de inicio reconstruyan el catálogo al mismo tiempo.
     if (productsLoadInProgress) return;
     productsLoadInProgress = true;
+    descriptionCatalogGeneration++;
 
     try {
         catalogLoadError = null;
@@ -1596,7 +1627,7 @@ async function loadProducts() {
         const cacheTimeKey = 'pth_catalogo_cache_time' + window.PTHSecureData.cacheSuffix();
         const cacheLocalKey = 'pth_ultimo_cambio_productos' + window.PTHSecureData.cacheSuffix();
         const catalogSchemaKey = 'pth_catalogo_schema_version';
-        const catalogSchemaVersion = 'technical-sheets-v1';
+        const catalogSchemaVersion = 'catalogue-light-description-v1';
 
         // Fuerza una sola actualización cuando la estructura del catálogo incorpora
         // campos nuevos, sin aumentar las consultas en las visitas posteriores.
@@ -1628,7 +1659,7 @@ async function loadProducts() {
             // Descargar catálogo completo de Supabase sólo si es estrictamente necesario
             const { data, error } = await supabaseClient
                 .from('productos')
-                .select('*')
+                .select('id,nombre,precio,comision,thumbnail,image1,image2,image3,categoria,mensajeria,disponible,garantia,pagos,vistas,created_at,proveedor,precio_flexible,costo_proveedor,cup_extra,tamaño_envio,ficha_pdf,ficha_pdf_nombre,ficha_pdf_idioma,inventario_actualizado_en,slug,seo_title,seo_description')
                 .order('nombre', { ascending: true });
 
             if (error) throw error;
@@ -2458,7 +2489,7 @@ function renderCatalogProducts(list) {
             return `
                 <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
                     <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
-                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-110">
+                    ${window.PTHProductImages.render(fixDriveUrl(product.thumbnail), product.nombre, 'h-full w-full object-contain transition duration-500 group-hover:scale-110')}
                     </a>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
                         <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
@@ -2488,7 +2519,7 @@ function renderCatalogProducts(list) {
         return `
             <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
                 <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
-                    <img src="${fixDriveUrl(product.thumbnail)}" loading="lazy" decoding="async" alt="${safeName}" class="h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}">
+                    ${window.PTHProductImages.render(fixDriveUrl(product.thumbnail), product.nombre, `h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}`, isList ? 'list' : 'grid')}
                 </a>
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                     <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
@@ -2586,7 +2617,7 @@ function openDetail(name, skipSolarCheck = false) {
     const detailModal = document.getElementById('detail-modal');
 
     document.getElementById('detail-name').innerText = p.nombre;
-    renderDetailDescription(p.descripcion);
+    loadDetailDescription(p);
 
     // Badge de Ganancia
     const oldBadge = document.getElementById('admin-comm-badge');
@@ -6707,6 +6738,7 @@ function openAdminMasterFromGestor() {
 let productSaveInFlight = false;
 
 function openModalProd() {
+    window.pthPendingProductEdit = null;
     if (typeof prepareProductEditor === "function") void prepareProductEditor();
     if (productSaveInFlight) return alert("⏳ Espera a que termine el guardado del producto.");
         updateFormCategories(); // <--- AGREGAR ESTA LÍNEA AQUÍ
@@ -6771,6 +6803,7 @@ function openModalProd() {
 }
 
 function closeModalProd(afterSave = false) {
+    window.pthPendingProductEdit = null;
     if (productSaveInFlight && !afterSave) return alert("⏳ Espera a que termine el guardado del producto.");
     document.getElementById('modal-producto').classList.add('hidden');
     document.body.style.overflow = 'auto';
@@ -7111,6 +7144,14 @@ function clearImageSlot(event, index) {
                   || productosRaw.find(prod => prod.id === id);
 
         if (!p) return alert("Error: No se encuentra la información del producto.");
+        if (!Object.prototype.hasOwnProperty.call(p, 'descripcion')) {
+            const requestedId = id;
+            window.pthPendingProductEdit = requestedId;
+            return ensureProductDescriptions([p]).then(() => {
+                if (window.pthPendingProductEdit === requestedId) editProduct(requestedId);
+            }).catch(error => alert(error.message));
+        }
+        window.pthPendingProductEdit = null;
         updateFormProviders(); // <-- Poblamos el select antes de asignarle el valor
 
         // Llenamos los campos.
@@ -10288,6 +10329,12 @@ window.addEventListener('load', () => {
 // Ahora recibimos el botón (btnElement) como parámetro
 function copySimpleDesc(btnElement) {
     if(!selectedProduct) return;
+    if (!Object.prototype.hasOwnProperty.call(selectedProduct, 'descripcion')) {
+        const product = selectedProduct;
+        return ensureProductDescriptions([product]).then(() => {
+            if (selectedProduct === product) copySimpleDesc(btnElement);
+        }).catch(error => alert(error.message));
+    }
     trackSpy('COPIO_INFO', selectedProduct.nombre);
 
     // --- 1. LÓGICA DE LIMPIEZA INTELIGENTE ---
@@ -11890,6 +11937,8 @@ async function downloadCatalogPDF() {
     }
 
     try {
+        // Fetch descriptions only for the selected PDF products, preserving their current prices.
+        await ensureProductDescriptions(visibleProducts);
         // 2. Filtrar productos visibles (respetando tus filtros actuales)
         const productsToExport = visibleProducts.map(p => ({
             id: p.id,

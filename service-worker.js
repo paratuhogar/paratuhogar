@@ -1,12 +1,16 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-fast1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-images2';
+const PTH_IMAGE_CACHE = 'pth-public-images-v1';
+const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20261001-fast1';
+const PTH_SHELL_URL = '/index.html?v=20261001-images2';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261001-announcement1',
-  '/js/storefront.js?v=20261001-fast1',
+  '/js/storefront.js?v=20261001-images2',
+  '/js/product-images.js?v=20261001-images2',
+  '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.js?v=20261001-fast1',
   '/js/internal-assets.js?v=20261001-fast1',
   '/js/product-availability-form.js?v=20260924-1',
@@ -19,7 +23,7 @@ const PTH_PUBLIC_ASSETS = [
   '/manifest.webmanifest',
   '/css/tailwind.min.css?v=20261001-fast1',
   '/css/client-followup.css?v=2',
-  '/js/image-variants.js?v=2026-08-02',
+  '/js/image-variants.js?v=20261001-images2',
   '/js/pwa.js?v=2026-08-02-pwa6',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
@@ -46,7 +50,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'CLEAR_PUBLIC_CACHE') {
-    event.waitUntil(caches.delete(PTH_CACHE_VERSION));
+    event.waitUntil(Promise.all([caches.delete(PTH_CACHE_VERSION), caches.delete(PTH_IMAGE_CACHE)]));
   }
 });
 
@@ -56,6 +60,31 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Only immutable, generated public thumbnails. No originals, queries, API,
+  // pricing, screenshots or authenticated requests enter this runtime cache.
+  if (request.destination === 'image' && !url.search
+      && !request.headers?.has('authorization')
+      && /^\/img_productos\/optimized\/[a-f0-9]{16}-(360|720)\.(avif|webp)$/.test(url.pathname)) {
+    event.respondWith((async () => {
+      let cache;
+      try {
+        cache = await caches.open(PTH_IMAGE_CACHE);
+        const hit = await cache.match(request);
+        if (hit) return hit;
+      } catch (_) { /* Storage is optional. */ }
+      const response = await fetch(request);
+      if (cache && response.ok && response.type === 'basic') {
+        try {
+          await cache.put(request, response.clone());
+          const keys = await cache.keys();
+          await Promise.all(keys.slice(0, Math.max(0, keys.length - PTH_IMAGE_LIMIT)).map(key => cache.delete(key)));
+        } catch (_) { /* Quota/privacy mode must not break a fetched image. */ }
+      }
+      return response;
+    })());
+    return;
+  }
 
   // Las navegaciones siempre buscan la versión actual en la red. Solo la raíz
   // pública puede usar el contenedor estático offline; ninguna ruta interna,
