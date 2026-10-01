@@ -67,6 +67,6 @@
  function install(client){if(client.__pthSecure)return client;const from=client.from.bind(client),rpc=client.rpc.bind(client);client.from=table=>tables.has(table)?new Query({action:'query',table,op:'select'}):from(table);client.rpc=(name,params={},options={})=>rpcs.has(name)?new Query({action:'rpc',name,params,...options}):rpc(name,params,options);client.__pthSecure=true;return client;}
  if(storage.getItem('pth_privacy_schema')!=='commission-v1'){clearCaches();storage.setItem('pth_privacy_schema','commission-v1');}
  async function loginMessenger(pin){const result=await send({action:'login_messenger',pin},null);if(result.error)throw Error(result.error.message);saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
- root.PTHSecureData={login,loginMessenger,restore,clearSession,clearCaches,install,token:()=>storage.getItem(tokenKey),cacheSuffix:()=>':'+(profile?.id||'public'),logout:()=>{const token=storage.getItem(tokenKey);clearSession();return send({action:'logout'},token);}};
+ root.PTHSecureData={feedback:async body=>{await restore();return send({...body,action:'feedback'});},login,loginMessenger,restore,clearSession,clearCaches,install,token:()=>storage.getItem(tokenKey),cacheSuffix:()=>':'+(profile?.id||'public'),logout:()=>{const token=storage.getItem(tokenKey);clearSession();return send({action:'logout'},token);}};
  if(root.supabase?.createClient){const create=root.supabase.createClient.bind(root.supabase);root.supabase.createClient=(...args)=>install(create(...args));}
 })(window);
