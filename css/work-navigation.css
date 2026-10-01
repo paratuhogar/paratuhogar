@@ -1,0 +1,53 @@
+/* Scoped to the existing, session-controlled three-action navigation. */
+#admin-nav {
+    width: calc(100% - 32px);
+    max-width: 1168px;
+    margin: 16px auto 0;
+    padding: 6px;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid #dce5ef;
+    border-radius: 18px;
+    background: #f0f4f9;
+}
+#admin-nav:not(.hidden) { display: grid; }
+#admin-nav > button,
+#admin-nav > a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 54px;
+    padding: 12px;
+    border: 1px solid #cbd8e8;
+    border-radius: 12px;
+    background: #fff;
+    color: #23466f;
+    font: 700 13px/1.4 Manrope, system-ui, sans-serif;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 150ms ease;
+}
+#admin-nav > a { grid-column: 1 / -1; background: #e8f0fb; border-color: #bfd0e6; }
+#admin-nav > button[aria-pressed="true"] { background: #1a4789; border-color: #1a4789; color: #fff; }
+#admin-nav > :is(button, a):hover { border-color: #1a4789; background: #dce8f7; }
+#admin-nav > button[aria-pressed="true"]:hover { background: #153c75; }
+#admin-nav > :is(button, a):focus-visible { outline: 3px solid #a64b08; outline-offset: 2px; }
+#admin-nav svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#admin-nav span { min-width: 0; overflow-wrap: anywhere; }
+@media (min-width: 640px) {
+    #admin-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #admin-nav > a { grid-column: auto; }
+}
+html.dark #admin-nav { border-color: #344a66; background: #0f1e35; }
+html.dark #admin-nav > :is(button, a) { border-color: #50657f; background: #172b46; color: #e5efff; }
+html.dark #admin-nav > a { background: #1c3657; }
+html.dark #admin-nav > button[aria-pressed="true"] { border-color: #447bc2; background: #245caa; color: #fff; }
+html.dark #admin-nav > :is(button, a):hover { background: #29486d; border-color: #8aaad2; }
+html.dark #admin-nav > :is(button, a):focus-visible { outline-color: #fbbf24; }
+@media (prefers-reduced-motion: reduce) {
+    #admin-nav > :is(button, a) { transition: none; }
+}

@@ -13,7 +13,9 @@ function page(profile = angel) {
     const nodes = new Map();
     function element(hidden = false) {
         const classes = new Set(hidden ? ['hidden'] : []);
+        const attributes = new Map();
         return { disabled: false, style: {}, innerText: '', textContent: '', value: '',
+            setAttribute: (name, value) => attributes.set(name, String(value)), getAttribute: name => attributes.get(name) ?? null,
             classList: { add: c => classes.add(c), remove: c => classes.delete(c), contains: c => classes.has(c), toggle(c, force) { const add = force ?? !classes.has(c); add ? classes.add(c) : classes.delete(c); } },
             appendChild() {}, prepend() {}, insertBefore() {}, remove() {} };
     }

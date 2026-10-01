@@ -3,11 +3,12 @@ const form=$('feedback-form');
 let rows=[],owner=false,next=null,busy=false,imageBusy=false,screenshot=null,requestId=crypto.randomUUID(),dirty=false;
 let generation=0;
 const sessionToken=window.PTHSecureData.token();
+const stateLabels={nuevo:'Nuevo',en_revision:'En revisión',pendiente_informacion:'Necesita más información',planificado:'Planificado',resuelto:'Resuelto',descartado:'No se realizará',duplicado:'Agrupado con otro reporte'};
 const statuses=['nuevo','en_revision','pendiente_informacion','planificado','resuelto','descartado','duplicado'];
 const knownPages=new Set(['/','/index.html','/subgestores.html','/gestores.html','/studio.html','/master.html']);
 let page='/feedback.html';
 try{const ref=new URL(document.referrer);if(ref.origin===location.origin&&knownPages.has(ref.pathname))page=ref.pathname;}catch{}
-$('page-label').textContent=`Página de origen: ${page}. La fecha se registra automáticamente al recibir el envío.`;
+$('page-label').textContent='Guardamos automáticamente la página desde la que llegaste y la fecha del envío. No hace falta que las escribas.';
 const message=text=>{$('message').textContent=text;};
 function clearPrivate(){generation++;rows=[];screenshot=null;form.reset();$('preview').removeAttribute('src');$('reports').replaceChildren();$('private').hidden=true;dirty=false;}
 async function api(body){
@@ -18,14 +19,14 @@ async function api(body){
  return result.data;
 }
 function element(tag,text){const node=document.createElement(tag);node.textContent=text;return node;}
-function field(label,value,options){const wrap=element('label',label),input=document.createElement(options?'select':'textarea');if(options)for(const option of options){const el=element('option',option.replaceAll('_',' '));el.value=option;input.append(el);}input.value=value||'';wrap.append(input);return {wrap,input};}
+function field(label,value,options){const wrap=element('label',label),input=document.createElement(options?'select':'textarea');if(options)for(const option of options){const el=element('option',stateLabels[option]||option.replaceAll('_',' '));el.value=option;input.append(el);}input.value=value||'';wrap.append(input);return {wrap,input};}
 function render(){
  $('reports').replaceChildren();
  const search=$('search').value.toLocaleLowerCase();
  const counts={};for(const row of rows)counts[row.status]=(counts[row.status]||0)+1;
- $('summary').textContent=`${rows.length} envíos cargados${next!==null?' (hay más)':''}. `+Object.entries(counts).map(([state,n])=>`${state.replaceAll('_',' ')}: ${n}`).join(' · ');
+ $('summary').textContent=`${rows.length} envíos cargados${next!==null?' (hay más)':''}. `+Object.entries(counts).map(([state,n])=>`${stateLabels[state]||state}: ${n}`).join(' · ');
  for(const row of rows.filter(r=>[r.title,r.need,r.workflow,r.benefit].some(v=>v.toLocaleLowerCase().includes(search)))){
-  const article=element('article','');article.append(element('h3',`${row.kind==='problema'?'Problema':'Mejora'} · ${row.title}`),element('p',`${row.status.replaceAll('_',' ')} · ${new Date(row.created_at).toLocaleString('es',{timeZone:'America/Havana'})} (Cuba) · ${row.page}`),element('p',`Referencia: ${row.id}`),element('p',`${row.kind==='problema'?'Acción prevista':'Necesidad'}: ${row.need}`),element('p',`${row.kind==='problema'?'Problema observado':'Flujo actual'}: ${row.workflow}`));
+  const article=element('article','');article.append(element('h3',`${row.kind==='problema'?'Problema':'Mejora'} · ${row.title}`),element('p',`${stateLabels[row.status]||row.status} · ${new Date(row.created_at).toLocaleString('es',{timeZone:'America/Havana'})} (Cuba) · ${row.page}`),element('p',`Referencia: ${row.id}`),element('p',`${row.kind==='problema'?'Qué querías hacer':'Qué te gustaría poder hacer'}: ${row.need}`),element('p',`${row.kind==='problema'?'Qué ocurrió':'Cómo lo haces ahora'}: ${row.workflow}`));
   if(row.benefit)article.append(element('p',`Beneficio esperado: ${row.benefit}`));
   if(row.response)article.append(element('p',`Respuesta: ${row.response}`));
   const imageButton=element('button','Ver captura privada');imageButton.type='button';
@@ -43,9 +44,23 @@ function render(){
  if(!rows.length)$('reports').append(element('p','Todavía no hay envíos.'));
  $('more').hidden=next===null;
 }
-async function load(append=false){const current=++generation;$('refresh').disabled=true;$('more').disabled=true;try{const data=await api({operation:'list',offset:append?next:0});if(current!==generation)return;rows=append?[...rows,...data.rows.filter(r=>!rows.some(old=>old.id===r.id))]:data.rows;owner=data.owner;next=data.next;$('list-title').textContent=owner?'Revisión privada del dueño':'Mis envíos';render();}finally{$('refresh').disabled=false;$('more').disabled=false;}}
+async function load(append=false){const current=++generation;$('refresh').disabled=true;$('more').disabled=true;try{const data=await api({operation:'list',offset:append?next:0});if(current!==generation)return;rows=append?[...rows,...data.rows.filter(r=>!rows.some(old=>old.id===r.id))]:data.rows;owner=data.owner;next=data.next;$('list-title').textContent=owner?'Revisión de reportes y mejoras':'Mis envíos';$('list-help').textContent=owner?'Consulta los envíos, responde y actualiza su estado. Las notas privadas solo aparecen en esta vista de revisión.':'Aquí verás el estado de lo que enviaste y las respuestas. Las ideas se revisan antes de decidir si se pueden hacer.';render();}finally{$('refresh').disabled=false;$('more').disabled=false;}}
 $('refresh').onclick=()=>load().catch(e=>message(e.message));$('more').onclick=()=>load(true).catch(e=>message(e.message));$('search').oninput=render;
-form.elements.kind.onchange=()=>{const improvement=form.elements.kind.value==='mejora';$('need-label').textContent=improvement?'¿Qué necesitas lograr?':'¿Qué intentabas hacer?';$('workflow-label').textContent=improvement?'¿Cómo lo haces actualmente?':'¿Qué ocurrió en realidad?';$('benefit-wrap').hidden=!improvement;form.elements.benefit.required=improvement;};
+form.elements.kind.onchange=()=>{
+ const improvement=form.elements.kind.value==='mejora';
+ $('kind-guide-title').textContent=improvement?'Una idea para trabajar más fácil o vender más':'Cuando algo no funciona como esperabas';
+ $('kind-guide-text').textContent=improvement?'Cuéntanos qué te gustaría poder hacer, cómo lo resuelves hoy y qué ganarías con el cambio. Las ideas se revisan antes de decidir si se pueden hacer.':'Cuéntanos qué querías hacer y qué salió mal. Por ejemplo: un botón no responde o una página no termina de cargar.';
+ $('title-help').textContent=improvement?'Resume tu idea en una frase para encontrarla fácilmente.':'Resume el problema en una frase para encontrarlo fácilmente.';
+ form.elements.title.placeholder=improvement?'Ej.: Compartir varias ofertas de una sola vez':'Ej.: No puedo copiar el enlace de mi tienda';
+ $('need-label').textContent=improvement?'¿Qué te gustaría poder hacer?':'¿Qué intentabas hacer?';
+ $('need-help').textContent=improvement?'Explica qué necesitas para hacer tu trabajo más fácil. Puedes describir la idea aunque no sepas cómo construirla.':'Explica qué querías conseguir y en qué parte de la web estabas.';
+ form.elements.need.placeholder=improvement?'Ej.: Me gustaría elegir varias ofertas y compartirlas juntas.':'Ej.: Quería copiar el enlace para compartir mi tienda.';
+ $('workflow-label').textContent=improvement?'¿Cómo lo haces ahora?':'¿Qué pasó en realidad?';
+ $('workflow-help').textContent=improvement?'Cuenta cómo resuelves esa tarea hoy y qué parte te resulta lenta o difícil.':'Cuenta los pasos que seguiste y qué ocurrió. Si apareció un mensaje, escríbelo sin datos privados.';
+ form.elements.workflow.placeholder=improvement?'Ej.: Hoy tengo que abrir cada producto y copiar su enlace uno por uno.':'Ej.: Pulsé «Copiar enlace», pero no apareció la confirmación.';
+ $('benefit-wrap').hidden=!improvement;form.elements.benefit.required=improvement;
+ $('submit').textContent=improvement?'Enviar mejora':'Enviar problema';
+};
 form.oninput=()=>{dirty=true;};
 function removeImage(){screenshot=null;$('preview').hidden=true;$('preview').removeAttribute('src');$('remove-image').hidden=true;$('screenshot').value='';}
 $('remove-image').onclick=removeImage;

@@ -1,12 +1,82 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Problemas y mejoras · ParaTuHogar</title><link rel="stylesheet" href="css/feedback.css"></head>
-<body><main><a href="index.html">← Volver a ParaTuHogar</a><h1>Tu experiencia cuenta</h1><p>Reporta un problema o propón una mejora para trabajar mejor y vender más.</p><p id="message" role="status" aria-live="polite">Verificando tu sesión…</p><div id="private" hidden>
-<p class="notice">Solo tú y el dueño pueden consultar tu envío. No incluyas nombres, teléfonos, direcciones, documentos, contraseñas ni datos de clientes. Lo enviado se revisa como información; las mejoras requieren decisión del dueño.</p>
-<form id="feedback-form"><h2>Nuevo envío</h2><label>¿Qué quieres compartir?<select name="kind"><option value="problema">Reportar un problema</option><option value="mejora">Proponer una mejora</option></select></label>
-<label>Título breve<input name="title" required maxlength="160"></label>
-<label><span id="need-label">¿Qué intentabas hacer?</span><textarea name="need" required maxlength="2000"></textarea></label>
-<label><span id="workflow-label">¿Qué ocurrió en realidad?</span><textarea name="workflow" required maxlength="2000"></textarea></label>
-<label id="benefit-wrap" hidden>¿Cómo ayudaría a vender más o ahorrar tiempo?<textarea name="benefit" maxlength="2000"></textarea></label>
-<p id="page-label"></p><label>Captura opcional (PNG o JPEG, hasta 5 MB)<input id="screenshot" type="file" accept="image/png,image/jpeg"></label><p>Antes de adjuntar, recorta u oculta los datos privados. Reduciremos la imagen y eliminaremos sus metadatos. Revisa la vista previa.</p><img id="preview" hidden alt="Vista previa de la captura"><button id="remove-image" type="button" hidden>Quitar captura</button>
-<button id="submit" type="submit">Enviar de forma privada</button><p>Si falla la conexión, conserva esta página abierta y reintenta. No guardamos borradores ni capturas en este dispositivo.</p></form>
-<section><h2 id="list-title">Mis envíos</h2><button id="refresh" type="button">Actualizar lista</button><p id="summary"></p><label>Buscar en los envíos cargados<input id="search" type="search" placeholder="Título o descripción"></label><div id="reports"></div><button id="more" type="button" hidden>Cargar más</button></section></div></main><script src="js/secure-data.js?v=20261001-feedback1"></script><script type="module" src="js/feedback.mjs?v=20261001-feedback1"></script></body></html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Problemas y mejoras · ParaTuHogar</title>
+    <link rel="stylesheet" href="css/feedback.css?v=20261001-2">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-inner">
+            <a class="brand" href="index.html" aria-label="ParaTuHogar, volver al inicio">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8M5 9v12h5v-7h4v7h5V9"/></svg>
+                <span>paratuhogar</span>
+            </a>
+            <a class="back-link" href="index.html">← Volver al panel</a>
+        </div>
+    </header>
+    <main>
+        <section class="page-intro" aria-labelledby="page-title">
+            <p class="eyebrow">Trabajemos mejor juntos</p>
+            <h1 id="page-title">Problemas y mejoras</h1>
+            <p>¿Algo no funciona como esperabas? ¿Tienes una idea para trabajar más fácil o vender más? Cuéntanos aquí y consulta la respuesta en esta misma página.</p>
+        </section>
+        <p id="message" class="connection-message" role="status" aria-live="polite">Verificando tu sesión…</p>
+        <div id="private" hidden>
+            <aside class="privacy-note">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z"/><path d="m8 12 3 3 5-6"/></svg>
+                <p><strong>Este espacio es privado.</strong> Tu envío solo lo ves tú y las personas autorizadas para revisarlo. No incluyas datos de clientes, documentos ni contraseñas.</p>
+            </aside>
+            <form id="feedback-form" class="panel">
+                <div class="panel-heading"><span class="step-number" aria-hidden="true">1</span><div><h2>Cuéntanos qué necesitas</h2><p>Elige el tipo de envío y completa los campos. No necesitas usar palabras técnicas.</p></div></div>
+                <label for="kind">¿Qué quieres enviar?</label>
+                <select id="kind" name="kind" aria-describedby="kind-guide-title kind-guide-text">
+                    <option value="problema">Reportar un problema</option>
+                    <option value="mejora">Proponer una mejora</option>
+                </select>
+                <div class="kind-guide" aria-live="polite">
+                    <h3 id="kind-guide-title">Cuando algo no funciona como esperabas</h3>
+                    <p id="kind-guide-text">Cuéntanos qué querías hacer y qué salió mal. Por ejemplo: un botón no responde o una página no termina de cargar.</p>
+                </div>
+                <label for="title">Ponle un título breve</label>
+                <p id="title-help" class="field-help">Resume el problema en una frase para encontrarlo fácilmente.</p>
+                <input id="title" name="title" required maxlength="160" aria-describedby="title-help" placeholder="Ej.: No puedo copiar el enlace de mi tienda">
+                <label for="need"><span id="need-label">¿Qué intentabas hacer?</span></label>
+                <p id="need-help" class="field-help">Explica qué querías conseguir y en qué parte de la web estabas.</p>
+                <textarea id="need" name="need" required maxlength="2000" aria-describedby="need-help" placeholder="Ej.: Quería copiar el enlace para compartir mi tienda."></textarea>
+                <label for="workflow"><span id="workflow-label">¿Qué pasó en realidad?</span></label>
+                <p id="workflow-help" class="field-help">Cuenta los pasos que seguiste y qué ocurrió. Si apareció un mensaje, escríbelo sin datos privados.</p>
+                <textarea id="workflow" name="workflow" required maxlength="2000" aria-describedby="workflow-help" placeholder="Ej.: Pulsé «Copiar enlace», pero no apareció la confirmación."></textarea>
+                <div id="benefit-wrap" hidden>
+                    <label for="benefit">¿Cómo te ayudaría esta mejora?</label>
+                    <p id="benefit-help" class="field-help">Explica si te ahorraría tiempo, evitaría errores o te ayudaría a vender más. No hace falta calcular cifras exactas.</p>
+                    <textarea id="benefit" name="benefit" maxlength="2000" aria-describedby="benefit-help" placeholder="Ej.: Compartiría las ofertas más rápido y tendría más tiempo para atender consultas."></textarea>
+                </div>
+                <div class="attachment-box">
+                    <label for="screenshot">Añade una captura si ayuda a entenderlo <span class="optional">(opcional)</span></label>
+                    <p id="screenshot-help" class="field-help">Puedes enviar una imagen PNG o JPEG de hasta 5 MB. Recorta u oculta antes los nombres, teléfonos y otros datos privados. Revisa la imagen antes de enviarla.</p>
+                    <input id="screenshot" type="file" accept="image/png,image/jpeg" aria-describedby="screenshot-help">
+                    <img id="preview" hidden alt="Vista previa de la captura que vas a enviar">
+                    <button id="remove-image" class="button-secondary" type="button" hidden>Quitar captura</button>
+                </div>
+                <p id="page-label" class="field-help automatic-info"></p>
+                <button id="submit" class="button-primary" type="submit">Enviar problema</button>
+                <p class="field-help connection-help">Si falla la conexión, deja esta página abierta y vuelve a intentarlo. El formulario se conserva mientras no cierres ni recargues la página.</p>
+            </form>
+            <section class="panel" aria-labelledby="list-title">
+                <div class="panel-heading history-heading"><span class="step-number" aria-hidden="true">2</span><div><h2 id="list-title">Mis envíos</h2><p id="list-help">Aquí verás el estado de lo que enviaste y las respuestas. Las ideas se revisan antes de decidir si se pueden hacer.</p></div><button id="refresh" class="button-secondary" type="button">Actualizar lista</button></div>
+                <p id="summary" class="summary-strip"></p>
+                <label for="search">Buscar en la lista</label>
+                <input id="search" type="search" placeholder="Escribe parte del título o de la descripción">
+                <div id="reports"></div>
+                <button id="more" class="button-secondary" type="button" hidden>Cargar más</button>
+            </section>
+        </div>
+    </main>
+    <script src="js/secure-data.js?v=20261001-feedback1"></script>
+    <script type="module" src="js/feedback.mjs?v=20261001-2"></script>
+</body>
+</html>
