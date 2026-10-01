@@ -1,4 +1,4 @@
-// DRAFT: not imported by service-worker.js until sender/subscriptions are approved.
+// Receives only generic, authorized server notifications; no submitted text or URLs.
 (() => {
  const target=kind=>kind==='orders'?'/index.html?admin_alert=orders':kind==='suggestions'?'/index.html?admin_alert=suggestions':null;
  self.addEventListener('push',event=>{
@@ -14,5 +14,14 @@
   event.notification.close();const url=target(event.notification.data?.kind);if(!url)return;
   // Ignore arbitrary URLs, report text and identifiers in push payloads.
   event.waitUntil(self.clients.openWindow(new URL(url,self.location.origin).href));
+ });
+ self.addEventListener('message',event=>{
+  if(event.data?.type!=='PTH_PUSH_LOGOUT')return;
+  event.waitUntil((async()=>{
+   const subscription=await self.registration.pushManager.getSubscription();
+   if(subscription)await subscription.unsubscribe();
+   const notifications=await self.registration.getNotifications();
+   notifications.filter(n=>String(n.tag).startsWith('pth-admin-')).forEach(n=>n.close());
+  })());
  });
 })();

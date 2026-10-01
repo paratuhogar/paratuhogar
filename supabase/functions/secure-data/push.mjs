@@ -1,8 +1,7 @@
 import {allowedPushTopics} from './push-policy.mjs';
 const fail=(message,status=403)=>{throw Object.assign(Error(message),{status});};
-// Remains false until dispatcher + authenticated deep links + end-to-end pilot
-// are implemented and verified. Entering secrets alone cannot activate delivery.
-export const PUSH_DELIVERY_READY=false;
+// Explicit server configuration stays off by default. Keys alone cannot enable it.
+export const PUSH_DELIVERY_READY=true;
 export function pushConfiguration(env={}){
  const prepared=/^[A-Za-z0-9_-]{87}$/.test(env.PTH_PUSH_VAPID_PUBLIC_KEY||'')
   &&/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_VAPID_PRIVATE_KEY||'')
@@ -19,10 +18,29 @@ export function validatePushEndpoint(value){
  if(typeof value!=='string'||value.length>2048||url.protocol!=='https:'||url.port||url.username||url.password||url.hash||!allowed)fail('Servicio de notificaciones no permitido.',400);
  return url.href;
 }
-export async function pushSettings(db,body,actor,sessionHash,env={}){
+export async function pushSettings(db,body,actor,sessionHash,env={},dispatchPilot){
  const allowed=allowedPushTopics(actor);if(!allowed.length)fail('Tu cuenta no tiene notificaciones administrativas.');
  const state=pushConfiguration(env);
  if(body.operation==='config')return {data:{...state,allowedTopics:allowed,publicKey:state.enabled?env.PTH_PUSH_VAPID_PUBLIC_KEY:null},error:null};
+ if(body.operation==='status'){
+  const endpoint=validatePushEndpoint(body.endpoint);
+  const {data,error}=await db.from('pth_push_subscriptions').select('topics,expires_at').eq('endpoint',endpoint).eq('gestor_id',actor.id).eq('session_hash',sessionHash).is('revoked_at',null).gt('expires_at',new Date().toISOString()).maybeSingle();
+  if(error)fail('No se pudo comprobar este dispositivo.',503);
+  return {data:{active:Boolean(data),topics:data?.topics?.filter(topic=>allowed.includes(topic))||[],expiresAt:data?.expires_at||null},error:null};
+ }
+ if(body.operation==='pilot'){
+  if(!state.enabled||!dispatchPilot)fail('Las notificaciones todavía no están habilitadas.',503);
+  const endpoint=validatePushEndpoint(body.endpoint);
+  const {data:sub,error}=await db.from('pth_push_subscriptions').select('id').eq('endpoint',endpoint).eq('gestor_id',actor.id).eq('session_hash',sessionHash).is('revoked_at',null).gt('expires_at',new Date().toISOString()).maybeSingle();
+  if(error||!sub)fail('Activa primero las notificaciones en este dispositivo.',409);
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('push-pilot:'+sessionHash));
+  const key=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  const rate=await db.rpc('pth_check_login_rate',{p_key:key,p_limit:5});
+  if(rate.error||rate.data!==true)fail('Espera unos minutos antes de repetir la prueba.',429);
+  const accepted=await dispatchPilot({mode:'pilot',subscription_id:sub.id,actor_id:actor.id,session_hash:sessionHash});
+  if(!accepted)fail('No se pudo enviar la prueba. Revisa la configuración.',503);
+  return {data:{accepted:true},error:null};
+ }
  if(body.operation==='remove'){
   const endpoint=validatePushEndpoint(body.endpoint);
   const {error}=await db.from('pth_push_subscriptions').delete().eq('endpoint',endpoint).eq('gestor_id',actor.id).eq('session_hash',sessionHash);

@@ -1,108 +1,89 @@
-# Admin Web Push: prepared, NOT activated
+# Admin Web Push: integrated, automatic delivery disabled
 
-Update after explicit user approval: preparation migration
-`20261001221521_admin_web_push_disabled_preparation` applied and secure-data v8
-deployed. Tables have RLS and no browser grants; both INSERT triggers are DISABLED.
-The settings backend has an additional code-level false readiness flag, so secrets
-alone cannot enable delivery. No credentials, subscriptions or cron created.
-141 Node tests plus local PostgreSQL and real grants/trigger-state checks pass.
-See `docs/push-secure-setup-es.md` for user-operated setup. The sections below
-describe the approved design and remaining activation work, not an active service.
+The approved integration is implemented. The user entered the VAPID and dispatch
+secrets through Supabase; the agent did not create, read or transmit their values.
+Only the presence of Vault name `pth_push_dispatch_secret` has been checked.
 
-Stable published main: `b801001e60a23a3265a82bafe712931a521c8eee`.
-Development branch: `feature/admin-push-preparation`. No credentials generated,
-no subscriptions, no real notification sent. Prepared component,
-worker handler and policy are deliberately not imported into production entrypoints.
+## Deployed backend
 
-## Inspection
+- Project: `ljqwaovevfatkiigirhf` (existing ParaTuHogar project).
+- Preparation: `20261001221521_admin_web_push_disabled_preparation`.
+- Queue machinery: `20261001225441_admin_web_push_dispatch_machinery_disabled`.
+- `secure-data` v10 and `admin-push-dispatch` v2 are ACTIVE. Both implement custom
+  authentication; the gateway preserves its existing opaque-session behavior.
+- Three private tables have RLS, no browser grants and no browser policies.
+  Service role has CRUD, without TRUNCATE. The lease RPC is executable only by
+  service role; actual service-role execution returned an empty batch.
+- Both INSERT triggers remain DISABLED. No push cron exists. Final metadata
+  inspection found zero subscriptions and zero events. No real push was sent.
+- `PTH_PUSH_ENABLED=false` is the user setup default. The new code is delivery-ready
+  and requires valid configuration plus this flag set to `true` before enrollment
+  or pilot. Secret values, including the stored flag, were not read by the agent.
+  Verify the runtime's safe config booleans through the authenticated page.
 
-No Web Push/VAPID/subscription implementation exists in repository source.
-Read-only production metadata found no push/outbox/notification tables. Existing
-Edge Functions are secure-data v7, google-statistics v3 and swift-responder v10;
-none is identified as a push sender. Existing service-worker handles only public
-cache/offline behavior. pg_cron, pg_net and supabase_vault are already installed.
-Secret values were not read; available connectors expose no secret-management
-action, so unused remote VAPID configuration cannot be ruled out or configured here.
-Do not extract management tokens or reuse unknown secrets to bypass this limitation.
+The frontend is `notifications.html`, linked from the existing administration
+navigation. It is available only to verified administrative accounts without a
+parent. No permission prompt or subscription occurs on load. Each device needs
+an explicit topic selection, Activate click and browser permission. The current
+worker must activate before subscribing. Failed enrollment removes a newly
+created browser subscription; a paused service still permits opt-out.
 
-## Approved configuration scope
+## Authorization and privacy
 
-1. Apply reviewed `supabase/proposals/admin-web-push.sql`: three private tables
-   (device subscriptions, minimal event queue, per-device delivery records), RLS
-   with no browser policies/grants, existing service-role CRUD for delivery/cleanup,
-   and two AFTER INSERT triggers on `pedidos` and `pth_feedback`. Triggers only
-   enqueue metadata; no order/customer/price values are changed. No backfill.
-2. Generate a VAPID P-256 key pair if no approved existing pair is available.
-   Store `PTH_PUSH_VAPID_PRIVATE_KEY` exclusively in Supabase Edge secrets; its
-   public key can be returned by the authenticated settings endpoint. Set public
-   VAPID subject `https://paratuhogar.org` (no new mailbox needed).
-3. Generate `PTH_PUSH_DISPATCH_SECRET`, restricted to this dispatcher, stored in
-   Edge secrets and Supabase Vault for the scheduler. No key belongs in Git,
-   browser storage, report text, logs or chat. This is new persistent access and
-   needs explicit approval plus a supported secret-management path/operator.
-4. Deploy an authenticated dispatcher and extend the existing secure-data gateway
-   with own-subscription config/save/remove operations. Configure one pg_cron job
-   every minute via pg_net, authenticated with the dispatch secret. No new paid
-   service/signup; existing project usage applies. Preserve current worker caches.
+Orders use the existing global administrative roles. Improvements use only the
+existing OWNER_IDS plus current administrative status. Parent-linked accounts,
+gestores, messengers and ordinary admins without review rights cannot receive
+improvement alerts. This adds no report or customer-data visibility.
 
-No request to broaden feedback visibility is included. Order notifications use
-the current global administrative order-read roles; improvements only the existing
-OWNER_IDS with current admin status. Parent-linked admins, gestores and messengers
-do not qualify. If Angel/another admin lacks feedback review rights, they cannot
-receive private-improvement alerts until a separate permission decision names the
-account/role and allowed scope. Bug reports are not a requested push category.
+The gateway binds subscription save/status/remove/pilot to the verified account
+and session. A conflicting endpoint is never reassigned to another account or
+session. Pilot targets are derived server-side and limited to five attempts per
+ten minutes per session. Logout revokes the existing session, cascades its devices,
+and asks the browser worker to unsubscribe and close admin notices.
 
-## Prepared behavior and pending integration
+Before every delivery the dispatcher checks the current role, account activity,
+parent relationship, credential hash, session binding/expiry, device expiry,
+topics and canonical source existence. HTTPS endpoints are restricted to known
+push vendors; redirects and private/arbitrary hosts are refused. Logs and response
+counts do not contain endpoints, keys, provider bodies or submitted text.
 
-`js/admin-push.mjs` is an opt-in settings component with server-supplied allowed
-topics, explicit checkbox choice and a user-click browser permission prompt. It
-never prompts during mount, never accepts permission itself, and stays disabled
-when the backend is unavailable. Adapter contract: config derives allowed topics
-from the verified actor; scope binds the existing opaque session; registration
-returns the existing root worker; save/remove use the captured session, never
-client-supplied actor IDs. Failed new subscriptions are unsubscribed; session
-changes abort; disable attempts server removal and browser unsubscribe.
+Only `{version:1,kind}` is encrypted for the push provider. Lock-screen text is
+“Hay novedades en tu panel. Entra para revisarlas.” Fixed same-origin links restore
+login and check current server topic rights before opening logistics or feedback.
+No report/customer IDs, text, screenshots or private API responses enter caches.
 
-Desktop and Android use capability detection. iPhone/iPad guidance requires
-opening the Home Screen web app on a supported system. See
-[WebKit guidance](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)
-and [MDN user-gesture/subscription requirements](https://developer.mozilla.org/en-US/docs/Web/API/PushManager/subscribe).
+## Events and delivery
 
-`js/admin-push-worker.js` ignores arbitrary payload text/URLs. Lock-screen content
-is generic; click destinations are fixed same-origin admin routes with no customer
-or report IDs. Before wiring this handler, implement those deep links so the page
-restores authentication and checks authorization before opening logistics/review.
-No private data is cached. Prepared policy rechecks actor, session expiry, current
-credential hash, device binding, expiry/revocation and allowed topic before send.
+An event is inserted in the same transaction as a new canonical `pedidos` row or
+a new `pth_feedback` row of kind `mejora`. Rollback produces no visible event.
+No cart, payment, delivery or update event exists. Subgestor requests notify only
+after approval into canonical orders. There is no historical backfill.
 
-Events: AFTER INSERT into canonical `pedidos`, and AFTER INSERT into feedback only
-when kind=mejora. Queue insert is transactional: rollback yields no event. Checkout
-idempotency already prevents duplicate order insertion; queue additionally has
-unique(kind,source_id), deliveries have unique(event,subscription). Subgestor
-requests notify once when approved into canonical pedidos, not once before and
-again after approval. No cart/client click triggers or retrospective notifications.
+Unique source events and device deliveries suppress duplicate enqueue/fanout.
+Atomic SKIP LOCKED claims use two-minute leases and unique lease tokens. Each run
+claims at most ten deliveries with two concurrent sends, 12-second provider
+requests and at most eight attempts. Retry backoff is bounded and events expire
+after one hour. Gone endpoints are deleted. A provider timeout after acceptance
+can produce a repeated delivery; per-topic browser tags collapse visible notices.
+Exactly-once delivery and immediate delivery are not guaranteed.
 
-Dispatcher still needs implementation after approval: atomic leased claims,
-bounded retry/backoff, expiry, active-session/credential/actor checks, current
-source existence and scope, delete expired 404/410 endpoints, per-session logout
-cascade, stale-account cleanup and bounded logs with no endpoints/keys. Only
-approved vendor HTTPS push endpoints, no redirects/private IPs/arbitrary hosts
-(prevent server-side request forgery). Delivery retry after an uncertain provider
-response cannot guarantee exactly once; generic per-topic notification tags can
-collapse repeated visible alerts. Do not claim end-to-end push works yet.
+## Validation and release gate
 
-Scheduling reference: [Supabase scheduled functions](https://supabase.com/docs/guides/functions/schedule-functions).
+157 Node tests pass, covering authorization, device/session ownership, invalid
+input, retry enrollment, pilot target spoofing/rate limits, errors, lease results,
+credential/role changes, generic encrypted payloads, logout and worker upgrades.
+Local PostgreSQL executes the SQL for RLS/grants, audience fanout, INSERT-only
+semantics, duplicate suppression, rollback and expired/live leases. Chromium
+checks explicit opt-in, denial, failed-save cleanup, interruption, paused opt-out
+and the actual mobile settings page for admin/gestor/parent-linked accounts.
+The existing visitor/gestor/subgestor catalog startup checks and CSS build pass.
+Deno type checks pass for both functions; a standalone Deno runtime encrypted a
+synthetic message without network or production credentials. Dependencies are
+pinned with committed npm and Deno locks. New advisor finding is only the expected
+INFO notice for private tables with RLS and no browser policies.
 
-## Tests and remaining gate
-
-Node tests cover audience/parent isolation, active session/credential binding,
-correct event types, desktop/Android/iOS/blocked capability states and inert
-generic worker content/fixed click URLs. Browser fixtures cover explicit opt-in,
-unavailable backend, denied permission, failed-save cleanup, session interruption
-and disable. Permission and push services are mocked; no real subscriptions.
-Local PGlite executes the proposed SQL to verify RLS/grants, INSERT-only events,
-improvement-only filtering, duplicate suppression and transaction rollback.
-
-Specific approval has been received. Credential setup still requires the user's
-secure entry; dispatcher/cron and frontend activation remain incomplete. Keep main available
-for the separate Mac clone. No Mac files are touched by this branch.
+A real device pilot remains required. Provider acceptance is not proof that the
+notification appeared. Automatic event collection and cron must stay disabled
+until the user confirms receipt and safe click navigation. The activation SQL is
+recorded separately and has NOT been applied. See `admin-web-push-release.md` for
+operator steps and rollback.

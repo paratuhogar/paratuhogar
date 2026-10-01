@@ -42,9 +42,9 @@ No cambies otros secretos del proyecto. Estos son los cinco nombres:
 Supabase documenta este formulario en
 [Production secrets](https://supabase.com/docs/guides/functions/secrets#production-secrets).
 El gateway `secure-data` comprueba la presencia de la configuración sin devolver
-valores privados. El futuro despachador usará la clave VAPID privada y el secreto
+valores privados. El despachador usará la clave VAPID privada y el secreto
 de envío dentro de su entorno servidor. Introducir valores ahora no activa avisos:
-además del interruptor en false hay una barrera de código deshabilitada.
+el interruptor permanece en false y los disparadores y la tarea automática siguen deshabilitados.
 
 ## 3. Guardar solo el secreto de envío en Vault
 
@@ -65,20 +65,30 @@ Guarda una copia de recuperación en tu gestor privado de contraseñas y elimina
 los archivos temporales locales cuando hayas comprobado ambos formularios.
 Después basta responder **«Ya están configuradas»**, sin valores ni capturas.
 
-## Estado técnico de esta preparación
+## Configuración ya realizada y siguiente prueba
 
-- Migración `20261001221521_admin_web_push_disabled_preparation` aplicada.
-- Tres tablas privadas con RLS; anon/authenticated sin acceso. Service role tiene
-  SELECT/INSERT/UPDATE/DELETE, sin TRUNCATE. Los dos disparadores están deshabilitados.
-- `secure-data` v8 activo, con configuración y operaciones propias de suscripción;
-  nuevas suscripciones deshabilitadas incluso si se introducen claves ahora.
-- 141 pruebas Node y prueba SQL local pasan. Verificación real de grants/RLS y
-  disparadores realizada. Advisor señala solo el aviso informativo esperado de
-  tabla privada con RLS sin políticas para clientes.
-- No claves generadas/configuradas por el agente, ningún dispositivo registrado,
-  ningún aviso enviado y ninguna tarea cron creada.
-- Pendientes: despachador con reintentos/claims, enlaces autenticados, conectar la
-  interfaz al gateway y piloto real. Solo después se habilitarán envío y disparadores.
+El usuario ya generó y guardó las claves y el secreto de Vault. No repitas esos
+pasos ni regeneres claves para esta instalación. El nombre de Vault está
+verificado; sus valores no se han leído.
+
+El backend está integrado: `secure-data` v10 y `admin-push-dispatch` v2.
+La sección **Notificaciones** permite elegir los avisos autorizados, activar este
+dispositivo, enviar una prueba explícita y desactivar los avisos. Se mantienen
+apagados los dos disparadores y no existe una tarea automática de envío.
+
+Para el piloto, cambia únicamente `PTH_PUSH_ENABLED` a `true` en
+**Edge Functions → Secrets** y guarda. Esta variable no contiene una clave.
+No cambies los otros cuatro valores. Luego, con tu sesión de administración,
+abre `https://paratuhogar.org/notifications.html`, elige los tipos, pulsa
+**Activar notificaciones** y concede el permiso si quieres recibirlas. Finalmente
+pulsa **Enviar aviso de prueba** y confirma que aparece en el dispositivo y que
+al tocarlo abre el panel correcto con tu sesión.
+
+En iPhone/iPad usa la web instalada desde su icono de pantalla de inicio y un
+sistema compatible. El mensaje «Prueba enviada» confirma aceptación por el
+servicio, no recepción en pantalla. Solo después de confirmar el piloto se
+habilitarán los eventos nuevos y la tarea automática. Consulta los detalles de
+operación y reversión en `admin-web-push-release.md`.
 
 Cuando esté activo, el programador revisará la cola cada minuto; se añade el
 tiempo del proveedor/navegador, así que no es entrega instantánea garantizada.

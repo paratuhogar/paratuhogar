@@ -435,6 +435,9 @@ async function processRegister() {
     const setupVersion = window.PTHWorkView.beginSetup();
     let welcomeNotice = Promise.resolve();
     adminMode = window.PTHWorkView.isAdminView(window.currentUserData);
+    let requestedAdminTab = null;
+    try { requestedAdminTab = await window.PTHPushLinks?.resolve(); } catch (_) { /* Login/service errors keep the existing verified view. */ }
+    if (requestedAdminTab) adminMode = true;
     window.gestorName = name;
     window.isAdmin = adminMode;
     // Remove the previous view before rendering the new one. The role/token stay intact.
@@ -459,6 +462,7 @@ async function processRegister() {
         document.getElementById('sec-catalogo').style.display = 'none';
         if(adminNav) adminNav.classList.add('hidden');
         loadAdminData();
+        if (requestedAdminTab) changeAdminTab(requestedAdminTab);
     } else {
         // MODO GESTOR o SUBGESTOR (Ventas)
         const commandCenter = document.getElementById('gestor-command-center');

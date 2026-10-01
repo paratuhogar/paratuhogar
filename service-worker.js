@@ -1,14 +1,14 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-catalogfix4';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-push1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20261001-catalogfix4';
+const PTH_SHELL_URL = '/index.html?v=20261001-push1';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
-  '/js/secure-data.js?v=20261001-announcement1',
-  '/js/storefront.js?v=20261001-catalogfix4',
+  '/js/secure-data.js?v=20261001-push1',
+  '/js/storefront.js?v=20261001-push1',
   '/js/product-images.js?v=20261001-images2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.js?v=20261001-fast1',
@@ -20,6 +20,7 @@ const PTH_PUBLIC_ASSETS = [
   '/css/feedback-announcement.css?v=20261001-1',
   '/css/work-navigation.css?v=20261001-1',
   '/js/admin-work-view.js?v=20260930-admins2',
+  '/js/admin-push-links.js?v=20261001-push1',
   '/manifest.webmanifest',
   '/css/tailwind.min.css?v=20261001-fast1',
   '/css/client-followup.css?v=2',
@@ -30,6 +31,8 @@ const PTH_PUBLIC_ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
+
+importScripts('/js/admin-push-worker.js?v=20261001-push1');
 
 self.addEventListener('install', event => {
   event.waitUntil(

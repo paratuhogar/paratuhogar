@@ -1,4 +1,4 @@
-// Prepared policy only; not wired into the live gateway.
+// Existing administrative authorization is checked again for every delivery.
 import {actorKind,OWNER_IDS} from './policy.mjs';
 export function allowedPushTopics(actor){
  if(!actor||actor.estado!=='activo'||actor.activo===false||actorKind(actor)!=='admin')return [];

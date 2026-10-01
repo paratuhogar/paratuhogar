@@ -7,7 +7,7 @@ function setup({failStorage=false,badResponse=false}={}){
  const events={},entries=new Map();let fetches=0;
  const key=r=>typeof r==='string'?r:r.url;
  const cache={match:async r=>entries.get(key(r)),put:async(r,v)=>entries.set(key(r),v),keys:async()=>[...entries.keys()],delete:async r=>entries.delete(key(r))};
- vm.runInNewContext(source,{URL,self:{location:{origin:'https://paratuhogar.org'},addEventListener:(e,f)=>events[e]=f},caches:{open:async()=>{if(failStorage)throw Error('quota');return cache;},delete:async()=>true},fetch:async()=>{fetches++;return {ok:!badResponse,type:'basic',clone(){return this;}};}});
+ vm.runInNewContext(source,{importScripts:()=>{},URL,self:{location:{origin:'https://paratuhogar.org'},addEventListener:(e,f)=>events[e]=f},caches:{open:async()=>{if(failStorage)throw Error('quota');return cache;},delete:async()=>true},fetch:async()=>{fetches++;return {ok:!badResponse,type:'basic',clone(){return this;}};}});
  function request(path,extra={}){let response;events.fetch({request:{url:'https://paratuhogar.org'+path,method:'GET',destination:'image',headers:new Headers(),...extra},respondWith:p=>response=p});return response;}
  return {request,entries,fetches:()=>fetches};
 }

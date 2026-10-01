@@ -39,3 +39,10 @@ test('worker never displays submitted content or accepts arbitrary navigation UR
  assert.deepEqual(opens,['https://paratuhogar.org/index.html?admin_alert=suggestions']);
  events.push({data:{json:()=>({version:1,kind:'problema'})},waitUntil:()=>assert.fail('bugs not requested')});
 });
+test('logout unsubscribes this browser and closes only ParaTuHogar admin notices',async()=>{
+ const events={};let stopped=0,closed=0,otherClosed=0,pending;
+ vm.runInNewContext(fs.readFileSync(new URL('../js/admin-push-worker.js',import.meta.url),'utf8'),{self:{addEventListener:(k,f)=>events[k]=f,registration:{pushManager:{getSubscription:async()=>({unsubscribe:async()=>{stopped++;}})},getNotifications:async()=>[{tag:'pth-admin-orders',close:()=>closed++},{tag:'unrelated',close:()=>otherClosed++}]}}});
+ events.message({data:{type:'PTH_PUSH_LOGOUT'},waitUntil:p=>pending=p});await pending;
+ assert.equal(stopped,1);assert.equal(closed,1);assert.equal(otherClosed,0);
+ events.message({data:{type:'arbitrary text'},waitUntil:()=>assert.fail('unexpected action')});
+});

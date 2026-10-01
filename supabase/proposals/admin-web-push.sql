@@ -1,4 +1,5 @@
--- PROPOSAL ONLY. Do not execute before specific database/access approval.
+-- Approved preparation, applied as 20261001221521_admin_web_push_disabled_preparation.
+-- Recorded source: do not reapply to an existing installation.
 -- No customer values, titles, report text, screenshots, or bearer tokens stored.
 begin;
 set local lock_timeout='3s';
