@@ -56,6 +56,9 @@ article p:nth-of-type(-n+2) { color: #53677e; font-size: 12px; }
 details { margin-top: 8px; border-top: 1px solid #e1e8f1; }
 summary { min-height: 46px; padding: 14px 2px; color: #1a4789; font-size: 14px; font-weight: 750; cursor: pointer; }
 [hidden] { display: none !important; }
+.review-embedded .app-header,.review-embedded .page-intro,.review-embedded .privacy-note { display:none; }
+.review-embedded main { padding: 8px 12px 24px; }
+.review-embedded .panel { margin-top: 8px; }
 @media(max-width:600px) {
     .header-inner { padding: 12px 16px; gap: 8px; }
     .brand { gap: 7px; font-size: 21px; }

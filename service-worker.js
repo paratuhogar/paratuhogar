@@ -1,14 +1,14 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-images2';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-adminfeedback3';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20261001-images2';
+const PTH_SHELL_URL = '/index.html?v=20261001-adminfeedback3';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261001-announcement1',
-  '/js/storefront.js?v=20261001-images2',
+  '/js/storefront.js?v=20261001-adminfeedback3',
   '/js/product-images.js?v=20261001-images2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.js?v=20261001-fast1',

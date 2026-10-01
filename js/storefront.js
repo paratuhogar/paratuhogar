@@ -6673,6 +6673,18 @@ async function loadTrafficAnalytics() {
 }
 
 function changeAdminTab(tab) {
+    // Load the existing private reviewer only on demand. Unmount on leaving so
+    // hidden tabs never retain report text/screenshots or an active review form.
+    const feedbackHost = document.getElementById('admin-feedback-content');
+    if (feedbackHost && tab !== 'feedback') feedbackHost.replaceChildren();
+    if (feedbackHost && tab === 'feedback' && !feedbackHost.firstChild) {
+        const frame = document.createElement('iframe');
+        frame.title = 'Revisión privada de problemas y mejoras';
+        frame.src = 'feedback.html?view=review';
+        frame.referrerPolicy = 'no-referrer';
+        frame.style.cssText = 'display:block;width:100%;height:78vh;min-height:580px;border:0;border-radius:20px;background:#f4f7fb';
+        feedbackHost.append(frame);
+    }
     // 1. Ocultar todos los contenedores de pestañas admin
     document.querySelectorAll('.tab-cnt').forEach(cnt => {
         cnt.classList.add('hidden');
@@ -13196,6 +13208,17 @@ window.toggleRecogidaEnAlmacen = function() {
 // ==========================================
 let reportesAdminRaw = [];
 
+function formatTeamReportDate(value) {
+    if (typeof value !== 'string' || !value.trim()) return 'Fecha no disponible';
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return 'Fecha no disponible';
+    return new Intl.DateTimeFormat('es-CU', {timeZone: 'America/Havana', year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).format(date) + ' (Cuba)';
+}
+
+function escapeTeamReportText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
+
 async function loadAdminReports() {
     const container = document.getElementById('list-admin-reportes');
     if(container) container.innerHTML = `<p class="text-center text-gray-400 text-xs py-4 col-span-full"><span class="loader w-4 h-4 border-indigo-500"></span> Buscando reportes...</p>`;
@@ -13205,7 +13228,7 @@ async function loadAdminReports() {
         const { data, error } = await supabaseClient
             .from('reportes_gestor')
             .select('*')
-            .order('id', { ascending: false }); // Los más nuevos primero
+            .order('created_at', { ascending: false }); // Fecha real, no orden de UUID
 
         if (error) throw error;
 
@@ -13239,10 +13262,10 @@ function renderAdminReports() {
         let imgHtml = '';
         if (r.imagen_url) {
             // Reconstruimos la URL pública de Supabase
-            const urlFoto = `https://ljqwaovevfatkiigirhf.supabase.co/storage/v1/object/public/productos/${r.imagen_url}`;
+            const urlFoto = `https://ljqwaovevfatkiigirhf.supabase.co/storage/v1/object/public/productos/${String(r.imagen_url).split('/').map(encodeURIComponent).join('/')}`;
             imgHtml = `
             <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                <a href="${urlFoto}" target="_blank" class="inline-flex items-center gap-1 text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-indigo-100 transition-colors">
+                <a href="${escapeTeamReportText(urlFoto)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-indigo-100 transition-colors">
                     <span class="material-symbols-outlined text-[14px]">image</span> Ver Foto Adjunta
                 </a>
             </div>`;
@@ -13253,13 +13276,14 @@ function renderAdminReports() {
             <div>
                 <div class="flex justify-between items-start mb-3">
                     <span class="px-2 py-1 rounded text-[9px] font-black uppercase border flex items-center gap-1 ${colorTag}">
-                        <span class="material-symbols-outlined text-[12px]">${icon}</span> ${r.categoria}
+                        <span class="material-symbols-outlined text-[12px]">${icon}</span> ${escapeTeamReportText(r.categoria)}
                     </span>
                     <span class="text-[9px] font-black text-gray-400 uppercase bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-sm border border-gray-100 dark:border-gray-700">
-                        Por: <span class="text-indigo-500">${r.gestor}</span>
+                        Por: <span class="text-indigo-500">${escapeTeamReportText(r.gestor)}</span>
                     </span>
                 </div>
-                <p class="text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-pre-wrap leading-relaxed">${r.mensaje}</p>
+                <p class="mb-3 text-xs text-gray-500">Enviado: ${formatTeamReportDate(r.created_at)}</p>
+                <p class="text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-pre-wrap leading-relaxed break-words">${escapeTeamReportText(r.mensaje)}</p>
             </div>
             ${imgHtml}
         </div>`;

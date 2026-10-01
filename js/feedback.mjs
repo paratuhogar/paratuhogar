@@ -1,5 +1,7 @@
 const $=id=>document.getElementById(id);
 const form=$('feedback-form');
+const reviewOnly=new URLSearchParams(location.search).get('view')==='review';
+if(reviewOnly){document.body.classList.add('review-embedded');form.hidden=true;}
 let rows=[],owner=false,next=null,busy=false,imageBusy=false,screenshot=null,requestId=crypto.randomUUID(),dirty=false;
 let generation=0;
 const sessionToken=window.PTHSecureData.token();
@@ -44,7 +46,7 @@ function render(){
  if(!rows.length)$('reports').append(element('p','Todavía no hay envíos.'));
  $('more').hidden=next===null;
 }
-async function load(append=false){const current=++generation;$('refresh').disabled=true;$('more').disabled=true;try{const data=await api({operation:'list',offset:append?next:0});if(current!==generation)return;rows=append?[...rows,...data.rows.filter(r=>!rows.some(old=>old.id===r.id))]:data.rows;owner=data.owner;next=data.next;$('list-title').textContent=owner?'Revisión de reportes y mejoras':'Mis envíos';$('list-help').textContent=owner?'Consulta los envíos, responde y actualiza su estado. Las notas privadas solo aparecen en esta vista de revisión.':'Aquí verás el estado de lo que enviaste y las respuestas. Las ideas se revisan antes de decidir si se pueden hacer.';render();}finally{$('refresh').disabled=false;$('more').disabled=false;}}
+async function load(append=false){const current=++generation;$('refresh').disabled=true;$('more').disabled=true;try{const data=await api({operation:'list',offset:append?next:0});if(current!==generation)return;if(reviewOnly&&data.owner!==true){rows=[];owner=false;next=null;$('reports').replaceChildren();$('private').hidden=true;throw Error('Tu cuenta no tiene acceso a la revisión de reportes privados. Tus propios envíos siguen disponibles en Problemas y mejoras desde tu panel.');}rows=append?[...rows,...data.rows.filter(r=>!rows.some(old=>old.id===r.id))]:data.rows;owner=data.owner;next=data.next;$('list-title').textContent=owner?'Revisión de reportes y mejoras':'Mis envíos';$('list-help').textContent=owner?'Consulta los envíos, responde y actualiza su estado. Las notas privadas solo aparecen en esta vista de revisión.':'Aquí verás el estado de lo que enviaste y las respuestas. Las ideas se revisan antes de decidir si se pueden hacer.';render();}finally{$('refresh').disabled=false;$('more').disabled=false;}}
 $('refresh').onclick=()=>load().catch(e=>message(e.message));$('more').onclick=()=>load(true).catch(e=>message(e.message));$('search').oninput=render;
 form.elements.kind.onchange=()=>{
  const improvement=form.elements.kind.value==='mejora';
