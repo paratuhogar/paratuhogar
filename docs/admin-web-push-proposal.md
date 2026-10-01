@@ -1,22 +1,29 @@
-# Admin Web Push: integrated, automatic delivery disabled
+# Admin Web Push: active after verified device pilot
 
 The approved integration is implemented. The user entered the VAPID and dispatch
 secrets through Supabase; the agent did not create, read or transmit their values.
-Only the presence of Vault name `pth_push_dispatch_secret` has been checked.
+Vault name presence and successful server-side authenticated dispatch have been
+verified without exposing the stored value. The user confirmed receipt of the
+generic test and that its click opened the administrative panel.
 
 ## Deployed backend
 
 - Project: `ljqwaovevfatkiigirhf` (existing ParaTuHogar project).
 - Preparation: `20261001221521_admin_web_push_disabled_preparation`.
 - Queue machinery: `20261001225441_admin_web_push_dispatch_machinery_disabled`.
-- `secure-data` v12 and `admin-push-dispatch` v3 are ACTIVE. Both implement custom
+- Activation: `20261001235127_admin_web_push_activate_after_verified_pilot`.
+- `secure-data` v14 and `admin-push-dispatch` v5 are ACTIVE. Both implement custom
   authentication; the gateway preserves its existing opaque-session behavior.
 - Three private tables have RLS, no browser grants and no browser policies.
   Service role has CRUD, without TRUNCATE. The lease RPC is executable only by
   service role; actual service-role execution returned an empty batch.
-- Both INSERT triggers remain DISABLED. No push cron exists. Final metadata
-  inspection found zero subscriptions and zero events. No real push was sent.
-- `PTH_PUSH_ENABLED=false` is the user setup default. The new code is delivery-ready
+- Both INSERT triggers are ENABLED. Exactly one active push cron exists, named
+  `pth-admin-push-dispatch`, scheduled every minute (job 5). One device is enrolled.
+  Activation inspection found zero events/deliveries: no historical backfill.
+  Empty-queue dispatch returned HTTP 200, processed=0, without a timeout; the
+  scheduler also recorded a successful SQL execution.
+- The user set `PTH_PUSH_ENABLED=true` and completed the real pilot. The setup
+  helper still defaults to false for any future fresh installation. The new code is delivery-ready
   and requires valid configuration plus this flag set to `true` before enrollment
   or pilot. Secret values, including the stored flag, were not read by the agent.
   Verify the runtime's safe config booleans through the authenticated page.
@@ -82,8 +89,10 @@ synthetic message without network or production credentials. Dependencies are
 pinned with committed npm and Deno locks. New advisor finding is only the expected
 INFO notice for private tables with RLS and no browser policies.
 
-A real device pilot remains required. Provider acceptance is not proof that the
-notification appeared. Automatic event collection and cron must stay disabled
-until the user confirms receipt and safe click navigation. The activation SQL is
-recorded separately and has NOT been applied. See `admin-web-push-release.md` for
-operator steps and rollback.
+A real device pilot passed: the user confirmed the generic notice appeared and
+its click opened the panel correctly. Activation was applied at 2026-10-01
+23:51:27 UTC (19:51:27 America/Havana). The empty-queue probe returned HTTP 200
+at 23:51:52 UTC, and cron job 5 succeeded at 23:52:00 UTC. No fake order/report
+was created. Actual automatic delivery of the next genuine new order/improvement
+has not yet been observed; this does not change the verified active configuration.
+See `admin-web-push-release.md` for operation and rollback.

@@ -65,32 +65,30 @@ Guarda una copia de recuperación en tu gestor privado de contraseñas y elimina
 los archivos temporales locales cuando hayas comprobado ambos formularios.
 Después basta responder **«Ya están configuradas»**, sin valores ni capturas.
 
-## Configuración ya realizada y siguiente prueba
+## Configuración y piloto completados
 
 El usuario ya generó y guardó las claves y el secreto de Vault. No repitas esos
 pasos ni regeneres claves para esta instalación. El nombre de Vault está
 verificado; sus valores no se han leído.
 
-El backend está integrado: `secure-data` v12 y `admin-push-dispatch` v3.
-La sección **Notificaciones** permite elegir los avisos autorizados, activar este
-dispositivo, enviar una prueba explícita y desactivar los avisos. Se mantienen
-apagados los dos disparadores y no existe una tarea automática de envío.
+El usuario ya activó su dispositivo, recibió el aviso de prueba y confirmó que
+al tocarlo se abre el panel. El envío automático quedó habilitado el 1 de octubre
+de 2026 a las 19:51 de Cuba: dos disparadores y una tarea por minuto. Backend
+activo: `secure-data` v14 y `admin-push-dispatch` v5.
 
-Para el piloto, cambia únicamente `PTH_PUSH_ENABLED` a `true` en
-**Edge Functions → Secrets** y guarda. Esta variable no contiene una clave.
-No cambies los otros cuatro valores. Luego, con tu sesión de administración,
-abre `https://paratuhogar.org/notifications.html`, elige los tipos, pulsa
-**Activar notificaciones** y concede el permiso si quieres recibirlas. Finalmente
-pulsa **Enviar aviso de prueba** y confirma que aparece en el dispositivo y que
-al tocarlo abre el panel correcto con tu sesión.
+No repitas la configuración de claves. Para otro dispositivo autorizado, abre
+`https://paratuhogar.org/notifications.html` con su sesión de administración,
+elige los tipos y pulsa **Activar notificaciones**. El permiso del navegador
+siempre lo decide el usuario. **Enviar aviso de prueba** permite comprobar ese
+dispositivo; **Desactivar en este dispositivo** permite dejar de recibir avisos.
 
 En iPhone/iPad usa la web instalada desde su icono de pantalla de inicio y un
-sistema compatible. El mensaje «Prueba enviada» confirma aceptación por el
-servicio, no recepción en pantalla. Solo después de confirmar el piloto se
-habilitarán los eventos nuevos y la tarea automática. Consulta los detalles de
-operación y reversión en `admin-web-push-release.md`.
+sistema compatible. Los avisos dependen del permiso del dispositivo y de una
+sesión vigente y autorizada. El mensaje «Prueba enviada» confirma aceptación
+por el servicio; comprueba también que aparece y que abre el panel. Consulta
+la operación y reversión en `admin-web-push-release.md`.
 
-Cuando esté activo, el programador revisará la cola cada minuto; se añade el
+El programador revisa la cola cada minuto; se añade el
 tiempo del proveedor/navegador, así que no es entrega instantánea garantizada.
 «Pedido nuevo» significa inserción confirmada en `pedidos`, no pago ni entrega.
 Los pedidos de subgestor avisan después de su aprobación hacia esa tabla.

@@ -1,5 +1,6 @@
--- ACTIVATION ONLY, DO NOT RUN until user has entered secrets and personally
--- opted in and confirmed the pilot notification. Contains no secret values.
+-- Approved activation applied as 20261001235127_admin_web_push_activate_after_verified_pilot.
+-- Recorded source: user confirmed receipt and authorized click navigation.
+-- Do not blindly reapply; check named cron/trigger state first. No secret literals.
 begin;
 set local lock_timeout='3s';
 do $$ begin

@@ -1,23 +1,37 @@
-# Private admin push release and pilot
+# Private admin push: active release and operation
 
 ## Bounded release
+
+Activation is complete after the user's confirmed test receipt and click.
+Migration `20261001235127_admin_web_push_activate_after_verified_pilot` was applied
+on 2026-10-01 at 23:51:27 UTC / 19:51:27 America/Havana. Both AFTER INSERT
+triggers are enabled. One active named cron job (id 5) runs every minute.
+Empty-queue request 2039 returned HTTP 200, timed_out=false, processed=0 and zero
+sent/failed/pending/expired counts at 23:51:52 UTC. The scheduled job recorded
+succeeded at 23:52:00 UTC. One device is enrolled; no historical events were
+backfilled and no fake order/report was created. Values were resolved only inside
+the approved server-side call; the agent did not retrieve or print any secret.
+
 
 This release publishes only the opt-in admin settings page, generic notification
 worker, authenticated fixed links, own-session enrollment/pilot, dispatcher and
 private queue machinery. Existing catalog projection `select('*')` hotfix,
 prices, commissions, payments, order/customer records, report visibility and
-public startup behavior are preserved. No backfill, enrollment, message send,
-cron creation or trigger activation is part of this preparation release.
+public startup behavior are preserved. The preparation release collected no
+events or devices. The subsequent approved activation above enables only future
+events after the verified opt-in pilot; it includes no historical backfill.
 
 Frontend target is the existing repository `paratuhogar/paratuhogar`, GitHub Pages
 main branch/root, domain `paratuhogar.org`. Source publication is separate from
 public Pages verification; the parent performs browser checks and updates its Mac
 clone by fast-forward. No local Mac or private setup folder is accessed here.
 
-Backend deployed: secure-data v12 (private readiness diagnostics), admin-push-dispatch v3 (same dispatcher source; secret save refreshed its version). Migrations applied:
-20261001221521 and 20261001225441. Exact SQL is in `supabase/proposals/`.
+Backend active metadata: secure-data v14 and admin-push-dispatch v5 (user secret
+saves refresh versions; approved source is unchanged). Migrations applied:
+20261001221521, 20261001225441 and 20261001235127. Exact SQL is in `supabase/proposals/`.
 The dispatch migration added fanout/lease columns, indexes and a service-only
-invoker RPC. Preparation triggers remain disabled and no push cron exists.
+invoker RPC. Activation enables pth_push_new_order and pth_push_new_suggestion and the single
+every-minute pth-admin-push-dispatch job.
 Rollback gateway snapshot before this release is preserved outside the repo at
 `/workspace/scratch/push-rollback-v9/`; its files match published a9d1fb7.
 
@@ -35,7 +49,10 @@ counts, RLS/grants and lease-RPC privileges. Do not query decrypted Vault values
 HTTP request queue headers/bodies, device endpoints/keys or session credentials.
 Actual claim test under service_role returned zero with no events present.
 
-## User-operated pilot
+## User-operated pilot (completed for the first device)
+
+The following records the completed rollout procedure. Additional devices need
+only their own opt-in and test; do not reapply the installation migration.
 
 1. Parent verifies public source and private page wiring. User edits only
    `PTH_PUSH_ENABLED` to `true` through Edge Functions Secrets. Other configured
@@ -65,7 +82,7 @@ existing verify_jwt=false custom authentication setting. Keep private additive
 schema in place; dropping it is unnecessary and would destroy enrolled devices.
 
 After activation, also disable pth_push_new_order and pth_push_new_suggestion and
-unschedule only cron job pth-admin-push-dispatch. Keep other project jobs and
+unschedule only cron job pth-admin-push-dispatch (current job id 5). Keep other project jobs and
 secrets unchanged. Historical queue entries are not backfilled; expired events
 cannot send. A browser may still show an already accepted generic notice until
 it expires or logout closes it.
@@ -77,8 +94,9 @@ settings and explicit permission/failure/interruption/paused opt-out tests;
 visitor/gestor/subgestor startup regression checks; CSS build; Deno type checks
 and real encryption runtime using deterministic synthetic fixtures only.
 Live database grants, disabled triggers, no cron and empty service-role claims
-are checked. Deployment source matches reviewed files. Actual user device receipt
-and public Pages delivery remain parent/user verification, not claimed here.
+are checked. Deployment source matches reviewed files. The user has now confirmed actual device receipt and safe panel navigation.
+The next genuine automatic new-order/improvement delivery has not yet been
+observed; no artificial business record is created just to test it.
 
 ## Pilot configuration diagnosis
 
