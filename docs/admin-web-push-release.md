@@ -88,8 +88,8 @@ dispatchSecretValid and subjectValid. Ordinary administrators retain the origina
 config response without this detail; anonymous and non-administrative accounts
 remain denied. No values, lengths, prefixes or hashes are returned.
 
-The refreshed settings module (`push2`) displays the first failed condition in
-plain Spanish. Reload `notifications.html?check=push2` after Pages serves this
+The refreshed settings module (`push3`) displays the first failed condition in
+plain Spanish. Reload `notifications.html?check=push3` after Pages serves this
 release. Do not change or regenerate keys before reading this safe result.
 If switchOn is false, check only PTH_PUSH_ENABLED in the same project. If a key or
 dispatch predicate is false, correct only that named field from the user's existing
@@ -100,3 +100,24 @@ browser; the environment has no such session and does not extract one.
 
 158 Node tests and focused browser checks pass for this diagnostic addition.
 Triggers and cron remain disabled throughout diagnosis.
+
+## Button and stalled-browser recovery
+
+The original shared disabled-button style used cursor:wait even when the service
+was unavailable and no request was running. The private push component now hides
+Activate until readiness/browser checks pass, highlights the actual status and
+provides an explicit recheck button. It overrides the cursor locally; unrelated
+feedback styles are unchanged.
+
+Bounded waits cover session/config, browser lookup, permission response, worker
+registration itself and activation, subscription, save, pilot, opt-out and failed
+enrollment cleanup. Busy controls always recover. A late granted permission does
+not automatically enroll; a late browser subscription is unsubscribed without
+server enrollment. No permission or configuration requirement is bypassed.
+
+Nine Chromium pending-operation scenarios pass, including cleanup/pilot/disable
+timeouts and late config/permission/device responses. Healthy, denied, missing
+configuration and actual-page mobile checks pass. 159 Node tests pass. No backend
+change, credential edit, event-trigger activation or cron accompanies this UI fix.
+The actual user's readiness booleans and device receipt still require their private
+browser session. A wait cursor alone does not establish a slow server or bad keys.

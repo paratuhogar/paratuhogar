@@ -14,7 +14,7 @@ const root=path.resolve(__dirname,'..');
  });
  const initialPermission=await page.evaluate(()=>Notification.permission);
  await page.goto('http://127.0.0.1:8080/notifications.html');
- if(role==='admin'){await page.getByRole('status').filter({hasText:'aún no están habilitadas'}).waitFor({timeout:5000}).catch(async e=>{throw Error(e.message+' '+await page.locator('body').innerText());});assert.equal(await page.getByRole('button',{name:'Activar notificaciones',exact:true}).isDisabled(),true);}
+ if(role==='admin'){await page.getByRole('status').filter({hasText:'aún no están habilitadas'}).waitFor({timeout:5000}).catch(async e=>{throw Error(e.message+' '+await page.locator('body').innerText());});assert.equal(await page.getByRole('button',{name:'Activar notificaciones',exact:true}).isVisible(),false);assert.equal(await page.getByRole('button',{name:'Volver a comprobar'}).evaluate(e=>getComputedStyle(e).cursor),'pointer');}
  else await page.locator('#push-settings').filter({hasText:'Entra con tu cuenta de administración'}).waitFor();
  assert.equal(requests.some(p=>p==='/service-worker.js'),false);assert.equal(await page.evaluate(()=>Notification.permission),initialPermission);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);console.log(`PASS actual notifications page ${role}: authenticated settings, disabled, no registration/prompt, mobile`);await page.close();

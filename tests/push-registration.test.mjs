@@ -19,3 +19,12 @@ test('already activated current worker returns immediately; failed installation 
  const broken=new EventTarget();broken.installing=new Worker('20261001-push1','installing');
  const pending=adminPushRegistration({register:async()=>broken});await new Promise(resolve=>setImmediate(resolve));broken.installing.change('redundant');await assert.rejects(pending,/installation failed/);
 });
+test('browser register and worker activation have bounded waits; late resolution does not activate after timeout',async()=>{
+ let settle;
+ const pending=adminPushRegistration({register:()=>new Promise(resolve=>settle=resolve)},{timeoutMs:20});
+ await assert.rejects(pending,/unavailable/);
+ const late=new EventTarget();late.waiting=new Worker('20261001-push1','installed');settle(late);
+ await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(late.waiting.messages,[]);
+ const waiting=new EventTarget();waiting.installing=new Worker('20261001-push1','installing');
+ await assert.rejects(adminPushRegistration({register:async()=>waiting},{timeoutMs:20}),/unavailable/);
+});
