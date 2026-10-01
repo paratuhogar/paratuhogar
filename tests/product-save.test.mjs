@@ -1,10 +1,11 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
 // Execute the actual form listener and secure adapter; mock only DOM and transport.
-const source = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const source = readStorefront();
 const start = source.indexOf("document.getElementById('form-nuevo-prod').addEventListener('submit', async function(e) {");
 assert.ok(start > 0);
 const listener = source.slice(start, source.indexOf('// Función mágica de compresión', start));

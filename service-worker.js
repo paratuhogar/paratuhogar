@@ -1,14 +1,23 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-09-30-catalogue1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-01-fast1';
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20260930-catalogue1';
+const PTH_SHELL_URL = '/index.html?v=20261001-fast1';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
-  '/js/secure-data.js?v=20260930-catalogue1',
+  '/js/secure-data.js?v=20261001-announcement1',
+  '/js/storefront.js?v=20261001-fast1',
+  '/js/storefront-extras.js?v=20261001-fast1',
+  '/js/internal-assets.js?v=20261001-fast1',
+  '/js/product-availability-form.js?v=20260924-1',
+  '/js/product-description-editor.js?v=20260924-1',
+  '/js/checkout-submit-guard.js?v=20260918-1',
+  '/js/feedback-announcement.js?v=20261001-1',
+  '/css/feedback-announcement.css?v=20261001-1',
+  '/css/work-navigation.css?v=20261001-1',
   '/js/admin-work-view.js?v=20260930-admins2',
   '/manifest.webmanifest',
-  '/css/tailwind.min.css?v=2026-08-02',
+  '/css/tailwind.min.css?v=20261001-fast1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=2026-08-02',
   '/js/pwa.js?v=2026-08-02-pwa6',

@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 
 test('los consecutivos se reservan de forma atómica y se reutilizan en el pedido', async () => {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const squadron = await readFile(new URL('sistema-escuadron.js', root), 'utf8');
   const sql = await readFile(
     new URL('supabase/migrations/20260909_consecutivos_pedidos_atomicos.sql', root),

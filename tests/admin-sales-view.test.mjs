@@ -1,9 +1,10 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const html = readStorefront();
 const controllerPath = new URL('../js/admin-work-view.js', import.meta.url);
 const angel = { id: 'angel-id', nombre: 'Angel Rodriguez', rol: 'superadmin', parent_id: null, password: '__session__' };
 

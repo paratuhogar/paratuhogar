@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const html=require('./read-storefront.cjs')();
 const nav=html.match(/<nav id="admin-nav"[\s\S]*?<\/nav>/)[0];
 const start=html.indexOf('function showSection(section)');
 const showSection=html.slice(start,html.indexOf('// GESTORES',start));

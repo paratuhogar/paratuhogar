@@ -1,4 +1,5 @@
 const colors = ['cyan', 'orange', 'blue', 'indigo', 'emerald', 'purple'];
+const payoutColors = ['amber', 'blue', 'emerald', 'violet'];
 
 module.exports = {
   darkMode: 'class',
@@ -6,7 +7,10 @@ module.exports = {
     './index.html',
     './admin-stats.js',
     './subgestor-tutorial.js',
-    './js/client-followup.js'
+    './system-events.js',
+    './sistema-escuadron.js',
+    // Include lazy modules too: production no longer generates utilities in the browser.
+    './js/**/*.{js,mjs}'
   ],
   safelist: [
     ...colors.flatMap(color => [
@@ -14,6 +18,13 @@ module.exports = {
       `bg-${color}-500`,
       `bg-${color}-900/10`,
       `text-${color}-400`
+    ]),
+    // These utilities are assembled from the payout summary's finite color palette.
+    ...payoutColors.flatMap(color => [
+      `border-${color}-100`,
+      `bg-${color}-50`,
+      `text-${color}-700`,
+      `text-${color}-950`
     ])
   ],
   theme: {

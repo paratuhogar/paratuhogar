@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 
 test('la asignación masiva conserva un ocultamiento explícito y vuelve visible un registro sin decisión previa', async () => {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const source = html.match(/async function autoAssignHalfCommissions\(\)[\s\S]*?\n    \}\n\n\n\/\/ =====================================================/);
 
   assert.ok(source, 'No se encontró la asignación masiva de comisiones');

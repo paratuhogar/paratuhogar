@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -6,7 +7,7 @@ import vm from 'node:vm';
 const root = new URL('../', import.meta.url);
 
 async function formatSubgestorWhatsappSummary({ parentName, subgestorName, totalCommission }) {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const source = html.match(/function buildSubgestorWhatsappSummary\([\s\S]*?\n\}/)?.[0];
   assert.ok(source, 'No se encontró el formato privado para avisos de subgestor');
 
@@ -34,7 +35,7 @@ test('el aviso de WhatsApp de subgestor muestra comercial y total sin revelar el
   assert.doesNotMatch(message, /Comisión gestor principal:/);
 });
 test('checkout passes only the assigned commission, never the complete pool',async()=>{
- const html=await readFile(new URL('index.html',root),'utf8');
+ const html=readStorefront();
  assert.match(html,/buildSubgestorWhatsappSummary\(orderSubgestor, comisionTotalVale\)/);
  assert.doesNotMatch(html,/buildSubgestorWhatsappSummary\(orderSubgestor, comisionOriginalPoolVale\)/);
 });

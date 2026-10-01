@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -21,7 +22,7 @@ function extractFunction(source, name) {
 }
 
 test('un pedido ya incluido en una solicitud activa no vuelve a estar disponible', async () => {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const source = [
     extractFunction(html, 'isCommissionPaid'),
     extractFunction(html, 'getOrderCommission'),

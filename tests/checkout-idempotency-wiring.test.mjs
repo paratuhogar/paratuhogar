@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 
 test('el checkout bloquea reenvíos y conserva una clave idempotente por proveedor', async () => {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const subgestores = await readFile(new URL('subgestores.html', root), 'utf8');
   const migration = await readFile(
     new URL('supabase/migrations/20260918_checkout_idempotencia.sql', root),

@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 
 test('el frontend no muestra ni ejecuta el temporizador de baja por inactividad', async () => {
-  const index = await readFile(new URL('index.html', root), 'utf8');
+  const index = readStorefront();
   const master = await readFile(new URL('master.html', root), 'utf8');
   const squad = await readFile(new URL('sistema-escuadron.js', root), 'utf8');
 

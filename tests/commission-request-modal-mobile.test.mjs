@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 
 async function commissionRequestModalMarkup() {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const match = html.match(/<div id="commission-request-modal" class="([^"]+)">\s*<div class="([^"]+)"/);
   assert.ok(match, 'No se encontró el modal de solicitud de cobro');
   return { overlayClasses: match[1], dialogClasses: match[2] };

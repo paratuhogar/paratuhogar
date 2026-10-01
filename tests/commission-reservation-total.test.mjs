@@ -1,3 +1,4 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -6,7 +7,7 @@ import vm from 'node:vm';
 const root = new URL('../', import.meta.url);
 
 async function activeReservationTotal(requests) {
-  const html = await readFile(new URL('index.html', root), 'utf8');
+  const html = readStorefront();
   const source = html.match(/function getActiveCommissionReservationTotal\([\s\S]*?\n\}/)?.[0];
   assert.ok(source, 'No se encontró el cálculo de saldo reservado de comisiones');
   const context = { requests };

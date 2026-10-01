@@ -1,8 +1,9 @@
+import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readStorefront();
 const start=html.indexOf('let productsLoadInProgress = false;');
 const code=html.slice(start,html.indexOf('// --- FUNCIONES DE APOYO PARA EL RASTREO IP ---',start));
 const renderStart=html.indexOf('const CATALOG_PAGE_SIZE = 24;');
