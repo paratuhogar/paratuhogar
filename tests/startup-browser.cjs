@@ -8,7 +8,7 @@ const products=Array.from({length:30},(_,i)=>({id:'p'+i,nombre:'Nevera prueba '+
 const parent={id:'11111111-1111-4111-8111-111111111111',nombre:'Gestor Prueba',rol:'gestor',estado:'activo',telefono:'5350000000',password:'__session__'};
 const child={...parent,id:'22222222-2222-4222-8222-222222222222',nombre:'Sub Prueba',parent_id:parent.id,parent_nombre:parent.nombre};
 const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'v1'}:[];if(single&&Array.isArray(data))data=null;return Promise.resolve({data,error:null,count:0}).then(ok,no)}};for(const name of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[name]=()=>q;for(const name of ['single','maybeSingle'])q[name]=()=>{single=true;return q};return q;},rpc(){return Promise.resolve({data:[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};`;
-(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+(async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  for(const role of (baseline?['visitor']:['visitor','gestor','subgestor'])){
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:parent;
  page.on('pageerror',e=>errors.push(e.message));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
@@ -21,6 +21,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  if(b.action==='login')data={token:'a'.repeat(64),profile:parent};
  else if(b.action==='announcement')data={acknowledged:true};
  else if(b.action==='query'){
+  try{validateQuery(b,req.headers().authorization?profile:null);}catch(e){return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({data:null,error:{message:e.message}})});}
   if(b.table==='productos'){productsAfterHero=heroFinished;}
   if(b.table==='productos')data=products.map(p=>({...p,comision:!req.headers().authorization?0:role==='subgestor'?15:50}));
   if(b.table==='gestores')data=[parent,child];

@@ -1627,7 +1627,7 @@ async function loadProducts() {
         const cacheTimeKey = 'pth_catalogo_cache_time' + window.PTHSecureData.cacheSuffix();
         const cacheLocalKey = 'pth_ultimo_cambio_productos' + window.PTHSecureData.cacheSuffix();
         const catalogSchemaKey = 'pth_catalogo_schema_version';
-        const catalogSchemaVersion = 'catalogue-light-description-v1';
+        const catalogSchemaVersion = 'catalogue-gateway-compatible-v2';
 
         // Fuerza una sola actualización cuando la estructura del catálogo incorpora
         // campos nuevos, sin aumentar las consultas en las visitas posteriores.
@@ -1659,7 +1659,10 @@ async function loadProducts() {
             // Descargar catálogo completo de Supabase sólo si es estrictamente necesario
             const { data, error } = await supabaseClient
                 .from('productos')
-                .select('id,nombre,precio,comision,thumbnail,image1,image2,image3,categoria,mensajeria,disponible,garantia,pagos,vistas,created_at,proveedor,precio_flexible,costo_proveedor,cup_extra,tamaño_envio,ficha_pdf,ficha_pdf_nombre,ficha_pdf_idioma,inventario_actualizado_en,slug,seo_title,seo_description')
+                // Gateway v7 accepts ASCII identifiers only. Keep its supported
+                // wildcard so tamaño_envio and all required fields remain present.
+                // Server projectRow still removes fields unauthorized for this actor.
+                .select('*')
                 .order('nombre', { ascending: true });
 
             if (error) throw error;

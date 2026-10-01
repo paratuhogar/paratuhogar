@@ -1,5 +1,14 @@
 # Catalogue performance phase 2 — 2026-10-01
 
+**Production correction:** the initial projection was rolled back to the supported
+`select('*')` after the public browser exposed gateway v7's rejection of the
+non-ASCII `tamaño_envio` identifier. Role-based server projection stays unchanged.
+The initial description-payload reduction described below is therefore withdrawn;
+images/cache/diagnostics remain. Cache schema and entrypoint versions were bumped.
+New tests validate the actual source query against the real gateway parser, and
+the full-page browser fixture now invokes that parser before serving mock data.
+Earlier mocks had accepted the incompatible projection and missed this failure.
+
 Baseline: `1757a756b993efb34b46ad9613a8fefb432acb1a` on the existing
 `paratuhogar/paratuhogar` main/root publication source for `paratuhogar.org`.
 Static frontend only. Gateway v7, database, authorization, prices, commissions,
