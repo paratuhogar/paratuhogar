@@ -9,7 +9,7 @@ Only the presence of Vault name `pth_push_dispatch_secret` has been checked.
 - Project: `ljqwaovevfatkiigirhf` (existing ParaTuHogar project).
 - Preparation: `20261001221521_admin_web_push_disabled_preparation`.
 - Queue machinery: `20261001225441_admin_web_push_dispatch_machinery_disabled`.
-- `secure-data` v10 and `admin-push-dispatch` v2 are ACTIVE. Both implement custom
+- `secure-data` v12 and `admin-push-dispatch` v3 are ACTIVE. Both implement custom
   authentication; the gateway preserves its existing opaque-session behavior.
 - Three private tables have RLS, no browser grants and no browser policies.
   Service role has CRUD, without TRUNCATE. The lease RPC is executable only by

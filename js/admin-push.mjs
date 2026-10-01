@@ -41,7 +41,18 @@ export async function mountAdminPush(host,adapter,env=window){
   // Read only: paused delivery must still let this browser unsubscribe.
   subscription=await adapter.existing?.()||null;if(!current()){reset();return cleanup;}
   if(subscription)disable.hidden=false;
-  if(config?.enabled!==true){status.textContent='Las notificaciones aún no están habilitadas. Puedes seguir revisando el panel.';return cleanup;}
+  if(config?.enabled!==true){
+   const ready=config?.readiness;
+   const reason=ready?[
+    ['deliveryReady','El servicio de notificaciones todavía se está preparando.'],
+    ['switchOn','El interruptor de notificaciones sigue apagado en el servidor.'],
+    ['publicKeyValid','El servidor no reconoce la clave pública de notificaciones guardada.'],
+    ['privateKeyValid','El servidor no reconoce la clave privada de notificaciones guardada.'],
+    ['dispatchSecretValid','El servidor no reconoce el secreto de envío guardado.'],
+    ['subjectValid','La identificación del servicio no coincide con la de ParaTuHogar.'],
+   ].find(([key])=>ready[key]===false)?.[1]:null;
+   status.textContent=reason||'Las notificaciones aún no están habilitadas. Puedes seguir revisando el panel.';return cleanup;
+  }
   const reason=capability(env);if(reason){status.textContent=reason;return cleanup;}
   keyBytes(config.publicKey);
   for(const [kind,label] of [['orders','Pedidos nuevos'],['suggestions','Mejoras nuevas']])if(config.allowedTopics?.includes(kind)){

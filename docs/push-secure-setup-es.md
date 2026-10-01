@@ -71,7 +71,7 @@ El usuario ya generó y guardó las claves y el secreto de Vault. No repitas eso
 pasos ni regeneres claves para esta instalación. El nombre de Vault está
 verificado; sus valores no se han leído.
 
-El backend está integrado: `secure-data` v10 y `admin-push-dispatch` v2.
+El backend está integrado: `secure-data` v12 y `admin-push-dispatch` v3.
 La sección **Notificaciones** permite elegir los avisos autorizados, activar este
 dispositivo, enviar una prueba explícita y desactivar los avisos. Se mantienen
 apagados los dos disparadores y no existe una tarea automática de envío.

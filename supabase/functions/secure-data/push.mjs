@@ -2,12 +2,17 @@ import {allowedPushTopics} from './push-policy.mjs';
 const fail=(message,status=403)=>{throw Object.assign(Error(message),{status});};
 // Explicit server configuration stays off by default. Keys alone cannot enable it.
 export const PUSH_DELIVERY_READY=true;
+export function pushReadiness(env={}){
+ // Boolean diagnostics only. Never expose values, lengths, hashes or prefixes.
+ return {deliveryReady:PUSH_DELIVERY_READY,switchOn:env.PTH_PUSH_ENABLED==='true',
+  publicKeyValid:/^[A-Za-z0-9_-]{87}$/.test(env.PTH_PUSH_VAPID_PUBLIC_KEY||''),
+  privateKeyValid:/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_VAPID_PRIVATE_KEY||''),
+  dispatchSecretValid:/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_DISPATCH_SECRET||''),
+  subjectValid:env.PTH_PUSH_VAPID_SUBJECT==='https://paratuhogar.org'};
+}
 export function pushConfiguration(env={}){
- const prepared=/^[A-Za-z0-9_-]{87}$/.test(env.PTH_PUSH_VAPID_PUBLIC_KEY||'')
-  &&/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_VAPID_PRIVATE_KEY||'')
-  &&/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_DISPATCH_SECRET||'')
-  &&env.PTH_PUSH_VAPID_SUBJECT==='https://paratuhogar.org';
- return {configured:prepared,enabled:PUSH_DELIVERY_READY&&prepared&&env.PTH_PUSH_ENABLED==='true'};
+ const ready=pushReadiness(env),prepared=ready.publicKeyValid&&ready.privateKeyValid&&ready.dispatchSecretValid&&ready.subjectValid;
+ return {configured:prepared,enabled:ready.deliveryReady&&prepared&&ready.switchOn};
 }
 export function validatePushEndpoint(value){
  let url;try{url=new URL(value);}catch(_){fail('Suscripción no válida.',400);}
@@ -21,7 +26,8 @@ export function validatePushEndpoint(value){
 export async function pushSettings(db,body,actor,sessionHash,env={},dispatchPilot){
  const allowed=allowedPushTopics(actor);if(!allowed.length)fail('Tu cuenta no tiene notificaciones administrativas.');
  const state=pushConfiguration(env);
- if(body.operation==='config')return {data:{...state,allowedTopics:allowed,publicKey:state.enabled?env.PTH_PUSH_VAPID_PUBLIC_KEY:null},error:null};
+ if(body.operation==='config')return {data:{...state,allowedTopics:allowed,publicKey:state.enabled?env.PTH_PUSH_VAPID_PUBLIC_KEY:null,
+  ...(allowed.includes('suggestions')?{readiness:pushReadiness(env)}:{})},error:null};
  if(body.operation==='status'){
   const endpoint=validatePushEndpoint(body.endpoint);
   const {data,error}=await db.from('pth_push_subscriptions').select('topics,expires_at').eq('endpoint',endpoint).eq('gestor_id',actor.id).eq('session_hash',sessionHash).is('revoked_at',null).gt('expires_at',new Date().toISOString()).maybeSingle();

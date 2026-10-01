@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pushSettings,pushConfiguration,validatePushEndpoint} from '../supabase/functions/secure-data/push.mjs';
+import {OWNER_IDS} from '../supabase/functions/secure-data/policy.mjs';
 const actor={id:'admin',rol:'admin',estado:'activo'};
 const enabledEnv={PTH_PUSH_VAPID_PUBLIC_KEY:'a'.repeat(87),PTH_PUSH_VAPID_PRIVATE_KEY:'b'.repeat(43),PTH_PUSH_DISPATCH_SECRET:'c'.repeat(43),PTH_PUSH_VAPID_SUBJECT:'https://paratuhogar.org',PTH_PUSH_ENABLED:'true'};
 const endpoint='https://fcm.googleapis.com/synthetic';
@@ -28,6 +29,17 @@ test('backend stays disabled when configuration explicitly disables it; no priva
  assert.deepEqual(result.data,{configured:true,enabled:false,allowedTopics:['orders'],publicKey:null});
  assert.doesNotMatch(JSON.stringify(result),/b{43}|c{43}/);
  await assert.rejects(pushSettings(db,{operation:'save'},actor,'hash',env),/no están habilitadas/);
+});
+test('existing review owner gets per-condition booleans only; ordinary admins do not receive diagnostics',async()=>{
+ const owner={...actor,id:[...OWNER_IDS][0]},db={from:()=>assert.fail('no diagnostic database reads')};
+ for(const [name,check] of [['PTH_PUSH_ENABLED','switchOn'],['PTH_PUSH_VAPID_PUBLIC_KEY','publicKeyValid'],['PTH_PUSH_VAPID_PRIVATE_KEY','privateKeyValid'],['PTH_PUSH_DISPATCH_SECRET','dispatchSecretValid'],['PTH_PUSH_VAPID_SUBJECT','subjectValid']]){
+  const env={...enabledEnv,[name]:'invalid'};
+  const result=await pushSettings(db,{operation:'config'},owner,'hash',env);
+  assert.equal(result.data.enabled,false);assert.equal(result.data.readiness[check],false);
+  assert.ok(Object.values(result.data.readiness).every(v=>typeof v==='boolean'));
+  assert.doesNotMatch(JSON.stringify(result),/invalid|b{43}|c{43}|a{87}/);
+ }
+ assert.equal((await pushSettings(db,{operation:'config'},actor,'hash',enabledEnv)).data.readiness,undefined);
 });
 test('endpoint validator refuses redirects/private targets, credentials, fragments and lookalike domains',()=>{
  for(const url of ['http://fcm.googleapis.com/push','https://127.0.0.1/push','https://fcm.googleapis.com.evil.test/push','https://user:pass@fcm.googleapis.com/push','https://web.push.apple.com/push#secret','https://fcm.googleapis.com:8443/push'])assert.throws(()=>validatePushEndpoint(url));

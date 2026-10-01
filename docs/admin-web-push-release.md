@@ -14,7 +14,7 @@ main branch/root, domain `paratuhogar.org`. Source publication is separate from
 public Pages verification; the parent performs browser checks and updates its Mac
 clone by fast-forward. No local Mac or private setup folder is accessed here.
 
-Backend deployed: secure-data v10, admin-push-dispatch v2. Migrations applied:
+Backend deployed: secure-data v12 (private readiness diagnostics), admin-push-dispatch v3 (same dispatcher source; secret save refreshed its version). Migrations applied:
 20261001221521 and 20261001225441. Exact SQL is in `supabase/proposals/`.
 The dispatch migration added fanout/lease columns, indexes and a service-only
 invoker RPC. Preparation triggers remain disabled and no push cron exists.
@@ -24,8 +24,8 @@ Rollback gateway snapshot before this release is preserved outside the repo at
 ## Readiness without secrets
 
 Use the current authenticated administrative session to request config through
-`PTHSecureData.push({operation:'config'})`. Inspect only `configured`, `enabled`
-and `allowedTopics`; do not print tokens or private browser subscription keys.
+`PTHSecureData.push({operation:'config'})`. Inspect only `configured`, `enabled`, `allowedTopics` and the owner-only
+`readiness` boolean object; do not print tokens or private browser subscription keys.
 Before the pilot, expected booleans are configured=true and enabled=false.
 A false configured flag means the user's secret setup needs correction in the
 Supabase UI; it does not authorize the agent to read any values.
@@ -79,3 +79,24 @@ and real encryption runtime using deterministic synthetic fixtures only.
 Live database grants, disabled triggers, no cron and empty service-role claims
 are checked. Deployment source matches reviewed files. Actual user device receipt
 and public Pages delivery remain parent/user verification, not claimed here.
+
+## Pilot configuration diagnosis
+
+The owner-only config response now identifies each disabled predicate using only
+booleans: deliveryReady, switchOn, publicKeyValid, privateKeyValid,
+dispatchSecretValid and subjectValid. Ordinary administrators retain the original
+config response without this detail; anonymous and non-administrative accounts
+remain denied. No values, lengths, prefixes or hashes are returned.
+
+The refreshed settings module (`push2`) displays the first failed condition in
+plain Spanish. Reload `notifications.html?check=push2` after Pages serves this
+release. Do not change or regenerate keys before reading this safe result.
+If switchOn is false, check only PTH_PUSH_ENABLED in the same project. If a key or
+dispatch predicate is false, correct only that named field from the user's existing
+private setup file through Supabase UI. If subjectValid is false, the public
+subject must be exactly https://paratuhogar.org. The agent does not read any of
+those stored values. Real current booleans require the user's authenticated
+browser; the environment has no such session and does not extract one.
+
+158 Node tests and focused browser checks pass for this diagnostic addition.
+Triggers and cron remain disabled throughout diagnosis.
