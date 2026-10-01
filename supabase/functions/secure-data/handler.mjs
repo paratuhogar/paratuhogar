@@ -188,9 +188,16 @@ async function dataQuery(db,body,actor) {
   if(error) return {data:null,error:{message:error.message,code:error.code},count:null};
   let assigned=new Map();
   if(table==='productos'&&actorKind(actor)==='subgestor'&&data?.length) {
-    const {data:prices,error:priceError}=await db.from('precios_personalizados').select('producto_id,nuevo_precio,comision_subgestor,visible_subgestor').eq('gestor',actor.parent_nombre).in('producto_id',data.map(p=>p.id));
-    if(priceError) fail('No se pudo consultar tu comisión asignada.',503);
-    assigned=new Map((prices||[]).map(p=>[p.producto_id,p]));
+    // Bound UUID IN filters so large catalogues stay within gateway URL limits.
+    const productIds=[...new Set(data.map(p=>p.id))];
+    for(let offset=0;offset<productIds.length;offset+=100) {
+      const {data:prices,error:priceError}=await db.from('precios_personalizados')
+        .select('producto_id,nuevo_precio,comision_subgestor,visible_subgestor')
+        .eq('gestor',actor.parent_nombre)
+        .in('producto_id',productIds.slice(offset,offset+100));
+      if(priceError)fail('No se pudo consultar tu comisión asignada.',503);
+      for(const price of prices||[])assigned.set(price.producto_id,price);
+    }
   }
   let rows=(data||[]).filter(row=>!(table==='productos'&&actorKind(actor)==='subgestor'&&assigned.get(row.id)?.visible_subgestor===false)).map(row=>projectRow(table,row,actor,assigned)).filter(Boolean).map(row=>pick(row,body.columns));
   if(body.single) {
