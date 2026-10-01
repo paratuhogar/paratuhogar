@@ -1,6 +1,8 @@
 -- PROPOSAL ONLY. Do not execute before specific database/access approval.
 -- No customer values, titles, report text, screenshots, or bearer tokens stored.
 begin;
+set local lock_timeout='3s';
+set local statement_timeout='30s';
 create table public.pth_push_subscriptions (
  id uuid primary key default gen_random_uuid(),
  gestor_id uuid not null references public.gestores(id) on delete cascade,
@@ -54,6 +56,9 @@ $$;
 revoke all on function public.pth_enqueue_admin_push() from public,anon,authenticated,service_role;
 create trigger pth_push_new_order after insert on public.pedidos for each row execute function public.pth_enqueue_admin_push();
 create trigger pth_push_new_suggestion after insert on public.pth_feedback for each row execute function public.pth_enqueue_admin_push();
+-- Preparation release: no order/report event is collected before activation.
+alter table public.pedidos disable trigger pth_push_new_order;
+alter table public.pth_feedback disable trigger pth_push_new_suggestion;
 -- No backfill, no cart events, no update trigger, no second trigger for
 -- pedidos_subgestores: notification occurs once when approved into pedidos.
 -- Scheduler, lease RPC, Vault/Edge secrets and dispatcher are separate gated work.

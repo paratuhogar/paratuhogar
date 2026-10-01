@@ -6,6 +6,9 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),path=require('n
  create table public.pedidos(id uuid primary key);create table public.pth_feedback(id uuid primary key,kind text);
  alter default privileges in schema public grant all on tables to anon,authenticated,service_role;`);
  await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/proposals/admin-web-push.sql'),'utf8'));
+ const disabled=await db.query("select tgenabled from pg_trigger where tgname in ('pth_push_new_order','pth_push_new_suggestion')");assert.ok(disabled.rows.every(r=>r.tgenabled==='D'));
+ // Local activation simulation only; production remains disabled.
+ await db.exec('alter table pedidos enable trigger pth_push_new_order;alter table pth_feedback enable trigger pth_push_new_suggestion;');
  for(const role of ['anon','authenticated']){
   const result=await db.query(`select has_table_privilege($1,'public.pth_push_subscriptions','select') as allowed`,[role]);assert.equal(result.rows[0].allowed,false);
  }

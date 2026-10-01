@@ -1,8 +1,17 @@
 # Admin Web Push: prepared, NOT activated
 
+Update after explicit user approval: preparation migration
+`20261001221521_admin_web_push_disabled_preparation` applied and secure-data v8
+deployed. Tables have RLS and no browser grants; both INSERT triggers are DISABLED.
+The settings backend has an additional code-level false readiness flag, so secrets
+alone cannot enable delivery. No credentials, subscriptions or cron created.
+141 Node tests plus local PostgreSQL and real grants/trigger-state checks pass.
+See `docs/push-secure-setup-es.md` for user-operated setup. The sections below
+describe the approved design and remaining activation work, not an active service.
+
 Stable published main: `b801001e60a23a3265a82bafe712931a521c8eee`.
-Draft branch: `feature/admin-push-preparation`. No credentials generated, no
-database changes, no subscriptions, no real notification sent. Draft component,
+Development branch: `feature/admin-push-preparation`. No credentials generated,
+no subscriptions, no real notification sent. Prepared component,
 worker handler and policy are deliberately not imported into production entrypoints.
 
 ## Inspection
@@ -16,7 +25,7 @@ Secret values were not read; available connectors expose no secret-management
 action, so unused remote VAPID configuration cannot be ruled out or configured here.
 Do not extract management tokens or reuse unknown secrets to bypass this limitation.
 
-## Exact approval required
+## Approved configuration scope
 
 1. Apply reviewed `supabase/proposals/admin-web-push.sql`: three private tables
    (device subscriptions, minimal event queue, per-device delivery records), RLS
@@ -94,6 +103,6 @@ and disable. Permission and push services are mocked; no real subscriptions.
 Local PGlite executes the proposed SQL to verify RLS/grants, INSERT-only events,
 improvement-only filtering, duplicate suppression and transaction rollback.
 
-Production migration/credential/dispatcher/cron activation remains blocked on the
-specific approval above and authorized secret setup. Keep stable main available
+Specific approval has been received. Credential setup still requires the user's
+secure entry; dispatcher/cron and frontend activation remain incomplete. Keep main available
 for the separate Mac clone. No Mac files are touched by this branch.

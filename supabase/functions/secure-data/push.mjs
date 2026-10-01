@@ -1,0 +1,48 @@
+import {allowedPushTopics} from './push-policy.mjs';
+const fail=(message,status=403)=>{throw Object.assign(Error(message),{status});};
+// Remains false until dispatcher + authenticated deep links + end-to-end pilot
+// are implemented and verified. Entering secrets alone cannot activate delivery.
+export const PUSH_DELIVERY_READY=false;
+export function pushConfiguration(env={}){
+ const prepared=/^[A-Za-z0-9_-]{87}$/.test(env.PTH_PUSH_VAPID_PUBLIC_KEY||'')
+  &&/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_VAPID_PRIVATE_KEY||'')
+  &&/^[A-Za-z0-9_-]{43}$/.test(env.PTH_PUSH_DISPATCH_SECRET||'')
+  &&env.PTH_PUSH_VAPID_SUBJECT==='https://paratuhogar.org';
+ return {configured:prepared,enabled:PUSH_DELIVERY_READY&&prepared&&env.PTH_PUSH_ENABLED==='true'};
+}
+export function validatePushEndpoint(value){
+ let url;try{url=new URL(value);}catch(_){fail('Suscripción no válida.',400);}
+ const host=url.hostname;
+ const allowed=['fcm.googleapis.com','web.push.apple.com'].includes(host)
+  ||/^(?:[a-z0-9-]+\.)*push\.services\.mozilla\.com$/.test(host)
+  ||/^[a-z0-9-]+\.notify\.windows\.com$/.test(host);
+ if(typeof value!=='string'||value.length>2048||url.protocol!=='https:'||url.port||url.username||url.password||url.hash||!allowed)fail('Servicio de notificaciones no permitido.',400);
+ return url.href;
+}
+export async function pushSettings(db,body,actor,sessionHash,env={}){
+ const allowed=allowedPushTopics(actor);if(!allowed.length)fail('Tu cuenta no tiene notificaciones administrativas.');
+ const state=pushConfiguration(env);
+ if(body.operation==='config')return {data:{...state,allowedTopics:allowed,publicKey:state.enabled?env.PTH_PUSH_VAPID_PUBLIC_KEY:null},error:null};
+ if(body.operation==='remove'){
+  const endpoint=validatePushEndpoint(body.endpoint);
+  const {error}=await db.from('pth_push_subscriptions').delete().eq('endpoint',endpoint).eq('gestor_id',actor.id).eq('session_hash',sessionHash);
+  if(error)fail('No se pudo confirmar la desactivación.',503);
+  return {data:{removed:true},error:null};
+ }
+ if(body.operation!=='save')fail('Operación no permitida.');
+ if(!state.enabled)fail('Las notificaciones todavía no están habilitadas.',503);
+ const input=body.subscription,keys=input?.keys;
+ const endpoint=validatePushEndpoint(input?.endpoint);
+ if(!keys||!/^[A-Za-z0-9_-]{87}$/.test(keys.p256dh||'')||!/^[A-Za-z0-9_-]{22}$/.test(keys.auth||''))fail('Claves de suscripción no válidas.',400);
+ if(!Array.isArray(body.topics)||!body.topics.length||body.topics.length>2||body.topics.some(topic=>!allowed.includes(topic)))fail('Estos avisos no corresponden a tu cuenta.');
+ const {data:session,error:sessionError}=await db.from('pth_secure_sessions').select('gestor_id,expires_at').eq('token_hash',sessionHash).eq('gestor_id',actor.id).maybeSingle();
+ if(sessionError||!session||Date.parse(session.expires_at)<=Date.now())fail('La sesión cambió. Vuelve a entrar.',401);
+ const {data:existing,error:readError}=await db.from('pth_push_subscriptions').select('id,gestor_id,session_hash').eq('endpoint',endpoint).maybeSingle();
+ if(readError)fail('No se pudo comprobar la suscripción.',503);
+ // Never reassign another actor/session's subscription through an upsert.
+ if(existing&&(existing.gestor_id!==actor.id||existing.session_hash!==sessionHash))fail('Desactiva la suscripción anterior en este navegador antes de volver a activarla.',409);
+ const values={gestor_id:actor.id,session_hash:sessionHash,endpoint,p256dh:keys.p256dh,auth:keys.auth,topics:[...new Set(body.topics)],expires_at:session.expires_at,revoked_at:null};
+ const result=existing?await db.from('pth_push_subscriptions').update(values).eq('id',existing.id).eq('gestor_id',actor.id).eq('session_hash',sessionHash):await db.from('pth_push_subscriptions').insert(values);
+ if(result.error)fail('No se confirmó la suscripción. Vuelve a intentarlo.',503);
+ return {data:{saved:true,expiresAt:session.expires_at},error:null};
+}

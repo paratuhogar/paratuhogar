@@ -1,5 +1,6 @@
 import {announcement} from './announcement.mjs';
 import {feedback} from './feedback.mjs';
+import {pushSettings} from './push.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
@@ -221,7 +222,7 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db}) {
+export function createHandler({db,pushEnv={}}) {
   return async request=>{
     const origin=request.headers.get('Origin');
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
@@ -242,6 +243,7 @@ export function createHandler({db}) {
       else if(body.action==='logout') {if(bearer) await db.from('pth_secure_sessions').delete().eq('token_hash',await hash(bearer));result={data:null,error:null};}
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
+      else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv);
       else if(body.action==='query') result=await dataQuery(db,body,actor);
       else if(body.action==='rpc') result=await rpcQuery(db,body,actor);
       else fail('Operación no permitida.');
