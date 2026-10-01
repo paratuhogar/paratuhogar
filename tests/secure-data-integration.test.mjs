@@ -57,3 +57,12 @@ test('failure in a later assigned-price batch does not return base manager commi
  assert.equal(response.status,503);assert.equal(response.data,null);
  assert.match(response.error.message,/comisión asignada/);
 });
+
+for(const size of [0,100,101,1000,2000])test(`subgestor catalogue handles ${size} products including unassigned items`,async()=>{
+ const {request,rows}=await setup({maxPriceIds:100});
+ rows.productos=Array.from({length:size},(_,i)=>({id:crypto.randomUUID(),precio:100,comision:80,costo_proveedor:20}));
+ rows.precios_personalizados=rows.productos.filter((_,i)=>i%2===0).map(p=>({producto_id:p.id,gestor:'Parent',comision_subgestor:5,visible_subgestor:true}));
+ const response=await request({action:'query',table:'productos',op:'select',limit:2000});
+ assert.equal(response.status,200);assert.equal(response.data.length,size);
+ response.data.forEach((p,i)=>{assert.equal(p.comision,i%2===0?5:0);assert.equal('costo_proveedor' in p,false);});
+});
