@@ -1,6 +1,7 @@
 import {announcement} from './announcement.mjs';
 import {feedback} from './feedback.mjs';
 import {pushSettings} from './push.mjs';
+import {createCheckoutService} from './checkout.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
@@ -102,7 +103,7 @@ async function loginMessenger(db,body){
   if(sessionError)fail('No se pudo iniciar la sesión.',503);
   return {token,profile:{id:driver.id,nombre:driver.nombre,telefono:driver.telefono,rol:'mensajero'}};
 }
-async function canonicalSale(db,table,input,actor) {
+async function canonicalSale(db,table,input,actor,checkoutPrices=false) {
   const allowed=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','costo_mensajeria','proveedor','orden_dia','origen','garantia_venta','garantia_dias','submission_token'];
   const row=Object.fromEntries(allowed.filter(key=>Object.hasOwn(input,key)).map(key=>[key,input[key]]));
   const lines=input._lineas;
@@ -148,6 +149,11 @@ async function canonicalSale(db,table,input,actor) {
   row.comision_total=seller?sale.totalCommission:0;
   if(parent) {row.subgestor_id=seller.id;row.subgestor_nombre=seller.nombre;row.parent_gestor_id=parent.id;row.parent_gestor_nombre=parent.nombre;row.comision_subgestor=sale.subCommission;row.estado='Pendiente Aprobacion';delete row.gestor;delete row.origen;}
   else {row.gestor=seller?.nombre||'Venta Directa';delete row.comision_parent;delete row.comision_subgestor;row.estado='Pendiente';row.pago_gestor='Pendiente';}
+  if(checkoutPrices) row._checkout_prices=lines.map(line=>{
+    const product=products.find(p=>p.id===line.producto_id),custom=(prices||[]).find(p=>p.producto_id===line.producto_id);
+    const base=Math.round(Number(product.precio)*100),value=Math.round(Number(custom?.nuevo_precio)*100);
+    return {id:product.id,price:(product.precio_flexible==='SI'&&Number.isFinite(value)&&value>=base?value:base)/100,garantia:product.garantia};
+  });
   return row;
 }
 async function prepareWrite(db,body,actor) {
@@ -158,6 +164,7 @@ async function prepareWrite(db,body,actor) {
   for(const input of values) {
     scopeFor(body.table,actor,body.op,input);
     let row={...input};
+    if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'&&String(row.submission_token||'').startsWith('pthn1.')&&!row._approval_id) fail('Usa la confirmación de pedidos nuevos para esta clave.');
     if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert') row=await canonicalSale(db,body.table,row,actor);
     if(body.table==='gestores'&&body.op==='insert'&&kind!=='admin') {
       if(!row.nombre||!row.telefono||String(row.password||'').length<6) fail('Completa nombre, teléfono y una contraseña de al menos 6 caracteres.');
@@ -224,7 +231,8 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db,pushEnv={},pushPilot}) {
+export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
+  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret});
   return async request=>{
     const origin=request.headers.get('Origin');
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
@@ -236,6 +244,9 @@ export function createHandler({db,pushEnv={},pushPilot}) {
       if(Number(request.headers.get('content-length'))>150000) fail('Solicitud demasiado grande.',413);
       const text=await request.text();if(text.length>150000) fail('Solicitud demasiado grande.',413);
       const body=JSON.parse(text);
+      // A signed new-attempt receipt remains readable after session expiry.
+      // It exposes only its references, never legacy orders or customer fields.
+      if(body.action==='checkout'&&body.operation==='receipt') return new Response(JSON.stringify(await checkout(body,null)),{headers});
       if(body.action==='login') return new Response(JSON.stringify({data:await login(db,body,request),error:null}),{headers});
       if(body.action==='login_messenger') return new Response(JSON.stringify({data:await loginMessenger(db,body),error:null}),{headers});
       const bearer=request.headers.get('Authorization')?.replace(/^Bearer\s+/i,'')||'';
@@ -246,6 +257,7 @@ export function createHandler({db,pushEnv={},pushPilot}) {
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
+      else if(body.action==='checkout') result=await checkout(body,actor);
       else if(body.action==='query') result=await dataQuery(db,body,actor);
       else if(body.action==='rpc') result=await rpcQuery(db,body,actor);
       else fail('Operación no permitida.');

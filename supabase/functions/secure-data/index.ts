@@ -10,4 +10,4 @@ async function pushPilot(body:object){
  });
  return response.ok;
 }
-Deno.serve(createHandler({db,pushEnv,pushPilot}));
+Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}));
