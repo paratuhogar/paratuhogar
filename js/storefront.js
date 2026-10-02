@@ -11205,61 +11205,6 @@ window.filterMyOrders = function() {
 // ==========================================
 
 // 1. BOTÓN TEXTO: Copiado Masivo
-async function legacyCopyCategoryOffersV2() {
-    const btn = document.getElementById('btn-copy-bulk');
-    const originalContent = btn.innerHTML;
-    trackSpy('USO_HERRAMIENTA', 'Copiado Masivo (Texto)');
-
-
-    // Feedback visual de carga
-    btn.innerHTML = `<span class="loader w-4 h-4 border-indigo-600"></span>`;
-
-    try {
-        const gestor = window.gestorName || 'Ventas';
-        // Usamos la variable global productosRaw y activeCategory
-        const products = productosRaw.filter(p => {
-            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-            return matchCat && p.disponible === 'SI';
-        });
-
-        if (products.length === 0) throw new Error("No hay productos visibles en esta categoría.");
-
-        let texto = `🔥 *CATÁLOGO ${activeCategory}* 🔥\n\n`;
-
-        // Generamos links para los primeros 20 productos para no saturar
-        const limit = products.slice(0, 20);
-
-        for (let p of limit) {
-            // Construir link limpio
-            let cleanName = encodeURIComponent(p.nombre.trim());
-            let link = `${window.location.origin}${window.location.pathname}?search=${cleanName}&ref=${encodeURIComponent(gestor)}`;
-
-            // Si tienes la función de link corto, úsala, si no, usa el largo
-            if (typeof getOrGenerateShortLink === 'function') {
-                try { link = await getOrGenerateShortLink(gestor, link); } catch(e){}
-            }
-
-            texto += `▫️ *${p.nombre}*\n💰 $${p.precio} USD\n🔗 ${link}\n\n`;
-        }
-
-        texto += `📲 *Pide aquí:* https://wa.me/${window.currentUserData?.telefono || ''}`;
-
-        await navigator.clipboard.writeText(texto);
-
-        btn.innerHTML = `<span class="material-symbols-outlined text-xl">check</span>`;
-        setTimeout(() => { btn.innerHTML = originalContent; }, 2000);
-
-    } catch (e) {
-        alert(e.message);
-        btn.innerHTML = originalContent;
-    }
-}
-
-// ======================================================
-// COMPOSITOR UNIFICADO: RESPUESTA RÁPIDA + DIFUSIÓN
-// ======================================================
-let salesComposerState = null;
-
 function getProductsVisibleOnScreen() {
     const renderedNames = [...document.querySelectorAll('#productos-container h3')]
         .map(node => node.textContent.trim())
@@ -11282,381 +11227,40 @@ function getProductsVisibleOnScreen() {
     });
 }
 
-function ensureSalesComposerModal() {
-    if (document.getElementById('sales-composer-modal')) return;
-    document.body.insertAdjacentHTML('beforeend', `
-        <div id="sales-composer-modal" class="fixed inset-0 z-[650] hidden overflow-y-auto bg-slate-950/80 backdrop-blur-sm p-3 md:p-6">
-            <div class="mx-auto flex min-h-full w-full max-w-5xl flex-col overflow-y-auto rounded-3xl bg-white pb-52 shadow-2xl dark:bg-slate-900 lg:h-full lg:min-h-0 lg:overflow-hidden lg:pb-0">
-                <header class="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-700 dark:bg-slate-900">
-                    <div class="flex items-center gap-3">
-                        <div id="sales-composer-icon" class="grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700">
-                            <span class="material-symbols-outlined">flash_on</span>
-                        </div>
-                        <div>
-                            <h2 id="sales-composer-title" class="text-lg font-black text-slate-900 dark:text-white">Respuesta rápida</h2>
-                            <p id="sales-composer-scope" class="text-[11px] font-bold text-slate-500"></p>
-                        </div>
-                    </div>
-                    <button onclick="closeSalesComposer()" class="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </header>
-
-                <div class="block min-h-0 flex-1 lg:grid lg:grid-cols-[390px_1fr]">
-                    <section class="border-b border-slate-200 p-5 dark:border-slate-700 lg:min-h-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
-                        <div class="mb-4 grid grid-cols-2 gap-3">
-                            <label class="space-y-1">
-                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Plantilla</span>
-                                <select id="sales-composer-template" onchange="refreshSalesComposerPreview()" class="w-full rounded-xl border-slate-200 bg-slate-50 text-xs font-bold">
-                                    <option value="quick">Respuesta a consulta</option>
-                                    <option value="broadcast">Mensaje de difusión</option>
-                                </select>
-                            </label>
-                            <label class="space-y-1">
-                                <span class="text-[9px] font-black uppercase tracking-wider text-slate-400">Cantidad</span>
-                                <select id="sales-composer-count" onchange="setSalesComposerCount(Number(this.value))" class="w-full rounded-xl border-slate-200 bg-slate-50 text-xs font-bold">
-                                    <option value="3">3 productos</option>
-                                    <option value="5">5 productos</option>
-                                    <option value="10">10 productos</option>
-                                </select>
-                            </label>
-                        </div>
-
-                        <div class="mb-3 flex items-center justify-between">
-                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Productos visibles</p>
-                            <span id="sales-composer-selected-count" class="rounded-full bg-indigo-50 px-2 py-1 text-[9px] font-black text-indigo-600"></span>
-                        </div>
-                        <div id="sales-composer-products" class="max-h-[320px] space-y-2 overflow-y-auto overscroll-contain pr-1 lg:max-h-none lg:overflow-visible"></div>
-                    </section>
-
-                    <section class="flex min-h-0 flex-col bg-slate-50 p-5 pb-6 dark:bg-slate-950">
-                        <div class="mb-3 flex items-center justify-between">
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Vista previa editable</p>
-                                <p class="text-[10px] text-slate-400">Puedes modificar el mensaje antes de compartirlo.</p>
-                            </div>
-                            <span id="sales-composer-link-status" class="text-[9px] font-bold text-slate-400">Preparando enlace…</span>
-                        </div>
-                        <textarea id="sales-composer-preview" class="h-[360px] min-h-[360px] flex-none resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-inner focus:border-indigo-400 focus:ring-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 lg:h-auto lg:min-h-[330px] lg:flex-1"></textarea>
-
-                        <div class="fixed bottom-3 left-3 right-3 z-[660] grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-2xl sm:grid-cols-3 lg:static lg:z-10 lg:mt-4 lg:border-0 lg:p-0 lg:shadow-none dark:border-slate-700 dark:bg-slate-950">
-                            <button onclick="copySalesComposerMessage(this)" class="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-black text-white hover:bg-indigo-500">
-                                <span class="material-symbols-outlined text-lg">content_copy</span> Copiar
-                            </button>
-                            <button onclick="openSalesComposerWhatsApp()" class="flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-xs font-black text-white hover:bg-[#20bd5c]">
-                                <i class="fab fa-whatsapp text-lg"></i> WhatsApp
-                            </button>
-                            <button onclick="shareSalesComposerMessage()" class="flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-4 py-3 text-xs font-black text-white hover:bg-slate-700">
-                                <span class="material-symbols-outlined text-lg">share</span> Compartir
-                            </button>
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </div>
-    `);
-}
-
-function buildContextualCatalogUrl() {
-    const params = new URLSearchParams();
-    const query = (document.getElementById('search-bar')?.value || '').trim();
-    const phone = String(getAgentPhone() || '').replace(/\D/g, '');
-    if (query) params.set('catalog_q', query);
-    if (activeCategory && activeCategory !== 'TODOS') params.set('catalog_category', activeCategory);
-    if (window.gestorName) params.set('ref', window.gestorName);
-    if (phone) params.set('contact', phone);
-    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-}
-
-async function openSalesComposer(mode = 'quick') {
-    const products = getProductsVisibleOnScreen();
-    if (!products.length) return alert('No hay productos visibles para crear el mensaje.');
-    ensureSalesComposerModal();
-
-    const defaultCount = mode === 'quick' ? 3 : 5;
-    salesComposerState = {
-        mode,
-        products: products.slice(0, 30),
-        selectedNames: new Set(products.slice(0, defaultCount).map(product => product.nombre)),
-        catalogLink: buildContextualCatalogUrl()
+// Optional sales tools never delay catalogue startup.
+const salesToolOpening = new Map();
+function invokeSalesTool(name, args, buttonId) {
+    if (salesToolOpening.has(name)) return salesToolOpening.get(name);
+    const element = document.getElementById(buttonId);
+    const button = element?.tagName === 'BUTTON' ? element : element?.querySelector('button');
+    const original = button?.innerHTML, wasDisabled = button?.disabled;
+    const token = window.PTHSecureData?.token();
+    let restored = false;
+    const restoreButton = () => {
+        if (restored) return;
+        restored = true;
+        if (button) { button.innerHTML = original; button.disabled = wasDisabled; }
     };
-
-    const modal = document.getElementById('sales-composer-modal');
-    const isQuick = mode === 'quick';
-    document.getElementById('sales-composer-title').textContent = isQuick ? 'Respuesta rápida' : 'Mensaje de difusión';
-    document.getElementById('sales-composer-icon').innerHTML = `<span class="material-symbols-outlined">${isQuick ? 'flash_on' : 'campaign'}</span>`;
-    document.getElementById('sales-composer-icon').className = `grid h-11 w-11 place-items-center rounded-2xl ${isQuick ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`;
-    document.getElementById('sales-composer-template').value = mode;
-    document.getElementById('sales-composer-count').value = String(defaultCount);
-    document.getElementById('sales-composer-scope').textContent =
-        `${activeCategory === 'TODOS' ? 'Catálogo general' : activeCategory} · ${products.length} productos en pantalla`;
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    renderSalesComposerProducts();
-    refreshSalesComposerPreview();
-
-    const status = document.getElementById('sales-composer-link-status');
-    status.textContent = 'Preparando enlace…';
-    try {
-        const agent = window.gestorName || 'Ventas';
-        salesComposerState.catalogLink = await getOrGenerateShortLink(agent, salesComposerState.catalogLink);
-        status.textContent = 'Enlace de catálogo listo';
-    } catch (error) {
-        status.textContent = 'Se usará el enlace completo';
-    }
-    refreshSalesComposerPreview();
-    trackSpy('USO_HERRAMIENTA', isQuick ? 'Respuesta rápida' : 'Mensaje de difusión');
-}
-
-function closeSalesComposer() {
-    document.getElementById('sales-composer-modal')?.classList.add('hidden');
-    document.body.style.overflow = '';
-}
-
-function setSalesComposerCount(count) {
-    if (!salesComposerState) return;
-    salesComposerState.selectedNames = new Set(
-        salesComposerState.products.slice(0, count).map(product => product.nombre)
-    );
-    renderSalesComposerProducts();
-    refreshSalesComposerPreview();
-}
-
-function toggleSalesComposerProduct(name, checked) {
-    if (!salesComposerState) return;
-    if (checked) {
-        if (salesComposerState.selectedNames.size >= 10) {
-            renderSalesComposerProducts();
-            return alert('Puedes seleccionar hasta 10 productos por mensaje.');
-        }
-        salesComposerState.selectedNames.add(name);
-    } else {
-        salesComposerState.selectedNames.delete(name);
-    }
-    renderSalesComposerProducts();
-    refreshSalesComposerPreview();
-}
-
-function moveSalesComposerProduct(index, direction) {
-    if (!salesComposerState) return;
-    const target = index + direction;
-    if (target < 0 || target >= salesComposerState.products.length) return;
-    const [product] = salesComposerState.products.splice(index, 1);
-    salesComposerState.products.splice(target, 0, product);
-    renderSalesComposerProducts();
-    refreshSalesComposerPreview();
-}
-
-function renderSalesComposerProducts() {
-    if (!salesComposerState) return;
-    const container = document.getElementById('sales-composer-products');
-    container.innerHTML = salesComposerState.products.map((product, index) => {
-        const selected = salesComposerState.selectedNames.has(product.nombre);
-        return `
-            <div class="flex items-center gap-2 rounded-xl border ${selected ? 'border-indigo-200 bg-indigo-50' : 'border-slate-200 bg-white'} p-2">
-                <input type="checkbox" ${selected ? 'checked' : ''} onchange="toggleSalesComposerProduct(${JSON.stringify(product.nombre).replace(/"/g, '&quot;')}, this.checked)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                <img src="${fixDriveUrl(product.thumbnail)}" class="h-10 w-10 rounded-lg bg-white object-contain" alt="">
-                <div class="min-w-0 flex-1">
-                    <p class="truncate text-[11px] font-black text-slate-700">${product.nombre}</p>
-                    <p class="text-[10px] font-bold text-indigo-600">$${product.precio} USD</p>
-                </div>
-                <div class="flex">
-                    <button onclick="moveSalesComposerProduct(${index}, -1)" class="p-1 text-slate-400 hover:text-indigo-600" title="Subir"><span class="material-symbols-outlined text-base">arrow_upward</span></button>
-                    <button onclick="moveSalesComposerProduct(${index}, 1)" class="p-1 text-slate-400 hover:text-indigo-600" title="Bajar"><span class="material-symbols-outlined text-base">arrow_downward</span></button>
-                </div>
-            </div>`;
-    }).join('');
-    document.getElementById('sales-composer-selected-count').textContent =
-        `${salesComposerState.selectedNames.size} seleccionados`;
-}
-
-function getSalesComposerSelectedProducts() {
-    if (!salesComposerState) return [];
-    return salesComposerState.products.filter(product => salesComposerState.selectedNames.has(product.nombre));
-}
-
-function cleanComposerDetail(value, fallback) {
-    const div = document.createElement('div');
-    div.innerHTML = String(value || '');
-    return (div.textContent || '').replace(/\s+/g, ' ').trim() || fallback;
-}
-
-function createSalesComposerMessage() {
-    const products = getSalesComposerSelectedProducts();
-    if (!products.length) return 'Selecciona al menos un producto.';
-    const template = document.getElementById('sales-composer-template')?.value || salesComposerState.mode;
-    const link = salesComposerState.catalogLink;
-    const agent = window.gestorName || 'nuestro equipo';
-
-    if (template === 'quick') {
-        let message = `Hola, te comparto ${products.length === 1 ? 'esta opción disponible' : `${products.length} opciones disponibles`}:\n\n`;
-        products.forEach((product, index) => {
-            const warranty = cleanComposerDetail(product.garantia, 'Garantía a consultar');
-            const delivery = cleanComposerDetail(product.mensajeria, 'Entrega a consultar');
-            message += `*${index + 1}. ${product.nombre}* — *$${product.precio} USD*\n`;
-            message += `${warranty} · ${delivery}\n\n`;
-        });
-        message += `Fotos y detalles:\n${link}\n\n`;
-        message += `¿Cuál se ajusta mejor a lo que buscas?`;
-        return message;
-    }
-
-    let message = `🔥 *OFERTAS DISPONIBLES${activeCategory !== 'TODOS' ? ` EN ${activeCategory}` : ''}*\n\n`;
-    products.forEach(product => {
-        message += `✅ *${product.nombre}* — *$${product.precio} USD*\n`;
-    });
-    message += `\nPrecios y disponibilidad confirmables al momento de realizar el pedido.\n`;
-    message += `📲 Consulta fotos, garantía y entrega:\n${link}\n\n`;
-    message += `Atendido por *${agent}*.`;
-    return message;
-}
-
-function refreshSalesComposerPreview() {
-    const preview = document.getElementById('sales-composer-preview');
-    if (preview) preview.value = createSalesComposerMessage();
-}
-
-async function copySalesComposerMessage(button) {
-    const preview = document.getElementById('sales-composer-preview');
-    if (!preview?.value.trim()) return;
-    try {
-        await navigator.clipboard.writeText(preview.value);
-        const previous = button.innerHTML;
-        button.innerHTML = `<span class="material-symbols-outlined text-lg">check</span> Copiado`;
-        setTimeout(() => button.innerHTML = previous, 1600);
-        trackSpy('MENSAJE_COPIADO', salesComposerState?.mode || 'composer');
-    } catch (error) {
-        preview.focus();
-        preview.select();
-        alert('Seleccionamos el mensaje. Usa Copiar desde el menú del navegador.');
-    }
-}
-
-function openSalesComposerWhatsApp() {
-    const message = document.getElementById('sales-composer-preview')?.value.trim();
-    if (!message) return;
-    trackSpy('MENSAJE_COMPARTIDO', 'WhatsApp');
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
-}
-
-async function shareSalesComposerMessage() {
-    const message = document.getElementById('sales-composer-preview')?.value.trim();
-    if (!message) return;
-    if (navigator.share) {
+    if (button) { button.disabled = true; button.textContent = 'Cargando herramienta…'; }
+    const opening = Promise.resolve().then(async () => {
         try {
-            await navigator.share({ text: message });
-            trackSpy('MENSAJE_COMPARTIDO', 'Share');
-            return;
+            if (!window.PTHSalesTools) await window.PTHAssets.load('sales');
+            if (token !== window.PTHSecureData?.token()) throw Error('La sesión cambió. Vuelve a pulsar el botón.');
+            restoreButton();
+            return await window.PTHSalesTools[name](...args);
         } catch (error) {
-            if (error.name === 'AbortError') return;
-        }
-    }
-    await navigator.clipboard.writeText(message);
-    alert('Mensaje copiado para compartir.');
+            alert('No se pudo abrir la herramienta. ' + error.message + ' Puedes volver a intentarlo.');
+        } finally { restoreButton(); salesToolOpening.delete(name); }
+    });
+    salesToolOpening.set(name, opening);
+    return opening;
 }
-
-function generateFlashResponse() {
-    openSalesComposer('quick');
-}
-
-function copyCategoryOffers() {
-    openSalesComposer('broadcast');
-}
-
-// 2. BOTÓN FOTOS: Descargar ZIP
-async function downloadCategoryPhotos() {
-    if (window.PTHAssets && !await window.PTHAssets.ensure('zip')) return;
-    if (typeof JSZip === 'undefined') return alert("Error: Librería JSZip no cargada.");
-    trackSpy('USO_HERRAMIENTA', 'Pack Fotos (ZIP)');
-
-
-    const btn = document.getElementById('btn-zip-bulk');
-    const originalContent = btn.innerHTML;
-    btn.innerHTML = `<span class="loader w-4 h-4 border-blue-600"></span>`;
-
-    try {
-        const zip = new JSZip();
-        const products = productosRaw.filter(p => {
-            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-            return matchCat && p.disponible === 'SI';
-        });
-
-        if (products.length === 0) throw new Error("No hay productos para descargar.");
-        if (products.length > 50) {
-            if(!confirm(`Se descargarán ${products.length} imágenes. ¿Continuar?`)) throw new Error("Cancelado por usuario.");
-        }
-
-        let count = 0;
-        const promises = products.map(async (p) => {
-            if (!p.thumbnail) return;
-            try {
-                // Usamos fixDriveUrl para asegurar la ruta correcta de Supabase
-                const url = fixDriveUrl(p.thumbnail);
-                const response = await fetch(url);
-                const blob = await response.blob();
-                const filename = p.nombre.replace(/[^a-z0-9]/gi, '_').substring(0, 50) + ".jpg";
-                zip.file(filename, blob);
-                count++;
-            } catch (err) { console.log("Error img:", p.nombre); }
-        });
-
-        await Promise.all(promises);
-
-        if(count === 0) throw new Error("No se pudieron descargar las imágenes (Bloqueo CORS o URLs rotas).");
-
-        const content = await zip.generateAsync({ type: "blob" });
-        const link = document.createElement("a");
-        link.href = window.URL.createObjectURL(content);
-        link.download = `Fotos_${activeCategory || 'Catalogo'}.zip`;
-        link.click();
-
-        btn.innerHTML = originalContent;
-
-    } catch (e) {
-        alert(e.message);
-        btn.innerHTML = originalContent;
-    }
-}
-
-// The PDF workspace opens in the same tab: no delayed mobile popup to block.
-let catalogExportOpening = false;
-async function downloadCatalogPDF() {
-    if (catalogExportOpening) return;
-    if (catalogLoadError || productsLoadInProgress) {
-        alert('Primero actualiza el catálogo. Usa Reintentar catálogo si aparece un error.');
-        return;
-    }
-    const visibleProducts = getProductsVisibleOnScreen().filter(product => product.disponible === 'SI');
-    if (!visibleProducts.length) return alert('No hay productos en esta selección. Cambia los filtros o busca otro equipo.');
-    if (visibleProducts.length > 50 && !confirm(`La selección contiene ${visibleProducts.length} productos. ¿Abrir el estudio PDF con todos ellos?`)) return;
-    const btn = document.getElementById('btn-pdf-bulk'), originalText = btn?.innerHTML;
-    const token = window.PTHSecureData.token();
-    catalogExportOpening = true;
-    if (btn) { btn.disabled = true; btn.textContent = 'Abriendo catálogo…'; }
-    try {
-        const profile = await window.PTHSecureData.restore();
-        if (!profile?.id || !token || token !== window.PTHSecureData.token()) throw Error('Vuelve a iniciar sesión antes de abrir el catálogo.');
-        await ensureProductDescriptions(visibleProducts);
-        if (token !== window.PTHSecureData.token()) throw Error('La sesión cambió. Abre el catálogo de nuevo.');
-        const exportPayload = {
-            timestamp: Date.now(), ownerId: profile.id,
-            agent: profile.nombre, phone: profile.telefono || '',
-            categoryName: activeCategory, mode: 'catalog',
-            title: activeCategory === 'TODOS' ? 'Selección comercial' : activeCategory,
-            products: visibleProducts.map(p => Object.fromEntries(['id','nombre','categoria','precio','descripcion','garantia','mensajeria','thumbnail'].map(field => [field,p[field]])))
-        };
-        try { localStorage.setItem('pth_catalog_data', JSON.stringify(exportPayload)); }
-        catch (_) { throw Error('El dispositivo no tiene espacio para guardar esta selección. Cierra otras pestañas o selecciona menos productos.'); }
-        trackSpy('USO_HERRAMIENTA', 'Catálogo PDF');
-        window.location.assign('/catalog-maker.html?v=20261002-catalog1');
-    } catch (error) {
-        alert('No se pudo abrir el catálogo. ' + error.message + ' Puedes volver a intentarlo.');
-    } finally {
-        catalogExportOpening = false;
-        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
-    }
-}
+function legacyCopyCategoryOffersV2() { return invokeSalesTool('legacyCopyCategoryOffersV2', [], 'btn-copy-bulk'); }
+function openSalesComposer(mode = 'quick') { return invokeSalesTool('openSalesComposer', [mode], mode === 'quick' ? 'container-flash-btn' : 'btn-copy-bulk'); }
+function generateFlashResponse() { return openSalesComposer('quick'); }
+function copyCategoryOffers() { return openSalesComposer('broadcast'); }
+function downloadCategoryPhotos() { return invokeSalesTool('downloadCategoryPhotos', [], 'btn-zip-bulk'); }
+function downloadCatalogPDF() { return invokeSalesTool('downloadCatalogPDF', [], 'btn-pdf-bulk'); }
 
 async function verificarDuenioAlEscribir(telefono) {
     const status = document.getElementById('customer-owner-status');

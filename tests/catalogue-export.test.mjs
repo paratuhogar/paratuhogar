@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-const source=fs.readFileSync(new URL('../js/storefront.js',import.meta.url),'utf8');
+const source=fs.readFileSync(new URL('../js/sales-tools.js',import.meta.url),'utf8');
 const start=source.indexOf('let catalogExportOpening = false;');
-const code=source.slice(start,source.indexOf('async function verificarDuenioAlEscribir',start));
+const code=source.slice(start,source.indexOf('root.PTHSalesTools=',start));
 function fixture(){
  const values=new Map(),alerts=[],locations=[],products=[{id:'p1',nombre:'Equipo',precio:100,comision:50,costo_proveedor:80,proveedor:'INTERNAL',disponible:'SI',descripcion:'Descripción',thumbnail:'photo.jpg'}];
  let token='session-a',hydration=Promise.resolve(),writesFail=false;

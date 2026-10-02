@@ -72,20 +72,28 @@ const products=[
             const cache=await caches.open(cacheName);await cache.put('/synthetic-sentinel',new Response('keep outside old static cache'));
           }
           localStorage.setItem('pth_new_cart_v1:synthetic','synthetic draft sentinel');
-          const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-lowdata2',{scope:'/',updateViaCache:'none'});
+          const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-fasttools1',{scope:'/',updateViaCache:'none'});
           window.fixtureRegistration=registration;
         });
         await page.waitForFunction(()=>window.fixtureRegistration.waiting?.state==='installed');
         await page.evaluate(()=>fixtureRegistration.waiting.postMessage({type:'SKIP_WAITING'}));
-        await page.waitForFunction(()=>fixtureRegistration.active?.state==='activated'&&navigator.serviceWorker.controller?.scriptURL.endsWith('service-worker.js?v=20261002-lowdata2'));
+        await page.waitForFunction(()=>fixtureRegistration.active?.state==='activated'&&navigator.serviceWorker.controller?.scriptURL.endsWith('service-worker.js?v=20261002-fasttools1'));
         const cacheNames=await page.evaluate(()=>caches.keys());
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-lowdata1'),false);
-        for(const name of ['pth-public-static-2026-10-02-lowdata2','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
+        for(const name of ['pth-public-static-2026-10-02-fasttools1','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_new_cart_v1:synthetic')),'synthetic draft sentinel');
         await context.setOffline(true);await page.goto(origin+'/',{waitUntil:'load'});
         await page.locator('#offline-search').fill('panel solar bifacial');
         assert.deepEqual(await page.locator('#offline-products h2').allTextContents(),['Panel solar  bifacial 595 W']);
+        assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
+        // The saved catalogue link and query-bearing direct URL work offline too.
+        await page.goto(origin+'/offline-catalog.html?catalog_q=panel',{waitUntil:'load'});
+        await page.locator('#offline-search').fill('panel solar bifacial');
+        assert.deepEqual(await page.locator('#offline-products h2').allTextContents(),['Panel solar  bifacial 595 W']);
+        await page.goto(origin+'/offline.html',{waitUntil:'load'});
+        await page.locator('a[href="/offline-catalog.html"]').click();
+        assert.equal(await page.locator('#offline-search').count(),1);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.deepEqual(errors,[]);
         await page.screenshot({path:'/tmp/pth-offline-filters-mobile.png',fullPage:true});

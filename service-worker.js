@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-lowdata2';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-fasttools1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -16,11 +16,11 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261002-lowdata1',
-  '/js/storefront.js?v=20261002-lowdata1',
+  '/js/storefront.min.js?v=20261002-fasttools1',
   '/css/low-connectivity.css?v=20261002-lowdata1',
   '/js/product-description-loader.js?v=20261001-images2',
-  '/js/storefront-extras.js?v=20261002-admin1',
-  '/js/internal-assets.js?v=20261002-catalog1',
+  '/js/storefront-extras.min.js?v=20261002-fasttools1',
+  '/js/internal-assets.js?v=20261002-fasttools1',
   '/js/product-availability-form.js?v=20260924-1',
   '/js/product-description-editor.js?v=20260924-1',
   '/js/checkout-submit-guard.js?v=20261002-lowdata1',
@@ -36,7 +36,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=20261002-lowdata2',
+  '/js/pwa.js?v=20261002-fasttools1',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
@@ -108,7 +108,7 @@ self.addEventListener('fetch', event => {
         const response = await fetch(request);
         return response;
       } catch (error) {
-        if (url.pathname === '/' || url.pathname === '/index.html') {
+        if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === PTH_SHELL_URL) {
           const shell = await caches.match(PTH_SHELL_URL);
           if (shell) return shell;
         }

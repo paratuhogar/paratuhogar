@@ -11,7 +11,8 @@ module.exports = {
     './system-events.js',
     './sistema-escuadron.js',
     // Include lazy modules too: production no longer generates utilities in the browser.
-    './js/**/*.{js,mjs}'
+    './js/**/*.{js,mjs}',
+    '!./js/**/*.min.js'
   ],
   safelist: [
     ...colors.flatMap(color => [

@@ -11,7 +11,7 @@ const admin={...parent,id:'44444444-4444-4444-8444-444444444444',rol:'admin'};
 const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'v1'}:[];if(single&&Array.isArray(data))data=null;return Promise.resolve({data,error:null,count:0}).then(ok,no)}};for(const name of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[name]=()=>q;for(const name of ['single','maybeSingle'])q[name]=()=>{single=true;return q};return q;},rpc(){return Promise.resolve({data:[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};`;
 (async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  for(const role of (baseline?['visitor']:['visitor','gestor','subgestor','admin'])){
- const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:role==='admin'?admin:parent;
+ const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero,failSalesTools=true;const profile=role==='subgestor'?child:role==='admin'?admin:parent;
  page.on('pageerror',e=>errors.push(e.stack));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
  await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
  await page.route('**/*',async route=>{
@@ -36,6 +36,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  if(url.hostname==='127.0.0.1'){
  let rel=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname.slice(1));
  if(!/^(index\.html|catalog-maker\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
+ if(rel==='js/sales-tools.min.js'&&failSalesTools){failSalesTools=false;return route.abort();}
  const file=path.join(root,rel);if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
  return route.fulfill({body:rel==='index.html'&&baselineHtml?baselineHtml:fs.readFileSync(file),contentType:rel.endsWith('.html')?'text/html; charset=utf-8':/\.(js|mjs)$/.test(rel)?'application/javascript; charset=utf-8':rel.endsWith('.css')?'text/css':rel.endsWith('.ttf')?'font/ttf':'image/jpeg'});
  }
@@ -54,6 +55,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  assert.equal(productsAfterHero,false,'catalogue must start without waiting for hero');
  assert.equal(navigations,1,'root must not reload');assert.equal(new URL(page.url()).search,'');
  assert.equal(await page.locator('#splash-screen').count(),0);
+ assert.equal(requests.some(u=>u.includes('/sales-tools')),false,'sales code is deferred until an explicit click');
  assert.equal(requests.some(u=>/cdn.tailwindcss|quilljs|chart\.js|sheetjs|jszip|jspdf/.test(u)),false,'no runtime CSS or heavy tools during startup');
  if(role!=='visitor')await page.evaluate(()=>showSection('catalogo'));
  await page.waitForFunction(()=>document.querySelectorAll('#productos-container article').length===24);
@@ -116,6 +118,20 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   assert.equal(await page.locator('dialog').count(),0,'real storefront Stories entrypoint closes cleanly');
   await page.evaluate(()=>closeDetail());
   await page.evaluate(()=>showSection('catalogo'));
+  // A failed download unlocks retry; double taps request/open the composer once.
+  await page.locator('#btn-copy-bulk').click();
+  await page.waitForFunction(()=>document.getElementById('btn-copy-bulk').disabled===false);
+  assert.equal(await page.locator('#sales-composer-modal').count(),0);
+  assert.ok(storyAlerts.some(message=>message.includes('No se pudo abrir la herramienta')));
+  await page.evaluate(()=>Promise.all([copyCategoryOffers(),copyCategoryOffers()]));
+  assert.equal(requests.filter(u=>u.includes('/sales-tools.min.js')).length,2,'one failed request and one successful retry');
+  assert.equal(await page.locator('#sales-composer-modal').count(),1);
+  assert.match(await page.locator('#sales-composer-preview').inputValue(),/Nevera prueba 01/);
+  assert.equal(await page.locator('#btn-copy-bulk').isEnabled(),true);
+  await page.evaluate(()=>{window.syntheticShares=[];window.open=(url)=>{syntheticShares.push(url);return null;};});
+  await page.locator('#sales-composer-modal button').filter({hasText:'WhatsApp'}).click();
+  assert.match(await page.evaluate(()=>syntheticShares[0]),/^https:\/\/wa.me\//);
+  await page.evaluate(()=>closeSalesComposer());
   await page.locator('#btn-pdf-bulk').click();
   await page.waitForURL('**/catalog-maker.html?v=20261002-catalog1',{waitUntil:'domcontentloaded'});
   assert.equal(context.pages().length,1,'PDF opens without relying on a delayed popup');

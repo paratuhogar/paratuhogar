@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="css/low-connectivity.css?v=20261002-lowdata1">
     <script src="js/low-connectivity.js?v=20261002-lowdata1" defer></script>
     <script src="js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
-    <script src="js/pwa.js?v=20261002-lowdata2" defer></script>
+    <script src="js/pwa.js?v=20261002-fasttools1" defer></script>
     <link rel="stylesheet" href="css/admin-panel.css?v=20261002-admin1">
     <script src="js/admin-panel-data.js?v=20261002-admin1" defer></script>
     <link rel="stylesheet" href="css/feedback-announcement.css?v=20261001-1">
@@ -61,7 +61,7 @@
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
          gráficas, Excel, editor, ZIP ni PDF para consultar el catálogo. -->
-    <script src="js/internal-assets.js?v=20261002-catalog1" defer></script>
+    <script src="js/internal-assets.js?v=20261002-fasttools1" defer></script>
     <script>
         let quill = null;
         function loadInternalAssets() { window.PTHAssets?.scheduleSession(); }
@@ -444,7 +444,7 @@
         <!-- Logo -->
         <div class="flex items-center gap-8">
             <div class="flex items-center gap-2">
-                <img src="log.jpeg" alt="Logo Paratuhogar" class="h-8 w-8 rounded-full border border-white/20 shadow-sm object-cover">
+                <img src="icons/icon-192.png" alt="Logo Paratuhogar" class="h-8 w-8 rounded-full border border-white/20 shadow-sm object-cover">
                 <h1 class="text-white text-xl font-extrabold tracking-tight">para<span class="text-slate-200">tuhogar</span></h1>
             </div>
 
@@ -3120,7 +3120,7 @@
         </div>
 
     <!-- Scripts de Lógica -->
-    <script src="js/storefront.js?v=20261002-lowdata1" defer></script>
+    <script src="js/storefront.min.js?v=20261002-fasttools1" defer></script>
 
 
 
@@ -3625,7 +3625,7 @@
 </style>
 
 <!-- LÓGICA DEL SISTEMA -->
-<script src="js/storefront-extras.js?v=20261002-admin1" defer></script>
+<script src="js/storefront-extras.min.js?v=20261002-fasttools1" defer></script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->

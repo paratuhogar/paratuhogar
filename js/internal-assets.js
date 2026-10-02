@@ -3,6 +3,7 @@
  'use strict';
  const pending=new Map();
  const definitions={
+  sales:[['script','js/sales-tools.min.js?v=20261002-fasttools1','pth-sales-tools-js',30000]],
   studio:[['style','css/content-studio.css?v=20261002-studio1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
   charts:[['script','https://cdn.jsdelivr.net/npm/chart.js','pth-chart-js']],
   xlsx:[['script','https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js','pth-xlsx-js']],
@@ -13,7 +14,7 @@
   traffic:[['script','admin-stats.js?v=20261002-admin1','pth-admin-stats-js']],
   session:[['script','subgestor-tutorial.js?v=20261001-fast1','pth-subgestor-tutorial-js'],['script','js/client-followup.js?v=20261001-fast1','pth-client-followup-js']]
  };
- function resource([kind,url,id]){
+ function resource([kind,url,id,timeout=8000]){
   if(pending.has(id))return pending.get(id);
   const existing=document.getElementById(id);
   if(existing?.dataset.loaded==='true')return Promise.resolve();
@@ -23,7 +24,7 @@
    // live at the site root, independently of the currently open product.
    const assetURL=new URL(url,new URL('/',document.baseURI)).href;
    if(kind==='style'){node.rel='stylesheet';node.href=assetURL;}else{node.src=assetURL;node.async=true;}
-   const timer=setTimeout(()=>finish(Error('La herramienta tardó demasiado en cargar.')),8000);
+   const timer=setTimeout(()=>finish(Error('La herramienta tardó demasiado en cargar.')),timeout);
    const finish=error=>{clearTimeout(timer);node.onload=node.onerror=null;if(error){node.remove();pending.delete(id);reject(error);}else{node.dataset.loaded='true';resolve();}};
    node.onload=()=>finish();node.onerror=()=>finish(Error('No se pudo cargar la herramienta.'));
    document.head.appendChild(node);
