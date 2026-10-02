@@ -30,6 +30,13 @@ test('forged, legacy and expired keys cannot enumerate old orders; reserved new 
  const bypass=await f.request({action:'query',table:'pedidos',op:'insert',values:{...f.body.inputs[0],submission_token:q.data.attempt}});assert.ok(bypass.error);assert.equal(f.writes,0);
  let now=f.body.intentCreatedAt;const service=createCheckoutService({db:{from(){throw Error('must not query expired attempts');}},canonicalSale(){},signingSecret:secret,now:()=>now+8*86400000});assert.equal((await service({operation:'receipt',attempt:q.data.attempt},null)).error.code,'ATTEMPT_EXPIRED');assert.deepEqual(f.rows.pedidos[0],f.historical);
 });
+test('same draft intent with completely different providers cannot race into two accepted checkouts',async()=>{
+ const f=await fixture(),other=structuredClone(f.body);
+ f.rows.productos.push({...f.rows.productos[0],id:'pC',nombre:'Equipo C',proveedor:'C'},{...f.rows.productos[1],id:'pD',nombre:'Equipo D',proveedor:'D'});
+ other.inputs.forEach((row,i)=>{row.proveedor=i?'D':'C';row._lineas[0].producto_id=i?'pD':'pC';});
+ const [a,b]=await Promise.all([f.quote(),f.request({...other,operation:'quote'})]);
+ const results=await Promise.all([f.submit(a),f.request({...other,operation:'submit',attempt:b.data.attempt,quote:b.data.quote})]);assert.equal(results.filter(r=>r.data?.complete).length,1);assert.equal(f.writes,1);assert.equal(f.rows.pedidos.length,3);assert.deepEqual(f.rows.pedidos[0],f.historical);
+});
 test('existing delivery rules retain supplier A exceptions, size classes, quantity surcharge and pickup',()=>{
  const p={nombre:'Aspiradora',proveedor:'A','tamaño_envio':'Pequeño'},d={pickup:false,municipio:'Playa'},tariff={precio_pequeno:6,precio_grande:10};assert.equal(deliveryCost([p],[{cantidad:1}],d,tariff),10);assert.equal(deliveryCost([p],[{cantidad:4}],d,tariff),15);assert.equal(deliveryCost([{...p,'tamaño_envio':'Grande'}],[{cantidad:1}],d,tariff),10);assert.equal(deliveryCost([p],[{cantidad:1}],{pickup:true}),0);
 });

@@ -124,6 +124,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       }
       const existing=await receipts(token,attempt);
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
+      if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
       const rows=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
       const stamp=now(),digest=await sign('terms:'+JSON.stringify(currentTerms));
       if(body.operation==='quote'){
@@ -133,11 +134,11 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       const proof=String(body.quote||'').split('.');
       if(proof.length!==5||proof[0]!=='pthq1'||!/^\d{13}$/.test(proof[1])||now()-Number(proof[1])<0||now()-Number(proof[1])>QUOTE_AGE||proof[2]!==digest||proof[3]!==await sign('attempt:'+token)||!await verify(proof.slice(0,4).join('.'),proof[4]))fail('CONDITIONS_CHANGED','Cambió el precio, la disponibilidad o la entrega. Comprueba el carrito y confirma nuevamente.');
       const originals=new Map(body.inputs.map(input=>[input.proveedor,input]));
-      for(const row of rows){const reference=originals.get(row.proveedor)?.orden_dia;if(typeof reference!=='string'||!reference||reference.length>100)fail('CHECKOUT_INVALID','No se pudo verificar la referencia del pedido.');row.orden_dia=reference;
+      for(const [index,row] of rows.entries()){const reference=originals.get(row.proveedor)?.orden_dia;if(typeof reference!=='string'||!reference||reference.length>100)fail('CHECKOUT_INVALID','No se pudo verificar la referencia del pedido.');row.orden_dia=reference;
         delete row._checkout_prices;
         // A deterministic new-row PK also fences a changed-payload race for
         // one draft intent. A collision never updates or reveals another row.
-        const id=await sign('row-id:'+attempt.nonce+':'+row.proveedor);row.id=`${id.slice(0,8)}-${id.slice(8,12)}-4${id.slice(13,16)}-a${id.slice(17,20)}-${id.slice(20,32)}`;
+        const id=await sign('row-id:'+attempt.nonce+':'+(index===0?'anchor':'provider:'+row.proveedor));row.id=`${id.slice(0,8)}-${id.slice(8,12)}-4${id.slice(13,16)}-a${id.slice(17,20)}-${id.slice(20,32)}`;
       }
       // One multi-row INSERT is atomic. Existing (token,provider) uniqueness
       // resolves competing retries; accepted rows are never updated/upserted.
