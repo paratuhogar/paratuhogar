@@ -39,3 +39,15 @@ Publicar primero backend compatible; después assets `20261002-lowdata1`, SW `pt
 Rollback preferido: revertir interfaz y mantener el backend nuevo para resolver los recibos ya emitidos. Conservar los pedidos aceptados y los índices existentes. Volver al backend v16 también elimina la consulta de esos recibos; coordinar la revisión de intentos pendientes antes de hacerlo. No revertir datos ni restaurar filtros distintos para históricos. El respaldo exacto de v16 se conserva fuera del sitio público en `/workspace/private-order-diagnosis/lowdata-v16-backup/`.
 
 Referencias: [inserciones múltiples de Supabase](https://supabase.com/docs/reference/javascript/insert), [simulación de red de Chrome](https://developer.chrome.com/docs/devtools/network/reference#throttling), [Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API).
+
+## Corrección acotada del catálogo guardado — lowdata2
+
+Base: `9671e38fb2536fa3de7e663a3e92d82fcd4c7cd2`. Publicación autorizada específicamente para corregir búsquedas y categorías duplicadas.
+
+El lector compara cada palabra de la búsqueda, ignorando mayúsculas, tildes y espacios repetidos, incluidos tabulaciones y espacios no separables. `panel solar bifacial` encuentra el nombre original `Panel solar  bifacial 595 W`. Las categorías tienen una clave común normalizada y etiquetas sin espacios sobrantes; se conserva la selección al actualizar. Los productos, sus nombres/precios originales y la copia persistida no se reescriben al buscar o filtrar.
+
+Marcadores: lector `/js/offline-catalog.js?v=20261002-lowdata2`, service worker `/service-worker.js?v=20261002-lowdata2` y caché `pth-public-static-2026-10-02-lowdata2`. El registro PWA y el de notificaciones piden la misma versión; solamente cambian sus marcadores, sin alterar la activación, los temas o permisos. Los demás assets conservan sus versiones anteriores. La activación elimina únicamente cachés estáticas anteriores y conserva imágenes, otras cachés, copia pública y borradores.
+
+Validación final: 58 pruebas Node, lector en Chromium a 320/390/1280 px, actualización real de un worker anterior y navegación raíz sin conexión, página privada de notificaciones para cinco perfiles sin registro ni solicitud de permisos al cargar, y regresión del formulario real con pedidos/HTTP sintéticos. Se verificaron doble toque, respuesta perdida, reintento manual, recibo anónimo y fila histórica idéntica. No se crearon pedidos reales ni se contactó a terceros.
+
+No hay cambios de backend, esquema, productos, precios, pedidos, historial, comisiones, permisos ni secretos. `secure-data` permanece en v18 con el mismo bundle indicado arriba. Rollback: revertir únicamente el commit de esta corrección de frontend y volver a publicar con un marcador de caché nuevo; conservar backend y datos. El commit base conserva la versión anterior completa. La propagación del dominio y la sincronización del Mac se verifican por separado.

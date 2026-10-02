@@ -59,9 +59,9 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    assert.equal(await p.evaluate(()=>JSON.parse(localStorage.getItem('pth_offline_public_catalog_v1')).products.length),430);
    const api=trace.filter(r=>r.path==='/mock-secure-data').at(-1);assert.equal(api.cookie,false);assert.equal(api.authorization,false);
    await p.locator('#offline-search').fill('público 12');assert.ok(await p.locator('#offline-products article').count()>0);
-   await p.evaluate(async()=>{const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-lowdata1',{scope:'/'});await navigator.serviceWorker.ready;if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});});
+   await p.evaluate(async()=>{const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-lowdata2',{scope:'/'});await navigator.serviceWorker.ready;if(registration.waiting)registration.waiting.postMessage({type:'SKIP_WAITING'});});
    await p.waitForFunction(()=>navigator.serviceWorker.controller,{},{timeout:60000});
-   const stored=await p.evaluate(async()=>{const cache=await caches.open('pth-public-static-2026-10-02-lowdata1');return (await cache.keys()).map(r=>new URL(r.url).pathname);});assert.equal(stored.some(url=>/img_productos|secure-data|storefront/.test(url)),false);
+   const stored=await p.evaluate(async()=>{const cache=await caches.open('pth-public-static-2026-10-02-lowdata2');return (await cache.keys()).map(r=>new URL(r.url).pathname);});assert.equal(stored.some(url=>/img_productos|secure-data|storefront/.test(url)),false);
    await c.setOffline(true);const offlineStart=Date.now();await p.goto(origin+'/',{waitUntil:'domcontentloaded'});await p.waitForFunction(()=>document.querySelectorAll('#offline-products article').length===100);assert.ok(await p.locator('#catalog-date').innerText());await p.locator('#offline-category').selectOption('COCINA');assert.equal(await p.locator('#offline-products article').count(),100);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
    metrics.push({kbps,latencyMs:900,firstPublicCopyMs:elapsed,offlineRepeatMs:Date.now()-offlineStart,products:430});await c.close();
   }

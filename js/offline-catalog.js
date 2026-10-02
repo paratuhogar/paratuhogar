@@ -6,17 +6,26 @@
   window.PTHDataSaving={enabled:()=>true};
   const date=document.getElementById('catalog-date'),container=document.getElementById('offline-products');
   const search=document.getElementById('offline-search'),category=document.getElementById('offline-category');
+  // Normalize comparisons only; keep the saved public products and prices intact.
+  const cleanWhitespace=value=>String(value??'').trim().replace(/\s+/g,' ');
+  const normalized=value=>cleanWhitespace(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const categoryKey=value=>normalized(value).toUpperCase();
   function updateCopy(){
     if(!cached){date.textContent='No hay una copia reciente en este dispositivo. Pulsa Actualizar copia pública cuando tengas conexión.';return;}
     date.textContent='Guardado el '+new Date(cached.savedAt).toLocaleString('es-CU',{timeZone:'America/Havana'})+'. '+(cached.stale?'Pendiente de actualizar.':'');
-    const selected=category.value;category.replaceChildren();const all=document.createElement('option');all.value='';all.textContent='Todas';category.appendChild(all);
-    for(const name of [...new Set(cached.products.map(p=>p.categoria).filter(Boolean))].sort()){const option=document.createElement('option');option.value=name;option.textContent=name;category.appendChild(option);}
+    const selected=categoryKey(category.value);category.replaceChildren();const all=document.createElement('option');all.value='';all.textContent='Todas';category.appendChild(all);
+    const categories=new Map();
+    for(const p of cached.products){const label=cleanWhitespace(p.categoria),key=categoryKey(label);if(key&&!categories.has(key))categories.set(key,label);}
+    for(const [key,label] of [...categories].sort((a,b)=>a[1].localeCompare(b[1],'es',{sensitivity:'base'}))){const option=document.createElement('option');option.value=key;option.textContent=label;category.appendChild(option);}
     category.value=[...category.options].some(option=>option.value===selected)?selected:'';
   }
-  const normalized=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   function render(){
     if(!cached)return;
-    const rows=cached.products.filter(p=>(!category.value||p.categoria===category.value)&&normalized(p.nombre).includes(normalized(search.value)));
+    const tokens=normalized(search.value).split(' ').filter(Boolean),selected=categoryKey(category.value);
+    const rows=cached.products.filter(p=>{
+      if(selected&&categoryKey(p.categoria)!==selected)return false;
+      const name=normalized(p.nombre);return tokens.every(token=>name.includes(token));
+    });
     document.getElementById('offline-count').textContent=rows.length+' productos en la copia guardada';container.replaceChildren();
     for(const p of rows.slice(0,100)){
       const card=document.createElement('article'),name=document.createElement('h2'),price=document.createElement('strong'),state=document.createElement('p');
