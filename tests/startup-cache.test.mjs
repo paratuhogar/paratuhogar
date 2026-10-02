@@ -6,7 +6,7 @@ const root=new URL('../',import.meta.url);
 const source=fs.readFileSync(new URL('service-worker.js',root),'utf8');
 function fixture(){const events={},entries=new Map(),opened=[],deleted=[];let offline=false;
  const cache={addAll:async urls=>{for(const u of urls){assert.ok(fs.existsSync(new URL(new URL(u,'https://paratuhogar.org').pathname.slice(1),root)),u+' exists');entries.set(u,new Response(u));}},put:async(k,v)=>entries.set(typeof k==='string'?k:new URL(k.url).pathname+new URL(k.url).search,v),match:async k=>entries.get(typeof k==='string'?k:new URL(k.url).pathname+new URL(k.url).search)?.clone()};
- const ctx={importScripts:()=>{},URL,Response,console,self:{location:{origin:'https://paratuhogar.org'},addEventListener:(n,f)=>events[n]=f,clients:{claim:async()=>{}},skipWaiting(){}},caches:{open:async name=>{opened.push(name);return cache;},keys:async()=>['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-lowdata2','pth-public-static-2026-10-02-fasttools1','pth-public-static-2026-10-02-fasttools2','pth-public-images-v1','unrelated-cache'],delete:async name=>{deleted.push(name);return true;},match:cache.match},fetch:async()=>{if(offline)throw Error('offline');return new Response('current public shell');}};
+ const ctx={importScripts:()=>{},URL,Response,console,self:{location:{origin:'https://paratuhogar.org'},addEventListener:(n,f)=>events[n]=f,clients:{claim:async()=>{}},skipWaiting(){}},caches:{open:async name=>{opened.push(name);return cache;},keys:async()=>['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-lowdata2','pth-public-static-2026-10-02-fasttools1','pth-public-static-2026-10-02-fasttools2','pth-public-static-2026-10-02-quickstory1','pth-public-static-2026-10-02-review1','pth-public-images-v1','unrelated-cache'],delete:async name=>{deleted.push(name);return true;},match:cache.match},fetch:async()=>{if(offline)throw Error('offline');return new Response('current public shell');}};
  vm.runInNewContext(source,ctx);return {events,entries,opened,deleted,offline(){offline=true;}};
 }
 test('minimal static shells work without SDK, private responses or image precaching',async()=>{const f=fixture();let install;f.events.install({waitUntil:p=>install=p});await install;
@@ -25,7 +25,7 @@ test('catalogue upgrade installs the new reader and removes only previous static
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));
  assert.equal(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata1'),false);
  f.events.activate({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.deleted,['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-lowdata2','pth-public-static-2026-10-02-fasttools1','pth-public-static-2026-10-02-fasttools2']);
+ assert.deepEqual(f.deleted,['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-lowdata2','pth-public-static-2026-10-02-fasttools1','pth-public-static-2026-10-02-fasttools2','pth-public-static-2026-10-02-quickstory1','pth-public-static-2026-10-02-review1']);
 });
 test('reader, storefront and notification registrars agree on the release worker version',()=>{
  const read=file=>fs.readFileSync(new URL(file,root),'utf8');

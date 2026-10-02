@@ -12,7 +12,7 @@ const products=[
 ];
 
 (async()=>{
-  const allowed=new Set(['offline-catalog.html','offline.html','service-worker.js','old-service-worker.js','js/admin-push-worker.js','css/offline-catalog.css','js/low-connectivity.js','js/public-catalog-api.js','js/image-variants.js','js/product-images.js','js/offline-catalog.js']);
+  const allowed=new Set(['offline-catalog.html','offline.html','offline-order.html','service-worker.js','old-service-worker.js','js/admin-push-worker.js','css/offline-catalog.css','css/offline-order.css','js/low-connectivity.js','js/public-catalog-api.js','js/image-variants.js','js/product-images.js','js/offline-catalog.js','js/secure-data.js','js/pending-checkout.js','js/pending-checkout-page.js']);
   const server=http.createServer((request,response)=>{
     const pathname=new URL(request.url,'http://localhost').pathname;
     const filename=pathname==='/'?'offline-catalog.html':pathname.slice(1);
@@ -68,7 +68,7 @@ const products=[
         });
         await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/old-service-worker.js'));
         await page.evaluate(async()=>{
-          for(const cacheName of ['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-fasttools1','pth-public-images-v1','unrelated-cache']){
+          for(const cacheName of ['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-fasttools1','pth-public-static-2026-10-02-quickstory1','pth-public-static-2026-10-02-review1','pth-public-images-v1','unrelated-cache']){
             const cache=await caches.open(cacheName);await cache.put('/synthetic-sentinel',new Response('keep outside old static cache'));
           }
           localStorage.setItem('pth_new_cart_v1:synthetic','synthetic draft sentinel');
@@ -81,6 +81,8 @@ const products=[
         const cacheNames=await page.evaluate(()=>caches.keys());
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-lowdata1'),false);
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-fasttools1'),false);
+        assert.equal(cacheNames.includes('pth-public-static-2026-10-02-quickstory1'),false);
+        assert.equal(cacheNames.includes('pth-public-static-2026-10-02-review1'),false);
         for(const name of ['pth-public-static-2026-10-02-pending1','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_new_cart_v1:synthetic')),'synthetic draft sentinel');
