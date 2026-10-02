@@ -55,6 +55,17 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  if(role!=='visitor')await page.evaluate(()=>showSection('catalogo'));
  await page.waitForFunction(()=>document.querySelectorAll('#productos-container article').length===24);
  await page.evaluate(()=>loadMoreCatalogProducts());assert.equal(await page.locator('#productos-container article').count(),30);
+ // Catalogue pagination keeps active sorting even when source names disagree with prices.
+ await page.evaluate(()=>{window.catalogueBeforePaginationTest=productosRaw;productosRaw=Array.from({length:86},(_,i)=>({id:'sort'+i,nombre:'Equipo '+String(85-i).padStart(2,'0'),precio:17+i,comision:15,categoria:i%2?'COCINA':'HOGAR',disponible:'SI',thumbnail:'test.png',garantia:'1 mes'})).sort((a,b)=>a.nombre.localeCompare(b.nombre));activeCategory='TODOS';document.getElementById('search-bar').value='';document.getElementById(isGestorCatalogMode()?'sort-selector':'sort-selector-public').value='precio_asc';renderProducts();});
+ const catalogueNames=()=>page.locator('#productos-container article h3').allTextContents();
+ const firstSorted=await catalogueNames();assert.equal(firstSorted.length,24);assert.deepEqual(firstSorted.slice(0,4),['Equipo 85','Equipo 84','Equipo 83','Equipo 82']);
+ if(role!=='visitor')await page.evaluate(()=>showSection('catalogo'));
+ await page.locator('#productos-container button').filter({hasText:'Cargar más productos'}).click();
+ const nextSorted=await catalogueNames();assert.equal(nextSorted.length,48);assert.deepEqual(nextSorted.slice(0,24),firstSorted);
+ await page.evaluate(()=>{document.getElementById('search-bar').value='no-matching-product';activeCategory='COCINA';document.getElementById('filter-high-comm').checked=true;renderProducts();});
+ await page.locator('#productos-container button').filter({hasText:'Ver todos los disponibles'}).click();assert.equal(await page.locator('#productos-container article').count(),24);
+ assert.deepEqual(await page.evaluate(()=>({search:document.getElementById('search-bar').value,category:activeCategory,commission:document.getElementById('filter-high-comm').checked,sort:document.getElementById(isGestorCatalogMode()?'sort-selector':'sort-selector-public').value})),{search:'',category:'TODOS',commission:false,sort:'precio_asc'});
+ await page.evaluate(()=>{productosRaw=window.catalogueBeforePaginationTest;delete window.catalogueBeforePaginationTest;renderProducts();});
  await page.evaluate(()=>filterByCategory('NEVERAS'));assert.equal(await page.locator('#productos-container article').count(),15);
  await page.evaluate(()=>{filterByCategory('TODOS');document.getElementById('search-bar').value='prueba 01';renderProducts();});assert.equal(await page.locator('#productos-container article').count(),1);
  await page.evaluate(()=>addProductFromCard('Nevera prueba 01'));assert.equal(await page.evaluate(()=>cart.length),1);

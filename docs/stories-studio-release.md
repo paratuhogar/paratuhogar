@@ -81,6 +81,29 @@ push or reset. Rollback is a normal revert of this release commit followed by
 the standard static publication, retaining later work. No SQL rollback needed.
 Original Studio core remains in the repository for a reversible restoration.
 
+### Catalogue pagination follow-up (studio2)
+
+Independent public QA reproduced a preexisting issue: selecting ascending price
+then loading 48 of 86 products discarded sorting while the selector retained it.
+Both `renderProducts` and `loadMoreCatalogProducts` previously bypassed
+`applySort`; the same source is present in baseline `9007b20`, before Studio.
+The follow-up changes those two calls to reuse the existing sort/filter path.
+Search/category/commission and chosen sorting survive loading more; changing
+search/category still starts at 24. Existing wholesale-last behavior is retained.
+
+The empty-state recovery is explicitly labelled “Ver todos los disponibles”.
+Only that action clears search/category/high-commission and restores the
+availability filter. Ordinary filter buttons continue preserving search/category.
+The source/shell cache marker advances to studio2, retaining the push registration
+URL and all Studio renderer/assets. No backend or commercial changes.
+
+Twelve additional regression tests cover both audiences and all five sorting
+criteria, stable prefixes, filtered pagination and explicit empty-state reset;
+the 183-test suite passes. Browser fixtures exercise the actual 24→48 of 86
+button and recovery for visitors, gestores and subgestores. Parent verified
+studio1 publicly and synchronized the Mac at `45739ac`; studio2 propagation and
+Mac synchronization need its new source hash after the follow-up push.
+
 A successful source push confirms only GitHub source publication. Public Pages
 propagation and signed-in checks on an actual phone are the parent's follow-up:
 this environment previously received a denied public/Pages HTTP route, which

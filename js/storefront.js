@@ -2077,6 +2077,15 @@ function setGestorCatalogFilter(filter) {
     applySort();
 }
 
+function showAllAvailableCatalogProducts() {
+    const search = document.getElementById('search-bar');
+    const commission = document.getElementById('filter-high-comm');
+    if (search) search.value = '';
+    if (commission) commission.checked = false;
+    gestorCatalogFilter = 'disponibles';
+    filterByCategory('TODOS');
+}
+
 function setGestorCatalogView(view) {
     gestorCatalogView = view === 'list' ? 'list' : 'grid';
     const gridButton = document.getElementById('gestor-view-grid');
@@ -2480,7 +2489,7 @@ function renderCatalogProducts(list) {
             <div class="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-center">
                 <span class="material-symbols-outlined text-4xl text-slate-300">search_off</span>
                 <p class="mt-3 text-sm font-black text-slate-700">No encontramos productos con estos filtros</p>
-                <button onclick="setGestorCatalogFilter('disponibles')" class="mt-3 text-xs font-black text-[#1a4789] hover:underline">Ver disponibles</button>
+                <button onclick="showAllAvailableCatalogProducts()" class="mt-3 text-xs font-black text-[#1a4789] hover:underline">Ver todos los disponibles</button>
             </div>`;
         return;
     }
@@ -2584,12 +2593,12 @@ function renderProducts() {
         return;
     }
     catalogVisibleCount = CATALOG_PAGE_SIZE;
-    renderCatalogProducts(getFilteredCatalogProducts());
+    applySort();
 }
 
 function loadMoreCatalogProducts() {
     catalogVisibleCount += CATALOG_PAGE_SIZE;
-    renderCatalogProducts(getFilteredCatalogProducts());
+    applySort();
 }
 
     // 3. DETALLE DE PRODUCTO
