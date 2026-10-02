@@ -3,6 +3,7 @@
  'use strict';
  const pending=new Map();
  const definitions={
+  studio:[['style','css/content-studio.css?v=20261002-studio1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio1','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio1','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
   charts:[['script','https://cdn.jsdelivr.net/npm/chart.js','pth-chart-js']],
   xlsx:[['script','https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js','pth-xlsx-js']],
   zip:[['script','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js','pth-jszip-js']],
@@ -27,7 +28,7 @@
  async function load(name){
   const resources=definitions[name];if(!resources)throw Error('Herramienta desconocida.');
   // PDF plugin requires its core; all other downloads are independent.
-  if(name==='pdf'){for(const item of resources)await resource(item);}else await Promise.all(resources.map(resource));
+  if(name==='pdf'||name==='studio'){for(const item of resources)await resource(item);}else await Promise.all(resources.map(resource));
  }
  async function ensure(name){try{await load(name);return true;}catch(error){root.alert(error.message+' Comprueba la conexión y vuelve a intentarlo.');return false;}}
  function scheduleSession(){const token=root.PTHSecureData?.token();const run=()=>{if(token&&token===root.PTHSecureData?.token())load('session').catch(error=>console.warn(error.message));};if(root.requestIdleCallback)root.requestIdleCallback(run,{timeout:2500});else setTimeout(run,250);}

@@ -69,6 +69,14 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.evaluate(()=>{document.getElementById('log-user').value='synthetic-test-user';document.getElementById('log-pass').value='synthetic-test-only';return processLogin();});
   await page.waitForFunction(()=>window.currentUserData?.nombre==='Gestor Prueba'&&Number(productosRaw[0]?.comision)===50);
  }
+ if(role==='gestor'){
+  await page.evaluate(()=>openStoryComposer('Nevera prueba 01'));
+  await page.waitForFunction(()=>document.querySelector('dialog [data-count]')?.textContent.includes('1 seleccionados'));
+  await page.locator('dialog [data-select-results]').click();
+  assert.match(await page.locator('dialog [data-count]').textContent(),/30 seleccionados/);
+  await page.locator('dialog [data-close]').click();
+  assert.equal(await page.locator('dialog').count(),0,'real storefront Stories entrypoint closes cleanly');
+ }
  assert.deepEqual(errors,[],'unexpected runtime errors');
  console.log(`PASS ${role}: one navigation, no heavy startup tools, 24/30 pagination, filters/search/cart, own pricing, feedback link, mobile`);
  await context.close();
