@@ -124,3 +124,26 @@ this environment previously received a denied public/Pages HTTP route, which
 was not retried or bypassed. Real Android/iOS/desktop WhatsApp attachments and
 recipient delivery need device verification; Chromium fixtures prove wiring,
 fallbacks and state handling, not real-app delivery.
+
+### Story product-route follow-up (studio4)
+
+The user's mobile screenshot exposed a lazy-load failure after opening a product
+detail: `openDetail` changes the URL to `/producto/<slug>/` using `pushState`,
+so relative tool URLs requested nonexistent product-local JS/CSS. The shared
+optional asset loader now resolves local tools from the site root, retaining
+absolute CDN URLs, load order, deduplication, and failure/retry handling. The
+Canvas font also uses its root path, preventing a second failure during rendering.
+Only affected asset versions and the shell/cache marker advance to studio4;
+the push registration URL remains applications1. Scope is static file routing;
+there are no database, permission, price, commission, or customer-data changes.
+
+The nested-route regression failed with the exact tool-load error before the fix
+and passes afterward, including session/traffic tools. Full mobile Chromium
+fixtures now open the real product detail, click its Story button, verify the
+selected product, loaded font, and completed 1080×1920 Canvas, then select the
+catalogue and close cleanly, for both internal roles. The four-template Studio
+browser suite and 183 Node tests pass. No production writes or messages were
+used. There are no CSS/build-input changes. Rollback is a normal revert of this
+follow-up commit, retaining preceding releases. Parent must check live studio4
+propagation and the signed-in product-detail button on an actual phone; the
+previously denied public/Pages route remains unused in this environment.

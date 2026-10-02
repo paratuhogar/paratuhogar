@@ -55,7 +55,7 @@
  let fontPromise;
  function font() {
   if (!fontPromise) fontPromise = (async () => {
-   const face = new FontFace('PTHManrope', 'url(assets/fonts/Manrope.ttf)', { weight: '200 800' });
+   const face = new FontFace('PTHManrope', 'url(/assets/fonts/Manrope.ttf)', { weight: '200 800' });
    let timer;
    try { await Promise.race([face.load(), new Promise((_, reject) => { timer = setTimeout(() => reject(Error('No se pudo cargar la fuente del diseño. Vuelve a preparar.')), 10000); })]); document.fonts.add(face); }
    catch (error) { fontPromise = null; throw error; } finally { clearTimeout(timer); }

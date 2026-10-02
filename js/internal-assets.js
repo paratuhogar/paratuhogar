@@ -3,7 +3,7 @@
  'use strict';
  const pending=new Map();
  const definitions={
-  studio:[['style','css/content-studio.css?v=20261002-studio1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio3','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
+  studio:[['style','css/content-studio.css?v=20261002-studio1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
   charts:[['script','https://cdn.jsdelivr.net/npm/chart.js','pth-chart-js']],
   xlsx:[['script','https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js','pth-xlsx-js']],
   zip:[['script','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js','pth-jszip-js']],
@@ -18,7 +18,10 @@
   if(existing?.dataset.loaded==='true')return Promise.resolve();
   const promise=new Promise((resolve,reject)=>{
    const node=document.createElement(kind==='style'?'link':'script');node.id=id;
-   if(kind==='style'){node.rel='stylesheet';node.href=url;}else{node.src=url;node.async=true;}
+   // Product details change the document URL with pushState. Local tools still
+   // live at the site root, independently of the currently open product.
+   const assetURL=new URL(url,new URL('/',document.baseURI)).href;
+   if(kind==='style'){node.rel='stylesheet';node.href=assetURL;}else{node.src=assetURL;node.async=true;}
    const timer=setTimeout(()=>finish(Error('La herramienta tardó demasiado en cargar.')),8000);
    const finish=error=>{clearTimeout(timer);node.onload=node.onerror=null;if(error){node.remove();pending.delete(id);reject(error);}else{node.dataset.loaded='true';resolve();}};
    node.onload=()=>finish();node.onerror=()=>finish(Error('No se pudo cargar la herramienta.'));

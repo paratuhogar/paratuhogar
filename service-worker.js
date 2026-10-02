@@ -1,9 +1,9 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-studio3';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-studio4';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20261002-studio3';
+const PTH_SHELL_URL = '/index.html?v=20261002-studio4';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
@@ -12,7 +12,7 @@ const PTH_PUBLIC_ASSETS = [
   '/js/product-images.js?v=20261001-images2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.js?v=20261002-admin1',
-  '/js/internal-assets.js?v=20261002-studio3',
+  '/js/internal-assets.js?v=20261002-studio4',
   '/js/product-availability-form.js?v=20260924-1',
   '/js/product-description-editor.js?v=20260924-1',
   '/js/checkout-submit-guard.js?v=20260918-1',

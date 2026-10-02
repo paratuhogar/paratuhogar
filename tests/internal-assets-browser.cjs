@@ -3,6 +3,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  const page=await browser.newPage(),requests=[];let failXlsx=true;
  await page.route('**/*',async route=>{
   const url=route.request().url();requests.push(url);
+  if(new URL(url).pathname.startsWith('/producto/'))return route.fulfill({status:404,body:''});
   if(url.includes('sheetjs')&&failXlsx){failXlsx=false;return route.abort();}
   let body='';
   if(url.includes('jspdf.umd'))body='window.testPdfCore=true;';
@@ -12,7 +13,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
   if(url.includes('content-studio.js'))body='if(!window.testStudioJobs)throw Error("Studio UI loaded before jobs");window.testStudioUI=true;';
   await route.fulfill({contentType:url.includes('.css')?'text/css':'application/javascript',body});
  });
- await page.setContent('<html><head><base href="https://assets.test/"></head><body><script>window.alerts=[];window.alert=m=>alerts.push(m)</script></body></html>');
+ await page.setContent('<html><head><base href="https://assets.test/producto/bateria/"></head><body><script>window.alerts=[];window.alert=m=>alerts.push(m)</script></body></html>');
  await page.addScriptTag({content:fs.readFileSync(path.join(__dirname,'../js/internal-assets.js'),'utf8')});
  assert.equal(requests.length,0);
  await page.evaluate(()=>Promise.all([PTHAssets.load('zip'),PTHAssets.load('zip')]));assert.equal(requests.filter(u=>u.includes('jszip')).length,1);
@@ -20,5 +21,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  assert.equal(await page.evaluate(()=>PTHAssets.ensure('xlsx')),true);assert.equal(requests.filter(u=>u.includes('sheetjs')).length,2);
  await page.evaluate(()=>PTHAssets.load('pdf'));assert.equal(await page.evaluate(()=>testPdfPlugin),true);
  await page.evaluate(()=>PTHAssets.load('studio'));assert.equal(await page.evaluate(()=>testStudioUI),true);
- console.log('PASS lazy assets: zero eager requests, concurrent deduplication, failure/retry, ordered PDF and Studio dependencies');
+ await page.evaluate(()=>Promise.all([PTHAssets.load('traffic'),PTHAssets.load('session')]));
+ assert.equal(requests.some(u=>new URL(u).pathname.startsWith('/producto/')),false,'local tools must resolve from the site root on product routes');
+ console.log('PASS lazy assets: zero eager requests, concurrent deduplication, failure/retry, ordered PDF and Studio dependencies, nested product route');
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

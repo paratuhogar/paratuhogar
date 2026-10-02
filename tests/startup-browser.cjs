@@ -12,7 +12,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  for(const role of (baseline?['visitor']:['visitor','gestor','subgestor'])){
  const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:parent;
  page.on('pageerror',e=>errors.push(e.message));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
- await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','1');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
+ await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
  await page.route('**/*',async route=>{
  const req=route.request(),url=new URL(req.url());requests.push(url.href);
  if(url.pathname==='/functions/v1/secure-data'){
@@ -33,9 +33,9 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  }
  if(url.hostname==='127.0.0.1'){
  let rel=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname.slice(1));
- if(!/^(index\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
+ if(!/^(index\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
  const file=path.join(root,rel);if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
- return route.fulfill({body:rel==='index.html'&&baselineHtml?baselineHtml:fs.readFileSync(file),contentType:rel.endsWith('.html')?'text/html; charset=utf-8':/\.(js|mjs)$/.test(rel)?'application/javascript; charset=utf-8':rel.endsWith('.css')?'text/css':'image/jpeg'});
+ return route.fulfill({body:rel==='index.html'&&baselineHtml?baselineHtml:fs.readFileSync(file),contentType:rel.endsWith('.html')?'text/html; charset=utf-8':/\.(js|mjs)$/.test(rel)?'application/javascript; charset=utf-8':rel.endsWith('.css')?'text/css':rel.endsWith('.ttf')?'font/ttf':'image/jpeg'});
  }
  if(url.hostname==='cdn.tailwindcss.com')return route.fulfill({contentType:'application/javascript',body:'window.tailwind={config:{}};'});
  if(url.hostname==='images.unsplash.com'){await new Promise(r=>setTimeout(r,1000));heroFinished=true;}
@@ -80,16 +80,25 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.evaluate(()=>{document.getElementById('log-user').value='synthetic-test-user';document.getElementById('log-pass').value='synthetic-test-only';return processLogin();});
   await page.waitForFunction(()=>window.currentUserData?.nombre==='Gestor Prueba'&&Number(productosRaw[0]?.comision)===50);
  }
- if(role==='gestor'){
-  await page.evaluate(()=>openStoryComposer('Nevera prueba 01'));
+ if(role!=='visitor'){
+  await page.evaluate(()=>{toggleCartModal(false);openDetail('Nevera prueba 01');});
+  assert.match(new URL(page.url()).pathname,/^\/producto\//,'test Stories after opening the actual product detail');
+  const storyAlerts=[];page.on('dialog',async dialog=>{storyAlerts.push(dialog.message());await dialog.dismiss();});
+  await page.locator('#btn-story-maker').click();
   await page.waitForFunction(()=>document.querySelector('dialog [data-count]')?.textContent.includes('1 seleccionados'));
+  await page.waitForFunction(()=>{const canvas=document.querySelector('dialog [data-preview] canvas');return canvas?.width===1080&&canvas?.height===1920&&document.fonts.check('16px PTHManrope');});
+  assert.equal(await page.locator('dialog [data-preview] canvas').getAttribute('aria-label'),'Vista previa: Nevera prueba 01');
+  assert.ok(requests.some(u=>new URL(u).pathname==='/assets/fonts/Manrope.ttf'),'real Story font loads successfully');
+  assert.equal(requests.some(u=>/\/producto\/.*\/(?:js|css|assets)\//.test(new URL(u).pathname)),false,'tools and fonts must load from the root');
+  assert.deepEqual(storyAlerts,[],'product Story opens without an asset-load alert');
   await page.locator('dialog [data-select-results]').click();
   assert.match(await page.locator('dialog [data-count]').textContent(),/30 seleccionados/);
   await page.locator('dialog [data-close]').click();
   assert.equal(await page.locator('dialog').count(),0,'real storefront Stories entrypoint closes cleanly');
+  await page.evaluate(()=>closeDetail());
  }
  assert.deepEqual(errors,[],'unexpected runtime errors');
- console.log(`PASS ${role}: one navigation, no heavy startup tools, 24/30 pagination, filters/search/cart, own pricing, feedback link, mobile`);
+ console.log(`PASS ${role}: one navigation, no heavy startup tools, 24/30 pagination, filters/search/cart, own pricing, feedback link, mobile${role!=='visitor'?', actual product-detail Story button and 1080×1920 preview':''}`);
  await context.close();
  }
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
