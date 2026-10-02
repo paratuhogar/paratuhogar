@@ -14,7 +14,7 @@ function fixture(){
  const node=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',innerHTML:'',value:'',classList:{add(){},remove(){}},focus(){},addEventListener(event,listener){this[event]=listener;},querySelector(selector){return node(selector);}});return nodes.get(id);};
  const profile={id:'sub',nombre:'Sub de Jomil',parent_id:'principal',parent_nombre:'Jomil',rol:'gestor',estado:'activo'};
  const storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k),key:i=>[...values.keys()][i],get length(){return values.size;}};
- let failParent=false,failProducts=false,failPrices=false,networkFailure=false,productReads=0;
+ let failParent=false,failProducts=false,failPrices=false,networkFailure=false,productReads=0,duplicateSelf=false,mixedHierarchy=false;
  const sdk={from:table=>{assert.equal(table,'control_sistema');return{select(){return this;},eq(){return this;},maybeSingle:async()=>({data:{valor:'2026-09-30T23:00:00Z'},error:null})}},rpc(){throw Error('Unexpected RPC');}};
  const context={console:{log(){},error(){}},Set,Map,Promise,URL,URLSearchParams,AbortSignal,Date,
   localStorage:storage,document:{getElementById:node},location:{origin:'https://paratuhogar.org',search:''},
@@ -29,6 +29,7 @@ function fixture(){
    let data,error=null,status=200;
    if(body.action==='session')data={profile};
    else if(body.table==='gestores'){
+    if(duplicateSelf && body.filters.some(f=>f.column==='nombre'&&f.value===profile.nombre))return {status:body.single?406:200,json:async()=>body.single?({data:null,error:{message:'La consulta no devolvió un único registro.'}}):({data:[profile,{...profile,id:'duplicate',parent_id:mixedHierarchy?'another-parent':profile.parent_id}],error:null})};
     if(body.filters.some(f=>f.column==='id'&&f.value==='principal')){
      data=failParent?null:{id:'principal',nombre:'Jomil',estado:'activo',parent_id:null};
      if(failParent){error={message:'Consulta del principal no disponible',code:'ACCESS_DENIED'};status=503;}
@@ -41,15 +42,48 @@ function fixture(){
     data=failPrices?null:[{producto_id:'equipo',nuevo_precio:100,comision_subgestor:15,visible_subgestor:true}];
     if(failPrices){error={message:'No se pudo actualizar la configuración asignada',code:'NETWORK_ERROR'};status=503;}
    }else throw Error('Unexpected table '+body.table);
-   return{status,json:async()=>({data,error})};
+   return{status,json:async()=>({data:JSON.parse(JSON.stringify(data)),error})};
   }
  };
  context.window=context;
  vm.runInNewContext(fs.readFileSync(new URL('../js/secure-data.js',import.meta.url),'utf8'),context);
  context.supabaseClient=context.supabase.createClient();
  vm.runInNewContext(code,context);
- return{context,nodes,requests,storage,node,load:()=>context.loadProducts(),get productReads(){return productReads;},failParent:v=>{failParent=v;},failProducts:v=>{failProducts=v;},failPrices:v=>{failPrices=v;},networkFailure:v=>{networkFailure=v;}};
+ return{context,nodes,requests,storage,node,profile,duplicateSelf:v=>{duplicateSelf=v;},mixedHierarchy:v=>{mixedHierarchy=v;},load:()=>context.loadProducts(),get productReads(){return productReads;},failParent:v=>{failParent=v;},failProducts:v=>{failProducts=v;},failPrices:v=>{failPrices=v;},networkFailure:v=>{networkFailure=v;}};
 }
+test('authenticated catalogue resolves the exact account even when another account has the same name',async()=>{
+ const f=fixture();f.duplicateSelf(true);await f.load();
+ assert.equal(f.context.productosRaw.length,1);
+ assert.ok(f.requests.some(r=>r.table==='gestores'&&r.filters.some(x=>x.column==='id'&&x.value==='sub')));
+ assert.equal(f.requests.some(r=>r.table==='gestores'&&r.filters.some(x=>x.column==='nombre'&&x.value===f.profile.nombre)),false);
+});
+test('shared catalogue names with one pricing owner remain readable without arbitrarily choosing an account ID',async()=>{
+ const f=fixture();f.duplicateSelf(true);f.context.currentUserData=null;
+ const hierarchy=await f.context.resolveSalesHierarchy(f.profile.nombre,true);
+ assert.equal(hierarchy.pricingOwnerName,'Jomil');assert.equal(hierarchy.agent.id,undefined);
+});
+test('ambiguous public names with different parents do not leak an arbitrary hierarchy or pricing assignment',async()=>{
+ const f=fixture();f.duplicateSelf(true);f.mixedHierarchy(true);f.context.currentUserData=null;
+ await assert.rejects(f.context.resolveSalesHierarchy(f.profile.nombre,true),/diferentes equipos/);
+});
+test('two authenticated accounts sharing a name never share a cached hierarchy',async()=>{
+ const f=fixture();const first=await f.context.resolveSalesHierarchy(f.profile.nombre);
+ f.profile.id='different-account';f.profile.parent_id=null;
+ const second=await f.context.resolveSalesHierarchy(f.profile.nombre);
+ assert.equal(first.agent.id,'sub');assert.equal(second.agent.id,'different-account');assert.equal(second.isSubgestor,false);
+});
+test('a full optional cache does not hide products successfully fetched from the server',async()=>{
+ const f=fixture(),set=f.storage.setItem;f.storage.setItem=(k,v)=>{if(/^pth_catalogo_|^pth_ultimo_cambio_productos/.test(k))throw Error('Quota exceeded');set(k,v);};
+ await f.load();assert.equal(f.context.productosRaw.length,1);assert.equal(f.context.productosRaw[0].comision,'15.00');
+ assert.equal(vm.runInNewContext('catalogLoadError',f.context),null);
+});
+test('corrupt non-array and empty cached catalogues are discarded and refreshed',async()=>{
+ for(const cached of ['{broken','null','{}','[]','[null]']){
+  const f=fixture();f.profile.parent_id=null;
+  for(const [k,v] of Object.entries({'pth_catalogo_schema_version':'catalogue-gateway-compatible-v2','pth_catalogo_cache:sub':cached,'pth_catalogo_cache_time:sub':String(Date.now()),'pth_ultimo_cambio_productos:sub':'2026-09-30T23:00:00Z'}))f.storage.setItem(k,v);
+  await f.load();assert.equal(f.productReads,1);assert.equal(f.context.productosRaw.length,1);
+ }
+});
 test('a hierarchy failure is caught, unlocks catalogue loading and permits a later successful load',async()=>{
  const f=fixture();f.failParent(true);await f.load();
  assert.equal(vm.runInNewContext('productsLoadInProgress',f.context),false);

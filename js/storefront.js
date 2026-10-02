@@ -483,11 +483,11 @@ async function processRegister() {
 
         // --- VERIFICACIÓN DE SUBGESTOR EN TIEMPO REAL (EL FIX) ---
         try {
-            const { data: dbGestor } = await supabaseClient
+            let hierarchyQuery = supabaseClient
                 .from('gestores')
-                .select('id, parent_id')
-                .eq('nombre', name)
-                .single();
+                .select('id, parent_id');
+            hierarchyQuery = window.currentUserData?.id ? hierarchyQuery.eq('id', window.currentUserData.id) : hierarchyQuery.eq('nombre', name);
+            const { data: dbGestor } = await hierarchyQuery.single();
 
             if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
             if (dbGestor) {
@@ -1509,18 +1509,29 @@ function showCatalogLoadError(error, reload = false) {
 
 const salesHierarchyCache = new Map();
 
-async function resolveSalesHierarchy(agentName) {
+async function resolveSalesHierarchy(agentName, catalogOnly = false) {
     const cleanName = String(agentName || '').trim();
     if (!cleanName || cleanName === 'Venta Directa') return null;
-    if (salesHierarchyCache.has(cleanName)) return salesHierarchyCache.get(cleanName);
+    const self = window.currentUserData;
+    const ownId = window.PTHSecureData.token() && self?.nombre === cleanName ? self.id : null;
+    const scopeKey = `${window.PTHSecureData.cacheSuffix()}:${ownId || cleanName}:${catalogOnly}`;
+    if (salesHierarchyCache.has(scopeKey)) return salesHierarchyCache.get(scopeKey);
 
-    const { data: agent, error } = await supabaseClient
+    let query = supabaseClient
         .from('gestores')
-        .select('id, nombre, telefono, estado, parent_id')
-        .eq('nombre', cleanName)
-        .maybeSingle();
+        .select('id, nombre, telefono, estado, parent_id');
+    query = ownId ? query.eq('id', ownId).maybeSingle() : query.eq('nombre', cleanName);
+    if (!ownId && !catalogOnly) query = query.maybeSingle();
+    const { data, error } = await query;
 
     if (error) throw Object.assign(new Error(error.message), error);
+    // Public catalogue links name the pricing owner. Repeated names may share
+    // that owner, but never choose one account when their hierarchies disagree.
+    const matches = Array.isArray(data) ? data : data ? [data] : [];
+    if (matches.length > 1 && new Set(matches.map(row => row.parent_id || null)).size > 1) {
+        throw new Error('Este enlace necesita revisión: hay cuentas con el mismo nombre y diferentes equipos.');
+    }
+    const agent = matches.length > 1 ? { nombre: cleanName, parent_id: matches[0].parent_id } : matches[0];
     if (!agent) return null;
 
     let parent = null;
@@ -1543,7 +1554,7 @@ async function resolveSalesHierarchy(agentName) {
         isSubgestor: Boolean(parent),
         pricingOwnerName: parent?.nombre || agent.nombre
     };
-    salesHierarchyCache.set(cleanName, hierarchy);
+    salesHierarchyCache.set(scopeKey, hierarchy);
     return hierarchy;
 }
 
@@ -1603,7 +1614,7 @@ async function loadProducts() {
         // Declarar activeGestor con prioridad de sesión, URL o memoria
         const activeGestor = sessionGestor || urlGestor || memoriaGestor;
         const [salesHierarchy, { data: ctrlData }] = await Promise.all([
-            resolveSalesHierarchy(activeGestor),
+            resolveSalesHierarchy(activeGestor, true),
             supabaseClient.from('control_sistema').select('valor').eq('clave', 'ultimo_cambio_productos').maybeSingle()
         ]);
         window.activeSalesHierarchy = salesHierarchy;
@@ -1640,10 +1651,21 @@ async function loadProducts() {
         if (localStorage.getItem(catalogSchemaKey) !== catalogSchemaVersion) {
             localStorage.removeItem(cacheKey);
             localStorage.removeItem(cacheTimeKey);
-            localStorage.setItem(catalogSchemaKey, catalogSchemaVersion);
+            try { localStorage.setItem(catalogSchemaKey, catalogSchemaVersion); } catch (_) {}
         }
 
-        const catalogoCacheado = localStorage.getItem(cacheKey);
+        let catalogoCacheado = localStorage.getItem(cacheKey);
+        let cachedProducts;
+        if (catalogoCacheado) {
+            try {
+                cachedProducts = JSON.parse(catalogoCacheado);
+                if (!Array.isArray(cachedProducts) || !cachedProducts.length || cachedProducts.some(row => !row || typeof row !== 'object' || !row.id || !row.nombre)) throw Error('Invalid catalogue cache');
+            } catch (_) {
+                localStorage.removeItem(cacheKey);
+                localStorage.removeItem(cacheTimeKey);
+                catalogoCacheado = null;
+            }
+        }
         const cacheTime = localStorage.getItem(cacheTimeKey);
         const ultimoCambioLocal = localStorage.getItem(cacheLocalKey);
 
@@ -1653,13 +1675,14 @@ async function loadProducts() {
 
         // Si la marca de tiempo de la base de datos es diferente a la local, se fuerza la descarga
         const hayNuevaVersion = ultimoCambioNube && (ultimoCambioNube !== ultimoCambioLocal);
-        const cacheExpirada = !cacheTime || (Date.now() - parseInt(cacheTime) > CACHE_EXPIRATION_MS);
+        const cacheAge = Date.now() - Number(cacheTime);
+        const cacheExpirada = !cacheTime || !Number.isFinite(cacheAge) || cacheAge < 0 || cacheAge > CACHE_EXPIRATION_MS;
 
         // Personalized prices and assigned shares can change independently of inventory.
         const necesitaDescargar = Boolean(window.currentUserData?.parent_id) || !catalogoCacheado || hayNuevaVersion || cacheExpirada;
 
         if (!necesitaDescargar) {
-            productos = JSON.parse(catalogoCacheado);
+            productos = cachedProducts;
             console.log("📦 Catálogo cargado desde Caché Local (Versión al día)");
         } else {
             // Descargar catálogo completo de Supabase sólo si es estrictamente necesario
@@ -1672,13 +1695,18 @@ async function loadProducts() {
                 .order('nombre', { ascending: true });
 
             if (error) throw error;
+            if (!Array.isArray(data)) throw new Error('El servidor no devolvió un catálogo válido. Reintenta la carga.');
             productos = data;
 
             // Guardar en caché y actualizar marcas de tiempo
-            localStorage.setItem(cacheKey, JSON.stringify(productos));
-            localStorage.setItem(cacheTimeKey, Date.now().toString());
-            if (ultimoCambioNube) {
-                localStorage.setItem(cacheLocalKey, ultimoCambioNube);
+            // Cache is optional. A full device must not hide a valid catalogue.
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(productos));
+                localStorage.setItem(cacheTimeKey, Date.now().toString());
+                if (ultimoCambioNube) localStorage.setItem(cacheLocalKey, ultimoCambioNube);
+            } catch (_) {
+                localStorage.removeItem(cacheKey);
+                localStorage.removeItem(cacheTimeKey);
             }
             console.log("☁️ Catálogo actualizado desde Supabase (Nueva versión detectada)");
         }
@@ -8044,62 +8072,6 @@ window.doLogout = function() {
         ctx.closePath();
     }
 
-    // ==========================================
-    // --- NUEVA FUNCIÓN PUENTE: LLEVA AL ESTUDIO DE DISEÑO ---
-async function downloadCatalogPDF() {
-    // 1. Validar que hay categoría seleccionada
-    // Si es "TODOS", preguntamos si está seguro porque pueden ser muchos productos
-    if (activeCategory === 'TODOS' && productosRaw.length > 50) {
-        if(!confirm("Has seleccionado 'TODOS'. Son muchos productos. ¿Quieres ir al estudio de diseño de todas formas?")) return;
-    }
-
-    const btn = document.getElementById('btn-pdf-bulk'); // Asegúrate que este ID coincida con tu botón
-    const originalText = btn ? btn.innerHTML : "";
-    if(btn) {
-        btn.innerHTML = `<span class="loader w-4 h-4 border-red-600"></span>`;
-        btn.disabled = true;
-    }
-
-    try {
-        // 2. Filtrar los productos que se ven actualmente (respetando filtros)
-        const productsToExport = productosRaw.filter(p => {
-            const matchCat = activeCategory === 'TODOS' || (p.categoria && p.categoria.toUpperCase().includes(activeCategory));
-            return matchCat && p.disponible === 'SI';
-        });
-
-        if (productsToExport.length === 0) throw new Error("No hay productos disponibles en esta vista.");
-
-        // 3. Empaquetar la Información ("La Maleta")
-        const sessionPayload = {
-            timestamp: Date.now(),
-            agent: window.gestorName || "Asesor de Ventas",
-            phone: getAgentPhone(), // Tu función inteligente que obtiene el teléfono
-            categoryName: activeCategory,
-            products: productsToExport.map(p => Object.fromEntries(Object.entries(p).filter(([key]) => !/comision|commission|costo_proveedor/i.test(key))))
-        };
-
-        // 4. Guardar en la memoria del navegador (LocalStorage)
-        // Usamos try-catch por si el array es gigante y excede la memoria (raro en texto, pero posible)
-        try {
-            localStorage.setItem('pth_catalog_data', JSON.stringify(sessionPayload));
-        } catch (e) {
-            throw new Error("Demasiados productos para procesar. Por favor filtra por una categoría específica.");
-        }
-
-        // 5. Abrir el Estudio en una nueva pestaña
-        // Asumiremos que el archivo se llamará 'catalog-maker.html'
-        window.open('catalog-maker.html', '_blank');
-
-    } catch (e) {
-        alert("⚠️ " + e.message);
-    } finally {
-        if(btn) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-}
-
     // Helper: Obtener imagen en Base64 para el PDF
     function getImageDataUrl(url) {
         return new Promise((resolve, reject) => {
@@ -9690,7 +9662,7 @@ async function getActiveReferrer() {
     const today = new Date();
     today.setDate(today.getDate() - 30);
 
-    const hierarchy = await resolveSalesHierarchy(data.nombre);
+    const hierarchy = await resolveSalesHierarchy(data.nombre, true);
     let referralSalesQuery = supabaseClient
         .from('pedidos')
         .select('*', { count: 'exact', head: true })
@@ -11387,68 +11359,42 @@ async function downloadCategoryPhotos() {
     }
 }
 
-// --- NUEVA FUNCIÓN PUENTE EN INDEX.HTML ---
-// Reemplaza a la antigua downloadCatalogPDF
+// The PDF workspace opens in the same tab: no delayed mobile popup to block.
+let catalogExportOpening = false;
 async function downloadCatalogPDF() {
-    const visibleProducts = getProductsVisibleOnScreen().filter(product => product.disponible === 'SI');
-    if (visibleProducts.length > 50
-        && !confirm(`La selección actual contiene ${visibleProducts.length} productos. ¿Quieres abrir el estudio PDF con todos ellos?`)) return;
-
-    const btn = document.getElementById('btn-pdf-bulk');
-    const originalText = btn ? btn.innerHTML : "";
-    trackSpy('USO_HERRAMIENTA', 'Catálogo PDF');
-
-
-    // Feedback visual
-    if(btn) {
-        btn.innerHTML = `<span class="loader w-4 h-4 border-red-600"></span> Abriendo Estudio...`;
-        btn.disabled = true;
+    if (catalogExportOpening) return;
+    if (catalogLoadError || productsLoadInProgress) {
+        alert('Primero actualiza el catálogo. Usa Reintentar catálogo si aparece un error.');
+        return;
     }
-
+    const visibleProducts = getProductsVisibleOnScreen().filter(product => product.disponible === 'SI');
+    if (!visibleProducts.length) return alert('No hay productos en esta selección. Cambia los filtros o busca otro equipo.');
+    if (visibleProducts.length > 50 && !confirm(`La selección contiene ${visibleProducts.length} productos. ¿Abrir el estudio PDF con todos ellos?`)) return;
+    const btn = document.getElementById('btn-pdf-bulk'), originalText = btn?.innerHTML;
+    const token = window.PTHSecureData.token();
+    catalogExportOpening = true;
+    if (btn) { btn.disabled = true; btn.textContent = 'Abriendo catálogo…'; }
     try {
-        // Fetch descriptions only for the selected PDF products, preserving their current prices.
+        const profile = await window.PTHSecureData.restore();
+        if (!profile?.id || !token || token !== window.PTHSecureData.token()) throw Error('Vuelve a iniciar sesión antes de abrir el catálogo.');
         await ensureProductDescriptions(visibleProducts);
-        // 2. Filtrar productos visibles (respetando tus filtros actuales)
-        const productsToExport = visibleProducts.map(p => ({
-            id: p.id,
-            nombre: p.nombre,
-            categoria: p.categoria,
-            precio: p.precio,
-            descripcion: p.descripcion,
-            garantia: p.garantia,
-            mensajeria: p.mensajeria,
-            thumbnail: p.thumbnail
-        }));
-
-        if (productsToExport.length === 0) throw new Error("No hay productos visibles para el catálogo.");
-
-        // 3. Preparar la "Maleta" de datos
-        const sessionPayload = {
-            timestamp: Date.now(),
-            agent: window.gestorName || "Asesor de Ventas",
-            phone: getAgentPhone(), // Tu función que obtiene el teléfono correcto
-            categoryName: activeCategory,
-            mode: 'catalog',
+        if (token !== window.PTHSecureData.token()) throw Error('La sesión cambió. Abre el catálogo de nuevo.');
+        const exportPayload = {
+            timestamp: Date.now(), ownerId: profile.id,
+            agent: profile.nombre, phone: profile.telefono || '',
+            categoryName: activeCategory, mode: 'catalog',
             title: activeCategory === 'TODOS' ? 'Selección comercial' : activeCategory,
-            // Solo se transfieren datos comerciales. Nunca se incluyen costo,
-            // comisión, proveedor ni campos internos en el PDF.
-            products: productsToExport
+            products: visibleProducts.map(p => Object.fromEntries(['id','nombre','categoria','precio','descripcion','garantia','mensajeria','thumbnail'].map(field => [field,p[field]])))
         };
-
-        // 4. Guardar en la memoria del navegador
-        localStorage.setItem('pth_catalog_data', JSON.stringify(sessionPayload));
-
-        // 5. ABRIR EL ARCHIVO NUEVO (Asegúrate de haber creado catalog-maker.html)
-        window.open('catalog-maker.html', '_blank');
-
-    } catch (e) {
-        alert("⚠️ " + e.message);
+        try { localStorage.setItem('pth_catalog_data', JSON.stringify(exportPayload)); }
+        catch (_) { throw Error('El dispositivo no tiene espacio para guardar esta selección. Cierra otras pestañas o selecciona menos productos.'); }
+        trackSpy('USO_HERRAMIENTA', 'Catálogo PDF');
+        window.location.assign('/catalog-maker.html?v=20261002-catalog1');
+    } catch (error) {
+        alert('No se pudo abrir el catálogo. ' + error.message + ' Puedes volver a intentarlo.');
     } finally {
-        // Restaurar botón
-        if(btn) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+        catalogExportOpening = false;
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
     }
 }
 

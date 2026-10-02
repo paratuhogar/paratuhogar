@@ -7,11 +7,12 @@ const baselineHtml=baseline?fs.readFileSync(baseline,'utf8'):null;
 const products=Array.from({length:30},(_,i)=>({id:'p'+i,nombre:'Nevera prueba '+String(i).padStart(2,'0'),precio:1000+i,comision:50,categoria:i<15?'NEVERAS':'ENERGIA',disponible:'SI',precio_flexible:'NO',thumbnail:'test.png',created_at:'2026-09-25',garantia:'1 año'}));
 const parent={id:'11111111-1111-4111-8111-111111111111',nombre:'Gestor Prueba',rol:'gestor',estado:'activo',telefono:'5350000000',password:'__session__'};
 const child={...parent,id:'22222222-2222-4222-8222-222222222222',nombre:'Sub Prueba',parent_id:parent.id,parent_nombre:parent.nombre};
+const admin={...parent,id:'44444444-4444-4444-8444-444444444444',rol:'admin'};
 const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'v1'}:[];if(single&&Array.isArray(data))data=null;return Promise.resolve({data,error:null,count:0}).then(ok,no)}};for(const name of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[name]=()=>q;for(const name of ['single','maybeSingle'])q[name]=()=>{single=true;return q};return q;},rpc(){return Promise.resolve({data:[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};`;
 (async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
- for(const role of (baseline?['visitor']:['visitor','gestor','subgestor'])){
- const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:parent;
- page.on('pageerror',e=>errors.push(e.message));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
+ for(const role of (baseline?['visitor']:['visitor','gestor','subgestor','admin'])){
+ const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:role==='admin'?admin:parent;
+ page.on('pageerror',e=>errors.push(e.stack));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
  await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
  await page.route('**/*',async route=>{
  const req=route.request(),url=new URL(req.url());requests.push(url.href);
@@ -24,16 +25,17 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   try{validateQuery(b,req.headers().authorization?profile:null);}catch(e){return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({data:null,error:{message:e.message}})});}
   if(b.table==='productos'){productsAfterHero=heroFinished;}
   if(b.table==='productos')data=products.map(p=>({...p,comision:!req.headers().authorization?0:role==='subgestor'?15:50}));
-  if(b.table==='gestores')data=[parent,child];
+  if(b.table==='productos'&&b.columns==='id, descripcion')data=data.map(product=>({...product,descripcion:'Descripción de prueba'}));
+  if(b.table==='gestores')data=[parent,child,admin,{...parent,id:'33333333-3333-4333-8333-333333333333'}];
   if(b.table==='precios_personalizados')data=role==='subgestor'?products.map(p=>({gestor:parent.nombre,producto_id:p.id,nuevo_precio:p.precio,comision_subgestor:15,visible_subgestor:true})):[];
   for(const f of b.filters||[])if(f.method==='eq')data=data.filter(r=>r[f.column]===f.value);
-  if(b.single)data=data[0]||null;
+  if(b.single){if(data.length>1){return route.fulfill({status:406,contentType:'application/json',body:JSON.stringify({data:null,error:{message:'La consulta no devolvió un único registro.'}})});}data=data[0]||null;}
  }
  return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'http://127.0.0.1:8080'},body:JSON.stringify({data,error:null,count:0})});
  }
  if(url.hostname==='127.0.0.1'){
  let rel=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname.slice(1));
- if(!/^(index\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
+ if(!/^(index\.html|catalog-maker\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
  const file=path.join(root,rel);if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
  return route.fulfill({body:rel==='index.html'&&baselineHtml?baselineHtml:fs.readFileSync(file),contentType:rel.endsWith('.html')?'text/html; charset=utf-8':/\.(js|mjs)$/.test(rel)?'application/javascript; charset=utf-8':rel.endsWith('.css')?'text/css':rel.endsWith('.ttf')?'font/ttf':'image/jpeg'});
  }
@@ -46,6 +48,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  return route.fulfill({contentType:'application/json',body:'{"success":false}'});
  });
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
+ if(role==='admin'){await page.waitForFunction(()=>window.currentUserData?.rol==='admin');await page.evaluate(()=>PTHWorkView.switchView('gestor'));}
  try{await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===30,{},{timeout:12000});}catch(e){throw Error(role+': '+errors.join(' | ')+' '+await page.locator('#productos-container').innerText());}
  if(baseline){assert.equal(navigations,2);assert.equal(productsAfterHero,true);console.log('BASELINE controlled fixture: 2 navigations; catalogue waits for delayed hero image');await context.close();continue;}
  assert.equal(productsAfterHero,false,'catalogue must start without waiting for hero');
@@ -96,9 +99,18 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.locator('dialog [data-close]').click();
   assert.equal(await page.locator('dialog').count(),0,'real storefront Stories entrypoint closes cleanly');
   await page.evaluate(()=>closeDetail());
+  await page.evaluate(()=>showSection('catalogo'));
+  await page.locator('#btn-pdf-bulk').click();
+  await page.waitForURL('**/catalog-maker.html?v=20261002-catalog1',{waitUntil:'domcontentloaded'});
+  assert.equal(context.pages().length,1,'PDF opens without relying on a delayed popup');
+  assert.equal(await page.locator('#product-selector-list input').count(),1);
+  const exportData=await page.evaluate(()=>JSON.parse(localStorage.getItem('pth_catalog_data')));
+  assert.equal(exportData.ownerId,profile.id);assert.equal(exportData.products[0].nombre,'Nevera prueba 01');
+  assert.equal(Number(exportData.products[0].precio),1001);
+  assert.equal(exportData.products.some(product=>Object.hasOwn(product,'comision')||Object.hasOwn(product,'costo_proveedor')),false);
  }
  assert.deepEqual(errors,[],'unexpected runtime errors');
- console.log(`PASS ${role}: one navigation, no heavy startup tools, 24/30 pagination, filters/search/cart, own pricing, feedback link, mobile${role!=='visitor'?', actual product-detail Story button and 1080×1920 preview':''}`);
+ console.log(`PASS ${role}: one navigation, no heavy startup tools, 24/30 pagination, filters/search/cart, own pricing, feedback link, mobile${role!=='visitor'?', actual product-detail Story preview and same-tab PDF with selected product':''}`);
  await context.close();
  }
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -5,6 +5,7 @@ module.exports = {
   darkMode: 'class',
   content: [
     './index.html',
+    './catalog-maker.html',
     './admin-stats.js',
     './subgestor-tutorial.js',
     './system-events.js',

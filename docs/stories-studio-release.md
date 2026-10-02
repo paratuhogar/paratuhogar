@@ -147,3 +147,48 @@ used. There are no CSS/build-input changes. Rollback is a normal revert of this
 follow-up commit, retaining preceding releases. Parent must check live studio4
 propagation and the signed-in product-detail button on an actual phone; the
 previously denied public/Pages route remains unused in this environment.
+
+### Catalogue loading and PDF follow-up (catalog1)
+
+Support supplied a mobile screenshot of “La consulta no devolvió un único
+registro”. Read-only project checks confirmed healthy inventory and duplicate
+active account names. No account records, credentials, prices, commissions or
+permissions were changed. Private identifiers and contact details are omitted
+from this public release record.
+
+Session hierarchy/setup now resolves the signed-in account by its existing ID,
+not its non-unique display name; hierarchy caches are scoped by account. Shared
+catalogue/referrer reads accept a repeated name only when every matching account
+has the same pricing owner, without selecting an arbitrary account ID. Mixed
+parent assignments produce a recovery error. Transaction authorization and the
+server-side policies remain intact. Malformed/empty catalogue caches are
+refetched; a full optional cache no longer hides a valid server response.
+
+The PDF handoff uses a same-tab root URL after description loading, checks the
+session before/after, rejects concurrent clicks and stale/failed selections,
+transfers only commercial fields, and explains storage errors. The unused older
+duplicate PDF function was removed. The PDF workspace renders its product list
+without eager PDF/QR libraries or runtime Tailwind; its styles use the compiled
+site stylesheet. Libraries load with bounded retry on preparation, photographs
+have a timeout and safe fallback, and a basic price list needs no photographs.
+A prepared PDF has explicit download/open links for a fresh user gesture;
+changes to selection/options invalidate it. Product IDs use listener closures,
+never inline JavaScript generated from data. Cache/source marker is catalog1;
+push registration still uses applications1.
+
+Validation: 193 Node tests, real Chromium storefront fixtures for visitors,
+gestores, subgestores and administrators, duplicate account names, own pricing,
+24→48 pagination/filter recovery, product-detail Story rendering, and the actual
+PDF button/same-tab handoff. Separate mobile PDF fixtures cover 86 products,
+library failure/retry, image failures/timeouts, duplicate preparation, explicit
+download/open links and untrusted identifiers. That test uses a PDF API stub:
+it verifies UI/download wiring, not binary rendering by the CDN libraries.
+Compiled CSS and lazy-asset browser checks pass. Actual library retrieval
+returned HTTP 403 in this environment and was not bypassed; live PDF binary
+rendering and actual-phone saving remain external verification steps. Existing
+public/Pages access limits likewise prevent claiming live propagation solely
+from source publication. All production connector actions were read-only.
+
+Publication uses the existing main/root target and a normal fast-forward push.
+Rollback is a normal revert of this follow-up commit, retaining earlier work;
+there is no database migration or SQL rollback.

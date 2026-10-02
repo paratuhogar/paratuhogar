@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estudio de Catálogos | ParaTuHogar</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/tailwind.min.css?v=20261002-catalog1">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/js/internal-assets.js?v=20261002-catalog1" defer></script>
     <style>
+        @font-face { font-family:Manrope; src:url('/assets/fonts/Manrope.ttf') format('truetype'); font-weight:200 800; font-display:swap; }
         body { font-family: Manrope, sans-serif; }
         .paper { box-shadow: 0 25px 70px -20px rgba(15, 23, 42, .35); }
         @keyframes shimmer { to { transform: translateX(100%); } }
@@ -28,7 +26,7 @@
                     <p class="text-[10px] font-bold uppercase tracking-[.18em] text-blue-200">ParaTuHogar · PDF profesional</p>
                 </div>
             </div>
-            <button onclick="window.close()" class="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">Cerrar</button>
+            <a href="/" class="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">Volver al catálogo</a>
         </div>
     </header>
 
@@ -124,8 +122,14 @@
 
             <button id="btn-generate" onclick="startGeneration()" class="relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-[#1a4789] py-4 text-xs font-black uppercase tracking-[.15em] text-white shadow-xl shadow-blue-900/20 hover:bg-[#2461a5]">
                 <span class="material-symbols-outlined">download</span>
-                <span>Descargar PDF</span>
+                <span>Preparar PDF</span>
             </button>
+            <div id="pdf-ready" hidden class="space-y-3 rounded-2xl border border-blue-100 bg-white p-4">
+                <p id="pdf-result" role="status" class="text-xs font-bold text-slate-700"></p>
+                <a id="pdf-download" class="block rounded-xl bg-[#1a4789] p-4 text-center text-sm font-bold text-white">Descargar PDF</a>
+                <a id="pdf-open" target="_blank" rel="noopener" class="block text-center text-sm font-bold text-blue-700">Abrir PDF</a>
+                <p class="text-xs text-slate-500">Si el teléfono abre el documento, usa Guardar o Compartir desde el visor.</p>
+            </div>
             <div id="progress-container" class="hidden">
                 <div class="mb-2 flex justify-between text-[10px] font-bold text-slate-500">
                     <span id="status-text">Preparando...</span><span id="progress-percent">0%</span>
@@ -158,10 +162,10 @@
 <script>
 let payload;
 let selectedProductKeys = new Set();
-const { jsPDF } = window.jspdf;
+let generationInProgress = false, pdfUrl;
 const C = { navy:[16,43,83], blue:[26,71,137], teal:[39,179,162], ink:[24,38,58], muted:[91,106,125], pale:[244,247,250], line:[222,229,236] };
 
-window.addEventListener('load', () => {
+window.addEventListener('DOMContentLoaded', () => {
     try {
         payload = JSON.parse(localStorage.getItem('pth_catalog_data') || 'null');
         if (!payload || !Array.isArray(payload.products)) throw new Error('No hay productos cargados.');
@@ -181,6 +185,8 @@ window.addEventListener('load', () => {
             selectedProductKeys.add(product.__catalogKey);
         });
         bindProductSelector();
+        document.querySelectorAll('main input').forEach(input => { input.addEventListener('input', invalidatePdf); input.addEventListener('change', invalidatePdf); });
+        for (const id of ['select-visible','clear-selection']) document.getElementById(id).addEventListener('click', invalidatePdf);
         enforceModeSelection(false);
         renderProductSelector();
     } catch (error) {
@@ -242,6 +248,7 @@ function enforceModeSelection(notify) {
 }
 
 function toggleCatalogProduct(key, checked) {
+    invalidatePdf();
     const rule = modeRules[currentMode()];
     if (checked) {
         if (selectedProductKeys.size >= rule.max) {
@@ -262,15 +269,15 @@ function renderProductSelector() {
     const products = visibleSelectorProducts();
     list.innerHTML = products.length ? products.map(product => {
         const checked = selectedProductKeys.has(product.__catalogKey);
-        const safeKey = JSON.stringify(product.__catalogKey).replace(/"/g, '&quot;');
         return `<label class="flex cursor-pointer items-center gap-2 rounded-xl border ${checked ? 'border-blue-200 bg-blue-50' : 'border-slate-200 bg-white'} p-2">
-            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCatalogProduct(${safeKey},this.checked)" class="accent-blue-600">
+            <input type="checkbox" ${checked ? 'checked' : ''} class="accent-blue-600">
             <span class="min-w-0 flex-1">
                 <span class="block truncate text-[10px] font-black text-slate-700">${escapeSelectorHtml(product.nombre)}</span>
                 <span class="block truncate text-[9px] font-bold text-slate-400">$${money(product.precio)} · ${escapeSelectorHtml(product.categoria || '')}</span>
             </span>
         </label>`;
     }).join('') : '<p class="py-5 text-center text-[10px] font-bold text-slate-400">No hay coincidencias.</p>';
+    list.querySelectorAll('input').forEach((input, index) => input.addEventListener('change', () => toggleCatalogProduct(products[index].__catalogKey, input.checked)));
     document.getElementById('selection-count').textContent = `${selectedProductKeys.size} seleccionados`;
     document.getElementById('selection-rule').textContent = modeRules[currentMode()].label;
     const selected = payload.products.filter(product => selectedProductKeys.has(product.__catalogKey));
@@ -290,9 +297,8 @@ function escapeSelectorHtml(value) {
 }
 
 function cleanText(value) {
-    const box = document.createElement('div');
-    box.innerHTML = String(value || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n');
-    return (box.textContent || '').replace(/[•●▪]/g, '-').replace(/\s*\n\s*/g, '\n').replace(/[ \t]+/g, ' ').trim();
+    const parsed = new DOMParser().parseFromString(String(value || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n'), 'text/html');
+    return (parsed.body.textContent || '').replace(/[•●▪]/g, '-').replace(/\s*\n\s*/g, '\n').replace(/[ \t]+/g, ' ').trim();
 }
 
 function money(value) {
@@ -313,7 +319,10 @@ function loadImage(url) {
         if (!url) return resolve(null);
         const img = new Image();
         img.crossOrigin = 'anonymous';
+        const finish = result => { clearTimeout(timer); img.onload = img.onerror = null; if (!result) img.src = ''; resolve(result); };
+        const timer = setTimeout(() => finish(null), 10000);
         img.onload = () => {
+            try {
             const max = 760;
             const scale = Math.min(1, max / Math.max(img.width, img.height));
             const canvas = document.createElement('canvas');
@@ -323,9 +332,10 @@ function loadImage(url) {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve({ data: canvas.toDataURL('image/jpeg', .86), ratio: canvas.width / canvas.height });
+            finish({ data: canvas.toDataURL('image/jpeg', .86), ratio: canvas.width / canvas.height });
+            } catch (_) { finish(null); }
         };
-        img.onerror = () => resolve(null);
+        img.onerror = () => finish(null);
         img.src = url;
     });
 }
@@ -370,7 +380,7 @@ function drawLogo(doc, x, y, dark = false) {
 }
 
 async function startGeneration() {
-    if (!payload?.products?.length) return;
+    if (generationInProgress || !payload?.products?.length) return;
     const mode = currentMode();
     const rule = modeRules[mode];
     const activeProducts = payload.products.filter(product => selectedProductKeys.has(product.__catalogKey));
@@ -386,9 +396,18 @@ async function startGeneration() {
     const pct = document.getElementById('progress-percent');
     const status = document.getElementById('status-text');
     btn.disabled = true;
+    generationInProgress = true;
+    invalidatePdf();
+    const ready = document.getElementById('pdf-ready');
+    const controls = [...document.querySelectorAll('main input, #select-visible, #clear-selection')].map(node => ({node, disabled:node.disabled}));
+    controls.forEach(({node}) => { node.disabled = true; });
     btn.classList.add('opacity-60');
     progress.classList.remove('hidden');
     try {
+        status.textContent = 'Cargando herramientas PDF…';
+        await window.PTHAssets.load('pdf');
+        const { jsPDF } = window.jspdf;
+        if (document.getElementById('opt-qr').checked && mode === 'catalog' && document.querySelector('input[name="style"]:checked').value === 'pro') await window.PTHAssets.load('qr');
         const prepared = [];
         for (let i = 0; i < activeProducts.length; i++) {
             const p = activeProducts[i];
@@ -396,7 +415,7 @@ async function startGeneration() {
             bar.style.width = `${percent}%`;
             pct.textContent = `${percent}%`;
             status.textContent = `Optimizando ${String(p.nombre || '').slice(0, 25)}...`;
-            prepared.push({ ...p, imgObj: await loadImage(productImageUrl(p.thumbnail)) });
+            prepared.push({ ...p, imgObj: mode === 'catalog' && document.querySelector('input[name="style"]:checked').value === 'basic' ? null : await loadImage(productImageUrl(p.thumbnail)) });
         }
         const doc = new jsPDF({ unit:'mm', format:'a4', compress:true });
         const style = document.querySelector('input[name="style"]:checked').value;
@@ -409,15 +428,29 @@ async function startGeneration() {
         const safeCat = String(payload.categoryName || 'Catalogo').replace(/[^a-z0-9]+/gi, '_');
         const safeAgent = String(payload.agent || 'Asesor').replace(/[^a-z0-9]+/gi, '_');
         const modeName = {catalog:'Catalogo',bundle:'Paquete',comparison:'Comparativa',multi:'Promociones'}[mode];
-        doc.save(`${modeName}_${safeCat}_${safeAgent}.pdf`);
-        status.textContent = 'Catálogo descargado';
+        pdfUrl = URL.createObjectURL(doc.output('blob'));
+        const download = document.getElementById('pdf-download'), open = document.getElementById('pdf-open');
+        download.href = open.href = pdfUrl;
+        download.download = `${modeName}_${safeCat}_${safeAgent}.pdf`;
+        const missing = prepared.filter(product => !product.imgObj).length;
+        document.getElementById('pdf-result').textContent = `PDF listo: ${prepared.length} productos.` + ((mode !== 'catalog' || style !== 'basic') && missing ? ` ${missing} fotos no cargaron. El PDF conserva nombres y precios; puedes volver a prepararlo.` : '');
+        ready.hidden = false;
+        status.textContent = 'PDF listo. Toca Descargar PDF para guardarlo.';
     } catch (error) {
         console.error(error);
+        status.textContent = 'No se pudo preparar el PDF. Puedes volver a intentarlo.';
         alert(`No se pudo generar el catálogo: ${error.message}`);
     } finally {
         btn.disabled = false;
+        generationInProgress = false;
+        controls.forEach(({node,disabled}) => { node.disabled = disabled; });
         btn.classList.remove('opacity-60');
     }
+}
+
+function invalidatePdf() {
+    document.getElementById('pdf-ready').hidden = true;
+    if (pdfUrl) { URL.revokeObjectURL(pdfUrl); pdfUrl = null; }
 }
 
 function documentTitle(fallback) {
