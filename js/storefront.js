@@ -1524,7 +1524,12 @@ async function resolveSalesHierarchy(agentName, catalogOnly = false) {
     if (!ownId && !catalogOnly) query = query.maybeSingle();
     const { data, error } = await query;
 
-    if (error) throw Object.assign(new Error(error.message), error);
+    if (error) {
+        if (!catalogOnly && !ownId && error.code === 'PGRST116') {
+            throw Object.assign(new Error('El enlace de atención necesita revisión.'), { code: 'SELLER_IDENTITY_AMBIGUOUS' });
+        }
+        throw Object.assign(new Error(error.message), error);
+    }
     // Public catalogue links name the pricing owner. Repeated names may share
     // that owner, but never choose one account when their hierarchies disagree.
     const matches = Array.isArray(data) ? data : data ? [data] : [];
@@ -1532,7 +1537,10 @@ async function resolveSalesHierarchy(agentName, catalogOnly = false) {
         throw new Error('Este enlace necesita revisión: hay cuentas con el mismo nombre y diferentes equipos.');
     }
     const agent = matches.length > 1 ? { nombre: cleanName, parent_id: matches[0].parent_id } : matches[0];
-    if (!agent) return null;
+    if (!agent) {
+        if (!catalogOnly) throw Object.assign(new Error('No encontramos la cuenta de atención de este enlace.'), { code: 'SELLER_NOT_FOUND' });
+        return null;
+    }
 
     let parent = null;
     if (agent.parent_id) {
@@ -2918,6 +2926,20 @@ function buildSubgestorWhatsappSummary(orderSubgestor, assignedCommission) {
     return `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${parentName}\nSubgestor: ${subgestorName}\nComisión asignada al subgestor: $${commission}\n`;
 }
 
+function getCheckoutFailureMessage(error) {
+    switch (error?.code) {
+        case 'SELLER_IDENTITY_AMBIGUOUS':
+            return 'El enlace de atención necesita revisión. Pide al contacto que te lo envió que lo revise antes de confirmar. Tus datos siguen en esta pantalla.';
+        case 'SELLER_NOT_FOUND':
+            return 'No encontramos la cuenta de atención de este enlace. Pide al contacto que te lo envió un enlace actualizado. Tus datos siguen en esta pantalla.';
+        case 'SESSION_INVALID':
+        case 'SESSION_CHANGED':
+            return 'Tu sesión venció o cambió. Vuelve a iniciar sesión antes de confirmar el pedido. Tus datos siguen en esta pantalla.';
+        default:
+            return '❌ No pudimos completar el pedido. No cierres esta pantalla y vuelve a intentarlo. Si el problema continúa, informa al administrador.';
+    }
+}
+
     // 5. ENVÍO DE PEDIDO (FORMATO EXACTO FOTO CON BRAZOS 💪)
 // 5. ENVÍO DE PEDIDO (Lógica de visibilidad Gestor vs Cliente)
 // 5. ENVÍO DE PEDIDO (ACTUALIZADO CON CAMPO NOTAS)
@@ -3411,7 +3433,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     checkoutFinished = true;
     } catch (checkoutError) {
         console.error("Error inesperado al procesar el pedido:", checkoutError);
-        alert("❌ No pudimos completar el pedido. No cierres esta pantalla y vuelve a intentarlo. Si el problema continúa, informa al administrador.");
+        alert(getCheckoutFailureMessage(checkoutError));
     } finally {
         if (!checkoutFinished) checkoutSubmitGuard.fail();
         // Ante cualquier validación, error de red o excepción, el cliente puede

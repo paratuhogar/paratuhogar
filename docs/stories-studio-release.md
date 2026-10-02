@@ -231,3 +231,40 @@ its pinned lockfile and existing authentication configuration. A private local
 snapshot of function version 15 is also retained in the coding workspace.
 Redeployment creates a new function version; source revert alone does not
 change the live backend.
+
+### Identity prevention and checkout recovery follow-up (identity1)
+
+The authenticated own-order fix applies to every account, including every
+supported principal role; no account ID or person-specific exception is used.
+Additional regressions cover larger same-name groups and children with the same
+name under independent parents, including rejection of cross-team attribution.
+
+Frontend checkout now translates an ambiguous name lookup into a clear
+link-review notice before inserting an order or reserving its number. A missing
+seller asks for an updated link; an expired/changed session asks for sign-in.
+The form, cart and existing submission token remain available, and the submit
+button unlocks after failure. Messages use fixed text rather than arbitrary
+server details. A public ambiguous name still does not select an arbitrary
+account or receive a different commission attribution.
+
+Validation: 228 Node tests pass. Controlled 390px Chromium fixtures pass for
+visitors, principals, children and administrators, including the actual mobile
+checkout handler with repeated ambiguous submissions, retained fields/token,
+no order insert and no WhatsApp window. Existing catalogue, product Story and
+same-tab PDF checks continue to pass. No real order or customer contact was used.
+
+Source/cache marker is identity1 for the storefront and public shell. Compiled
+styles and the existing push-registration configuration retain their current
+versions. This follow-up publishes through the existing main/root frontend
+target. The tested backend remains secure-data version 16; this follow-up has
+no backend deployment, migration, permission or financial changes.
+
+The preventive review also identified legacy name-based order ownership and
+public referral resolution as separate identity work. Resolving those paths
+requires a reviewed ID ownership schema and explicit authorization before
+changing backend attribution or access filters. Legacy ambiguous records must
+not be assigned to an account by guessing or merging duplicate accounts.
+Production checks for this review read aggregate metadata only.
+
+Rollback is a normal revert of this frontend follow-up and publication through
+the existing target; the approved backend own-order fix stays deployed.

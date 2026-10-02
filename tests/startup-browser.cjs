@@ -11,13 +11,13 @@ const admin={...parent,id:'44444444-4444-4444-8444-444444444444',rol:'admin'};
 const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'v1'}:[];if(single&&Array.isArray(data))data=null;return Promise.resolve({data,error:null,count:0}).then(ok,no)}};for(const name of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[name]=()=>q;for(const name of ['single','maybeSingle'])q[name]=()=>{single=true;return q};return q;},rpc(){return Promise.resolve({data:[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};`;
 (async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  for(const role of (baseline?['visitor']:['visitor','gestor','subgestor','admin'])){
- const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:role==='admin'?admin:parent;
+ const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero;const profile=role==='subgestor'?child:role==='admin'?admin:parent;
  page.on('pageerror',e=>errors.push(e.stack));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
  await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
  await page.route('**/*',async route=>{
  const req=route.request(),url=new URL(req.url());requests.push(url.href);
  if(url.pathname==='/functions/v1/secure-data'){
- const b=req.postDataJSON();let data=[];
+ const b=req.postDataJSON();secureRequests.push(b);let data=[];
  if(b.action==='session')data={profile};
  if(b.action==='login')data={token:'a'.repeat(64),profile:parent};
  else if(b.action==='announcement')data={acknowledged:true};
@@ -29,7 +29,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   if(b.table==='gestores')data=[parent,child,admin,{...parent,id:'33333333-3333-4333-8333-333333333333'}];
   if(b.table==='precios_personalizados')data=role==='subgestor'?products.map(p=>({gestor:parent.nombre,producto_id:p.id,nuevo_precio:p.precio,comision_subgestor:15,visible_subgestor:true})):[];
   for(const f of b.filters||[])if(f.method==='eq')data=data.filter(r=>r[f.column]===f.value);
-  if(b.single){if(data.length>1){return route.fulfill({status:406,contentType:'application/json',body:JSON.stringify({data:null,error:{message:'La consulta no devolvió un único registro.'}})});}data=data[0]||null;}
+  if(b.single){if(data.length>1){return route.fulfill({status:406,contentType:'application/json',body:JSON.stringify({data:null,error:{code:'PGRST116',message:'La consulta no devolvió un único registro.'}})});}data=data[0]||null;}
  }
  return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'http://127.0.0.1:8080'},body:JSON.stringify({data,error:null,count:0})});
  }
@@ -80,6 +80,22 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===30);
   assert.equal(new URL(page.url()).searchParams.get('ref'),'Gestor Prueba');assert.equal(new URL(page.url()).searchParams.has('v'),false);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('pth_referrer_smart')).nombre),'Gestor Prueba');
+  // Real mobile checkout entrypoint; every request is intercepted with synthetic data.
+  await page.evaluate(async()=>{
+   window.checkoutIdentityAlerts=[];window.alert=message=>checkoutIdentityAlerts.push(message);
+   cart=[{...productosRaw[1],qty:1}];
+   document.getElementById('check-recogida').checked=true;
+   document.getElementById('check-nombre').value='Synthetic Customer';document.getElementById('check-tel').value='5350000000';
+   await document.getElementById('checkout-form').onsubmit({preventDefault(){}});
+   window.firstIdentityToken=sessionStorage.getItem('pth_checkout_submission_token');
+   await document.getElementById('checkout-form').onsubmit({preventDefault(){}});
+  });
+  assert.deepEqual(await page.evaluate(()=>checkoutIdentityAlerts),Array(2).fill('El enlace de atención necesita revisión. Pide al contacto que te lo envió que lo revise antes de confirmar. Tus datos siguen en esta pantalla.'));
+  assert.equal(await page.locator('#final-submit-btn').isEnabled(),true);
+  assert.equal(await page.evaluate(()=>cart.length),1);assert.equal(await page.locator('#check-nombre').inputValue(),'Synthetic Customer');
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('pth_checkout_submission_token')===firstIdentityToken),true);
+  assert.equal(secureRequests.some(body=>['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'),false);
+  assert.equal(context.pages().length,1,'ambiguous identity never opens WhatsApp');
   await page.evaluate(()=>{document.getElementById('log-user').value='synthetic-test-user';document.getElementById('log-pass').value='synthetic-test-only';return processLogin();});
   await page.waitForFunction(()=>window.currentUserData?.nombre==='Gestor Prueba'&&Number(productosRaw[0]?.comision)===50);
  }

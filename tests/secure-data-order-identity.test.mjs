@@ -133,3 +133,23 @@ test('new own-ID path still validates current product availability and quantitie
 test('messenger role cannot gain direct-order write permission through own name',async()=>{
  const f=await fixture({profiles:[profile('m','Shared Seller',{rol:'mensajero'})],actorId:'m'});const result=await f.request(payload());assert.equal(result.status,403);assert.equal(f.writes,0);
 });
+
+for(const rol of ['gestor','admin','administrador','superadmin','logistica'])test(`own-order identity resolution covers supported principal role ${rol} without special account IDs`,async()=>{
+ const profiles=Array.from({length:13},(_,i)=>profile(`account-${i}`,'Repeated Display Name',{rol}));
+ const f=await fixture({profiles,actorId:'account-8'});const result=await f.request(payload('Repeated Display Name'));
+ assert.equal(result.status,200);assert.equal(f.writes,1);assert.equal(f.rows.pedidos[0].gestor,'Repeated Display Name');
+ assert.ok(f.trace.filter(t=>t.table==='gestores').every(t=>t.filters.some(q=>q.column==='id'&&q.value==='account-8')));
+});
+
+test('same-name accounts across independent parent teams preserve each child own ID and parent attribution',async()=>{
+ const profiles=[profile('parent-a','Parent A'),profile('parent-b','Parent B'),profile('child-a','Repeated Child',{parent_id:'parent-a'}),profile('child-b','Repeated Child',{parent_id:'parent-b'})];
+ for(const [actorId,parentId] of [['child-a','parent-a'],['child-b','parent-b']]){
+  const f=await fixture({profiles,actorId});const body=payload('Repeated Child');body.table='pedidos_subgestores';body.values.subgestor_id=actorId;
+  const result=await f.request(body);assert.equal(result.status,200);assert.equal(f.rows.pedidos_subgestores[0].subgestor_id,actorId);assert.equal(f.rows.pedidos_subgestores[0].parent_gestor_id,parentId);
+ }
+});
+
+test('a name collision does not authorize a child order attributed to a different parent team',async()=>{
+ const f=await fixture({profiles:[profile('parent-a','Parent A'),profile('parent-b','Parent B'),profile('child-a','Repeated Child',{parent_id:'parent-a'}),profile('child-b','Repeated Child',{parent_id:'parent-b'})],actorId:'child-a'});
+ const body=payload('Repeated Child');body.table='pedidos_subgestores';body.values.subgestor_id='child-b';const result=await f.request(body);assert.equal(result.status,403);assert.equal(f.writes,0);
+});
