@@ -54,7 +54,7 @@
       if(row?.form){submit.dataset.pthPendingLocked='true';submit.disabled=!reviewing;submit.innerText=reviewing?'Guardar revisión y enviar pendiente':'Confirma primero el pendiente';}
       else if(submit.dataset.pthPendingLocked){delete submit.dataset.pthPendingLocked;submit.disabled=false;submit.innerText='Confirmar Pedido';}
     }
-    if(!panel){const grid=document.getElementById('productos-container');if(!grid)return;panel=document.createElement('aside');panel.id='pth-pending-order-panel';panel.className='pth-connectivity-card pth-pending-card';panel.style.margin='24px 0';grid.before(panel);}
+    if(!panel){const catalog=document.getElementById('sec-catalogo');if(!catalog)return;panel=document.createElement('aside');panel.id='pth-pending-order-panel';panel.className='pth-connectivity-card pth-pending-card';panel.style.margin='24px';catalog.before(panel);}
     panel.replaceChildren();panel.dataset.owner=account;panel.hidden=!row;if(!row)return;
     const heading=document.createElement('h3');heading.textContent='Pedido pendiente en este dispositivo';
     const status=document.createElement('p');status.setAttribute('role','status');status.textContent=labels[row.state]||labels.blocked;
