@@ -17,6 +17,18 @@ test('protected queries always use the gateway with all filters and no direct fa
  assert.equal(requests[0].action,'query');assert.equal(requests[0].table,'pedidos');assert.deepEqual(requests[0].range,[0,199]);
  assert.equal(db.from('categorias').direct,'categorias');
 });
+test('signed new receipt is anonymous and does not restore or expose the expired session',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','expired-synthetic-token');let options;
+ context.fetch=async(_url,input)=>{options=input;return {status:200,json:async()=>({data:{confirmed:[],complete:false},error:null})};};
+ await context.PTHSecureData.checkout({operation:'receipt',attempt:'synthetic-capability'});
+ assert.equal(options.headers.Authorization,undefined);assert.equal(JSON.parse(options.body).operation,'receipt');assert.equal(storage.getItem('pth_secure_token'),'expired-synthetic-token');
+});
+test('session expiry retains only the owner ID needed to check its existing tab receipt; explicit logout clears that hint',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'expired-owner'}}));
+ context.fetch=async()=>({status:401,json:async()=>({error:{code:'SESSION_INVALID',message:'expired'}})});
+ await assert.rejects(context.PTHSecureData.restore());assert.equal(context.PTHSecureData.expiredCheckoutOwner(),'expired-owner');assert.equal(storage.getItem('pth_session'),null);assert.equal(storage.getItem('pth_secure_token'),null);
+ context.PTHSecureData.clearSession();assert.equal(context.PTHSecureData.expiredCheckoutOwner(),null);
+});
 test('private RPC uses the gateway and cannot select another actor through browser credentials',async()=>{
  const {db,requests}=client();await db.rpc('mis_solicitudes_cobro',{p_gestor_id:'fake',p_password:'fake'});
  assert.equal(requests[0].action,'rpc');assert.equal(requests[0].name,'mis_solicitudes_cobro');

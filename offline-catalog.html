@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1a4789"><title>Catálogo sin conexión | ParaTuHogar</title>
+  <link rel="stylesheet" href="/css/offline-catalog.css?v=20261002-lowdata1">
+  <script src="/js/low-connectivity.js?v=20261002-lowdata1" defer></script>
+  <script src="/js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
+  <script src="/js/image-variants.js?v=20261001-images2" defer></script>
+  <script src="/js/product-images.js?v=20261002-lowdata1" defer></script>
+  <script src="/js/offline-catalog.js?v=20261002-lowdata1" defer></script>
+</head>
+<body>
+  <header><a href="/">paratuhogar</a><a class="return" href="/">Volver a la tienda</a></header>
+  <main>
+    <section class="intro"><p class="eyebrow">CATÁLOGO GUARDADO</p><h1>Consulta productos sin gastar datos</h1>
+      <p id="catalog-date" role="status"></p>
+      <p>Esta copia muestra precios públicos de referencia. Al volver a la tienda se comprueban los precios de tu cuenta y la disponibilidad. Aquí no se envían pedidos ni se abre tu sesión.</p>
+      <a class="action" href="/">Comprobar conexión y volver</a>
+      <button id="offline-refresh" type="button">Actualizar copia pública</button>
+    </section>
+    <div class="filters"><label>Buscar<input id="offline-search" type="search" placeholder="Modelo o producto" autocomplete="off"></label><label>Categoría<select id="offline-category"><option value="">Todas</option></select></label></div>
+    <p id="offline-count" role="status"></p><section id="offline-products" class="products" aria-label="Productos guardados"></section>
+  </main>
+</body></html>

@@ -22,6 +22,7 @@ function fixture(){
   supabase:{createClient:()=>sdk},registrarRastroIP(){},renderCategories(){node('category-list').textContent='ENERGÍA';},
   renderProducts(){node('productos-container').textContent='Catálogo cargado';},updateGestorSalesPulse(){},renderGestorPricing(){},
   openLoginModal(){node('login-overlay').opened=true;},
+  renderLowConnectivityPanel(){},cachePublicCatalogue(){},
   fetch:async(url,options)=>{
    assert.ok(url.endsWith('/functions/v1/secure-data'));
    const body=JSON.parse(options.body);requests.push(body);

@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '20261002-applications1';
+  const SW_VERSION = '20261002-lowdata1';
   let registration = null;
   let reloadingForUpdate = false;
 
@@ -34,7 +34,7 @@
 
   function updateConnectionStatus() {
     if (!navigator.onLine) {
-      showStatus('Sin conexión. La tienda se actualizará cuando regresen los datos.', 'Reintentar', () => location.reload());
+      showStatus('Sin conexión. Puedes consultar la copia pública guardada; los pedidos requieren confirmación del servidor.', 'Catálogo guardado', () => { location.href = '/offline-catalog.html'; });
     } else if (!registration?.waiting) {
       hideStatus();
     }

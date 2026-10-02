@@ -1,21 +1,30 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-identity1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-lowdata1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20261002-identity1';
-const PTH_PUBLIC_ASSETS = [
+const PTH_SHELL_URL = '/offline-catalog.html';
+// Repeat visits need only this public reader, not the SDK or account tools.
+const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL,
+  '/js/low-connectivity.js?v=20261002-lowdata1',
+  '/js/public-catalog-api.js?v=20261002-lowdata1',
+  '/js/offline-catalog.js?v=20261002-lowdata1',
+  '/css/offline-catalog.css?v=20261002-lowdata1',
+  '/js/image-variants.js?v=20261001-images2',
+  '/js/product-images.js?v=20261002-lowdata1'];
+const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
-  '/js/secure-data.js?v=20261001-push1',
-  '/js/storefront.js?v=20261002-identity1',
-  '/js/product-images.js?v=20261001-images2',
+  '/js/secure-data.js?v=20261002-lowdata1',
+  '/js/storefront.js?v=20261002-lowdata1',
+  '/css/low-connectivity.css?v=20261002-lowdata1',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.js?v=20261002-admin1',
   '/js/internal-assets.js?v=20261002-catalog1',
   '/js/product-availability-form.js?v=20260924-1',
   '/js/product-description-editor.js?v=20260924-1',
-  '/js/checkout-submit-guard.js?v=20260918-1',
+  '/js/checkout-submit-guard.js?v=20261002-lowdata1',
+  '/js/checkout-recovery.js?v=20261002-lowdata1',
   '/js/feedback-announcement.js?v=20261001-1',
   '/css/feedback-announcement.css?v=20261001-1',
   '/css/work-navigation.css?v=20261001-1',
@@ -24,10 +33,10 @@ const PTH_PUBLIC_ASSETS = [
   '/js/admin-work-view.js?v=20260930-admins2',
   '/js/admin-push-links.js?v=20261002-applications1',
   '/manifest.webmanifest',
-  '/css/tailwind.min.css?v=20261002-catalog1',
+  '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=20261002-applications1',
+  '/js/pwa.js?v=20261002-lowdata1',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
@@ -38,7 +47,7 @@ importScripts('/js/admin-push-worker.js?v=20261002-applications1');
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(PTH_CACHE_VERSION).then(cache => cache.addAll(PTH_PUBLIC_ASSETS))
+    caches.open(PTH_CACHE_VERSION).then(cache => cache.addAll(PTH_MINIMAL_SHELL))
   );
 });
 
@@ -91,17 +100,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Las navegaciones siempre buscan la versión actual en la red. Solo la raíz
-  // pública puede usar el contenedor estático offline; ninguna ruta interna,
-  // ficha, respuesta de Supabase o dato de usuario entra en esta caché.
+  // Offline navigation loads only the public reader. No account restoration,
+  // private page, SDK response or authenticated document is cached here.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
         const response = await fetch(request);
-        if (response.ok && (url.pathname === '/' || url.pathname === '/index.html')) {
-          const cache = await caches.open(PTH_CACHE_VERSION);
-          await cache.put(PTH_SHELL_URL, response.clone());
-        }
         return response;
       } catch (error) {
         if (url.pathname === '/' || url.pathname === '/index.html') {
