@@ -7,6 +7,8 @@ import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,project
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
 const ORIGINS=new Set(['https://paratuhogar.org','https://www.paratuhogar.org','http://localhost:8080','http://127.0.0.1:8080']);
 const encode=value=>new TextEncoder().encode(value);
+// Expiry is response metadata, never a profile field or a bearer capability.
+const sessionExpiries=new WeakMap();
 export async function hash(value) {return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encode(String(value)))),v=>v.toString(16).padStart(2,'0')).join('');}
 const fail=(message,status=403)=>{throw Object.assign(Error(message),{status});};
 const cleanProfile=actor=>({...actor,password:'__session__'});
@@ -60,12 +62,14 @@ async function resolveActor(db,token) {
   if(session.mensajero_id){
     const {data:driver}=await db.from('mensajeros').select('*').eq('id',session.mensajero_id).maybeSingle();
     if(!driver?.activo||await hash(driver.pin)!==session.credential_hash)fail('Inicia sesión de nuevo.',401);
-    return{id:driver.id,nombre:driver.nombre,telefono:driver.telefono,rol:'mensajero'};
+    const actor={id:driver.id,nombre:driver.nombre,telefono:driver.telefono,rol:'mensajero'};
+    sessionExpiries.set(actor,session.expires_at);return actor;
   }
   const {data:profile,error:profileError}=await db.from('gestores').select('*').eq('id',session.gestor_id).maybeSingle();
   if(profileError||!profile||profile.estado!=='activo'||profile.activo===false||await hash(profile.password)!==session.credential_hash) fail('La cuenta o sesión ya no está activa.',401);
   const parent=await parentFor(db,profile);
-  return {...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono};
+  const actor={...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono};
+  sessionExpiries.set(actor,session.expires_at);return actor;
 }
 async function login(db,body,request) {
   const username=String(body.username||'').trim();
@@ -88,9 +92,10 @@ async function login(db,body,request) {
   if(profile.estado!=='activo'||profile.activo===false) fail('Tu cuenta necesita revisión. Contacta con tu gestor o administrador.',401);
   const parent=await parentFor(db,profile);
   const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
-  const {error:sessionError}=await db.from('pth_secure_sessions').insert({token_hash:await hash(token),gestor_id:profile.id,credential_hash:await hash(password),expires_at:new Date(Date.now()+7*86400000).toISOString()});
+  const expiresAt=new Date(Date.now()+7*86400000).toISOString();
+  const {error:sessionError}=await db.from('pth_secure_sessions').insert({token_hash:await hash(token),gestor_id:profile.id,credential_hash:await hash(password),expires_at:expiresAt});
   if(sessionError) fail('No se pudo iniciar la sesión.',503);
-  return {token,profile:cleanProfile({...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono})};
+  return {token,expiresAt,profile:cleanProfile({...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono})};
 }
 async function loginMessenger(db,body){
   const pin=String(body.pin||'').trim();if(!pin||pin.length>100)fail('PIN incorrecto.',401);
@@ -99,9 +104,10 @@ async function loginMessenger(db,body){
   const {data:driver,error}=await db.from('mensajeros').select('*').eq('pin',pin).eq('activo',true).maybeSingle();
   if(error||!driver)fail('PIN incorrecto o mensajero inactivo.',401);
   const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
-  const {error:sessionError}=await db.from('pth_secure_sessions').insert({token_hash:await hash(token),mensajero_id:driver.id,credential_hash:await hash(pin),expires_at:new Date(Date.now()+86400000).toISOString()});
+  const expiresAt=new Date(Date.now()+86400000).toISOString();
+  const {error:sessionError}=await db.from('pth_secure_sessions').insert({token_hash:await hash(token),mensajero_id:driver.id,credential_hash:await hash(pin),expires_at:expiresAt});
   if(sessionError)fail('No se pudo iniciar la sesión.',503);
-  return {token,profile:{id:driver.id,nombre:driver.nombre,telefono:driver.telefono,rol:'mensajero'}};
+  return {token,expiresAt,profile:{id:driver.id,nombre:driver.nombre,telefono:driver.telefono,rol:'mensajero'}};
 }
 async function canonicalSale(db,table,input,actor,checkoutPrices=false) {
   const allowed=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','costo_mensajeria','proveedor','orden_dia','origen','garantia_venta','garantia_dias','submission_token'];
@@ -252,7 +258,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
       const bearer=request.headers.get('Authorization')?.replace(/^Bearer\s+/i,'')||'';
       const actor=await resolveActor(db,bearer);
       let result;
-      if(body.action==='session') {if(!actor) fail('Inicia sesión.',401);result={data:{profile:cleanProfile(actor)},error:null};}
+      if(body.action==='session') {if(!actor) fail('Inicia sesión.',401);result={data:{profile:cleanProfile(actor),expiresAt:sessionExpiries.get(actor)},error:null};}
       else if(body.action==='logout') {if(bearer) await db.from('pth_secure_sessions').delete().eq('token_hash',await hash(bearer));result={data:null,error:null};}
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);

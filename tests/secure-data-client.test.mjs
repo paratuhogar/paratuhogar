@@ -37,6 +37,26 @@ test('logout removes every account catalogue and token',()=>{
  const {context,storage}=client();storage.setItem('pth_catalogo_cache:parent','[{"comision":50}]');storage.setItem('pth_secure_token','secret');
  context.PTHSecureData.clearSession();assert.equal(storage.getItem('pth_secure_token'),null);assert.equal(storage.getItem('pth_catalogo_cache:parent'),null);
 });
+test('verified expiry is available to a consented local copy and cleared on logout',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));
+ const expiresAt=new Date(Date.now()+60000).toISOString();
+ context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'own',nombre:'Own',rol:'gestor'},expiresAt},error:null})});
+ await context.PTHSecureData.restore();assert.equal(context.PTHSecureData.expiresAt(),Date.parse(expiresAt));
+ context.PTHSecureData.clearSession();assert.equal(context.PTHSecureData.expiresAt(),null);
+});
+test('an expired local session cannot be reused through a cached restoration',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));
+ context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'own',rol:'gestor'},expiresAt:new Date(Date.now()+60000).toISOString()},error:null})});
+ await context.PTHSecureData.restore();storage.setItem('pth_secure_token_expires_at',String(Date.now()-1));
+ assert.equal(await context.PTHSecureData.restore(),null);assert.equal(context.PTHSecureData.expiredCheckoutOwner(),'own');
+ assert.equal(storage.getItem('pth_secure_token'),null);assert.equal(storage.getItem('pth_session'),null);
+});
+test('refresh replaces cached expiry only after matching the current account token',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));let release;
+ context.fetch=()=>new Promise(resolve=>{release=()=>resolve({status:200,json:async()=>({data:{profile:{id:'old',rol:'gestor'},expiresAt:new Date(Date.now()+60000).toISOString()},error:null})});});
+ const refresh=context.PTHSecureData.refresh();context.PTHSecureData.clearSession();release();
+ await assert.rejects(refresh);assert.equal(context.PTHSecureData.expiresAt(),null);assert.equal(storage.getItem('pth_session'),null);
+});
 test('logout invalidates locally before an unfinished network revocation',()=>{
  const {context,storage}=client();context.fetch=()=>new Promise(()=>{});
  storage.setItem('pth_secure_token','secret');storage.setItem('pth_catalog_data','{"products":[{"comision":50}]}');

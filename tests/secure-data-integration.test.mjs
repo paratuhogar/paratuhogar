@@ -31,6 +31,13 @@ test('subgestor endpoint masks product pool, parent orders and parent password',
  const orders=await request({action:'query',table:'pedidos',op:'select'});assert.equal(orders.data.length,1);assert.equal(orders.data[0].comision_total,15);assert.equal('comision_parent' in orders.data[0],false);
  const people=await request({action:'query',table:'gestores',op:'select'});assert.equal('password' in people.data.find(r=>r.id==='p'),false);
 });
+test('session expiry metadata describes the verified session without exposing its capability or extending it',async()=>{
+ const {request,rows}=await setup();const response=await request({action:'session'});
+ assert.equal(response.status,200);assert.equal(response.data.expiresAt,rows.pth_secure_sessions[0].expires_at);
+ assert.equal(response.data.profile.password,'__session__');assert.equal(response.data.token,undefined);
+ assert.equal(response.data.profile.expiresAt,undefined);assert.equal(response.data.profile.token_hash,undefined);
+ assert.equal(rows.pth_secure_sessions[0].expires_at,'2099-01-01');
+});
 test('inventory head/count probes cannot recover hidden commission events',async()=>{
  const {request}=await setup();const response=await request({action:'query',table:'inventario_eventos',op:'select',head:true,count:'exact',filters:[{method:'eq',column:'tipo',value:'comision'},{method:'eq',column:'valor_nuevo',value:40}]});
  assert.equal(response.error,null);assert.equal(response.count,0);

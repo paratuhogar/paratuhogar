@@ -170,6 +170,7 @@ async function checkShortLinks() {
     }
     window.addEventListener('pth:session-changed', bindNewCartAccount);
     function persistNewCartDraft() {
+        if (window.PTHPendingCheckoutUI?.localForm()) return;
         bindNewCartAccount();
         if (lowConnectivity.wasSent(newCartOwner,newCartRevision)) {
             cart = []; newCartRevision = null;
@@ -3143,15 +3144,17 @@ function getCheckoutFailureMessage(error) {
         const key = checkoutTokenKey() + ':outcome', owner = checkoutScope(), token = window.PTHSecureData.token();
         await window.PTHPendingCheckoutUI?.markOutcome(value);
         if (checkoutScope() !== owner || window.PTHSecureData.token() !== token || window.PTHPendingCheckoutUI?.guard()) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+        if (window.PTHPendingCheckoutUI?.active()) return;
         checkoutOutcomes.set(key,value);
         try { checkoutStorage?.setItem(key,JSON.stringify(value)); } catch (_) {}
     }
     function clearNewCheckoutOutcome() {
+        if (window.PTHPendingCheckoutUI?.active()) return;
         const key = checkoutTokenKey() + ':outcome'; checkoutOutcomes.delete(key);
         try { checkoutStorage?.removeItem(key); } catch (_) {}
     }
     function notifyNewCheckout(message) { if (!window.PTHPendingCheckoutUI?.message(message)) alert(message); }
-    async function confirmPendingCheckout(receipts) { await window.PTHPendingCheckoutUI?.confirmed(receipts); if (window.PTHPendingCheckoutUI?.active() && !window.PTHPendingCheckoutUI.guard()) { try { clearAutoSave(); } catch (_) {} document.getElementById('checkout-form').reset(); } }
+    async function confirmPendingCheckout(receipts) { await window.PTHPendingCheckoutUI?.confirmed(receipts); if (window.PTHPendingCheckoutUI?.active() && !window.PTHPendingCheckoutUI.guard()) document.getElementById('checkout-form').reset(); }
     async function checkNewCheckoutOutcome(outcome) {
         if (outcome.attempt) {
             const result = await window.PTHSecureData.checkout({operation:'receipt',attempt:outcome.attempt});
@@ -3168,6 +3171,10 @@ function getCheckoutFailureMessage(error) {
 
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
+    if (window.PTHPendingCheckoutUI?.shouldIntercept()) {
+        await window.PTHPendingCheckoutUI.interceptSubmit();
+        return;
+    }
     window.PTHAnalytics?.event('begin_checkout');
 
     // Debe ejecutarse antes del primer await. Así un doble clic o un reintento
@@ -3205,7 +3212,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             notifyNewCheckout('El servidor confirmó este envío: ' + outcome.receipts.map(row => row.orden_dia || row.id).join(', ') + '. No se creó otro pedido.');
             clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true;
             lowConnectivity.markSent(newCartOwner,newCartRevision);
-            cart = []; lowConnectivity.clearDraft(newCartOwner); newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
+            cart = []; if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
         }
         if (!['absent','partial'].includes(outcome.kind)) throw Object.assign(new Error('Unconfirmed outcome'),{code:'ORDER_OUTCOME_UNKNOWN'});
         if (previousOutcome.products !== window.PTHLowConnectivity.fingerprint(cart)) {
@@ -3627,8 +3634,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (quote.data.complete) {
         notifyNewCheckout('El servidor ya confirmó este envío: ' + quote.data.confirmed.map(row => row.reference).join(', ') + '. No se creó otro pedido.');
-        clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
+        clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
+    window.PTHPendingCheckoutUI?.verifyEstimate(quote.data);
     await markNewCheckoutOutcome({ token: submissionToken, attempt: quote.data.attempt, table: request.table, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart) });
     const changedTerms = quote.data.terms.some(term => {
         const expected = promesas.find(input => input.proveedor === term.proveedor);
@@ -3649,13 +3657,13 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     if (!result.data?.complete) throw Object.assign(new Error('Unconfirmed write'),{code:'ORDER_OUTCOME_UNKNOWN'});
     if (previousOutcome || result.data.confirmed.some(row => !protectionOrderIds.includes(row.reference))) {
         notifyNewCheckout('El servidor confirmó este envío: ' + result.data.confirmed.map(row => row.reference).join(', ') + '. No necesitas enviarlo otra vez.');
-        clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
+        clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
 
     clearNewCheckoutOutcome();
     // Only an acknowledged server result reaches this success path.
     lowConnectivity.markSent(newCartOwner,newCartRevision);
-    lowConnectivity.clearDraft(newCartOwner);
+    if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner);
     checkoutSubmitGuard.succeed();
     checkoutFinished = true;
 
