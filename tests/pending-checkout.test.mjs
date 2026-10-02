@@ -32,8 +32,8 @@ test('invalid, duplicate, excessive quantities, missing delivery and unbounded d
   assert.throws(()=>pending.clean({...input,form:{...input.form,moneda:'invalid'}}),{code:'INVALID'});
 });
 test('duplicate explicit saves and concurrent tabs retain one stable intent and single active lease',async()=>{
-  const {queue}=setup(),results=await Promise.allSettled([queue.save('a',input),queue.save('a',input)]);
-  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'EXISTS');
+  const {queue}=setup(),intent={intentId:'a'.repeat(64),savedAt:Date.now()},results=await Promise.all([queue.save('a',input,intent),queue.save('a',input,intent)]);
+  assert.equal(results[0].id,results[1].id);assert.equal((await queue.list('a')).length,1);
   let release,started;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);let attempts=0;
   const first=queue.run('a',async context=>{attempts++;started();await hold;await context.confirmed([{reference:'A1',proveedor:'A'}]);});await wait;
   assert.equal(await queue.run('a',()=>assert.fail('second tab cannot acquire live lease')),false);release();await first;assert.equal(attempts,1);
@@ -59,12 +59,13 @@ test('reopening, abandoned lease expiry and two competing retries cannot duplica
 });
 test('cancel before sending erases fields; cancellation or logout after a quote stops retries but preserves receipt capability',async()=>{
   const state=setup(),row=await state.queue.save('a',input);await state.queue.cancel('a',row.id);assert.equal(await state.queue.read('a'),null);
-  const second=await state.queue.save('a',input);await state.queue.patch('a',second.id,{outcome:{attempt:'signed-attempt'}});await state.queue.cancel('a',second.id);let paused=await state.queue.read('a');assert.equal(paused.form,undefined);assert.equal(paused.attempt,'signed-attempt');assert.equal(await state.queue.run('a',()=>assert.fail('cancelled never auto sends')),false);await assert.rejects(state.queue.save('a',input),{code:'RECEIPT_REQUIRED'});
-  await state.queue.patch('a',second.id,{attempt:null});const resumed=await state.queue.save('a',input);assert.equal(resumed.intentId,second.intentId,'absent receipt reuses the nonce to fence any acceptance still in flight');assert.notEqual(resumed.id,second.id,'new local revision cannot be confirmed by an old response');await assert.rejects(state.queue.confirmed('a',second.id,[{reference:'late-A1'}]),{code:'CHANGED'});await state.queue.logout('a');assert.equal(await state.queue.read('a'),null);
+  const second=await state.queue.save('a',input);await state.queue.patch('a',second.id,{outcome:{attempt:'signed-attempt'}});await state.queue.cancel('a',second.id);let paused=await state.queue.read('a');assert.equal(paused.form,undefined);assert.equal(paused.attempt,'signed-attempt');assert.equal(await state.queue.run('a',()=>assert.fail('cancelled never auto sends')),false);
+  const independent=await state.queue.save('a',{...input,form:{...input.form,nombre:'Independent customer'}});assert.notEqual(independent.intentId,second.intentId);
+  await state.queue.confirmed('a',second.id,[{reference:'late-A1'}]);assert.equal((await state.queue.read('a',independent.id)).state,'queued','late receipt changes only its own order');await state.queue.logout('a');assert.equal((await state.queue.list('a')).some(row=>row.form),false);
 });
 test('live submissions cannot be cancelled or replaced in a second tab',async()=>{
-  const {queue}=setup(),row=await queue.save('a',input);let release,started;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);
-  const run=queue.run('a',async()=>{started();await hold;});await wait;await assert.rejects(queue.cancel('a',row.id),{code:'BUSY'});await assert.rejects(queue.save('a',input),{code:'EXISTS'});release();await run;
+  const {queue}=setup(),intent={intentId:'a'.repeat(64),savedAt:Date.now()},row=await queue.save('a',input,intent);let release,started;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);
+  const run=queue.run('a',async()=>{started();await hold;});await wait;await assert.rejects(queue.cancel('a',row.id),{code:'BUSY'});assert.equal((await queue.save('a',input,intent)).id,row.id);await assert.rejects(queue.save('a',{...input,form:{...input.form,nombre:'Replacement'}},intent),{code:'INTENT_CONFLICT'});release();await run;
 });
 test('expired session/account rejection blocks retry and never transfers the customer to another account',async()=>{
   for(const code of ['SESSION_CHANGED','SESSION_INVALID']){const {queue}=setup();await queue.save('a',input);await queue.run('a',()=>{throw Object.assign(Error('private raw server error'),{code,safeMessage:'Vuelve a tu cuenta.'});});const row=await queue.read('a');assert.equal(row.state,'blocked');assert.equal(row.code,code);assert.equal(await queue.read('b'),null);assert.equal(await queue.run('b',()=>assert.fail()),false);}
@@ -105,4 +106,59 @@ test('signed pickup review tolerates only normalized display delivery fields and
     await assert.rejects(queue.revise('a',row.id,{...pickup,form:{...pickup.form,...change}}),{code:'SIGNED_CHANGE'});
   }
   await assert.rejects(queue.revise('a',row.id,{...pickup,lines:[{id:'pA',qty:2,price:100}]}),{code:'SIGNED_CHANGE'});
+});
+test('multiple customers with identical products retain separate intents, estimates, reviews and receipts',async()=>{
+  const {queue}=setup(),intentA={intentId:'a'.repeat(64),savedAt:Date.now()},intentB={intentId:'b'.repeat(64),savedAt:Date.now()};
+  const a=await queue.save('a',{...input,estimate:{shipping:12,total:312}},intentA),b=await queue.save('a',{...input,form:{...input.form,nombre:'Second customer'},estimate:{shipping:20}},intentB);
+  assert.notEqual(a.id,b.id);assert.notEqual(a.intentId,b.intentId);assert.deepEqual(a.estimate,{equipment:300,shipping:12,total:312});assert.deepEqual(b.estimate,{equipment:300,shipping:20,total:320});
+  assert.equal((await queue.read('a')).id,a.id);assert.equal((await queue.list('a')).length,2);
+  await queue.patch('a',a.id,{state:'blocked'});await queue.revise('a',a.id,{...input,form:{...input.form,nombre:'First edited'}});
+  assert.equal((await queue.read('a',b.id)).form.nombre,'Second customer');await queue.confirmed('a',a.id,[{reference:'A1'}]);
+  const rows=await queue.list('a');assert.equal(rows.find(row=>row.id===a.id).form,undefined);assert.equal(rows.find(row=>row.id===b.id).form.nombre,'Second customer');assert.equal(await queue.read('other',a.id),null);await assert.rejects(queue.cancel('other',b.id),{code:'CHANGED'});
+});
+test('reference and reviewed amounts are bounded, internally consistent and cleared after explicit acceptance or receipt',async()=>{
+  const {queue}=setup(),a=await queue.save('a',input);
+  for(const shipping of [-1,Infinity,NaN,'6'])await assert.rejects(queue.save('a',{...input,estimate:{shipping}}),{code:'INVALID'});
+  await assert.rejects(queue.save('a',{...input,estimate:{equipment:299,shipping:6,total:305}}),{code:'INVALID'});
+  await assert.rejects(queue.patch('a',a.id,{reviewEstimate:{equipment:300,shipping:12,total:999}}),{code:'INVALID'});
+  await queue.patch('a',a.id,{state:'blocked',reviewEstimate:{equipment:300,shipping:12,total:312,untrustedText:'do not persist'}});
+  assert.deepEqual((await queue.read('a',a.id)).reviewEstimate,{equipment:300,shipping:12,total:312});
+  const accepted=await queue.revise('a',a.id,{...input,estimate:{equipment:300,shipping:12,total:312}});assert.equal(accepted.reviewEstimate,undefined);assert.equal(accepted.estimate.total,312);
+  await queue.confirmed('a',a.id,[{reference:'A1'}]);const receipt=await queue.read('a',a.id);assert.equal(receipt.estimate,undefined);assert.equal(receipt.reviewEstimate,undefined);
+});
+test('scheduler skips blocked orders, serializes the whole account and can target a specific pending',async()=>{
+  const {queue}=setup(),a=await queue.save('a',input),b=await queue.save('a',{...input,form:{...input.form,nombre:'Second'}});await queue.patch('a',a.id,{state:'blocked'});
+  let started,release;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);
+  const run=queue.run('a',async context=>{assert.equal(context.row.id,b.id);started();await hold;await context.confirmed([{reference:'B1'}]);});await wait;
+  await queue.retry('a',a.id);assert.equal(await queue.run('a',()=>assert.fail('another tab cannot send a different row while the account is leased'),a.id),false);release();await run;
+  await queue.run('a',async context=>{assert.equal(context.row.id,a.id);await context.confirmed([{reference:'A1'}]);},a.id);assert.equal((await queue.list('a')).every(row=>row.state==='confirmed'),true);
+});
+test('an uncertain receipt is retained individually while another independent customer can be sent',async()=>{
+  const {queue}=setup(),a=await queue.save('a',input),b=await queue.save('a',{...input,form:{...input.form,nombre:'Second'}});
+  await queue.run('a',async context=>{await context.save({outcome:{attempt:'signed-A'}});throw Object.assign(Error('lost response'),{code:'ORDER_OUTCOME_UNKNOWN'});},a.id);
+  await queue.run('a',async context=>{assert.equal(context.row.id,b.id);await context.confirmed([{reference:'B1'}]);},b.id);
+  assert.equal((await queue.read('a',a.id)).state,'uncertain');assert.equal((await queue.read('a',a.id)).outcome.attempt,'signed-A');assert.equal((await queue.read('a',b.id)).state,'confirmed');
+});
+test('logout, expiry and quota failures protect every customer without crossing accounts',async()=>{
+  const state=setup(),a=await state.queue.save('a',input),b=await state.queue.save('a',{...input,form:{...input.form,nombre:'Second'}}),other=await state.queue.save('b',input);
+  await state.queue.patch('a',a.id,{outcome:{attempt:'signed-A'}});await state.queue.logout('a');
+  const rows=await state.queue.list('a');assert.equal(rows.length,1);assert.equal(rows[0].attempt,'signed-A');assert.doesNotMatch(JSON.stringify(rows),/Synthetic|Second|synthetic-phone/);assert.ok((await state.queue.read('b',other.id)).form);
+  state.store.denied=true;await assert.rejects(state.queue.save('b',input),{code:'STORAGE'});state.store.denied=false;assert.equal((await state.queue.list('b')).length,1);
+  state.advance(pending.AGE+1);assert.equal((await state.queue.list('b')).every(row=>!row.form&&!row.lines),true);assert.equal(await state.queue.read('a',b.id),null);
+});
+test('explicit save nonce is required for deduplication and cannot be reused with changed customer or quantities',async()=>{
+  const {queue}=setup(),intent={intentId:'a'.repeat(64),savedAt:Date.now()},a=await queue.save('a',input,intent);
+  await assert.rejects(queue.save('a',{...input,form:{...input.form,tel:'different'}},intent),{code:'INTENT_CONFLICT'});await assert.rejects(queue.save('a',{...input,lines:[{id:'pA',qty:2,price:100}]},intent),{code:'INTENT_CONFLICT'});
+  await queue.confirmed('a',a.id,[{reference:'A1'}]);assert.equal((await queue.save('a',input,intent)).id,a.id);assert.equal((await queue.list('a')).length,1);
+  await assert.rejects(queue.save('a',input,{intentId:'invalid',savedAt:Date.now()}),{code:'INVALID_INTENT'});
+});
+test('pending limit is bounded without deleting existing customers and confirmation frees a slot',async()=>{
+  const {queue}=setup();for(let i=0;i<pending.MAX_PENDING;i++)await queue.save('a',{...input,form:{...input.form,nombre:'Customer '+i}});
+  await assert.rejects(queue.save('a',input),{code:'LIMIT'});assert.equal((await queue.list('a')).filter(row=>row.form).length,pending.MAX_PENDING);
+  const first=await queue.read('a');await queue.confirmed('a',first.id,[{reference:'first'}]);await queue.save('a',input);assert.equal((await queue.list('a')).filter(row=>row.form).length,pending.MAX_PENDING);
+});
+test('legacy v1 storage value migrates without changing attempt, intent, references or pending customer',async()=>{
+  const state=setup(),legacy={version:1,owner:'a',id:'1'.repeat(64),intentId:'2'.repeat(64),createdAt:state.now,updatedAt:state.now,state:'uncertain',...pending.clean(input),outcome:{attempt:'signed-legacy'},priorAttempts:['prior-legacy'],lease:null};
+  state.store.rows.set('a',legacy);assert.equal((await state.queue.list('a')).length,1);assert.deepEqual(await state.queue.read('a',legacy.id),legacy);assert.equal(state.store.rows.get('a').version,2);
+  const second=await state.queue.save('a',{...input,form:{...input.form,nombre:'New customer'}});assert.notEqual(second.intentId,legacy.intentId);await state.queue.confirmed('a',legacy.id,[{reference:'Legacy1'}]);assert.equal((await state.queue.read('a',second.id)).state,'queued');
 });
