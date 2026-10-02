@@ -1,11 +1,16 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-review1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-pending1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
 const PTH_SHELL_URL = '/offline-catalog.html';
-// Repeat visits need only this public reader, not the SDK or account tools.
-const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL,
+const PTH_ORDER_SHELL_URL = '/offline-order.html';
+// Static reader and local preparation form only. No SDK or private responses.
+const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
+  '/css/offline-order.css?v=20261002-pending1',
+  '/js/pending-checkout.js?v=20261002-pending1',
+  '/js/pending-checkout-page.js?v=20261002-pending1',
+  '/js/secure-data.js?v=20261002-lowdata1',
   '/js/low-connectivity.js?v=20261002-lowdata1',
   '/js/public-catalog-api.js?v=20261002-lowdata1',
   '/js/offline-catalog.js?v=20261002-lowdata2',
@@ -13,10 +18,11 @@ const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL,
   '/js/image-variants.js?v=20261001-images2',
   '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
+  '/js/pending-checkout-storefront.js?v=20261002-pending1',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261002-lowdata1',
-  '/js/storefront.min.js?v=20261002-quickstory1',
+  '/js/storefront.min.js?v=20261002-pending1',
   '/css/low-connectivity.css?v=20261002-fasttools2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261002-review1',
@@ -100,14 +106,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Offline navigation loads only the public reader. No account restoration,
-  // private page, SDK response or authenticated document is cached here.
+  // Offline navigation loads a static reader or local-only preparation form.
+  // No SDK response or authenticated document is cached here. The adapter
+  // can verify a session again only through the uncached live gateway.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
         const response = await fetch(request);
         return response;
       } catch (error) {
+        if (url.pathname === PTH_ORDER_SHELL_URL) {
+          const orderShell = await caches.match(PTH_ORDER_SHELL_URL);
+          if (orderShell) return orderShell;
+        }
         if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === PTH_SHELL_URL) {
           const shell = await caches.match(PTH_SHELL_URL);
           if (shell) return shell;

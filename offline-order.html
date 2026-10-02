@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1a4789">
+  <title>Pedido pendiente | ParaTuHogar</title>
+  <link rel="stylesheet" href="/css/offline-order.css?v=20261002-pending1">
+  <script src="/js/low-connectivity.js?v=20261002-lowdata1" defer></script>
+  <script src="/js/secure-data.js?v=20261002-lowdata1" defer></script>
+  <script src="/js/pending-checkout.js?v=20261002-pending1" defer></script>
+  <script src="/js/pending-checkout-page.js?v=20261002-pending1" defer></script>
+</head>
+<body>
+  <header><a href="/">paratuhogar</a><a href="/offline-catalog.html">Volver al catálogo</a></header>
+  <main>
+    <section class="card"><p class="eyebrow">EN ESTE DISPOSITIVO</p><h1>Prepara el pedido sin conexión</h1>
+      <p>Guarda los productos y los datos del cliente. Al volver la conexión, se comprueba tu cuenta y se envía con la web abierta. Solo se confirma cuando el servidor lo recibe.</p>
+      <p>Necesitas haber entrado antes en tu cuenta y guardado el catálogo en este dispositivo. Esta página no abre WhatsApp ni envía un borrador sin tu autorización.</p>
+      <p>Puedes guardar un pedido por cuenta en este dispositivo. Los datos del cliente se borran al confirmar, cancelar o cerrar sesión. Si pasan 7 días, se borran al volver a abrir el pendiente. Con el navegador cerrado no se garantiza el envío.</p>
+      <p id="pending-status" role="status" aria-live="polite">Comprobando el almacenamiento del dispositivo…</p>
+      <p id="pending-detail"></p><div id="pending-actions" class="actions"></div>
+    </section>
+    <form id="pending-form" autocomplete="off" class="card" hidden>
+      <h2>Productos</h2><p>Los precios guardados son de referencia. El servidor comprobará los precios de tu cuenta y la entrega antes de aceptar el pedido.</p>
+      <label>Buscar en la copia guardada<input id="pending-search" type="search" placeholder="Modelo o producto"></label>
+      <div id="pending-products"></div><p id="pending-selection" role="status"></p>
+      <h2>Datos del cliente</h2>
+      <label>Nombre<input id="pending-nombre" required maxlength="200"></label>
+      <div class="columns"><label>Teléfono<input id="pending-tel" type="tel" required maxlength="200"></label><label>Carnet (opcional)<input id="pending-ci" maxlength="200"></label></div>
+      <label class="check"><input id="pending-pickup" type="checkbox"> Recogida en el almacén</label>
+      <div id="pending-delivery"><div class="columns"><label>Municipio<input id="pending-municipio" list="pending-municipios" required maxlength="200" placeholder="Como aparece en la tienda"><datalist id="pending-municipios"></datalist></label><label>Localidad / Reparto<input id="pending-localidad" list="pending-localidades" required maxlength="200" placeholder="Como aparece en la tienda"><datalist id="pending-localidades"></datalist></label></div>
+      <label>Dirección exacta<textarea id="pending-dir" required maxlength="4000" placeholder="Calle, número, entre calles…"></textarea></label></div>
+      <label>Notas (opcional)<textarea id="pending-notas" maxlength="4000"></textarea></label>
+      <label>Método de pago<select id="pending-moneda"><option>USD (Efectivo)</option><option>EUR (Efectivo)</option><option>Zelle</option><option>CUP (Al cambio)</option></select></label>
+      <label>Vuelto (opcional)<input id="pending-vuelto" type="number" min="0"></label>
+      <p>Al pulsar el botón, autorizas guardar temporalmente estos datos en este dispositivo y enviar este pedido al recuperar conexión con tu misma cuenta y la web abierta. Puedes revisarlo o detener los reintentos. Los datos del cliente se borran al confirmar la recepción.</p>
+      <button id="pending-save" type="submit">Dejar pendiente de envío</button>
+    </form>
+    <section id="pending-summary" class="card" hidden><h2>Pedido guardado</h2><div id="pending-summary-text"></div></section>
+    <noscript>Activa JavaScript para preparar un pedido en este dispositivo.</noscript>
+  </main>
+</body></html>

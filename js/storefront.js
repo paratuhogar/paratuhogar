@@ -254,6 +254,7 @@ async function checkShortLinks() {
         const warning = document.createElement('p'); warning.id = 'pth-saved-catalog-warning'; warning.className = 'pth-saved-catalog-warning';
         warning.textContent = 'Los precios y la disponibilidad pueden cambiar. Confírmalos con conexión antes de hacer el pedido. Sin conexión, solo podrás abrir las fotos guardadas en este dispositivo.';
         savedCard.append(savedTitle, copyHelp, link, copyDate, warning);
+        if (currentNewCartOwner()) { const prepare = document.createElement('a'); prepare.href = '/offline-order.html'; prepare.className = 'pth-connectivity-action'; prepare.textContent = 'Preparar pedido sin conexión'; savedCard.append(prepare); }
         cards.append(savingCard, savedCard);
         // Keep existing manual receipt/cart actions separate from the copy's date.
         const status = document.createElement('p'); status.setAttribute('role', 'status'); status.className = 'pth-connectivity-status';
@@ -1952,6 +1953,7 @@ async function loadProducts() {
         // Internal data is never the source of the new public offline copy.
         // Public cache refresh is shared and uses an explicitly anonymous read.
         cachePublicCatalogue(productos, anonymousCatalogueSource, necesitaDescargar ? Date.now() : Number(cacheTime));
+        void window.PTHPendingCheckoutUI?.catalogReady();
 
         if (sessionGestor) {
             renderGestorPricing();
@@ -2894,6 +2896,8 @@ function consultSelectedProduct() {
 
     // 4. CARRITO Y PAGOS
    function addItemToCart() {
+    if (window.PTHPendingCheckoutUI?.cartLocked()) { window.PTHPendingCheckoutUI.message('Espera la confirmación del pendiente antes de cambiar el carrito.'); return; }
+
     // === NUEVO: LÓGICA DE BLOQUEO B2B ===
     const catActual = (selectedProduct.categoria || "").toUpperCase();
     const esB2B = catActual.includes('MAYORISTA') || catActual.includes('B2B') || catActual.includes('MIPYME');
@@ -3042,6 +3046,8 @@ function renderCart() {
 
 // Función para sumar o restar cantidad
 function changeQty(index, delta) {
+    if (window.PTHPendingCheckoutUI?.cartLocked()) { window.PTHPendingCheckoutUI.message('Espera la confirmación del pendiente antes de cambiar el carrito.'); return; }
+
     const item = cart[index];
     item.qty += delta;
 
@@ -3128,18 +3134,24 @@ function getCheckoutFailureMessage(error) {
     const checkoutSubmitGuard = window.PTHCheckoutSubmitGuard.createCheckoutSubmitGuard(checkoutStorage, checkoutTokenKey);
     const checkoutOutcomes = new Map();
     function readNewCheckoutOutcome() {
+        if (window.PTHPendingCheckoutUI?.active()) return window.PTHPendingCheckoutUI.outcome();
         const key = checkoutTokenKey() + ':outcome';
         try { return JSON.parse(checkoutStorage?.getItem(key) || 'null') || checkoutOutcomes.get(key) || null; }
         catch (_) { return checkoutOutcomes.get(key) || null; }
     }
-    function markNewCheckoutOutcome(value) {
-        const key = checkoutTokenKey() + ':outcome'; checkoutOutcomes.set(key,value);
+    async function markNewCheckoutOutcome(value) {
+        const key = checkoutTokenKey() + ':outcome', owner = checkoutScope(), token = window.PTHSecureData.token();
+        await window.PTHPendingCheckoutUI?.markOutcome(value);
+        if (checkoutScope() !== owner || window.PTHSecureData.token() !== token || window.PTHPendingCheckoutUI?.guard()) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+        checkoutOutcomes.set(key,value);
         try { checkoutStorage?.setItem(key,JSON.stringify(value)); } catch (_) {}
     }
     function clearNewCheckoutOutcome() {
         const key = checkoutTokenKey() + ':outcome'; checkoutOutcomes.delete(key);
         try { checkoutStorage?.removeItem(key); } catch (_) {}
     }
+    function notifyNewCheckout(message) { if (!window.PTHPendingCheckoutUI?.message(message)) alert(message); }
+    async function confirmPendingCheckout(receipts) { await window.PTHPendingCheckoutUI?.confirmed(receipts); if (window.PTHPendingCheckoutUI?.active() && !window.PTHPendingCheckoutUI.guard()) { try { clearAutoSave(); } catch (_) {} document.getElementById('checkout-form').reset(); } }
     async function checkNewCheckoutOutcome(outcome) {
         if (outcome.attempt) {
             const result = await window.PTHSecureData.checkout({operation:'receipt',attempt:outcome.attempt});
@@ -3162,36 +3174,42 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // mientras carga la red no inicia dos flujos de inserción simultáneos.
     const submissionAttempt = checkoutSubmitGuard.acquire();
     if (!submissionAttempt.accepted) {
-        alert('⏳ Este pedido ya se está procesando. Espera la confirmación.');
+        notifyNewCheckout('⏳ Este pedido ya se está procesando. Espera la confirmación.');
         return;
     }
     const submissionToken = submissionAttempt.token;
     const submissionOwner = checkoutScope();
     const submissionSession = window.PTHSecureData.token();
+    const inSubmissionScope = () => checkoutScope() === submissionOwner && window.PTHSecureData.token() === submissionSession && !window.PTHPendingCheckoutUI?.guard();
+    const assertSubmissionScope = () => { if (!inSubmissionScope()) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'}); };
     let checkoutFinished = false;
     let btn = null;
 
     try {
     if (typeof lowConnectivity !== 'undefined' && lowConnectivity.wasSent(newCartOwner,newCartRevision)) {
-        alert('Este carrito ya fue confirmado en otra pestaña. Revisa tus pedidos antes de iniciar otra venta.'); return;
+        notifyNewCheckout('Este carrito ya fue confirmado en otra pestaña. Revisa tus pedidos antes de iniciar otra venta.'); return;
     }
-    if (!cart.length) { alert('Añade productos al carrito antes de confirmar.'); return; }
+    if (!cart.length) { notifyNewCheckout('Añade productos al carrito antes de confirmar.'); return; }
     if (window.navigator?.onLine === false) {
-        alert('No hay conexión. El carrito sigue en este dispositivo; el pedido todavía no se ha enviado. Vuelve cuando tengas datos y pulsa Confirmar Pedido.');
+        notifyNewCheckout('No hay conexión. El carrito sigue en este dispositivo; el pedido todavía no se ha enviado. Vuelve cuando tengas datos y pulsa Confirmar Pedido.');
         return;
     }
+    if (window.PTHPendingCheckoutUI?.guard()) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     const previousOutcome = readNewCheckoutOutcome();
     if (previousOutcome) {
         const outcome = await checkNewCheckoutOutcome(previousOutcome);
+        if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
         if (outcome.kind === 'confirmed') {
-            alert('El servidor confirmó este envío: ' + outcome.receipts.map(row => row.orden_dia || row.id).join(', ') + '. No se creó otro pedido.');
+            await confirmPendingCheckout(outcome.receipts);
+            if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+            notifyNewCheckout('El servidor confirmó este envío: ' + outcome.receipts.map(row => row.orden_dia || row.id).join(', ') + '. No se creó otro pedido.');
             clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true;
             lowConnectivity.markSent(newCartOwner,newCartRevision);
             cart = []; lowConnectivity.clearDraft(newCartOwner); newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
         }
         if (!['absent','partial'].includes(outcome.kind)) throw Object.assign(new Error('Unconfirmed outcome'),{code:'ORDER_OUTCOME_UNKNOWN'});
         if (previousOutcome.products !== window.PTHLowConnectivity.fingerprint(cart)) {
-            alert('El carrito cambió durante el envío. Primero revisa el intento anterior antes de confirmar otro carrito.'); return;
+            notifyNewCheckout('El carrito cambió durante el envío. Primero revisa el intento anterior antes de confirmar otro carrito.'); return;
         }
     }
 
@@ -3207,6 +3225,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             .select('id,nombre,disponible,precio,comision,precio_flexible,proveedor,garantia,mensajeria')
             .in('id', idsEnCarrito);
 
+        assertSubmissionScope();
+
         if (dbError || !Array.isArray(dbProducts)) throw Object.assign(new Error('Inventory unavailable'),{code:'NETWORK_ERROR'});
         verifiedCheckoutProducts = dbProducts;
         if (dbProducts) {
@@ -3220,7 +3240,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             });
 
             if (noDisponibles.length > 0) {
-                alert(`⚠️ PEDIDO DETENIDO POR INVENTARIO:\n\nLos siguientes productos ya no se encuentran disponibles:\n\n• ${noDisponibles.join('\n• ')}\n\nPor favor, actualice la página para refrescar el catálogo.`);
+                notifyNewCheckout(`⚠️ PEDIDO DETENIDO POR INVENTARIO:\n\nLos siguientes productos ya no se encuentran disponibles:\n\n• ${noDisponibles.join('\n• ')}\n\nPor favor, actualice la página para refrescar el catálogo.`);
 
                 const btnF = document.getElementById('final-submit-btn');
                 if (btnF) {
@@ -3242,7 +3262,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // Solo validamos que no esté vacío si NO es recogida
     if (!isRecogida && (!localidadC || localidadC === "")) {
-        alert("⚠️ Por favor, selecciona una Localidad/Reparto antes de confirmar el pedido.");
+        notifyNewCheckout("⚠️ Por favor, selecciona una Localidad/Reparto antes de confirmar el pedido.");
         return;
     }
 
@@ -3259,7 +3279,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // de datos necesita una duración válida para conservar la cobertura vendida.
     const productosSinGarantia = cart.filter(item => !String(item.garantia || '').trim());
     if (productosSinGarantia.length > 0) {
-        alert(`⚠️ PEDIDO DETENIDO POR DATOS INCOMPLETOS:\n\nFalta configurar la garantía de:\n\n• ${productosSinGarantia.map(item => item.nombre).join('\n• ')}\n\nUn administrador debe completar la garantía del producto antes de venderlo.`);
+        notifyNewCheckout(`⚠️ PEDIDO DETENIDO POR DATOS INCOMPLETOS:\n\nFalta configurar la garantía de:\n\n• ${productosSinGarantia.map(item => item.nombre).join('\n• ')}\n\nUn administrador debe completar la garantía del producto antes de venderlo.`);
         return;
     }
 
@@ -3293,8 +3313,11 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         .in('telefono', [...blacklistCandidates])
         .limit(1);
 
+    assertSubmissionScope();
+
     if (blacklistError) {
-        alert('⚠️ No pudimos verificar el teléfono en el Radar de Riesgos. Por seguridad, intenta confirmar el pedido nuevamente.');
+        if (window.PTHPendingCheckoutUI?.active()) throw Object.assign(new Error('Risk check unavailable'),{code:'NETWORK_ERROR'});
+        notifyNewCheckout('⚠️ No pudimos verificar el teléfono en el Radar de Riesgos. Por seguridad, intenta confirmar el pedido nuevamente.');
         btn.disabled = false;
         btn.innerText = 'Confirmar Pedido';
         return;
@@ -3303,7 +3326,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const isBlocked = blockedMatches?.[0];
 
     if (isBlocked) {
-        alert(`🚨 ALERTA DE SEGURIDAD 🚨\n\nEste número de teléfono está registrado en nuestra base de datos como Cliente ${isBlocked.tipo.toUpperCase()}.\n\nMotivo del reporte: ${isBlocked.motivo}\n\nPor seguridad del equipo, este pedido no puede ser procesado.`);
+        notifyNewCheckout(`🚨 ALERTA DE SEGURIDAD 🚨\n\nEste número de teléfono está registrado en nuestra base de datos como Cliente ${isBlocked.tipo.toUpperCase()}.\n\nMotivo del reporte: ${isBlocked.motivo}\n\nPor seguridad del equipo, este pedido no puede ser procesado.`);
 
         const btnF = document.getElementById('final-submit-btn');
         btnF.disabled = false;
@@ -3325,7 +3348,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN
     let activeGestor = await obtenerDuenoReal(telC);
+    assertSubmissionScope();
     const checkoutHierarchy = await resolveSalesHierarchy(activeGestor);
+    assertSubmissionScope();
     const orderSubgestor = checkoutHierarchy?.isSubgestor ? checkoutHierarchy : null;
 
     // Revalidar precios contra Supabase antes de guardar. Esto bloquea carritos
@@ -3344,6 +3369,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             .select('producto_id, nuevo_precio, comision_subgestor')
             .eq('gestor', pricingOwner)
             .in('producto_id', cartProductIds);
+        assertSubmissionScope();
         if (customRowsError) throw customRowsError;
         checkoutCustomPrices = customRows || [];
     }
@@ -3385,7 +3411,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     if (priceMismatches.length > 0) {
         renderCart();
-        alert(`⚠️ CAMBIARON LAS CONDICIONES DEL CARRITO:\n\n• ${priceMismatches.join('\n• ')}\n\nEl carrito fue actualizado. Revisa el total, la entrega y la garantía; confirma nuevamente.`);
+        notifyNewCheckout(`⚠️ CAMBIARON LAS CONDICIONES DEL CARRITO:\n\n• ${priceMismatches.join('\n• ')}\n\nEl carrito fue actualizado. Revisa el total, la entrega y la garantía; confirma nuevamente.`);
         return;
     }
 
@@ -3442,7 +3468,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // Bandera para asignar el envío global SOLO a un vale (por si hay múltiples proveedores)
     let envioYaCobrado = false;
 
-    if (checkoutScope() !== submissionOwner) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+    if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
 
     // GENERAR VALES Y MENSAJE
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
@@ -3461,7 +3487,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             codPedido = String(consecutivo).trim();
         } catch (e) {
             console.error('No se pudo reservar el consecutivo del pedido:', e);
-            alert('❌ No se pudo reservar el consecutivo del pedido. No se envió a WhatsApp ni se guardó un código temporal. Vuelve a intentarlo.');
+            notifyNewCheckout('❌ No se pudo reservar el consecutivo del pedido. No se envió a WhatsApp ni se guardó un código temporal. Vuelve a intentarlo.');
             throw e;
         }
         protectionOrderIds.push(codPedido);
@@ -3584,7 +3610,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 submission_token: submissionToken
             };
         }
-        if (checkoutScope() !== submissionOwner) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+        if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
         promesas.push(insertPromise);
     }
 
@@ -3592,16 +3618,18 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     if (!volatileCheckoutIntent || volatileCheckoutIntent.owner !== submissionOwner || volatileCheckoutIntent.products !== window.PTHLowConnectivity.fingerprint(cart)) {
         volatileCheckoutIntent = { owner: submissionOwner, products: window.PTHLowConnectivity.fingerprint(cart), intentId: Array.from(crypto.getRandomValues(new Uint8Array(32)),v => v.toString(16).padStart(2,'0')).join(''), savedAt: Date.now() };
     }
-    const intent = draft || volatileCheckoutIntent;
+    const intent = window.PTHPendingCheckoutUI?.intent() || draft || volatileCheckoutIntent;
     const request = { table: orderSubgestor ? 'pedidos_subgestores' : 'pedidos', inputs: promesas, delivery: { pickup: isRecogida, municipio: municipioC, localidad: localidadC }, intentId: intent.intentId, intentCreatedAt: intent.savedAt, attempt: previousOutcome?.attempt };
     const quote = await window.PTHSecureData.checkout({ ...request, operation: 'quote' });
     if (quote.error) throw quote.error;
-    if (checkoutScope() !== submissionOwner) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+    if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+    if (quote.data.complete) await confirmPendingCheckout(quote.data.confirmed);
+    if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (quote.data.complete) {
-        alert('El servidor ya confirmó este envío: ' + quote.data.confirmed.map(row => row.reference).join(', ') + '. No se creó otro pedido.');
+        notifyNewCheckout('El servidor ya confirmó este envío: ' + quote.data.confirmed.map(row => row.reference).join(', ') + '. No se creó otro pedido.');
         clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
-    markNewCheckoutOutcome({ token: submissionToken, attempt: quote.data.attempt, table: request.table, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart) });
+    await markNewCheckoutOutcome({ token: submissionToken, attempt: quote.data.attempt, table: request.table, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart) });
     const changedTerms = quote.data.terms.some(term => {
         const expected = promesas.find(input => input.proveedor === term.proveedor);
         return !expected || Math.abs(Number(expected.total)-Number(term.total)) > 0.001 || Math.abs(Number(expected.costo_mensajeria)-Number(term.costo_mensajeria)) > 0.001 || expected.garantia_venta !== term.garantia_venta;
@@ -3611,14 +3639,16 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             const item = cart.find(row => row.id === price.id); if (item) { item.precio = price.price; item.precio_venta = price.price; if (price.garantia) item.garantia = price.garantia; }
         }
         newCheckoutShippingOverride = { fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: municipioC, localidad: localidadC, pickup: isRecogida, cost: quote.data.terms.reduce((sum,term) => sum + Number(term.costo_mensajeria),0) };
-        renderCart(); alert('El servidor comprobó nuevas condiciones de precio, garantía o entrega. Revisa el total actualizado y pulsa Confirmar Pedido nuevamente.'); return;
+        renderCart(); notifyNewCheckout('El servidor comprobó nuevas condiciones de precio, garantía o entrega. Revisa el total actualizado y pulsa Confirmar Pedido nuevamente.'); return;
     }
     const result = await window.PTHSecureData.checkout({ ...request, operation: 'submit', attempt: quote.data.attempt, quote: quote.data.quote });
     if (result.error) throw result.error;
-    if (checkoutScope() !== submissionOwner) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+    if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
+    if (result.data?.complete) await confirmPendingCheckout(result.data.confirmed);
+    if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (!result.data?.complete) throw Object.assign(new Error('Unconfirmed write'),{code:'ORDER_OUTCOME_UNKNOWN'});
     if (previousOutcome || result.data.confirmed.some(row => !protectionOrderIds.includes(row.reference))) {
-        alert('El servidor confirmó este envío: ' + result.data.confirmed.map(row => row.reference).join(', ') + '. No necesitas enviarlo otra vez.');
+        notifyNewCheckout('El servidor confirmó este envío: ' + result.data.confirmed.map(row => row.reference).join(', ') + '. No necesitas enviarlo otra vez.');
         clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
 
@@ -3631,19 +3661,24 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     if (activeGestor !== 'Venta Directa') {
         const protection = await recordCustomerClosure(telC, activeGestor, protectionOrderIds.join(','));
+        assertSubmissionScope();
         if (protection.transferred) {
             console.log(`🔄 Cliente transferido por cierre completo: ${protection.previousOwner} → ${activeGestor}`);
         }
         if (activeGestor === window.gestorName) {
             protectedCustomerCountOwner = null;
             protectedCustomerCountValue = null;
-            window.PTHFollowups?.scheduleProtectedCustomer?.({
+            if (!window.PTHPendingCheckoutUI?.active()) window.PTHFollowups?.scheduleProtectedCustomer?.({
                 cliente: nombreC,
                 telefono: telC,
                 producto: cart.map(item => item.nombre).join(', '),
                 pedido_id: protectionOrderIds.join(',')
             });
         }
+    }
+
+    if (window.PTHPendingCheckoutUI?.active()) {
+        cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
 
     const mensajeCodificado = encodeURIComponent(mensajeRaw.trim());
@@ -3690,15 +3725,17 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     checkoutFinished = true;
     } catch (checkoutError) {
         console.error("Error inesperado al procesar el pedido:", checkoutError);
+        window.PTHPendingCheckoutUI?.failure(checkoutError,getCheckoutFailureMessage(checkoutError));
+        if (!inSubmissionScope()) return;
         if (checkoutFinished) {
-            alert('El servidor confirmó el pedido. No necesitas enviarlo otra vez. No se pudo completar el comprobante o la comunicación; revisa el pedido en tu panel.');
+            notifyNewCheckout('El servidor confirmó el pedido. No necesitas enviarlo otra vez. No se pudo completar el comprobante o la comunicación; revisa el pedido en tu panel.');
             cart = []; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false);
-        } else alert(getCheckoutFailureMessage(checkoutError));
+        } else notifyNewCheckout(getCheckoutFailureMessage(checkoutError));
     } finally {
         if (!checkoutFinished) checkoutSubmitGuard.fail();
         // Ante cualquier validación, error de red o excepción, el cliente puede
         // volver a intentarlo en lugar de quedar atrapado en “PROCESANDO…”.
-        if (!checkoutFinished && btn) {
+        if (!checkoutFinished && btn && inSubmissionScope()) {
             btn.disabled = false;
             btn.innerText = "Confirmar Pedido";
         }
@@ -3713,7 +3750,7 @@ document.getElementById('checkout-form').onsubmit = function(event) {
     const locks = window.navigator?.locks;
     if (!locks) return submitNewCheckout.call(this,event);
     return locks.request('pth-new-checkout:' + checkoutScope(), { ifAvailable: true }, lock => {
-        if (!lock) { alert('Hay un envío en otra pestaña. Espera su confirmación antes de enviar desde aquí.'); return; }
+        if (!lock) { notifyNewCheckout('Hay un envío en otra pestaña. Espera su confirmación antes de enviar desde aquí.'); return; }
         return submitNewCheckout.call(this,event);
     });
 };
@@ -3920,7 +3957,9 @@ function toggleCartModal(show) {
 }
 
 
-    function removeFromCart(i) { cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
+    function removeFromCart(i) {
+    if (window.PTHPendingCheckoutUI?.cartLocked()) { window.PTHPendingCheckoutUI.message('Espera la confirmación del pendiente antes de cambiar el carrito.'); return; }
+    cart.splice(i, 1); document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0); renderCart(); // NUEVO: Cada vez que añada algo, actualizamos el Radar si ya puso su teléfono
     if (typeof captureGhostLead === "function") {
         captureGhostLead();
     }
@@ -9090,6 +9129,7 @@ function initAutoSaveSystem() {
 
         // B. Guardar al escribir
         el.addEventListener('input', () => {
+            if (window.PTHPendingCheckoutUI?.localForm()) return;
             try { localStorage.setItem('autosave_' + id, el.value); } catch (_) { /* Existing optional autosave must not interrupt typing. */ }
         });
     });
@@ -11419,8 +11459,10 @@ async function trackSpy(accion, detalle, duracion = 0) {
 // 2. captureGhostLead blindado contra duplicados
 let ghostTimer;
 function captureGhostLead() {
+    if (window.PTHPendingCheckoutUI?.localForm()) return;
     clearTimeout(ghostTimer);
     ghostTimer = setTimeout(async () => {
+        if (window.PTHPendingCheckoutUI?.localForm()) return;
         const nombre = document.getElementById('check-nombre').value.trim();
         const telRaw = document.getElementById('check-tel').value.trim();
 
@@ -12212,6 +12254,7 @@ async function loadTarifasMensajeria() {
 
     if (error || !data) return console.error("Error cargando tarifas");
 
+    window.PTHPendingCheckoutUI?.saveDeliveryZones(data);
     tarifasMensajeriaAdminRaw = data;
     tarifasMensajeria = {}; // Reseteamos el objeto
 
