@@ -126,8 +126,10 @@ async function canonicalSale(db,table,input,actor) {
     const {data}=await db.from('gestores').select('*').eq('id',row.subgestor_id).maybeSingle();seller=data;
     if(!seller?.parent_id) fail('El subgestor no es válido.');
   } else if(row.gestor&&row.gestor!=='Venta Directa') {
-    const {data}=await db.from('gestores').select('*').eq('nombre',row.gestor).maybeSingle();seller=data;
-    if(!seller||seller.parent_id) fail('El vendedor no es válido para un pedido directo.');
+    // Own direct orders use the server-verified session identity, never a submitted ID.
+    const ownPrincipal=actor?.id&&actor.nombre===row.gestor&&['gestor','admin'].includes(actorKind(actor));
+    const {data}=await db.from('gestores').select('*').eq(ownPrincipal?'id':'nombre',ownPrincipal?actor.id:row.gestor).maybeSingle();seller=data;
+    if(!seller||seller.parent_id||(ownPrincipal&&seller.nombre!==row.gestor)) fail('El vendedor no es válido para un pedido directo.');
   }
   if(seller&&(seller.estado!=='activo'||seller.activo===false)) fail('El vendedor no está activo.');
   if(actorKind(actor)==='subgestor'&&seller?.id!==actor.id) fail('Solo puedes registrar tus propias ventas.');

@@ -192,3 +192,42 @@ from source publication. All production connector actions were read-only.
 Publication uses the existing main/root target and a normal fast-forward push.
 Rollback is a normal revert of this follow-up commit, retaining earlier work;
 there is no database migration or SQL rollback.
+
+### Authenticated direct-order seller validation follow-up
+
+After explicit approval to update and deploy the seller validation, own direct
+orders resolve their seller through the existing server-verified session ID.
+The previous name lookup rejected an active principal when another account had
+the same display name. A browser-submitted seller ID cannot select an account:
+the ID comes from the resolved session, and the requested name must match that
+principal. The fresh seller record must still match the name, have no parent,
+and pass the existing active-account check. Other-seller/public lookups, child
+order authorization and pending-order approval retain their existing checks.
+Server-side product, availability and commission calculations use the existing
+implementation. The release contains one handler change and synthetic identity
+regression tests; it has no schema, permission, account or financial-data changes.
+
+Validation: all 214 Node tests pass, including 21 new endpoint regressions for
+same-name principal accounts, principal/child role collisions, forged submitted
+IDs, child ownership, disabled/expired sessions, read interruptions, product
+validation, pending approval and duplicate submission constraints. The original
+denial was reproduced against the previous handler in an isolated fixture.
+Read-only metadata checks confirmed the existing submission-token/provider
+unique indexes. No real order was submitted or retried, and no reference was
+available to identify the reported attempted submission.
+
+Deployed to the existing `secure-data` function in the paratuhogar project:
+version 16 is ACTIVE. Retrieved deployed module contents match the tested
+package; custom-session authentication and its existing `verify_jwt: false`
+setting are preserved. The runtime HTTP smoke request could not reach the
+function because the execution environment's proxy rejected CONNECT with 403;
+that limit was not bypassed. An actual-device checkout remains user verification.
+Ambiguous public referrals still require a separate identity solution, and
+persistent order/pricing ownership retains the existing name-based schema.
+
+Rollback requires reverting this follow-up commit and redeploying the previous
+`secure-data` source from `4f513399f0043e67fc26838724d282891f4b9b94`, including
+its pinned lockfile and existing authentication configuration. A private local
+snapshot of function version 15 is also retained in the coding workspace.
+Redeployment creates a new function version; source revert alone does not
+change the live backend.
