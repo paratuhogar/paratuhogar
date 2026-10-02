@@ -97,6 +97,8 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  assert.match(await page.locator('#pth-saved-catalog-date').innerText(),/Pendiente de actualizar/);
  assert.equal(Date.parse(await panel.locator('time').getAttribute('datetime')),staleAt);
  assert.match(await panel.locator('#pth-saved-catalog-warning').innerText(),/Confírmalos con conexión/);
+ assert.match(await panel.locator('#pth-saved-catalog-description').innerText(),/Consulta productos y precios de la última copia guardada aunque no tengas internet/);
+ assert.match(await panel.locator('#pth-saved-catalog-warning').innerText(),/solo podrás abrir las fotos guardadas/);
  await page.evaluate(()=>{localStorage.removeItem('pth_offline_public_catalog_v1');renderLowConnectivityPanel();});
  assert.equal(await panel.locator('time').count(),0);assert.match(await page.locator('#pth-saved-catalog-date').innerText(),/Todavía no hay/);
  assert.match(await page.locator('#pth-saved-catalog-description').innerText(),/Actualizar copia pública/);

@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-fasttools2';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-quickstory1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -16,11 +16,11 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261002-lowdata1',
-  '/js/storefront.min.js?v=20261002-fasttools2',
+  '/js/storefront.min.js?v=20261002-quickstory1',
   '/css/low-connectivity.css?v=20261002-fasttools2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261002-fasttools1',
-  '/js/internal-assets.js?v=20261002-fasttools1',
+  '/js/internal-assets.js?v=20261002-quickstory1',
   '/js/product-availability-form.js?v=20260924-1',
   '/js/product-description-editor.js?v=20260924-1',
   '/js/checkout-submit-guard.js?v=20261002-lowdata1',

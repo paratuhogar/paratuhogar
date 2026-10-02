@@ -11,6 +11,7 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
   if(url.includes('studio-designs.js'))body='window.testStudioDesigns=true;';
   if(url.includes('studio-jobs.js'))body='if(!window.testStudioDesigns)throw Error("Studio jobs loaded before designs");window.testStudioJobs=true;';
   if(url.includes('content-studio.js'))body='if(!window.testStudioJobs)throw Error("Studio UI loaded before jobs");window.testStudioUI=true;';
+  if(url.includes('quick-story.js'))body='if(!window.testStudioJobs)throw Error("Quick Story loaded before jobs");window.testQuickStory=true;';
   await route.fulfill({contentType:url.includes('.css')?'text/css':'application/javascript',body});
  });
  await page.setContent('<html><head><base href="https://assets.test/producto/bateria/"></head><body><script>window.alerts=[];window.alert=m=>alerts.push(m)</script></body></html>');
@@ -20,7 +21,10 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
  assert.equal(await page.evaluate(()=>PTHAssets.ensure('xlsx')),false);assert.equal(await page.evaluate(()=>alerts.length),1);
  assert.equal(await page.evaluate(()=>PTHAssets.ensure('xlsx')),true);assert.equal(requests.filter(u=>u.includes('sheetjs')).length,2);
  await page.evaluate(()=>PTHAssets.load('pdf'));assert.equal(await page.evaluate(()=>testPdfPlugin),true);
+ await page.evaluate(()=>PTHAssets.load('story'));assert.equal(await page.evaluate(()=>testQuickStory),true);
+ assert.equal(requests.some(u=>u.includes('content-studio.js')),false,'quick Story does not fetch the full editor');
  await page.evaluate(()=>PTHAssets.load('studio'));assert.equal(await page.evaluate(()=>testStudioUI),true);
+ assert.equal(requests.filter(u=>u.includes('studio-jobs.js')).length,1,'Story and Studio share only renderer/jobs dependencies');
  await page.evaluate(()=>Promise.all([PTHAssets.load('traffic'),PTHAssets.load('session')]));
  assert.equal(requests.some(u=>new URL(u).pathname.startsWith('/producto/')),false,'local tools must resolve from the site root on product routes');
  console.log('PASS lazy assets: zero eager requests, concurrent deduplication, failure/retry, ordered PDF and Studio dependencies, nested product route');

@@ -246,14 +246,13 @@ async function checkShortLinks() {
             if (copy.stale) copyDate.append(' · Pendiente de actualizar');
         } else copyDate.textContent = 'Todavía no hay una copia guardada.';
         const copyHelp = document.createElement('p'); copyHelp.id = 'pth-saved-catalog-description';
-        copyHelp.textContent = copy
-            ? 'Consulta la copia pública de este dispositivo sin conexión.'
-            : 'Ábrelo con conexión y pulsa “Actualizar copia pública” para guardarla.';
+        copyHelp.textContent = 'Consulta productos y precios de la última copia guardada aunque no tengas internet. '
+            + (copy ? 'Guárdala primero con conexión.' : 'Ábrelo con conexión y pulsa “Actualizar copia pública” para guardarla.');
         const link = document.createElement('a'); link.id = 'pth-saved-catalog-link'; link.className = 'pth-connectivity-action pth-saved-catalog-action';
         link.href = '/offline-catalog.html'; link.textContent = 'Abrir catálogo guardado';
         link.setAttribute('aria-describedby', copyHelp.id + ' ' + copyDate.id + ' pth-saved-catalog-warning');
         const warning = document.createElement('p'); warning.id = 'pth-saved-catalog-warning'; warning.className = 'pth-saved-catalog-warning';
-        warning.textContent = 'Los precios y la disponibilidad pueden cambiar. Confírmalos con conexión antes de hacer el pedido.';
+        warning.textContent = 'Los precios y la disponibilidad pueden cambiar. Confírmalos con conexión antes de hacer el pedido. Sin conexión, solo podrás abrir las fotos guardadas en este dispositivo.';
         savedCard.append(savedTitle, copyHelp, link, copyDate, warning);
         cards.append(savingCard, savedCard);
         // Keep existing manual receipt/cart actions separate from the copy's date.
@@ -8037,21 +8036,22 @@ function loadStoryProductImage(url) {
     });
 }
 
-// Stories shares the same tested renderer, selection and prepared-file flow as Studio.
+// Story uses the verified renderer/files with its own quick, single-product interface.
 let storyToolOpening = false;
 async function openStoryComposer(name = '') {
     if (storyToolOpening) return;
     storyToolOpening = true;
     try {
-        if (!await window.PTHAssets.ensure('studio')) return;
+        if (!await window.PTHAssets.ensure('story')) return;
         const product = name ? getProductForQuickAction(name) : null;
-        window.PTHContentStudio.openStory(supabaseClient, {
+        window.PTHQuickStory.open(supabaseClient, {
+            productId: product?.id || '',
             productName: product?.nombre || '',
             onUsage: (action, count) => trackSpy('USO_HERRAMIENTA', `Story ${action}: ${count} imágenes`)
         });
     } finally { storyToolOpening = false; }
 }
-function closeStoryComposer() { window.PTHContentStudio?.closeStory(); }
+function closeStoryComposer() { window.PTHQuickStory?.close(); }
 function generateStoryForProduct(name) { return openStoryComposer(name); }
 function generateQuickStoryForProduct(name) { return openStoryComposer(name); }
 

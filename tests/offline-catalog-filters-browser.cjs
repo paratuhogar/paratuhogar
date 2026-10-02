@@ -81,7 +81,7 @@ const products=[
         const cacheNames=await page.evaluate(()=>caches.keys());
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-lowdata1'),false);
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-fasttools1'),false);
-        for(const name of ['pth-public-static-2026-10-02-fasttools2','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
+        for(const name of ['pth-public-static-2026-10-02-quickstory1','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_new_cart_v1:synthetic')),'synthetic draft sentinel');
         await context.setOffline(true);await page.goto(origin+'/',{waitUntil:'load'});
