@@ -287,7 +287,7 @@ async function saveFinancialChanges() {
 // 1. CARGA Y LIMPIEZA DE GESTORES (ZOMBIES)
 // =========================================================
 let pendingGestoresCache = [];
-let pendingGestorFilter = 'all';
+let pendingGestorFilter = 'recent';
 let pendingGestoresLoading = false;
 let pendingGestoresGeneration = 0;
 let pendingGestoresUpdatedAt = null;
@@ -295,12 +295,13 @@ let pendingGestoresRefreshFailed = false;
 function setPendingGestorFilter(value) {
     if (!['recent', 'history', 'unknown', 'all'].includes(value)) return;
     pendingGestorFilter = value;
+    const filter = document.getElementById('admin-pending-filter');
+    if (filter) filter.value = value;
     renderPendingGestores();
 }
 function openPendingGestorReview() {
-    setPendingGestorFilter('all');
+    setPendingGestorFilter('recent');
     const filter = document.getElementById('admin-pending-filter');
-    if (filter) filter.value = 'all';
     changeAdminTab('aprobaciones');
     filter?.focus();
     filter?.scrollIntoView({ block: 'nearest' });
@@ -314,21 +315,22 @@ function renderPendingGestores() {
     if (!host) return;
     const now = Date.now(), data = PTHAdminData;
     const review = data.pendingReview(pendingGestoresCache, now);
-    const counts = Object.fromEntries(['recent', 'history', 'unknown'].map(filter => [filter, review.rows.filter(row => data.bucket(row, now) === filter).length]));
+    const all = data.pendingReview(pendingGestoresCache, now, 'all');
+    const counts = Object.fromEntries(['recent', 'history', 'unknown'].map(filter => [filter, all.rows.filter(row => data.bucket(row, now) === filter).length]));
     const badge = document.getElementById('admin-pending-count');
-    if (badge) { badge.hidden = !review.total || pendingGestoresRefreshFailed; badge.textContent = String(review.total); badge.setAttribute('aria-label', `${review.total} solicitudes pendientes en total`); }
+    if (badge) { badge.hidden = !review.total || pendingGestoresRefreshFailed; badge.textContent = String(review.total); badge.setAttribute('aria-label', `${review.total} solicitudes pendientes de los últimos 7 días`); }
     const lastUpdate = pendingGestoresUpdatedAt ? data.date(new Date(pendingGestoresUpdatedAt).toISOString()) : 'Pendiente de actualización';
     const card = document.getElementById('admin-pending-review');
     if (card) {
-        card.hidden = !review.total;
-        document.getElementById('admin-pending-review-total').textContent = `${review.total} ${review.total === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'}`;
-        document.getElementById('admin-pending-review-age').textContent = `${review.over24h} esperan más de 24 horas · ${review.over48h} más de 48 horas.${review.oldest ? ` La más antigua: ${data.date(review.oldest)}.` : ''}${review.unknown ? ` ${review.unknown} con fecha por revisar.` : ''}`;
+        card.hidden = !review.total || pendingGestoresRefreshFailed;
+        document.getElementById('admin-pending-review-total').textContent = `${review.total} ${review.total === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'} de los últimos 7 días`;
+        document.getElementById('admin-pending-review-age').textContent = `${review.over24h} esperan más de 24 horas · ${review.over48h} más de 48 horas.${review.oldest ? ` La más antigua de los últimos 7 días: ${data.date(review.oldest)}.` : ''}`;
         setPendingGestorReviewState(pendingGestoresRefreshFailed ? 'No se pudieron actualizar las solicitudes. Este contador es de la última consulta; vuelve a actualizar.' : `Actualizado: ${lastUpdate}.`);
     }
     const summary = document.getElementById('admin-pending-summary');
     if (summary) summary.textContent = `${counts.recent} recientes · ${counts.history} en el historial · ${counts.unknown} con fecha por revisar. ${pendingGestoresRefreshFailed ? 'La última actualización falló; estos datos pueden estar desactualizados.' : `Actualizado: ${lastUpdate}.`}`;
     host.replaceChildren();
-    const rows = review.rows.filter(row => pendingGestorFilter === 'all' || data.bucket(row, now) === pendingGestorFilter);
+    const rows = all.rows.filter(row => pendingGestorFilter === 'all' || data.bucket(row, now) === pendingGestorFilter);
     if (!rows.length) { host.innerHTML = '<tr><td colspan="4" class="p-6 text-center admin-note">No hay solicitudes en esta vista.</td></tr>'; return; }
     for (const row of rows) {
         const tr = document.createElement('tr');
@@ -424,19 +426,20 @@ async function loadPendingGestores() {
         if (summary) summary.textContent = 'No se pudieron actualizar las solicitudes. Vuelve a intentar; los datos anteriores pueden estar desactualizados.';
         setPendingGestorReviewState('No se pudieron actualizar las solicitudes. Este contador es de la última consulta; vuelve a actualizar.');
         const badge = document.getElementById('admin-pending-count'); if (badge) badge.hidden = true;
+        const card = document.getElementById('admin-pending-review'); if (card) card.hidden = true;
     } finally { if (generation === pendingGestoresGeneration) pendingGestoresLoading = false; }
 
 }
 
 window.addEventListener('pth:session-changed', () => {
     pendingGestoresGeneration++; pendingGestoresLoading = false;
-    pendingGestoresCache = []; pendingGestorFilter = 'all';
+    pendingGestoresCache = []; pendingGestorFilter = 'recent';
     pendingGestoresUpdatedAt = null; pendingGestoresRefreshFailed = false;
     document.getElementById('list-admin-aprobaciones')?.replaceChildren();
     const badge = document.getElementById('admin-pending-count'); if (badge) badge.hidden = true;
     const card = document.getElementById('admin-pending-review'); if (card) card.hidden = true;
     for (const id of ['admin-pending-review-total', 'admin-pending-review-age', 'admin-pending-review-state', 'admin-pending-summary']) document.getElementById(id)?.replaceChildren();
-    const filter = document.getElementById('admin-pending-filter'); if (filter) filter.value = 'all';
+    const filter = document.getElementById('admin-pending-filter'); if (filter) filter.value = 'recent';
 });
 
 // =========================================================

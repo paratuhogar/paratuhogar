@@ -17,8 +17,8 @@
    seen.add(row.id);return filter==='all'||bucket(row,now)===filter;
   }).sort((a,b)=>(timestamp(b.created_at)||0)-(timestamp(a.created_at)||0));
  }
- function pendingReview(rows,now=Date.now()){
-  const waiting=pending(rows,'all',now),valid=row=>bucket(row,now)!=='unknown';
+ function pendingReview(rows,now=Date.now(),filter='recent'){
+  const waiting=pending(rows,filter,now),valid=row=>bucket(row,now)!=='unknown';
   waiting.sort((a,b)=>{
    if(valid(a)!==valid(b))return valid(a)?-1:1;
    return valid(a)?timestamp(a.created_at)-timestamp(b.created_at):0;
