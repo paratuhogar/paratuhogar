@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '20261002-fasttools1';
+  const SW_VERSION = '20261002-fasttools2';
   let registration = null;
   let reloadingForUpdate = false;
 

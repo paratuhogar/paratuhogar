@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-fasttools1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-fasttools2';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -11,13 +11,13 @@ const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL,
   '/js/offline-catalog.js?v=20261002-lowdata2',
   '/css/offline-catalog.css?v=20261002-lowdata1',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/product-images.js?v=20261002-lowdata1'];
+  '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261002-lowdata1',
-  '/js/storefront.min.js?v=20261002-fasttools1',
-  '/css/low-connectivity.css?v=20261002-lowdata1',
+  '/js/storefront.min.js?v=20261002-fasttools2',
+  '/css/low-connectivity.css?v=20261002-fasttools2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261002-fasttools1',
   '/js/internal-assets.js?v=20261002-fasttools1',
@@ -36,7 +36,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=20261002-fasttools1',
+  '/js/pwa.js?v=20261002-fasttools2',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',

@@ -27,9 +27,10 @@ Baseline: `d3c8941dd160fc029fbbc489d5fa2f3898ff333b`, existing
 
 No backend publication, database, access, authentication, commission, payment,
 order-history or customer-data change. No real orders or notifications in tests.
-The separately approved visual redesign of the data-saving control is pending:
-its required reference image could not be materialized through Library. This
-release does not claim that visual work is complete.
+This performance release preceded the separately approved visual control work.
+That follow-up is documented in [low-data-controls-release.md](low-data-controls-release.md),
+using authorized observation of the actual local application; the inaccessible
+Library reference was not downloaded or inspected.
 
 ## Measurements
 

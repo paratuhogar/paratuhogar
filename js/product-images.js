@@ -12,7 +12,7 @@
   }).join(', ');
  }
  function render(original,alt,classes,mode='grid',requested=false){
-  if(!requested&&root.PTHDataSaving?.enabled())return `<button type="button" class="pth-photo-button" data-photo-url="${escape(original)}" data-photo-alt="${escape(alt)}" data-photo-classes="${escape(classes)}" data-photo-mode="${escape(mode)}" onclick="event.stopPropagation();PTHProductImages.load(this)">Ver foto · ahorrar datos</button>`;
+  if(!requested&&root.PTHDataSaving?.enabled())return `<button type="button" class="pth-photo-button" data-photo-url="${escape(original)}" data-photo-alt="${escape(alt)}" data-photo-classes="${escape(classes)}" data-photo-mode="${escape(mode)}" onclick="event.preventDefault();event.stopPropagation();PTHProductImages.load(this)">Ver foto · ahorrar datos</button>`;
   const row=root.PTH_IMAGE_VARIANTS?.[key(original)];
   const base=`loading="lazy" decoding="async" alt="${escape(alt)}" class="${escape(classes)}" data-original="${escape(original)}" onerror="PTHProductImages.fallback(this)"`;
   if(!row||!safePath(row.webp360)||!candidates(row,'webp'))return `<img src="${escape(original)}" data-original-attempt="1" ${base}>`;

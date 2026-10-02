@@ -209,17 +209,56 @@ async function checkShortLinks() {
         bindNewCartAccount();
         let panel = document.getElementById('pth-low-data-panel');
         if (!panel) { panel = document.createElement('aside'); panel.id = 'pth-low-data-panel'; panel.className = 'pth-low-data-panel'; grid.before(panel); }
+        const focusId = panel.contains(document.activeElement) ? document.activeElement.id : '';
         panel.replaceChildren();
-        const label = document.createElement('label'), toggle = document.createElement('input');
-        toggle.type = 'checkbox'; toggle.checked = dataSavingEnabled;
-        label.append(toggle, 'Ahorrar datos · fotos al tocar');
-        toggle.onchange = () => { dataSavingEnabled = toggle.checked; lowConnectivity.setSaving(dataSavingEnabled); renderProducts(); };
-        const link = document.createElement('a'); link.href = '/offline-catalog.html'; link.textContent = 'Catálogo guardado';
-        const copy = lowConnectivity.readPublic(), status = document.createElement('p');
-        status.textContent = copy
-            ? 'Copia pública guardada: ' + new Date(copy.savedAt).toLocaleString('es-CU',{timeZone:'America/Havana'}) + (copy.stale ? ' · pendiente de actualizar.' : '.')
-            : 'La copia pública se guardará cuando el catálogo cargue con conexión.';
-        panel.append(label,link,status);
+        const cards = document.createElement('div'); cards.className = 'pth-connectivity-cards';
+        const savingCard = document.createElement('section'); savingCard.className = 'pth-connectivity-card';
+        savingCard.setAttribute('aria-labelledby', 'pth-data-saving-heading');
+        const heading = document.createElement('div'); heading.className = 'pth-connectivity-heading';
+        const title = document.createElement('h3'); title.id = 'pth-data-saving-heading'; title.textContent = 'Ahorro de datos';
+        const state = document.createElement('span'); state.className = 'pth-data-saving-state';
+        state.dataset.enabled = String(dataSavingEnabled); state.setAttribute('role', 'status');
+        state.textContent = dataSavingEnabled ? 'Activado' : 'Desactivado';
+        heading.append(title, state);
+        const explanation = document.createElement('p'); explanation.id = 'pth-data-saving-description';
+        explanation.textContent = dataSavingEnabled
+            ? 'Las fotos de los productos solo se cargan al tocarlas. Así consumes menos datos.'
+            : 'Las fotos de los productos se cargan automáticamente al recorrer el catálogo.';
+        const toggle = document.createElement('button'); toggle.type = 'button'; toggle.id = 'pth-data-saving-toggle';
+        toggle.className = 'pth-connectivity-action pth-data-saving-action';
+        toggle.setAttribute('aria-label', 'Ahorro de datos'); toggle.setAttribute('aria-pressed', String(dataSavingEnabled));
+        toggle.setAttribute('aria-describedby', explanation.id);
+        toggle.textContent = dataSavingEnabled ? 'Desactivar ahorro' : 'Activar ahorro';
+        toggle.onclick = () => {
+            dataSavingEnabled = !dataSavingEnabled; lowConnectivity.setSaving(dataSavingEnabled);
+            renderLowConnectivityPanel(); renderProducts();
+        };
+        savingCard.append(heading, explanation, toggle);
+        const savedCard = document.createElement('section'); savedCard.className = 'pth-connectivity-card';
+        savedCard.setAttribute('aria-labelledby', 'pth-saved-catalog-heading');
+        const savedTitle = document.createElement('h3'); savedTitle.id = 'pth-saved-catalog-heading'; savedTitle.textContent = 'Catálogo guardado';
+        const copy = lowConnectivity.readPublic(), copyDate = document.createElement('p');
+        copyDate.id = 'pth-saved-catalog-date'; copyDate.className = 'pth-saved-catalog-date';
+        if (copy) {
+            const date = document.createElement('time'); date.dateTime = new Date(copy.savedAt).toISOString();
+            date.textContent = new Date(copy.savedAt).toLocaleString('es-CU', {timeZone:'America/Havana',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+            copyDate.append('Guardado: ', date);
+            if (copy.stale) copyDate.append(' · Pendiente de actualizar');
+        } else copyDate.textContent = 'Todavía no hay una copia guardada.';
+        const copyHelp = document.createElement('p'); copyHelp.id = 'pth-saved-catalog-description';
+        copyHelp.textContent = copy
+            ? 'Consulta la copia pública de este dispositivo sin conexión.'
+            : 'Ábrelo con conexión y pulsa “Actualizar copia pública” para guardarla.';
+        const link = document.createElement('a'); link.id = 'pth-saved-catalog-link'; link.className = 'pth-connectivity-action pth-saved-catalog-action';
+        link.href = '/offline-catalog.html'; link.textContent = 'Abrir catálogo guardado';
+        link.setAttribute('aria-describedby', copyHelp.id + ' ' + copyDate.id + ' pth-saved-catalog-warning');
+        const warning = document.createElement('p'); warning.id = 'pth-saved-catalog-warning'; warning.className = 'pth-saved-catalog-warning';
+        warning.textContent = 'Los precios y la disponibilidad pueden cambiar. Confírmalos con conexión antes de hacer el pedido.';
+        savedCard.append(savedTitle, copyHelp, link, copyDate, warning);
+        cards.append(savingCard, savedCard);
+        // Keep existing manual receipt/cart actions separate from the copy's date.
+        const status = document.createElement('p'); status.setAttribute('role', 'status'); status.className = 'pth-connectivity-status';
+        panel.append(cards, status);
         const expiredOwner = window.PTHSecureData.expiredCheckoutOwner?.();
         if (expiredOwner && !currentNewCartOwner()) {
             let pending; try { pending = JSON.parse(checkoutStorage?.getItem('pth_checkout_submission_token:' + expiredOwner + ':outcome') || 'null'); } catch (_) {}
@@ -236,6 +275,7 @@ async function checkShortLinks() {
         if (!cart.length && lowConnectivity.readDraft(newCartOwner)) {
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Recuperar mi carrito'; button.onclick = recoverNewCartDraft; panel.appendChild(button);
         }
+        if (focusId) document.getElementById(focusId)?.focus({preventScroll:true});
     }
     function cachePublicCatalogue(rows, anonymousSource, savedAt) {
         if (anonymousSource) { lowConnectivity.savePublic(rows, savedAt); renderLowConnectivityPanel(); return; }

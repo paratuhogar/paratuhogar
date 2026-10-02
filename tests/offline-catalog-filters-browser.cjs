@@ -68,19 +68,20 @@ const products=[
         });
         await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.endsWith('/old-service-worker.js'));
         await page.evaluate(async()=>{
-          for(const cacheName of ['pth-public-static-2026-10-02-lowdata1','pth-public-images-v1','unrelated-cache']){
+          for(const cacheName of ['pth-public-static-2026-10-02-lowdata1','pth-public-static-2026-10-02-fasttools1','pth-public-images-v1','unrelated-cache']){
             const cache=await caches.open(cacheName);await cache.put('/synthetic-sentinel',new Response('keep outside old static cache'));
           }
           localStorage.setItem('pth_new_cart_v1:synthetic','synthetic draft sentinel');
-          const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-fasttools1',{scope:'/',updateViaCache:'none'});
+          const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-fasttools2',{scope:'/',updateViaCache:'none'});
           window.fixtureRegistration=registration;
         });
         await page.waitForFunction(()=>window.fixtureRegistration.waiting?.state==='installed');
         await page.evaluate(()=>fixtureRegistration.waiting.postMessage({type:'SKIP_WAITING'}));
-        await page.waitForFunction(()=>fixtureRegistration.active?.state==='activated'&&navigator.serviceWorker.controller?.scriptURL.endsWith('service-worker.js?v=20261002-fasttools1'));
+        await page.waitForFunction(()=>fixtureRegistration.active?.state==='activated'&&navigator.serviceWorker.controller?.scriptURL.endsWith('service-worker.js?v=20261002-fasttools2'));
         const cacheNames=await page.evaluate(()=>caches.keys());
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-lowdata1'),false);
-        for(const name of ['pth-public-static-2026-10-02-fasttools1','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
+        assert.equal(cacheNames.includes('pth-public-static-2026-10-02-fasttools1'),false);
+        for(const name of ['pth-public-static-2026-10-02-fasttools2','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_new_cart_v1:synthetic')),'synthetic draft sentinel');
         await context.setOffline(true);await page.goto(origin+'/',{waitUntil:'load'});
