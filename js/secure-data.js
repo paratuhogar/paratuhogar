@@ -10,8 +10,18 @@
  const tokenKey=messenger?'pth_secure_messenger_token':'pth_secure_token';
  const expiryKey=tokenKey+'_expires_at';let expiryTimer=null;
  function expiresAt(){const value=Number(storage.getItem(expiryKey));return Number.isFinite(value)&&value>0?value:null;}
- function armExpiry(){if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);const expires=expiresAt();if(!expires||!root.setTimeout)return;expiryTimer=root.setTimeout(()=>{if(expiresAt()===expires)clearSession('expired');},Math.max(0,expires-Date.now()));}
+ function armExpiry(){if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);const expires=expiresAt();if(!expires||!root.setTimeout)return;expiryTimer=root.setTimeout(()=>{if(expiresAt()===expires){if(expires<=Date.now())clearSession('expired');else armExpiry();}},Math.min(2147483647,Math.max(0,expires-Date.now())));}
  function checkExpiry(){const expires=expiresAt();if(expires&&expires<=Date.now()){clearSession('expired');return false;}return true;}
+ // Display-only offline identity. Protected operations still call restore()
+ // and the live gateway; this never creates a successful restoration promise.
+ function offlineProfile(){
+  if(!checkExpiry()||!expiresAt()||expiresAt()>Date.now()+7*86400000)return null;
+  const token=storage.getItem(tokenKey);if(!/^[a-f0-9]{64}$/.test(token||''))return null;
+  let saved;try{saved=JSON.parse(storage.getItem('pth_session')||'null')?.data;}catch(_){return null;}
+  if(!saved?.id||!saved.nombre||saved.password!=='__session__'||saved.estado!=='activo'||saved.activo===false)return null;
+  return Object.fromEntries(['id','nombre','telefono','rol','estado','activo','parent_id','parent_nombre','parent_telefono'].filter(field=>Object.hasOwn(saved,field)).map(field=>[field,saved[field]]).concat([['password','__session__']]));
+ }
+ function adoptOfflineProfile(){const saved=offlineProfile();if(!saved)return null;profile=saved;return {...saved};}
  function clearCaches(){
   for(let i=storage.length-1;i>=0;i--){const name=storage.key(i);if(/^(pth_catalogo_|pth_catalog_data|pth_ultimo_cambio_productos|pth_studio_.*(?:catalog|product|cache|custom_prices)|pth_stats)/.test(name))storage.removeItem(name);}
  }
@@ -76,6 +86,8 @@
  if(storage.getItem('pth_privacy_schema')!=='commission-v1'){clearCaches();try{storage.setItem('pth_privacy_schema','commission-v1');}catch(_){/* Optional metadata must not block a full device. */}}
  async function loginMessenger(pin){const result=await send({action:'login_messenger',pin},null);if(result.error)throw Error(result.error.message);saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
  root.PTHSecureData={push:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'push'},token);},announcement:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'announcement'},token);},feedback:async body=>{await restore();return send({...body,action:'feedback'});},login,loginMessenger,restore,refresh,expiresAt,clearSession,clearCaches,install,token:()=>storage.getItem(tokenKey),cacheSuffix:()=>':'+(profile?.id||'public'),logout:()=>{const token=storage.getItem(tokenKey);clearSession();return send({action:'logout'},token);}};
+ root.PTHSecureData.offlineProfile=offlineProfile;
+ root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
  // Receipt is the approved capability-only read. Other operations keep the

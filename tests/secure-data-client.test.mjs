@@ -57,6 +57,15 @@ test('refresh replaces cached expiry only after matching the current account tok
  const refresh=context.PTHSecureData.refresh();context.PTHSecureData.clearSession();release();
  await assert.rejects(refresh);assert.equal(context.PTHSecureData.expiresAt(),null);assert.equal(storage.getItem('pth_session'),null);
 });
+test('display-only offline identity never authenticates a private operation or leaks legacy passwords',async()=>{
+ const {context,storage,db}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_secure_token_expires_at',String(Date.now()+60000));
+ storage.setItem('pth_session',JSON.stringify({data:{id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__',email:'excluded'}}));
+ assert.equal(context.PTHSecureData.adoptOfflineProfile().id,'own');assert.equal(context.PTHSecureData.offlineProfile().email,undefined);
+ let requests=0;context.fetch=async()=>{requests++;throw Error('offline');};
+ const result=await db.from('pedidos').select('id');assert.equal(requests,1);assert.equal(result.data,null);assert.equal(result.error.code,'NETWORK_ERROR');
+ storage.setItem('pth_session',JSON.stringify({data:{id:'own',nombre:'Own',estado:'activo',password:'legacy-credential'}}));assert.equal(context.PTHSecureData.offlineProfile(),null);
+ storage.setItem('pth_secure_token_expires_at',String(Date.now()-1));assert.equal(context.PTHSecureData.offlineProfile(),null);assert.equal(storage.getItem('pth_secure_token'),null);
+});
 test('logout invalidates locally before an unfinished network revocation',()=>{
  const {context,storage}=client();context.fetch=()=>new Promise(()=>{});
  storage.setItem('pth_secure_token','secret');storage.setItem('pth_catalog_data','{"products":[{"comision":50}]}');
