@@ -283,9 +283,9 @@
     "slug": "bicicleta-de-montana-24-huffy",
     "nombre": "Bicicleta de montaña 24 Huffy",
     "categoria": "TRANSPORTE ",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bicicleta-de-montana-24-huffy/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-02T18:57:45.297138+00:00"
   },
   {
     "id": "bc022593-2744-44b8-8749-fe1a4d404999",
@@ -301,18 +301,18 @@
     "slug": "bicicleta-de-montana-27-5-huffy",
     "nombre": "Bicicleta de montaña 27.5 Huffy",
     "categoria": "TRANSPORTE ",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bicicleta-de-montana-27-5-huffy/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-02T18:57:40.282124+00:00"
   },
   {
     "id": "46747761-edaa-4f8d-a136-23350ce704cd",
     "slug": "bicicleta-de-paseo-26",
     "nombre": "Bicicleta de paseo 26",
     "categoria": "TRANSPORTE ",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bicicleta-de-paseo-26/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-02T18:57:51.053763+00:00"
   },
   {
     "id": "a88e7e4a-bb9a-4112-9002-0faff8dd0bbc",
@@ -3354,7 +3354,7 @@
     "categoria": "SMART TV",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-09-30T19:06:07.764119+00:00"
+    "updated_at": "2026-10-02T16:41:32.219347+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
