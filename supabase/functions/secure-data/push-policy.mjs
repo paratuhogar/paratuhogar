@@ -1,10 +1,15 @@
 // Existing administrative authorization is checked again for every delivery.
 import {actorKind,OWNER_IDS} from './policy.mjs';
+// Confirmed account; no name/email matching and no additional administrative grants.
+export const APPLICATION_REVIEWER_ID='6193f310-1e3f-4404-b874-977d0e23a6a0';
 export function allowedPushTopics(actor){
  if(!actor||actor.estado!=='activo'||actor.activo===false||actorKind(actor)!=='admin')return [];
- return OWNER_IDS.has(actor.id)?['orders','suggestions']:['orders'];
+ const topics=OWNER_IDS.has(actor.id)?['orders','suggestions']:['orders'];
+ if(actor.id===APPLICATION_REVIEWER_ID)topics.push('applications');
+ return topics;
 }
 export function pushEventForInsert(table,row){
+ if(table==='gestores'&&row.estado==='pendiente'&&row.parent_id==null)return {kind:'applications',source_id:row.id};
  if(table==='pedidos')return {kind:'orders',source_id:row.id};
  if(table==='pth_feedback'&&row.kind==='mejora')return {kind:'suggestions',source_id:row.id};
  return null;

@@ -1,6 +1,6 @@
 // Receives only generic, authorized server notifications; no submitted text or URLs.
 (() => {
- const target=kind=>kind==='orders'?'/index.html?admin_alert=orders':kind==='suggestions'?'/index.html?admin_alert=suggestions':null;
+ const target=kind=>kind==='orders'?'/index.html?admin_alert=orders':kind==='suggestions'?'/index.html?admin_alert=suggestions':kind==='applications'?'/index.html?admin_alert=applications':null;
  self.addEventListener('push',event=>{
   let payload;try{payload=event.data?.json();}catch(_){return;}
   if(payload?.version!==1||!target(payload.kind))return;

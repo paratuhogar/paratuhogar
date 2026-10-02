@@ -13,6 +13,6 @@ test('new public shell cache contains matching compiled styles and deferred entr
  for(const resource of ['/js/storefront.js?v=20261002-admin1','/js/storefront-extras.js?v=20261002-admin1','/css/tailwind.min.css?v=20261002-admin1','/js/admin-panel-data.js?v=20261002-admin1','/css/admin-panel.css?v=20261002-admin1'])assert.ok(f.entries.has(resource));
 });
 test('cached root remains available offline; private routes get only offline fallback',async()=>{const f=fixture();let p;f.events.install({waitUntil:x=>p=x});await p;f.offline();
- for(const [url,expected] of [['/','/index.html?v=20261002-admin1'],['/feedback.html','/offline.html']]){let response;f.events.fetch({request:{method:'GET',mode:'navigate',url:'https://paratuhogar.org'+url},respondWith:x=>response=x});assert.equal(await (await response).text(),expected);}
+ for(const [url,expected] of [['/','/index.html?v=20261002-applications1'],['/feedback.html','/offline.html']]){let response;f.events.fetch({request:{method:'GET',mode:'navigate',url:'https://paratuhogar.org'+url},respondWith:x=>response=x});assert.equal(await (await response).text(),expected);}
 });
 test('service worker never intercepts protected API or POST responses',()=>{const f=fixture();for(const req of [{method:'POST',url:'https://paratuhogar.org/'},{method:'GET',url:'https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data'}])f.events.fetch({request:req,respondWith:()=>assert.fail('must not cache protected response')});});

@@ -17,3 +17,9 @@ test('anonymous, subgestor, other administrator and arbitrary link cannot open p
  const f=fixture('https://evil.test',{id:'owner',rol:'admin'},['orders']);assert.equal(await f.root.PTHPushLinks.resolve(),null);assert.equal(f.calls(),0);
  const visitor=fixture('orders',null,[],'');visitor.listeners.DOMContentLoaded();assert.equal(visitor.prompted(),1);
 });
+
+test('application deep link requires restored administrative profile and server-granted topic',async()=>{
+ const f=fixture('applications',{id:'angel',rol:'admin'},['orders','suggestions','applications']);assert.equal(await f.root.PTHPushLinks.resolve(),'aprobaciones');assert.deepEqual(f.changes,['https://paratuhogar.org/?ref=keep']);
+ for(const [profile,topics] of [[null,[]],[{id:'sub',rol:'admin',parent_id:'parent'},['applications']],[{id:'owner',rol:'admin'},['orders','suggestions']],[{id:'other',rol:'admin'},['orders']]]){const blocked=fixture('applications',profile,topics);assert.equal(await blocked.root.PTHPushLinks.resolve(),null);assert.equal(blocked.changes.length,0);}
+ const visitor=fixture('applications',null,[],'');visitor.listeners.DOMContentLoaded();assert.equal(visitor.prompted(),1);
+});

@@ -88,7 +88,14 @@ at `/workspace/scratch/admin-panel-preview`; do not claim the supplied screensho
 pixels were inspected. Parent owns a real signed-in/public propagation check and
 Mac-clone sync once the source hash is reported.
 
-## Pending applications notification: precise approval boundary
+## Applications notification: initial approval checkpoint
+
+The approval recorded below was subsequently received. The scoped extension is
+implemented and active; see [admin-applications-push-release.md](admin-applications-push-release.md)
+for deployed versions, verification, opt-in steps and rollback. This section
+preserves the earlier checkpoint.
+
+### Initial precise approval boundary
 
 Authoritative candidate: `Angel Rodriguez`, ID
 `6193f310-1e3f-4404-b874-977d0e23a6a0`, active `superadmin`, no parent; exact

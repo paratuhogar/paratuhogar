@@ -58,7 +58,7 @@ export async function pushSettings(db,body,actor,sessionHash,env={},dispatchPilo
  const input=body.subscription,keys=input?.keys;
  const endpoint=validatePushEndpoint(input?.endpoint);
  if(!keys||!/^[A-Za-z0-9_-]{87}$/.test(keys.p256dh||'')||!/^[A-Za-z0-9_-]{22}$/.test(keys.auth||''))fail('Claves de suscripción no válidas.',400);
- if(!Array.isArray(body.topics)||!body.topics.length||body.topics.length>2||body.topics.some(topic=>!allowed.includes(topic)))fail('Estos avisos no corresponden a tu cuenta.');
+ if(!Array.isArray(body.topics)||!body.topics.length||body.topics.length>allowed.length||body.topics.some(topic=>!allowed.includes(topic)))fail('Estos avisos no corresponden a tu cuenta.');
  const {data:session,error:sessionError}=await db.from('pth_secure_sessions').select('gestor_id,expires_at').eq('token_hash',sessionHash).eq('gestor_id',actor.id).maybeSingle();
  if(sessionError||!session||Date.parse(session.expires_at)<=Date.now())fail('La sesión cambió. Vuelve a entrar.',401);
  const {data:existing,error:readError}=await db.from('pth_push_subscriptions').select('id,gestor_id,session_hash').eq('endpoint',endpoint).maybeSingle();

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pushSettings,pushConfiguration,validatePushEndpoint} from '../supabase/functions/secure-data/push.mjs';
+import {APPLICATION_REVIEWER_ID} from '../supabase/functions/secure-data/push-policy.mjs';
 import {OWNER_IDS} from '../supabase/functions/secure-data/policy.mjs';
 const actor={id:'admin',rol:'admin',estado:'activo'};
 const enabledEnv={PTH_PUSH_VAPID_PUBLIC_KEY:'a'.repeat(87),PTH_PUSH_VAPID_PRIVATE_KEY:'b'.repeat(43),PTH_PUSH_DISPATCH_SECRET:'c'.repeat(43),PTH_PUSH_VAPID_SUBJECT:'https://paratuhogar.org',PTH_PUSH_ENABLED:'true'};
@@ -88,4 +89,16 @@ test('pilot handles dispatcher refusal and stays unavailable while paused',async
  const f=fixture();await pushSettings(f.db,body,actor,'session-a',enabledEnv);
  await assert.rejects(pushSettings(f.db,{operation:'pilot',endpoint},actor,'session-a',enabledEnv,async()=>false),e=>e.status===503);
  await assert.rejects(pushSettings(f.db,{operation:'pilot',endpoint},actor,'session-a',{...enabledEnv,PTH_PUSH_ENABLED:'false'},()=>assert.fail('no send while paused')),e=>e.status===503);
+});
+
+test('only Angel can explicitly enroll applications; existing topics never change on config',async()=>{
+ const angel={...actor,id:APPLICATION_REVIEWER_ID},f=fixture();
+ f.tables.pth_secure_sessions[0].gestor_id=angel.id;
+ const config=await pushSettings(f.db,{operation:'config'},angel,'session-a',enabledEnv);
+ assert.deepEqual(config.data.allowedTopics,['orders','suggestions','applications']);assert.equal(f.writes.length,0);
+ const topics=['orders','suggestions','applications'];
+ await pushSettings(f.db,{...body,topics},angel,'session-a',enabledEnv);assert.deepEqual(f.writes[0].topics,topics);
+ const other=fixture();await assert.rejects(pushSettings(other.db,{...body,topics:['applications'],gestor_id:angel.id},actor,'session-a',enabledEnv),e=>e.status===403);assert.equal(other.writes.length,0);
+ const owner={...actor,id:[...OWNER_IDS][0]};await assert.rejects(pushSettings(other.db,{...body,topics:['applications']},owner,'session-a',enabledEnv),e=>e.status===403);
+ for(const blocked of [{...angel,rol:'gestor'},{...angel,parent_id:'parent'},{...angel,activo:false}])await assert.rejects(pushSettings(other.db,{...body,topics:['applications']},blocked,'session-a',enabledEnv),e=>e.status===403);
 });

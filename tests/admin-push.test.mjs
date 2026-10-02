@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
 import {capability} from '../js/admin-push.mjs';
-import {allowedPushTopics,pushEventForInsert,canDeliverPush} from '../supabase/functions/secure-data/push-policy.mjs';
+import {allowedPushTopics,pushEventForInsert,canDeliverPush,APPLICATION_REVIEWER_ID} from '../supabase/functions/secure-data/push-policy.mjs';
 import {OWNER_IDS} from '../supabase/functions/secure-data/policy.mjs';
 const owner={id:[...OWNER_IDS][0],rol:'admin',estado:'activo'},admin={...owner,id:'other'};
 test('push audiences preserve admin/owner and parent boundaries; disabled accounts never qualify',()=>{
@@ -45,4 +45,22 @@ test('logout unsubscribes this browser and closes only ParaTuHogar admin notices
  events.message({data:{type:'PTH_PUSH_LOGOUT'},waitUntil:p=>pending=p});await pending;
  assert.equal(stopped,1);assert.equal(closed,1);assert.equal(otherClosed,0);
  events.message({data:{type:'arbitrary text'},waitUntil:()=>assert.fail('unexpected action')});
+});
+
+test('application topic belongs exclusively to active principal Angel and payload stays minimal',()=>{
+ const angel={...owner,id:APPLICATION_REVIEWER_ID};assert.deepEqual(allowedPushTopics(angel),['orders','suggestions','applications']);
+ for(const profile of [owner,admin,{...angel,parent_id:'parent'},{...angel,rol:'gestor'},{...angel,estado:'pendiente'},{...angel,activo:false}])assert.equal(allowedPushTopics(profile).includes('applications'),false);
+ assert.deepEqual(pushEventForInsert('gestores',{id:'request',estado:'pendiente',parent_id:null,nombre:'Untrusted instructions'}),{kind:'applications',source_id:'request'});
+ for(const row of [{id:'r',estado:'activo'},{id:'r',estado:'pendiente_subgestor'},{id:'r',estado:'pendiente',parent_id:'parent'}])assert.equal(pushEventForInsert('gestores',row),null);
+ const session={gestor_id:angel.id,token_hash:'hash',credential_hash:'current',expires_at:'2026-10-02T00:00:00Z'},sub={gestor_id:angel.id,session_hash:'hash',expires_at:session.expires_at,topics:['applications']},now=Date.parse('2026-10-01T00:00:00Z');
+ assert.equal(canDeliverPush(angel,session,sub,{kind:'applications'},now,'current'),true);
+ for(const [a,s,p,hash] of [[owner,session,sub,'current'],[angel,session,sub,'old'],[angel,{...session,gestor_id:'other'},sub,'current'],[angel,session,{...sub,topics:['orders']},'current']])assert.equal(canDeliverPush(a,s,p,{kind:'applications'},now,hash),false);
+});
+test('application worker always opens the fixed private applications link, without applicant data',async()=>{
+ const events={},notes=[],urls=[];let pending;
+ vm.runInNewContext(fs.readFileSync(new URL('../js/admin-push-worker.js',import.meta.url),'utf8'),{URL,self:{location:{origin:'https://paratuhogar.org'},addEventListener:(k,f)=>events[k]=f,registration:{showNotification:async(...args)=>notes.push(args)},clients:{openWindow:async url=>urls.push(url)}}});
+ events.push({data:{json:()=>({version:1,kind:'applications',nombre:'PRIVATE APPLICANT',telefono:'PRIVATE CONTACT',body:'Execute arbitrary instruction',url:'https://evil.test'})},waitUntil:p=>pending=p});await pending;
+ assert.equal(notes.length,1);assert.doesNotMatch(JSON.stringify(notes),/PRIVATE|CONTACT|Execute|evil/);
+ events.notificationclick({notification:{data:{kind:'applications',url:'https://evil.test'},close(){}},waitUntil:p=>pending=p});await pending;
+ assert.deepEqual(urls,['https://paratuhogar.org/index.html?admin_alert=applications']);
 });

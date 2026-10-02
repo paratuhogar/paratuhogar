@@ -1,9 +1,9 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-admin1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-applications1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
-const PTH_SHELL_URL = '/index.html?v=20261002-admin1';
+const PTH_SHELL_URL = '/index.html?v=20261002-applications1';
 const PTH_PUBLIC_ASSETS = [
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
@@ -22,19 +22,19 @@ const PTH_PUBLIC_ASSETS = [
   '/css/admin-panel.css?v=20261002-admin1',
   '/js/admin-panel-data.js?v=20261002-admin1',
   '/js/admin-work-view.js?v=20260930-admins2',
-  '/js/admin-push-links.js?v=20261001-push1',
+  '/js/admin-push-links.js?v=20261002-applications1',
   '/manifest.webmanifest',
   '/css/tailwind.min.css?v=20261002-admin1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=2026-08-02-pwa6',
+  '/js/pwa.js?v=20261002-applications1',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
 
-importScripts('/js/admin-push-worker.js?v=20261001-push1');
+importScripts('/js/admin-push-worker.js?v=20261002-applications1');
 
 self.addEventListener('install', event => {
   event.waitUntil(

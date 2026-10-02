@@ -21,11 +21,11 @@ export function createDispatcher({db,env,send,clock=()=>Date.now()}){
  }
  async function deliver(job){
   if(Date.parse(job.expires_at)<=clock()){await finish(job,'expired');return 'expired';}
-  const sourceTable=job.kind==='orders'?'pedidos':job.kind==='suggestions'?'pth_feedback':null;
+  const sourceTable=job.kind==='orders'?'pedidos':job.kind==='suggestions'?'pth_feedback':job.kind==='applications'?'gestores':null;
   if(!sourceTable){await finish(job,'failed');return 'failed';}
-  let query=db.from(sourceTable).select(job.kind==='suggestions'?'id,kind':'id').eq('id',job.source_id);
+  let query=db.from(sourceTable).select(job.kind==='suggestions'?'id,kind':job.kind==='applications'?'id,estado,parent_id':'id').eq('id',job.source_id);
   const source=await checked(query.maybeSingle());
-  if(!source||(job.kind==='suggestions'&&source.kind!=='mejora')){await finish(job,'expired');return 'expired';}
+  if(!source||(job.kind==='suggestions'&&source.kind!=='mejora')||(job.kind==='applications'&&(source.estado!=='pendiente'||source.parent_id))){await finish(job,'expired');return 'expired';}
   const target=await recipient(job.subscription_id,job);
   if(!target){await finish(job,'expired');return 'expired';}
   let code=0;try{code=await send(target.sub,{version:1,kind:job.kind});}catch(_){/* no endpoint/key/provider body logging */}
