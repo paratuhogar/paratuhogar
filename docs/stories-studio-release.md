@@ -104,6 +104,20 @@ button and recovery for visitors, gestores and subgestores. Parent verified
 studio1 publicly and synchronized the Mac at `45739ac`; studio2 propagation and
 Mac synchronization need its new source hash after the follow-up push.
 
+### Customer wording follow-up (studio3)
+
+User requested that customers not receive the labels gestor/subgestor. The shared
+artwork contact block now says “Contáctanos” across Story/square templates and
+compositions. Studio sign-in/error/no-script wording is neutral. Public footer
+recruitment link says “Trabaja con nosotros”, retaining its original destination.
+Contextual shared catalogue links use the already supported canonical `ref` and
+`contact` parameters, preserving name/contact attribution and filter context;
+existing legacy URL parsing, internal roles, schema/identifiers, private admin
+terminology and business/legal terms remain. Accompanying customer copy/ZIP
+text already uses neutral wording and verified catalogue/contact facts.
+The old Library review sheet predates this wording change and is not a new
+preview of studio3. No new analytics, business data or access changes.
+
 A successful source push confirms only GitHub source publication. Public Pages
 propagation and signed-in checks on an actual phone are the parent's follow-up:
 this environment previously received a denied public/Pages HTTP route, which

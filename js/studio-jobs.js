@@ -37,13 +37,13 @@
  }
  async function catalogue(client, signal) {
   const profile = await wait(root.PTHSecureData.restore(), signal), token = scope();
-  if (!profile?.id || !profile.nombre) throw Error('Inicia sesión como gestor para usar esta herramienta.');
+  if (!profile?.id || !profile.nombre) throw Error('Inicia sesión para usar esta herramienta.');
   assertScope(token, signal);
   let owner = profile.parent_id ? profile.parent_nombre : profile.nombre;
   if (!owner && profile.parent_id) {
    const response = await wait(client.from('gestores').select('nombre').eq('id', profile.parent_id).maybeSingle(), signal);
    assertScope(token, signal);
-   if (response.error || !response.data?.nombre) throw Error('No se pudo comprobar el gestor principal.');
+   if (response.error || !response.data?.nombre) throw Error('No se pudo comprobar la cuenta principal.');
    owner = response.data.nombre;
   }
   if (!owner) throw Error('No se pudo comprobar tu cuenta.');

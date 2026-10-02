@@ -102,7 +102,7 @@
  function contact(ctx, options, x, y, w, h, theme) {
   box(ctx, x, y, w, h, 24, theme.accent);
   const fg = theme === themes.premium ? '#131d2c' : '#fff';
-  text(ctx, 'Consulta con tu gestor', x + 30, y + 22, 35, w - 100, fg);
+  text(ctx, 'Contáctanos', x + 30, y + 22, 35, w - 100, fg);
   const phone = options.showPhone !== false ? String(options.gestorPhone || '').replace(/\D/g, '') : '';
   text(ctx, phone ? 'WhatsApp +' + phone : 'paratuhogar.org', x + 30, y + 69, 27, w - 80, fg, 600);
   arrow(ctx, x + w - 65, y + 37, 34, fg);

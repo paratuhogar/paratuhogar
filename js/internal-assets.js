@@ -3,7 +3,7 @@
  'use strict';
  const pending=new Map();
  const definitions={
-  studio:[['style','css/content-studio.css?v=20261002-studio1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio1','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio1','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
+  studio:[['style','css/content-studio.css?v=20261002-studio1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio3','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
   charts:[['script','https://cdn.jsdelivr.net/npm/chart.js','pth-chart-js']],
   xlsx:[['script','https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js','pth-xlsx-js']],
   zip:[['script','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js','pth-jszip-js']],

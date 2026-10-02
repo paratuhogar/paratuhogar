@@ -11131,8 +11131,8 @@ function buildContextualCatalogUrl() {
     const phone = String(getAgentPhone() || '').replace(/\D/g, '');
     if (query) params.set('catalog_q', query);
     if (activeCategory && activeCategory !== 'TODOS') params.set('catalog_category', activeCategory);
-    if (window.gestorName) params.set('gestor', window.gestorName);
-    if (phone) params.set('tel', phone);
+    if (window.gestorName) params.set('ref', window.gestorName);
+    if (phone) params.set('contact', phone);
     return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
 }
 
