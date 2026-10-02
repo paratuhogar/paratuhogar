@@ -66,6 +66,12 @@ test('display-only offline identity never authenticates a private operation or l
  storage.setItem('pth_session',JSON.stringify({data:{id:'own',nombre:'Own',estado:'activo',password:'legacy-credential'}}));assert.equal(context.PTHSecureData.offlineProfile(),null);
  storage.setItem('pth_secure_token_expires_at',String(Date.now()-1));assert.equal(context.PTHSecureData.offlineProfile(),null);assert.equal(storage.getItem('pth_secure_token'),null);
 });
+test('a far-future expiry timer cannot overflow and invalidate a current session',async()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));let callback,delay;
+ context.setTimeout=(fn,ms)=>{callback=fn;delay=ms;return 1;};context.clearTimeout=()=>{};
+ context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'own',nombre:'Own',rol:'gestor'},expiresAt:'2099-01-01T00:00:00Z'},error:null})});
+ await context.PTHSecureData.restore();assert.equal(delay,2147483647);callback();assert.equal(storage.getItem('pth_secure_token'),'a'.repeat(64));assert.equal(delay,2147483647);
+});
 test('logout invalidates locally before an unfinished network revocation',()=>{
  const {context,storage}=client();context.fetch=()=>new Promise(()=>{});
  storage.setItem('pth_secure_token','secret');storage.setItem('pth_catalog_data','{"products":[{"comision":50}]}');
