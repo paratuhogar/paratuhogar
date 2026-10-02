@@ -10,7 +10,7 @@
     bar.id = 'pth-connection-status';
     bar.setAttribute('role', 'status');
     bar.setAttribute('aria-live', 'polite');
-    bar.style.cssText = 'display:none;position:fixed;left:50%;bottom:18px;z-index:99999;max-width:calc(100% - 24px);transform:translateX(-50%);align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:#0f172a;color:#fff;box-shadow:0 14px 36px rgba(15,23,42,.28);font:700 12px/1.3 Arial,sans-serif';
+    bar.style.cssText = 'display:none;position:fixed;left:50%;bottom:18px;z-index:100;max-width:calc(100% - 24px);transform:translateX(-50%);align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:#0f172a;color:#fff;box-shadow:0 14px 36px rgba(15,23,42,.28);font:700 12px/1.3 Arial,sans-serif';
     bar.innerHTML = '<span data-pth-status-text></span><button type="button" data-pth-status-action style="display:none;border:0;border-radius:10px;padding:8px 10px;background:#fff;color:#1a4789;font:800 11px Arial,sans-serif;white-space:nowrap">Actualizar</button>';
     document.body.appendChild(bar);
     return bar;

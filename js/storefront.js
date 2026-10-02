@@ -3076,14 +3076,14 @@ function changeQty(index, delta) {
     function recalcularTotalFinal() {
     const totalEquipos = cart.reduce((acc, item) => acc + (item.precio_venta * item.qty), 0);
     const costoEnvio = obtenerCostoMensajeriaGlobal();
-    const totalUSD = totalEquipos + costoEnvio;
+    const totalUSD = costoEnvio === null ? null : totalEquipos + costoEnvio;
 
     // Actualizar cajas nuevas
     if(document.getElementById('resumen-equipos')) document.getElementById('resumen-equipos').innerText = `$${totalEquipos.toLocaleString()}`;
-    if(document.getElementById('resumen-envio')) document.getElementById('resumen-envio').innerText = costoEnvio === 0 ? "GRATIS" : `$${costoEnvio.toLocaleString()}`;
+    if(document.getElementById('resumen-envio')) document.getElementById('resumen-envio').innerText = costoEnvio === null ? 'Selecciona la entrega' : costoEnvio === 0 ? "GRATIS" : `$${costoEnvio.toLocaleString()}`;
 
     const elTotal = document.getElementById('total-convertido');
-    if(elTotal) elTotal.innerText = `$${totalUSD.toLocaleString()}`;
+    if(elTotal) elTotal.innerText = totalUSD === null ? 'Falta la mensajería' : `$${totalUSD.toLocaleString()}`;
 }
 
 
@@ -3275,6 +3275,10 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // === 2. NUEVO: CÁLCULO GLOBAL DE ENVÍO ===
     const envioTotalGlobal = typeof obtenerCostoMensajeriaGlobal === 'function' ? obtenerCostoMensajeriaGlobal() : 0;
+    if (envioTotalGlobal === null) {
+        notifyNewCheckout('No hay una tarifa de entrega disponible para esta zona. Comprueba municipio y localidad antes de confirmar.');
+        return;
+    }
 
     // Solo alertamos de envío $0 si NO es recogida en almacén
     if (!isRecogida && envioTotalGlobal === 0) {
@@ -12472,9 +12476,11 @@ window.obtenerCostoMensajeriaGlobal = function() {
     const localidad = document.getElementById('check-localidad')?.value;
     if (newCheckoutShippingOverride && newCheckoutShippingOverride.fingerprint === window.PTHLowConnectivity.fingerprint(cart) && newCheckoutShippingOverride.municipio === municipio && newCheckoutShippingOverride.localidad === localidad && !newCheckoutShippingOverride.pickup) return newCheckoutShippingOverride.cost;
 
+    if (window.PTHCheckoutForm) return window.PTHCheckoutForm.shipping({ lines: cart, municipio, localidad, pickup: false, tariffs: tarifasMensajeria });
+
     if (!municipio || !localidad) return 0;
 
-    const tarifa = tarifasMensajeria[municipio][localidad];
+    const tarifa = tarifasMensajeria[municipio]?.[localidad];
     if(!tarifa) return 0;
 
     let costoBase = carritoTieneEquipoGrande() ? tarifa.gr : tarifa.pq;
