@@ -8,7 +8,7 @@
   zip:[['script','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js','pth-jszip-js']],
   pdf:[['script','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','pth-jspdf-js'],['script','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js','pth-jspdf-autotable-js']],
   editor:[['style','https://cdn.quilljs.com/1.3.6/quill.snow.css','pth-quill-css'],['script','https://cdn.quilljs.com/1.3.6/quill.js','pth-quill-js']],
-  traffic:[['script','admin-stats.js?v=20261001-fast1','pth-admin-stats-js']],
+  traffic:[['script','admin-stats.js?v=20261002-admin1','pth-admin-stats-js']],
   session:[['script','subgestor-tutorial.js?v=20261001-fast1','pth-subgestor-tutorial-js'],['script','js/client-followup.js?v=20261001-fast1','pth-client-followup-js']]
  };
  function resource([kind,url,id]){

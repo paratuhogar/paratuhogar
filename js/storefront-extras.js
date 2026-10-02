@@ -286,14 +286,49 @@ async function saveFinancialChanges() {
 // =========================================================
 // 1. CARGA Y LIMPIEZA DE GESTORES (ZOMBIES)
 // =========================================================
+let pendingGestoresCache = [];
+let pendingGestorFilter = 'recent';
+let pendingGestoresLoading = false;
+let pendingGestoresGeneration = 0;
+function setPendingGestorFilter(value) {
+    if (!['recent', 'history', 'unknown', 'all'].includes(value)) return;
+    pendingGestorFilter = value;
+    renderPendingGestores();
+}
+function renderPendingGestores() {
+    const host = document.getElementById('list-admin-aprobaciones');
+    if (!host) return;
+    const now = Date.now(), data = PTHAdminData;
+    const counts = Object.fromEntries(['recent', 'history', 'unknown'].map(filter => [filter, data.pending(pendingGestoresCache, filter, now).length]));
+    const badge = document.getElementById('admin-pending-count');
+    if (badge) { badge.hidden = !counts.recent; badge.textContent = String(counts.recent); }
+    const summary = document.getElementById('admin-pending-summary');
+    if (summary) summary.textContent = `${counts.recent} recientes · ${counts.history} en el historial · ${counts.unknown} con fecha por revisar. Actualizado: ${data.date(new Date(now).toISOString())}.`;
+    host.replaceChildren();
+    const rows = data.pending(pendingGestoresCache, pendingGestorFilter, now);
+    if (!rows.length) { host.innerHTML = '<tr><td colspan="4" class="p-6 text-center admin-note">No hay solicitudes en esta vista.</td></tr>'; return; }
+    for (const row of rows) {
+        const tr = document.createElement('tr');
+        tr.className = 'text-xs border-b dark:border-gray-700';
+        for (const value of [row.nombre, row.telefono || 'Sin teléfono', data.bucket(row, now) === 'unknown' ? 'Fecha por revisar' : data.date(row.created_at)]) {
+            const td = document.createElement('td'); td.className = 'p-4 admin-note'; td.textContent = value; tr.append(td);
+        }
+        const actions = document.createElement('td'); actions.className = 'p-4 text-right';
+        for (const [label, action] of [['Activar', () => approveGestorOnly(row.id, row.nombre)], ['Rechazar', () => approveGestor(row.id, 'bloqueado')]]) {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-control'; button.textContent = label; button.addEventListener('click', action); actions.append(button);
+        }
+        tr.append(actions); host.append(tr);
+    }
+}
 async function loadPendingGestores() {
-    const { data: gestoresDB, error } = await supabaseClient
-        .from('gestores')
-        .select('*')
-        .in('estado', ['pendiente', 'activo', 'bloqueado', 'ausente_definitivo'])
-        .order('nombre', { ascending: true });
-
-    if (error) return console.error("Error cargando gestores:", error);
+    if (pendingGestoresLoading) return;
+    pendingGestoresLoading = true;
+    const generation = ++pendingGestoresGeneration;
+    try {
+    const gestoresDB = await PTHAdminData.pages(() => supabaseClient.from('gestores')
+        .select('*').in('estado', ['pendiente', 'activo', 'bloqueado', 'ausente_definitivo'])
+        .order('nombre', { ascending: true }).order('id', { ascending: true }));
+    if (generation !== pendingGestoresGeneration) return;
 
     const { data: clicsDB } = await supabaseClient
     .from('link_analytics')
@@ -308,39 +343,9 @@ async function loadPendingGestores() {
     const pendientes = gestoresDB.filter(g => !g.parent_id && g.estado === 'pendiente');
     const activos = gestoresDB.filter(g => !g.parent_id && (g.estado === 'activo' || g.estado === 'ausente_definitivo'));
 
-    const containerPendientes = document.getElementById('list-admin-aprobaciones');
-    if (containerPendientes) {
-        if (pendientes.length === 0) {
-            // Se cambia colspan a 4 debido a la nueva columna
-            containerPendientes.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400 text-[10px] font-bold uppercase italic">No hay solicitudes nuevas.</td></tr>`;
-        } else {
-            containerPendientes.innerHTML = pendientes.map(g => {
-                // LIMPIEZA DE COMILLAS PARA EVITAR ERROR JS
-                const safeName = g.nombre.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-
-                // Calcular fecha y días transcurridos desde el envío (campo g.created_at)
-                const fechaSolicitud = g.created_at ? new Date(g.created_at) : null;
-                let txtSolicitud = "---";
-                if (fechaSolicitud) {
-                    const dias = Math.floor((new Date() - fechaSolicitud) / (1000 * 60 * 60 * 24));
-                    const fechaFormateada = fechaSolicitud.toLocaleDateString();
-                    txtSolicitud = dias === 0 ? `Hoy (${fechaFormateada})` : `Hace ${dias} día${dias > 1 ? 's' : ''} (${fechaFormateada})`;
-                }
-
-                return `
-                <tr class="text-xs border-b dark:border-gray-700 bg-white dark:bg-gray-900">
-                    <td class="p-4 font-bold text-primary uppercase">${g.nombre}</td>
-                    <td class="p-4 font-medium text-gray-500">${g.telefono}</td>
-                    <td class="p-4 font-bold text-gray-500">${txtSolicitud}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="approveGestorOnly('${g.id}', '${safeName}')" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-black uppercase text-[9px] hover:bg-emerald-600">Activar</button>
-                        <button onclick="approveGestor('${g.id}', 'bloqueado')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg font-black uppercase text-[9px] ml-1">Rechazar</button>
-                    </td>
-                </tr>
-                `;
-            }).join('');
-        }
-    }
+    if (generation !== pendingGestoresGeneration) return;
+    pendingGestoresCache = pendientes;
+    renderPendingGestores();
 
     const todosLosPedidos = (typeof pedidosRawAdmin !== 'undefined') ? pedidosRawAdmin : [];
 
@@ -386,7 +391,21 @@ async function loadPendingGestores() {
     });
 
     renderAgentTeamTable();
+    } catch (error) {
+        if (generation !== pendingGestoresGeneration) return;
+        const summary = document.getElementById('admin-pending-summary');
+        if (summary) summary.textContent = 'No se pudieron actualizar las solicitudes. Vuelve a intentar; los datos anteriores pueden estar desactualizados.';
+    } finally { if (generation === pendingGestoresGeneration) pendingGestoresLoading = false; }
+
 }
+
+window.addEventListener('pth:session-changed', () => {
+    pendingGestoresGeneration++; pendingGestoresLoading = false;
+    pendingGestoresCache = []; pendingGestorFilter = 'recent';
+    document.getElementById('list-admin-aprobaciones')?.replaceChildren();
+    const badge = document.getElementById('admin-pending-count'); if (badge) badge.hidden = true;
+    const filter = document.getElementById('admin-pending-filter'); if (filter) filter.value = 'recent';
+});
 
 // =========================================================
 // 2. RENDERIZADO DE TABLA (FILTROS Y ZOMBIES)

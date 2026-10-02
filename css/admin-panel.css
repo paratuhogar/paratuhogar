@@ -1,0 +1,23 @@
+/* Administration controls use the existing brand palette and remain readable on phones. */
+#admin-master-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;margin-bottom:24px;border:1px solid #dce5ef;border-radius:20px;background:#f0f4f9;}
+#admin-master-nav>button,#admin-master-nav>a{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:48px;padding:11px 8px;border:1px solid #cbd8e8;border-radius:12px;background:#fff;color:#23466f;font:700 13px/1.4 Manrope,system-ui,sans-serif;text-decoration:none;text-align:center;overflow-wrap:anywhere;cursor:pointer;}
+#admin-master-nav>.active{background:#1a4789;color:#fff!important;border-color:#1a4789;box-shadow:0 3px 9px #1a478926;}
+#admin-master-nav>:hover{border-color:#1a4789;}
+#admin-master-nav>:focus-visible,.admin-control:focus-visible{outline:3px solid #a64b08;outline-offset:2px;}
+#admin-pending-count{padding:2px 6px;border-radius:20px;background:#dbeafe;color:#153c75;}
+#admin-master-nav>.active #admin-pending-count{background:#fff;}
+.admin-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px;}
+.admin-control{min-height:44px;max-width:100%;padding:9px 12px;border:1px solid #bfd0e6;border-radius:10px;background:#fff;color:#23466f;font:700 13px/1.4 Manrope,system-ui,sans-serif;}
+.admin-control:disabled{opacity:.6;cursor:wait;}
+.admin-note{color:#475569;font-size:13px;line-height:1.6;overflow-wrap:anywhere;}
+.admin-table-scroll{overflow:auto;max-width:100%;border-radius:20px;}
+#cnt-trafico .text-3xl{font-size:26px;line-height:1.3;overflow-wrap:anywhere;}
+#cnt-trafico .grid>*{min-width:0;}
+#list-admin-aprobaciones td:last-child{min-width:160px;}
+@media(min-width:640px){#admin-master-nav{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(min-width:1100px){#admin-master-nav{grid-template-columns:repeat(6,minmax(0,1fr));}}
+html.dark #admin-master-nav{background:#0f1e35;border-color:#344a66;}
+html.dark #admin-master-nav>button,html.dark #admin-master-nav>a,html.dark .admin-control{background:#172b46;border-color:#50657f;color:#e5efff;}
+html.dark #admin-master-nav>.active{background:#245caa;border-color:#447bc2;}
+html.dark .admin-note{color:#cbd5e1;}
+html.dark #admin-master-nav>:focus-visible,html.dark .admin-control:focus-visible{outline-color:#fbbf24;}

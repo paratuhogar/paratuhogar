@@ -440,6 +440,7 @@ async function processRegister() {
     if (requestedAdminTab) adminMode = true;
     window.gestorName = name;
     window.isAdmin = adminMode;
+    if (!adminMode && typeof stopTrafficDashboard === 'function') stopTrafficDashboard();
     // Remove the previous view before rendering the new one. The role/token stay intact.
     document.getElementById('sec-admin-master')?.classList.toggle('hidden', !adminMode);
     document.getElementById('sec-dashboard')?.classList.add('hidden');
@@ -463,6 +464,7 @@ async function processRegister() {
         if(adminNav) adminNav.classList.add('hidden');
         loadAdminData();
         if (requestedAdminTab) changeAdminTab(requestedAdminTab);
+        else if (!document.getElementById('cnt-trafico')?.classList.contains('hidden') && typeof initTrafficDashboard === 'function') initTrafficDashboard();
     } else {
         // MODO GESTOR o SUBGESTOR (Ventas)
         const commandCenter = document.getElementById('gestor-command-center');
@@ -6680,6 +6682,7 @@ async function loadTrafficAnalytics() {
 }
 
 function changeAdminTab(tab) {
+    if (tab !== 'trafico' && typeof stopTrafficDashboard === 'function') stopTrafficDashboard();
     // Load the existing private reviewer only on demand. Unmount on leaving so
     // hidden tabs never retain report text/screenshots or an active review form.
     const feedbackHost = document.getElementById('admin-feedback-content');
@@ -6705,7 +6708,7 @@ function changeAdminTab(tab) {
         // --- NUEVO: Si entramos a tráfico, cargamos las gráficas ---
         // El 'typeof' evita errores si aún no has cargado el archivo admin-stats.js
         if (tab === 'trafico') {
-            Promise.all([window.PTHAssets.load('charts'), window.PTHAssets.load('traffic')]).then(() => {
+            window.PTHAssets.load('traffic').then(() => {
                 if (!target.classList.contains('hidden')) initTrafficDashboard();
             }).catch(() => { target.textContent = 'No se pudo cargar esta herramienta. Vuelve a abrir la pestaña para reintentar.'; });
         }
@@ -6717,14 +6720,14 @@ function changeAdminTab(tab) {
     // 3. Actualizar los estilos de los botones
     document.querySelectorAll('.btn-tab-admin').forEach(btn => {
         btn.classList.remove('active', 'bg-primary', 'text-white');
-        btn.classList.add('text-gray-400');
+        btn.setAttribute('aria-pressed', 'false');
     });
 
     // 4. Resaltar el botón presionado
     const activeBtn = document.getElementById('tab-' + tab);
     if (activeBtn) {
-        activeBtn.classList.add('active', 'bg-primary', 'text-white');
-        activeBtn.classList.remove('text-gray-400');
+        activeBtn.classList.add('active');
+        activeBtn.setAttribute('aria-pressed', 'true');
     }
 }
 
