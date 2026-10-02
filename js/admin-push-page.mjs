@@ -1,4 +1,4 @@
-import {mountAdminPush} from './admin-push.mjs?v=20261002-lowdata1';
+import {mountAdminPush} from './admin-push.mjs?v=20261002-review1';
 import {adminPushRegistration} from './admin-push-registration.mjs?v=20261002-fasttools2';
 const host=document.getElementById('push-settings');
 try{

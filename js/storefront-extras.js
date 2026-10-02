@@ -287,25 +287,48 @@ async function saveFinancialChanges() {
 // 1. CARGA Y LIMPIEZA DE GESTORES (ZOMBIES)
 // =========================================================
 let pendingGestoresCache = [];
-let pendingGestorFilter = 'recent';
+let pendingGestorFilter = 'all';
 let pendingGestoresLoading = false;
 let pendingGestoresGeneration = 0;
+let pendingGestoresUpdatedAt = null;
+let pendingGestoresRefreshFailed = false;
 function setPendingGestorFilter(value) {
     if (!['recent', 'history', 'unknown', 'all'].includes(value)) return;
     pendingGestorFilter = value;
     renderPendingGestores();
 }
+function openPendingGestorReview() {
+    setPendingGestorFilter('all');
+    const filter = document.getElementById('admin-pending-filter');
+    if (filter) filter.value = 'all';
+    changeAdminTab('aprobaciones');
+    filter?.focus();
+    filter?.scrollIntoView({ block: 'nearest' });
+}
+function setPendingGestorReviewState(message) {
+    const status = document.getElementById('admin-pending-review-state');
+    if (status) status.textContent = message;
+}
 function renderPendingGestores() {
     const host = document.getElementById('list-admin-aprobaciones');
     if (!host) return;
     const now = Date.now(), data = PTHAdminData;
-    const counts = Object.fromEntries(['recent', 'history', 'unknown'].map(filter => [filter, data.pending(pendingGestoresCache, filter, now).length]));
+    const review = data.pendingReview(pendingGestoresCache, now);
+    const counts = Object.fromEntries(['recent', 'history', 'unknown'].map(filter => [filter, review.rows.filter(row => data.bucket(row, now) === filter).length]));
     const badge = document.getElementById('admin-pending-count');
-    if (badge) { badge.hidden = !counts.recent; badge.textContent = String(counts.recent); }
+    if (badge) { badge.hidden = !review.total || pendingGestoresRefreshFailed; badge.textContent = String(review.total); badge.setAttribute('aria-label', `${review.total} solicitudes pendientes en total`); }
+    const lastUpdate = pendingGestoresUpdatedAt ? data.date(new Date(pendingGestoresUpdatedAt).toISOString()) : 'Pendiente de actualización';
+    const card = document.getElementById('admin-pending-review');
+    if (card) {
+        card.hidden = !review.total;
+        document.getElementById('admin-pending-review-total').textContent = `${review.total} ${review.total === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'}`;
+        document.getElementById('admin-pending-review-age').textContent = `${review.over24h} esperan más de 24 horas · ${review.over48h} más de 48 horas.${review.oldest ? ` La más antigua: ${data.date(review.oldest)}.` : ''}${review.unknown ? ` ${review.unknown} con fecha por revisar.` : ''}`;
+        setPendingGestorReviewState(pendingGestoresRefreshFailed ? 'No se pudieron actualizar las solicitudes. Este contador es de la última consulta; vuelve a actualizar.' : `Actualizado: ${lastUpdate}.`);
+    }
     const summary = document.getElementById('admin-pending-summary');
-    if (summary) summary.textContent = `${counts.recent} recientes · ${counts.history} en el historial · ${counts.unknown} con fecha por revisar. Actualizado: ${data.date(new Date(now).toISOString())}.`;
+    if (summary) summary.textContent = `${counts.recent} recientes · ${counts.history} en el historial · ${counts.unknown} con fecha por revisar. ${pendingGestoresRefreshFailed ? 'La última actualización falló; estos datos pueden estar desactualizados.' : `Actualizado: ${lastUpdate}.`}`;
     host.replaceChildren();
-    const rows = data.pending(pendingGestoresCache, pendingGestorFilter, now);
+    const rows = review.rows.filter(row => pendingGestorFilter === 'all' || data.bucket(row, now) === pendingGestorFilter);
     if (!rows.length) { host.innerHTML = '<tr><td colspan="4" class="p-6 text-center admin-note">No hay solicitudes en esta vista.</td></tr>'; return; }
     for (const row of rows) {
         const tr = document.createElement('tr');
@@ -323,6 +346,7 @@ function renderPendingGestores() {
 async function loadPendingGestores() {
     if (pendingGestoresLoading) return;
     pendingGestoresLoading = true;
+    setPendingGestorReviewState('Actualizando solicitudes; el contador anterior puede haber cambiado…');
     const generation = ++pendingGestoresGeneration;
     try {
     const gestoresDB = await PTHAdminData.pages(() => supabaseClient.from('gestores')
@@ -345,6 +369,8 @@ async function loadPendingGestores() {
 
     if (generation !== pendingGestoresGeneration) return;
     pendingGestoresCache = pendientes;
+    pendingGestoresUpdatedAt = Date.now();
+    pendingGestoresRefreshFailed = false;
     renderPendingGestores();
 
     const todosLosPedidos = (typeof pedidosRawAdmin !== 'undefined') ? pedidosRawAdmin : [];
@@ -393,18 +419,24 @@ async function loadPendingGestores() {
     renderAgentTeamTable();
     } catch (error) {
         if (generation !== pendingGestoresGeneration) return;
+        pendingGestoresRefreshFailed = true;
         const summary = document.getElementById('admin-pending-summary');
         if (summary) summary.textContent = 'No se pudieron actualizar las solicitudes. Vuelve a intentar; los datos anteriores pueden estar desactualizados.';
+        setPendingGestorReviewState('No se pudieron actualizar las solicitudes. Este contador es de la última consulta; vuelve a actualizar.');
+        const badge = document.getElementById('admin-pending-count'); if (badge) badge.hidden = true;
     } finally { if (generation === pendingGestoresGeneration) pendingGestoresLoading = false; }
 
 }
 
 window.addEventListener('pth:session-changed', () => {
     pendingGestoresGeneration++; pendingGestoresLoading = false;
-    pendingGestoresCache = []; pendingGestorFilter = 'recent';
+    pendingGestoresCache = []; pendingGestorFilter = 'all';
+    pendingGestoresUpdatedAt = null; pendingGestoresRefreshFailed = false;
     document.getElementById('list-admin-aprobaciones')?.replaceChildren();
     const badge = document.getElementById('admin-pending-count'); if (badge) badge.hidden = true;
-    const filter = document.getElementById('admin-pending-filter'); if (filter) filter.value = 'recent';
+    const card = document.getElementById('admin-pending-review'); if (card) card.hidden = true;
+    for (const id of ['admin-pending-review-total', 'admin-pending-review-age', 'admin-pending-review-state', 'admin-pending-summary']) document.getElementById(id)?.replaceChildren();
+    const filter = document.getElementById('admin-pending-filter'); if (filter) filter.value = 'all';
 });
 
 // =========================================================

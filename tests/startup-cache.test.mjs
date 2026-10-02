@@ -32,6 +32,6 @@ test('reader, storefront and notification registrars agree on the release worker
  assert.match(read('js/pwa.js'),/SW_VERSION = '20261002-fasttools2'/);
  assert.match(read('js/admin-push-registration.mjs'),/service-worker\.js\?v=20261002-fasttools2/);
  assert.match(read('js/admin-push-page.mjs'),/admin-push-registration\.mjs\?v=20261002-fasttools2/);
- assert.match(read('notifications.html'),/admin-push-page\.mjs\?v=20261002-fasttools2/);
+ assert.match(read('notifications.html'),/admin-push-page\.mjs\?v=20261002-review1/);
  assert.match(source,/\/js\/pwa\.js\?v=20261002-fasttools2/);
 });

@@ -19,7 +19,7 @@ export async function mountAdminPush(host,adapter,env=window,limits={}){
  const wait={config:15000,existing:8000,permission:60000,registration:25000,subscription:20000,save:20000,cleanup:5000,pilot:20000,remove:15000,...limits};
  host.replaceChildren();const doc=host.ownerDocument;
  const node=(tag,text)=>{const n=doc.createElement(tag);n.textContent=text;return n;};
- host.append(node('h3','Notificaciones de administración'),node('p','Recibe avisos de pedidos, mejoras o solicitudes de gestores según los permisos de tu cuenta. Cada dispositivo necesita su propia activación. No incluimos nombres ni datos personales en los avisos.'));
+ host.append(node('h3','Notificaciones de administración'),node('p','Recibe avisos de pedidos, mejoras o solicitudes de gestores según los permisos de tu cuenta. Cada dispositivo necesita su propia activación. No incluimos nombres ni datos personales en los avisos.'),node('p','Al cerrar sesión o caducar tu acceso, los avisos se desactivan. Cuando vuelvas a entrar, abre esta sección y actívalos de nuevo en cada dispositivo.'));
  const status=node('p','Comprobando disponibilidad…');status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.style.cssText='padding:14px;border:1px solid #c6d8ef;border-radius:12px;background:#eaf2fc;color:#203651;line-height:1.6';host.append(status);
  const choices=node('fieldset',''),legend=node('legend','¿Qué avisos quieres recibir en este dispositivo?');choices.append(legend);choices.hidden=true;host.append(choices);
  const enable=node('button','Activar notificaciones'),disable=node('button','Desactivar en este dispositivo');enable.type=disable.type='button';enable.disabled=true;enable.hidden=true;disable.hidden=true;host.append(enable,disable);
@@ -73,7 +73,7 @@ export async function mountAdminPush(host,adapter,env=window,limits={}){
   if(subscription){
    setupStage='status';const saved=await bounded(adapter.status(subscription.endpoint),wait.config,'El servidor no confirmó el estado del dispositivo. Pulsa «Volver a comprobar».');if(!current()){reset();return cleanup;}
    if(saved.active){controls.forEach(input=>input.checked=saved.topics.includes(input.value));pilot.hidden=false;status.textContent='Este dispositivo tiene avisos activados para tu sesión. Puedes cambiar los tipos o enviar una prueba.';}
-   else status.textContent='Hay una suscripción anterior en este navegador. Desactívala aquí antes de volver a activar los avisos.';
+   else status.textContent='Este dispositivo necesita activar los avisos para tu sesión actual. Elige qué avisos recibir y pulsa «Activar notificaciones». Si la suscripción anterior pertenece a otra cuenta o sesión, desactívala aquí antes de volver a activar.';
   }
  }catch(error){
   if(!current()){reset();return cleanup;}enable.hidden=true;

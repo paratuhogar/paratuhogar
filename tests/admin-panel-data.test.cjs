@@ -18,6 +18,15 @@ test('Havana hours across UTC midnight and DST; hostile map keys stay inert',()=
  assert.equal(stats.countries.find(x=>x[0]==='__proto__')[1],1);
  assert.ok(data.date('2026-10-02T00:00:00Z').includes('1 oct'));
 });
+test('review counts all principal requests once, oldest first, with strict 24/48-hour boundaries',()=>{
+ const time=age=>new Date(now-age).toISOString();
+ const rows=[row('new',time(1000)),row('old',time(9*data.DAY)),row('24h',time(data.DAY)),row('over24h',time(data.DAY+1)),row('48h',time(2*data.DAY)),row('over48h',time(2*data.DAY+1)),row('missing',null),row('future',time(-1000)),row('old',time(9*data.DAY)),row('child',time(9*data.DAY),{parent_id:'parent'}),row('active',time(9*data.DAY),{estado:'activo'})];
+ const before=JSON.stringify(rows),review=data.pendingReview(rows,now);
+ assert.deepEqual(review.rows.map(r=>r.id),['old','over48h','48h','over24h','24h','new','future','missing']);
+ assert.equal(review.total,8);assert.equal(review.over24h,4);assert.equal(review.over48h,2);assert.equal(review.unknown,2);
+ assert.equal(review.oldest,time(9*data.DAY));assert.equal(JSON.stringify(rows),before);
+ assert.deepEqual(data.pendingReview([],now),{rows:[],total:0,over24h:0,over48h:0,unknown:0,oldest:null});
+});
 function queryRows(rows,{failureAt=-1}={}){const ranges=[];return {ranges,make(){return {range(a,b){ranges.push([a,b]);return Promise.resolve(ranges.length===failureAt?{error:{message:'secret backend error'}}:{data:rows.slice(a,b+1),error:null});}};}};}
 test('reads beyond API default caps and exact page multiples; dedupes overlapping rows',async()=>{
  const rows=Array.from({length:1600},(_,id)=>({id}));const mock=queryRows(rows);

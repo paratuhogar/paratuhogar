@@ -39,8 +39,8 @@
     <script src="js/low-connectivity.js?v=20261002-lowdata1" defer></script>
     <script src="js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
     <script src="js/pwa.js?v=20261002-fasttools2" defer></script>
-    <link rel="stylesheet" href="css/admin-panel.css?v=20261002-admin1">
-    <script src="js/admin-panel-data.js?v=20261002-admin1" defer></script>
+    <link rel="stylesheet" href="css/admin-panel.css?v=20261002-review1">
+    <script src="js/admin-panel-data.js?v=20261002-review1" defer></script>
     <link rel="stylesheet" href="css/feedback-announcement.css?v=20261001-1">
     <script src="js/product-availability-form.js?v=20260924-1" defer></script>
     <script src="js/product-description-editor.js?v=20260924-1" defer></script>
@@ -2262,6 +2262,16 @@
     </div>
 </div>
 
+    <aside id="admin-pending-review" class="admin-pending-review" aria-labelledby="admin-pending-review-title" hidden>
+        <div>
+            <h3 id="admin-pending-review-title">Solicitudes por revisar</h3>
+            <p id="admin-pending-review-total"></p>
+            <p id="admin-pending-review-age" class="admin-note"></p>
+            <p id="admin-pending-review-state" class="admin-note" role="status" aria-live="polite"></p>
+        </div>
+        <button type="button" class="admin-control" onclick="openPendingGestorReview()">Revisar solicitudes</button>
+    </aside>
+
     <!-- Pestañas del Master Control (LOGÍSTICA, PAGOS, INVENTARIO, ANÁLISIS, TRÁFICO, APROBACIONES) -->
 <nav id="admin-master-nav" aria-label="Herramientas de administración">
     <button type="button" onclick="changeAdminTab('logistica')" id="tab-logistica" class="btn-tab-admin active" aria-pressed="true">Logística</button>
@@ -2499,14 +2509,14 @@
     <!-- BLOQUE 1: PENDIENTES -->
 <div class="space-y-4">
     <h4 class="font-bold text-primary">Solicitudes de gestores</h4>
-    <p class="admin-note">Aquí aparecen las solicitudes pendientes de los últimos siete días. Las anteriores siguen disponibles en el historial; no se han rechazado ni eliminado. Fechas en horario de Cuba.</p>
+    <p class="admin-note">Revisa primero las solicitudes que más tiempo llevan esperando. Se muestran todas las pendientes; puedes filtrar por fecha. Fechas en horario de Cuba.</p>
     <div class="admin-toolbar">
         <label for="admin-pending-filter" class="admin-note">Mostrar</label>
         <select id="admin-pending-filter" class="admin-control" onchange="setPendingGestorFilter(this.value)">
+            <option value="all">Todas las pendientes</option>
             <option value="recent">Últimos 7 días</option>
             <option value="history">Historial: más de 7 días</option>
             <option value="unknown">Fecha por revisar</option>
-            <option value="all">Todas las pendientes</option>
         </select>
         <button type="button" class="admin-control" onclick="loadPendingGestores()">Actualizar solicitudes</button>
     </div>
@@ -3625,7 +3635,7 @@
 </style>
 
 <!-- LÓGICA DEL SISTEMA -->
-<script src="js/storefront-extras.min.js?v=20261002-fasttools1" defer></script>
+<script src="js/storefront-extras.min.js?v=20261002-review1" defer></script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->

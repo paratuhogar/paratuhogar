@@ -17,6 +17,18 @@
    seen.add(row.id);return filter==='all'||bucket(row,now)===filter;
   }).sort((a,b)=>(timestamp(b.created_at)||0)-(timestamp(a.created_at)||0));
  }
+ function pendingReview(rows,now=Date.now()){
+  const waiting=pending(rows,'all',now),valid=row=>bucket(row,now)!=='unknown';
+  waiting.sort((a,b)=>{
+   if(valid(a)!==valid(b))return valid(a)?-1:1;
+   return valid(a)?timestamp(a.created_at)-timestamp(b.created_at):0;
+  });
+  return {rows:waiting,total:waiting.length,
+   over24h:waiting.filter(row=>valid(row)&&now-timestamp(row.created_at)>DAY).length,
+   over48h:waiting.filter(row=>valid(row)&&now-timestamp(row.created_at)>2*DAY).length,
+   unknown:waiting.filter(row=>!valid(row)).length,
+   oldest:waiting.find(valid)?.created_at||null};
+ }
  function date(value){const time=timestamp(value);return Number.isFinite(time)?new Intl.DateTimeFormat('es-CU',{timeZone:zone,dateStyle:'medium',timeStyle:'short'}).format(time):'Fecha no disponible';}
  function escape(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
  async function pages(makeQuery,{size=500,maxPages=60,signal}={}){
@@ -41,6 +53,6 @@
   const sorted=map=>[...map].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
   return {total:rows.length,hours,countries:sorted(countries),agents:sorted(agents),systems:sorted(systems)};
  }
- const api={DAY,zone,timestamp,bucket,pending,date,escape,pages,aggregate};
+ const api={DAY,zone,timestamp,bucket,pending,pendingReview,date,escape,pages,aggregate};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PTHAdminData=api;
 })(globalThis);

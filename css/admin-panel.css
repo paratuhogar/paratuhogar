@@ -6,6 +6,12 @@
 #admin-master-nav>:focus-visible,.admin-control:focus-visible{outline:3px solid #a64b08;outline-offset:2px;}
 #admin-pending-count{padding:2px 6px;border-radius:20px;background:#dbeafe;color:#153c75;}
 #admin-master-nav>.active #admin-pending-count{background:#fff;}
+.admin-pending-review{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:20px;margin-bottom:20px;border:1px solid #b5c9e4;border-radius:20px;background:#eef5ff;color:#203651;}
+.admin-pending-review[hidden]{display:none;}
+.admin-pending-review>div{flex:1 1 230px;min-width:0;}
+.admin-pending-review h3{margin:0 0 6px;font-size:15px;font-weight:800;}
+.admin-pending-review p{margin:6px 0;overflow-wrap:anywhere;}
+.admin-pending-review .admin-control{flex-shrink:0;background:#1a4789;color:#fff;border-color:#1a4789;}
 .admin-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px;}
 .admin-control{min-height:44px;max-width:100%;padding:9px 12px;border:1px solid #bfd0e6;border-radius:10px;background:#fff;color:#23466f;font:700 13px/1.4 Manrope,system-ui,sans-serif;}
 .admin-control:disabled{opacity:.6;cursor:wait;}
@@ -20,4 +26,6 @@ html.dark #admin-master-nav{background:#0f1e35;border-color:#344a66;}
 html.dark #admin-master-nav>button,html.dark #admin-master-nav>a,html.dark .admin-control{background:#172b46;border-color:#50657f;color:#e5efff;}
 html.dark #admin-master-nav>.active{background:#245caa;border-color:#447bc2;}
 html.dark .admin-note{color:#cbd5e1;}
+html.dark .admin-pending-review{background:#172b46;border-color:#50657f;color:#e5efff;}
+html.dark .admin-pending-review .admin-control{background:#245caa;color:#fff;border-color:#447bc2;}
 html.dark #admin-master-nav>:focus-visible,html.dark .admin-control:focus-visible{outline-color:#fbbf24;}
