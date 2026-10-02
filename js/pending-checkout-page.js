@@ -1,103 +1,55 @@
-/* Static offline form. Only a verified online session can resume the existing checkout. */
+/* The normal checkout fields with an explicitly saved account-only device copy. */
 (() => {
   'use strict';
   let storage,idb;try{storage=localStorage;idb=indexedDB;}catch(_){}
-  const api=PTHPendingCheckout,queue=api.create(api.indexedStore(idb)),store=PTHLowConnectivity.create(storage);
-  const owner=api.localOwner(storage),form=document.getElementById('pending-form'),status=document.getElementById('pending-status'),actions=document.getElementById('pending-actions');
-  const saved=store.readPublic(),products=saved?.products||[],selection=new Map();
-  let record=null,busy=false,departing=false,renderGeneration=0;
+  const api=window.PTHPendingCheckout,queue=api.create(api.indexedStore(idb)),copyApi=window.PTHOfflineCheckoutCopy,copies=copyApi.create(idb),shared=window.PTHCheckoutForm;
+  const owner=api.localOwner(storage)||PTHSecureData.expiredCheckoutOwner?.(),form=document.getElementById('checkout-form'),workspace=document.getElementById('checkout-workspace'),status=document.getElementById('pending-status');
+  const selection=new Map();let products=[],tariffs=[],savedCopy=null,fields=null,records=[],busy=false,departing=false,generation=0,saveIntent=null,copyStamp=null;
+  copyApi.bindLifecycle(window,storage,copies);
   const inScope=token=>api.localOwner(storage)===owner&&(token===undefined||PTHSecureData.token()===token);
-  let zones=[];try{const copy=JSON.parse(storage.getItem('pth_pending_delivery_zones_v1')||'null');if(copy?.savedAt&&Date.now()-copy.savedAt<api.AGE&&Array.isArray(copy.zones))zones=copy.zones.slice(0,5000);}catch(_){}
-  function populate(id,values){const list=document.getElementById(id);list.replaceChildren();for(const value of new Set(values)){const option=document.createElement('option');option.value=String(value);list.append(option);}}
-  populate('pending-municipios',zones.map(p=>p.municipio));
-  document.getElementById('pending-municipio').oninput=()=>populate('pending-localidades',zones.filter(p=>p.municipio===document.getElementById('pending-municipio').value).map(p=>p.localidad));
+  const localSessionValid=()=>{const expiry=PTHSecureData.expiresAt?.();return inScope()&&(!Number.isFinite(expiry)||expiry>Date.now());};
   const normal=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
-  const states={queued:'Guardado. Esperando conexión con el servidor.',sending:'Se está comprobando el envío. Espera su confirmación.',uncertain:'Se perdió la respuesta. Comprobaremos el recibo antes de reintentar.',blocked:'Revisa el pendiente antes de reintentar.',paused:'Reintentos detenidos. Comprueba el recibo del intento anterior.',expired:'Este pendiente venció. Revisa tus pedidos antes de iniciar otro.',confirmed:'El servidor confirmó la recepción.'};
-  function addButton(label,callback,kind=''){const button=document.createElement('button');button.type='button';button.textContent=label;button.className=kind;button.onclick=async()=>{button.disabled=true;try{await callback();}catch(_){status.textContent='No se pudo completar la operación. El estado anterior se conserva.';}finally{button.disabled=false;}};actions.append(button);}
-  function renderProducts(){
-    const container=document.getElementById('pending-products');container.replaceChildren();
-    const terms=normal(document.getElementById('pending-search').value).split(' ').filter(Boolean);
-    const rows=products.filter(p=>p.disponible==='SI'&&terms.every(term=>normal(p.nombre).includes(term)));
-    for(const product of rows.slice(0,30)){
-      const row=document.createElement('div');row.className='product';const name=document.createElement('span');name.textContent=product.nombre+' · $'+Number(product.precio).toFixed(2)+' USD';
-      const quantity=document.createElement('input');quantity.type='number';quantity.min='0';quantity.max='10000';quantity.value=selection.get(product.id)?.qty||0;quantity.setAttribute('aria-label','Cantidad de '+product.nombre);
-      quantity.oninput=()=>{const qty=Number(quantity.value);if(qty>0)selection.set(product.id,{id:product.id,qty,price:Number(product.precio)});else selection.delete(product.id);renderSelection();};row.append(name,quantity);container.append(row);
-    }
-    if(rows.length>30){const note=document.createElement('p');note.textContent='Busca un modelo para ver más resultados.';container.append(note);}
-    renderSelection();
+  const labels={queued:'Esperando conexión para enviar.',sending:'Comprobando y enviando. Espera la confirmación de la tienda.',uncertain:'Comprobaremos si la tienda lo recibió antes de reintentar.',blocked:'Necesita revisión. Abre tu cuenta con conexión para comprobarlo.',paused:'Los reintentos están detenidos. Comprueba si la tienda lo recibió.',expired:'El pedido venció. Revisa tus pedidos antes de preparar otro.',confirmed:'La tienda confirmó que recibió este pedido.'};
+  const pendingCopy=count=>count===1?'Pedido guardado en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tu pedido automáticamente. Te avisaremos cuando la tienda confirme que lo recibió.':count+' pedidos guardados en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tus pedidos automáticamente. Te avisaremos cuando la tienda confirme que recibió cada uno.';
+  function button(parent,label,callback,kind=''){const node=document.createElement('button');node.type='button';node.textContent=label;node.className=kind;node.onclick=async()=>{node.disabled=true;try{await callback();}catch(error){if(inScope())status.textContent=error.code==='BUSY'?'Se está comprobando este pedido. Espera antes de cambiarlo.':'No se pudo completar la operación. El estado anterior se conserva.';}finally{node.disabled=false;}};parent.append(node);}
+  function fullLines(){return [...selection.values()].map(line=>({...products.find(product=>product.id===line.id),...line,precio_venta:line.price}));}
+  function recalculate(){const values=shared.readForm(document),estimate=shared.estimate({...values,lines:fullLines(),tariffs});document.getElementById('resumen-equipos').textContent=estimate.equipment===null?'Por revisar':'$'+estimate.equipment.toFixed(2);document.getElementById('resumen-envio').textContent=estimate.shipping===null?'Elige la zona de entrega':estimate.shipping===0?(values.pickup?'Recogida: $0':'GRATIS'):'$'+estimate.shipping.toFixed(2);document.getElementById('total-convertido').textContent=estimate.total===null?'Por completar':'$'+estimate.total.toFixed(2)+' USD';return estimate;}
+  function renderSelection(){const wholesale=fullLines().some(shared.isWholesale),pickup=document.getElementById('check-recogida'),pickupContainer=pickup.parentElement,addressContainer=document.getElementById('check-dir').parentElement;if(wholesale){pickup.checked=true;fields?.togglePickup();pickupContainer.style.display='none';addressContainer.style.display='none';document.getElementById('check-dir').value='Almacén Inbond (Mayorista B2B)';}else{pickupContainer.style.display='flex';addressContainer.style.display='block';}const cart=document.getElementById('cart-items');cart.replaceChildren();for(const line of selection.values()){const product=products.find(p=>p.id===line.id);const node=document.createElement('p');node.textContent=line.qty+' × '+(product?.nombre||'Producto guardado')+' · $'+line.price.toFixed(2);cart.append(node);}document.getElementById('pending-selection').textContent=[...selection.values()].reduce((sum,line)=>sum+line.qty,0)+' equipos seleccionados. La selección se mantiene al buscar.';recalculate();}
+  function renderProducts(){const container=document.getElementById('pending-products');container.replaceChildren();const terms=normal(document.getElementById('pending-search').value).split(' ').filter(Boolean),rows=products.filter(p=>p.disponible==='SI'&&terms.every(term=>normal(p.nombre).includes(term)));for(const product of rows.slice(0,30)){const row=document.createElement('div');row.className='product';const name=document.createElement('span');name.textContent=product.nombre+' · $'+product.precio.toFixed(2)+' USD';const quantity=document.createElement('input');quantity.type='number';quantity.min='0';quantity.max='10000';quantity.step='1';quantity.value=selection.get(product.id)?.qty||0;quantity.setAttribute('aria-label','Cantidad de '+product.nombre);quantity.oninput=()=>{const qty=Number(quantity.value);if(qty>0){const wholesale=shared.isWholesale(product),different=[...selection.values()].some(line=>shared.isWholesale(products.find(p=>p.id===line.id))!==wholesale);if(different){status.textContent='Los productos mayoristas se piden por separado. Termina o vacía la selección actual antes de añadir este producto.';quantity.value=selection.get(product.id)?.qty||0;return;}selection.set(product.id,{id:product.id,qty,price:product.precio});}else selection.delete(product.id);renderSelection();};row.append(name,quantity);container.append(row);}if(rows.length>30){const note=document.createElement('p');note.textContent='Busca un modelo para ver más resultados.';container.append(note);}renderSelection();}
+  function clearPrivateView(){records=[];products=[];tariffs=[];savedCopy=null;copyStamp=null;fields?.destroy();fields=null;selection.clear();saveIntent=null;form.reset();workspace.hidden=true;document.getElementById('pending-products').replaceChildren();document.getElementById('cart-items').replaceChildren();document.getElementById('crm-datalist').replaceChildren();document.getElementById('pending-summary').hidden=true;document.getElementById('pending-summary-text').replaceChildren();document.getElementById('pending-actions').replaceChildren();document.getElementById('pending-detail').textContent='';}
+  async function checkReceipt(current){
+    if(!inScope())return;const token=PTHSecureData.token(),receipt=await PTHSecureData.checkout({operation:'receipt',attempt:current.outcome?.attempt||current.attempt});
+    if(!inScope(token))return;
+    if(receipt.error){status.textContent='No se pudo comprobar la recepción. Conservamos la clave del intento; revisa tus pedidos antes de preparar otro igual.';return;}
+    if(receipt.data.complete){await queue.confirmed(owner,current.id,receipt.data.confirmed);if(inScope(token))await refresh();}
+    else if(current.form)status.textContent='La tienda aún no confirma el envío completo. Reintenta desde tu misma cuenta.';
+    else if(!receipt.data.confirmed.length){await queue.patch(owner,current.id,{attempt:null,state:'paused',priorAttempts:[...new Set([...(current.priorAttempts||[]),current.attempt].filter(Boolean))]});if(inScope(token)){await refresh();status.textContent='La tienda no confirma este intento. Conservamos su clave para evitar un duplicado si llega una respuesta tardía.';}}
+    else status.textContent='La tienda confirma parte del pedido. Revísalo en tu cuenta; no se reenviará automáticamente.';
   }
-  function renderSelection(){const total=[...selection.values()].reduce((sum,p)=>sum+p.qty,0);document.getElementById('pending-selection').textContent=total+' equipos seleccionados. La selección se mantiene al buscar.';}
-  function renderSummary(row){
-    const section=document.getElementById('pending-summary'),container=document.getElementById('pending-summary-text');container.replaceChildren();section.hidden=!row?.form;if(!row?.form)return;
-    const customer=document.createElement('p');customer.textContent=row.form.nombre+' · '+row.form.tel;container.append(customer);
-    const address=document.createElement('p');address.textContent=row.form.pickup?'Recogida en el almacén':row.form.dir+' · '+row.form.localidad+', '+row.form.municipio;container.append(address);
-    for(const p of row.lines){const line=document.createElement('p');line.textContent=p.qty+' × '+(products.find(product=>product.id===p.id)?.nombre||'Producto guardado')+' · $'+p.price.toFixed(2);container.append(line);}
-  }
-  function clearPrivateView(){record=null;form.hidden=true;document.getElementById('pending-summary').hidden=true;document.getElementById('pending-summary-text').replaceChildren();document.getElementById('pending-detail').textContent='';}
+  function renderRecords(){const section=document.getElementById('pending-summary'),container=document.getElementById('pending-summary-text');container.replaceChildren();section.hidden=!records.length;for(const current of records){const card=document.createElement('article');card.className='saved-order';card.dataset.orderId=current.id;const title=document.createElement('h3');title.textContent=current.form?'Pedido para '+current.form.nombre:'Pedido guardado';const state=document.createElement('p');state.textContent=labels[current.state]||labels.blocked;state.setAttribute('role','status');card.append(title,state);
+    if(current.form){const address=document.createElement('p');address.textContent=current.form.pickup?'Recogida en el almacén':current.form.dir+' · '+current.form.localidad+', '+current.form.municipio;card.append(address);for(const line of current.lines){const node=document.createElement('p');node.textContent=line.qty+' × '+(products.find(p=>p.id===line.id)?.nombre||'Producto guardado')+' · $'+line.price.toFixed(2);card.append(node);}if(current.estimate?.total!==null&&Number.isFinite(current.estimate?.total)){const total=document.createElement('p');total.textContent='Total guardado: $'+current.estimate.total.toFixed(2)+' USD';card.append(total);}}
+    if(current.message){const note=document.createElement('p');note.textContent=current.message;card.append(note);}if(current.state==='confirmed'){const receipt=document.createElement('p');receipt.className='receipt';receipt.textContent='Referencia de la tienda: '+(current.receipts||[]).map(row=>row.reference).filter(Boolean).join(', ');card.append(receipt);}
+    const actions=document.createElement('div');actions.className='actions';card.append(actions);
+    if(current.form)button(actions,current.outcome?.attempt?'Detener reintentos':'Cancelar pendiente',async()=>{if(!inScope())return;const token=PTHSecureData.token();await queue.cancel(owner,current.id);if(inScope(token))await refresh();},'danger');
+    if(current.form&&['blocked','paused'].includes(current.state)){const link=document.createElement('a');link.href='/?pending_order=1';link.textContent='Revisar con conexión';link.className='secondary';actions.append(link);button(actions,'Reintentar con mi cuenta',async()=>{if(!inScope())return;const token=PTHSecureData.token();await queue.retry(owner,current.id);if(inScope(token)){await refresh();await reconnect();}});}
+    if(current.attempt||current.outcome?.attempt)button(actions,'Comprobar recepción',()=>checkReceipt(current));container.append(card);
+  }}
   async function refresh(){
-    const generation=++renderGeneration;
-    actions.replaceChildren();
-    if(!owner||api.localOwner(storage)!==owner){clearPrivateView();status.textContent='Entra en tu cuenta con conexión antes de preparar un pendiente en este dispositivo.';return;}
-    let row;try{row=await queue.read(owner);}catch(_){if(generation===renderGeneration&&inScope()){clearPrivateView();status.textContent='No se pudo abrir el almacenamiento. No hay un pendiente guardado; mantén los datos en la pantalla de la tienda.';}return;}
-    if(generation!==renderGeneration||!inScope())return;
-    record=row;
-    renderSummary(record);status.textContent=record?states[record.state]||states.blocked:'Completa el pedido y pulsa Dejar pendiente de envío.';
-    document.getElementById('pending-detail').textContent=record?.message|| (record?.state==='confirmed'?record.receipts.map(p=>p.reference).join(', '):'');
-    form.hidden=Boolean(record?.form||record?.attempt);
-    if(!record?.form&&!record?.attempt){
-      form.hidden=!products.length;if(!products.length)status.textContent='Todavía no hay una copia de productos guardada. Abre la tienda con conexión y guarda primero el catálogo.';
-      const draft=store.readDraft(owner);if(!selection.size&&draft)for(const p of draft.lines){const product=products.find(product=>product.id===p.id);if(product)selection.set(p.id,{...p,price:Number(product.precio)});}renderProducts();
-    }
-    if(record?.form){
-      addButton(record.outcome?.attempt?'Detener reintentos':'Cancelar pendiente',async()=>{if(!inScope())return;const revision=record.id,token=PTHSecureData.token();await queue.cancel(owner,revision);if(!inScope(token))return;form.reset();selection.clear();await refresh();},'danger');
-      if(['blocked','paused'].includes(record.state))addButton('Reintentar con mi cuenta',async()=>{if(!inScope())return;const revision=record.id;await queue.retry(owner,revision);if(!inScope())return;await refresh();await reconnect();});
-    }
-    if(record?.attempt||record?.outcome?.attempt)addButton('Comprobar recepción',async()=>{
-      if(!inScope())return;
-      const current=record,token=PTHSecureData.token();
-      const receipt=await PTHSecureData.checkout({operation:'receipt',attempt:current.outcome?.attempt||current.attempt});
-      if(!inScope(token))return;
-      if(receipt.error){status.textContent='No se pudo comprobar la recepción. Conservamos la clave del intento; revisa tus pedidos antes de iniciar otro.';return;}
-      if(receipt.data.complete){await queue.confirmed(owner,current.id,receipt.data.confirmed);if(!inScope(token))return;store.clearDraft(owner);form.reset();selection.clear();await refresh();}
-      else if(current.form){status.textContent='El servidor aún no confirma el envío completo. Puedes reintentar con tu misma cuenta.';}
-      else if(!receipt.data.confirmed.length){await queue.patch(owner,current.id,{attempt:null,state:'paused',priorAttempts:[...new Set([...(current.priorAttempts||[]),current.attempt].filter(Boolean))]});if(!inScope(token))return;status.textContent='El servidor no confirma este intento. Conservamos su clave al preparar otro para evitar un duplicado si llega una respuesta tardía.';await refresh();}
-      else status.textContent='El servidor confirma parte del envío. Revisa tus pedidos; no se reenviará automáticamente.';
-    });
+    const currentGeneration=++generation,token=PTHSecureData.token();
+    if(!owner||!localSessionValid()){clearPrivateView();if(owner){void copies.clear(owner).catch(()=>{});if(PTHSecureData.expiredCheckoutOwner?.()===owner)void queue.logout(owner).catch(()=>{});}status.textContent='Entra en tu misma cuenta con conexión. No enviaremos pedidos hasta comprobar tu sesión.';document.getElementById('copy-status').textContent='La copia de clientes no está disponible sin una sesión válida.';return;}
+    let rows,copy;try{[rows,copy]=await Promise.all([queue.list(owner),copies.read(owner,{profile:copyApi.localProfile(storage)})]);}catch(_){if(currentGeneration===generation&&inScope(token)){status.textContent='No se pudo abrir el almacenamiento. Conserva tus datos y vuelve a intentarlo.';workspace.hidden=true;}return;}
+    if(currentGeneration!==generation||!inScope(token))return;records=rows||[];savedCopy=copy;
+    if(copy){if(copyStamp!==copy.savedAt){fields?.destroy();copyStamp=copy.savedAt;products=copy.products;tariffs=copy.tariffs;fields=shared.bind(document,{clients:copy.clients,tariffs,onChange:recalculate});renderProducts();}workspace.hidden=false;document.getElementById('copy-status').textContent='Copia de tu cuenta: '+copy.clients.length+' clientes · '+copy.products.length+' productos · tarifas de '+new Set(copy.tariffs.map(t=>t.municipio)).size+' municipios. Guardada '+new Date(copy.savedAt).toLocaleString('es-CU')+'.';}
+    else{workspace.hidden=true;fields?.destroy();fields=null;copyStamp=null;products=[];tariffs=[];selection.clear();form.reset();document.getElementById('crm-datalist').replaceChildren();document.getElementById('pending-products').replaceChildren();document.getElementById('cart-items').replaceChildren();document.getElementById('copy-status').textContent='Abre tu cuenta con conexión y pulsa Guardar datos para usar sin conexión. Así tendrás tus productos, clientes y tarifas en este teléfono.';}
+    renderRecords();const waiting=records.filter(row=>row.form&&['queued','sending','uncertain'].includes(row.state)),blocked=records.filter(row=>row.form&&['blocked','paused'].includes(row.state));
+    status.textContent=waiting.length?pendingCopy(waiting.length):blocked.length?'Hay '+blocked.length+' pedido'+(blocked.length===1?'':'s')+' que necesita'+(blocked.length===1?'':'n')+' revisión. Abre tu misma cuenta con conexión y usa Revisar con conexión.':records.some(row=>row.state==='confirmed')?'La tienda recibió los pedidos confirmados. Puedes preparar otro.':'Completa los datos y confirma para guardar el pedido en este teléfono.';
+    document.getElementById('pending-detail').textContent=waiting.length&&blocked.length?'También hay '+blocked.length+' pedido'+(blocked.length===1?'':'s')+' pendiente'+(blocked.length===1?'':'s')+' de revisión.':'';
   }
-  async function reconnect(){
-    if(busy||departing||navigator.onLine===false||!owner||api.localOwner(storage)!==owner)return;
-    busy=true;const token=PTHSecureData.token();
-    try{
-      const current=await queue.read(owner);
-      if(api.localOwner(storage)!==owner||PTHSecureData.token()!==token)return;
-      if(!current?.form||!['queued','uncertain','sending'].includes(current.state))return;
-      // The gateway is never cached. navigator.onLine alone is not evidence.
-      const profile=await PTHSecureData.restore();
-      if(profile?.id!==owner||api.localOwner(storage)!==owner||PTHSecureData.token()!==token){status.textContent='Vuelve a la misma cuenta que preparó el pendiente para enviarlo.';return;}
-      departing=true;location.replace('/?pending_order=1');
-    }catch(_){status.textContent='Pedido guardado. Aún no hay conexión confirmada con el servidor, o necesitas volver a tu cuenta.';}
-    finally{busy=false;}
-  }
-  form.onsubmit=async event=>{
-    event.preventDefault();if(!form.reportValidity())return;
-    const button=document.getElementById('pending-save');button.disabled=true;
-    try{
-      if(api.localOwner(storage)!==owner)throw Object.assign(Error('ACCOUNT'),{code:'ACCOUNT'});
-      const values={};for(const field of ['nombre','ci','tel','municipio','localidad','dir','notas','moneda','vuelto'])values[field]=document.getElementById('pending-'+field).value;
-      values.pickup=document.getElementById('pending-pickup').checked;
-      const token=PTHSecureData.token();
-      const current=await queue.save(owner,{lines:[...selection.values()],form:values},store.readDraft(owner));
-      if(!inScope(token))return;
-      record=current;
-      form.reset();selection.clear();await refresh();await reconnect();
-    }catch(error){status.textContent=error.code==='INVALID'?'Selecciona productos con cantidades válidas y completa nombre, teléfono y entrega.':'No se pudo guardar el pendiente. No cierres la página; conserva los datos para reintentar.';}
-    finally{button.disabled=false;}
-  };
-  document.getElementById('pending-search').oninput=renderProducts;
-  document.getElementById('pending-pickup').onchange=()=>{const pickup=document.getElementById('pending-pickup').checked;document.getElementById('pending-delivery').hidden=pickup;for(const field of ['municipio','localidad','dir'])document.getElementById('pending-'+field).required=!pickup;};
-  window.addEventListener('storage',()=>{if(api.localOwner(storage)!==owner){form.reset();selection.clear();void refresh();}});
-  window.addEventListener('pth:session-changed',event=>{if(api.localOwner(storage)!==owner){form.reset();selection.clear();if(event.reason==='logout'&&owner)void queue.logout(owner).catch(()=>{});}void refresh();});
-  window.addEventListener('online',()=>void reconnect());window.addEventListener('focus',()=>{void refresh();void reconnect();});
-  setInterval(()=>{void refresh();void reconnect();},15000);
-  void refresh().then(reconnect);
+  async function reconnect(){if(busy||departing||navigator.onLine===false||!owner||!localSessionValid())return;busy=true;const token=PTHSecureData.token();try{const rows=await queue.list(owner);if(!inScope(token)||!rows.some(row=>row.form&&['queued','uncertain','sending'].includes(row.state)))return;const profile=await (PTHSecureData.refresh?.()||PTHSecureData.restore());if(!inScope(token))return;if(profile?.id!==owner){status.textContent='Vuelve a la misma cuenta que preparó los pedidos para enviarlos.';return;}departing=true;location.replace('/?pending_order=1');}catch(error){if(inScope(token)&&error.code!=='NETWORK_ERROR')status.textContent='Vuelve a entrar en tu misma cuenta con conexión para enviar los pedidos guardados.';}finally{busy=false;}}
+  form.onsubmit=async event=>{event.preventDefault();if(!form.reportValidity())return;const submit=document.getElementById('final-submit-btn');submit.disabled=true;const token=PTHSecureData.token();try{if(!owner||!localSessionValid()||!savedCopy||Date.now()>=savedCopy.expiresAt)throw Object.assign(Error('ACCOUNT'),{code:'ACCOUNT'});const estimate=recalculate();if(estimate.shipping===null||estimate.total===null)throw Object.assign(Error('DELIVERY'),{code:'DELIVERY'});if(!saveIntent)saveIntent={intentId:Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join(''),savedAt:Date.now()};await queue.save(owner,{lines:[...selection.values()],form:shared.readForm(document),estimate},saveIntent);if(!inScope(token))return;saveIntent=null;selection.clear();form.reset();fields.togglePickup();document.getElementById('pending-search').value='';renderProducts();await refresh();await reconnect();}catch(error){if(inScope(token))status.textContent=error.code==='INVALID'?'Selecciona productos con cantidades válidas y completa el nombre, el teléfono y la entrega.':error.code==='DELIVERY'?'Elige una zona con tarifa guardada o recogida en el almacén. No hemos guardado el pedido.':error.code==='LIMIT'?'Este teléfono ya tiene el máximo de pedidos pendientes. Envía o cancela alguno antes de preparar otro.':error.code==='ACCOUNT'?'Tu sesión o la copia guardada venció. Conserva los datos y vuelve a entrar con conexión.':'No se pudo guardar el pedido. Mantén la página abierta y conserva los datos para reintentar.';}finally{submit.disabled=false;}};
+  form.addEventListener('input',()=>recalculate());document.getElementById('pending-search').oninput=renderProducts;
+  // Clipboard access is a manual browser action; submitted text remains plain data.
+  const pasteButton=form.querySelector('#gestor-checkout-tools button');pasteButton.onclick=async()=>{const token=PTHSecureData.token();try{const text=await navigator.clipboard.readText();if(!inScope(token))return;const parsed=shared.parseClipboard(text);for(const [field,value]of Object.entries(parsed))if(value)document.getElementById(shared.fieldIds[field]).value=value;status.textContent='Datos pegados. Revísalos antes de confirmar.';}catch(_){if(inScope(token))status.textContent='No se pudo leer el portapapeles. Pega los datos directamente en cada campo.';}};
+  window.addEventListener('storage',()=>{if(!inScope()){clearPrivateView();void refresh();}});window.addEventListener('pth:session-changed',event=>{clearPrivateView();if(owner&&['logout','expired'].includes(event.reason))void queue.logout(owner).catch(()=>{});void refresh();});
+  window.addEventListener('online',()=>void reconnect());window.addEventListener('focus',()=>{void refresh();void reconnect();});setInterval(()=>{void refresh();void reconnect();},15000);void refresh().then(reconnect);
 })();

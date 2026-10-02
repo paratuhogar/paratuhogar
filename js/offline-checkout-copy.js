@@ -1,0 +1,43 @@
+/* A deliberately saved, account-only device copy. Never credentials or shared cache. */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PTHOfflineCheckoutCopy=api;})(typeof window==='undefined'?globalThis:window,function(){
+  'use strict';
+  const AGE=7*86400000,DB='pth_offline_checkout_copy_v1';
+  const fail=code=>{throw Object.assign(Error(code),{code});};
+  const clone=value=>JSON.parse(JSON.stringify(value));
+  const text=(value,limit=200)=>{const result=String(value??'');if(result.length>limit)fail('INVALID');return result;};
+  function publicReference(value){const ref=text(value,2000).trim();if(!ref||/[<>\"']/.test(ref)||ref.startsWith('//'))return '';if(/^[a-z][a-z0-9+.-]*:/i.test(ref)){try{const url=new URL(ref);if(url.protocol!=='https:'||url.username||url.password||/\/storage\/v1\/object\/sign\//.test(url.pathname)||[...url.searchParams.keys()].some(key=>/^(token|access_token|apikey|api_key|signature|x-amz-signature)$/i.test(key)))return '';return ref;}catch(_){return '';}}return /(?:^|\/)\.\.(?:\/|$)/.test(ref)?'':ref;}
+  function clean(input){
+    if(!input||!Array.isArray(input.products)||!input.products.length||input.products.length>5000||!Array.isArray(input.clients)||input.clients.length>300||!Array.isArray(input.tariffs)||!input.tariffs.length||input.tariffs.length>5000)fail('INVALID');
+    const ids=new Set(),products=input.products.map(row=>{const id=text(row.id,100),nombre=text(row.nombre,500),precio=Number(row.precio);if(!id||!nombre||ids.has(id)||!Number.isFinite(precio)||precio<0)fail('INVALID');ids.add(id);const product={id,nombre,precio,disponible:text(row.disponible),categoria:text(row.categoria),proveedor:text(row.proveedor),tamaño_envio:text(row.tamaño_envio),garantia:text(row.garantia,2000),mensajeria:text(row.mensajeria),created_at:text(row.created_at),updated_at:text(row.updated_at)};if(Object.prototype.hasOwnProperty.call(row,'descripcion'))product.descripcion=text(row.descripcion,8000);if(typeof row.precio_flexible==='string'||typeof row.precio_flexible==='boolean'||typeof row.precio_flexible==='number'&&Number.isFinite(row.precio_flexible))product.precio_flexible=typeof row.precio_flexible==='string'?text(row.precio_flexible):row.precio_flexible;for(const field of ['thumbnail','image1','image2','image3'])product[field]=publicReference(row[field]);return product;});
+    const seen=new Set(),clients=[];for(const row of input.clients){const phone=text(row.telefono);if(!phone||seen.has(phone))continue;seen.add(phone);clients.push({cliente:text(row.cliente),ci:text(row.ci),telefono:phone,direccion:text(row.direccion,4000)});}
+    const tariffs=input.tariffs.map(row=>{const municipio=text(row.municipio),localidad=text(row.localidad),pq=Number(row.precio_pequeno),gr=Number(row.precio_grande);if(!municipio||!localidad||!Number.isFinite(pq)||pq<0||!Number.isFinite(gr)||gr<0)fail('INVALID');return {municipio,localidad,precio_pequeno:pq,precio_grande:gr};});
+    const result={products,clients,tariffs};if(JSON.stringify(result).length>4000000)fail('INVALID');return result;
+  }
+  function indexedStore(idb){let opening;const open=()=>opening||(opening=new Promise((resolve,reject)=>{if(!idb){reject(Object.assign(Error('STORAGE'),{code:'STORAGE'}));return;}const request=idb.open(DB,1);request.onupgradeneeded=()=>request.result.createObjectStore('copies',{keyPath:'owner'});request.onsuccess=()=>{const db=request.result;db.onversionchange=()=>{db.close();opening=null;};resolve(db);};request.onerror=()=>{opening=null;reject(Object.assign(Error('STORAGE'),{code:'STORAGE'}));};request.onblocked=()=>reject(Object.assign(Error('STORAGE'),{code:'STORAGE'}));}));return {async update(owner,mutate){const db=await open();return new Promise((resolve,reject)=>{let result,error;const tx=db.transaction('copies','readwrite'),store=tx.objectStore('copies'),request=store.get(owner);request.onsuccess=()=>{try{result=mutate(request.result?clone(request.result):null);if(result===null)store.delete(owner);else store.put(result);}catch(problem){error=problem;tx.abort();}};tx.oncomplete=()=>resolve(result?clone(result):null);tx.onerror=tx.onabort=()=>reject(error||Object.assign(Error('STORAGE'),{code:'STORAGE'}));});}};}
+  const deviceStorage=()=>{try{return globalThis.localStorage;}catch(_){return null;}};
+  const scope=profile=>[text(profile?.id,100),text(profile?.nombre),text(profile?.rol),text(profile?.parent_id,100)];
+  function create(idb,{now=Date.now,store=indexedStore(idb)}={}){
+    const ownerKey=owner=>{if(typeof owner!=='string'||!owner||owner.length>100)fail('ACCOUNT');return owner;};
+    return {async save(owner,input,{consent=false,sessionUntil=null,profile=null,storage=deviceStorage(),guard=()=>true}={}){ownerKey(owner);if(profile?.id!==owner)fail('ACCOUNT');if(consent!==true)fail('CONSENT');const data=clean(input),savedAt=now(),until=sessionUntil===null?NaN:Number(sessionUntil);if(!Number.isFinite(until)||until<=savedAt)fail('SESSION_EXPIRED');return store.update(owner,()=>{if(!guard()||storage&&JSON.stringify(scope(localProfile(storage)))!==JSON.stringify(scope(profile)))fail('ACCOUNT');return {version:1,owner,scope:scope(profile),savedAt,expiresAt:Math.min(until,savedAt+AGE),...data};});},async read(owner,{profile=null}={}){ownerKey(owner);return store.update(owner,row=>{if(!row)return null;if(profile?.id!==owner||JSON.stringify(row.scope)!==JSON.stringify(scope(profile)))return null;if(row.version!==1||row.owner!==owner||!Number.isFinite(row.savedAt)||!Number.isFinite(row.expiresAt)||now()<row.savedAt||now()>=row.expiresAt)return null;try{return {...row,...clean(row)};}catch(_){return null;}});},async clear(owner){ownerKey(owner);return store.update(owner,()=>null);}};
+  }
+  function localProfile(storage){try{return storage.getItem('pth_secure_token')?JSON.parse(storage.getItem('pth_session')||'null')?.data||null:null;}catch(_){return null;}}
+  async function capture({client,profile,products,tariffs,storage,token,sessionUntil,secureData=globalThis.PTHSecureData}){
+    if(secureData?.refresh){const verified=await secureData.refresh();if(JSON.stringify([verified?.id,verified?.nombre,verified?.rol,verified?.parent_id])!==JSON.stringify([profile?.id,profile?.nombre,profile?.rol,profile?.parent_id]))fail('ACCOUNT');profile=verified;sessionUntil=secureData.expiresAt?.();}
+    const identity=value=>JSON.stringify([value?.id,value?.nombre,value?.rol,value?.parent_id]);
+    const stable=()=>identity(localProfile(storage))===identity(profile)&&storage.getItem('pth_secure_token')===token;
+    if(!token||!profile?.id||!profile?.nombre||!stable())fail('ACCOUNT');
+    if(!Number.isFinite(sessionUntil)||sessionUntil<=Date.now())fail('SESSION_EXPIRED');
+    // Orders currently identify the salesperson by name. Fail closed for a
+    // privileged account when that name cannot identify one existing account.
+    if(!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase())){
+      let names=client.from('gestores').select('id, nombre').eq('nombre',profile.nombre).limit(2);if(names.forSession)names=names.forSession(token);const result=await names;if(!stable())fail('ACCOUNT');if(result.error)fail(result.error.code||'NETWORK_ERROR');if(!Array.isArray(result.data)||result.data.length!==1||result.data[0].id!==profile.id)fail('CLIENT_SCOPE_AMBIGUOUS');
+    }
+    // Even an administrator's device copy includes only their own sales.
+    let query=client.from('pedidos').select('cliente, ci, telefono, direccion').eq(profile.parent_id?'subgestor_nombre':'gestor',profile.nombre).order('fecha',{ascending:false}).limit(300);
+    if(query.forSession)query=query.forSession(token);
+    const result=await query;if(!stable())fail('ACCOUNT');if(result.error)fail(result.error.code||'NETWORK_ERROR');
+    return clean({products,tariffs,clients:result.data||[]});
+  }
+  function bindLifecycle(root,storage,copies){let previous=localProfile(storage)?.id||null,previousToken=storage?.getItem('pth_secure_token');const check=event=>{const current=localProfile(storage)?.id||null,currentToken=storage?.getItem('pth_secure_token');if(previous&&(current!==previous||currentToken!==previousToken||event?.type==='pth:session-changed'||['logout','expired'].includes(event?.reason)))void copies.clear(previous).catch(()=>{});previous=current;previousToken=currentToken;};root.addEventListener('storage',check);root.addEventListener('pth:session-changed',check);return check;}
+  return {AGE,DB,clean,indexedStore,create,capture,localProfile,bindLifecycle};
+});
