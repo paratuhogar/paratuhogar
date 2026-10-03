@@ -1488,7 +1488,7 @@ async function displaySavedStorefront(error) {
     const slug = /^\/producto\/([^/]+)\/?$/.exec(window.location.pathname)?.[1];
     const requested = shared ? productosRaw.find(product => product.nombre === shared)
         : slug ? productosRaw.find(product => createStableProductSlug(product) === decodeURIComponent(slug)) : null;
-    if (requested) openDetail(requested.nombre);
+    if (requested) openSharedProduct(requested, urlParams);
     void window.PTHPendingCheckoutUI?.catalogReady();
     return true;
 }
@@ -1717,7 +1717,7 @@ async function loadProducts() {
         if (searchParam) {
             const existe = productosRaw.find(p => p.nombre === searchParam);
             if (isProductCurrentlyAvailable(existe)) {
-                setTimeout(() => { openDetail(searchParam); }, 500);
+                setTimeout(() => { openSharedProduct(existe, urlParams); }, 500);
             } else if (existe) {
                 setTimeout(() => showUnavailableSharedOffer(existe), 350);
             }
@@ -2650,6 +2650,25 @@ function openDetail(name, skipSolarCheck = false) {
     document.body.style.overflow = 'hidden';
 }
 
+// A link may prepare a local cart or focus consultation; sending still requires a click.
+let productLinkActionConsumed = false;
+function openSharedProduct(product, params) {
+    if (!product) return;
+    const action = params.get('accion');
+    const actionable = !productLinkActionConsumed
+        && params.getAll('accion').length === 1
+        && params.getAll('search').length === 1
+        && params.get('search') === product.nombre
+        && ['consultar', 'pedido'].includes(action)
+        && isProductCurrentlyAvailable(product)
+        && Number.isFinite(Number(product.precio)) && Number(product.precio) > 0;
+    if (actionable) productLinkActionConsumed = true;
+    openDetail(product.nombre);
+    if (!actionable) return;
+    if (action === 'pedido') addItemToCart(true);
+    else document.getElementById('detail-client-consult')?.focus();
+}
+
 function consultSelectedProduct() {
     if (!selectedProduct) return;
     const message = `Hola, estoy viendo *${selectedProduct.nombre}* en ParaTuHogar y quisiera confirmar disponibilidad, entrega y garantía.`;
@@ -2657,7 +2676,7 @@ function consultSelectedProduct() {
 }
 
     // 4. CARRITO Y PAGOS
-   function addItemToCart() {
+   function addItemToCart(fromProductLink = false) {
     if (window.PTHPendingCheckoutUI?.cartLocked()) { window.PTHPendingCheckoutUI.message('Espera la confirmación del pendiente antes de cambiar el carrito.'); return; }
 
     // === NUEVO: LÓGICA DE BLOQUEO B2B ===
@@ -2684,8 +2703,10 @@ function consultSelectedProduct() {
     }
 
     if(existing) {
-        existing.qty++;
-        existing.shipping_linea += defaultShipping;
+        if (!fromProductLink) {
+            existing.qty++;
+            existing.shipping_linea += defaultShipping;
+        }
     } else {
         cart.push({
             ...selectedProduct,
@@ -2697,13 +2718,13 @@ function consultSelectedProduct() {
             shipping_linea: defaultShipping,
             cup_extra: selectedProduct.cup_extra || 0
         });
-        if (typeof captureGhostLead === "function") {
+        if (!fromProductLink && typeof captureGhostLead === "function") {
             captureGhostLead();
         }
     }
 
     document.getElementById('cart-count').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
-    window.PTHAnalytics?.event('add_to_cart');
+    if (!fromProductLink) window.PTHAnalytics?.event('add_to_cart');
     closeDetail();
     toggleCartModal(true);
 

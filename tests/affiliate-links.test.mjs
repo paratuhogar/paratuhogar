@@ -55,5 +55,6 @@ test('UUID hierarchy disambiguates identical historical names and keeps parent p
  const source=read('js/storefront.js'),start=source.indexOf('const salesHierarchyCache = new Map();');vm.runInContext(source.slice(start,source.indexOf('// Description hydration',start)),f.context);
  const hierarchy=await f.context.resolveSalesHierarchy(other);assert.equal(hierarchy.agent.id,other);assert.equal(hierarchy.parent.id,id);assert.equal(hierarchy.pricingOwnerName,'Same Internal');
  await assert.rejects(f.context.resolveSalesHierarchy('Same Internal'),error=>error.code==='SELLER_IDENTITY_AMBIGUOUS');
+ await assert.rejects(f.context.resolveSalesHierarchy('00000000-0000-4000-8000-000000000000'),error=>error.code==='SELLER_NOT_FOUND','removed UUID must not fall back to another account');
  await assert.rejects(f.context.resolveSalesHierarchy('Same Alias'),error=>error.code==='SELLER_NOT_FOUND');assert.ok(filters.every(q=>q.key==='id'||q.key==='nombre'));
 });

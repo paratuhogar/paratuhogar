@@ -42,6 +42,11 @@
     footer{background:var(--navy);color:#dbeafe;padding:34px 0;margin-top:40px}.foot{display:flex;justify-content:space-between;gap:24px;align-items:center}.foot a{color:white}
     @media(max-width:780px){.shell{width:min(100% - 24px,1180px)}.topin{min-height:62px}.brand{font-size:20px}.brand img{width:38px;height:38px}.hero{grid-template-columns:1fr;gap:24px;padding-top:8px}.mainimg{border-radius:20px}.facts{grid-template-columns:1fr 1fr}.actions{grid-template-columns:1fr}.related{grid-template-columns:repeat(2,1fr)}.reviews{grid-template-columns:1fr}.specs{grid-template-columns:1fr}.sheet,.foot{align-items:flex-start;flex-direction:column}h1{font-size:36px}.price{font-size:38px}}
   </style>
+<!-- PTH_AFFILIATE_NAVIGATION_START -->
+<script id="pth-short-links" type="application/json">{"url":"https://ljqwaovevfatkiigirhf.supabase.co","key":"sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt"}</script>
+<script defer src="/js/affiliate-links.js?v=20261003-alias1"></script>
+<script defer src="/js/seo-affiliate-navigation.js?v=20261003-seo-affiliate1"></script>
+<!-- PTH_AFFILIATE_NAVIGATION_END -->
 <script defer src="/js/google-measurement.js?v=20260928-google-1"></script>
 </head>
 <body>
@@ -103,60 +108,12 @@
   <footer><div class="shell foot"><div><strong>ParaTuHogar</strong><br><small>Equipos para el hogar y soluciones de energía en Cuba.</small></div><div><a href="https://paratuhogar.org/categoria/transporte/">Más de TRANSPORTE</a> · <a href="/">Explorar catálogo</a></div></div></footer>
   <script>
   (() => {
-    const SB_URL="https://ljqwaovevfatkiigirhf.supabase.co", SB_KEY="sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt";
-    const params=new URLSearchParams(location.search), short=params.get('s'), opaque=params.get('r');
-    const saveReferral=(name,tel)=>{
-      if(!name)return;
-      const value={nombre:name,telefono:tel||'',timestamp:Date.now(),expiresAt:Date.now()+2592e6};
-      localStorage.setItem('pth_referrer_smart',JSON.stringify(value));
-      localStorage.setItem('pth_referrer',JSON.stringify(value));
-    };
-    const cleanVisibleUrl=()=>{
-      if(params.has('s')||params.has('r')||params.has('ref')||params.has('contact')||params.has('gestor')||params.has('tel')){
-        history.replaceState({},'',location.pathname);
-      }
-    };
-    const resolveShort=async()=>{
-      if(short&&SB_URL&&SB_KEY){
-        try{
-          const response=await fetch(`${SB_URL}/rest/v1/short_links?slug=eq.${encodeURIComponent(short)}&select=original_url,gestor&limit=1`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});
-          const [record]=response.ok?await response.json():[];
-          if(record){
-            let tel='';
-            try{tel=new URL(record.original_url,location.origin).searchParams.get('tel')||''}catch(e){}
-            saveReferral(record.gestor,tel);
-          }
-        }catch(e){}
-      }else if(opaque){
-        try{
-          const padded=opaque.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((opaque.length+3)%4);
-          const payload=JSON.parse(decodeURIComponent(escape(atob(padded))));
-          saveReferral(payload.n,payload.t);
-        }catch(e){}
-      }else{
-        saveReferral(params.get('ref')||params.get('gestor'),params.get('contact')||params.get('tel'));
-      }
-      cleanVisibleUrl();
-    };
-    const getReferral=()=>{
-      try{
-        const value=JSON.parse(localStorage.getItem('pth_referrer_smart')||'null');
-        return value&&(!value.expiresAt||value.expiresAt>Date.now())?value:null;
-      }catch(e){return null}
-    };
-    const attachAttribution=()=>{
-      const ref=getReferral();
-      if(!ref)return;
-      document.querySelectorAll('.js-attributed-link').forEach(link=>{
-        link.addEventListener('click',()=>saveReferral(ref.nombre,ref.telefono));
-      });
-    };
+    /* PTH_PRODUCT_GALLERY */
     document.querySelectorAll('.thumb').forEach(button=>button.addEventListener('click',()=>{
       const image=document.getElementById('main-product-image');
       image.src=button.dataset.src;
       image.alt=button.dataset.alt||image.alt;
     }));
-    resolveShort().finally(attachAttribution);
   })();
   </script>
 </body>

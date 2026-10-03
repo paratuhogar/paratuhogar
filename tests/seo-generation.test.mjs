@@ -103,3 +103,22 @@ test('un borrador queda fuera de Google hasta publicarse, y conserva indexación
   assert.match((await readFile(file, 'utf8')).match(/<meta name="robots"[^>]*>/)[0], /content="index,follow/);
   assert.match(await readFile(join(dir, 'sitemap.xml'), 'utf8'), /\/producto\/borrador-nuevo\//);
 });
+
+test('navigation-only regeneration preserves commercial HTML, sitemap and publication history without inventory reads', async t => {
+  const dir = await generate(t);
+  const file = join(dir, 'producto/bateria-disponible/index.html');
+  const original = await readFile(file, 'utf8');
+  const block = /<!-- PTH_AFFILIATE_NAVIGATION_START -->[\s\S]*?<!-- PTH_AFFILIATE_NAVIGATION_END -->/;
+  const gallery = /<script>\s*\(\(\) => \{\s*\/\* PTH_PRODUCT_GALLERY \*\/[\s\S]*?<\/script>/;
+  const old = original.replace(block, '').replace(gallery, '<script>\n  (() => {\n    const SB_URL="https://fixture.supabase.co", SB_KEY="public";\n    const obsolete="legacy navigation";\n  })();\n  </script>');
+  await writeFile(file, old);
+  const stable = await Promise.all(['sitemap.xml','producto/publicados.json','producto/manifest.json'].map(name=>readFile(join(dir,name),'utf8')));
+  execFileSync(process.execPath,['scripts/generate-product-pages.mjs','--refresh-navigation'],{cwd:dir,env:{...process.env,SUPABASE_URL:'https://fixture.supabase.co'}});
+  const updated = await readFile(file,'utf8');
+  const withoutNavigation = html=>html.replace(block,'').replace(gallery,'').replace(/<script>\s*\(\(\) => \{\s*const SB_URL=[\s\S]*?<\/script>/,'').replace(/\n\s*\n/g,'\n').trim();
+  assert.equal(withoutNavigation(updated),withoutNavigation(old));
+  assert.match(updated,/seo-affiliate-navigation\.js/);assert.doesNotMatch(updated,/expiresAt:Date\.now\(\)/);
+  assert.deepEqual(await Promise.all(['sitemap.xml','producto/publicados.json','producto/manifest.json'].map(name=>readFile(join(dir,name),'utf8'))),stable);
+  execFileSync(process.execPath,['scripts/generate-product-pages.mjs','--refresh-navigation'],{cwd:dir,env:{...process.env,SUPABASE_URL:'https://fixture.supabase.co'}});
+  assert.equal(await readFile(file,'utf8'),updated,'refresh is idempotent when configuration is unchanged');
+});

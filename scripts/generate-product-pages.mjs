@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat, readdir } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import process from 'node:process';
 
@@ -436,6 +436,8 @@ async function main() {
       SEO_DESCRIPTION: attr(description),
       CANONICAL_URL: attr(canonical),
       CATEGORY: htmlEscape(categoryLabel),
+      SUPABASE_URL_JSON: JSON.stringify(SUPABASE_URL),
+      SUPABASE_ANON_KEY_JSON: JSON.stringify(SUPABASE_ANON_KEY),
       CATEGORY_INTRO: htmlEscape(description),
       CATEGORY_SLUG: attr(categorySlug),
       PRODUCT_COUNT: String(categoryProducts.length),
@@ -499,7 +501,43 @@ async function main() {
   console.log(`Categorías SEO: ${generatedCategories.length}.`);
 }
 
-main().catch(error => {
+// Bounded technical releases can refresh navigation without reading inventory,
+// changing prices/reviews, or regenerating sitemap and publication history.
+async function refreshNavigation() {
+  const productTemplate = await readFile(TEMPLATE_PATH, 'utf8');
+  const marker = /<!-- PTH_AFFILIATE_NAVIGATION_START -->[\s\S]*?<!-- PTH_AFFILIATE_NAVIGATION_END -->/;
+  const markup = render(productTemplate.match(marker)[0], {
+    SUPABASE_URL_JSON: JSON.stringify(SUPABASE_URL),
+    SUPABASE_ANON_KEY_JSON: JSON.stringify(SUPABASE_ANON_KEY)
+  });
+  const gallery = productTemplate.match(/<script>\s*\(\(\) => \{\s*\/\* PTH_PRODUCT_GALLERY \*\/[\s\S]*?<\/script>/)[0];
+  const updates = [];
+  for (const [directory, product] of [[OUTPUT_ROOT, true], [CATEGORY_OUTPUT_ROOT, false]]) {
+    const folders = (await readdir(directory, {withFileTypes: true})).filter(entry => entry.isDirectory());
+    for (const folder of folders) {
+      const path = join(directory, folder.name, 'index.html');
+      const original = await readFile(path, 'utf8');
+      let html = original;
+      if (marker.test(html)) html = html.replace(marker, markup);
+      else {
+        const anchor = '<script defer src="/js/google-measurement.js';
+        if (!html.includes(anchor)) throw new Error(`Falta ancla de navegación: ${folder.name}`);
+        html = html.replace(anchor, markup + '\n' + anchor);
+      }
+      if (product) {
+        const oldGallery = /<script>\s*\(\(\) => \{\s*(?:const SB_URL=|\/\* PTH_PRODUCT_GALLERY \*\/)[\s\S]*?<\/script>/;
+        if (!oldGallery.test(html)) throw new Error(`Falta navegación anterior: ${folder.name}`);
+        html = html.replace(oldGallery, gallery);
+      }
+      if (html !== original) updates.push([path, html]);
+    }
+  }
+  // Validate all source anchors before writing any page.
+  for (const [path, html] of updates) await writeFile(path, html, 'utf8');
+  console.log(`Navegación SEO regenerada: ${updates.length} páginas; inventario, contenido e indexación conservados.`);
+}
+
+(process.argv.includes('--refresh-navigation') ? refreshNavigation() : main()).catch(error => {
   console.error(`Error generando páginas SEO: ${error.message}`);
   process.exitCode = 1;
 });
