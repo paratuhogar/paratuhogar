@@ -65,9 +65,11 @@ update together; the push worker registration version stays unchanged.
 
 ## Publication / rollback
 
-This is a prepared static frontend release, not a production deployment.
-Publishing does not require a database/security/permission action. Parent
-coordinates publication authorization and timing. Before release, fetch main
+Source commit `7276fc2d6aa46d7bfdee4e4129f6fe7b28daa320` was published to main
+with explicit user approval and confirmed with `git ls-remote`. Live static
+deployment verification is blocked by 403 responses from GitHub Actions and
+public website reads; do not describe the browser release as verified.
+Publishing does not require a database/security/permission action. Before release, fetch main
 again and preserve any newer changes; use a normal merge/fast-forward, never
 force push. Rollback is a normal revert of this release commit and standard
 Pages publication. No server/data rollback is needed. The local artifact

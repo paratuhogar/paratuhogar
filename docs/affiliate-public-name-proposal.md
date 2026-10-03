@@ -1,115 +1,123 @@
-# Public name and durable affiliate links
+# Public name and durable affiliate links — release evidence
 
-## Approved implementation checkpoint — 2026-10-03
+Marcel explicitly approved the nullable field, the action limited to editing
+one's own public label, and publication of Magic Studio and aliases. The parent
+relayed the approval with transcript evidence. Alina's report and reply remain
+with the parent; no report was edited or marked resolved in this work.
 
-Marcel explicitly approved the nullable field, narrowly scoped own-account edit
-action, and publication of Magic Studio and the compatible alias/link feature.
-The parent relayed that approval with transcript evidence. No further consent
-is needed for these exact actions; tool-level denials must still be respected.
+## Implementation and compatibility
 
-Magic Studio source commit `7276fc2d6aa46d7bfdee4e4129f6fe7b28daa320` was pushed
-to `main` and independently confirmed by `git ls-remote`. Deployment verification
-is blocked: GitHub Actions run listing and public website reads returned 403.
-The earlier Pages configuration read was also denied. No alternative route is
-used to bypass these denials. Do not describe the live website as verified.
+`97ac750` implements the alias feature. The own-account editor appears in
+Dashboard → Inicio. Customers see the saved public label, or the first name
+when it is empty. `gestores.nombre` remains unchanged for account access,
+historical orders, principal/child pricing, payroll and commissions.
 
-Alias implementation is local in `/workspace/paratuhogar-studio-all`:
-authenticated `public_name` accepts only `nombre_publico` and scopes update to
-the validated actor ID; generic account mutation policy remains unchanged.
-Public display defaults to first name, while new references use UUID and keep
-old name/short/opaque links readable. Existing internal names, financial joins,
-customer ownership and seven-day authentication expiration are retained.
+`public_name` accepts only `action` and `nombre_publico`. It obtains the target
+ID from the validated actor, rejects anonymous/courier callers and forged target
+IDs or other fields, and returns only ID and public label. The ordinary gestores
+write scope is unchanged. Submitted aliases are display text, never commands,
+HTML, identity keys or aliases for account lookup.
 
-Referral records use nullable expiry and preserve last-click replacement. Valid
-legacy browser records migrate to this format; expired/malformed records clear
-both keys. A link has no calendar expiry while its account and route remain
-valid; browser clearing/eviction, another link, browser/device changes still
-limit attribution. No IP fingerprinting, cross-device tracking or session
-extension is added. Public projection still retains the historical `nombre`
-needed by legacy price resolution; this is customer-visible name/URL control,
-not a claim that historical names disappear from all public API responses.
+New links use the existing account UUID. Old `ref=`/`gestor=` full names, `?s=`
+short links and `?r=` opaque fallback data remain supported. Short-link rows
+and their existing destinations are not rewritten. Repeated public labels
+do not merge accounts; ambiguous legacy names retain their explicit rejection.
+The compatible backend resolves UUID to the canonical historical name before
+storing a sale. Existing price/commission and customer-ownership rules remain.
 
-Read-only database checks found no short_links expiry column, no public/private
-function referencing that table and no current cron command mentioning it.
-This does not establish anything about unconnected external cleanup jobs.
-Existing gestores RLS is enabled, not forced. Schema/action deployment has not
-yet been applied. Local regression: 372 Node tests pass; Magic complete-output
-browser stress and PDF UI tests pass. Mobile editor/full-startup verification
-passes for visitor, principal, child and administrator, including failed alias
-save/retry, own-label editing at widths 320/390/820, unchanged internal names,
-no attribution replacement on edit, UUID short-link destinations, Story copy
-and PDF payload alias. PDF API testing uses a stub and is not a real layout proof.
+Story, Magic Studio, public offer/composer text, contact display and public PDF
+labels use this separation. Old cached PDF payloads abbreviate the full name.
+The public projection still contains historical `nombre` for legacy price
+resolution: this feature controls customer-visible labels and shared URLs,
+not the removal of historical names from all public API responses.
 
-Next: apply the already approved additive SQL,
-deploy compatible secure-data backend before client UUID links, then publish
-the alias commit and verify exact deployment when the read blocks are resolved.
-Rollback frontend/backend before removing anything; retain nullable aliases
-and old links. Backend version 20 was fetched and matches base `1a0f6c2` exactly.
-Its previous payload is stored privately in the execution orchestration state;
-no environment values or credentials were read or created.
+## Duration
 
-Magic Studio is complete in `7276fc2`. This is the separate authorized follow-up
-for Alina's suggestion. Her report was already answered by the parent; no
-duplicate response or report mutation is made here.
+Links have no calendar expiry while their account and route remain valid.
+New browser referral records have nullable expiry and preserve last-click
+replacement. Valid legacy records migrate; expired or malformed records clear
+both storage keys and cannot be revived through an older fallback key.
+Another link, browser clearing/eviction, or a different browser/device limits
+attribution. No IP fingerprinting, cross-device tracking or authentication
+extension is added. Seven-day main and one-day courier sessions are unchanged.
 
-Read-only schema verification on project `ljqwaovevfatkiigirhf` confirms
-`gestores.id` is UUID and `gestores.nombre` is the historical identity field.
-There is no public-name/alias column. `short_links` contains slug, original_url,
-gestor, created_at and is_custom; there is no expiry column. This alone is not
-proof that no external cleanup deletes links.
+Read-only checks found no short_links expiry column, no public/private SQL
+function referring to short_links and no current cron command mentioning it.
+Unconnected external cleanup jobs were not inspected.
 
-## Concrete approval gate
+## Applied backend and schema — 2026-10-03
 
-1. Apply the additive nullable `public.gestores.nombre_publico` column and its
-   1–40-character/control-character validation from the SQL proposal. No rows
-   are renamed or backfilled, no grants/RLS settings change.
-2. Add a strictly authenticated secure-data action to edit **only that column
-   on the caller's own account**, taking the ID from the validated actor,
-   ignoring/rejecting client-supplied identity, and rejecting courier sessions.
-   Existing ordinary account writes are scoped to the principal's children,
-   so self-editing this field is a new narrowly scoped permission. Do not
-   weaken or broaden the generic gestores mutation policy to implement it.
-3. Expose the public label through the appropriate public projection while
-   retaining the internal full name in authenticated/internal and financial
-   flows. The alias is display text, never an identifier or executable content.
+Project: `ljqwaovevfatkiigirhf`.
 
-These security/database-access actions are approved and have not yet been applied.
-The SQL is concrete and reviewable; no credential,
-privileged session, direct public grant or destructive migration is proposed.
+- Migration `public_name_affiliate`, version `20261003131350`, succeeded.
+  `nombre_publico` is nullable text with no default; the database constraint
+  allows null or 1–40 characters without markup/control characters. No rows
+  were renamed or backfilled and no grants or RLS policies were changed.
+- Metadata read after application confirms the field, constraint, and the
+  unchanged gestores RLS state: enabled, not forced.
+- `secure-data` version 21 is ACTIVE. Management readback confirms all returned
+  source files byte-for-byte against the tested local deployment payload.
+  The existing `verify_jwt:false` setting is retained because this gateway uses
+  its existing custom authenticated sessions; authentication is unchanged.
+- Previous version 20 was read and matched repository base `1a0f6c2` exactly.
+  No environment values, new credentials or persistent service access were
+  read or created. The deployment uses the already authorized connector.
 
-## Minimum implementation after approval
+Backend 21 was deployed and verified before publishing any UUID client links.
+Migration source is `supabase/migrations/20261003_public_name_affiliate.sql`.
 
-- Default public display to the first name when no alias is set; provide an
-  own-account editor. Keep gestores.nombre intact for all historical joins,
-  prices, principal/child attribution, payroll and commissions.
-- New links identify the existing account UUID, not the display alias or full
-  name. Continue resolving legacy ref=/gestor= full names, old ?s= short links
-  and ?r= opaque fallbacks. Ambiguous legacy names retain the existing explicit
-  rejection; never pick the first account or resolve a repeated public alias.
-- Update server canonical seller resolution before producing UUID links;
-  current ordinary-order lookup uses gestores.nombre. Resolve UUID internally
-  to the same canonical historical name, with existing status/parent checks.
-- Public offer/share messages, Magic Studio text/link, Story text/link, PDF,
-  catalogue links and contact displays use the public label. Internal reports
-  and historical order fields retain their existing identity. Verify all
-  actual entrypoints and both anonymous and authenticated projections.
-- Referral memory currently has competing writers: default 30 days, 180 days
-  above 500 clicks, and level-based durations displayed elsewhere. Unify the
-  accepted maximum retention independently of auth sessions. Preserve
-  last-click-wins and honor legacy entries that already expired; extend valid
-  entries only, never revive deleted/expired history or reassign orders.
-- Stable links should have no calendar expiry while their account and route
-  remain valid. Browser attribution can persist until replacement/removal,
-  subject to browser clearing/eviction and device/browser changes. Do not
-  promise eternal attribution; do not change seven-day auth sessions or
-  one-day courier sessions.
+## Validation
 
-Required tests: old/new links and opaque/short fallbacks, duplicate display
-names, same-name legacy ambiguity, disabled accounts and parent visibility,
-price/commission and order attribution unchanged, own alias write only,
-anonymous/other-account denial, untrusted alias text, correct expiry migration,
-last-click reassignment unchanged, all public share/PDF/Story/Studio surfaces.
+372 Node tests pass. Checks include own-account field isolation, anonymous,
+courier, expired-session and forged-ID denial, repeated names/aliases,
+old/new/opaque references, inactive seller checks, unchanged financial results,
+last-click memory, legacy expiry migration and logout fencing. Alias editing
+does not extend authentication or assign a different customer owner.
 
-Release order must preserve callers that still use legacy references. Both
-aliases and UUID links need server/client compatibility tests before combined
-publication; Magic Studio can be released independently from its tested commit.
+The full storefront browser test passes for visitor, principal, child and
+administrator: failed alias save/retry, editing at 320/390/820 px, unchanged
+internal names, UUID short-link destinations, actual Story copy, and PDF alias
+payload. Magic complete-output stress and PDF UI tests also pass. PDF API
+testing uses a stub and is not a real layout proof. `check:js` and diff checks
+pass; no real customer order or message was sent by tests.
+
+## Publication and verification limits
+
+Magic source `7276fc2d6aa46d7bfdee4e4129f6fe7b28daa320` was published to main
+and confirmed by `git ls-remote`. The alias implementation and migration are
+prepared for a normal fast-forward of the same repository; never force-push.
+The final remotely confirmed source hash is reported in the task outcome.
+
+These reads were denied; no alternative route was used to bypass them:
+
+- Pages configuration: `gh api repos/paratuhogar/paratuhogar/pages` → Forbidden.
+- Actions run listing through `gh run list`, whose request was
+  `https://api.github.com/repos/paratuhogar/paratuhogar/actions/runs?per_page=20&exclude_pull_requests=true&head_sha=7276fc2d6aa46d7bfdee4e4129f6fe7b28daa320`
+  → Forbidden. No server reason was provided beyond that message.
+- Public file reads through exec/Python urllib, such as
+  `https://paratuhogar.org/studio.html?verify_release=7276fc2d6aa46d7bfdee4e4129f6fe7b28daa320&check=<timestamp>`,
+  plus index.html, content-studio.js, studio-collection.js, internal-assets.js
+  and service-worker.js → Tunnel connection failed: 403 Forbidden.
+- Runtime gateway checks through exec/Python urllib at
+  `https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data`
+  → Tunnel connection failed: 403 Forbidden. Neither the public no-row alias
+  projection nor anonymous-denial smoke test reached a usable response.
+
+Supabase management reads verify the schema and ACTIVE backend source. Git
+confirms repository publication. They do not establish which static release
+the browser currently receives or an authenticated runtime alias edit.
+Do not declare the live UI fully verified or mark the report resolved.
+
+## Rollback
+
+Retain the nullable column, saved labels and old links. Before client publication,
+backend 20 can be restored if needed. After UUID links have been issued, retain
+the UUID canonical resolver and nullable-expiry reader during rollback;
+restoring the full old backend/referral reader would break new links/memory.
+
+For an alias-editing fault, pause only the new public_name action after actor
+validation with a controlled 503 response, keeping UUID/name resolution and
+public labels. Repair/redeploy it using the same scoped permission. A broader
+UI rollback requires backporting that compatibility first; never drop or rename
+the field or historical identities. Magic Studio's separate frontend commit
+can be reverted independently without a server/data rollback.

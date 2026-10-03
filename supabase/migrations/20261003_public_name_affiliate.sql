@@ -1,6 +1,4 @@
--- Historical approved proposal; applied as public_name_affiliate, version
--- 20261003131350. Use the versioned migration for new environments.
--- Preserves every existing gestores.nombre,
+-- Approved additive display preference. Preserves every existing internal name,
 -- account ID, short link, order and commission reference.
 begin;
 set local lock_timeout = '5s';
@@ -21,5 +19,4 @@ comment on column public.gestores.nombre_publico is
  'Customer-facing display label only. Never an attribution, login, payroll or commission key. NULL uses a safe abbreviated display name.';
 commit;
 -- No backfill, RLS change, grants, expiration change or credential creation.
--- Rollback should leave this nullable column in place to preserve user aliases;
--- old frontend/server versions ignore it. Do not rename nombre or delete links.
+-- Retain this nullable field during rollback to preserve user aliases.
