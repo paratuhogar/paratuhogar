@@ -19,7 +19,7 @@ function luminance(color){const c=color.match(/[\d.]+/g).slice(0,3).map(Number).
   for(const width of [360,390,1280])for(const dark of [false,true]){
    const page=await browser.newPage({viewport:{width,height:220}});
    await page.route('**/*',route=>route.abort());
-   await page.setContent(`<!doctype html><html lang="es" class="${dark?'dark':'light'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body style="background:${dark?'#020617':'#f8fafc'}"><main style="max-width:1200px;margin:auto">${nav}<div id="sec-catalogo"></div><div id="sec-dashboard" class="hidden"></div></main><script>var myOrdersData=[];${showSection}</script></body></html>`);
+   await page.setContent(`<!doctype html><html lang="es" class="${dark?'dark':'light'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body style="background:${dark?'#020617':'#f8fafc'}"><main style="max-width:1200px;margin:auto">${nav}<div id="sec-catalogo"></div><div id="sec-dashboard" class="hidden"></div></main><script>var myOrdersData=[];const offlineStorefront={usingCopy:()=>false};${showSection}</script></body></html>`);
    assert.equal(await page.locator('#admin-nav').isVisible(),false,'session-controlled hidden state retained');
    await page.evaluate(()=>document.getElementById('admin-nav').classList.remove('hidden'));
    assert.equal(await page.locator('#work-feedback-link').getAttribute('href'),'feedback.html');

@@ -87,7 +87,21 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  await page.evaluate(()=>{filterByCategory('TODOS');document.getElementById('search-bar').value='prueba 01';renderProducts();});assert.equal(await page.locator('#productos-container article').count(),1);
  await page.evaluate(()=>addProductFromCard('Nevera prueba 01'));assert.equal(await page.evaluate(()=>cart.length),1);
  assert.equal(await page.evaluate(()=>Number(productosRaw[0].comision)),role==='visitor'?0:role==='subgestor'?15:50);
- if(role!=='visitor')assert.equal(await page.locator('#work-feedback-link').getAttribute('href'),'feedback.html');
+ if(role!=='visitor'){
+  assert.equal(await page.locator('#work-feedback-link').getAttribute('href'),'feedback.html');
+  assert.equal(await page.locator('#work-feedback-link').isVisible(),true,'feedback remains accessible for every selling/admin role');
+  assert.equal(await page.locator('#admin-nav a[href="feedback.html"],#gestor-command-center a[href="feedback.html"]').count(),1,'one private feedback entry, no redundant catalogue strip');
+ }
+ if(role==='gestor'&&process.env.PTH_CAPTURE_FEEDBACK_ENTRY){
+  await page.addStyleTag({content:"@font-face{font-family:Manrope;src:url('/assets/fonts/Manrope.ttf');font-weight:200 800}"});
+  const previousCaptureState=await page.evaluate(()=>({search:document.getElementById('search-bar').value,cartOpen:!document.getElementById('cart-modal').classList.contains('hidden')}));
+  await page.evaluate(()=>{toggleCartModal(false);showSection('catalogo');document.getElementById('search-bar').value='';renderProducts();});
+  await page.locator('#admin-nav').scrollIntoViewIfNeeded();await page.evaluate(()=>document.fonts.ready);
+  const nav=await page.locator('#admin-nav').boundingBox(),result=await page.locator('#gestor-catalog-result-label').boundingBox(),top=Math.max(0,Math.floor(nav.y-24));
+  await page.evaluate(top=>{const e=document.createElement('div');e.id='fixture-feedback-capture-label';e.textContent='DEMOSTRACIÓN LOCAL · DATOS FICTICIOS';Object.assign(e.style,{position:'fixed',top:top+'px',left:'0',right:'0',height:'24px',lineHeight:'24px',zIndex:'2147483647',background:'#0b2550',color:'#fff',font:'bold 10px sans-serif',textAlign:'center',pointerEvents:'none'});document.body.append(e);},top);
+  await page.screenshot({path:process.env.PTH_CAPTURE_FEEDBACK_ENTRY,clip:{x:0,y:top,width:390,height:Math.ceil(result.y+result.height+12-top)}});
+  await page.evaluate(previous=>{document.getElementById('fixture-feedback-capture-label').remove();document.getElementById('search-bar').value=previous.search;renderProducts();toggleCartModal(previous.cartOpen);},previousCaptureState);
+ }
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+15),'no overflow beyond existing 15px carousel margin');
  if(role==='visitor'){
   assert.equal(secureRequests.some(body=>body.action==='ranking'),false,'public visitors never request the ranking');
