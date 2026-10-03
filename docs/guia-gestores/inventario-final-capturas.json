@@ -1,0 +1,398 @@
+{
+  "source_pdf": "/guias/guia-gestores.pdf",
+  "sha256": "07cce5db6f9024ade52edb771676bb22d8d9675c1cf0752f4662b3b4d5dec372",
+  "pages_with_images": 18,
+  "images": [
+    {
+      "page": 1,
+      "file": "capturas/image-212cf961c7c057204e40.jpeg",
+      "sha256": "212cf961c7c057204e409b17cdb43c6f047d4172494d895c5f15d9a0653dd4d0",
+      "bytes": 22084,
+      "width": 1116,
+      "height": 131,
+      "placements": [
+        [
+          30.0,
+          511.4000244140625,
+          390.0,
+          553.6580810546875
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 2,
+      "file": "capturas/image-652480e60725add9fc92.jpeg",
+      "sha256": "652480e60725add9fc92b102b24c5a4cd855ce92f863aeb1b64301602c8d58dc",
+      "bytes": 24486,
+      "width": 401,
+      "height": 492,
+      "placements": [
+        [
+          71.52458953857422,
+          362.20001220703125,
+          348.47540283203125,
+          702.0
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 3,
+      "file": "capturas/image-ed970931e045df091cb1.png",
+      "sha256": "ed970931e045df091cb148ea82950fe78826686c8f9ca461807aacb101279224",
+      "bytes": 16732,
+      "width": 390,
+      "height": 291,
+      "placements": [
+        [
+          60.0,
+          444.0999755859375,
+          360.0,
+          667.9461669921875
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 4,
+      "file": "capturas/image-b2ee1f7807b47022e509.jpeg",
+      "sha256": "b2ee1f7807b47022e50929da8a33c891e4ea2cc5e334ecd19fab9909c19c2bea",
+      "bytes": 73989,
+      "width": 875,
+      "height": 641,
+      "placements": [
+        [
+          30.0,
+          404.79998779296875,
+          390.0,
+          668.5256958007812
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 5,
+      "file": "capturas/image-fa5fdc6706467baf4c0b.jpeg",
+      "sha256": "fa5fdc6706467baf4c0bf0bdafe56c5727140bfaa998c3f904ba3b3244a79a0f",
+      "bytes": 38520,
+      "width": 500,
+      "height": 429,
+      "placements": [
+        [
+          32.72726821899414,
+          397.79998779296875,
+          387.27276611328125,
+          702.0
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 6,
+      "file": "capturas/image-ac65388fe134f4be8161.jpeg",
+      "sha256": "ac65388fe134f4be81618a5570f0667c264182ebef69661bae23561341872dd3",
+      "bytes": 25360,
+      "width": 409,
+      "height": 323,
+      "placements": [
+        [
+          30.0,
+          355.1999816894531,
+          390.0,
+          639.503173828125
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 7,
+      "file": "capturas/image-1656a086427cea5d3715.jpeg",
+      "sha256": "1656a086427cea5d3715161c4ddc8d1d0466f0b6fb2eeacc3e64c52ea024ebcd",
+      "bytes": 10557,
+      "width": 392,
+      "height": 262,
+      "placements": [
+        [
+          109.75569915771484,
+          355.20001220703125,
+          310.24420166015625,
+          489.20001220703125
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 7,
+      "file": "capturas/image-bc9d3be413ed254efa2e.jpeg",
+      "sha256": "bc9d3be413ed254efa2ea8bcdab1715ecc7b426a621586bcdd0139cb1cdd989a",
+      "bytes": 11897,
+      "width": 395,
+      "height": 187,
+      "placements": [
+        [
+          68.47593688964844,
+          497.20001220703125,
+          351.5240478515625,
+          631.2000122070312
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 8,
+      "file": "capturas/image-cd55512285d2e289aa57.png",
+      "sha256": "cd55512285d2e289aa570c74a00f2dbf015524ef0c5781e2d053dac1061e96ef",
+      "bytes": 23817,
+      "width": 390,
+      "height": 468,
+      "placements": [
+        [
+          60.0,
+          342.29998779296875,
+          360.0,
+          702.2999877929688
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 9,
+      "file": "capturas/image-1f1d80b53adf42ba166d.png",
+      "sha256": "1f1d80b53adf42ba166d41305e7e859f11cc1d74648658d694653493a15c934d",
+      "bytes": 26529,
+      "width": 390,
+      "height": 420,
+      "placements": [
+        [
+          75.0,
+          398.3999938964844,
+          345.0,
+          689.169189453125
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 10,
+      "file": "capturas/image-17890716d97824640e70.png",
+      "sha256": "17890716d97824640e7065103bc6306e6cd63d1fac26ab343de5a9779503584f",
+      "bytes": 22404,
+      "width": 390,
+      "height": 325,
+      "placements": [
+        [
+          50.0,
+          388.0,
+          370.0,
+          654.6666870117188
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 11,
+      "file": "capturas/image-2ef40568f6161dd36d62.png",
+      "sha256": "2ef40568f6161dd36d623951f802f9683a46f78c0061333d22549d06debe995f",
+      "bytes": 21052,
+      "width": 390,
+      "height": 350,
+      "placements": [
+        [
+          50.0,
+          388.0,
+          370.0,
+          675.1795043945312
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 12,
+      "file": "capturas/image-fae55a5f9a4f08dcb717.png",
+      "sha256": "fae55a5f9a4f08dcb7179e9278c1f53fc4bc28b79c99e75a0d64693558d619ed",
+      "bytes": 10758,
+      "width": 390,
+      "height": 134,
+      "placements": [
+        [
+          50.0,
+          584.3846435546875,
+          370.0,
+          694.3333740234375
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 12,
+      "file": "capturas/image-3fc600b5d9f72606670f.png",
+      "sha256": "3fc600b5d9f72606670fd4e0f6d94470394aa9457a5358dd7a2c13f8145bf086",
+      "bytes": 10616,
+      "width": 390,
+      "height": 254,
+      "placements": [
+        [
+          60.0,
+          351.00006103515625,
+          360.0,
+          546.3846435546875
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 13,
+      "file": "capturas/image-89766520e166dfde108c.png",
+      "sha256": "89766520e166dfde108c2ac2771275211a5305210fb07490c24aecfe0e9bd4b3",
+      "bytes": 13601,
+      "width": 147,
+      "height": 259,
+      "placements": [
+        [
+          309.0,
+          378.300048828125,
+          389.0,
+          519.25244140625
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 13,
+      "file": "capturas/image-7c947b2f54c42293abf3.png",
+      "sha256": "7c947b2f54c42293abf3ef02bd3de63203255e60232457049c80769044d6ad58",
+      "bytes": 15266,
+      "width": 147,
+      "height": 259,
+      "placements": [
+        [
+          216.0,
+          378.300048828125,
+          296.0,
+          519.25244140625
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 13,
+      "file": "capturas/image-85422b1f39b8cb042f30.png",
+      "sha256": "85422b1f39b8cb042f304edfaedf2370e860878f430dc2b8fd9f88f9d2e2bd33",
+      "bytes": 17558,
+      "width": 147,
+      "height": 259,
+      "placements": [
+        [
+          30.0,
+          378.300048828125,
+          110.0,
+          519.25244140625
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 13,
+      "file": "capturas/image-142281cdec83ff8702cd.png",
+      "sha256": "142281cdec83ff8702cd13ddf7f503709f78aee12607d8005c8079a207030de2",
+      "bytes": 16562,
+      "width": 147,
+      "height": 259,
+      "placements": [
+        [
+          123.0,
+          378.300048828125,
+          203.0,
+          519.25244140625
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 14,
+      "file": "capturas/image-7eaf52cdf4d3490bdb09.png",
+      "sha256": "7eaf52cdf4d3490bdb0990e10b0c12cd6546e811b7d8a9be428051beb6b6bc27",
+      "bytes": 11690,
+      "width": 390,
+      "height": 159,
+      "placements": [
+        [
+          40.0,
+          444.0999755859375,
+          380.0,
+          582.7153930664062
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 15,
+      "file": "capturas/image-0c02b22268a598b2191d.jpeg",
+      "sha256": "0c02b22268a598b2191d4fee37bcc1e195266a8889cf2b8ef014110e3c4b68e3",
+      "bytes": 20613,
+      "width": 336,
+      "height": 375,
+      "placements": [
+        [
+          80.08000183105469,
+          412.0,
+          339.91998291015625,
+          702.0
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 16,
+      "file": "capturas/image-a6467e7b36711f2413ee.png",
+      "sha256": "a6467e7b36711f2413ee53090e4e7ada10e23e735d6db6aebcbec1efd196501b",
+      "bytes": 57979,
+      "width": 390,
+      "height": 385,
+      "placements": [
+        [
+          50.0,
+          398.4000244140625,
+          370.0,
+          714.2974243164062
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 18,
+      "file": "capturas/image-96d62b8ef5b97eb349f6.png",
+      "sha256": "96d62b8ef5b97eb349f60579b0848b57f9319d270a5edcdfc204045cde1030cc",
+      "bytes": 15449,
+      "width": 390,
+      "height": 322,
+      "placements": [
+        [
+          57.5,
+          398.4000244140625,
+          362.5,
+          650.2205200195312
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    },
+    {
+      "page": 19,
+      "file": "capturas/image-d419ae66b63ce3bfcf11.png",
+      "sha256": "d419ae66b63ce3bfcf11b62cf69e6a44937329631f07229766f9fb29cb5f65c0",
+      "bytes": 18946,
+      "width": 390,
+      "height": 330,
+      "placements": [
+        [
+          55.0,
+          454.4999694824219,
+          365.0,
+          716.8076782226562
+        ]
+      ],
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
+    }
+  ]
+}

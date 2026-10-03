@@ -4,7 +4,8 @@
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.cjs -i css/tailwind-input.css -o css/tailwind.min.css --minify",
     "build:js": "node scripts/build-js.cjs",
-    "check:js": "node scripts/build-js.cjs --check"
+    "check:js": "node scripts/build-js.cjs --check",
+    "check:guide": "node scripts/check-guide-release.cjs"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",

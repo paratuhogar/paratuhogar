@@ -1,0 +1,382 @@
+[
+  {
+    "title": "Tu trabajo en ParaTuHogar",
+    "section": "EMPEZAR",
+    "body": [
+      "Entra en tu cuenta, busca lo que necesita el cliente, comparte una oferta clara, registra el pedido y comprueba su estado. Después revisa tus comisiones y programa el próximo contacto.",
+      "Las herramientas disponibles dependen de tu cuenta. Si una opción no aparece, comprueba primero tus permisos.",
+      "Un pedido guardado en el teléfono todavía no está recibido por la tienda. Espera su confirmación."
+    ],
+    "figures": [
+      {
+        "file": "39-entrada-unica-problemas-mejoras.png",
+        "caption": "Navegación móvil: un solo acceso a Problemas y mejoras.",
+        "box": null,
+        "width": 280
+      }
+    ],
+    "callout": "Pantallas reales de la web con datos de demostración. Los productos, precios, nombres y pedidos de las imágenes son ficticios. No son ofertas comerciales.",
+    "index": true
+  },
+  {
+    "title": "Entrar y orientarte",
+    "section": "EMPEZAR",
+    "body": [
+      "1. Abre paratuhogar.org y toca el icono de persona.",
+      "2. Escribe tu usuario y contraseña. Toca «Iniciar Sesión».",
+      "3. Comprueba que estás en tu propia cuenta antes de crear pedidos o compartir tu tienda.",
+      "4. Usa «Catálogo» para consultar productos y «Mi dashboard» para revisar tu trabajo.",
+      "«Inscríbete» abre la solicitud de registro; enviarla no confirma que tu cuenta esté aprobada. Si olvidaste la clave, usa «¿Olvidaste tu contraseña?» y sigue las indicaciones.",
+      "La primera carga y el inicio de sesión requieren internet. En un dispositivo compartido, evita guardar contraseñas o copias de clientes."
+    ],
+    "callout": "Tu sesión reúne las herramientas y los datos que corresponden a tu cuenta."
+  },
+  {
+    "title": "Tu nombre público y tu tienda",
+    "section": "EMPEZAR",
+    "body": [
+      "En «Nombre que verán tus clientes», escribe tu nombre corto o el de tu tienda, hasta 40 caracteres. Toca «Guardar nombre público» y espera la confirmación. Si lo dejas vacío, se muestra tu primer nombre.",
+      "El nombre público no cambia el nombre interno de tu cuenta ni modifica pedidos existentes.",
+      "Usa «Ver mi tienda» para comprobar el resultado. «Copiar enlace» copia el enlace generado para tu cuenta: compártelo sin cambiarlo manualmente.",
+      "Antes de enviarlo, revisa el nombre y el contacto de tu tienda. Comparte los enlaces para clientes; los enlaces privados de trabajo se quedan contigo."
+    ],
+    "figures": [
+      {
+        "file": "40-nombre-publico-editor.png",
+        "caption": "Editor de nombre público y botón de guardado. Recorte real sin iconos faltantes.",
+        "box": null,
+        "width": 300
+      }
+    ],
+    "callout": "Un nombre reconocible y el enlace correcto facilitan que el cliente vuelva a encontrarte."
+  },
+  {
+    "title": "Encontrar el producto adecuado",
+    "section": "VENDER",
+    "body": [
+      "1. Busca por nombre o modelo.",
+      "2. Elige una categoría y revisa los filtros disponibles.",
+      "3. Ordena por precio o por el criterio que te resulte útil.",
+      "4. Abre el producto y lee sus características completas antes de recomendarlo.",
+      "Si no aparecen resultados, revisa la escritura y quita los filtros que ya no necesitas. Al cargar más productos, comprueba el filtro y el orden seleccionados.",
+      "Marca como favoritos los equipos que sueles ofrecer. En las herramientas que incluyen «Mis favoritos», podrás encontrarlos más rápido.",
+      "Los precios y la disponibilidad pueden cambiar. Una captura antigua no confirma el stock actual."
+    ],
+    "callout": "Busca una opción que encaje con la necesidad y el presupuesto del cliente."
+  },
+  {
+    "title": "Explicar y compartir una oferta",
+    "section": "VENDER",
+    "body": [
+      "Abre la ficha. Revisa fotos, descripción, precio, garantía y mensajería publicados para ese equipo.",
+      "«Copiar Info», «Copiar Oferta» y las herramientas de mensajes ayudan a preparar una propuesta. Léela antes de enviarla y conserva solo los datos confirmados.",
+      "Para una imagen lista para publicar, utiliza Story rápida o Magic Studio. El destinatario y el envío final se eligen en tu teléfono.",
+      "No prometas una rebaja, una entrega o una garantía que no esté confirmada."
+    ],
+    "figures": [
+      {
+        "file": "16-story-essential.png",
+        "caption": "Ejemplo de imagen preparada con Story rápida; es un recorte de su vista previa.",
+        "box": [
+          123,
+          377,
+          270,
+          635
+        ],
+        "width": 150
+      }
+    ],
+    "callout": "Copiar un texto o abrir WhatsApp no demuestra que el cliente haya recibido el mensaje."
+  },
+  {
+    "title": "Preparar el pedido",
+    "section": "VENDER",
+    "body": [
+      "1. Añade al carrito los productos que el cliente confirmó.",
+      "2. Revisa cantidades y retira lo que no forme parte de la compra.",
+      "3. Abre el formulario del pedido.",
+      "4. Si ya compró antes, prueba «Buscar Cliente Recurrente» y confirma los datos recuperados con el cliente.",
+      "Para un cliente nuevo, completa «Nombre del Cliente» y «Teléfono». El campo «Carnet (CI)» es opcional: no añadas información que no haga falta.",
+      "Lee cualquier aviso sobre el cliente o la atribución de la venta. Si aparece una opción de cierre asistido, revisa sus condiciones antes de aceptarla. No cambies datos para saltarte el aviso."
+    ],
+    "callout": "El carrito organiza la compra; reutilizar un cliente evita escribir sus datos otra vez."
+  },
+  {
+    "title": "Entrega y total",
+    "section": "VENDER",
+    "body": [
+      "1. Selecciona «Municipio». Después elige «Localidad / Reparto».",
+      "2. Completa «Dirección Exacta» y añade indicaciones útiles en «Notas / Observaciones».",
+      "3. Revisa la mensajería y el total calculados por la web.",
+      "4. Indica «Método de Pago Preferido» y confirma toda la información con el cliente.",
+      "Para recogida, usa «Lo recojo en el almacén (Envío $0)» y coordina con el contacto mostrado. Marcar recogida no confirma un horario.",
+      "El método preferido describe cómo desea pagar el cliente. No significa que el pago ya se haya realizado. No copies tarifas de una captura antigua."
+    ],
+    "callout": "Municipio, localidad y dirección completa reducen errores y aclaraciones."
+  },
+  {
+    "title": "Confirmar sin duplicar",
+    "section": "VENDER",
+    "body": [
+      "Revisa cliente, teléfono, equipos, cantidades, entrega y total. Pulsa una vez la confirmación y espera.",
+      "Si la respuesta tarda o se pierde la señal, comprueba los pendientes antes de crear otro pedido idéntico.",
+      "Solo comunica que fue recibido cuando la tienda confirme la recepción y aparezca su referencia. Recibido no significa Entregado.",
+      "Si cambian las condiciones, revísalas antes de aceptar el envío."
+    ],
+    "figures": [
+      {
+        "file": "38-recepcion-confirmada-demostracion.png",
+        "caption": "Dos recepciones independientes confirmadas por el servidor local de prueba.",
+        "box": null,
+        "width": 300
+      }
+    ]
+  },
+  {
+    "title": "Prepararte sin conexión",
+    "section": "CONEXIÓN MÍNIMA",
+    "body": [
+      "Con internet, entra en tu cuenta y carga los productos que necesitarás. Continúa trabajando en la misma web.",
+      "En el carrito, usa «Guardar clientes y entregas en este teléfono». Guarda expresamente la copia de tus clientes recientes, productos y tarifas solo en un dispositivo personal.",
+      "Comprueba la fecha guardada. «Activar ahorro» permite cargar las fotos cuando las necesites.",
+      "La copia depende de la sesión y del almacenamiento del navegador. No garantiza una primera visita sin internet."
+    ],
+    "figures": [
+      {
+        "file": "33-ahorro-datos.png",
+        "caption": "Ahorro de datos y fecha de la copia guardada. Recorte del panel real.",
+        "box": [
+          0,
+          0,
+          390,
+          420
+        ],
+        "width": 270
+      }
+    ]
+  },
+  {
+    "title": "Pedidos pendientes en el teléfono",
+    "section": "CONEXIÓN MÍNIMA",
+    "body": [
+      "Sin conexión, completa el formulario y toca «Guardar pedido pendiente». Comprueba el guardado en este teléfono.",
+      "Mantén la página abierta y la misma cuenta. Al recuperar señal, la web revisará los datos e intentará enviar cada pendiente.",
+      "En «Ver o cancelar pedidos pendientes» puedes revisar la cola. Si se solicita una revisión, comprueba los cambios antes de guardar y enviar.",
+      "No cierres el navegador ni la sesión con pendientes."
+    ],
+    "figures": [
+      {
+        "file": "37-varios-pedidos-pendientes.png",
+        "caption": "Dos pedidos guardados con estados independientes. Recorte real.",
+        "box": [
+          0,
+          260,
+          390,
+          585
+        ],
+        "width": 320
+      }
+    ],
+    "callout": "Los datos locales se limpian al confirmar, cancelar, cerrar o vencer la sesión. Los pendientes caducan a los siete días y se limpian al abrir la cola."
+  },
+  {
+    "title": "Story rápida para un producto",
+    "section": "PROMOCIÓN",
+    "body": [
+      "1. Abre un producto y toca «Crear Story». Espera la comprobación y la preparación.",
+      "2. Elige uno de los cuatro diseños y revisa producto, precio y contacto.",
+      "3. Si aparece «Compartir imagen», elige WhatsApp u otra aplicación desde el teléfono. Si no admite compartir archivos, descarga y adjunta la imagen.",
+      "«Copiar información» prepara el texto por separado. «Cambiar producto» elige otro equipo. Si se solicita, usa «Actualizar imagen» antes de compartir."
+    ],
+    "figures": [
+      {
+        "file": "16-story-essential.png",
+        "caption": "Controles de diseño de Story rápida. Recorte de la ventana real.",
+        "box": [
+          0,
+          0,
+          390,
+          350
+        ],
+        "width": 320
+      }
+    ]
+  },
+  {
+    "title": "Magic Studio: tu selección",
+    "section": "PROMOCIÓN",
+    "body": [
+      "Busca un modelo y marca equipos. «Seleccionar resultados» elige lo que coincide con tu búsqueda y filtros. «Seleccionar todo el catálogo» tiene un alcance mayor.",
+      "Comprueba el contador y activa «Solo seleccionados». Cambiar la búsqueda conserva lo marcado. «Quitar selección» permite empezar de nuevo.",
+      "Las vistas «Mis favoritos» y «Usados recientemente» ayudan a encontrar tus equipos habituales."
+    ],
+    "figures": [
+      {
+        "file": "22-magic-studio-busqueda.png",
+        "caption": "Búsqueda y filtros; recorte real.",
+        "box": [
+          0,
+          0,
+          390,
+          254
+        ],
+        "width": 300
+      },
+      {
+        "file": "23-magic-studio-seleccion.png",
+        "caption": "Contador y primer equipo seleccionado; recorte real.",
+        "box": [
+          0,
+          24,
+          390,
+          158
+        ],
+        "width": 320
+      }
+    ]
+  },
+  {
+    "title": "Diseños y formatos",
+    "section": "PROMOCIÓN",
+    "body": [
+      "En Magic Studio elige «Diseño» y «Formato»: Story usa 1080 × 1920; Publicación usa 1080 × 1080.",
+      "«Serie» crea una imagen por equipo. Paquete, comparación y varios reúnen los seleccionados en una imagen. Revisa «Así quedará».",
+      "Comprueba precio, garantía, mensajería y contacto. Si cambias una opción, vuelve a preparar. En un paquete, lee el importe y cualquier aviso sobre tu comisión antes de aceptar un descuento."
+    ],
+    "designs": true,
+    "callout": "Los cuatro ejemplos siguientes proceden de las plantillas reales. No utilizan imágenes generadas por IA."
+  },
+  {
+    "title": "Preparar, compartir y descargar",
+    "section": "PROMOCIÓN",
+    "body": [
+      "Toca «Preparar todas» y espera. Si cambian datos del producto o el contacto, revisa y prepara de nuevo.",
+      "«Compartir imágenes» abre el menú del teléfono para elegir aplicación y destino. Puede usar grupos de hasta 10 imágenes o 12 MB; sigue el contador hasta completar la selección.",
+      "«Descargar ZIP completo» reúne todas las imágenes. Extrae el ZIP para adjuntarlas como fotos en WhatsApp. Con una sola imagen puede aparecer «Descargar imagen».",
+      "El texto se copia por separado. «Cancelar preparación» detiene la generación; reintenta con «Continuar preparación» cuando aparezca."
+    ],
+    "figures": [
+      {
+        "file": "24-magic-studio-listo.png",
+        "caption": "Selección preparada y controles reales de envío y ZIP. Recorte del resultado.",
+        "box": [
+          0,
+          600,
+          390,
+          759
+        ],
+        "width": 340
+      }
+    ]
+  },
+  {
+    "title": "Catálogo PDF y fotos",
+    "section": "PROMOCIÓN",
+    "body": [
+      "Abre «Catálogo PDF» o «PDF». Revisa los productos y las opciones de la pantalla. Espera a que termine la preparación antes de descargar o abrir el archivo.",
+      "Abre el PDF descargado y comprueba que se leen los productos, los precios y el contacto antes de enviarlo.",
+      "Si falla la preparación, recupera conexión y usa el reintento disponible. No vuelvas a generar repetidamente mientras siga preparando.",
+      "La herramienta «Fotos» permite preparar material fotográfico cuando esté disponible para tu cuenta. Revisa el contenido antes de adjuntarlo.",
+      "Un PDF es una copia del momento en que se creó. Antes de cerrar la venta, consulta la web para confirmar precio y disponibilidad. Las fotos y herramientas que no se hayan cargado pueden requerir internet."
+    ],
+    "callout": "El archivo descargado debe abrir correctamente antes de compartirlo con el cliente."
+  },
+  {
+    "title": "Pedidos y seguimientos",
+    "section": "CONTROL",
+    "body": [
+      "En Mi dashboard, revisa «Últimos pedidos» y «Ver todos». Identifica cada venta por su referencia y estado.",
+      "En Seguimientos, empieza por «Hoy» y revisa «Atrasados». Usa «+ Nuevo» para crear el próximo contacto y anotar la necesidad del cliente.",
+      "WhatsApp prepara la conversación: revisa y envía tú el mensaje. Después actualiza el estado y la próxima fecha.",
+      "La agenda no sustituye el estado del pedido ni confirma un pago. No añadas contraseñas, carnets o direcciones a las notas."
+    ],
+    "figures": [
+      {
+        "file": "15-seguimientos-agenda.png",
+        "caption": "Agenda de la cuenta de demostración: filtros y acceso a un seguimiento nuevo.",
+        "box": [
+          0,
+          0,
+          390,
+          385
+        ],
+        "width": 320
+      }
+    ]
+  },
+  {
+    "title": "Comisiones y solicitudes de pago",
+    "section": "CONTROL",
+    "body": [
+      "Abre «Mi dashboard → Mis comisiones». Disponible es lo listo para solicitar; Potencial corresponde a pedidos aún no entregados; Liquidado reúne lo marcado como pagado.",
+      "En «Movimientos de comisión», revisa Por cobrar, Liquidadas, En proceso o Todas. Relaciona cada importe con sus pedidos.",
+      "Si tu cuenta lo permite, «Solicitar liquidación» abre la solicitud. Revisa el importe y la forma de pago. Solicitar no significa que ya cobraste.",
+      "Para ver lo último que solicitaste, toca «Exportar resumen de pagos» y busca «SOLICITUDES Y PAGOS». Se ordena por fecha, con lo más reciente primero. Incluye importe, método, estado y fechas cuando estén informadas.",
+      "El resumen se descarga como CSV. Ábrelo con una aplicación de hojas de cálculo. Si falta un dato o hay una diferencia, conserva la referencia y consulta antes de repetir la solicitud."
+    ],
+    "callout": "La comisión potencial todavía no es saldo disponible para cobrar."
+  },
+  {
+    "title": "Tu ranking y próxima meta",
+    "section": "CONTROL",
+    "body": [
+      "En Inicio, «Cada entrega cuenta» muestra el mes en hora de Cuba. Solo suman pedidos Entregados con fecha de entrega registrada en ese mes.",
+      "Cada pedido suma una vez a quien vendió. Los empates comparten puesto: 1, 1, 3. Con cero entregas mensuales: «Sin puesto».",
+      "Metas: 1, 3 y 5; después una más. Los logros acumulados usan el historial identificado y pueden superar el resultado mensual.",
+      "Los antiguos sin fecha quedan fuera del mes; no se borran ni cambian comisiones o pagos. Usa «Actualizar» con internet."
+    ],
+    "figures": [
+      {
+        "file": "12b-ranking-ejemplo.png",
+        "caption": "Ranking definitivo: ejemplo ficticio con 2 entregas del mes, puesto 4 y meta 3.",
+        "box": [
+          0,
+          0,
+          390,
+          322
+        ],
+        "width": 305
+      }
+    ],
+    "callout": "La vista muestra las tres primeras cuentas y las cercanas a ti con nombre público, puesto y cantidad. No expone clientes ni ganancias ajenas. Puestos y metas no prometen premios."
+  },
+  {
+    "title": "Avisos, problemas y mejoras",
+    "section": "CONTROL",
+    "body": [
+      "Las notificaciones dependen de tu cuenta, dispositivo y navegador. Si tienes acceso, configura los avisos y comprueba el permiso; cada dispositivo necesita activación propia.",
+      "En «Problemas y mejoras», cuenta qué intentabas hacer y qué pasó. Para una mejora, explica cómo trabajas hoy y qué te ahorraría tiempo o ayudaría a vender.",
+      "Adjunta una captura solo si ayuda. Oculta nombres, teléfonos, direcciones, claves y datos de pago. En «Mis envíos» puedes revisar el estado y las respuestas.",
+      "Enviar una idea no confirma que vaya a implementarse; un reporte recibido no significa que la corrección ya esté publicada."
+    ],
+    "figures": [
+      {
+        "file": "25-reportar-problema.png",
+        "caption": "Formulario privado con guía sencilla. Recorte de la pantalla real.",
+        "box": [
+          0,
+          0,
+          390,
+          330
+        ],
+        "width": 310
+      }
+    ]
+  },
+  {
+    "title": "Tu equipo y rutina final",
+    "section": "CONTROL",
+    "body": [
+      "«Red de Subgestores» aparece solo cuando tu cuenta tiene acceso. Puede incluir Pedidos por Aprobar, Mi Equipo y Nómina y Liquidaciones.",
+      "Revisa cada solicitud y pedido antes de aprobar. Comprueba los datos y las condiciones mostradas; no supongas un reparto universal. Las aprobaciones y liquidaciones tienen consecuencias.",
+      "Antes de terminar tu jornada:",
+      "• Revisa los pedidos pendientes en este teléfono y la confirmación individual de los enviados.",
+      "• Consulta los pedidos y contactos que necesitan atención.",
+      "• Comprueba que las ofertas compartidas siguen vigentes.",
+      "• Revisa tus solicitudes de pago antes de repetir una.",
+      "• En un dispositivo compartido, cierra la sesión después de resolver los pendientes.",
+      "En «Mi rendimiento», comprueba el periodo de cada indicador. En «Mis Precios (Config)», revisa el precio y el efecto mostrado sobre la ganancia antes de guardar. Las opciones dependen de tu cuenta."
+    ],
+    "callout": "Guardar, enviar, recibir y entregar son estados diferentes. Usa el estado y la referencia para saber el siguiente paso."
+  }
+]

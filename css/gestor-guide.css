@@ -1,0 +1,47 @@
+/* One shared card above catalogue/dashboard, using the existing sales session. */
+#pth-guide-download {
+    width: calc(100% - 32px);
+    max-width: 1168px;
+    margin: 12px auto 0;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #cbd8e8;
+    border-left: 4px solid #1a4789;
+    border-radius: 18px;
+    background: #fff;
+    color: #24364b;
+    font: 500 13px/1.5 Manrope, system-ui, sans-serif;
+}
+#pth-guide-download[hidden] { display: none; }
+#pth-guide-download .pth-guide-copy { flex: 1; min-width: 0; }
+#pth-guide-download h2 { margin: 0; color: #1a4789; font-size: 16px; line-height: 1.4; font-weight: 800; }
+#pth-guide-download p { margin: 5px 0 0; overflow-wrap: anywhere; }
+#pth-guide-download .pth-guide-meta { color: #526176; font-size: 12px; }
+#pth-guide-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    min-width: 145px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: #1a4789;
+    color: #fff;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+    touch-action: manipulation;
+}
+#pth-guide-link:hover { background: #153c75; }
+#pth-guide-link:focus-visible { outline: 3px solid #a64b08; outline-offset: 3px; }
+@media (max-width: 639px) {
+    #pth-guide-download { flex-direction: column; align-items: stretch; gap: 12px; }
+    #pth-guide-link { width: 100%; }
+}
+html.dark #pth-guide-download { border-color: #50657f; border-left-color: #8abaff; background: #172b46; color: #e5efff; }
+html.dark #pth-guide-download h2 { color: #a9ccff; }
+html.dark #pth-guide-download .pth-guide-meta { color: #becce0; }
+html.dark #pth-guide-link { background: #245caa; }
+html.dark #pth-guide-link:focus-visible { outline-color: #fbbf24; }

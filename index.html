@@ -36,6 +36,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <link rel="stylesheet" href="css/work-navigation.css?v=20261001-1">
+    <link rel="stylesheet" href="css/gestor-guide.css?v=20261003-guide1">
+    <script src="js/gestor-guide.js?v=20261003-guide1" defer></script>
     <link rel="stylesheet" href="css/low-connectivity.css?v=20261003-pending2">
     <script src="js/low-connectivity.js?v=20261002-lowdata1" defer></script>
     <script src="js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
@@ -527,6 +529,15 @@
                 <span>Problemas y mejoras</span>
             </a>
         </nav>
+
+        <aside id="pth-guide-download" hidden aria-labelledby="pth-guide-title">
+            <div class="pth-guide-copy">
+                <h2 id="pth-guide-title">Guía para gestores</h2>
+                <p>Consulta cómo compartir ofertas, registrar pedidos y usar tus herramientas.</p>
+                <p id="pth-guide-meta" class="pth-guide-meta"></p>
+            </div>
+            <a id="pth-guide-link" download="Guia_ParaTuHogar.pdf" aria-describedby="pth-guide-meta">Descargar PDF</a>
+        </aside>
 
         <!-- 2. CONTENEDOR DEL CATÁLOGO (Solo envuelve cosas del catálogo) -->
         <div id="sec-catalogo">
