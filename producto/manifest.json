@@ -357,7 +357,7 @@
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bomba-turbina-sumergible-solar-cr-turbo/",
-    "updated_at": "2026-09-19T23:19:14.397752+00:00"
+    "updated_at": "2026-10-03T02:48:34.680538+00:00"
   },
   {
     "id": "be693e8a-1db5-4dda-b522-d96f823d244e",
@@ -373,9 +373,9 @@
     "slug": "bomba-sumergible-para-pozo-profundo-cr-turbo",
     "nombre": "Bomba sumergible para pozo profundo – CR Turbo",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bomba-sumergible-para-pozo-profundo-cr-turbo/",
-    "updated_at": "2026-09-25T21:40:31.996562+00:00"
+    "updated_at": "2026-10-03T02:48:30.367275+00:00"
   },
   {
     "id": "a2499976-d64d-4420-b37a-fb8e431006cc",
@@ -940,9 +940,9 @@
     "slug": "estacion-de-energia-6kw-con-14-3kwh-must",
     "nombre": "Estación de energia 6kw con 14.3kwh Must",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-03T04:15:47.445192+00:00"
   },
   {
     "id": "a1f0b1be-6fe1-4db0-849c-5932a246c5f4",
