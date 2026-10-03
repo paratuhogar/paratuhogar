@@ -5,7 +5,7 @@
  const definitions={
   sales:[['script','js/sales-tools.min.js?v=20261002-fasttools1','pth-sales-tools-js',30000]],
   story:[['style','css/content-studio.css?v=20261002-quickstory1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/quick-story.js?v=20261002-quickstory1','pth-quick-story-js']],
-  studio:[['style','css/content-studio.css?v=20261002-quickstory1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/content-studio.js?v=20261002-studio1','pth-content-studio-js']],
+  studio:[['style','css/content-studio.css?v=20261002-quickstory1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261002-studio3','pth-studio-jobs-js'],['script','js/studio-collection.js?v=20261003-studioall1','pth-studio-collection-js'],['script','js/content-studio.js?v=20261003-studioall1','pth-content-studio-js']],
   charts:[['script','https://cdn.jsdelivr.net/npm/chart.js','pth-chart-js']],
   xlsx:[['script','https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js','pth-xlsx-js']],
   zip:[['script','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js','pth-jszip-js']],

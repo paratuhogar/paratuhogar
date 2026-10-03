@@ -10,7 +10,8 @@ const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:
   if(url.includes('autotable'))body='if(!window.testPdfCore)throw Error("PDF plugin loaded before core");window.testPdfPlugin=true;';
   if(url.includes('studio-designs.js'))body='window.testStudioDesigns=true;';
   if(url.includes('studio-jobs.js'))body='if(!window.testStudioDesigns)throw Error("Studio jobs loaded before designs");window.testStudioJobs=true;';
-  if(url.includes('content-studio.js'))body='if(!window.testStudioJobs)throw Error("Studio UI loaded before jobs");window.testStudioUI=true;';
+  if(url.includes('studio-collection.js'))body='if(!window.testStudioJobs)throw Error("Collection loaded before jobs");window.testStudioCollection=true;';
+  if(url.includes('content-studio.js'))body='if(!window.testStudioCollection)throw Error("Studio UI loaded before collection");window.testStudioUI=true;';
   if(url.includes('quick-story.js'))body='if(!window.testStudioJobs)throw Error("Quick Story loaded before jobs");window.testQuickStory=true;';
   await route.fulfill({contentType:url.includes('.css')?'text/css':'application/javascript',body});
  });
