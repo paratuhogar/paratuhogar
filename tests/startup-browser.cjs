@@ -20,6 +20,12 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  const b=req.postDataJSON();secureRequests.push(b);let data=[];
  if(b.action==='session')data={profile,expiresAt:new Date(Date.now()+7*86400000).toISOString()};
  if(b.action==='login')data={token:'a'.repeat(64),profile:parent};
+ else if(b.action==='ranking'){
+  assert.deepEqual(Object.keys(b),['action']); assert.ok(req.headers().authorization,'aggregate always requires a session, including a visitor who logs in during this test');
+  const {summary}=await import('./fixtures/ranking.mjs');data=summary(profile.id);
+  data.self.participates=role!=='admin';
+  data.top=[{id:'99999999-9999-4999-8999-999999999999',alias:'Tienda ficticia <img src=x onerror=window.rankInjection=true>',count:4,rank:1}];
+ }
  else if(b.action==='public_name'){
   assert.deepEqual(Object.keys(b).sort(),['action','nombre_publico']);
   if(failAlias){failAlias=false;return route.fulfill({status:503,json:{data:null,error:{message:'No se pudo guardar. Vuelve a intentar.'}}});}
@@ -84,6 +90,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  if(role!=='visitor')assert.equal(await page.locator('#work-feedback-link').getAttribute('href'),'feedback.html');
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+15),'no overflow beyond existing 15px carousel margin');
  if(role==='visitor'){
+  assert.equal(secureRequests.some(body=>body.action==='ranking'),false,'public visitors never request the ranking');
   await page.goto('http://127.0.0.1:8080/?ref=Gestor%20Prueba&contact=5350000000',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===30);
   assert.equal(new URL(page.url()).searchParams.get('ref'),'Gestor Prueba');assert.equal(new URL(page.url()).searchParams.has('v'),false);
@@ -110,6 +117,32 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  if(role!=='visitor'){
   await page.evaluate(()=>injectLinksSection(currentUserData.nombre));
   await page.evaluate(()=>{toggleCartModal(false);showSection('dashboard');showDashSection('resumen');});
+  await page.waitForFunction(()=>document.getElementById('gestor-ranking')?.dataset.rankingState==='ready');
+  assert.equal(await page.locator('#gestor-ranking').isVisible(),true,'beginner ranking is in Inicio, outside advanced analysis');
+  assert.equal(await page.locator('#gestor-ranking img').count(),0,'alias is plain text');
+  assert.equal(await page.evaluate(()=>window.rankInjection),undefined);
+  assert.match(await page.locator('#gestor-ranking [data-ranking-period]').textContent(),/octubre.*01\/10–31\/10.*Cuba/);
+  assert.equal(await page.evaluate(()=>window.currentGestorLevel||0),0,'fixture has no sales but ranking is available');
+  if(role!=='admin')assert.match(await page.locator('#gestor-ranking').textContent(),/Tu puesto#4.*Entregas del mes2.*Próxima meta3/);
+  else assert.match(await page.locator('#gestor-ranking').textContent(),/Vista de administración/);
+  for(const width of [320,390,820]){await page.setViewportSize({width,height:844});assert.ok(await page.locator('#gestor-ranking').evaluate(node=>node.scrollWidth<=node.clientWidth),'ranking card fits '+width);}
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(secureRequests.some(body=>body.table==='pedidos'&&body.columns==='gestor, comision_total, producto, fecha, estado'),false,'old attempted cross-account ranking query is gone');
+  const beforeOfflineRanking=secureRequests.filter(body=>body.action==='ranking').length;
+  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{value:false,configurable:true});return PTHRanking.load(true);});
+  assert.match(await page.locator('#gestor-ranking').textContent(),/Estás sin conexión/);
+  assert.equal(secureRequests.filter(body=>body.action==='ranking').length,beforeOfflineRanking,'offline state makes no private request and invents no position');
+  await page.evaluate(()=>{delete navigator.onLine;return PTHRanking.load(true);});
+  await page.evaluate(async()=>{window.originalRanking=PTHSecureData.ranking;PTHSecureData.ranking=async()=>({data:null,error:{message:'Synthetic network error'}});await PTHRanking.load(true);});
+  assert.match(await page.locator('#gestor-ranking').textContent(),/no mostraremos una posición sin verificar/);
+  assert.equal(await page.locator('#gestor-ranking [data-ranking-top]').count(),0,'error clears positions instead of presenting stale results as current');
+  await page.evaluate(()=>{PTHSecureData.ranking=originalRanking;});
+  await page.getByRole('button',{name:'Reintentar clasificación'}).click();await page.waitForFunction(()=>document.getElementById('gestor-ranking').dataset.rankingState==='ready');
+  await page.evaluate(()=>{window.heldRankingCalls=0;PTHSecureData.ranking=()=>{heldRankingCalls++;return new Promise(resolve=>window.releaseRanking=resolve);};window.pendingRanking=PTHRanking.load(true);PTHRanking.load(true);});
+  assert.equal(await page.evaluate(()=>heldRankingCalls),1,'duplicate refresh reads are coalesced');
+  await page.evaluate(async()=>{PTHRanking.clear();releaseRanking({data:{period:{},self:{id:currentUserData.id}}});await pendingRanking;PTHSecureData.ranking=originalRanking;});
+  assert.equal(await page.locator('#gestor-ranking').textContent(),'','late response cannot resurrect a cleared private ranking');
+  await page.evaluate(()=>PTHRanking.load(true));await page.waitForFunction(()=>document.getElementById('gestor-ranking').dataset.rankingState==='ready');
   const alias=page.locator('#gestor-public-name input[type="text"]'),save=page.getByRole('button',{name:'Guardar nombre público'});
   await alias.fill('Mi tienda de prueba');await save.click();
   await page.waitForFunction(()=>document.querySelector('#gestor-public-name [role="status"]')?.textContent.includes('Vuelve a intentar'));

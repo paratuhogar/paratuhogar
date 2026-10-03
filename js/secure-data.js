@@ -120,6 +120,13 @@
  root.PTHSecureData={push:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'push'},token);},announcement:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'announcement'},token);},feedback:async body=>{await restore();return send({...body,action:'feedback'});},login,loginMessenger,restore,refresh,expiresAt,clearSession,clearCaches,install,token:()=>storage.getItem(tokenKey),cacheSuffix:()=>':'+(profile?.id||'public'),logout:()=>{const token=storage.getItem(tokenKey);clearSession();return send({action:'logout'},token);}};
  root.PTHSecureData.offlineProfile=offlineProfile;
  root.PTHSecureData.publicName=publicName;
+ root.PTHSecureData.ranking=async()=>{
+  const token=storage.getItem(tokenKey);await restore();
+  const changed=()=>!token||token!==storage.getItem(tokenKey);
+  if(changed())return {data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}};
+  const result=await send({action:'ranking'},token);
+  return changed()?{data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}}:result;
+ };
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;

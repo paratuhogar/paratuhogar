@@ -693,6 +693,7 @@ async function processRegister() {
         }
         // Cargar la información una sola vez, ya con el rol correcto resuelto.
         // El gestor entra directamente a su centro de trabajo.
+        if (!localDisplay) window.PTHRanking?.load();
         await Promise.all([loadProducts(), localDisplay ? Promise.resolve() : loadProDashboard(name)]);
         if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
         if (!localDisplay) loadMyPayoutRequests();
@@ -873,300 +874,10 @@ async function loadProDashboard(nombreGestor) {
     // 5. ENLACES (Link corto)
     await injectLinksSection(nombreGestor);
 
-    // 6. RENDERIZAR RANKING (Se eliminó 'created_at' para evitar el error de consulta)
-    const hace30dias = new Date();
-    hace30dias.setDate(hace30dias.getDate() - 30);
-
-    const { data: allPedidos, error: errAll } = await supabaseClient
-        .from('pedidos')
-        .select('gestor, comision_total, producto, fecha, estado')
-        .eq('estado', 'Entregado')
-        .gte('fecha', hace30dias.toISOString());
-
-    const rankingPedidos = allPedidos || [];
-    renderLockedRanking(rankingPedidos, nombreGestor);
+    // Ranking receives a bounded server aggregate, never another account's orders.
+    await window.PTHRanking?.load();
 }
 
-// Función auxiliar para el Ranking (para mantener el código limpio)
-// --- FUNCIÓN ACTUALIZADA CON LAS 4 IDEAS ---
-// Función auxiliar para tiempo relativo (Ej: "Hace 5m")
-function timeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-
-    if (seconds < 60) return "Hace un momento";
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `Hace ${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `Hace ${hours}h`;
-    return "Ayer";
-}
-
-// Función principal de Ranking PRO
-// Función principal de Ranking PRO (TEXTOS GRANDES Y LEGIBLES)
-// 1. FUNCIÓN AUXILIAR PARA EL TIEMPO (Pégala fuera de renderRankingAnonimo, al final de tu script)
-function timeAgo(dateString) {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-
-    if (seconds < 60) return "Hace un momento";
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `Hace ${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `Hace ${hours}h`;
-    return "Ayer";
-}
-
-// 2. FUNCIÓN PRINCIPAL CORREGIDA
-// --- FUNCIÓN PRINCIPAL DE RANKING (SYSTEM STYLE) ---
-// --- FUNCIÓN PRINCIPAL DE RANKING (SYSTEM STYLE - HIGH CONTRAST) ---
-// --- RENDERIZADOR DEL RANKING (ESPAÑOL Y ADICTIVO) ---
-// --- RENDERIZADOR DEL RANKING (FULL SYSTEM: TICKER + PODIO + BARRA + LISTA) ---
-// --- RENDERIZADOR DEL RANKING (MODO VENTAS + MISTERIO) ---
-async function renderRankingAnonimo(allPedidos, nombreGestor) {
-    const container = document.getElementById('ranking-list');
-    if (!container) return;
-
-    const rankingMap = {};
-    const salesFeed = [];
-
-    // === EL FIX: VENTANA DE 30 DÍAS (TEMPORADA ACTUAL) ===
-    const hace30dias = new Date();
-    hace30dias.setDate(hace30dias.getDate() - 30);
-
-    allPedidos.forEach(p => {
-        const fechaPedido = new Date(p.fecha || p.created_at);
-
-        // SOLO SE CUENTAN VENTAS ENTREGADAS DE LOS ÚLTIMOS 30 DÍAS
-        if (p.estado === 'Entregado' && p.gestor !== 'Venta Directa' && fechaPedido >= hace30dias) {
-            const monto = Number(p.comision_total) || 0;
-
-            if (!rankingMap[p.gestor]) {
-                rankingMap[p.gestor] = { money: 0, sales: 0 };
-            }
-
-            rankingMap[p.gestor].money += monto;
-            rankingMap[p.gestor].sales += 1;
-
-            salesFeed.push(p);
-        }
-    });
-
-    salesFeed.sort((a, b) => new Date(b.created_at || b.fecha) - new Date(a.created_at || a.fecha));
-
-    const rankingArray = Object.entries(rankingMap)
-        .map(([name, data]) => ({ name, total: data.money, count: data.sales }))
-        .sort((a, b) => b.total - a.total);
-
-    const myRankIndex = rankingArray.findIndex(r => r.name === nombreGestor);
-    const myData = rankingArray[myRankIndex] || { total: 0, count: 0 };
-    const topData = rankingArray[0] || { total: 1, count: 1 };
-    const maxScore = topData.total || 1;
-    const gestoresActivos = rankingArray.length;
-
-    let html = '';
-
-    const lastSale = salesFeed[0];
-    let tickerContent = `SISTEMA: Escaneando transacciones...`;
-
-    if (lastSale) {
-        const tiempo = timeAgo(lastSale.created_at || lastSale.fecha);
-        tickerContent = `
-            <span class="text-emerald-400 font-bold">📢 [NUEVO]</span>
-            <span class="text-white font-black">${lastSale.gestor.substring(0,10).toUpperCase()}</span>
-            VENDIÓ: <span class="text-cyan-300 font-bold">${lastSale.producto.substring(0,30)}...</span>
-            <span class="text-slate-500 text-[10px] ml-2 font-mono">(${tiempo})</span>
-        `;
-    }
-
-
-
-    html += `<div class="flex flex-col md:flex-row items-end justify-center gap-6 mb-10 px-2 relative z-10 font-system">`;
-    const [p1, p2, p3] = [rankingArray[0], rankingArray[1], rankingArray[2]];
-
-    if (p2) html += renderSystemCard(p2, 2, nombreGestor, maxScore);
-    if (p1) html += renderSystemCard(p1, 1, nombreGestor, maxScore);
-    if (p3) html += renderSystemCard(p3, 3, nombreGestor, maxScore);
-    html += `</div>`;
-
-    if (myRankIndex > 0 && myData.count > 0) {
-        const percentage = Math.min(100, (myData.count / topData.count) * 100);
-        const ventasRestantes = topData.count - myData.count;
-
-        let fraseMotivacional = "";
-        if(ventasRestantes <= 2) fraseMotivacional = "¡ESTÁS A PUNTO DE SUPERARLO!";
-        else fraseMotivacional = `Elimina ${ventasRestantes} objetivos más para igualar al Monarca.`;
-
-        html += `
-        <div class="mb-12 relative group font-system mx-2">
-            <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-
-            <div class="relative bg-[#020617] border border-slate-700 p-6 rounded-lg shadow-2xl">
-                <div class="flex justify-between items-end mb-3">
-                    <div>
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">COMPARACIÓN DE PODER (VENTAS)</p>
-                        <h4 class="text-xl font-black text-white uppercase italic tracking-wide">
-                            DISTANCIA AL <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">MONARCA</span>
-                        </h4>
-                    </div>
-                    <span class="text-4xl font-black text-white font-mono">${percentage.toFixed(0)}%</span>
-                </div>
-
-                <div class="h-5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800 relative">
-                    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                    <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 relative transition-all duration-1000 shadow-[0_0_20px_rgba(139,92,246,0.6)]" style="width: ${percentage}%">
-                        <div class="absolute right-0 top-0 h-full w-1 bg-white/80 shadow-[0_0_10px_white]"></div>
-                    </div>
-                </div>
-
-                <div class="mt-4 flex justify-between items-center">
-                    <div class="flex flex-col">
-                        <span class="text-[9px] font-bold text-slate-500 uppercase">TU NIVEL ACTUAL</span>
-                        <span class="text-white font-mono font-bold text-lg">${myData.count} <span class="text-xs text-slate-500">VENTAS</span></span>
-                    </div>
-                    <p class="text-purple-400 text-xs font-bold italic animate-pulse text-center hidden md:block">"${fraseMotivacional}"</p>
-                    <div class="flex flex-col items-end">
-                        <span class="text-[9px] font-bold text-slate-500 uppercase">PODER DEL TOP 1</span>
-                        <span class="text-purple-400 font-mono font-black text-lg tracking-widest">${topData.count} <span class="text-xs text-slate-600">VENTAS</span></span>
-                    </div>
-                </div>
-                <p class="text-purple-400 text-xs font-bold italic mt-3 text-center md:hidden">"${fraseMotivacional}"</p>
-            </div>
-        </div>`;
-    }
-
-    html += `<div class="bg-[#0f172a] rounded-xl border border-slate-700 overflow-hidden shadow-2xl font-system">
-                <div class="bg-[#020617] p-4 border-b border-slate-700 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-slate-400">toc</span>
-                        <h4 class="text-sm font-black text-slate-300 uppercase tracking-[0.2em]">Clasificación Global</h4>
-                    </div>
-                    <span class="text-[9px] font-bold text-emerald-500 uppercase border border-emerald-900 bg-emerald-900/20 px-2 py-1 rounded">TEMPORADA 30 DÍAS</span>
-                </div>
-                <div class="divide-y divide-slate-800">`;
-
-    if (rankingArray.length === 0) {
-        html += `<div class="p-6 text-center text-slate-500 font-bold uppercase text-xs">Aún no hay ventas en los últimos 30 días. ¡Sé el primero!</div>`;
-    }
-
-    rankingArray.forEach((user, index) => {
-        const rank = index + 1;
-        if (rank > 3) {
-            const isMe = user.name === nombreGestor;
-            const displayMoney = isMe ? `$${user.total.toFixed(0)}` : '???';
-            const displayName = isMe ? `${user.name.toUpperCase()}` : user.name.substring(0, 3).toUpperCase() + '***';
-
-            const bgClass = isMe ? "bg-cyan-950/40" : "bg-[#0f172a] hover:bg-[#1e293b]";
-            const textClass = isMe ? "text-cyan-300 text-shadow-glow" : "text-slate-300";
-            const borderClass = isMe ? "border-l-4 border-cyan-400" : "border-l-4 border-transparent";
-
-            html += `
-            <div class="flex items-center justify-between p-4 ${bgClass} ${borderClass} transition-colors group">
-                <div class="flex items-center gap-6">
-                    <span class="text-lg font-mono font-bold text-slate-600 w-8 group-hover:text-slate-400 transition-colors">#${rank < 10 ? '0'+rank : rank}</span>
-                    <div class="flex flex-col">
-                        <span class="text-sm md:text-base font-black ${textClass} tracking-wide uppercase">
-                            ${displayName}
-                            ${isMe ? '<span class="ml-2 text-[9px] bg-cyan-600 text-white px-1.5 py-0.5 rounded align-middle tracking-widest">YOU</span>' : ''}
-                        </span>
-                        <span class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${user.count} VENTAS</span>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <span class="hidden md:block text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">Ganancia Acumulada</span>
-                    <span class="text-sm md:text-base font-mono font-black text-amber-500 bg-black/30 px-2 py-1 rounded border border-white/5">
-                        ${displayMoney}
-                    </span>
-                </div>
-            </div>`;
-        }
-    });
-    html += `</div></div>`;
-
-    container.innerHTML = html;
-}
-
-// --- TARJETA DE RANGO (VISUALMENTE ADICTIVA) ---
-function renderSystemCard(user, rank, meName, maxScore) {
-    const isMe = user.name === meName;
-    const nameDisplay = isMe ? 'TÚ' : user.name.split(' ')[0].toUpperCase();
-    const moneyDisplay = isMe ? `$${user.total.toFixed(0)}` : 'BLOQUEADO';
-
-    // Porcentaje para la barra de poder
-    const powerPercent = (user.total / maxScore) * 100;
-
-    let c = {};
-    if (rank === 1) {
-        c = {
-            wrapper: "order-1 md:order-2 w-full md:w-1/3 z-20 scale-110 border-purple-500/50 bg-[#0a0a0a]",
-            rankText: "1", rankColor: "text-purple-500",
-            title: "MONARCA (TOP 1)", titleBg: "bg-purple-900/50 text-purple-200 border-purple-500",
-            barColor: "bg-purple-600",
-            glow: "shadow-[0_0_40px_rgba(168,85,247,0.2)]"
-        };
-    } else {
-        c = {
-            wrapper: "order-2 md:order-1 w-full md:w-1/4 z-10 opacity-90 hover:opacity-100 border-cyan-500/30 bg-[#020617]",
-            rankText: rank, rankColor: "text-cyan-500",
-            title: rank === 2 ? "NIVEL NACIONAL" : "CAZADOR ÉLITE",
-            titleBg: "bg-cyan-900/30 text-cyan-200 border-cyan-500/50",
-            barColor: "bg-cyan-600",
-            glow: "shadow-[0_0_20px_rgba(34,211,238,0.1)]"
-        };
-    }
-
-    return `
-    <div class="relative border-2 rounded-lg overflow-hidden transition-all duration-500 group ${c.wrapper} ${c.glow}">
-
-        <!-- Header Rango -->
-        <div class="p-6 text-center border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
-            <p class="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-2">POSICIÓN</p>
-            <h1 class="text-7xl font-black ${c.rankColor} leading-none mb-4 drop-shadow-lg">${c.rankText}</h1>
-            <span class="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${c.titleBg}">
-                ${c.title}
-            </span>
-        </div>
-
-        <!-- Stats Cuerpo -->
-        <div class="p-6 space-y-4">
-
-            <div class="flex justify-between items-end border-b border-slate-800 pb-2">
-                <span class="text-[10px] font-bold text-slate-500 uppercase">AGENTE</span>
-                <span class="text-lg font-black text-white uppercase tracking-wide truncate max-w-[120px] text-right">${nameDisplay}</span>
-            </div>
-
-            <!-- Barra de Poder (Reemplaza HP/MP) -->
-            <div>
-                <div class="flex justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
-                    <span>Dominio del Mercado</span>
-                    <span>${powerPercent.toFixed(0)}%</span>
-                </div>
-                <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full ${c.barColor} transition-all duration-1000 shadow-[0_0_10px_currentColor]" style="width: ${powerPercent}%"></div>
-                </div>
-            </div>
-
-            <!-- Recompensa -->
-            <div class="pt-2 mt-2">
-                <p class="text-[10px] font-bold text-slate-500 uppercase text-center mb-1">GANANCIA ACUMULADA</p>
-                <div class="text-center">
-                    <span class="text-2xl font-mono font-black text-white bg-white/5 px-4 py-2 rounded border border-white/10 block">
-                        ${moneyDisplay}
-                    </span>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Efecto Borde Brillante al pasar el mouse -->
-        <div class="absolute inset-0 border-2 border-white/0 group-hover:border-white/20 transition-all rounded-lg pointer-events-none"></div>
-    </div>`;
-}
-
-// --- FUNCIÓN UTILITARIA DE TIEMPO ---
 function timeAgo(dateString) {
     if (!dateString) return "";
 
@@ -4096,19 +3807,7 @@ async function loadFullDashboard() {
     }
 }
 
-    function renderRankingGestor(misVentas) {
-        // Esta función lista las últimas ventas del propio gestor en la lista de abajo
-        const list = document.getElementById('ranking-list');
-        list.innerHTML = misVentas.slice(0, 5).map(v => `
-            <div class="p-4 flex justify-between items-center">
-                <div>
-                    <p class="text-[10px] font-bold text-gray-400">${new Date(v.created_at || new Date()).toLocaleDateString()}</p>
-                    <p class="text-xs font-black uppercase text-gray-700">${v.producto.substring(0, 20)}...</p>
-                </div>
-                <span class="text-emerald-500 font-black text-xs">+$${v.comision_total}</span>
-            </div>
-        `).join('');
-    }
+    function renderRankingGestor() { return window.PTHRanking?.load(); }
 
 function prepareGestorDashboardLayout() {
     const dashboard = document.getElementById('sec-dashboard');
@@ -5244,6 +4943,7 @@ function renderGestorHome({ ventas = [], entregados = [], pendientes = [], porCo
         const el = document.getElementById(id);
         if (el) el.textContent = value;
     });
+    window.PTHRanking?.load();
     renderGestorDailyOpportunity();
     renderGestorToday(ventas);
     updateGestorSalesPulse();
@@ -6106,7 +5806,7 @@ function toggleGestorAdvanced(forceOpen) {
     document.getElementById('gestor-advanced-icon')?.classList.toggle('rotate-180', shouldOpen);
     const label = document.querySelector('#gestor-advanced-toggle > span:first-child');
     if (label) {
-        label.innerHTML = `<span class="material-symbols-outlined text-lg">monitoring</span> ${shouldOpen ? 'Ocultar análisis avanzado' : 'Ver análisis, ranking e historial completo'}`;
+        label.innerHTML = `<span class="material-symbols-outlined text-lg">monitoring</span> ${shouldOpen ? 'Ocultar análisis avanzado' : 'Ver análisis e historial completo'}`;
     }
 }
 
@@ -11591,56 +11291,8 @@ async function checkCustomerOwnership(phone) {
     return null;
 }
 
-function renderLockedRanking(allPedidos, nombreGestor) {
-    const container = document.getElementById('ranking-list');
-    if (!container) return;
-
-    // 1. Verificar Nivel
-    const salesCount = window.gestorSalesCount || 0;
-    const currentLevel = window.currentGestorLevel || 0;
-    const NIVEL_REQUERIDO = 4; // Monarca
-    const VENTAS_REQUERIDAS = 40;
-
-    // CASO A: MODO DIOS O NIVEL SUFICIENTE -> MOSTRAR TODO
-    if (nombreGestor === "Marcel Montano" || window.isAdmin || window.PTHWorkView.canSwitch(window.currentUserData) || currentLevel >= NIVEL_REQUERIDO) {
-        renderRankingAnonimo(allPedidos, nombreGestor);
-        return;
-    }
-
-    // CASO B: BLOQUEADO (Efecto Borroso)
-    const faltan = Math.max(1, VENTAS_REQUERIDAS - salesCount);
-
-    container.innerHTML = `
-    <div class="relative w-full h-64 bg-[#020617] rounded-xl overflow-hidden border border-slate-700 group cursor-pointer" onclick="alert('🔒 RANKING GLOBAL BLOQUEADO\\n\\nNecesitas ser NIVEL 4 (Monarca) para ver la competencia.\\n\\n📉 Te faltan: ${faltan} ventas.')">
-
-        <!-- Fondo Falso Borroso (Simulación) -->
-        <div class="absolute inset-0 p-4 space-y-4 opacity-30 blur-md select-none pointer-events-none filter grayscale">
-            ${[1,2,3,4].map(i => `
-            <div class="flex justify-between items-center border-b border-white/10 pb-2">
-                <div class="flex gap-2"><span class="w-8 h-8 bg-slate-700 rounded-full"></span><div class="h-4 w-32 bg-slate-700 rounded"></div></div>
-                <div class="h-6 w-16 bg-slate-700 rounded"></div>
-            </div>`).join('')}
-        </div>
-
-        <!-- Capa de Bloqueo (Overlay) -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/50 hover:bg-black/60 transition-all">
-
-            <div class="relative">
-                <span class="material-symbols-outlined text-6xl text-red-500 animate-pulse drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">lock</span>
-                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">LVL 4</div>
-            </div>
-
-            <h3 class="mt-4 text-xl font-black text-white uppercase tracking-widest italic">CLASIFICADO</h3>
-            <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Ranking Global de Agentes</p>
-
-            <div class="mt-4 px-4 py-2 bg-slate-800/90 border border-slate-600 rounded-lg backdrop-blur-md transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                <p class="text-xs text-center text-white">
-                    <span class="text-red-400 font-black">BLOQUEADO:</span> Te faltan <span class="text-white font-black text-lg">${faltan}</span> ventas<br>
-                    para espiar a la competencia.
-                </p>
-            </div>
-        </div>
-    </div>`;
+function renderLockedRanking() {
+    return window.PTHRanking?.load();
 }
 async function renderRescueMissions(nombreGestor) {
     // 1. Buscar Leads Fantasma de ESTE gestor que NO han comprado hoy

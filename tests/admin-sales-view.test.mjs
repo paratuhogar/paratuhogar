@@ -49,7 +49,7 @@ function page(profile = angel) {
     const rankingStart = html.indexOf('function renderLockedRanking(');
     const rankingEnd = html.indexOf('\n}', rankingStart) + 2;
     vm.runInNewContext(html.slice(rankingStart, rankingEnd), context);
-    context.renderRankingAnonimo = (orders, name) => calls.push(['ranking', name]);
+    context.PTHRanking = {load:()=>calls.push(['ranking'])};
     assert.ok(context.PTHWorkView, 'the work-view controller must exist');
     return { context, nodes, calls, values, storage };
 }
@@ -217,8 +217,8 @@ test('failed sales rendering restores the complete previous admin view', async (
     assert.equal(nodes.get('btn-sales-to-admin').classList.contains('hidden'), true);
 });
 
-test('administrator retains ranking privileges in sales while normal low-level gestor stays locked', async () => {
-    for (const [profile, expected] of [[angel, 1], [{ id: 'normal', nombre: 'Normal', rol: 'gestor' }, 0]]) {
+test('administrator and beginner both request the safe aggregate without a level gate', async () => {
+    for (const [profile, expected] of [[angel, 1], [{ id: 'normal', nombre: 'Normal', rol: 'gestor' }, 1]]) {
         const { context, calls } = page(profile);
         context.isAdmin = false;
         context.currentGestorLevel = 0;

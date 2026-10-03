@@ -3,6 +3,7 @@ import {feedback} from './feedback.mjs';
 import {pushSettings} from './push.mjs';
 import {createCheckoutService} from './checkout.mjs';
 import {publicName} from './public-name.mjs';
+import {ranking} from './ranking.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
@@ -265,6 +266,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
       else if(body.action==='logout') {if(bearer) await db.from('pth_secure_sessions').delete().eq('token_hash',await hash(bearer));result={data:null,error:null};}
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='public_name') result=await publicName(db,body,actor);
+      else if(body.action==='ranking') result=await ranking(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
       else if(body.action==='checkout') result=await checkout(body,actor);

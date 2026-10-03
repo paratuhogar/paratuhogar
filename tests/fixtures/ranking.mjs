@@ -1,0 +1,2 @@
+export const own='11111111-1111-4111-8111-111111111111', other='22222222-2222-4222-8222-222222222222';
+export function summary(id=own){return {period:{key:'2026-10',startAt:'2026-10-01T04:00:00Z',endAt:'2026-11-01T04:00:00Z',startDate:'2026-10-01',endDate:'2026-10-31',timeZone:'America/Havana'},updatedAt:'2026-10-03T12:00:00Z',self:{id,alias:'Mi tienda',count:2,rank:4,lifetimeCount:5,undatedCount:3,participates:true,identityReliable:true},top:[{id:other,alias:'Otra tienda',count:3,rank:1}],nearby:[{id,alias:'Mi tienda',count:2,rank:4}],historyComplete:false};}

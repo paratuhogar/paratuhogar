@@ -11,6 +11,14 @@ function client(existingStorage) {
  vm.runInNewContext(fs.readFileSync(new URL('../js/secure-data.js',import.meta.url),'utf8'),context);
  return{context,requests,storage,db:context.supabase.createClient('https://example.supabase.co','public-key')};
 }
+test('ranking sends no caller-controlled actor or date and discards a result after logout',async()=>{
+ const f=client(),profile={id:'own',nombre:'Own',rol:'gestor',estado:'activo'},expiry=new Date(Date.now()+600000).toISOString();
+ f.storage.setItem('pth_secure_token','a'.repeat(64));let release;const bodies=[];
+ f.context.fetch=async(_url,options)=>{const body=JSON.parse(options.body);bodies.push(body);return {status:200,json:async()=>body.action==='session'?{data:{profile,expiresAt:expiry},error:null}:body.action==='ranking'?await new Promise(resolve=>release=resolve):{data:null,error:null}};};
+ await f.context.PTHSecureData.restore();const pending=f.context.PTHSecureData.ranking();await new Promise(resolve=>setTimeout(resolve,0));
+ assert.deepEqual(bodies.at(-1),{action:'ranking'});f.context.PTHSecureData.clearSession();release({data:{self:{id:'own'}},error:null});
+ const result=await pending;assert.equal(result.data,null);assert.equal(result.error.code,'SESSION_CHANGED');
+});
 test('saving public name submits no target or permission fields and preserves session expiry and historical name',async()=>{
  const f=client(),expiry=new Date(Date.now()+600000).toISOString(),profile={id:'own',nombre:'Historical Full Name',rol:'gestor',estado:'activo',password:'__session__'};
  f.storage.setItem('pth_secure_token','a'.repeat(64));const bodies=[];
