@@ -712,7 +712,7 @@ async function generarComprobanteB2B(datosPedido, accion) {
 
     doc.setTextColor(...cGold);
     doc.setFont("helvetica", "bold");
-    doc.text(`ATENDIDO POR: ${agentName.toUpperCase()}`, 15, 38);
+    doc.text(`ATENDIDO POR: ${window.PTHAffiliate.publicName(session?.data || window.PTHAffiliate.current(), 'Asesor de ventas').toUpperCase()}`, 15, 38);
 
     // Recuadro superior derecho (ORDEN DE DESPACHO)
     doc.setFillColor(...cGold);

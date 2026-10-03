@@ -11,6 +11,20 @@ function client(existingStorage) {
  vm.runInNewContext(fs.readFileSync(new URL('../js/secure-data.js',import.meta.url),'utf8'),context);
  return{context,requests,storage,db:context.supabase.createClient('https://example.supabase.co','public-key')};
 }
+test('saving public name submits no target or permission fields and preserves session expiry and historical name',async()=>{
+ const f=client(),expiry=new Date(Date.now()+600000).toISOString(),profile={id:'own',nombre:'Historical Full Name',rol:'gestor',estado:'activo',password:'__session__'};
+ f.storage.setItem('pth_secure_token','a'.repeat(64));const bodies=[];
+ f.context.fetch=async(_url,options)=>{const body=JSON.parse(options.body);bodies.push(body);return{status:200,json:async()=>body.action==='session'?{data:{profile,expiresAt:expiry},error:null}:{data:{id:'own',nombre_publico:'My shop'},error:null}};};
+ const result=await f.context.PTHSecureData.publicName('My shop');assert.equal(result.error,null);
+ assert.deepEqual(bodies[1],{action:'public_name',nombre_publico:'My shop'});assert.equal(f.storage.getItem('pth_secure_token_expires_at'),String(Date.parse(expiry)));
+ const restored=await f.context.PTHSecureData.restore();assert.equal(restored.nombre,profile.nombre);assert.equal(restored.nombre_publico,'My shop');assert.equal(restored.id,'own');
+});
+test('logout during an alias write fences the returned profile and never restores the departing session',async()=>{
+ const f=client();f.storage.setItem('pth_secure_token','a'.repeat(64));let release;
+ f.context.fetch=async(_url,options)=>{const body=JSON.parse(options.body);if(body.action==='session')return{status:200,json:async()=>({data:{profile:{id:'own',nombre:'Original',rol:'gestor'},expiresAt:new Date(Date.now()+600000).toISOString()},error:null})};return new Promise(resolve=>{release=()=>resolve({status:200,json:async()=>({data:{id:'own',nombre_publico:'Late'},error:null})});});};
+ const pending=f.context.PTHSecureData.publicName('Late');while(!release)await new Promise(resolve=>setImmediate(resolve));f.context.PTHSecureData.clearSession();release();
+ assert.match((await pending).error.message,/sesión cambió/);assert.equal(f.storage.getItem('pth_session'),null);assert.equal(f.storage.getItem('pth_secure_token'),null);
+});
 test('protected queries always use the gateway with all filters and no direct fallback',async()=>{
  const {db,requests}=client();
  await db.from('pedidos').select('id,comision_total').eq('gestor','Fake').order('fecha',{ascending:false}).range(0,199);

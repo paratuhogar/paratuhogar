@@ -2,6 +2,7 @@ import {announcement} from './announcement.mjs';
 import {feedback} from './feedback.mjs';
 import {pushSettings} from './push.mjs';
 import {createCheckoutService} from './checkout.mjs';
+import {publicName} from './public-name.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
@@ -135,7 +136,9 @@ async function canonicalSale(db,table,input,actor,checkoutPrices=false) {
   } else if(row.gestor&&row.gestor!=='Venta Directa') {
     // Own direct orders use the server-verified session identity, never a submitted ID.
     const ownPrincipal=actor?.id&&actor.nombre===row.gestor&&['gestor','admin'].includes(actorKind(actor));
-    const {data}=await db.from('gestores').select('*').eq(ownPrincipal?'id':'nombre',ownPrincipal?actor.id:row.gestor).maybeSingle();seller=data;
+    const isId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(row.gestor));
+    const {data,error}=await db.from('gestores').select('*').eq(ownPrincipal||isId?'id':'nombre',ownPrincipal?actor.id:row.gestor).maybeSingle();seller=data;
+    if(error) fail('No se pudo verificar la cuenta de atención.');
     if(!seller||seller.parent_id||(ownPrincipal&&seller.nombre!==row.gestor)) fail('El vendedor no es válido para un pedido directo.');
   }
   if(seller&&(seller.estado!=='activo'||seller.activo===false)) fail('El vendedor no está activo.');
@@ -261,6 +264,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
       if(body.action==='session') {if(!actor) fail('Inicia sesión.',401);result={data:{profile:cleanProfile(actor),expiresAt:sessionExpiries.get(actor)},error:null};}
       else if(body.action==='logout') {if(bearer) await db.from('pth_secure_sessions').delete().eq('token_hash',await hash(bearer));result={data:null,error:null};}
       else if(body.action==='announcement') result=await announcement(db,body,actor);
+      else if(body.action==='public_name') result=await publicName(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
       else if(body.action==='checkout') result=await checkout(body,actor);

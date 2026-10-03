@@ -137,7 +137,7 @@ function buildContextualCatalogUrl() {
     const phone = String(getAgentPhone() || '').replace(/\D/g, '');
     if (query) params.set('catalog_q', query);
     if (activeCategory && activeCategory !== 'TODOS') params.set('catalog_category', activeCategory);
-    if (window.gestorName) params.set('ref', window.gestorName);
+    if (window.gestorName) params.set('ref', window.PTHAffiliate.reference(window.currentUserData) || window.gestorName);
     if (phone) params.set('contact', phone);
     return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
 }
@@ -261,7 +261,7 @@ function createSalesComposerMessage() {
     if (!products.length) return 'Selecciona al menos un producto.';
     const template = document.getElementById('sales-composer-template')?.value || salesComposerState.mode;
     const link = salesComposerState.catalogLink;
-    const agent = window.gestorName || 'nuestro equipo';
+    const agent = window.PTHAffiliate.publicName(window.PTHAffiliate.current(), 'nuestro equipo');
 
     if (template === 'quick') {
         let message = `Hola, te comparto ${products.length === 1 ? 'esta opción disponible' : `${products.length} opciones disponibles`}:\n\n`;
@@ -407,7 +407,7 @@ async function downloadCatalogPDF() {
         if (token !== window.PTHSecureData.token()) throw Error('La sesión cambió. Abre el catálogo de nuevo.');
         const exportPayload = {
             timestamp: Date.now(), ownerId: profile.id,
-            agent: profile.nombre, phone: profile.telefono || '',
+            agent: window.PTHAffiliate.publicName(profile), publicName:window.PTHAffiliate.publicName(profile), phone: profile.telefono || '',
             categoryName: activeCategory, mode: 'catalog',
             title: activeCategory === 'TODOS' ? 'Selección comercial' : activeCategory,
             products: visibleProducts.map(p => Object.fromEntries(['id','nombre','categoria','precio','descripcion','garantia','mensajeria','thumbnail'].map(field => [field,p[field]])))

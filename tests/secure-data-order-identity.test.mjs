@@ -5,6 +5,8 @@ import {createHandler,hash} from '../supabase/functions/secure-data/handler.mjs'
 // All accounts, sessions, products and orders below are synthetic and in memory.
 const profile=(id,nombre,extra={})=>({id,nombre,rol:'gestor',estado:'activo',activo:true,parent_id:null,password:'synthetic-password',...extra});
 const principals=[profile('principal-a','Shared Seller'),profile('principal-b','Shared Seller')];
+const stableId='12345678-1234-4234-8234-123456789abc';
+const secondId='12345678-1234-4234-8234-123456789abd';
 const payload=(gestor='Shared Seller',extra={})=>({action:'query',table:'pedidos',op:'insert',returning:true,values:{gestor,proveedor:'Synthetic Provider',cliente:'Synthetic Customer',_lineas:[{producto_id:'product-1',cantidad:2}],costo_mensajeria:5,submission_token:'synthetic-submission',...extra}});
 
 async function fixture({profiles=principals,actorId='principal-a',expired=false,failSellerRead=false}={}){
@@ -21,6 +23,7 @@ async function fixture({profiles=principals,actorId='principal-a',expired=false,
   order(){return this;}range(){return this;}limit(max){this.max=max;return this;}
   maybeSingle(){this.single=true;return this;}
   insert(values){this.op='insert';this.values=Array.isArray(values)?values:[values];this.returning=false;return this;}
+  update(values){this.op='update';this.values=values;this.returning=false;return this;}
   then(resolve,reject){return Promise.resolve().then(()=>{
    trace.push({table:this.table,op:this.op,filters:this.filters});
    if(failSellerRead&&this.table==='gestores'&&trace.some(t=>t.table==='gestores')){
@@ -34,6 +37,7 @@ async function fixture({profiles=principals,actorId='principal-a',expired=false,
     writes++;rows[this.table].push(...structuredClone(this.values));return{data:this.returning?this.values:null,error:null};
    }
    if(this.single&&matches.length>1)return{data:null,error:{code:'PGRST116',message:'Synthetic multiple-row result'}};
+   if(this.op==='update'){writes++;for(const row of matches)Object.assign(row,structuredClone(this.values));}
    return{data:this.single?matches[0]||null:matches,error:null};
   }).then(resolve,reject);}
  }
@@ -41,6 +45,33 @@ async function fixture({profiles=principals,actorId='principal-a',expired=false,
  async function request(body){const response=await handler(new Request('https://example.test',{method:'POST',headers:actorId?{Authorization:`Bearer ${token}`}:{},body:JSON.stringify(body)}));return{status:response.status,...await response.json()};}
  return{request,rows,trace,get writes(){return writes;}};
 }
+
+test('public stable UUID order retains historical identity, exact price, commission and retry token even with repeated aliases/names',async()=>{
+ const f=await fixture({profiles:[profile(stableId,'Shared Seller',{nombre_publico:'Same Alias'}),profile(secondId,'Shared Seller',{nombre_publico:'Same Alias'})],actorId:null});
+ const result=await f.request(payload(stableId));assert.equal(result.status,200);const order=f.rows.pedidos[0];
+ assert.equal(order.gestor,'Shared Seller');assert.equal(order.total,225);assert.equal(order.comision_total,80);assert.equal(order.submission_token,'synthetic-submission');
+ assert.ok(f.trace.some(t=>t.table==='gestores'&&t.filters.some(q=>q.column==='id'&&q.value===stableId)));
+ assert.equal(f.trace.some(t=>t.table==='gestores'&&t.filters.some(q=>q.column==='nombre_publico')),false);
+});
+test('public stable UUID cannot route an inactive or child seller through a direct order',async()=>{
+ for(const extra of [{estado:'inactivo'},{activo:false},{parent_id:secondId}]){const f=await fixture({profiles:[profile(stableId,'Shared Seller',extra),profile(secondId,'Parent')],actorId:null});assert.equal((await f.request(payload(stableId))).status,403);assert.equal(f.writes,0);}
+});
+for(const extra of [{},{rol:'admin'},{parent_id:'parent'}])test(`authenticated public-name action changes only own display field (${JSON.stringify(extra)})`,async()=>{
+ const own=profile(stableId,'Shared Seller',extra),other=profile(secondId,'Shared Seller',{nombre_publico:'Other'});const f=await fixture({profiles:[own,other,profile('parent','Parent')],actorId:stableId});
+ const before=structuredClone(f.rows.gestores),result=await f.request({action:'public_name',nombre_publico:'  Mi tienda  '});
+ assert.equal(result.status,200);assert.deepEqual(f.rows.gestores[0],{...before[0],nombre_publico:'Mi tienda'});assert.deepEqual(f.rows.gestores[1],before[1]);
+ assert.deepEqual(Object.keys(result.data).sort(),['id','nombre_publico']);assert.equal(f.writes,1);
+ assert.equal((await f.request({action:'public_name',nombre_publico:null})).status,200);assert.equal(f.rows.gestores[0].nombre_publico,null);
+});
+test('public-name action refuses anonymous, expired and courier sessions before any write',async()=>{
+ for(const options of [{actorId:null},{expired:true},{profiles:[profile('principal-a','Shared Seller',{rol:'mensajero'})]}]){const f=await fixture(options),result=await f.request({action:'public_name',nombre_publico:'Test'});assert.ok([401,403].includes(result.status));assert.equal(f.writes,0);}
+});
+test('public-name action refuses forged target IDs, roles, other fields, invalid type, long alias and markup',async()=>{
+ for(const body of [{id:secondId,nombre_publico:'Forged'},{gestor_id:secondId,nombre_publico:'Forged'},{rol:'admin',nombre_publico:'Forged'},{nombre:'New internal name',nombre_publico:'Forged'},{nombre_publico:7},{nombre_publico:'x'.repeat(41)},{nombre_publico:'<img onerror=run()>'},{nombre_publico:'abc\nxyz'},{nombre_publico:'abc\u202e'}]){const f=await fixture(),result=await f.request({action:'public_name',...body});assert.ok([400,403].includes(result.status));assert.equal(f.writes,0);}
+});
+test('ordinary gestores mutation still cannot self-edit alias or exploit the child scope',async()=>{
+ const f=await fixture();const result=await f.request({action:'query',table:'gestores',op:'update',values:{nombre_publico:'Bypass'},filters:[{method:'eq',column:'id',value:'principal-a'}]});assert.equal(result.status,403);assert.equal(f.writes,0);
+});
 
 for(const actorId of ['principal-a','principal-b'])test(`own same-name principal resolves by verified session ID (${actorId})`,async()=>{
  const f=await fixture({actorId});const result=await f.request(payload('Shared Seller',{gestor_id:'principal-other',total:1,comision_total:999,estado:'Entregado',pago_gestor:'Pagado'}));

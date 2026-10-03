@@ -29,7 +29,9 @@ const products=Array.from({length:86},(_,i)=>({id:'p'+i,nombre:'Equipo '+i,preci
  await page.locator('#btn-generate').click();await page.waitForFunction(()=>!document.querySelector('#pdf-ready').hidden);
  assert.equal(await page.evaluate(()=>pdfBuilds),1);assert.match(await page.locator('#pdf-result').textContent(),/86 productos/);
  assert.equal(requests.some(url=>url.includes('raw.githubusercontent')),false,'basic PDF needs no photos');
- const downloadPromise=page.waitForEvent('download');await page.locator('#pdf-download').click();const download=await downloadPromise;const file=await download.path();assert.match(fs.readFileSync(file,'utf8'),/^%PDF/);assert.match(download.suggestedFilename(),/^Catalogo_TODOS_Asesor_prueba\.pdf$/);
+ const downloadPromise=page.waitForEvent('download');await page.locator('#pdf-download').click();const download=await downloadPromise;const file=await download.path();assert.match(fs.readFileSync(file,'utf8'),/^%PDF/);assert.match(download.suggestedFilename(),/^Catalogo_TODOS_Asesor\.pdf$/);
+ assert.equal(await page.locator('#agent-name').textContent(),'Asesor');
+ assert.doesNotMatch(await page.evaluate(()=>pdfText.flat().join('\n')),/Asesor prueba/,'legacy PDF payload abbreviates the name');
  assert.ok((await page.locator('#pdf-open').getAttribute('href')).startsWith('blob:'),'persistent open fallback is available');
  // Select a small PRO catalogue and simulate unavailable photographs.
  await page.locator('#clear-selection').click();assert.equal(await page.locator('#pdf-ready').isVisible(),false,'changing selection invalidates the prepared PDF');await page.locator('#product-selector-list input').nth(0).check();await page.locator('#product-selector-list input').nth(1).check();

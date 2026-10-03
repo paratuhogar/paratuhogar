@@ -42,7 +42,7 @@
    this.buttons();
   }
   message(text, error = false) { const node = this.node('[data-status]'); node.textContent = text; node.dataset.error = String(error); }
-  options() { return { theme: this.theme, isStory: true, mode: 'single', showPrice: true, showWarranty: true, showDelivery: true, showPhone: true, gestorName: this.profile?.nombre || '', gestorPhone: this.profile?.telefono || '', allowCommissionDiscount: false }; }
+  options() { return { theme: this.theme, isStory: true, mode: 'single', showPrice: true, showWarranty: true, showDelivery: true, showPhone: true, gestorName: this.profile?.nombre || '', gestorId: this.profile?.id || '', gestorPhone: this.profile?.telefono || '', allowCommissionDiscount: false }; }
   releasePreview() { clearTimeout(this.expiryTimer); if (this.previewURL) URL.revokeObjectURL(this.previewURL); this.previewURL = null; this.node('[data-preview]').replaceChildren(); }
   renderPicker() {
    const term = this.node('[data-search]').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

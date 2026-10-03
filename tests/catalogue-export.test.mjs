@@ -8,19 +8,20 @@ const code=source.slice(start,source.indexOf('root.PTHSalesTools=',start));
 function fixture(){
  const values=new Map(),alerts=[],locations=[],products=[{id:'p1',nombre:'Equipo',precio:100,comision:50,costo_proveedor:80,proveedor:'INTERNAL',disponible:'SI',descripcion:'Descripción',thumbnail:'photo.jpg'}];
  let token='session-a',hydration=Promise.resolve(),writesFail=false;
- const btn={innerHTML:'PDF',disabled:false},profile={id:'a',nombre:'Asesor',telefono:'5350000000'};
- const context={Date,JSON,Set,Map,Promise,catalogLoadError:null,productsLoadInProgress:false,activeCategory:'TODOS',
+ const btn={innerHTML:'PDF',disabled:false},profile={id:'a',nombre:'Alina Rodríguez',nombre_publico:'Mi tienda',telefono:'5350000000'};
+ const context={Date,JSON,Set,Map,Promise,URL,URLSearchParams,catalogLoadError:null,productsLoadInProgress:false,activeCategory:'TODOS',
   document:{getElementById:()=>btn},alert:m=>alerts.push(m),confirm:()=>true,
   PTHSecureData:{token:()=>token,restore:async()=>profile},ensureProductDescriptions:()=>hydration,
   getProductsVisibleOnScreen:()=>products,trackSpy(){},location:{assign:path=>locations.push(path)},
   localStorage:{setItem:(k,v)=>{if(writesFail)throw Error('QuotaExceededError');values.set(k,v);}}
- };context.window=context;vm.runInNewContext(code,context);
+ };context.window=context;vm.createContext(context);vm.runInContext(fs.readFileSync(new URL('../js/affiliate-links.js',import.meta.url),'utf8'),context);vm.runInContext(code,context);
  return{context,values,alerts,locations,products,btn,run:()=>context.downloadCatalogPDF(),token:v=>{token=v;},hydrate:v=>{hydration=v;},writesFail:()=>{writesFail=true;}};
 }
 test('PDF opens in the same tab at a root URL after description hydration; only commercial fields transfer',async()=>{
  const f=fixture();await f.run();
  assert.deepEqual(f.locations,['/catalog-maker.html?v=20261002-catalog1']);
  const payload=JSON.parse(f.values.get('pth_catalog_data'));assert.equal(payload.products[0].precio,100);
+ assert.equal(payload.agent,'Mi tienda');assert.doesNotMatch(JSON.stringify(payload),/Alina|Rodríguez/);
  for(const field of ['comision','costo_proveedor','proveedor'])assert.equal(Object.hasOwn(payload.products[0],field),false);
  assert.equal(f.btn.disabled,false);assert.equal(f.btn.innerHTML,'PDF');assert.deepEqual(f.alerts,[]);
 });

@@ -64,7 +64,7 @@ export function projectRow(table,source,actor,assigned=new Map()) {
     const isChild=kind==='gestor'&&row.parent_id===actor.id;
     if(isOwn) row.password='__session__';
     else if(!isChild) {
-      for(const key of Object.keys(row)) if(!['id','nombre','telefono','estado','parent_id','created_at'].includes(key)) delete row[key];
+      for(const key of Object.keys(row)) if(!['id','nombre','nombre_publico','telefono','estado','parent_id','created_at'].includes(key)) delete row[key];
     }
     return row;
   }

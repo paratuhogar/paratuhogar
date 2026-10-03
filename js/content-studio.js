@@ -62,7 +62,7 @@
    this.modeUI();
   }
   options() {
-   const options = { theme: this.node('[data-theme]').value, isStory: this.node('[data-format]').value === 'story', mode: this.node('[data-mode]').value, compositionTitle: this.node('[data-title]').value.trim(), promoPrice: this.node('[data-promo]').value, allowCommissionDiscount: !this.story && this.node('[data-discount]').checked, gestorName: this.profile?.nombre || '', gestorPhone: this.profile?.telefono || '' };
+   const options = { theme: this.node('[data-theme]').value, isStory: this.node('[data-format]').value === 'story', mode: this.node('[data-mode]').value, compositionTitle: this.node('[data-title]').value.trim(), promoPrice: this.node('[data-promo]').value, allowCommissionDiscount: !this.story && this.node('[data-discount]').checked, gestorName: this.profile?.nombre || '', gestorId: this.profile?.id || '', gestorPhone: this.profile?.telefono || '' };
    this.host.querySelectorAll('[data-option]').forEach(node => { options[node.dataset.option] = node.checked; });
    if (!['bundle', 'multi'].includes(options.mode)) { options.promoPrice = ''; options.allowCommissionDiscount = false; }
    return options;

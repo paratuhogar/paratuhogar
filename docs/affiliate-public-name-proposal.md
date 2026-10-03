@@ -1,4 +1,52 @@
-# Public name and durable affiliate links — review gate
+# Public name and durable affiliate links
+
+## Approved implementation checkpoint — 2026-10-03
+
+Marcel explicitly approved the nullable field, narrowly scoped own-account edit
+action, and publication of Magic Studio and the compatible alias/link feature.
+The parent relayed that approval with transcript evidence. No further consent
+is needed for these exact actions; tool-level denials must still be respected.
+
+Magic Studio source commit `7276fc2d6aa46d7bfdee4e4129f6fe7b28daa320` was pushed
+to `main` and independently confirmed by `git ls-remote`. Deployment verification
+is blocked: GitHub Actions run listing and public website reads returned 403.
+The earlier Pages configuration read was also denied. No alternative route is
+used to bypass these denials. Do not describe the live website as verified.
+
+Alias implementation is local in `/workspace/paratuhogar-studio-all`:
+authenticated `public_name` accepts only `nombre_publico` and scopes update to
+the validated actor ID; generic account mutation policy remains unchanged.
+Public display defaults to first name, while new references use UUID and keep
+old name/short/opaque links readable. Existing internal names, financial joins,
+customer ownership and seven-day authentication expiration are retained.
+
+Referral records use nullable expiry and preserve last-click replacement. Valid
+legacy browser records migrate to this format; expired/malformed records clear
+both keys. A link has no calendar expiry while its account and route remain
+valid; browser clearing/eviction, another link, browser/device changes still
+limit attribution. No IP fingerprinting, cross-device tracking or session
+extension is added. Public projection still retains the historical `nombre`
+needed by legacy price resolution; this is customer-visible name/URL control,
+not a claim that historical names disappear from all public API responses.
+
+Read-only database checks found no short_links expiry column, no public/private
+function referencing that table and no current cron command mentioning it.
+This does not establish anything about unconnected external cleanup jobs.
+Existing gestores RLS is enabled, not forced. Schema/action deployment has not
+yet been applied. Local regression: 372 Node tests pass; Magic complete-output
+browser stress and PDF UI tests pass. Mobile editor/full-startup verification
+passes for visitor, principal, child and administrator, including failed alias
+save/retry, own-label editing at widths 320/390/820, unchanged internal names,
+no attribution replacement on edit, UUID short-link destinations, Story copy
+and PDF payload alias. PDF API testing uses a stub and is not a real layout proof.
+
+Next: apply the already approved additive SQL,
+deploy compatible secure-data backend before client UUID links, then publish
+the alias commit and verify exact deployment when the read blocks are resolved.
+Rollback frontend/backend before removing anything; retain nullable aliases
+and old links. Backend version 20 was fetched and matches base `1a0f6c2` exactly.
+Its previous payload is stored privately in the execution orchestration state;
+no environment values or credentials were read or created.
 
 Magic Studio is complete in `7276fc2`. This is the separate authorized follow-up
 for Alina's suggestion. Her report was already answered by the parent; no
@@ -25,9 +73,8 @@ proof that no external cleanup deletes links.
    retaining the internal full name in authenticated/internal and financial
    flows. The alias is display text, never an identifier or executable content.
 
-These security/database-access actions have not been applied. They must be
-approved explicitly under the delegated per-action permission rule before the
-feature is activated. The SQL is concrete and reviewable; no credential,
+These security/database-access actions are approved and have not yet been applied.
+The SQL is concrete and reviewable; no credential,
 privileged session, direct public grant or destructive migration is proposed.
 
 ## Minimum implementation after approval

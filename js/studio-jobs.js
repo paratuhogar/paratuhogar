@@ -58,7 +58,7 @@
    return result;
   });
   assertScope(token, signal);
-  return { products: resolved, profile: { id: profile.id, nombre: profile.nombre, telefono: profile.telefono || '', parent_id: profile.parent_id || null }, token, verifiedAt: Date.now() };
+  return { products: resolved, profile: { id: profile.id, nombre: profile.nombre, nombre_publico:profile.nombre_publico || null, telefono: profile.telefono || '', parent_id: profile.parent_id || null }, token, verifiedAt: Date.now() };
  }
  function signature(product) { return JSON.stringify(publicProduct(product)); }
  function validate(products, options) {
@@ -84,7 +84,7 @@
   }
   if (['bundle', 'multi'].includes(options.mode) && options.showPrice !== false) result.push('Total del conjunto: ' + design.money(Number(options.promoPrice) || products.reduce((sum, p) => sum + Number(p.precio), 0)) + ' USD');
   if (options.showPhone !== false && options.gestorPhone) result.push('Consulta por WhatsApp: +' + String(options.gestorPhone).replace(/\D/g, ''));
-  const params = new URLSearchParams({ ref: options.gestorName || '' });
+  const params = new URLSearchParams({ ref: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options.gestorId || '') ? options.gestorId : options.gestorName || '' });
   if (options.gestorPhone) params.set('contact', String(options.gestorPhone).replace(/\D/g, ''));
   if (products.length === 1) params.set('search', products[0].nombre);
   result.push('https://paratuhogar.org/?' + params.toString());

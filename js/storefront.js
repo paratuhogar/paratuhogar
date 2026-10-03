@@ -100,15 +100,7 @@ async function checkShortLinks() {
                 if (gestorDB) telOriginal = gestorDB.telefono;
             }
 
-            const referrerData = {
-                nombre: data.gestor,
-                telefono: telOriginal,
-                timestamp: new Date().getTime(),
-                expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
-            };
-
-            localStorage.setItem('pth_referrer_smart', JSON.stringify(referrerData));
-            localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
+            window.PTHAffiliate.remember({nombre:data.gestor, telefono:telOriginal});
 
             // Redirigir
             window.location.href = data.original_url;
@@ -418,29 +410,8 @@ async function checkShortLinks() {
     let referrerData = null;
 
     function initReferralSystem() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlGestor = urlParams.get('ref') || urlParams.get('gestor');
-        const urlTel = urlParams.get('contact') || urlParams.get('tel');
-
-        // 1. SI HAY NUEVO ENLACE -> SOBRESCRIBIMOS (Last Click Wins)
-        if (urlGestor) {
-            referrerData = {
-                nombre: urlGestor,
-                telefono: urlTel || "",
-                timestamp: new Date().getTime() // Guardamos cuándo ocurrió
-            };
-            // Guardamos en memoria persistente del navegador
-            localStorage.setItem('pth_referrer', JSON.stringify(referrerData));
-            console.log("Nuevo gestor atribuido:", urlGestor);
-        }
-        // 2. SI NO HAY ENLACE -> BUSCAMOS EN MEMORIA (Histórico)
-        else {
-            const stored = localStorage.getItem('pth_referrer');
-            if (stored) {
-                referrerData = JSON.parse(stored);
-                console.log("Gestor recuperado de memoria:", referrerData.nombre);
-            }
-        }
+        const incoming = window.PTHAffiliate.incoming();
+        referrerData = incoming ? window.PTHAffiliate.remember(incoming) : window.PTHAffiliate.read();
     }
 // Función para abrir la ventana de inicio de sesión manualmente
 function openLoginModal() {
@@ -1575,7 +1546,7 @@ function renderMyOrdersList(lista) {
     let diasDuracion = lvlData.duration / 24;
     if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 
-    const myLongLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${userData.telefono || ''}`;
+    const myLongLink = window.PTHAffiliate.link(baseUrl, userData);
     const linkParaMostrar = await getOrGenerateShortLink(nombre, myLongLink);
 
     // CAMBIO VISUAL: Quitamos mt-6 (margen arriba) y pusimos mb-8 (margen abajo)
@@ -1595,7 +1566,7 @@ function renderMyOrdersList(lista) {
                 </span>
             </div>
             <p class="text-xs text-gray-400 mb-4">
-                Este enlace dura <span class="font-black text-primary">${diasDuracion} días</span> en el navegador del cliente.
+                Tu enlace no tiene fecha de vencimiento mientras la cuenta esté activa. El navegador recuerda el último enlace abierto hasta que el cliente abra otro o borre los datos; no se conserva al cambiar de navegador o dispositivo.
             </p>
 
             <div class="flex gap-2 mb-4">
@@ -1628,6 +1599,7 @@ function renderMyOrdersList(lista) {
         const fallbackDiv = document.getElementById('sec-dashboard');
         if(fallbackDiv) fallbackDiv.insertAdjacentHTML('afterbegin', html);
     }
+    window.PTHPublicNameEditor?.mount(document.getElementById('gestor-public-name'), userData);
 }
 
 
@@ -1695,15 +1667,16 @@ async function resolveSalesHierarchy(agentName, catalogOnly = false) {
     const cleanName = String(agentName || '').trim();
     if (!cleanName || cleanName === 'Venta Directa') return null;
     const self = window.currentUserData;
-    const ownId = window.PTHSecureData.token() && self?.nombre === cleanName ? self.id : null;
+    const ownId = window.PTHSecureData.token() && (self?.nombre === cleanName || self?.id === cleanName) ? self.id : null;
+    const referenceId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanName) ? cleanName : null;
     const scopeKey = `${window.PTHSecureData.cacheSuffix()}:${ownId || cleanName}:${catalogOnly}`;
     if (salesHierarchyCache.has(scopeKey)) return salesHierarchyCache.get(scopeKey);
 
     let query = supabaseClient
         .from('gestores')
-        .select('id, nombre, telefono, estado, parent_id');
-    query = ownId ? query.eq('id', ownId).maybeSingle() : query.eq('nombre', cleanName);
-    if (!ownId && !catalogOnly) query = query.maybeSingle();
+        .select('id, nombre, nombre_publico, telefono, estado, parent_id');
+    query = ownId || referenceId ? query.eq('id', ownId || referenceId).maybeSingle() : query.eq('nombre', cleanName);
+    if (!ownId && !referenceId && !catalogOnly) query = query.maybeSingle();
     const { data, error } = await query;
 
     if (error) {
@@ -1830,7 +1803,7 @@ async function loadProducts() {
         }
 
         try {
-            const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
+            const stored = window.PTHAffiliate.read();
             if (stored && stored.nombre) {
                 memoriaGestor = stored.nombre;
             }
@@ -2422,7 +2395,10 @@ function makeOpaqueAttributedFallback(longLink) {
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
             .replace(/=+$/g, '');
-        url.search = '';
+        url.searchParams.delete('ref');
+        url.searchParams.delete('gestor');
+        url.searchParams.delete('contact');
+        url.searchParams.delete('tel');
         url.searchParams.set('r', token);
         return url.toString();
     } catch (error) {
@@ -3436,6 +3412,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     let activeGestor = await obtenerDuenoReal(telC);
     assertSubmissionScope();
     const checkoutHierarchy = await resolveSalesHierarchy(activeGestor);
+    const canonicalGestor = checkoutHierarchy?.agent?.nombre || activeGestor;
     assertSubmissionScope();
     const orderSubgestor = checkoutHierarchy?.isSubgestor ? checkoutHierarchy : null;
 
@@ -3622,7 +3599,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (orderSubgestor && isLogged) {
             mensajeRaw += buildSubgestorWhatsappSummary(orderSubgestor, comisionTotalVale);
         } else if (isLogged) {
-            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${activeGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
+            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${canonicalGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
         }
 
         mensajeRaw += `\n------------------------------------\n\n`;
@@ -3747,12 +3724,12 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     checkoutFinished = true;
 
     if (activeGestor !== 'Venta Directa') {
-        const protection = await recordCustomerClosure(telC, activeGestor, protectionOrderIds.join(','));
+        const protection = await recordCustomerClosure(telC, canonicalGestor, protectionOrderIds.join(','));
         assertSubmissionScope();
         if (protection.transferred) {
             console.log(`🔄 Cliente transferido por cierre completo: ${protection.previousOwner} → ${activeGestor}`);
         }
-        if (activeGestor === window.gestorName) {
+        if (canonicalGestor === window.gestorName) {
             protectedCustomerCountOwner = null;
             protectedCustomerCountValue = null;
             if (!window.PTHPendingCheckoutUI?.active()) window.PTHFollowups?.scheduleProtectedCustomer?.({
@@ -3919,7 +3896,7 @@ async function initAgentFloatingButton() {
 
     // Renderizar Botón Flotante
     if (referrer.telefono) {
-        renderFloatingWA(referrer.nombre, referrer.telefono);
+        renderFloatingWA(window.PTHAffiliate.publicName(referrer), referrer.telefono);
     }
 
 
@@ -3942,7 +3919,7 @@ function renderFloatingWA(nombre, telefono) {
     }
     // ======================================
 
-    const primerNombre = nombre.split(' ')[0];
+    const primerNombre = nombre;
     const advisorName = document.getElementById('client-assigned-advisor-name');
     const advisorStatus = document.getElementById('client-assigned-advisor-status');
     if (advisorName) {
@@ -3966,7 +3943,7 @@ function renderFloatingWA(nombre, telefono) {
 
             <div class="flex flex-col">
                 <span class="text-[9px] font-black uppercase opacity-80 tracking-tighter leading-none mb-1">Comercial en línea</span>
-                <span class="text-sm font-black leading-none">${nombre.toUpperCase()}</span>
+                <span class="text-sm font-black leading-none">${gestorSafeText(nombre.toUpperCase())}</span>
             </div>
 
             <div class="absolute -top-12 left-0 bg-gray-900 text-white text-[10px] py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
@@ -4203,7 +4180,7 @@ function getGestorStoreLink() {
     if (generatedLink) return generatedLink;
     const data = window.currentUserData || {};
     const base = window.location.origin + window.location.pathname;
-    return `${base}?ref=${encodeURIComponent(window.gestorName || '')}&contact=${encodeURIComponent(data.telefono || '')}`;
+    return window.PTHAffiliate.link(base, {...data,nombre:window.gestorName || data.nombre});
 }
 
 async function copyGestorStoreLink() {
@@ -7831,9 +7808,19 @@ async function requestShortLink(gestor, longLink) {
 
 async function getOrGenerateShortLink(gestor, longLink) {
     const cleanGestor = String(gestor || window.gestorName || 'ParaTuHogar').trim();
-    const cleanLongLink = String(longLink || '').trim();
+    let cleanLongLink = String(longLink || '').trim();
     if (!cleanLongLink) return '';
     if (/[?&]s=[a-z0-9]+(?:&|$)/i.test(cleanLongLink)) return cleanLongLink;
+    if (window.PTHAffiliate) {
+        try {
+            const target = new URL(cleanLongLink, window.location.origin);
+            const ref = target.searchParams.get('ref') || target.searchParams.get('gestor');
+            if (ref && !window.PTHAffiliate.uuid(ref)) {
+                const hierarchy = await resolveSalesHierarchy(ref);
+                if (hierarchy?.agent?.id) cleanLongLink = window.PTHAffiliate.link(target, {...hierarchy.agent,telefono:target.searchParams.get('contact') || hierarchy.agent.telefono});
+            }
+        } catch (_) { /* Unresolved legacy identity is never silently reassigned. */ }
+    }
 
     const cached = findCachedShortLink(cleanGestor, cleanLongLink);
     if (cached) return cached;
@@ -8030,15 +8017,15 @@ async function buildProductOfferText(product) {
     if (!isProductCurrentlyAvailable(product)) {
         throw new Error('PRODUCT_UNAVAILABLE');
     }
-    const agent = window.gestorName || 'ParaTuHogar';
+    const agent = window.PTHAffiliate.publicName(window.PTHAffiliate.current());
     const phone = String(getAgentPhone() || '').replace(/\D/g, '');
     const permanentUrl = new URL(getPermanentProductUrl(product, true));
     if (window.gestorName) {
-        permanentUrl.searchParams.set('ref', window.gestorName);
+        permanentUrl.searchParams.set('ref', window.PTHAffiliate.reference(window.currentUserData) || window.gestorName);
         permanentUrl.searchParams.set('contact', phone);
     }
     const longProductUrl = permanentUrl.toString();
-    const productUrl = await getOrGenerateShortLink(agent, longProductUrl);
+    const productUrl = await getOrGenerateShortLink(window.gestorName || 'ParaTuHogar', longProductUrl);
     return `🔥 *OFERTA DISPONIBLE*
 
 📦 *${product.nombre}*
@@ -8317,19 +8304,7 @@ window.doLogout = function() {
             }
 
             if (nombre && telefono) {
-                // 2. CREAR EL AMARRE (30 DÍAS)
-                // Al hacer Login directo, te damos el máximo nivel de retención (30 días)
-                // porque has demostrado identidad física en el dispositivo.
-                const amarreData = {
-                    nombre: nombre,
-                    telefono: telefono,
-                    timestamp: new Date().getTime(),
-                    expiresAt: new Date().getTime() + (30 * 24 * 60 * 60 * 1000)
-                };
-
-                localStorage.setItem('pth_referrer_smart', JSON.stringify(amarreData));
-                localStorage.setItem('pth_referrer', JSON.stringify(amarreData));
-                console.log(`🔒 Dispositivo amarrado a: ${nombre} (${telefono})`);
+                window.PTHAffiliate.remember({...session.data, nombre, telefono});
             }
         } catch (e) {
             console.error("Error al guardar rastro:", e);
@@ -9534,7 +9509,7 @@ async function showAgentWelcomeModal(nombre) {
         document.getElementById('welcome-motivational-phrase').innerText = `"${nextTier.phrase}"`;
         document.getElementById('welcome-rank-tag').innerText = "RANGO: " + lvlData.name;
 
-        let durationText = lvlData.lvl === 5 ? "365 DÍAS" : (lvlData.lvl === 0 ? "7 DÍAS" : (lvlData.duration / 720) + " MESES");
+        let durationText = 'SIN VENCIMIENTO';
         document.getElementById('welcome-link-duration').innerText = durationText;
         document.getElementById('welcome-next-power').innerText = "NIVEL " + (currentLvl < 5 ? currentLvl + 1 : 5);
 
@@ -9802,7 +9777,7 @@ function updateGamificationUI(sales) {
         // Mensaje de Sistema en Español
         const dias = data.duration / 24;
         const tiempoTexto = data.lvl === 5 ? "∞ (ETERNO)" : `${dias} DÍAS`;
-        dashMsg.innerHTML = `<span class="text-purple-400 font-bold">SISTEMA:</span> Duración del enlace extendida a <span class="text-white font-black text-sm">${tiempoTexto}</span>`;
+        dashMsg.textContent = 'Enlace sin fecha de vencimiento. La memoria depende del navegador del cliente.';
 
         // Barra
         dashCounter.innerText = `${sales} / ${data.next} VENTAS`;
@@ -9844,18 +9819,7 @@ if (slName) {
     document.getElementById('sl-xp-text').innerText = `${sales} / ${data.next}`;
 
     // --- INICIO DE LA CORRECCIÓN ---
-    const dias = Math.floor(data.duration / 24); // Calculamos los días reales basados en la config
-    let textoTiempo = "";
-
-    if (dias >= 365) {
-        textoTiempo = "1 AÑO";
-    } else if (dias >= 30) {
-        textoTiempo = `${dias} DÍAS`; // Opcional: podrías poner `${Math.floor(dias/30)} MESES`
-    } else if (dias === 7) {
-        textoTiempo = "1 SEMANA";
-    } else {
-        textoTiempo = `${dias} DÍAS`;
-    }
+    const textoTiempo = 'SIN VENCIMIENTO';
     // --- FIN DE LA CORRECCIÓN ---
 
     document.getElementById('sl-mana-text').innerText = textoTiempo;
@@ -10017,126 +9981,25 @@ function alertLockedInfo(title, desc) {
 // ==============================================
 
 async function initSmartReferral() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlGestor = urlParams.get('ref') || urlParams.get('gestor');
-    let urlTel = urlParams.get('contact') || urlParams.get('tel');
-
-    // CASO 1: HAY NUEVOS DATOS EN LA URL (Sobrescribir)
-    if (urlGestor) {
-        // Recuperar teléfono si falta
-        if (!urlTel) {
-            const { data } = await supabaseClient.from('gestores').select('telefono').eq('nombre', urlGestor).maybeSingle();
-            if (data) urlTel = data.telefono;
-        }
-
-        // --- MAGIA: VERIFICAR SI EL GESTOR TIENE MÁS DE 500 CLICS ---
-        let diasDuracion = 30; // Por defecto 30 días
-        try {
-            // Contar cuántos clics tiene este gestor en la base de datos
-            const { count } = await supabaseClient
-                .from('link_analytics')
-                .select('id', { count: 'exact', head: true })
-                .eq('agent_name', urlGestor);
-
-            // Si tiene más de 500 clics, le premiamos con 6 meses (180 días)
-            if (count && count >= 500) {
-                diasDuracion = 180;
-                console.log("🌟 Enlace VIP (6 Meses) aplicado para:", urlGestor);
-            }
-        } catch (e) { console.error("Error verificando clics", e); }
-
-        const dataGuardar = {
-            nombre: urlGestor,
-            telefono: urlTel || "",
-            timestamp: new Date().getTime(),
-            // Aplicar la duración calculada
-            expiresAt: new Date().getTime() + (diasDuracion * 24 * 60 * 60 * 1000)
-        };
-        localStorage.setItem('pth_referrer_smart', JSON.stringify(dataGuardar));
-        localStorage.setItem('pth_referrer', JSON.stringify(dataGuardar));
-
-        // Rastro IP
-        registrarRastroIP(urlGestor);
-    }
-    // CASO 2: URL LIMPIA (Mantener lo que había)
-    else {
-        const stored = localStorage.getItem('pth_referrer_smart');
-        if (stored) {
-            const data = JSON.parse(stored);
-            const now = new Date().getTime();
-
-            if (now > data.expiresAt) {
-                console.log("Amarre expirado por tiempo.");
-                localStorage.removeItem('pth_referrer_smart');
-            } else {
-                console.log("Amarre activo mantenido:", data.nombre);
-            }
-        }
-    }
+    const incoming = window.PTHAffiliate.incoming();
+    if (!incoming) { window.PTHAffiliate.read(); return; }
+    try {
+        const hierarchy = await resolveSalesHierarchy(incoming.nombre, true);
+        // Preserve legacy names with shared catalogue ownership; never resolve aliases.
+        const profile = hierarchy?.agent;
+        if (window.PTHAffiliate.incoming()?.nombre !== incoming.nombre) return;
+        const record = profile ? {...profile, telefono: incoming.telefono || profile.telefono || ''} : incoming;
+        referrerData = window.PTHAffiliate.remember(record);
+        registrarRastroIP(profile?.nombre || incoming.nombre);
+    } catch (_) { /* A failed lookup does not replace attribution with another account. */ }
 }
 
-// Función auxiliar para limpiar si expiró
-function checkExpiration() {
-    const stored = localStorage.getItem('pth_referrer_smart');
-    if (!stored) return;
+function checkExpiration() { window.PTHAffiliate.read(); }
 
-    const data = JSON.parse(stored);
-    const now = new Date().getTime();
-
-    if (now > data.expiresAt) {
-        console.log("❌ El amarre del gestor ha expirado. Cliente libre.");
-        localStorage.removeItem('pth_referrer_smart');
-        localStorage.removeItem('pth_referrer');
-    } else {
-        console.log(`🔒 Cliente amarrado a: ${data.nombre} (Vigente)`);
-    }
-}
-
-// 2. Recuperar Referido al comprar (VALIDACIÓN SEVERA)
 async function getActiveReferrer() {
-    const stored = localStorage.getItem('pth_referrer_smart');
-    if (!stored) return null;
-
-    const data = JSON.parse(stored);
-    const now = new Date().getTime();
-
-    // A. ¿Caducó por fecha fija?
-    if (now > data.expiresAt) {
-        console.log("❌ Enlace caducado por tiempo.");
-        localStorage.removeItem('pth_referrer_smart');
-        return null;
-    }
-
-    // B. VALIDACIÓN DOBLE: ¿El gestor sigue manteniendo el nivel?
-    // Si bajó de nivel ayer, hoy su enlace antiguo podría ser inválido.
-    const today = new Date();
-    today.setDate(today.getDate() - 30);
-
-    const hierarchy = await resolveSalesHierarchy(data.nombre, true);
-    let referralSalesQuery = supabaseClient
-        .from('pedidos')
-        .select('*', { count: 'exact', head: true })
-        .eq('estado', 'Entregado')
-        .gte('created_at', today.toISOString());
-    referralSalesQuery = hierarchy?.isSubgestor
-        ? referralSalesQuery.eq('subgestor_nombre', data.nombre)
-        : referralSalesQuery.eq('gestor', data.nombre);
-    const { count } = await referralSalesQuery;
-
-    const currentSales = count || 0;
-    const currentData = getLevelData(currentSales);
-    const allowedHours = currentData.duration;
-
-    // Calcular horas reales transcurridas desde el clic original
-    const hoursElapsed = (now - data.timestamp) / (1000 * 60 * 60);
-
-    if (hoursElapsed > allowedHours) {
-        console.log(`❌ PENALIZACIÓN: El gestor bajó de nivel. Enlace invalidado retroactivamente.`);
-        localStorage.removeItem('pth_referrer_smart');
-        return null;
-    }
-
-    return data;
+    // This browser remembers the most recent referral until another link or
+    // storage removal. Order eligibility still uses live server authorization.
+    return window.PTHAffiliate.read();
 }
 
 // EJECUTAR AL CARGAR
@@ -10420,7 +10283,10 @@ async function obtenerDuenoReal(telefonoCliente) {
 
     // 2. Un cliente que compra desde el enlace del gestor está siendo cerrado por él.
     const referrer = await getActiveReferrer();
-    if (referrer && esValido(referrer.nombre)) return referrer.nombre;
+    if (referrer && esValido(referrer.nombre)) {
+        const hierarchy = await resolveSalesHierarchy(referrer.id || referrer.nombre);
+        return referrer.id || hierarchy?.agent?.id || referrer.nombre;
+    }
 
     // 3. Si compra directamente, conserva para siempre al gestor que lo captó.
     if (telefonoCliente) {
@@ -10685,6 +10551,8 @@ async function generarComprobanteVenta(datosPedido, accion) {
     } else {
         linkPersonal += `?s=oficial`;
     }
+
+    nombreFinal = window.PTHAffiliate.publicName(session?.data || window.PTHAffiliate.current(), 'Asesor de ventas');
 
     // PALETA DE COLORES PREMIUM
     const cPrimary = [26, 71, 137];   // Azul Profundo
@@ -11861,7 +11729,7 @@ function consultarMensajeria(nombreProd) {
                 let t = data.telefono.replace(/\D/g, '');
                 if (t.length === 8) t = "53" + t; // Formato Cuba
                 telefonoDestino = t;
-                nombreAgente = data.nombre || "Agente";
+                nombreAgente = window.PTHAffiliate.publicName(data, 'Asesor');
             }
         } catch (e) { console.error(e); }
     }

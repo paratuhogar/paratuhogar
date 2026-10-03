@@ -55,7 +55,9 @@
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="js/vendor/supabase-2.57.4.js" defer></script>
-    <script src="js/secure-data.js?v=20261003-pending2" defer></script>
+    <script src="js/secure-data.js?v=20261003-alias1" defer></script>
+    <script src="js/affiliate-links.js?v=20261003-alias1" defer></script>
+    <script src="js/public-name-editor.js?v=20261003-alias1" defer></script>
     <script src="js/offline-storefront-adapter.js?v=20261003-pending2" defer></script>
     <script src="js/feedback-announcement.js?v=20261001-1" defer></script>
     <script src="js/image-variants.js?v=20261001-images2" defer></script>
@@ -67,7 +69,7 @@
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
          gráficas, Excel, editor, ZIP ni PDF para consultar el catálogo. -->
-    <script src="js/internal-assets.js?v=20261003-studioall1" defer></script>
+    <script src="js/internal-assets.js?v=20261003-alias1" defer></script>
     <script>
         let quill = null;
         function loadInternalAssets() { window.PTHAssets?.scheduleSession(); }
@@ -956,6 +958,7 @@
                     </div>
                 </section>
 
+                <div id="gestor-public-name"></div>
                 <section id="gestor-customer-protection" class="overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-blue-50 shadow-sm">
                     <div class="grid gap-5 p-5 md:grid-cols-[auto_1fr_auto] md:items-center md:p-6">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
@@ -3136,7 +3139,7 @@
         </div>
 
     <!-- Scripts de Lógica -->
-    <script src="js/storefront.min.js?v=20261003-pending2" defer></script>
+    <script src="js/storefront.min.js?v=20261003-alias1" defer></script>
     <script src="js/pending-checkout-storefront.js?v=20261003-pending2" defer></script>
 
 
@@ -3642,7 +3645,7 @@
 </style>
 
 <!-- LÓGICA DEL SISTEMA -->
-<script src="js/storefront-extras.min.js?v=20261003-recent2" defer></script>
+<script src="js/storefront-extras.min.js?v=20261003-alias1" defer></script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->

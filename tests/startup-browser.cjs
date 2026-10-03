@@ -11,15 +11,20 @@ const admin={...parent,id:'44444444-4444-4444-8444-444444444444',rol:'admin'};
 const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'v1'}:[];if(single&&Array.isArray(data))data=null;return Promise.resolve({data,error:null,count:0}).then(ok,no)}};for(const name of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[name]=()=>q;for(const name of ['single','maybeSingle'])q[name]=()=>{single=true;return q};return q;},rpc(){return Promise.resolve({data:[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};`;
 (async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  for(const role of (baseline?['visitor']:['visitor','gestor','subgestor','admin'])){
- const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero,failSalesTools=true;const profile=role==='subgestor'?child:role==='admin'?admin:parent;
+ const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero,failSalesTools=true,failAlias=true;const profile={...(role==='subgestor'?child:role==='admin'?admin:parent)};
  page.on('pageerror',e=>errors.push(e.stack));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
  await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
  await page.route('**/*',async route=>{
  const req=route.request(),url=new URL(req.url());requests.push(url.href);
  if(url.pathname==='/functions/v1/secure-data'){
  const b=req.postDataJSON();secureRequests.push(b);let data=[];
- if(b.action==='session')data={profile};
+ if(b.action==='session')data={profile,expiresAt:new Date(Date.now()+7*86400000).toISOString()};
  if(b.action==='login')data={token:'a'.repeat(64),profile:parent};
+ else if(b.action==='public_name'){
+  assert.deepEqual(Object.keys(b).sort(),['action','nombre_publico']);
+  if(failAlias){failAlias=false;return route.fulfill({status:503,json:{data:null,error:{message:'No se pudo guardar. Vuelve a intentar.'}}});}
+  profile.nombre_publico=b.nombre_publico;data={id:profile.id,nombre_publico:profile.nombre_publico};
+ }
  else if(b.action==='announcement')data={acknowledged:true};
  else if(b.action==='query'){
   try{validateQuery(b,req.headers().authorization?profile:null);}catch(e){return route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({data:null,error:{message:e.message}})});}
@@ -103,6 +108,21 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.waitForFunction(()=>window.currentUserData?.nombre==='Gestor Prueba'&&Number(productosRaw[0]?.comision)===50);
  }
  if(role!=='visitor'){
+  await page.evaluate(()=>injectLinksSection(currentUserData.nombre));
+  await page.evaluate(()=>{toggleCartModal(false);showSection('dashboard');showDashSection('resumen');});
+  const alias=page.locator('#gestor-public-name input[type="text"]'),save=page.getByRole('button',{name:'Guardar nombre público'});
+  await alias.fill('Mi tienda de prueba');await save.click();
+  await page.waitForFunction(()=>document.querySelector('#gestor-public-name [role="status"]')?.textContent.includes('Vuelve a intentar'));
+  assert.equal(await save.isEnabled(),true);
+  await save.click();await page.waitForFunction(()=>currentUserData.nombre_publico==='Mi tienda de prueba');
+  assert.match(await page.locator('#gestor-public-name [role="status"]').textContent(),/Guardado.*Mi tienda/);
+  assert.equal(await page.evaluate(()=>PTHAffiliate.read()?.id===currentUserData.id),false,'editing alias never reassigns referral ownership');
+  assert.equal(await page.evaluate(()=>currentUserData.nombre),profile.nombre);
+  for(const width of [320,390,820]){await page.setViewportSize({width,height:844});assert.ok(await page.locator('#gestor-public-name').evaluate(node=>node.scrollWidth<=node.clientWidth),'alias editor fits mobile');}
+  await page.setViewportSize({width:390,height:844});
+  const storeLink=await page.evaluate(()=>getGestorStoreLink());assert.doesNotMatch(storeLink,/Gestor|Sub|tienda|Prueba/);
+  assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('pth_short_links_cache_v2')||'[]').some(row=>new URL(row.original).searchParams.get('ref')===currentUserData.id)),'short link destination uses the stable ID');
+  await page.evaluate(()=>showSection('catalogo'));
   await page.evaluate(()=>{toggleCartModal(false);openDetail('Nevera prueba 01');});
   assert.match(new URL(page.url()).pathname,/^\/producto\//,'test Stories after opening the actual product detail');
   const storyAlerts=[];page.on('dialog',async dialog=>{storyAlerts.push(dialog.message());await dialog.dismiss();});
@@ -110,6 +130,10 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.waitForFunction(()=>document.querySelector('dialog [data-preview] img')?.naturalHeight===1920&&document.fonts.check('16px PTHManrope'));
   assert.equal(await page.locator('dialog [data-preview] img').getAttribute('alt'),'Story de Nevera prueba 01');
   assert.equal(await page.locator('dialog [data-select-results]').count(),0,'quick Story has no bulk editor controls');
+  await page.evaluate(()=>{navigator.clipboard.writeText=async text=>{window.storyCopied=text;};});
+  await page.locator('dialog [data-copy]').click();
+  assert.match(await page.evaluate(()=>storyCopied),new RegExp(profile.id));
+  assert.doesNotMatch(await page.evaluate(()=>storyCopied),/Gestor Prueba|Sub Prueba/);
   assert.ok(requests.some(u=>new URL(u).pathname==='/assets/fonts/Manrope.ttf'),'real Story font loads successfully');
   assert.equal(requests.some(u=>/\/producto\/.*\/(?:js|css|assets)\//.test(new URL(u).pathname)),false,'tools and fonts must load from the root');
   assert.deepEqual(storyAlerts,[],'product Story opens without an asset-load alert');
@@ -141,6 +165,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   assert.equal(await page.locator('#product-selector-list input').count(),1);
   const exportData=await page.evaluate(()=>JSON.parse(localStorage.getItem('pth_catalog_data')));
   assert.equal(exportData.ownerId,profile.id);assert.equal(exportData.products[0].nombre,'Nevera prueba 01');
+  assert.equal(exportData.agent,'Mi tienda de prueba');assert.doesNotMatch(JSON.stringify(exportData),/Gestor Prueba|Sub Prueba/);
   assert.equal(Number(exportData.products[0].precio),1001);
   assert.equal(exportData.products.some(product=>Object.hasOwn(product,'comision')||Object.hasOwn(product,'costo_proveedor')),false);
  }

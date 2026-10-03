@@ -6,7 +6,8 @@
     <title>Estudio de Catálogos | ParaTuHogar</title>
     <link rel="stylesheet" href="/css/tailwind.min.css?v=20261002-catalog1">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-    <script src="/js/internal-assets.js?v=20261002-catalog1" defer></script>
+    <script src="/js/affiliate-links.js?v=20261003-alias1"></script>
+    <script src="/js/internal-assets.js?v=20261003-alias1" defer></script>
     <style>
         @font-face { font-family:Manrope; src:url('/assets/fonts/Manrope.ttf') format('truetype'); font-weight:200 800; font-display:swap; }
         body { font-family: Manrope, sans-serif; }
@@ -173,7 +174,8 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cat-title').textContent = cat;
         document.getElementById('preview-title').textContent = cat;
         document.getElementById('cat-count').textContent = `${payload.products.length} productos disponibles`;
-        document.getElementById('agent-name').textContent = payload.agent || 'Asesor de ventas';
+        payload.agent = payload.publicName || window.PTHAffiliate.publicName(payload.agent, 'Asesor de ventas');
+        document.getElementById('agent-name').textContent = payload.agent;
         document.getElementById('preview-agent').textContent = payload.agent || 'Asesor de ventas';
         document.getElementById('date-tag').textContent = new Date(payload.timestamp || Date.now()).toLocaleDateString('es-ES');
         const requestedMode = ['catalog','bundle','comparison','multi'].includes(payload.mode) ? payload.mode : 'catalog';

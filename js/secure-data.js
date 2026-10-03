@@ -50,7 +50,7 @@
   const token=storage.getItem(tokenKey);if(!/^[a-f0-9]{64}$/.test(token||''))return null;
   let saved;try{saved=JSON.parse(storage.getItem('pth_session')||'null')?.data;}catch(_){return null;}
   if(!saved?.id||hasPendingPrivatePurge(saved.id)||!saved.nombre||saved.password!=='__session__'||saved.estado!=='activo'||saved.activo===false)return null;
-  return Object.fromEntries(['id','nombre','telefono','rol','estado','activo','parent_id','parent_nombre','parent_telefono'].filter(field=>Object.hasOwn(saved,field)).map(field=>[field,saved[field]]).concat([['password','__session__']]));
+  return Object.fromEntries(['id','nombre','nombre_publico','telefono','rol','estado','activo','parent_id','parent_nombre','parent_telefono'].filter(field=>Object.hasOwn(saved,field)).map(field=>[field,saved[field]]).concat([['password','__session__']]));
  }
  function adoptOfflineProfile(){const saved=offlineProfile();if(!saved)return null;profile=saved;return {...saved};}
  function clearCaches(){
@@ -113,11 +113,13 @@
  }
  for(const method of ['eq','neq','gt','gte','lt','lte','like','ilike','is','in'])Query.prototype[method]=function(column,value){this.body.filters.push({method,column,value});return this;};
  async function refresh(){const token=storage.getItem(tokenKey);if(!token||!checkExpiry())return null;const result=await send({action:'session'},token);if(result.error)throw Object.assign(Error(result.error.message),result.error);if(token!==storage.getItem(tokenKey))throw Object.assign(Error('La sesión cambió.'),{code:'SESSION_CHANGED'});saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
+ async function publicName(value){const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return{data:null,error:{message:'La sesión cambió.'}};const result=await send({action:'public_name',nombre_publico:value},token);if(token!==storage.getItem(tokenKey))return{data:null,error:{message:'La sesión cambió.'}};if(!result.error){const expiry=expiresAt();saveSession({profile:{...profile,nombre_publico:result.data.nombre_publico},expiresAt:expiry?new Date(expiry).toISOString():undefined});restoration=Promise.resolve(profile);}return result;}
  function install(client){if(client.__pthSecure)return client;const from=client.from.bind(client),rpc=client.rpc.bind(client);client.from=table=>tables.has(table)?new Query({action:'query',table,op:'select'}):from(table);client.rpc=(name,params={},options={})=>rpcs.has(name)?new Query({action:'rpc',name,params,...options}):rpc(name,params,options);client.__pthSecure=true;return client;}
  if(storage.getItem('pth_privacy_schema')!=='commission-v1'){clearCaches();try{storage.setItem('pth_privacy_schema','commission-v1');}catch(_){/* Optional metadata must not block a full device. */}}
  async function loginMessenger(pin){const result=await send({action:'login_messenger',pin},null);if(result.error)throw Error(result.error.message);saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
  root.PTHSecureData={push:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'push'},token);},announcement:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'announcement'},token);},feedback:async body=>{await restore();return send({...body,action:'feedback'});},login,loginMessenger,restore,refresh,expiresAt,clearSession,clearCaches,install,token:()=>storage.getItem(tokenKey),cacheSuffix:()=>':'+(profile?.id||'public'),logout:()=>{const token=storage.getItem(tokenKey);clearSession();return send({action:'logout'},token);}};
  root.PTHSecureData.offlineProfile=offlineProfile;
+ root.PTHSecureData.publicName=publicName;
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
