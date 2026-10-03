@@ -147,10 +147,10 @@ test('logout, expiry and quota failures protect every customer without crossing 
   state.advance(pending.AGE+1);assert.equal((await state.queue.list('b')).every(row=>!row.form&&!row.lines),true);assert.equal(await state.queue.read('a',b.id),null);
 });
 test('explicit save nonce is required for deduplication and cannot be reused with changed customer or quantities',async()=>{
-  const {queue}=setup(),intent={intentId:'a'.repeat(64),savedAt:Date.now()},a=await queue.save('a',input,intent);
+  const state=setup(),{queue}=state,intent={intentId:'a'.repeat(64),savedAt:state.now},a=await queue.save('a',input,intent);
   await assert.rejects(queue.save('a',{...input,form:{...input.form,tel:'different'}},intent),{code:'INTENT_CONFLICT'});await assert.rejects(queue.save('a',{...input,lines:[{id:'pA',qty:2,price:100}]},intent),{code:'INTENT_CONFLICT'});
   await queue.confirmed('a',a.id,[{reference:'A1'}]);assert.equal((await queue.save('a',input,intent)).id,a.id);assert.equal((await queue.list('a')).length,1);
-  await assert.rejects(queue.save('a',input,{intentId:'invalid',savedAt:Date.now()}),{code:'INVALID_INTENT'});
+  await assert.rejects(queue.save('a',input,{intentId:'invalid',savedAt:state.now}),{code:'INVALID_INTENT'});
 });
 test('pending limit is bounded without deleting existing customers and confirmation frees a slot',async()=>{
   const {queue}=setup();for(let i=0;i<pending.MAX_PENDING;i++)await queue.save('a',{...input,form:{...input.form,nombre:'Customer '+i}});

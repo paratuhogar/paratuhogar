@@ -118,7 +118,7 @@
    // Native sharing must run directly in the click, before any await or clipboard.
    const operation = this.batch.share(); this.buttons();
    operation.then(() => { if (epoch !== this.epoch || this.disposed) return; this.onUsage('compartir', 1); this.message('Imagen entregada al menú de compartir. Comprueba el envío en la aplicación elegida.'); })
-    .catch(error => { if (epoch === this.epoch && !this.disposed) this.message(error.name === 'AbortError' ? 'Compartido cancelado. Tu imagen sigue lista para intentarlo de nuevo.' : error.message + ' También puedes descargar la imagen.', error.name !== 'AbortError'); })
+    .catch(error => { if (epoch === this.epoch && !this.disposed && !this.expired) this.message(J.shareErrorMessage(error, { single: true }), error.name !== 'AbortError'); })
     .finally(() => { this.sharing = false; if (!this.disposed) this.buttons(); });
   }
   download() {

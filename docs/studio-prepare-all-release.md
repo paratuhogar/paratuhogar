@@ -32,10 +32,9 @@ The only stored fields are random job ID, index, public filename, JPEG Blob and
 timestamp. Renderers/text receive the existing public field whitelist.
 
 Sharing remains a separate explicit click and calls `navigator.share`
-synchronously before asynchronous reads. At most 12 MiB of share files are
-preloaded. If the entire selection fits that budget and real `canShare` accepts
-it, it is shared together even above ten files. Otherwise a compatible bounded
-group is loaded; after sharing, the next group is preloaded automatically.
+synchronously before asynchronous reads. At most ten images and 12 MiB of
+share files are preloaded. `canShare` does not guarantee that the native share
+accepts a larger count. After sharing, the next group is preloaded automatically.
 Each native share still needs another user click. Resolving the OS share API
 does not prove delivery in WhatsApp. Incompatible browsers use the complete
 download; prices and authentication expiration are unchanged.
@@ -52,7 +51,8 @@ update together; the push worker registration version stays unchanged.
 - Chromium Studio: 1,003-item catalogue, full filter selection, 23 selected
   images from one click, complete ZIP checked with an independent JSZip CRC
   reader; more than 12 MiB, UTF-8 filenames, complete text and no private fields.
-- Native capability fixtures: all 23 small images together or automatic groups;
+- Native capability fixtures: automatic groups of 10/10/3 even when `canShare`
+  accepts all 23 small images;
   explicit user activation, repeated clicks and native cancellation.
 - Recoverable image failure resumes saved JPEGs; quota errors, missing data,
   interrupted writes, cancel, repeat, fresh prices and changed options checked.
@@ -74,3 +74,48 @@ again and preserve any newer changes; use a normal merge/fast-forward, never
 force push. Rollback is a normal revert of this release commit and standard
 Pages publication. No server/data rollback is needed. The local artifact
 database may contain only bounded orphan artwork until its next sweep.
+
+## Share-denial follow-up, 3 October 2026
+
+The original release incorrectly treated a positive `canShare({files})` as a
+safe count limit. The current [Chromium renderer source](https://raw.githubusercontent.com/chromium/chromium/main/third_party/blink/renderer/modules/webshare/navigator_share.cc)
+checks known share fields in `canShare`, but rejects more than ten files in
+`share` with `NotAllowedError: Permission denied`. We reproduced the application
+fault before fixing it: all 23 small images were loaded instead of ten. This
+explains a verified failure path matching the reported message; the phone's
+actual selection count, host response headers and native target are not known.
+Do not claim the user's exact device cause or successful WhatsApp delivery as
+verified. The [Web Share specification](https://www.w3.org/TR/web-share/) also
+requires an allowed document policy and transient user activation.
+
+The follow-up always caps native groups at ten images and 12 MiB. A native
+`NotAllowedError` on a multiple-image group preserves the complete archive and
+current position and offers one image per fresh click for the rest of that
+job. It never calls the native API automatically after an error. Cancellation
+preserves the current group. Recognized blocked document policy and missing
+user activation are checked without changing browser/server permissions.
+Magic Studio and Quick Story show fixed Spanish recovery messages rather than
+arbitrary browser error text. The existing five-minute expiry/session cleanup
+and complete ZIP generation/download stay unchanged.
+
+Verification: 377 Node tests passed; actual local Chromium UI tests passed for
+10/10/3 grouping with Chrome-like false-positive capability, rejection,
+cancellation, position/archive preservation, single-image retry, duplicate
+clicks and a six-second callback that loses activation. Native OS sharing is
+simulated in those tests; JPEG rendering and download are real local browser
+operations. Studio layout remains checked at 320/390/820/1366 px; Quick Story
+at 320/390/1280 px. `npm run check:js`, JS syntax and `git diff --check` passed.
+One pre-existing pending-order test mixed its frozen queue clock with real
+`Date.now()` and intermittently rejected its own valid fixture; only that
+test's timestamp was aligned with its fixture clock. No order runtime changed.
+
+Cache-busted changed Studio/Story assets and loader entrypoints use
+`20261003-sharefix1`; the public static cache updates together. The push-worker
+registration version is unchanged. This release changes frontend sharing and
+tests only, with no database, authentication, prices, commissions, payments,
+customer-data or permission changes. Publish by normal main fast-forward;
+rollback by reverting this follow-up commit and publishing normally. Do not
+undo the separate public-name backend or migration. The user confirmed that
+the earlier complete ZIP download works; phone confirmation of this sharing
+follow-up is pending. Prior 403 blocks on Pages/Actions and public-site reads
+remain verification limits; do not retry through alternative routes.

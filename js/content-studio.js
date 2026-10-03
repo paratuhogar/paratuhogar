@@ -166,7 +166,7 @@
    if (!this.story) {
     this.node('[data-prepare]').textContent = !ready && this.batch.job?.entries.length ? 'Continuar preparación' : 'Preparar todas';
     this.node('[data-download]').textContent = ready && this.batch.ready.total === 1 ? 'Descargar imagen' : 'Descargar ZIP completo';
-    this.node('[data-share]').textContent = ready && this.batch.ready.files.length < this.batch.ready.total ? `Compartir ${this.batch.ready.shareStart + 1}–${this.batch.ready.shareNext} de ${this.batch.ready.total}` : 'Compartir imágenes';
+    this.node('[data-share]').textContent = ready && this.batch.ready.files.length === 1 ? `Compartir imagen${this.batch.ready.total > 1 ? ' ' + (this.batch.ready.shareStart + 1) + ' de ' + this.batch.ready.total : ''}` : ready && this.batch.ready.files.length < this.batch.ready.total ? `Compartir ${this.batch.ready.shareStart + 1}–${this.batch.ready.shareNext} de ${this.batch.ready.total}` : 'Compartir imágenes';
    }
    this.node('[data-cancel]').hidden = !preparing || !!this.sharing;
    for (const attr of ['share', 'download', 'copy', ...(this.story ? ['next'] : [])]) this.node('[data-' + attr + ']').disabled = !!(disabled || preparing || this.downloading);
@@ -197,7 +197,7 @@
    this.sharing = true;
    // Call directly during this click, before any asynchronous work or clipboard.
    const operation = this.batch.share(); this.buttons();
-   operation.then(() => { if (epoch !== this.queueEpoch || this.expired) return; this.completed = true; this.remember(ready.products); this.onUsage('compartir', count); this.message('Imágenes entregadas al menú de compartir. Comprueba el envío en la aplicación que elegiste.' + (!this.story && ready.files.length ? ' El siguiente grupo ya está listo para compartir.' : '')); }).catch(error => { if (epoch === this.queueEpoch) this.message(error.name === 'AbortError' ? 'Compartido cancelado. Las imágenes siguen preparadas para volver a intentarlo.' : error.message + ' Puedes descargar la selección completa.', error.name !== 'AbortError'); }).finally(() => { this.sharing = false; this.buttons(); });
+   operation.then(() => { if (epoch !== this.queueEpoch || this.expired) return; this.completed = true; this.remember(ready.products); this.onUsage('compartir', count); this.message('Imágenes entregadas al menú de compartir. Comprueba el envío en la aplicación que elegiste.' + (!this.story && ready.files.length ? ' El siguiente grupo ya está listo para compartir.' : '')); }).catch(error => { if (epoch === this.queueEpoch && !this.expired) this.message(J.shareErrorMessage(error, { single: ready.total === 1, smallerGroup: !this.story && count > 1 && ready.files.length === 1 }), error.name !== 'AbortError'); }).finally(() => { this.sharing = false; this.buttons(); });
   }
   async download() {
    if (this.downloading || this.sharing || !this.batch.valid()) { this.message('Vuelve a preparar la tanda antes de descargar.', true); return; }

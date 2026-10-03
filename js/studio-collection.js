@@ -153,8 +153,9 @@
   async loadShare(start, signal) {
    const ready = this.ready, job = this.job; if (!ready || !job) return;
    ready.files = []; ready.shareStart = start; ready.shareNext = start;
-   if (!root.navigator.share || !root.navigator.canShare || start >= job.entries.length) return;
-   const limit = job.bytes <= J.MAX_BYTES ? job.entries.length : J.MAX_FILES; let bytes = 0;
+   if (!root.navigator.share || !root.navigator.canShare || !J.sharePolicyAllowed() || start >= job.entries.length) return;
+   // Chrome's canShare can accept >10 files even though share then rejects them as Permission denied.
+   const limit = Math.min(J.MAX_FILES, job.shareLimit || J.MAX_FILES); let bytes = 0;
    for (let index = start; index < job.entries.length && ready.files.length < limit; index++) {
     const entry = job.entries[index]; if (ready.files.length && bytes + entry.size > J.MAX_BYTES) break;
     J.assertScope(ready.token, signal); const row = await this.cache.get(job.id, index, signal); J.assertScope(ready.token, signal);
@@ -169,13 +170,22 @@
    }
    ready.shareNext = start + ready.files.length;
   }
-  canShare() { if (!this.valid() || !this.ready.files.length) return false; try { return !!root.navigator.canShare({ files: this.ready.files }); } catch (_) { return false; } }
+  canShare() { if (!this.valid() || !this.ready.files.length || !root.navigator.share || !root.navigator.canShare || !J.sharePolicyAllowed()) return false; try { return !!root.navigator.canShare({ files: this.ready.files }); } catch (_) { return false; } }
   share() {
+   if (!this.valid()) return Promise.reject(Error('La selección venció o la sesión cambió. Vuelve a prepararla.'));
+   const contextError = J.shareContextError(); if (contextError) return Promise.reject(contextError);
    if (!this.canShare()) return Promise.reject(Error('Descarga el ZIP completo para adjuntar las imágenes en WhatsApp.'));
    const ready = this.ready, epoch = this.epoch, next = ready.shareNext; this.busy = true;
    // No await before the native call: this uses the user's actual click activation.
-   let operation; try { operation = root.navigator.share({ files: ready.files }); } catch (error) { this.busy = false; return Promise.reject(error); }
-   return Promise.resolve(operation).then(async () => {
+   let operation; try { operation = root.navigator.share({ files: ready.files }); } catch (error) { operation = Promise.reject(error); }
+   return Promise.resolve(operation).catch(error => {
+    if (epoch === this.epoch && this.ready === ready && error.name === 'NotAllowedError' && ready.files.length > 1) {
+     // Never retry the native API automatically: it consumes the user's activation.
+     // Keep the full ZIP and position; prepare a smaller group for a fresh explicit click.
+     this.job.shareLimit = 1; ready.files = ready.files.slice(0, 1); ready.shareNext = ready.shareStart + 1;
+    }
+    throw error;
+   }).then(async () => {
     if (epoch !== this.epoch) return;
     const controller = this.controller = new AbortController();
     await this.loadShare(next, controller.signal);

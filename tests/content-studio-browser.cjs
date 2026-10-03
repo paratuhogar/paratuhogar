@@ -49,7 +49,7 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   await page.locator('[data-clear]').click(); await page.locator('[data-only]').uncheck();
   for (let i = 0; i < 23; i++) await page.locator('[data-products] .pth-studio-product-choice').nth(i).click();
   assert.equal(await page.locator('[data-next]').count(), 0, 'Magic Studio never asks to prepare another batch');
-  await page.evaluate(() => { window.shareCalls = []; window.capabilityCalls = []; navigator.canShare = data => { capabilityCalls.push(Object.keys(data)); return data.files.length <= 10; }; navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive, keys: Object.keys(data) }); return Promise.resolve(); }; });
+  await page.evaluate(() => { window.shareCalls = []; window.capabilityCalls = []; navigator.canShare = data => { capabilityCalls.push(Object.keys(data)); return data.files.length > 0; }; navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive, keys: Object.keys(data) }); if (data.files.length > 10) return Promise.reject(new DOMException("Failed to execute 'share' on 'Navigator': Permission denied", 'NotAllowedError')); return Promise.resolve(); }; });
   await page.locator('[data-prepare]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid());
   assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.files.length), 10);
   assert.ok(await page.evaluate(() => PTHStudioPage.batch.ready.bytes <= PTHStudioJobs.MAX_BYTES));
@@ -67,10 +67,36 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.batch.ready?.shareStart === 20 && PTHStudioPage.batch.valid());
   await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid() && !PTHStudioPage.batch.ready.files.length);
   assert.equal(await page.locator('[data-share]').isVisible(), false);
-  // A compatible device can share >10 small images together, without an arbitrary count restriction.
-  await page.evaluate(() => { navigator.canShare = data => data.files.length > 0; });
+  assert.deepEqual(await page.evaluate(() => shareCalls.map(call => call.count)), [10, 10, 3], 'Chrome false-positive canShare still uses native-safe groups');
+  // Runtime denial/cancel preserves the full download and retries with a fresh explicit click.
   await page.locator('[data-prepare]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid());
-  assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.files.length), 23);
+  assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.files.length), 10);
+  await page.evaluate(() => { window.savedCompleteArchive = PTHStudioPage.batch.ready.archive; window.shareCalls = []; navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive }); return Promise.reject(new DOMException("Failed to execute 'share' on 'Navigator': Permission denied", 'NotAllowedError')); }; });
+  await page.locator('[data-share]').click(); await page.waitForFunction(() => !PTHStudioPage.sharing);
+  assert.deepEqual(await page.evaluate(() => shareCalls), [{ count: 10, activation: true }]);
+  assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.archive === savedCompleteArchive), true);
+  assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.shareStart), 0);
+  assert.equal(await page.locator('[data-share]').textContent(), 'Compartir imagen 1 de 23');
+  assert.match(await page.locator('[data-status]').textContent(), /una sola imagen/);
+  assert.doesNotMatch(await page.locator('[data-status]').textContent(), /Permission denied|Navigator/);
+  await page.evaluate(() => { navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive }); return Promise.reject(new DOMException('cancel', 'AbortError')); }; });
+  await page.locator('[data-share]').click(); await page.waitForFunction(() => !PTHStudioPage.sharing);
+  assert.equal(await page.locator('[data-share]').textContent(), 'Compartir imagen 1 de 23');
+  assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.archive === savedCompleteArchive), true);
+  await page.evaluate(() => { navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive }); return Promise.resolve(); }; });
+  await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid() && PTHStudioPage.batch.ready.shareStart === 1);
+  assert.deepEqual(await page.evaluate(() => shareCalls), [{ count: 10, activation: true }, { count: 1, activation: true }, { count: 1, activation: true }]);
+  assert.equal(await page.locator('[data-share]').textContent(), 'Compartir imagen 2 de 23');
+  // A delayed callback loses activation; do not call the native API, then a normal tap succeeds.
+  await page.evaluate(() => { const button = document.createElement('button'); button.id = 'delayed-share'; button.textContent = 'Delayed test'; button.onclick = () => setTimeout(() => { window.delayedActivation = navigator.userActivation.isActive; PTHStudioPage.share(); window.delayedShareDone = true; }, 6000); document.body.append(button); });
+  await page.locator('#delayed-share').click(); await page.waitForFunction(() => window.delayedShareDone && !PTHStudioPage.sharing);
+  assert.equal(await page.evaluate(() => delayedActivation), false);
+  assert.equal(await page.evaluate(() => shareCalls.length), 3);
+  assert.match(await page.locator('[data-status]').textContent(), /Toca Compartir de nuevo/);
+  assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.archive === savedCompleteArchive), true);
+  await page.locator('#delayed-share').evaluate(button => button.remove());
+  await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid() && PTHStudioPage.batch.ready.shareStart === 2);
+  assert.equal(await page.evaluate(() => shareCalls[3].activation), true);
   // Preserve valid JPEG output, adding harmless trailing bytes to exercise a real >12-MiB archive.
   await page.evaluate(() => {
    window.originalBlob = HTMLCanvasElement.prototype.toBlob;
@@ -173,7 +199,7 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
    const db = await PTHStudioPage.batch.cache.open(); return await new Promise(resolve => { const r = db.transaction('files').objectStore('files').count(); r.onsuccess = () => resolve(r.result); });
   }), 0, 'session change deletes all generated artifacts from the previous preparation');
   assert.ok(queries.some(q => q.table === 'productos' && q.range[0] === 1000), 'complete paginated catalogue');
-  console.log('PASS Stories/Studio: 1003 catalogue products, 23-image one-click complete CRC-verified ZIP including >12 MiB, all-at-once compatible sharing or automatic bounded groups, error resume, quota recovery, interrupted-write fencing, activation, cancel/duplicate/retry, fresh prices, 8 templates, modes, mobile, dialog focus, tenant cleanup; no remote writes/messages.');
+  console.log('PASS Stories/Studio: Chrome canShare false positive, 10/10/3 native-safe groups, denial/cancel preserves archive/position, explicit single-image retry, delayed activation recovery, 1003 catalogue products, complete CRC-verified ZIP, preparation failures, prices, templates/mobile/session isolation; no remote writes/messages.');
   await context.close();
  } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

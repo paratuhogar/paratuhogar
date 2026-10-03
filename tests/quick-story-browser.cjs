@@ -68,6 +68,11 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
    // Native gesture and duplicate invocation are verified without sending anything.
    await page.locator('[data-share]').click(); await page.waitForFunction(() => !story.sharing);
    assert.deepEqual(await page.evaluate(() => shareCalls[0]), { count: 1, activation: true, keys: ['files'] });
+   await page.evaluate(() => { navigator.share = () => Promise.reject(new DOMException("Failed to execute 'share' on 'Navigator': Permission denied", 'NotAllowedError')); });
+   await page.locator('[data-share]').click(); await page.waitForFunction(() => !story.sharing);
+   assert.equal(await page.evaluate(() => story.batch.valid()), true);
+   assert.match(await page.locator('[data-status]').textContent(), /imagen sigue preparada/);
+   assert.doesNotMatch(await page.locator('[data-status]').textContent(), /Permission denied|Navigator/);
    await page.evaluate(() => { navigator.share = () => Promise.reject(new DOMException('cancel', 'AbortError')); });
    await page.locator('[data-share]').click(); await page.waitForFunction(() => !story.sharing); assert.equal(await page.evaluate(() => story.batch.valid()), true);
    await page.evaluate(() => { window.pendingShares = 0; navigator.share = () => { pendingShares++; return new Promise(resolve => window.releaseShare = resolve); }; story.share(); story.share(); });

@@ -91,6 +91,27 @@
   return result.join('\n');
  }
  const MAX_FILES = 10, MAX_BYTES = 12 * 1024 * 1024, MAX_AGE = 5 * 60 * 1000;
+ function sharePolicyAllowed() {
+  const policy = root.document?.permissionsPolicy || root.document?.featurePolicy;
+  // An unrecognized feature is reported as false by some browsers; trust only known policy features.
+  try { return !policy?.features?.().includes('web-share') || policy.allowsFeature('web-share'); } catch (_) { return true; }
+ }
+ function shareContextError() {
+  if (!sharePolicyAllowed()) return Object.assign(Error('Compartir no está disponible en esta ventana.'), { code: 'SHARE_POLICY_BLOCKED' });
+  if (root.navigator.userActivation?.isActive === false) return Object.assign(Error('Toca Compartir de nuevo.'), { code: 'SHARE_GESTURE_REQUIRED' });
+  return null;
+ }
+ function shareErrorMessage(error, { single = false, smallerGroup = false } = {}) {
+  const saved = single ? 'Tu imagen sigue preparada.' : 'Las imágenes siguen preparadas.';
+  const download = single ? 'Puedes descargarla y adjuntarla en WhatsApp.' : 'Puedes descargar el ZIP completo y adjuntar las imágenes en WhatsApp.';
+  if (error?.name === 'AbortError') return 'Compartido cancelado. ' + saved + ' Puedes volver a intentarlo.';
+  if (error?.code === 'SHARE_GESTURE_REQUIRED') return 'Toca Compartir de nuevo para abrir el menú del teléfono. ' + saved;
+  if (error?.code === 'SHARE_POLICY_BLOCKED') return 'Este navegador no permite compartir desde esta ventana. ' + saved + ' ' + download;
+  if (error?.name === 'NotAllowedError' && smallerGroup) return 'El teléfono rechazó este grupo. Toca Compartir para probar con una sola imagen. ' + saved + ' ' + download;
+  if (error?.name === 'NotAllowedError') return 'El navegador no permitió abrir el menú de compartir. ' + saved + ' Puedes volver a intentarlo. ' + download;
+  if (error?.name === 'InvalidStateError') return 'Cierra el menú de compartir que esté abierto y vuelve a intentarlo. ' + saved;
+  return 'No se pudo compartir en este navegador. ' + saved + ' ' + download;
+ }
  class Batch {
   constructor() { this.epoch = 0; this.busy = false; this.ready = null; this.controller = null; }
   cancel() { this.epoch++; this.controller?.abort(); this.controller = null; this.ready = null; this.busy = false; }
@@ -125,15 +146,16 @@
     progress(files.length, files.length, 'Tanda preparada'); return this.ready;
    } finally { if (epoch === this.epoch) { this.busy = false; this.controller = null; } }
   }
-  canShare() { if (!this.valid() || !root.navigator.share || !root.navigator.canShare) return false; try { return root.navigator.canShare({ files: this.ready.files }); } catch (_) { return false; } }
+  canShare() { if (!this.valid() || !root.navigator.share || !root.navigator.canShare || !sharePolicyAllowed()) return false; try { return root.navigator.canShare({ files: this.ready.files }); } catch (_) { return false; } }
   share() {
    // Deliberately synchronous through navigator.share: retain the explicit click's activation.
    if (!this.valid()) return Promise.reject(Error('La tanda venció o la sesión cambió. Vuelve a prepararla.'));
+   const contextError = shareContextError(); if (contextError) return Promise.reject(contextError);
    if (!this.canShare()) return Promise.reject(Error('Este navegador no comparte archivos. Descarga la tanda y adjúntala en WhatsApp.'));
    this.busy = true; const epoch = this.epoch;
    try { return Promise.resolve(root.navigator.share({ files: this.ready.files })).finally(() => { if (epoch === this.epoch) this.busy = false; }); }
    catch (error) { this.busy = false; return Promise.reject(error); }
   }
  }
- root.PTHStudioJobs = { id, scope, assertScope, wait, catalogue, publicProduct, signature, validate, copy, Batch, MAX_FILES, MAX_BYTES, MAX_AGE };
+ root.PTHStudioJobs = { id, scope, assertScope, wait, catalogue, publicProduct, signature, validate, copy, sharePolicyAllowed, shareContextError, shareErrorMessage, Batch, MAX_FILES, MAX_BYTES, MAX_AGE };
 })(window);
