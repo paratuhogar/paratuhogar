@@ -2,7 +2,7 @@ const {chromium}=require('playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
 (async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});try{
- for(const scenario of ['ready','inactive-existing','angel-ready','angel-existing','disabled','disabled-config','paused-existing','denied','save-failure','session-change']){
+ for(const scenario of ['ready','inactive-existing','angel-ready','angel-existing','angel-reminder','angel-reminder-existing','marcel-reminder','marcel-reminder-existing','disabled','disabled-config','paused-existing','denied','save-failure','session-change']){
  const page=await browser.newPage({viewport:{width:390,height:844}});
  await page.route('**/*',route=>{const u=new URL(route.request().url());if(u.pathname==='/js/admin-push.mjs')return route.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.join(root,'js/admin-push.mjs'))});return route.fulfill({contentType:'text/html',body:'<main id="settings"></main>'});});
  await page.goto('http://127.0.0.1:8080/');
@@ -11,7 +11,7 @@ const root=path.resolve(__dirname,'..');
   const subscription={endpoint:'https://push.test/synthetic',toJSON:()=>({endpoint:'https://push.test/synthetic',keys:{auth:'synthetic',p256dh:'synthetic'}}),unsubscribe:async()=>{calls.unsubscribe++;return true;}};
   const env={isSecureContext:true,navigator:{userAgent:'Desktop',serviceWorker:{}},PushManager:{},Notification:{permission:'default',requestPermission:async()=>{calls.permission++;if(scenario==='session-change')window.scope='session-b';return scenario==='denied'?'denied':'granted';}},matchMedia:()=>({matches:false}),addEventListener:window.addEventListener.bind(window),removeEventListener:window.removeEventListener.bind(window)};
   const raw=String.fromCharCode(4)+String.fromCharCode(...new Uint8Array(64));const publicKey=btoa(raw).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
-  await mountAdminPush(document.querySelector('#settings'),{scope:()=>window.scope,config:async()=>({enabled:!['disabled','disabled-config','paused-existing'].includes(scenario),publicKey,allowedTopics:scenario.startsWith('angel-')?['orders','suggestions','applications']:['orders'],...(scenario==='disabled-config'?{readiness:{deliveryReady:true,switchOn:true,publicKeyValid:true,privateKeyValid:false,dispatchSecretValid:true,subjectValid:true}}:{})}),existing:async()=>['paused-existing','angel-existing','inactive-existing'].includes(scenario)?subscription:null,status:async()=>({active:scenario==='angel-existing',topics:['orders','suggestions']}),registration:async()=>({pushManager:{getSubscription:async()=>['angel-existing','inactive-existing'].includes(scenario)?subscription:null,subscribe:async()=>{calls.subscribe++;return subscription;}}}),save:async data=>{calls.save++;window.savedTopics=data.topics;if(scenario==='save-failure')throw Error('offline');},remove:async()=>{calls.remove++;},pilot:async()=>{calls.pilot++;}},env);
+  await mountAdminPush(document.querySelector('#settings'),{scope:()=>window.scope,config:async()=>({enabled:!['disabled','disabled-config','paused-existing'].includes(scenario),publicKey,allowedTopics:scenario.startsWith('angel-')?['orders','suggestions','applications',...(scenario.includes('reminder')?['application_reminders']:[])]:scenario.startsWith('marcel-')?['orders','suggestions','application_reminders']:['orders'],...(scenario==='disabled-config'?{readiness:{deliveryReady:true,switchOn:true,publicKeyValid:true,privateKeyValid:false,dispatchSecretValid:true,subjectValid:true}}:{})}),existing:async()=>['paused-existing','angel-existing','angel-reminder-existing','marcel-reminder-existing','inactive-existing'].includes(scenario)?subscription:null,status:async()=>({active:['angel-existing','angel-reminder-existing','marcel-reminder-existing'].includes(scenario),topics:scenario==='angel-reminder-existing'?['orders','suggestions','applications']:['orders','suggestions']}),registration:async()=>({pushManager:{getSubscription:async()=>['angel-existing','angel-reminder-existing','marcel-reminder-existing','inactive-existing'].includes(scenario)?subscription:null,subscribe:async()=>{calls.subscribe++;return subscription;}}}),save:async data=>{calls.save++;window.savedTopics=data.topics;if(scenario==='save-failure')throw Error('offline');},remove:async()=>{calls.remove++;},pilot:async()=>{calls.pilot++;}},env);
  },scenario);
  assert.equal(await page.evaluate(()=>calls.permission),0,'no prompt on load');
  assert.ok((await page.locator('#settings').textContent()).includes('Al cerrar sesión o caducar tu acceso'));
@@ -33,6 +33,16 @@ const root=path.resolve(__dirname,'..');
   await page.getByRole('button',{name:'Desactivar en este dispositivo'}).click();await page.getByRole('status').filter({hasText:'desactivadas'}).waitFor();
   assert.equal(await page.evaluate(()=>calls.unsubscribe),1);assert.equal(await page.evaluate(()=>calls.remove),1);assert.equal(await page.evaluate(()=>calls.subscribe),0);
   console.log('PASS paused push: existing device can still opt out');await page.close();continue;
+ }
+ if(scenario.includes('reminder')){
+  assert.equal(await page.locator('input[type=checkbox]').count(),scenario.startsWith('angel-')?4:3);
+  assert.equal(await page.locator('input[value=application_reminders]').isChecked(),false,'reminders are never silently added');
+  assert.equal(await page.evaluate(()=>calls.save),0);assert.equal(await page.locator('input[value=applications]').count(),scenario.startsWith('angel-')?1:0);
+  await page.locator('input[value=application_reminders]').check();await page.getByRole('button',{name:'Activar notificaciones',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Notificaciones activadas'}).waitFor();
+  assert.deepEqual(await page.evaluate(()=>savedTopics),scenario==='angel-reminder-existing'?['orders','suggestions','applications','application_reminders']:scenario.endsWith('-existing')?['orders','suggestions','application_reminders']:['application_reminders']);
+  assert.equal(await page.evaluate(()=>calls.pilot),0);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  console.log(`PASS ${scenario}: exact audience choices, explicit new reminder opt-in, retained existing topics, no send, mobile`);await page.close();continue;
  }
  if(scenario.startsWith('angel-')){
   assert.equal(await page.locator('input[type=checkbox]').count(),3);

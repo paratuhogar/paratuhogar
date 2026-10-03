@@ -1,4 +1,4 @@
-import {allowedPushTopics} from './push-policy.mjs';
+import {allowedPushTopics,APPLICATION_REVIEWER_ID,APPLICATION_ESCALATION_REVIEWER_ID} from './push-policy.mjs';
 const fail=(message,status=403)=>{throw Object.assign(Error(message),{status});};
 // Explicit server configuration stays off by default. Keys alone cannot enable it.
 export const PUSH_DELIVERY_READY=true;
@@ -23,16 +23,30 @@ export function validatePushEndpoint(value){
  if(typeof value!=='string'||value.length>2048||url.protocol!=='https:'||url.port||url.username||url.password||url.hash||!allowed)fail('Servicio de notificaciones no permitido.',400);
  return url.href;
 }
+export async function applicationReminderConfig(db,{required=false}={}){
+ try{
+  const {data,error}=await db.from('pth_application_reminder_config')
+   .select('enabled,angel_id,marcel_id').eq('singleton',true).maybeSingle();
+  if(error||!data)throw Error('Reminder policy unavailable');
+  return data;
+ }catch(error){if(required)throw Error('Reminder policy unavailable');return null;}
+}
 export async function pushSettings(db,body,actor,sessionHash,env={},dispatchPilot){
- const allowed=allowedPushTopics(actor);if(!allowed.length)fail('Tu cuenta no tiene notificaciones administrativas.');
+ const base=allowedPushTopics(actor);if(!base.length)fail('Tu cuenta no tiene notificaciones administrativas.');
  const state=pushConfiguration(env);
+ // Removing an enrollment remains possible while the reminder policy is offline.
+ const reminders=state.enabled&&body.operation!=='remove'
+  &&[APPLICATION_REVIEWER_ID,APPLICATION_ESCALATION_REVIEWER_ID].includes(actor.id)
+  ?await applicationReminderConfig(db):null;
+ const allowed=allowedPushTopics(actor,reminders);
  if(body.operation==='config')return {data:{...state,allowedTopics:allowed,publicKey:state.enabled?env.PTH_PUSH_VAPID_PUBLIC_KEY:null,
   ...(allowed.includes('suggestions')?{readiness:pushReadiness(env)}:{})},error:null};
  if(body.operation==='status'){
   const endpoint=validatePushEndpoint(body.endpoint);
   const {data,error}=await db.from('pth_push_subscriptions').select('topics,expires_at').eq('endpoint',endpoint).eq('gestor_id',actor.id).eq('session_hash',sessionHash).is('revoked_at',null).gt('expires_at',new Date().toISOString()).maybeSingle();
   if(error)fail('No se pudo comprobar este dispositivo.',503);
-  return {data:{active:Boolean(data),topics:data?.topics?.filter(topic=>allowed.includes(topic))||[],expiresAt:data?.expires_at||null},error:null};
+  const topics=data?.topics?.filter(topic=>allowed.includes(topic))||[];
+  return {data:{active:Boolean(data&&topics.length),topics,expiresAt:data?.expires_at||null},error:null};
  }
  if(body.operation==='pilot'){
   if(!state.enabled||!dispatchPilot)fail('Las notificaciones todavía no están habilitadas.',503);

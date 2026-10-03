@@ -9,7 +9,7 @@ const endpoint='https://fcm.googleapis.com/synthetic';
 const body={operation:'save',subscription:{endpoint,keys:{p256dh:'a'.repeat(87),auth:'b'.repeat(22)}},topics:['orders']};
 function fixture(){
  const future=new Date(Date.now()+3600000).toISOString();
- const tables={pth_secure_sessions:[{gestor_id:actor.id,token_hash:'session-a',expires_at:future}],pth_push_subscriptions:[]};
+ const tables={pth_secure_sessions:[{gestor_id:actor.id,token_hash:'session-a',expires_at:future}],pth_push_subscriptions:[],pth_application_reminder_config:[]};
  const writes=[];let allowedRate=true;
  const db={rpc:async(name,args)=>{assert.equal(name,'pth_check_login_rate');assert.equal(args.p_limit,5);assert.match(args.p_key,/^[a-f0-9]{64}$/);return {data:allowedRate,error:null};},from(table){
   let op='select',values,single=false;const filters=[];

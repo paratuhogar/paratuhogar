@@ -23,3 +23,10 @@ test('application deep link requires restored administrative profile and server-
  for(const [profile,topics] of [[null,[]],[{id:'sub',rol:'admin',parent_id:'parent'},['applications']],[{id:'owner',rol:'admin'},['orders','suggestions']],[{id:'other',rol:'admin'},['orders']]]){const blocked=fixture('applications',profile,topics);assert.equal(await blocked.root.PTHPushLinks.resolve(),null);assert.equal(blocked.changes.length,0);}
  const visitor=fixture('applications',null,[],'');visitor.listeners.DOMContentLoaded();assert.equal(visitor.prompted(),1);
 });
+test('reminder click restores the account and checks its granted topic before opening applications',async()=>{
+ for(const id of ['angel','marcel']){const f=fixture('application_reminders',{id,rol:'admin'},['orders','application_reminders']);assert.equal(await f.root.PTHPushLinks.resolve(),'aprobaciones');assert.deepEqual(f.changes,['https://paratuhogar.org/?ref=keep']);}
+ for(const [profile,topics] of [[null,[]],[{id:'other',rol:'admin'},['orders']],[{id:'child',rol:'admin',parent_id:'parent'},['application_reminders']]]){
+  const f=fixture('application_reminders',profile,topics);assert.equal(await f.root.PTHPushLinks.resolve(),null);assert.equal(f.changes.length,0);
+ }
+ const visitor=fixture('application_reminders',null,[],'');visitor.listeners.DOMContentLoaded();assert.equal(visitor.prompted(),1);
+});
