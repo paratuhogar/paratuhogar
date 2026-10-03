@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '20261002-fasttools2';
+  const SW_VERSION = '20261002-reminders1';
   let registration = null;
   let reloadingForUpdate = false;
 

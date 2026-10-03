@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-pending1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-03-reminders1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -37,19 +37,19 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/css/admin-panel.css?v=20261002-review1',
   '/js/admin-panel-data.js?v=20261002-review1',
   '/js/admin-work-view.js?v=20260930-admins2',
-  '/js/admin-push-links.js?v=20261002-applications1',
+  '/js/admin-push-links.js?v=20261002-reminders1',
   '/manifest.webmanifest',
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=20261002-fasttools2',
+  '/js/pwa.js?v=20261002-reminders1',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
 
-importScripts('/js/admin-push-worker.js?v=20261002-applications1');
+importScripts('/js/admin-push-worker.js?v=20261002-reminders1');
 
 self.addEventListener('install', event => {
   event.waitUntil(

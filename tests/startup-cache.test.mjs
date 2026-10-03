@@ -21,7 +21,7 @@ test('cached root remains available offline; private routes get only offline fal
 test('service worker never intercepts protected API or POST responses',()=>{const f=fixture();for(const req of [{method:'POST',url:'https://paratuhogar.org/'},{method:'GET',url:'https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data'}])f.events.fetch({request:req,respondWith:()=>assert.fail('must not cache protected response')});});
 test('catalogue upgrade installs the new reader and removes only previous static caches',async()=>{
  const f=fixture();let p;f.events.install({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.opened,['pth-public-static-2026-10-02-pending1']);
+ assert.deepEqual(f.opened,['pth-public-static-2026-10-03-reminders1']);
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));
  assert.equal(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata1'),false);
  f.events.activate({waitUntil:value=>p=value});await p;
@@ -30,10 +30,10 @@ test('catalogue upgrade installs the new reader and removes only previous static
 test('reader, storefront and notification registrars agree on the release worker version',()=>{
  const read=file=>fs.readFileSync(new URL(file,root),'utf8');
  assert.match(read('offline-catalog.html'),/offline-catalog\.js\?v=20261002-lowdata2/);
- assert.match(read('index.html'),/pwa\.js\?v=20261002-fasttools2/);
- assert.match(read('js/pwa.js'),/SW_VERSION = '20261002-fasttools2'/);
- assert.match(read('js/admin-push-registration.mjs'),/service-worker\.js\?v=20261002-fasttools2/);
- assert.match(read('js/admin-push-page.mjs'),/admin-push-registration\.mjs\?v=20261002-fasttools2/);
- assert.match(read('notifications.html'),/admin-push-page\.mjs\?v=20261002-review1/);
- assert.match(source,/\/js\/pwa\.js\?v=20261002-fasttools2/);
+ assert.match(read('index.html'),/pwa\.js\?v=20261002-reminders1/);
+ assert.match(read('js/pwa.js'),/SW_VERSION = '20261002-reminders1'/);
+ assert.match(read('js/admin-push-registration.mjs'),/service-worker\.js\?v=20261002-reminders1/);
+ assert.match(read('js/admin-push-page.mjs'),/admin-push-registration\.mjs\?v=20261002-reminders1/);
+ assert.match(read('notifications.html'),/admin-push-page\.mjs\?v=20261002-reminders1/);
+ assert.match(source,/\/js\/pwa\.js\?v=20261002-reminders1/);
 });
