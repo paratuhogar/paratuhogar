@@ -4,15 +4,15 @@
   const identity=profile=>JSON.stringify([profile?.id,profile?.nombre,profile?.rol,profile?.parent_id]);
   const networkFailure=error=>['NETWORK_ERROR','SESSION_UNAVAILABLE'].includes(error?.code)||error?.name==='TypeError'||error?.name==='AbortError';
   function create({root=globalThis,secureData=root.PTHSecureData,copies=root.PTHOfflineCheckoutCopy?.create(root.indexedDB),publicCopy,now=Date.now,onClear=()=>{}}={}){
-    let active=null,generation=0,reconnecting=false;
+    let active=null,activeToken=null,generation=0,reconnecting=false;
     function valid(){
       if(!active)return false;
       const cached=active;
       if(now()<cached.savedAt||now()>=cached.expiresAt){clear();return false;}
-      if(cached.owner){const profile=secureData.offlineProfile?.();if(active!==cached)return false;if(secureData.token()!==cached.token||identity(profile)!==cached.identity||secureData.expiresAt?.()<=now()){clear();return false;}}
+      if(cached.owner){const profile=secureData.offlineProfile?.();if(active!==cached)return false;if(secureData.token()!==activeToken||identity(profile)!==cached.identity||secureData.expiresAt?.()<=now()){clear();return false;}}
       return true;
     }
-    function clear(){const previous=active;active=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();if(previous)onClear(previous);}
+    function clear(){const previous=active;active=null;activeToken=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();if(previous)onClear(previous);}
     function status(note=''){
       if(!valid()||!root.document)return;
       const doc=root.document;let node=doc.getElementById('pth-offline-storefront-status');
@@ -31,16 +31,16 @@
         let copy;try{copy=await copies.read(profile.id,{profile});}catch(_){return null;}
         if(epoch!==generation||!copy||token!==secureData.token()||identity(profile)!==identity(secureData.offlineProfile?.())||copy.expiresAt<=now())return null;
         const adopted=secureData.adoptOfflineProfile?.();if(identity(adopted)!==identity(profile))return null;
-        active={...copy,owner:profile.id,token,profile:adopted,identity:identity(adopted)};
+        activeToken=token;active={...copy,owner:profile.id,profile:adopted,identity:identity(adopted)};
       }else{
         // A signed-in device never falls through to someone else's/public copy.
         if(secureData.offlineProfile?.())return null;
         const copy=publicCopy?.();if(epoch!==generation||!copy?.products?.length||secureData.token())return null;
-        active={...copy,owner:null,expiresAt:copy.savedAt+7*86400000,clients:[],tariffs:[]};
+        activeToken=null;active={...copy,owner:null,expiresAt:copy.savedAt+7*86400000,clients:[],tariffs:[]};
       }
       status();return active;
     }
-    function live(){active=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();}
+    function live(){active=null;activeToken=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();}
     async function reconnect(reload){
       if(reconnecting||!valid()||root.navigator?.onLine===false)return false;
       reconnecting=true;const token=secureData.token(),epoch=generation;
