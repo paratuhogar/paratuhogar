@@ -35,8 +35,9 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  }
  if(url.hostname==='127.0.0.1'){
  let rel=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname.slice(1));
- if(!/^(index\.html|catalog-maker\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
+ if(!/^(js\/vendor\/supabase-2\.57\.4\.js|index\.html|catalog-maker\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
  if(rel==='js/sales-tools.min.js'&&failSalesTools){failSalesTools=false;return route.abort();}
+ if(rel==='js/vendor/supabase-2.57.4.js')return route.fulfill({contentType:'application/javascript',body:sdk});
  const file=path.join(root,rel);if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
  return route.fulfill({body:rel==='index.html'&&baselineHtml?baselineHtml:fs.readFileSync(file),contentType:rel.endsWith('.html')?'text/html; charset=utf-8':/\.(js|mjs)$/.test(rel)?'application/javascript; charset=utf-8':rel.endsWith('.css')?'text/css':rel.endsWith('.ttf')?'font/ttf':'image/jpeg'});
  }

@@ -46,6 +46,7 @@ function fixture(){
    return{status,json:async()=>({data:JSON.parse(JSON.stringify(data)),error})};
   }
  };
+ context.navigator = {onLine:true}; context.offlineStorefront = {usingCopy:()=>false,current:()=>null,fallback:async()=>null,live(){},status(){}};
  context.window=context;
  vm.runInNewContext(fs.readFileSync(new URL('../js/secure-data.js',import.meta.url),'utf8'),context);
  context.supabaseClient=context.supabase.createClient();

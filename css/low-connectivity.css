@@ -31,3 +31,13 @@ html.dark .pth-saved-catalog-action,html.dark .pth-low-data-panel>button{border-
 html.dark .pth-low-data-panel .pth-saved-catalog-date{color:#d3e5ff}
 html.dark .pth-low-data-panel .pth-saved-catalog-warning{border-color:#344a66;color:#bdcde2}
 html.dark .pth-low-data-panel :is(button,a):focus-visible{outline-color:#fbbf24}
+
+.pth-connectivity-card[hidden],.pth-connectivity-action[hidden]{display:none!important}
+.pth-pending-card{color:#233851}
+.pth-pending-card>section{padding-top:16px;border-top:1px solid #dce5ef}
+.pth-pending-card :is(h3,h4){margin:0;font-weight:800;color:#123968}
+.pth-pending-card p{margin:8px 0;line-height:1.5}
+html.dark .pth-pending-card{color:#d3e5ff}
+html.dark .pth-pending-card :is(h3,h4){color:#edf4ff}
+html.dark .pth-pending-card>section{border-color:#344a66}
+html.dark .pth-pending-card .pth-connectivity-action{color:#edf4ff;border-color:#80a8dd;background:#203e62}

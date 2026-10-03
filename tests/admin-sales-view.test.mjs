@@ -34,7 +34,8 @@ function page(profile = angel) {
         loadAdminData: async () => calls.push(['admin']), loadProducts: async () => calls.push(['catalogue']),
         loadProDashboard: async name => calls.push(['orders', name]), loadClientCRM: async () => {},
         loadMyPayoutRequests() {}, renderGestorHomeFromCache() {}, myOrdersData: [] };
-    context.window = context;
+    context.navigator = {onLine:true}; context.offlineStorefront = {usingCopy:()=>false,current:()=>null,fallback:async()=>null,live(){},status(){}};
+ context.window = context;
     if (fs.existsSync(controllerPath)) vm.runInNewContext(fs.readFileSync(controllerPath, 'utf8'), context);
     const setupStart = html.indexOf('async function setupSession(');
     const setupEnd = html.indexOf('// --- 2. LÓGICA DASHBOARD PRO', setupStart);

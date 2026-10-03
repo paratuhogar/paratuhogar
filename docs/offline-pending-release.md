@@ -1,25 +1,29 @@
-# Pedido pendiente con conexión interrumpida
+# La web habitual con conexión interrumpida
 
-El botón **Dejar pendiente de envío** guarda expresamente un pedido por cuenta y dispositivo. El formulario estático también se abre desde el catálogo guardado, después de haber iniciado sesión y guardado una copia con conexión. Un borrador corriente no autoriza el envío automático.
+La raíz `/`, `/index.html` y las fichas `/producto/...` vuelven a abrir la misma web con los recursos públicos y productos descargados previamente. Categorías, búsqueda, ficha, carrito y formulario habitual funcionan con esa copia. No se necesita abrir un catálogo alternativo. Las páginas antiguas offline se conservan para enlaces y pedidos anteriores.
 
-Los productos, cantidades y datos necesarios del formulario se guardan en IndexedDB del dispositivo, separados por cuenta. Los datos del cliente se eliminan al confirmar recepción, cancelar o cerrar sesión. El plazo de siete días se comprueba al volver a abrir o leer el pendiente. Los metadatos mínimos de un intento incierto permiten comprobar el recibo; no contienen datos del cliente.
+En el carrito, **Guardar clientes y tarifas** solicita consentimiento para guardar en este navegador una copia propia: productos públicos, hasta 300 clientes de pedidos de la cuenta y municipios/localidades con sus costes reales. No copia la agenda general de administración, credenciales ni comisiones. La copia queda separada por cuenta y rol y vence al terminar la sesión o, como máximo, a los siete días. Una tarifa ausente obliga a revisar la entrega; no se convierte en envío gratis.
 
-Con la web abierta, se comprueba la cuenta y se usa el checkout existente: inventario, precios propios, garantía, entrega, controles de venta, cotización, envío y recibo. Una respuesta perdida se recupera por el mismo intento. Los cambios de condiciones exigen revisión. Una revisión firmada conserva sus datos originales; para cambiarlos se detienen los reintentos y se comprueba primero la recepción.
+Al confirmar un pedido con la copia sin conexión, el formulario guarda un pedido independiente y muestra: «Pedido guardado en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tu pedido automáticamente. Te avisaremos cuando la tienda confirme que lo recibió». El mensaje plural aparece cuando hay varios pendientes. Un borrador sin confirmar no autoriza su envío.
 
-La tarjeta aparece tanto en el catálogo como en el Dashboard habitual. Permite consultar el estado y abrir la revisión o cancelación. No se abre WhatsApp ni se genera un PDF automáticamente. Cancelar los reintentos no anula un pedido que el servidor ya recibió.
+Se conservan hasta 25 pendientes por cuenta/dispositivo, cada uno con su intención y estado. La cola se envía con la página abierta cuando la misma cuenta vuelve a validar su sesión contra el servidor. Cada pedido muestra su referencia solo después de recibir el recibo del servidor. Respuestas perdidas se recuperan con la misma intención; cambios de producto, precio o entrega requieren revisión expresa. La operación de un pendiente no reemplaza el carrito ni el formulario que la persona esté preparando.
 
-## Límites de esta publicación
+Cerrar sesión, cambiar cuenta/rol o vencer la sesión bloquea el envío y elimina los datos privados locales. La purga deja una marca que contiene solo el identificador de cuenta mientras termina: si una recarga la interrumpe, el siguiente arranque la completa antes de permitir usar o enviar esa cola. Los recibos mínimos de intentos inciertos no conservan datos de clientes.
 
-- Requiere una copia previa de productos y una sesión previa en el mismo navegador.
-- El envío y la limpieza por caducidad necesitan volver a abrir la web. No se garantiza ejecución con el navegador cerrado.
-- Si faltan productos, datos de entrega o una sesión válida, el pedido requiere revisión; no se omiten las comprobaciones actuales.
-- Cache Storage contiene solo recursos estáticos públicos. No se guardan respuestas de API, clientes, pedidos ni sesiones en esa caché.
-- No cambia el backend, los permisos, precios, comisiones, cobros ni historial. Los recordatorios de solicitudes pertenecen a otra fase.
+## Alcance y límites
 
-## Verificación y recuperación
+- Necesita una primera descarga con conexión en el mismo navegador, una copia propia consentida y una sesión todavía vigente. No se inventa una identidad ni se amplía la duración de la sesión.
+- El navegador debe permanecer abierto para enviar automáticamente. No se garantiza ejecución cerrada, push de pedidos offline ni sincronización en segundo plano del sistema operativo.
+- Clientes y pedidos se guardan en IndexedDB por cuenta; Cache Storage contiene únicamente la plantilla pública, SDK local, scripts, estilos y miniaturas públicas. No cachea respuestas de API, sesiones, paneles privados, informes o capturas.
+- Las ganancias y funciones administrativas que requieren datos actuales se comprueban al conectar. No se muestran importes inventados. Las herramientas pesadas de diseño siguen cargándose cuando se solicitan y no forman parte del arranque offline.
+- El backend solo añade la fecha de vencimiento ya existente a sus respuestas de sesión/login. No crea tablas, cambia permisos, precios, comisiones, pagos ni datos históricos. La migración de recordatorios pertenece a otra fase.
 
-Pasaron 294 pruebas Node integradas y las pruebas del checkout real con servidor sintético a 320 píxeles en oscuro y 390 en claro. Cubren reapertura offline, pérdida del socket tras aceptación, dos pestañas, cambios de cuenta durante guardado y recibo, respuestas de una revisión anterior, edición durante un lease, cuota de almacenamiento, revisión de recogidas y limpieza de detalles privados. Se verificaron los cuatro roles, Story y la actualización real de caché conservando catálogo y carrito. No se hicieron pedidos ni envíos reales.
+## Validación y actualización
 
-Los nuevos recursos y la caché estática usan `20261002-pending1`. Las versiones de Story y de la interfaz de solicitudes se conservan. El registro y los manejadores de push permanecen intactos.
+Pruebas con servidor y datos sintéticos: formulario normal, múltiples pedidos, pérdida de respuesta, dos pestañas, revisión de costes, cuotas, cambios de cuenta y expiración. Chromium real verifica instalación y actualización del worker, cierre/reapertura de raíz y producto sin señal, filtros, clientes separados, envío al reconectar y ausencia de datos privados en Cache Storage. Se verifica también que interrumpir una purga no conserve una cola utilizable en el siguiente arranque. La evidencia y el número final de pruebas se registran en el informe privado de publicación, sin pedidos reales.
 
-Para retirar la fase, revertir únicamente sus commits mediante un commit nuevo, conservando Story, solicitudes y las páginas generadas desde otras sesiones. Revertir no borra pedidos del servidor ni almacenamiento local de recibos. Una pestaña que ya ejecuta el código debe recargarse o detener sus reintentos desde la revisión; el navegador cerrado no realiza envíos en segundo plano.
+Recursos nuevos y registradores usan `20261003-pending2`, caché `pth-public-static-2026-10-03-pending2`; el panel reciente usa `20261003-recent2`. Los tipos y permisos de push existentes se conservan. La versión antigua de frontend se migra sin perder intenciones ni historial: el formato v2 tiene un namespace separado del singleton previo.
+
+## Rollback
+
+Detener reintentos desde la revisión de cada pedido o cerrar la página. Revertir únicamente la integración de la interfaz mediante commits nuevos, conservando el lector de cola v2, las marcas de purga y la compatibilidad de intenciones ya guardadas. No reset ni force-push; no borrar bases IndexedDB ni pedidos del servidor. Una interfaz singleton antigua no puede leer todos los pendientes v2: retirar la ampliación requiere mantener un lector compatible. La fecha de sesión añadida es aditiva y puede permanecer; restaurar Edge anterior no extiende sesiones.

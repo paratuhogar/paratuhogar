@@ -3,7 +3,7 @@ export function adminPushRegistration(serviceWorker,{timeoutMs=20000}={}){
  return new Promise((resolve,reject)=>{
   const watched=new Set();let finished=false,registration=null;
   const finish=error=>{if(finished)return;finished=true;clearTimeout(timer);registration?.removeEventListener('updatefound',check);for(const worker of watched)worker.removeEventListener('statechange',check);error?reject(error):resolve(registration);};
-  const expected=worker=>worker&&new URL(worker.scriptURL).searchParams.get('v')==='20261002-fasttools2';
+  const expected=worker=>worker&&new URL(worker.scriptURL).searchParams.get('v')==='20261003-pending2';
   const check=()=>{
    if(finished)return;
    if(expected(registration.active)&&registration.active.state==='activated'){finish();return;}
@@ -15,7 +15,7 @@ export function adminPushRegistration(serviceWorker,{timeoutMs=20000}={}){
   };
   // Covers register() itself, as well as installation/activation afterward.
   const timer=setTimeout(()=>finish(Error('Service worker unavailable')),timeoutMs);
-  Promise.resolve().then(()=>serviceWorker.register('/service-worker.js?v=20261002-fasttools2',{scope:'/',updateViaCache:'none'})).then(value=>{
+  Promise.resolve().then(()=>serviceWorker.register('/service-worker.js?v=20261003-pending2',{scope:'/',updateViaCache:'none'})).then(value=>{
    if(finished)return;registration=value;registration.addEventListener('updatefound',check);check();
   }).catch(finish);
  });

@@ -267,25 +267,22 @@ async function checkShortLinks() {
         savingCard.append(heading, explanation, toggle);
         const savedCard = document.createElement('section'); savedCard.className = 'pth-connectivity-card';
         savedCard.setAttribute('aria-labelledby', 'pth-saved-catalog-heading');
-        const savedTitle = document.createElement('h3'); savedTitle.id = 'pth-saved-catalog-heading'; savedTitle.textContent = 'Catálogo guardado';
-        const copy = lowConnectivity.readPublic(), copyDate = document.createElement('p');
+        const savedTitle = document.createElement('h3'); savedTitle.id = 'pth-saved-catalog-heading'; savedTitle.textContent = 'Tu web sin conexión';
+        const localCopy = window.PTHOfflineStorefront?.current();
+        const copy = localCopy || lowConnectivity.readPublic(), copyDate = document.createElement('p');
         copyDate.id = 'pth-saved-catalog-date'; copyDate.className = 'pth-saved-catalog-date';
         if (copy) {
             const date = document.createElement('time'); date.dateTime = new Date(copy.savedAt).toISOString();
             date.textContent = new Date(copy.savedAt).toLocaleString('es-CU', {timeZone:'America/Havana',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-            copyDate.append('Guardado: ', date);
-            if (copy.stale) copyDate.append(' · Pendiente de actualizar');
-        } else copyDate.textContent = 'Todavía no hay una copia guardada.';
+            copyDate.append('Datos guardados: ', date);
+        } else copyDate.textContent = 'Conéctate una vez para preparar este teléfono.';
         const copyHelp = document.createElement('p'); copyHelp.id = 'pth-saved-catalog-description';
-        copyHelp.textContent = 'Consulta productos y precios de la última copia guardada aunque no tengas internet. '
-            + (copy ? 'Guárdala primero con conexión.' : 'Ábrelo con conexión y pulsa “Actualizar copia pública” para guardarla.');
-        const link = document.createElement('a'); link.id = 'pth-saved-catalog-link'; link.className = 'pth-connectivity-action pth-saved-catalog-action';
-        link.href = '/offline-catalog.html'; link.textContent = 'Abrir catálogo guardado';
-        link.setAttribute('aria-describedby', copyHelp.id + ' ' + copyDate.id + ' pth-saved-catalog-warning');
+        copyHelp.textContent = currentNewCartOwner()
+            ? 'Continúa usando este catálogo y el mismo formulario cuando falte conexión. Guarda expresamente tus clientes y las tarifas desde el carrito antes de necesitarlos.'
+            : 'Este catálogo se abre aquí con los productos previamente descargados. Para preparar pedidos sin conexión, entra primero en tu cuenta y guarda tus datos de trabajo.';
         const warning = document.createElement('p'); warning.id = 'pth-saved-catalog-warning'; warning.className = 'pth-saved-catalog-warning';
-        warning.textContent = 'Los precios y la disponibilidad pueden cambiar. Confírmalos con conexión antes de hacer el pedido. Sin conexión, solo podrás abrir las fotos guardadas en este dispositivo.';
-        savedCard.append(savedTitle, copyHelp, link, copyDate, warning);
-        if (currentNewCartOwner()) { const prepare = document.createElement('a'); prepare.href = '/offline-order.html'; prepare.className = 'pth-connectivity-action'; prepare.textContent = 'Preparar pedido sin conexión'; savedCard.append(prepare); }
+        warning.textContent = 'La tienda comprueba precios, disponibilidad y mensajería al recibir el pedido. Sin conexión se verán las fotos ya guardadas en este dispositivo.';
+        savedCard.append(savedTitle, copyHelp, copyDate, warning);
         cards.append(savingCard, savedCard);
         // Keep existing manual receipt/cart actions separate from the copy's date.
         const status = document.createElement('p'); status.setAttribute('role', 'status'); status.className = 'pth-connectivity-status';
@@ -3061,7 +3058,7 @@ function renderCart() {
         if(item.comision_actual < item.comision) colorGanancia = "text-orange-500";
         if(item.comision_actual > item.comision) colorGanancia = "text-blue-600";
 
-        const gananciaDisplay = isGestor ?
+        const gananciaDisplay = isGestor && window.PTHOfflineStorefront?.usingCopy() ? '<p class="text-[9px] font-bold text-slate-500 text-right">Ganancia disponible al conectar</p>' : isGestor ?
             `<p class="text-[9px] font-bold ${colorGanancia} text-right">
                 Gan: $${(item.comision_actual * item.qty).toFixed(0)}
              </p>` : '';
@@ -3258,6 +3255,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // mientras carga la red no inicia dos flujos de inserción simultáneos.
     const submissionAttempt = checkoutSubmitGuard.acquire();
     if (!submissionAttempt.accepted) {
+        if (window.PTHPendingCheckoutUI?.active()) window.PTHPendingCheckoutUI.failure({code:'NETWORK_ERROR'},'Esperando el envío de la otra pestaña.');
         notifyNewCheckout('⏳ Este pedido ya se está procesando. Espera la confirmación.');
         return;
     }
@@ -3839,7 +3837,10 @@ document.getElementById('checkout-form').onsubmit = function(event) {
     const locks = window.navigator?.locks;
     if (!locks) return submitNewCheckout.call(this,event);
     return locks.request('pth-new-checkout:' + checkoutScope(), { ifAvailable: true }, lock => {
-        if (!lock) { notifyNewCheckout('Hay un envío en otra pestaña. Espera su confirmación antes de enviar desde aquí.'); return; }
+        if (!lock) {
+            if (window.PTHPendingCheckoutUI?.active()) window.PTHPendingCheckoutUI.failure({code:'NETWORK_ERROR'},'Esperando el envío de la otra pestaña.');
+            notifyNewCheckout('Hay un envío en otra pestaña. Espera su confirmación antes de enviar desde aquí.'); return;
+        }
         return submitNewCheckout.call(this,event);
     });
 };

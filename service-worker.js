@@ -1,16 +1,45 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-02-pending1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-03-pending2';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
 const PTH_OFFLINE_URL = '/offline.html';
 const PTH_SHELL_URL = '/offline-catalog.html';
 const PTH_ORDER_SHELL_URL = '/offline-order.html';
-// Static reader and local preparation form only. No SDK or private responses.
-const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
-  '/css/offline-order.css?v=20261002-pending1',
-  '/js/pending-checkout.js?v=20261002-pending1',
-  '/js/pending-checkout-page.js?v=20261002-pending1',
-  '/js/secure-data.js?v=20261002-lowdata1',
+const PTH_APP_SHELL_URL = '/index.html';
+// This is the checked-in public template: no rendered customer/API data.
+const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
+  '/js/vendor/supabase-2.57.4.js',
+  '/js/checkout-form-shared.js?v=20261003-pending2',
+  '/js/offline-checkout-copy.js?v=20261003-pending2',
+  '/js/offline-storefront-adapter.js?v=20261003-pending2',
+  '/css/offline-storefront.css?v=20261003-pending2',
+  '/js/storefront.min.js?v=20261003-pending2',
+  '/js/storefront-extras.min.js?v=20261003-recent2',
+  '/js/pending-checkout-storefront.js?v=20261003-pending2',
+  '/js/pwa.js?v=20261003-pending2',
+  '/css/tailwind.min.css?v=20261003-pending2',
+  '/css/client-followup.css?v=2',
+  '/css/work-navigation.css?v=20261001-1',
+  '/css/low-connectivity.css?v=20261003-pending2',
+  '/css/admin-panel.css?v=20261003-recent2',
+  '/css/feedback-announcement.css?v=20261001-1',
+  '/js/admin-panel-data.js?v=20261003-recent2',
+  '/js/product-availability-form.js?v=20260924-1',
+  '/js/product-description-editor.js?v=20260924-1',
+  '/js/checkout-submit-guard.js?v=20261002-lowdata1',
+  '/js/checkout-recovery.js?v=20261002-lowdata1',
+  '/js/feedback-announcement.js?v=20261001-1',
+  '/js/product-description-loader.js?v=20261001-images2',
+  '/js/admin-work-view.js?v=20260930-admins2',
+  '/js/admin-push-links.js?v=20261002-applications1',
+  '/js/internal-assets.js?v=20261002-quickstory1',
+  '/log.jpeg', '/icons/product-placeholder.svg'];
+// Public templates, local SDK and display code only. No private responses.
+const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
+  '/css/offline-order.css?v=20261003-pending2',
+  '/js/pending-checkout.js?v=20261003-pending2',
+  '/js/pending-checkout-page.js?v=20261003-pending2',
+  '/js/secure-data.js?v=20261003-pending2',
   '/js/low-connectivity.js?v=20261002-lowdata1',
   '/js/public-catalog-api.js?v=20261002-lowdata1',
   '/js/offline-catalog.js?v=20261002-lowdata2',
@@ -18,14 +47,14 @@ const PTH_MINIMAL_SHELL = [PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
   '/js/image-variants.js?v=20261001-images2',
   '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
-  '/js/pending-checkout-storefront.js?v=20261002-pending1',
+  '/js/pending-checkout-storefront.js?v=20261003-pending2',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
-  '/js/secure-data.js?v=20261002-lowdata1',
-  '/js/storefront.min.js?v=20261002-pending1',
-  '/css/low-connectivity.css?v=20261002-fasttools2',
+  '/js/secure-data.js?v=20261003-pending2',
+  '/js/storefront.min.js?v=20261003-pending2',
+  '/css/low-connectivity.css?v=20261003-pending2',
   '/js/product-description-loader.js?v=20261001-images2',
-  '/js/storefront-extras.min.js?v=20261002-review1',
+  '/js/storefront-extras.min.js?v=20261003-recent2',
   '/js/internal-assets.js?v=20261002-quickstory1',
   '/js/product-availability-form.js?v=20260924-1',
   '/js/product-description-editor.js?v=20260924-1',
@@ -34,8 +63,8 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/js/feedback-announcement.js?v=20261001-1',
   '/css/feedback-announcement.css?v=20261001-1',
   '/css/work-navigation.css?v=20261001-1',
-  '/css/admin-panel.css?v=20261002-review1',
-  '/js/admin-panel-data.js?v=20261002-review1',
+  '/css/admin-panel.css?v=20261003-recent2',
+  '/js/admin-panel-data.js?v=20261003-recent2',
   '/js/admin-work-view.js?v=20260930-admins2',
   '/js/admin-push-links.js?v=20261002-applications1',
   '/manifest.webmanifest',
@@ -106,9 +135,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Offline navigation loads a static reader or local-only preparation form.
-  // No SDK response or authenticated document is cached here. The adapter
-  // can verify a session again only through the uncached live gateway.
+  // The normal route reopens its generic checked-in template. Own device data
+  // stays in account-scoped IndexedDB; no API response or private route is cached.
+  // Compatibility readers remain available at their explicit existing paths.
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -119,7 +148,11 @@ self.addEventListener('fetch', event => {
           const orderShell = await caches.match(PTH_ORDER_SHELL_URL);
           if (orderShell) return orderShell;
         }
-        if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === PTH_SHELL_URL) {
+        if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname.startsWith('/producto/')) {
+          const app = await caches.match(PTH_APP_SHELL_URL);
+          if (app) return app;
+        }
+        if (url.pathname === PTH_SHELL_URL) {
           const shell = await caches.match(PTH_SHELL_URL);
           if (shell) return shell;
         }
