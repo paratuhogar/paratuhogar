@@ -1,11 +1,17 @@
-# Private monthly ranking — approval checkpoint
+# Private monthly ranking — approved release
 
 Repository `paratuhogar/paratuhogar`, local branch `feat/private-monthly-ranking`,
 base main `417d3d1d6dc5d5c1393dece28b0c7ff74323359e`. Deployment target remains
 GitHub Pages main/root, `paratuhogar.org`. Supabase target is verified active
 project `ljqwaovevfatkiigirhf`, name `paratuhogar`, PostgreSQL 17.6.
-Live `secure-data` remains version 21. No new SQL, permissions, trigger or Edge
-deployment has been applied; frontend has not been published.
+The user approved the exact aggregate access, forward delivery timestamp and
+publication on 2026-10-03. Migration `20261003173240`,
+`private_monthly_delivered_ranking`, is applied. `secure-data` version 22 is
+ACTIVE; all 11 deployed source files were verified, including nine previous
+files preserved byte for byte. The frontend release targets the verified
+GitHub Pages main/root configuration at `paratuhogar.org`; the release commit
+is identifiable in main history. Live Pages serving cannot be independently
+confirmed through the previously denied routes.
 
 ## Evidence and chosen rules
 
@@ -46,11 +52,11 @@ remain internal and no records are renamed or backfilled.
   customer, product, phone, internal full-name, cost, commission or payment
   fields are returned. The frontend uses plain text, no submitted instructions.
 
-## Exact approval needed
+## Exact approval received
 
 Delegation requires: “Si requiere permisos nuevos/lectura agregada
 security-sensitive, presenta alcance exacto para aprobación antes aplicarlo”.
-The complete reviewable SQL is [ranking-summary-proposal.sql](ranking-summary-proposal.sql).
+The complete approved SQL is [ranking-summary-proposal.sql](ranking-summary-proposal.sql).
 
 1. Create `public.pth_ranking_summary(uuid)`, `SECURITY INVOKER`, and revoke
    execution from PUBLIC/anon/authenticated; grant execution only to existing
@@ -93,6 +99,33 @@ CTE-only PostgreSQL tests verified own/child/admin, same-alias different UUIDs,
 2/2 ties, single child attribution, ambiguity, missing dates, canceled orders,
 future-date rejection and both repeated midnight hours included in November.
 No function, object, grant or real order was created by those tests.
+
+Release verification on 2026-10-03:
+
+- The installed function is SECURITY INVOKER with a fixed search path;
+  anon/authenticated cannot execute it and existing service_role can.
+- The delivery trigger is enabled. Existing RLS and table privileges remain
+  unchanged. All 2,239 orders, 1,511 delivered orders and 1,432 missing delivery
+  dates were preserved; the before/after delivery fingerprint is identical.
+- Installed aggregate calls for an active principal, child and admin verified
+  own UUID, October in Cuba, bounded rows and the exact public response keys.
+  The current monthly counts are zero; no historical dates were inferred.
+- Security advisors returned the same seven pre-existing notices, with no new
+  notices from this release. No unrelated permissions were changed.
+- Runtime HTTP, public-site and Pages/Actions checks remain blocked by earlier
+  403 responses; those denied routes were not retried. The management connector
+  verified the ACTIVE Edge release and every deployed source byte.
+- CSS/JS builds and generated-JS validation passed. The full local Node suite
+  passed: 352 ESM tests plus 32 CommonJS tests executed independently. Real
+  Chromium fixture checks passed for visitor, principal, child and admin,
+  including the private ranking, 320/390/820 widths, error/retry, interrupted
+  response, offline clearing and duplicate reads, immediately before
+  publication. No real order or message was sent.
+
+Bounded publication: only the private Inicio ranking card, its aggregate
+gateway action and forward delivery timestamp. No prices, commissions,
+payment logic, customer data, existing role grants or historical order rows
+are modified. New runtime credentials and persistent access were not created.
 
 Rollback frontend with a normal revert. Remove the new ranking Edge action,
 drop only the new ranking function and delivery trigger/function if approved

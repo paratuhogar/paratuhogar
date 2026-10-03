@@ -1,4 +1,5 @@
--- REVIEW ONLY. Not applied. New service-only aggregate access needs approval.
+-- Approved and applied 2026-10-03: migration 20261003173240,
+-- private_monthly_delivered_ranking. Retained as the exact release SQL.
 -- No changes to existing table privileges, RLS, order rows or historical dates.
 begin;
 create or replace function public.pth_ranking_summary(p_actor_id uuid)
