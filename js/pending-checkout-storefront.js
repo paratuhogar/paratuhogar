@@ -6,6 +6,13 @@
   let storage, idb;
   try { storage = localStorage; idb = indexedDB; } catch (_) {}
   const queue = api.create(api.indexedStore(idb));
+  const copyApi = window.PTHOfflineCheckoutCopy;
+  const copies = copyApi?.create(idb);
+  if (copies) copyApi.bindLifecycle(window, storage, copies);
+  // Expiry can be detected by secure-data before this deferred module starts.
+  // Clear the departing account's device data even when we missed that event.
+  const expiredOwner = window.PTHSecureData.expiredCheckoutOwner?.();
+  if (expiredOwner && api.localOwner(storage) !== expiredOwner) void Promise.allSettled([queue.logout(expiredOwner), copies?.clear(expiredOwner)]).then(() => render());
   const form = document.getElementById('checkout-form');
   const modal = document.getElementById('cart-modal');
   const confirmationHelp = document.getElementById('checkout-confirmation-help');
@@ -13,6 +20,7 @@
   const lastStep = document.getElementById('checkout-last-step');
   const owner = () => window.PTHSecureData.accountId?.() || null;
   const token = () => window.PTHSecureData.token();
+  const offlineMode = () => navigator.onLine === false || window.PTHOfflineStorefront?.usingCopy?.() === true;
   const sameSession = (account, expectedToken) => api.localOwner(storage) === account && (!owner() || owner() === account) && token() === expectedToken;
   const pendingStates = ['queued', 'sending', 'uncertain', 'blocked', 'paused'];
   const labels = {
@@ -37,6 +45,12 @@
   function message(value) {
     const target = document.getElementById('pth-pending-message');
     if (target) target.textContent = value;
+  }
+  function hide(node, hidden) {
+    node.hidden = hidden;
+    // The existing connectivity card/action classes use display:flex, which
+    // otherwise overrides the browser's native [hidden] display rule.
+    node.style.display = hidden ? 'none' : '';
   }
   function snapshot() {
     const values = {};
@@ -109,8 +123,10 @@
       if (document.getElementById('check-localidad').value !== row.form.localidad) throw Object.assign(Error('DELIVERY_UNAVAILABLE'), {code: 'DELIVERY_UNAVAILABLE', safeMessage: 'La localidad de entrega necesita revisión.'});
     }
     const assisted = document.getElementById('assisted-sale-checkbox'); if (assisted) assisted.checked = row.form.assisted;
-    // Only explicit review adopts a previously checked current delivery cost.
-    if (reviewing && row.reviewEstimate && Number.isFinite(row.reviewEstimate.shipping)) newCheckoutShippingOverride = {fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: row.form.municipio, localidad: row.form.localidad, pickup: row.form.pickup, cost: row.reviewEstimate.shipping};
+    // Sending uses the amount explicitly saved/accepted for this order. The
+    // mandatory fresh quote below must still match it before any submission.
+    const approvedShipping = reviewing ? row.reviewEstimate?.shipping : row.estimate?.shipping;
+    if (Number.isFinite(approvedShipping)) newCheckoutShippingOverride = {fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: row.form.municipio, localidad: row.form.localidad, pickup: row.form.pickup, cost: approvedShipping};
     document.getElementById('cart-count').textContent = String(cart.reduce((sum, product) => sum + product.qty, 0));
     renderCart(); recalcularTotalFinal();
   }
@@ -133,19 +149,20 @@
   }
   async function render() {
     const generation = ++renderGeneration, account = localAccount();
-    queueButton.hidden = !account; copyButton.hidden = !account;
-    exitReview.hidden = !reviewing;
+    hide(queueButton, !account); hide(copyButton, !account);
+    hide(help, !account); hide(copyHelp, !account);
+    hide(exitReview, !reviewing);
     const submit = document.getElementById('final-submit-btn');
-    if (confirmationHelp) confirmationHelp.textContent = navigator.onLine === false || reviewing ? 'Guardaremos el pedido pendiente en este teléfono. Con esta página abierta y tu misma cuenta, comprobaremos los datos y lo enviaremos al recuperar conexión. Verás la confirmación cuando la tienda lo reciba.' : onlineConfirmationHelp;
-    if (lastStep?.lastChild?.nodeType === 3) lastStep.lastChild.textContent = navigator.onLine === false || reviewing ? 'Confirmación' : 'WhatsApp';
+    if (confirmationHelp) confirmationHelp.textContent = account && offlineMode() || reviewing ? 'Guardaremos el pedido pendiente en este teléfono. Con esta página abierta y tu misma cuenta, comprobaremos los datos y lo enviaremos al recuperar conexión. Verás la confirmación cuando la tienda lo reciba.' : onlineConfirmationHelp;
+    if (lastStep?.lastChild?.nodeType === 3) lastStep.lastChild.textContent = account && offlineMode() || reviewing ? 'Confirmación' : 'WhatsApp';
     if (submit && !active && !preparing && submit.innerText !== 'PROCESANDO...') {
-      submit.innerText = reviewing ? 'Guardar revisión y enviar pendiente' : navigator.onLine === false ? 'Guardar pedido pendiente' : 'Confirmar por WhatsApp';
+      submit.innerText = reviewing ? 'Guardar revisión y enviar pendiente' : account && offlineMode() ? 'Guardar pedido pendiente' : 'Confirmar por WhatsApp';
     }
     if (!account) {
-      if (panel) { panel.hidden = true; panel.replaceChildren(); }
+      if (panel) { hide(panel, true); panel.replaceChildren(); }
       return;
     }
-    if (panel && panel.dataset.owner !== account) { panel.hidden = true; panel.replaceChildren(); }
+    if (panel && panel.dataset.owner !== account) { hide(panel, true); panel.replaceChildren(); }
     let rows;
     try { rows = await queue.list(account); }
     catch (_) { message('Este navegador no pudo abrir el almacenamiento. El pedido no está guardado.'); return; }
@@ -155,11 +172,11 @@
       const catalog = document.getElementById('sec-catalogo'); if (!catalog) return;
       panel = document.createElement('aside'); panel.id = 'pth-pending-order-panel'; panel.className = 'pth-connectivity-card pth-pending-card'; panel.style.margin = '24px'; catalog.before(panel);
     }
-    panel.replaceChildren(); panel.dataset.owner = account; panel.hidden = !rows.length;
+    panel.replaceChildren(); panel.dataset.owner = account; hide(panel, !rows.length);
     if (!rows.length) return;
     const pending = rows.filter(row => row.form && pendingStates.includes(row.state));
     const ready = pending.filter(row => ['queued', 'sending', 'uncertain'].includes(row.state));
-    const heading = document.createElement('h3'); heading.textContent = pending.length === 1 ? '1 pedido pendiente en este teléfono' : pending.length ? pending.length + ' pedidos pendientes en este teléfono' : 'Pedidos recibidos por la tienda';
+    const heading = document.createElement('h3'); heading.textContent = pending.length === 1 ? '1 pedido pendiente en este teléfono' : pending.length ? pending.length + ' pedidos pendientes en este teléfono' : 'Estado de los pedidos guardados';
     panel.append(heading);
     if (ready.length) {
       const guidance = document.createElement('p'); guidance.className = 'pth-pending-guidance'; guidance.textContent = savedGuidance(ready.length); panel.append(guidance);
@@ -278,12 +295,12 @@
     localForm: () => Boolean(active || reviewing || preparing), outcome: () => active?.row.outcome || null,
     intent: () => active ? {intentId: active.row.intentId || active.row.id, savedAt: active.row.createdAt} : null,
     async markOutcome(value) { if (active) await active.save({outcome: value}); },
-    async confirmed(receipts) { if (active) await active.confirmed(receipts); },
+    async confirmed(receipts) { if (active) { await active.confirmed(receipts); await render(); } },
     message(value) { if (active) { active.message = value; return true; } return false; },
     failure(error, value) { if (active) active.failure = Object.assign(Error(error.code || 'REVIEW'), {code: error.code || 'REVIEW', safeMessage: error.safeMessage || value}); },
     guard() { return Boolean(active && (owner() !== active.row.owner || !sameSession(active.row.owner, active.expectedToken))); },
-    shouldIntercept: () => !active && Boolean(reviewing || preparing || navigator.onLine === false),
-    async interceptSubmit() { if (active) return false; if (reviewing) await saveReview(); else if (navigator.onLine === false) await savePending(); return true; },
+    shouldIntercept: () => !active && Boolean(reviewing || preparing || localAccount() && offlineMode()),
+    async interceptSubmit() { if (active) return false; if (reviewing) await saveReview(); else if (offlineMode()) await savePending(); return true; },
     verifyEstimate, async catalogReady() { await render(); await tick(); },
     saveDeliveryZones(rows) { latestTariffs = Array.isArray(rows) ? rows : []; },
     render, tick, leaveReview
@@ -309,14 +326,14 @@
       if (!profile || profile.id !== account || !sameSession(account, expectedToken)) return;
       const payload = await helper.capture({client: supabaseClient, profile, products: productosRaw, tariffs: latestTariffs.length ? latestTariffs : tarifasMensajeriaAdminRaw, storage, token: expectedToken, sessionUntil});
       if (!sameSession(account, expectedToken)) return;
-      await helper.create(idb).save(account, payload, {consent: true, sessionUntil, guard: () => sameSession(account, expectedToken)});
+      await (copies || helper.create(idb)).save(account, payload, {profile, consent: true, sessionUntil, guard: () => sameSession(account, expectedToken)});
       if (sameSession(account, expectedToken)) message('Copia guardada en este teléfono: tus clientes recientes, productos y tarifas están disponibles en el formulario sin conexión.');
-    } catch (error) { message(error.safeMessage || 'No se pudo guardar la copia. Conserva la conexión y vuelve a intentarlo.'); }
+    } catch (error) { message(error.safeMessage || (error.code === 'CLIENT_SCOPE_AMBIGUOUS' ? 'La cuenta necesita revisión antes de guardar clientes en este teléfono.' : 'No se pudo guardar la copia. Conserva la conexión y vuelve a intentarlo.')); }
     finally { copying = false; copyButton.disabled = false; }
   };
   window.addEventListener('pth:session-changed', event => {
     const next = owner();
-    if (lastOwner && !next && ['logout', 'expired'].includes(event.reason)) void queue.logout(lastOwner).finally(render);
+    if (lastOwner && !next && ['logout', 'expired'].includes(event.reason)) void queue.logout(lastOwner).catch(() => message('El navegador no pudo borrar los datos locales. Revisa el almacenamiento de este teléfono antes de compartirlo.')).finally(render);
     reviewing = null; saveIntent = null; lockReviewFields(false); lastOwner = next;
     if (!next && event.reason === 'expired') message('Tu sesión venció. Los reintentos se detuvieron y se borraron los datos del cliente guardados en este teléfono. Inicia sesión y revisa tus pedidos antes de volver a prepararlos.');
     void render(); if (next) void tick();
@@ -325,7 +342,7 @@
   window.addEventListener('offline', () => void render());
   window.addEventListener('storage', event => {
     if (['pth_session', 'pth_secure_token'].includes(event.key) && api.localOwner(storage) !== owner()) {
-      form.reset(); if (panel) { panel.hidden = true; panel.replaceChildren(); }
+      form.reset(); if (panel) { hide(panel, true); panel.replaceChildren(); }
       reviewing = null; saveIntent = null; lockReviewFields(false);
     }
   });

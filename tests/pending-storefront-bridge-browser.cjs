@@ -1,11 +1,11 @@
-// Actual SW, anonymous public reader and checkout; local HTTP and synthetic DB only.
+// Actual normal checkout form; local HTTP and synthetic DB only.
 const {chromium}=require('playwright');
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jx1sAAAAASUVORK5CYII=','base64');
 (async()=>{
  const {fixture}=await import('./fixtures/new-checkout.mjs');let f=await fixture();
- const trace=[];let origin,dropSubmitResponse=false;
+ const trace=[];let origin,dropSubmitResponse=false,dropSubmitIntent=null;
  const products=Array.from({length:430},(_,i)=>({id:'public-'+i,nombre:'Equipo público '+i,precio:100+i,categoria:i%2?'COCINA':'HOGAR',disponible:'SI',garantia:'1 año',thumbnail:'sample.jpg'}));
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,origin);trace.push({path:url.pathname,method:req.method});
@@ -16,7 +16,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
    if(b.action==='announcement')result={data:{acknowledged:true},error:null};
    else if(req.headers['x-public-fixture']==='yes')result={data:products,error:null};
    else result=await f.request(b,req.headers.authorization?.replace(/^Bearer /,'')||null);
-   if(b.action==='checkout'&&b.operation==='submit'&&dropSubmitResponse){dropSubmitResponse=false;res.destroy();return;}
+   if(b.action==='checkout'&&b.operation==='submit'&&dropSubmitResponse){if(dropSubmitIntent===null)dropSubmitIntent=b.intentId;if(b.intentId===dropSubmitIntent){res.destroy();return;}}
    const bytes=zlib.gzipSync(Buffer.from(JSON.stringify(result)));res.writeHead(200,{'Content-Type':'application/json','Content-Encoding':'gzip','Cache-Control':'no-store'});res.end(bytes);return;
   }
   if(/^\/img_productos\//.test(url.pathname)){res.writeHead(200,{'Content-Type':'image/png'});res.end(png);return;}
@@ -24,7 +24,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   if(rel==='js/storefront.min.js')rel='js/storefront.js';
   if(!/^(?:[\w-]+\.html|service-worker\.js|manifest\.webmanifest|log\.jpeg|(?:js|css|icons)\/[\w.-]+\.(?:js|mjs|css|svg|png))$/.test(rel)||!fs.existsSync(path.join(root,rel))){res.writeHead(404);res.end();return;}
   let bytes=fs.readFileSync(path.join(root,rel));
-  if(rel==='index.html')bytes=Buffer.from(bytes.toString().replace('<script src="js/storefront.min.js', '<script src="js/checkout-form-shared.js" defer></script><script src="js/offline-checkout-copy.js" defer></script><script src="js/storefront.min.js'));
+  if(rel==='index.html'&&!bytes.toString().includes('js/checkout-form-shared.js'))bytes=Buffer.from(bytes.toString().replace('<script src="js/storefront.min.js', '<script src="js/checkout-form-shared.js" defer></script><script src="js/offline-checkout-copy.js" defer></script><script src="js/storefront.min.js'));
   if(rel==='js/secure-data.js'||rel==='js/public-catalog-api.js')bytes=Buffer.from(bytes.toString().replace('https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data',origin+'/mock-secure-data'));
   const type=/\.html$/.test(rel)?'text/html; charset=utf-8':/\.(js|mjs)$/.test(rel)?'application/javascript':rel.endsWith('.css')?'text/css':rel.endsWith('.png')?'image/png':rel.endsWith('.svg')?'image/svg+xml':'image/jpeg';
   if(/html|javascript|css/.test(type)){bytes=zlib.gzipSync(bytes);res.setHeader('Content-Encoding','gzip');}
@@ -36,7 +36,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   async function context(){
     const c=await browser.newContext({viewport:{width:Number(process.env.PTH_PENDING_WIDTH)||390,height:844},colorScheme:process.env.PTH_PENDING_DARK?'dark':'light'}),errors=[];
     c.on('page',p=>p.on('pageerror',e=>errors.push(e.stack||e.message)));
-    await c.route('**/*',route=>{const url=new URL(route.request().url());if(url.origin===origin)return route.continue();if(url.href.includes('@supabase/supabase-js'))return route.fulfill({contentType:'application/javascript',body:sdk});if(route.request().resourceType()==='stylesheet')return route.fulfill({contentType:'text/css',body:'.material-symbols-outlined{display:inline-block;width:1em;overflow:hidden}'});if(route.request().resourceType()==='image')return route.fulfill({contentType:'image/png',body:png});return route.fulfill({contentType:'application/json',body:'{"data":[],"error":null}'});});
+    await c.route('**/*',route=>{const url=new URL(route.request().url());if(url.pathname.includes('/js/vendor/supabase-'))return route.fulfill({contentType:'application/javascript',body:sdk});if(url.origin===origin)return route.continue();if(url.href.includes('@supabase/supabase-js'))return route.fulfill({contentType:'application/javascript',body:sdk});if(route.request().resourceType()==='stylesheet')return route.fulfill({contentType:'text/css',body:'.material-symbols-outlined{display:inline-block;width:1em;overflow:hidden}'});if(route.request().resourceType()==='image')return route.fulfill({contentType:'image/png',body:png});return route.fulfill({contentType:'application/json',body:'{"data":[],"error":null}'});});
     await c.addInitScript(profile=>{if(window.top!==window||!/^http:\/\/(127\.0\.0\.1|localhost)/.test(location.href))return;if(!localStorage.getItem('fixture-initialized')){localStorage.setItem('fixture-initialized','true');sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_data_saving_v1','on');localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},f.rows.gestores[0]);
     return {c,errors};
   }
@@ -44,7 +44,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   async function list(p,account='actor-a'){return p.evaluate(async account=>PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)).list(account),account);}
   async function waitForRows(p,predicate,label){const deadline=Date.now()+45000;while(Date.now()<deadline){const rows=await list(p);if(predicate(rows))return rows;await p.waitForTimeout(100);}throw Error(label+': '+JSON.stringify(await list(p)));}
   async function fill(p,{product='Equipo A',name='Synthetic Customer',pickup=true}={}){await p.evaluate(({product,name,pickup})=>{addProductFromCard(product);toggleCartModal(true);document.getElementById('check-recogida').checked=pickup;toggleRecogidaEnAlmacen();if(!pickup){document.getElementById('check-municipio').value='Centro Habana';actualizarLocalidades();document.getElementById('check-localidad').value='Centro';document.getElementById('check-dir').value='Synthetic address';}document.getElementById('check-nombre').value=name;document.getElementById('check-tel').value='synthetic-phone';document.getElementById('check-notas').value='<img src=x onerror=alert(1)> untreated customer text';recalcularTotalFinal();},{product,name,pickup});}
-  async function submitOffline(p){await p.locator('#final-submit-btn').click();await p.waitForFunction(()=>document.getElementById('cart-modal').classList.contains('hidden'));}
+  async function submitOffline(p){await p.locator('#final-submit-btn').click();try{await p.waitForFunction(()=>document.getElementById('cart-modal').classList.contains('hidden'));}catch(error){console.error(await p.evaluate(()=>({message:document.getElementById('pth-pending-message').textContent,form:PTHCheckoutForm.readForm(document),valid:document.getElementById('checkout-form').checkValidity(),cart,handler:document.getElementById('checkout-form').onsubmit.toString().slice(0,300)})));throw error;}}
 
   // The same confirmation queues multiple customers offline, then recovers
   // a lost response without replacing an unrelated live form or draft.
@@ -53,12 +53,12 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     await fill(p,{name:'First Synthetic'});await submitOffline(p);
     await fill(p,{product:'Equipo B',name:'Second Synthetic'});await submitOffline(p);
     let rows=await list(p);assert.equal(rows.length,2);assert.notEqual(rows[0].intentId,rows[1].intentId);assert.equal(f.writes,0);assert.equal(await p.evaluate(()=>cart.length),0);
-    assert.match(await p.locator('#pth-pending-order-panel').innerText(),/Pedidos guardados en este teléfono/);assert.match(await p.locator('#pth-pending-order-panel').innerText(),/Sal a buscar señal y mantén esta página abierta/);assert.equal(await p.locator('#pth-pending-order-panel img').count(),0);
+    assert.match(await p.locator('#pth-pending-order-panel').innerText(),/Pedidos guardados en este teléfono/);assert.match(await p.locator('#pth-pending-order-panel').innerText(),/Sal a buscar señal y mantén esta página abierta/);assert.equal(await p.locator('#pth-pending-order-panel img').count(),0);assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
     await fill(p,{product:'Equipo B',name:'Live Unrelated Customer'});
     await p.evaluate(()=>{cart[0].qty=3;renderCart();document.getElementById('check-dir').value='Untouched local address';document.getElementById('check-vuelto').value='50';toggleCartModal(false);});
     const before=await p.evaluate(()=>({cart:cart.map(p=>({...p})),revision:newCartRevision,draft:lowConnectivity.readDraft('actor-a'),form:PTHCheckoutForm.readForm(document)}));
     dropSubmitResponse=true;await c.setOffline(false);await p.evaluate(()=>PTHPendingCheckoutUI.tick());
-    rows=await waitForRows(p,r=>r.some(x=>x.state==='uncertain')&&r.some(x=>x.state==='confirmed'),'receipt loss plus independent second order');assert.equal(f.writes,2);
+    rows=await waitForRows(p,r=>r.some(x=>x.state==='uncertain')&&r.some(x=>x.state==='confirmed'),'receipt loss plus independent second order');assert.equal(f.writes,2);dropSubmitResponse=false;
     await p.evaluate(()=>PTHPendingCheckoutUI.tick());await waitForRows(p,r=>r.every(x=>x.state==='confirmed'),'both receipts confirmed');assert.equal(f.writes,2);
     const after=await p.evaluate(()=>({cart:cart.map(p=>({...p})),revision:newCartRevision,draft:lowConnectivity.readDraft('actor-a'),form:PTHCheckoutForm.readForm(document)}));assert.deepEqual(after,before);assert.equal(c.pages().length,1);assert.match(await p.locator('#pth-pending-order-panel').innerText(),/Referencia: /);assert.equal((await list(p)).some(r=>r.form||r.lines),false);assert.deepEqual(errors,[]);await c.close();
   }
@@ -86,6 +86,22 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   {
     f=await fixture();const {c,errors}=await context(),p=await main(c);await c.setOffline(true);await fill(p);await submitOffline(p);await p.evaluate(()=>PTHSecureData.clearSession('expired'));await waitForRows(p,r=>r.every(x=>!x.form&&!x.lines),'expired session purges customers');assert.equal(await p.locator('#pth-pending-order-panel').isVisible(),false);assert.match(await p.locator('#pth-pending-message').innerText(),/Tu sesión venció/);await c.setOffline(false);await p.evaluate(()=>PTHPendingCheckoutUI.tick());assert.equal(f.writes,0);assert.deepEqual(errors,[]);await c.close();
   }
-  console.log('PASS multiple normal offline confirmations, independent receipts, one lost response, live cart/form preservation, delivery cost review, active editing, storage refusal, expiry privacy, mobile layout, no external tabs');
+  // A receipt arriving after an account switch cannot overwrite B's inputs,
+  // cart or draft, and cannot leave B's modal inert or display A's details.
+  {
+    f=await fixture();const {c,errors}=await context(),p=await main(c);await c.setOffline(true);await fill(p);await submitOffline(p);
+    await p.evaluate(async()=>{const q=PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)),row=(await q.list('actor-a'))[0];await q.patch('actor-a',row.id,{outcome:{attempt:'synthetic-capability'},state:'uncertain'});const checkout=PTHSecureData.checkout;PTHSecureData.checkout=body=>body.operation==='receipt'?new Promise(resolve=>{window.releaseLateReceipt=()=>resolve({data:{complete:true,confirmed:[{reference:'Old-A1',proveedor:'A'}]},error:null});}):checkout(body);});
+    await c.setOffline(false);await p.waitForFunction(()=>typeof releaseLateReceipt==='function');await p.evaluate(()=>{localStorage.setItem('pth_session',JSON.stringify({data:{id:'account-b',nombre:'Other Account',rol:'gestor'}}));localStorage.setItem('pth_secure_token','b'.repeat(64));window.dispatchEvent(new Event('pth:session-changed'));cart=[{id:'pB',nombre:'Other cart',qty:2,precio_venta:200}];newCartOwner='account-b';newCartRevision='c'.repeat(64);lowConnectivity.saveDraft('account-b',cart);document.getElementById('check-nombre').value='Other Account Customer';releaseLateReceipt();});
+    await waitForRows(p,r=>r[0]?.state==='blocked','late receipt scope fence');assert.equal(await p.locator('#check-nombre').inputValue(),'Other Account Customer');assert.equal(await p.evaluate(()=>cart[0].qty),2);assert.ok(await p.evaluate(()=>lowConnectivity.readDraft('account-b')));assert.equal(await p.locator('#cart-modal').evaluate(node=>node.inert),false);assert.equal(await p.locator('#pth-pending-order-panel').isVisible(),false);assert.equal(f.writes,0);assert.deepEqual(errors,[]);await c.close();
+  }
+  // Cached account mode also queues when the browser still claims it is online.
+  {
+    f=await fixture();const {c,errors}=await context(),p=await main(c);await fill(p);await c.route('**/mock-secure-data',route=>route.abort('internetdisconnected'));await p.evaluate(()=>window.PTHOfflineStorefront={usingCopy:()=>true});await p.evaluate(()=>PTHPendingCheckoutUI.render());await submitOffline(p);await waitForRows(p,r=>r[0]?.state==='queued','apparent online with inaccessible server');assert.equal(await p.evaluate(()=>navigator.onLine),true);assert.equal(f.writes,0);await c.unroute('**/mock-secure-data');await p.evaluate(()=>{window.PTHOfflineStorefront=null;});await p.evaluate(()=>PTHPendingCheckoutUI.tick());await waitForRows(p,r=>r[0]?.state==='confirmed','real connectivity recovery');assert.equal(f.writes,1);assert.deepEqual(errors,[]);await c.close();
+  }
+  // Startup notices a session that expired before bridge listeners existed.
+  {
+    f=await fixture();const {c,errors}=await context();let p=await main(c);await c.setOffline(true);await fill(p);await submitOffline(p);await p.evaluate(()=>localStorage.setItem('pth_secure_token_expires_at',String(Date.now()-1000)));await p.close();await c.setOffline(false);p=await c.newPage();await p.goto(origin+'/',{waitUntil:'domcontentloaded'});await p.waitForFunction(()=>Boolean(window.PTHPendingCheckoutUI));await waitForRows(p,r=>r.every(x=>!x.form&&!x.lines),'startup expiry purges customers');assert.equal(await p.evaluate(()=>localStorage.getItem('pth_secure_token')),null);assert.equal(f.writes,0);assert.deepEqual(errors,[]);await c.close();
+  }
+  console.log('PASS multiple normal offline confirmations, independent receipts, one lost response, live cart/form preservation, delivery cost review, active editing, storage refusal, expiry privacy, mobile layout, apparent online outages, startup expiry cleanup, no external tabs');
  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1;});
