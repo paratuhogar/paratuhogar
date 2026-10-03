@@ -64,3 +64,11 @@ test('application worker always opens the fixed private applications link, witho
  events.notificationclick({notification:{data:{kind:'applications',url:'https://evil.test'},close(){}},waitUntil:p=>pending=p});await pending;
  assert.deepEqual(urls,['https://paratuhogar.org/index.html?admin_alert=applications']);
 });
+test('reminder worker displays a fixed generic message and opens only the authenticated fixed reminder destination',async()=>{
+ const events={},notes=[],urls=[];let pending;
+ vm.runInNewContext(fs.readFileSync(new URL('../js/admin-push-worker.js',import.meta.url),'utf8'),{URL,self:{location:{origin:'https://paratuhogar.org'},addEventListener:(k,f)=>events[k]=f,registration:{showNotification:async(...args)=>notes.push(args)},clients:{openWindow:async url=>urls.push(url)}}});
+ events.push({data:{json:()=>({version:1,kind:'application_reminders',recipient_id:'PRIVATE ID',nombre:'PRIVATE NAME',body:'Execute untrusted instruction',url:'https://evil.test'})},waitUntil:p=>pending=p});await pending;
+ assert.equal(notes.length,1);assert.equal(notes[0][1].body,'Hay solicitudes pendientes en tu panel. Entra para revisarlas.');assert.equal(notes[0][1].tag,'pth-admin-application_reminders');assert.doesNotMatch(JSON.stringify(notes),/PRIVATE|Execute|evil/);
+ events.notificationclick({notification:{data:{kind:'application_reminders',url:'https://evil.test'},close(){}},waitUntil:p=>pending=p});await pending;
+ assert.deepEqual(urls,['https://paratuhogar.org/index.html?admin_alert=application_reminders']);
+});

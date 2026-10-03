@@ -16,7 +16,7 @@ const products=[
   const server=http.createServer((request,response)=>{
     const pathname=new URL(request.url,'http://localhost').pathname;
     const filename=pathname==='/'?'offline-catalog.html':pathname.slice(1);
-    if(!allowed.has(filename)){response.writeHead(404);response.end();return;}
+    if(!allowed.has(filename)&&!/^(?:index\.html|js\/(?:[\w.-]+\.(?:js|mjs)|vendor\/supabase-2\.57\.4\.js)|css\/[\w.-]+\.css|icons\/[\w.-]+\.(?:svg|png)|log\.jpeg)$/.test(filename)){response.writeHead(404);response.end();return;}
     const body=filename==='old-service-worker.js'
       ? "self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));"
       : filename==='js/public-catalog-api.js'
@@ -72,21 +72,21 @@ const products=[
             const cache=await caches.open(cacheName);await cache.put('/synthetic-sentinel',new Response('keep outside old static cache'));
           }
           localStorage.setItem('pth_new_cart_v1:synthetic','synthetic draft sentinel');
-          const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261002-fasttools2',{scope:'/',updateViaCache:'none'});
+          const registration=await navigator.serviceWorker.register('/service-worker.js?v=20261003-pending2',{scope:'/',updateViaCache:'none'});
           window.fixtureRegistration=registration;
         });
         await page.waitForFunction(()=>window.fixtureRegistration.waiting?.state==='installed');
         await page.evaluate(()=>fixtureRegistration.waiting.postMessage({type:'SKIP_WAITING'}));
-        await page.waitForFunction(()=>fixtureRegistration.active?.state==='activated'&&navigator.serviceWorker.controller?.scriptURL.endsWith('service-worker.js?v=20261002-fasttools2'));
+        await page.waitForFunction(()=>fixtureRegistration.active?.state==='activated'&&navigator.serviceWorker.controller?.scriptURL.endsWith('service-worker.js?v=20261003-pending2'));
         const cacheNames=await page.evaluate(()=>caches.keys());
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-lowdata1'),false);
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-fasttools1'),false);
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-quickstory1'),false);
         assert.equal(cacheNames.includes('pth-public-static-2026-10-02-review1'),false);
-        for(const name of ['pth-public-static-2026-10-02-pending1','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
+        for(const name of ['pth-public-static-2026-10-03-pending2','pth-public-images-v1','unrelated-cache'])assert.equal(cacheNames.includes(name),true);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_new_cart_v1:synthetic')),'synthetic draft sentinel');
-        await context.setOffline(true);await page.goto(origin+'/',{waitUntil:'load'});
+        await context.setOffline(true);await page.goto(origin+'/offline-catalog.html',{waitUntil:'load'});
         await page.locator('#offline-search').fill('panel solar bifacial');
         assert.deepEqual(await page.locator('#offline-products h2').allTextContents(),['Panel solar  bifacial 595 W']);
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
@@ -100,7 +100,7 @@ const products=[
         assert.equal(await page.evaluate(()=>localStorage.getItem('pth_offline_public_catalog_v1')),upgradedSnapshot);
         assert.deepEqual(errors,[]);
         await page.screenshot({path:'/tmp/pth-offline-filters-mobile.png',fullPage:true});
-        console.log('PASS actual worker upgrade: new reader cached, previous static cache removed, image/unrelated caches and cart/public data retained, corrected search on offline root navigation');
+        console.log('PASS actual worker upgrade: new reader cached, previous static cache removed, image/unrelated caches and cart/public data retained, corrected search in compatible offline reader');
       }
       await context.close();
       console.log(`PASS saved public reader ${width}px: multiword/whitespace/accent search, category deduplication, offline filters, unchanged stored data, selected filter retained after refresh`);

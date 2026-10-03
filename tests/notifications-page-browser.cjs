@@ -7,10 +7,10 @@ const root=path.resolve(__dirname,'..');
  await page.route('**/*',async route=>{const url=new URL(route.request().url());requests.push(url.pathname);
  if(url.pathname==='/functions/v1/secure-data'){
   const body=route.request().postDataJSON();
-  const profile={id:role==='angel'?'6193f310-1e3f-4404-b874-977d0e23a6a0':role,rol:['angel','owner'].includes(role)?'superadmin':role==='subgestor'?'admin':role,parent_id:role==='subgestor'?'parent':null,estado:'activo'};
+  const profile={id:role==='angel'?'6193f310-1e3f-4404-b874-977d0e23a6a0':role==='owner'?'38f20b63-a845-4a03-8d10-9a57da2ac2c4':role,rol:['angel','owner'].includes(role)?'superadmin':role==='subgestor'?'admin':role,parent_id:role==='subgestor'?'parent':null,estado:'activo'};
   const raw=Buffer.concat([Buffer.from([4]),Buffer.alloc(64)]).toString('base64url');
   const ready=['angel','owner'].includes(role);
-  const data=body.action==='session'?{profile}:{configured:ready,enabled:ready,allowedTopics:role==='angel'?['orders','suggestions','applications']:role==='owner'?['orders','suggestions']:['orders'],publicKey:ready?raw:null};
+  const data=body.action==='session'?{profile}:{configured:ready,enabled:ready,allowedTopics:role==='angel'?['orders','suggestions','applications','application_reminders']:role==='owner'?['orders','suggestions','application_reminders']:['orders'],publicKey:ready?raw:null};
   return route.fulfill({contentType:'application/json',body:JSON.stringify({data,error:null}),headers:{'Access-Control-Allow-Origin':'http://127.0.0.1:8080'}});
  }
  const file=path.join(root,url.pathname);if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
@@ -18,7 +18,7 @@ const root=path.resolve(__dirname,'..');
  });
  const initialPermission=['angel','owner'].includes(role)?'default':await page.evaluate(()=>Notification.permission);
  await page.goto('http://127.0.0.1:8080/notifications.html');
- if(['angel','owner'].includes(role)){await page.locator('fieldset:not([hidden])').waitFor({timeout:5000}).catch(async e=>{throw Error(e.message+' '+await page.locator('body').innerText());});assert.equal(await page.locator('input[type=checkbox]').count(),role==='angel'?3:2);assert.equal(await page.locator('input[value=applications]').count(),role==='angel'?1:0);assert.equal(await page.locator('input:checked').count(),0);}
+ if(['angel','owner'].includes(role)){await page.locator('fieldset:not([hidden])').waitFor({timeout:5000}).catch(async e=>{throw Error(e.message+' '+await page.locator('body').innerText());});assert.equal(await page.locator('input[type=checkbox]').count(),role==='angel'?4:3);assert.equal(await page.locator('input[value=applications]').count(),role==='angel'?1:0);assert.equal(await page.locator('input[value=application_reminders]').count(),1);assert.equal(await page.locator('input:checked').count(),0);}
  else if(role==='admin'){await page.getByRole('status').filter({hasText:'aún no están habilitadas'}).waitFor({timeout:5000}).catch(async e=>{throw Error(e.message+' '+await page.locator('body').innerText());});assert.equal(await page.getByRole('button',{name:'Activar notificaciones',exact:true}).isVisible(),false);assert.equal(await page.getByRole('button',{name:'Volver a comprobar'}).evaluate(e=>getComputedStyle(e).cursor),'pointer');}
  else await page.locator('#push-settings').filter({hasText:'Entra con tu cuenta de administración'}).waitFor();
  assert.equal(requests.some(p=>p==='/service-worker.js'),false);assert.equal(await page.evaluate(()=>Notification.permission),initialPermission);

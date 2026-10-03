@@ -31,7 +31,7 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/feedback-announcement.js?v=20261001-1',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/admin-work-view.js?v=20260930-admins2',
-  '/js/admin-push-links.js?v=20261002-applications1',
+  '/js/admin-push-links.js?v=20261002-reminders1',
   '/js/internal-assets.js?v=20261002-quickstory1',
   '/log.jpeg', '/icons/product-placeholder.svg'];
 // Public templates, local SDK and display code only. No private responses.
@@ -66,7 +66,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/css/admin-panel.css?v=20261003-recent2',
   '/js/admin-panel-data.js?v=20261003-recent2',
   '/js/admin-work-view.js?v=20260930-admins2',
-  '/js/admin-push-links.js?v=20261002-applications1',
+  '/js/admin-push-links.js?v=20261002-reminders1',
   '/manifest.webmanifest',
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
@@ -78,7 +78,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/icons/icon-512.png'
 ];
 
-importScripts('/js/admin-push-worker.js?v=20261002-applications1');
+importScripts('/js/admin-push-worker.js?v=20261002-reminders1');
 
 self.addEventListener('install', event => {
   event.waitUntil(
