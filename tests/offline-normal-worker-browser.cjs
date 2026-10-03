@@ -2,6 +2,7 @@
 // NODE_PATH=/opt/codex/runtimes/codex-primary-runtime/dependencies/node/node_modules node tests/offline-normal-worker-browser.cjs
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
 const {startFixture}=require('./fixtures/offline-normal-http.cjs');
 
 async function makeContext(browser,fixture,width=390,account='a') {
@@ -50,6 +51,8 @@ async function saveCopy(page) {
   await page.locator('#pth-save-offline-copy').click();
   await page.waitForFunction(()=>!document.getElementById('pth-save-offline-copy').disabled&&/Copia guardada|No se pudo guardar|Renueva tu sesión/.test(document.getElementById('pth-pending-message')?.textContent||''));
   assert.match(await page.locator('#pth-pending-message').innerText(),/Copia guardada/,'actual save-copy button must save private account-scoped data');
+  const copies=await privateCopies(page);
+  assert.ok(copies.every(copy=>copy.products.every(product=>!Object.hasOwn(product,'comision')&&!Object.hasOwn(product,'password'))));
   await page.evaluate(()=>toggleCartModal(false));
 }
 async function rows(page,owner='actor-a') {return page.evaluate(owner=>PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)).list(owner),owner);}
@@ -73,6 +76,7 @@ async function auditCache(page,fixture) {
     }return result;
   });
   assert.ok(cached.some(row=>new URL(row.url).pathname==='/index.html'));
+  for(const row of cached.filter(row=>new URL(row.url).pathname==='/index.html'))assert.equal(row.body,fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),'cached app shell must be the exact checked-in generic template');
   for(const row of cached) {
     const path=new URL(row.url).pathname;
     assert.equal(new URL(row.url).origin,fixture.origin);
@@ -175,7 +179,7 @@ async function accountPrivacy(browser,fixture) {
   console.log('PASS real shared-origin account change clears A UI/copy, B sees only own CRM/queue; copy quota keeps editable draft; logout erases B queue/customer copy; 320px offline normal form');
   await context.close();
 }
-async function expiredReopening(browser,fixture,interrupted=false) {
+async function expiredReopening(browser,fixture,interrupted=false,logout=false) {
   const baseline=fixture.f.writes;
   const {context}=await makeContext(browser,fixture,390);
   let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -184,7 +188,16 @@ async function expiredReopening(browser,fixture,interrupted=false) {
   await deviceOffline(context,page,true);await page.reload({waitUntil:'domcontentloaded'});await deviceOffline(context,page,true);await page.waitForFunction(()=>PTHOfflineStorefront.usingCopy());
   await fillOrder(page,'SYNTHETIC_EXPIRED_CUSTOMER');assert.equal((await rows(page)).length,1);
   if(interrupted) {
-    await page.evaluate(()=>localStorage.setItem('pth_secure_token_expires_at',String(Date.now()-1)));
+    if(logout) {
+      // A transient failed transaction followed by navigation must retain the
+      // durable cleanup marker. The new document has a healthy real IndexedDB.
+      await page.evaluate(()=>{
+        const original=IDBDatabase.prototype.transaction;
+        IDBDatabase.prototype.transaction=function(stores,mode,...args){if(mode==='readwrite')throw new DOMException('Synthetic interrupted cleanup','AbortError');return original.call(this,stores,mode,...args);};
+        PTHSecureData.clearSession();
+      });
+      assert.equal(await page.evaluate(()=>localStorage.getItem('pth_pending_private_purge_v1:actor-a')),'1','failed cleanup must retain a durable owner-only marker');
+    } else await page.evaluate(()=>localStorage.setItem('pth_secure_token_expires_at',String(Date.now()-1)));
     await page.reload({waitUntil:'domcontentloaded'});await deviceOffline(context,page,true);
   } else {
     await page.close();
@@ -196,11 +209,12 @@ async function expiredReopening(browser,fixture,interrupted=false) {
   console.log('Expired reopening diagnostics:',await page.evaluate(()=>({token:PTHSecureData.token()?true:false,expired:PTHSecureData.expiredCheckoutOwner(),events:window.fixtureSessionEvents})),(await rows(page)).map(row=>({state:row.state,form:Boolean(row.form),attempt:Boolean(row.outcome?.attempt)})));
   await eventually(()=>rows(page),value=>value.every(row=>!row.form),'expired before deferred bridge purges queued customer fields');
   await eventually(()=>privateCopies(page),value=>!value.some(copy=>copy.owner==='actor-a'),'expired reopening clears saved own CRM copy');
+  await eventually(()=>page.evaluate(()=>PTHSecureData.pendingPrivatePurgeOwners?.()||[]),owners=>!owners.includes('actor-a'),'successful queue and CRM purges retire cleanup marker');
   assert.equal(await page.evaluate(()=>PTHSecureData.token()),null);assert.ok(!await page.evaluate(()=>PTHOfflineStorefront.current()?.owner));
   assert.equal(await page.locator('#crm-datalist option').count(),0);assert.equal(await page.locator('#cart-modal').isVisible(),false);
   assert.equal((await page.locator('body').innerText()).includes('SYNTHETIC_EXPIRED_CUSTOMER'),false);
   assert.equal(fixture.f.writes,baseline);await auditCache(page,fixture);assert.deepEqual(errors,[]);
-  console.log('PASS '+(interrupted?'interrupted active expiry cleanup/reload':'session expired while app closed')+' on actual cached normal reopening: token, own CRM copy and unsent customer fields erased; no order sent');
+  console.log('PASS '+(logout?'logout cleanup aborted then reload':interrupted?'interrupted active expiry cleanup/reload':'session expired while app closed')+' on actual cached normal reopening: token, own CRM copy and unsent customer fields erased; no order sent');
   await context.close();
 }
 
@@ -210,6 +224,7 @@ async function expiredReopening(browser,fixture,interrupted=false) {
   try {
     if(process.env.PTH_GATE_CASE==='expiry'){await expiredReopening(browser,fixture);return;}
     if(process.env.PTH_GATE_CASE==='interrupt'){await expiredReopening(browser,fixture,true);return;}
+    if(process.env.PTH_GATE_CASE==='logout'){await expiredReopening(browser,fixture,true,true);return;}
     const {context}=await makeContext(browser,fixture,390);
     let page=await context.newPage();const errors=[],downloads=[];context.on('page',p=>{p.on('pageerror',e=>errors.push(e.message));p.on('download',d=>downloads.push(d.suggestedFilename()));});page.on('pageerror',e=>errors.push(e.message));page.on('download',d=>downloads.push(d.suggestedFilename()));
     await ready(page,fixture,'/?ref=synthetic-link');console.log('Online storefront ready');await workerReady(page);console.log('Actual worker controls storefront');
@@ -253,6 +268,7 @@ async function expiredReopening(browser,fixture,interrupted=false) {
     await accountPrivacy(browser,fixture);
     await expiredReopening(browser,fixture);
     await expiredReopening(browser,fixture,true);
+    await expiredReopening(browser,fixture,true,true);
   } catch(error) {console.error('Requests at failure:',fixture.requests.slice(-12));console.error('Optional REST:',fixture.unexpected);throw error;}
   finally {await browser.close();await fixture.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
