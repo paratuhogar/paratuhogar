@@ -36,8 +36,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <link rel="stylesheet" href="css/work-navigation.css?v=20261001-1">
-    <link rel="stylesheet" href="css/gestor-guide.css?v=20261003-guide1">
-    <script src="js/gestor-guide.js?v=20261003-guide1" defer></script>
+    <link rel="stylesheet" href="css/gestor-guide.css?v=20261003-dashboard2">
+    <script src="js/gestor-guide.js?v=20261003-dashboard2" defer></script>
+    <link rel="stylesheet" href="css/work-welcome.css?v=20261003-welcome2">
+    <script src="js/work-welcome.js?v=20261003-welcome2" defer></script>
     <link rel="stylesheet" href="css/low-connectivity.css?v=20261003-pending2">
     <script src="js/low-connectivity.js?v=20261002-lowdata1" defer></script>
     <script src="js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
@@ -62,7 +64,7 @@
     <script src="js/affiliate-links.js?v=20261003-alias1" defer></script>
     <script src="js/public-name-editor.js?v=20261003-alias1" defer></script>
     <script src="js/offline-storefront-adapter.js?v=20261003-pending2" defer></script>
-    <script src="js/feedback-announcement.js?v=20261001-1" defer></script>
+    <script src="js/feedback-announcement.js?v=20261003-welcome2" defer></script>
     <script src="js/image-variants.js?v=20261001-images2" defer></script>
     <script src="js/product-images.js?v=20261002-fasttools2" defer></script>
     <script src="js/product-description-loader.js?v=20261001-images2" defer></script>
@@ -530,14 +532,6 @@
             </a>
         </nav>
 
-        <aside id="pth-guide-download" hidden aria-labelledby="pth-guide-title">
-            <div class="pth-guide-copy">
-                <h2 id="pth-guide-title">Guía para gestores</h2>
-                <p>Consulta cómo compartir ofertas, registrar pedidos y usar tus herramientas.</p>
-                <p id="pth-guide-meta" class="pth-guide-meta"></p>
-            </div>
-            <a id="pth-guide-link" download="Guia_ParaTuHogar.pdf" aria-describedby="pth-guide-meta">Descargar PDF</a>
-        </aside>
 
         <!-- 2. CONTENEDOR DEL CATÁLOGO (Solo envuelve cosas del catálogo) -->
         <div id="sec-catalogo">
@@ -945,6 +939,15 @@
 
         <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
+        <aside id="pth-guide-download" hidden aria-labelledby="pth-guide-title">
+            <div class="pth-guide-copy">
+                <h2 id="pth-guide-title">Guía para gestores</h2>
+                <p>Consulta cómo compartir ofertas, registrar pedidos y usar tus herramientas.</p>
+                <p id="pth-guide-meta" class="pth-guide-meta"></p>
+                <button id="pth-welcome-reopen" type="button">Ver bienvenida</button>
+            </div>
+            <a id="pth-guide-link" download="Guia_ParaTuHogar.pdf" aria-describedby="pth-guide-meta">Descargar PDF</a>
+        </aside>
             <!-- === INICIO OPERATIVO DEL GESTOR === -->
             <div id="gestor-home" class="space-y-6">
                 <section class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0f2d57] via-[#174b89] to-[#2563a8] text-white shadow-xl shadow-blue-950/15">
@@ -3155,7 +3158,7 @@
         </div>
 
     <!-- Scripts de Lógica -->
-    <script src="js/storefront.min.js?v=20261003-ranking1" defer></script>
+    <script src="js/storefront.min.js?v=20261003-welcome2" defer></script>
     <script src="js/pending-checkout-storefront.js?v=20261003-pending2" defer></script>
 
 
@@ -3316,111 +3319,6 @@
     }
 </style>
 
-<!-- MODAL DE BIENVENIDA GESTOR (CORREGIDO CON SCROLL) -->
-<div id="modal-welcome-agent" class="fixed inset-0 z-[300] hidden bg-[#0f172a]/95 backdrop-blur-md flex items-start justify-center p-4 overflow-y-auto">
-
-    <!-- Contenedor Principal con margen arriba y abajo para que no se pegue -->
-    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(26,71,137,0.3)] relative my-8 animate-pop-in">
-
-        <!-- BOTÓN X DE CIERRE RÁPIDO -->
-        <button onclick="closeWelcomeAgent()" class="absolute top-6 right-6 z-[310] h-10 w-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 transition-all">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-
-        <!-- Header con Gradiente -->
-        <div class="bg-gradient-to-br from-[#1a4789] to-[#2c6fb5] p-10 text-center relative overflow-hidden">
-            <div class="relative z-10">
-                <div class="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-md border border-white/30 shadow-xl">
-                    <span class="material-symbols-outlined text-4xl text-white animate-bounce">rocket_launch</span>
-                </div>
-                <h2 class="text-white text-3xl font-black italic uppercase tracking-tighter">¡Sistema Actualizado!</h2>
-                <p class="text-blue-100 text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Rango de Agente Detectado</p>
-            </div>
-        </div>
-
-        <!-- Contenido -->
-        <div class="p-8 space-y-8">
-
-            <!-- Botón WA Activo -->
-            <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-500/10 p-5 rounded-3xl border border-emerald-100 dark:border-emerald-500/20">
-                <div class="h-12 w-12 bg-[#25D366] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-green-500/40">
-                    <span class="material-symbols-outlined">chat</span>
-                </div>
-                <div>
-                    <h4 class="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase">Botón WhatsApp Activo</h4>
-                    <p class="text-[10px] text-emerald-600/70 font-bold">Tus clientes ya pueden contactarte directamente.</p>
-                </div>
-            </div>
-
-            <!-- Retención -->
-            <div class="grid grid-cols-2 gap-4">
-                <div class="p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Tu Link Dura</p>
-                    <p id="welcome-link-duration" class="text-xl font-black text-[#1a4789] dark:text-blue-400">---</p>
-                </div>
-                <div class="p-5 rounded-[2rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-2">Siguiente Nivel</p>
-                    <p id="welcome-next-power" class="text-xl font-black text-amber-500">---</p>
-                </div>
-            </div>
-
-            <!-- ÁRBOL DE HABILIDADES (Copiado de tu diseño anterior) -->
-            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden border border-white/5">
-                <div class="flex justify-between items-center mb-8">
-                    <div>
-                        <p class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] mb-1">Evolución de Carrera</p>
-                        <h3 class="text-xl font-black italic">ÁRBOL DE HABILIDADES</h3>
-                    </div>
-                    <div id="welcome-rank-tag" class="bg-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase">NIVEL 0</div>
-                </div>
-                <div id="welcome-features-list" class="space-y-4"></div>
-
-                <!-- PANEL DE PRONÓSTICO OPTIMISTA -->
-<div class="mt-10 p-6 bg-gradient-to-br from-emerald-600/20 to-blue-600/20 rounded-[2rem] border border-emerald-500/30 relative overflow-hidden">
-    <div class="relative z-10">
-        <div class="flex items-center gap-2 mb-4">
-            <div class="h-2 w-2 bg-emerald-400 rounded-full animate-ping"></div>
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Análisis de Potencial de Ingresos</p>
-        </div>
-
-        <div class="space-y-4">
-            <div>
-                <p class="text-[11px] text-slate-300 font-bold leading-tight">
-                    Al activar las herramientas de <span id="welcome-next-tier-name" class="text-white font-black">Siguiente Nivel</span>:
-                </p>
-            </div>
-
-            <div class="flex justify-between items-center bg-black/20 p-4 rounded-2xl border border-white/5">
-                <div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-emerald-400 font-black text-2xl">+</span>
-                        <span id="welcome-extra-sales" class="text-5xl font-black text-white">0</span>
-                    </div>
-                    <p class="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Ventas Extra / Mes</p>
-                </div>
-                <div class="text-right border-l border-white/10 pl-4">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Total Proyectado:</p>
-                    <span id="welcome-total-potential" class="text-2xl font-black text-white">0</span>
-                    <p class="text-[8px] text-slate-500 font-bold">Eq. Mensuales</p>
-                </div>
-            </div>
-        </div>
-
-        <p id="welcome-motivational-phrase" class="text-[10px] text-slate-400 mt-4 italic leading-tight">
-            "Con el Pack Masivo, tu alcance en Facebook se triplica automáticamente."
-        </p>
-    </div>
-</div>
-            </div>
-
-            <!-- BOTÓN DE CIERRE PRINCIPAL -->
-            <button onclick="closeWelcomeAgent()" class="w-full bg-[#1a4789] hover:bg-[#2c6fb5] text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 transition-all active:scale-95">
-                ¡Entendido, a vender!
-            </button>
-        </div>
-    </div>
-</div>
-
 <style>
     @keyframes pop-in {
         0% { transform: scale(0.9); opacity: 0; }
@@ -3504,164 +3402,18 @@
 </div>
 
 
-<!-- ========================================== -->
-<!-- SISTEMA DE INICIACIÓN (SOLO LEVELING HUD)  -->
-<!-- ========================================== -->
+<!-- Bienvenida breve para una sesión de trabajo existente. -->
+<dialog id="pth-welcome" aria-labelledby="pth-welcome-title" aria-describedby="pth-welcome-text">
+    <header><p>ParaTuHogar</p><button id="pth-welcome-skip" type="button">Omitir</button></header>
+    <p id="pth-welcome-step" class="pth-welcome-step" aria-live="polite">1 de 3</p>
+    <h2 id="pth-welcome-title" tabindex="-1">Encuentra lo que vas a ofrecer</h2>
+    <p id="pth-welcome-text"></p>
+    <button id="pth-welcome-action" type="button">Ir al catálogo</button>
+    <footer><button id="pth-welcome-back" type="button" disabled>Anterior</button><button id="pth-welcome-next" type="button">Continuar</button></footer>
+    <p class="pth-welcome-hint">Puedes volver a esta bienvenida desde la guía en Mi Dashboard.</p>
+</dialog>
 
-<div id="sl-system-overlay" class="sl-hidden">
-    <!-- Fondo oscuro con scanlines -->
-    <div class="sl-scanlines"></div>
-
-    <div class="sl-window">
-        <!-- Decoración Esquinas HUD -->
-        <div class="sl-hud-corner sl-tl"></div>
-        <div class="sl-hud-corner sl-tr"></div>
-        <div class="sl-hud-corner sl-bl"></div>
-        <div class="sl-hud-corner sl-br"></div>
-
-        <!-- Cabecera del Sistema -->
-        <div class="sl-header">
-            <div class="flex items-center gap-2">
-                <span class="sl-alert-icon">!</span>
-                <span class="sl-system-msg">MENSAJE DEL SISTEMA</span>
-            </div>
-            <div class="sl-rank-display">RANGO: <span id="sl-card-rank">PLAYER</span></div>
-        </div>
-
-        <!-- Contenido Dinámico -->
-        <div class="sl-content">
-            <div class="sl-icon-box">
-                <span id="sl-card-icon" class="material-symbols-outlined sl-main-icon">verified_user</span>
-                <div class="sl-icon-glow"></div>
-            </div>
-
-            <h2 id="sl-card-title" class="sl-title">BIENVENIDO, JUGADOR</h2>
-
-            <div class="sl-text-container">
-                <p id="sl-card-text" class="sl-text">Cargando interfaz...</p>
-            </div>
-        </div>
-
-        <!-- Barra de Progreso (XP) -->
-        <div class="sl-xp-container">
-            <div class="flex justify-between text-[10px] text-blue-400 font-bold mb-1 tracking-widest">
-                <span>SINCRONIZACIÓN</span>
-                <span id="sl-step-count">1/5</span>
-            </div>
-            <div class="sl-xp-track">
-                <div id="sl-xp-fill" class="sl-xp-bar"></div>
-            </div>
-        </div>
-
-        <!-- Botón de Acción -->
-        <div class="p-6 pt-0">
-            <button id="sl-action-btn" onclick="nextSystemSlide()" class="sl-btn">
-                ACEPTAR MISIÓN
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- ESTILOS CSS (SYSTEM STYLE) -->
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap');
-
-    :root {
-        --sl-blue: #00f0ff;
-        --sl-purple: #bc13fe;
-        --sl-dark: #020617;
-        --sl-border: #1e3a8a;
-    }
-
-    /* Contenedor Principal */
-    #sl-system-overlay {
-        position: fixed; inset: 0; z-index: 100000;
-        background: rgba(2, 6, 23, 0.95);
-        backdrop-filter: blur(5px);
-        display: flex; justify-content: center; align-items: center;
-        font-family: 'Rajdhani', sans-serif;
-        opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
-    }
-    .sl-visible { opacity: 1 !important; pointer-events: auto !important; }
-    .sl-hidden { display: none; }
-
-    /* Ventana del Sistema */
-    .sl-window {
-        width: 90%; max-width: 500px;
-        background: rgba(10, 15, 30, 0.9);
-        border: 1px solid var(--sl-border);
-        box-shadow: 0 0 40px rgba(0, 240, 255, 0.15);
-        position: relative; overflow: hidden;
-        transform: scale(0.95); transition: transform 0.3s ease;
-    }
-    .sl-visible .sl-window { transform: scale(1); }
-
-    /* Efecto Scanlines */
-    .sl-scanlines {
-        position: absolute; inset: 0; pointer-events: none;
-        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
-        background-size: 100% 4px; z-index: 0; opacity: 0.3;
-    }
-
-    /* Esquinas HUD */
-    .sl-hud-corner { position: absolute; width: 20px; height: 20px; border: 2px solid var(--sl-blue); z-index: 10; transition: all 0.3s; }
-    .sl-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
-    .sl-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
-    .sl-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
-    .sl-br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
-
-    /* Header */
-    .sl-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 15px 20px; background: linear-gradient(90deg, rgba(0,240,255,0.1) 0%, transparent 100%);
-        border-bottom: 1px solid var(--sl-border);
-    }
-    .sl-alert-icon {
-        background: var(--sl-blue); color: black; font-weight: 900; width: 18px; height: 18px;
-        display: flex; justify-content: center; align-items: center; border-radius: 50%; font-size: 12px;
-        animation: pulse-blue 2s infinite;
-    }
-    .sl-system-msg { color: var(--sl-blue); font-weight: 700; letter-spacing: 2px; font-size: 12px; }
-    .sl-rank-display { color: white; font-weight: 600; font-size: 12px; letter-spacing: 1px; }
-    #sl-card-rank { color: var(--sl-purple); text-shadow: 0 0 5px var(--sl-purple); }
-
-    /* Contenido */
-    .sl-content { padding: 30px 20px; text-align: center; color: white; position: relative; z-index: 2; }
-
-    .sl-icon-box { position: relative; width: 60px; height: 60px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; }
-    .sl-main-icon { font-size: 48px; color: white; z-index: 2; text-shadow: 0 0 15px var(--sl-blue); }
-    .sl-icon-glow { position: absolute; inset: 0; background: var(--sl-blue); filter: blur(25px); opacity: 0.4; animation: pulse-glow 3s infinite; }
-
-    .sl-title {
-        font-size: 28px; font-weight: 700; text-transform: uppercase; margin-bottom: 15px;
-        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); letter-spacing: 1px;
-    }
-
-    .sl-text-container { min-height: 120px; display: flex; align-items: center; justify-content: center; }
-    .sl-text { font-size: 18px; line-height: 1.5; color: #cbd5e1; font-weight: 500; }
-    .sl-highlight { color: var(--sl-blue); font-weight: 700; }
-    .sl-highlight-p { color: var(--sl-purple); font-weight: 700; text-shadow: 0 0 5px var(--sl-purple); }
-
-    /* XP Bar */
-    .sl-xp-container { padding: 0 25px 25px; }
-    .sl-xp-track { width: 100%; height: 6px; background: #0f172a; border: 1px solid #334155; }
-    .sl-xp-bar { height: 100%; width: 0%; background: var(--sl-blue); box-shadow: 0 0 10px var(--sl-blue); transition: width 0.3s ease; }
-
-    /* Botón */
-    .sl-btn {
-        width: 100%; padding: 14px; background: transparent;
-        border: 1px solid var(--sl-blue); color: var(--sl-blue);
-        font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px;
-        text-transform: uppercase; cursor: pointer; transition: all 0.2s;
-    }
-    .sl-btn:hover { background: var(--sl-blue); color: black; box-shadow: 0 0 20px var(--sl-blue); }
-
-    @keyframes pulse-blue { 0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(0, 240, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); } }
-    @keyframes pulse-glow { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 0.6; transform: scale(1.1); } }
-</style>
-
-<!-- LÓGICA DEL SISTEMA -->
-<script src="js/storefront-extras.min.js?v=20261003-alias1" defer></script>
+<script src="js/storefront-extras.min.js?v=20261003-welcome2" defer></script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->

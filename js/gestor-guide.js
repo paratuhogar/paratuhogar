@@ -7,7 +7,9 @@
     const link = () => root.document.getElementById('pth-guide-link');
     function eligible() {
         const nav = root.document.getElementById('admin-nav');
-        return Boolean(root.currentUserData?.id && root.PTHSecureData?.token() && nav &&
+        const dashboard = root.document.getElementById('sec-dashboard');
+        return Boolean(root.currentUserData?.id && root.currentUserData?.rol !== 'mensajero' && root.PTHSecureData?.token() && nav && dashboard &&
+            !dashboard.classList.contains('hidden') && !dashboard.hidden &&
             !nav.classList.contains('hidden') && !nav.hidden &&
             !root.PTHWorkView?.isAdminView(root.currentUserData));
     }
@@ -60,6 +62,8 @@
         const nav = root.document.getElementById('admin-nav');
         if (!nav || !card()) return;
         new MutationObserver(() => { void sync(); }).observe(nav, { attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
+        const dashboard = root.document.getElementById('sec-dashboard');
+        if (dashboard) new MutationObserver(() => { void sync(); }).observe(dashboard, { attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
         root.addEventListener('pth:session-changed', reset);
         root.addEventListener('storage', event => { if (event.key === null || ['pth_secure_token', 'pth_session'].includes(event.key)) reset(); });
         root.addEventListener('online', () => { void sync(true); });

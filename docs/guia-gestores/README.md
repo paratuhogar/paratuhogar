@@ -15,7 +15,11 @@ La actualización requiere capturas reales de la interfaz, revisión de privacid
 
 ## Tarjeta y alcance
 
-Una sola tarjeta aparece sobre Catálogo y Mi Dashboard durante una sesión de trabajo existente. Usa la misma navegación y sesión que la web. No aparece en la vista pública ni en el panel administrativo. Una persona con permisos administrativos que cambie a su vista de ventas la verá allí.
+Una sola tarjeta aparece dentro de Mi Dashboard durante una sesión de trabajo existente. El Catálogo queda dedicado a buscar productos y preparar pedidos y no consulta el manifiesto de la guía. La tarjeta usa la misma navegación y sesión que la web. No aparece en la vista pública ni en el panel administrativo. Una persona con permisos administrativos que cambie a su vista de ventas la verá en su Dashboard.
+
+«Ver bienvenida» permite repasar tres pasos prácticos: Catálogo, compartir y preparar pedidos, y Dashboard. Se puede omitir o cerrar con Escape. La primera apertura se recuerda por cuenta en este navegador, también ante recargas o interrupciones; la exclusión de la bienvenida anterior se migra sin repetirla. No activa notificaciones ni guarda contactos. El aviso privado de Problemas y mejoras espera a que se cierre esta bienvenida.
+
+La revisión de ubicación no cambia el PDF final ni su número de revisión: ninguna de sus veinte páginas situaba la tarjeta en el Catálogo ni incluía la antigua bienvenida. Las instrucciones del PDF sobre navegación y requisitos de poca conexión siguen vigentes. El mismo archivo aprobado y el inventario extraído se conservan sin regeneración.
 
 `guias/gestores.json` autoriza la aparición únicamente con una versión final válida. Antes de mostrar el enlace, se consulta la disponibilidad del PDF y su tipo y tamaño. No se precarga el contenido del documento. La descarga usa un enlace normal y admite navegadores móviles.
 

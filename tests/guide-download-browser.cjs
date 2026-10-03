@@ -20,7 +20,7 @@ const release = { published: true, status: 'final', path: '/guias/guia-gestores.
    const u=new URL(req.url,'http://127.0.0.1');
    if(u.pathname==='/'){
     res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});
-    return res.end('<!doctype html><html lang="es"><head><style>@font-face{font-family:Manrope;src:url(/assets/fonts/Manrope.ttf);font-weight:200 800}body{margin:0}.hidden{display:none}*{box-sizing:border-box}'+css+'</style></head><body><main>'+nav+card+'<div id="sec-catalogo">Catálogo de prueba</div><div id="sec-dashboard" hidden>Dashboard de prueba</div></main><script>window.currentUserData=null;window.token=null;window.adminView=false;window.PTHSecureData={token:()=>window.token};window.PTHWorkView={isAdminView:()=>window.adminView};</script><script>'+js+'</script></body></html>');
+    return res.end('<!doctype html><html lang="es"><head><style>@font-face{font-family:Manrope;src:url(/assets/fonts/Manrope.ttf);font-weight:200 800}body{margin:0}.hidden{display:none}*{box-sizing:border-box}'+css+'</style></head><body><main>'+nav+'<div id="sec-catalogo">Catálogo de prueba</div><section id="sec-dashboard" hidden>'+card+'Dashboard de prueba</section></main><script>window.currentUserData=null;window.token=null;window.adminView=false;window.PTHSecureData={token:()=>window.token};window.PTHWorkView={isAdminView:()=>window.adminView};</script><script>'+js+'</script></body></html>');
    }
    if(u.pathname==='/assets/fonts/Manrope.ttf'){res.writeHead(200,{'Content-Type':'font/ttf'});return res.end(fs.readFileSync(path.join(root,'assets/fonts/Manrope.ttf')));}
    if(u.pathname==='/guias/gestores.json'){reads++;if(delayed)await new Promise(r=>{hold=r;});res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify(metadata));}
@@ -29,15 +29,20 @@ const release = { published: true, status: 'final', path: '/guias/guia-gestores.
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   await page.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
-  const session = async (role='gestor') => page.evaluate(role => {
+  const session = async (role='gestor',dashboard=true) => page.evaluate(({role,dashboard}) => {
    window.currentUserData=role==='visitor'?null:{id:role,parent_id:role==='child'?'principal':null};window.token=role==='visitor'?null:'fixture-token';window.adminView=role==='admin';
    document.getElementById('admin-nav').classList.toggle('hidden',role==='visitor'||role==='admin');
+   document.getElementById('sec-dashboard').hidden=!dashboard||role==='visitor'||role==='admin';
    dispatchEvent(new Event('pth:session-changed'));
-  },role);
+  },{role,dashboard});
   const hidden = async () => { await page.waitForFunction(()=>document.getElementById('pth-guide-download').hidden); assert.equal(await page.locator('#pth-guide-link').getAttribute('href'),null); };
   await page.goto('http://127.0.0.1:'+server.address().port+'/'); await hidden(); assert.equal(reads,0,'visitor must not fetch guide metadata');
   await session(); await page.waitForTimeout(70); await hidden(); assert.equal(heads,0,'pending guide must not request a nonexistent PDF');
   metadata=release; await page.evaluate(()=>PTHGuide.sync(true)); await page.waitForFunction(()=>!document.getElementById('pth-guide-download').hidden);
+  assert.equal(await page.locator('#sec-dashboard #pth-guide-download').count(),1,'guide belongs to Dashboard');
+  await session('gestor',false); await hidden();
+  const catalogueReads=reads; await page.evaluate(()=>PTHGuide.sync(true)); assert.equal(reads,catalogueReads,'catalogue does not fetch guide metadata');
+  await session(); await page.waitForFunction(()=>!document.getElementById('pth-guide-download').hidden);
   assert.equal(await page.locator('#pth-guide-download').count(),1);
   assert.equal(await page.locator('#pth-guide-link').getAttribute('href'),'/guias/guia-gestores.pdf?v=2026-10-03.1');
   assert.match(await page.locator('#pth-guide-meta').textContent(),/Revisión 1/);
@@ -65,7 +70,7 @@ const release = { published: true, status: 'final', path: '/guias/guia-gestores.
   await page.addStyleTag({content:'#pth-guide-download{font-size:26px}#pth-guide-download h2{font-size:32px}#pth-guide-download .pth-guide-meta{font-size:24px}'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'enlarged text fits mobile');
   assert.deepEqual(errors,[]);
-  console.log('PASS guide roles, pending/final gates, stable download bytes, 320/390/1280, dark/light, focus, oversized text, errors, late response and back navigation');
+  console.log('PASS Dashboard-only guide, no catalogue requests, roles, pending/final gates, stable download bytes, 320/390/1280, dark/light, focus, oversized text, errors, late response and back navigation');
   await page.close();
  } finally { await browser.close();if(server){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));} }
 })().catch(error=>{console.error(error);process.exitCode=1;});

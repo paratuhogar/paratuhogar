@@ -1,8 +1,8 @@
-/* One shared card above catalogue/dashboard, using the existing sales session. */
+/* One guide card inside the existing private Dashboard. */
 #pth-guide-download {
-    width: calc(100% - 32px);
+    width: 100%;
     max-width: 1168px;
-    margin: 12px auto 0;
+    margin: 0 auto;
     padding: 18px;
     display: flex;
     align-items: center;
@@ -19,6 +19,19 @@
 #pth-guide-download h2 { margin: 0; color: #1a4789; font-size: 16px; line-height: 1.4; font-weight: 800; }
 #pth-guide-download p { margin: 5px 0 0; overflow-wrap: anywhere; }
 #pth-guide-download .pth-guide-meta { color: #526176; font-size: 12px; }
+#pth-welcome-reopen {
+    margin-top: 8px;
+    min-height: 44px;
+    padding: 8px 0;
+    border: 0;
+    background: transparent;
+    color: #1a4789;
+    font: inherit;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+}
+#pth-welcome-reopen:focus-visible { outline: 3px solid #a64b08; outline-offset: 3px; border-radius: 4px; }
 #pth-guide-link {
     display: flex;
     align-items: center;
@@ -43,5 +56,6 @@
 html.dark #pth-guide-download { border-color: #50657f; border-left-color: #8abaff; background: #172b46; color: #e5efff; }
 html.dark #pth-guide-download h2 { color: #a9ccff; }
 html.dark #pth-guide-download .pth-guide-meta { color: #becce0; }
+html.dark #pth-welcome-reopen { color: #a9ccff; }
 html.dark #pth-guide-link { background: #245caa; }
 html.dark #pth-guide-link:focus-visible { outline-color: #fbbf24; }

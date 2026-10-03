@@ -1,0 +1,33 @@
+#pth-welcome {
+    width: min(480px, calc(100% - 28px));
+    max-height: calc(100dvh - 28px);
+    margin: auto;
+    padding: 24px;
+    overflow: auto;
+    border: 1px solid #cbd8e8;
+    border-radius: 24px;
+    background: #fff;
+    color: #24364b;
+    box-shadow: 0 24px 80px #0b255055;
+    font: 500 15px/1.6 Manrope, system-ui, sans-serif;
+}
+#pth-welcome:not([open]) { display: none; }
+#pth-welcome::backdrop { background: #0b2550b3; }
+#pth-welcome header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#pth-welcome header p { margin: 0; color: #1a4789; font-weight: 800; }
+#pth-welcome button { min-height: 44px; padding: 10px 14px; border: 1px solid #cbd8e8; border-radius: 12px; background: #fff; color: #23466f; font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; }
+#pth-welcome button:focus-visible { outline: 3px solid #a64b08; outline-offset: 3px; }
+#pth-welcome button:disabled { opacity: .5; cursor: default; }
+#pth-welcome h2 { margin: 12px 0; color: #143866; font-size: clamp(22px, 5vw, 28px); line-height: 1.3; font-weight: 800; overflow-wrap: anywhere; }
+#pth-welcome h2:focus { outline: none; }
+#pth-welcome-text { margin: 0 0 20px; overflow-wrap: anywhere; }
+#pth-welcome .pth-welcome-step { margin: 22px 0 0; color: #526176; font-size: 13px; font-weight: 800; }
+#pth-welcome-action { width: 100%; background: #1a4789 !important; color: #fff !important; border-color: #1a4789 !important; }
+#pth-welcome footer { display: flex; gap: 12px; justify-content: space-between; margin-top: 16px; }
+#pth-welcome footer button { flex: 1; }
+#pth-welcome .pth-welcome-hint { margin: 18px 0 0; color: #526176; font-size: 12px; }
+html.dark #pth-welcome { background: #172b46; color: #e5efff; border-color: #50657f; }
+html.dark #pth-welcome h2, html.dark #pth-welcome header p { color: #a9ccff; }
+html.dark #pth-welcome .pth-welcome-step, html.dark #pth-welcome .pth-welcome-hint { color: #becce0; }
+html.dark #pth-welcome button { background: #243e60; color: #e5efff; border-color: #50657f; }
+html.dark #pth-welcome button:focus-visible { outline-color: #fbbf24; }

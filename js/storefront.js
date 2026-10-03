@@ -9130,111 +9130,12 @@ if (sales >= 10) return {
     };
 }
 
-async function showAgentWelcomeModal(nombre) {
-    const modal = document.getElementById('modal-welcome-agent');
-    if(!modal) return;
-
-    try {
-        let salesCount = 0;
-
-        // Lógica de conteo de ventas (Igual que tenías)
-        if (nombre === "Marcel Montano") {
-            salesCount = 80;
-        } else {
-            const { count, error } = await supabaseClient
-                .from('pedidos')
-                .select('id', { count: 'exact', head: true })
-                .eq('gestor', nombre)
-                .eq('estado', 'Entregado');
-            if (error) throw error;
-            salesCount = count || 0;
-        }
-
-        const lvlData = getLevelData(salesCount);
-        const currentLvl = lvlData.lvl;
-
-        // Guardamos nivel global
-        window.currentGestorLevel = currentLvl;
-
-        // === AQUÍ ESTÁ LA CORRECCIÓN ===
-        const lastSeenLevel = localStorage.getItem('pth_last_seen_level');
-
-        // Si el nivel actual es IGUAL al último que vio...
-        if (lastSeenLevel && parseInt(lastSeenLevel) === currentLvl) {
-            console.log("El usuario sigue en el mismo nivel. Pasando al cartel de precios...");
-
-            // ¡ESTA ES LA LÍNEA QUE TE FALTABA!
-            // Si no muestra nivel, intenta mostrar precios.
-            showPriceIntro();
-
-            return; // Salimos para que NO salga el cartel azul de nivel
-        }
-        // ==============================
-
-        // (El resto de tu código para dibujar el cartel azul sigue aquí igual...)
-        const tiers = [
-            { lvl: 1, name: "Novato", tool: "Story Maker", boost: 1.5, phrase: "Crearás piezas visuales listas para publicar." },
-            { lvl: 2, name: "Experto", tool: "Magic Studio AI & Fotos", boost: 2.2, phrase: "Tu publicidad ahora será creada por Inteligencia Artificial." },
-            { lvl: 3, name: "Élite", tool: "Radar de Tendencias", boost: 2.8, phrase: "Publicarás exactamente lo que los clientes están buscando hoy." },
-            { lvl: 4, name: "Monarca", tool: "Catálogo PDF Pro", boost: 3.5, phrase: "Tu imagen profesional será irresistible para clientes de alto valor." },
-            { lvl: 5, name: "Emperador", tool: "Amarre Total", boost: 5.0, phrase: "Has alcanzado el poder máximo. Tu red de clientes es ahora un activo eterno." }
-        ];
-
-        // DIBUJAR LISTA (Copia esto tal cual tenías)
-        const listHTML = tiers.map(t => {
-            const isUnlocked = currentLvl >= t.lvl;
-            return `
-            <div class="flex items-center gap-4 py-1 ${isUnlocked ? 'opacity-100' : 'opacity-40'}">
-                <span class="material-symbols-outlined ${isUnlocked ? 'text-emerald-400' : 'text-slate-700'} text-xl">
-                    ${isUnlocked ? 'check_circle' : 'lock'}
-                </span>
-                <div class="flex-1 border-b border-white/5 pb-2">
-                    <div class="flex justify-between items-center">
-                        <p class="text-[11px] font-black uppercase tracking-wide text-white">${t.tool}</p>
-                        <span class="text-[10px] font-black ${isUnlocked ? 'text-emerald-400' : 'text-slate-500'}">LVL ${t.lvl}</span>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-
-        const nextTier = tiers.find(t => t.lvl === currentLvl + 1) || tiers[4];
-        let baseline = salesCount === 0 ? 1.5 : salesCount;
-        let extraSales = Math.ceil(baseline * nextTier.boost);
-        let totalPotential = Math.ceil(salesCount + extraSales);
-
-        document.getElementById('welcome-features-list').innerHTML = listHTML;
-        document.getElementById('welcome-next-tier-name').innerText = nextTier.tool;
-        document.getElementById('welcome-extra-sales').innerText = extraSales;
-        document.getElementById('welcome-total-potential').innerText = totalPotential;
-        document.getElementById('welcome-motivational-phrase').innerText = `"${nextTier.phrase}"`;
-        document.getElementById('welcome-rank-tag').innerText = "RANGO: " + lvlData.name;
-
-        let durationText = 'SIN VENCIMIENTO';
-        document.getElementById('welcome-link-duration').innerText = durationText;
-        document.getElementById('welcome-next-power').innerText = "NIVEL " + (currentLvl < 5 ? currentLvl + 1 : 5);
-
-        // Mostrar Modal Azul
-        setTimeout(() => { modal.classList.remove('hidden'); }, 800);
-
-    } catch (e) { console.error("Error en Bienvenida:", e); }
+async function showAgentWelcomeModal() {
+    // The existing level check still controls tools; onboarding has no sales forecasts.
+    window.PTHWelcome?.sync();
 }
 
-function closeWelcomeAgent() {
-    // 1. Ocultar modal azul
-    const modal = document.getElementById('modal-welcome-agent');
-    if(modal) modal.classList.add('hidden');
-
-    // 2. Guardar nivel actual
-    if (window.currentGestorLevel !== undefined) {
-        localStorage.setItem('pth_last_seen_level', window.currentGestorLevel);
-    }
-
-    // 3. PUENTE: Llamar al siguiente cartel
-    console.log("Cerrando nivel. Intentando mostrar noticias...");
-    setTimeout(() => {
-        showPriceIntro();
-    }, 500);
-}
+function closeWelcomeAgent() { window.PTHWelcome?.close(); }
 
 // --- FUNCIÓN DE BLOQUEO DE HERRAMIENTAS (FALTABA ESTO) ---
 // --- CORRECCIÓN: FUNCIÓN PARA DESBLOQUEAR BOTONES ---

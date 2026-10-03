@@ -57,6 +57,12 @@ const output=process.env.PTH_ANNOUNCEMENT_SCREENSHOTS;
   assert.equal(await page.locator('dialog[open]').count(),0);
   await page.evaluate(()=>document.getElementById('modal-intro-precios').classList.add('hidden'));await page.waitForSelector('dialog:visible');
   await page.evaluate(()=>PTHSecureData.clearSession());assert.equal(await page.locator('dialog').isVisible(),false);
+  // The practical welcome is a native dialog; wait for its open attribute to clear.
+  await page.evaluate(()=>{localStorage.setItem('pth_secure_token','e'.repeat(64));const welcome=document.createElement('dialog');welcome.id='pth-welcome';welcome.textContent='Synthetic practical welcome';document.body.append(welcome);welcome.showModal();return PTHSecureData.restore().then(()=>PTHFeedbackAnnouncement.show());});
+  assert.equal(await page.locator('#feedback-announcement[open]').count(),0);
+  assert.equal(await page.locator('#pth-welcome[open]').count(),1);
+  await page.evaluate(()=>document.getElementById('pth-welcome').close());await page.waitForSelector('#feedback-announcement[open]');
+  await page.evaluate(()=>{PTHSecureData.clearSession();document.getElementById('pth-welcome').remove();});
   // Delayed old-account status must not reopen after logout.
   delay=150;await page.evaluate(()=>{localStorage.setItem('pth_secure_token','d'.repeat(64));return PTHSecureData.restore();});
   await page.evaluate(()=>{void PTHFeedbackAnnouncement.show();setTimeout(()=>PTHSecureData.clearSession(),30);});await page.waitForTimeout(250);assert.equal(await page.locator('dialog[open]').count(),0);

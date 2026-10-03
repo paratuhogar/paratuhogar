@@ -186,7 +186,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   assert.deepEqual(storyAlerts,[],'product Story opens without an asset-load alert');
   assert.equal(requests.some(u=>u.includes('content-studio.js')),false,'quick product Story does not load the full editor');
   await page.locator('dialog [data-close]').click();
-  assert.equal(await page.locator('dialog').count(),0,'real storefront Stories entrypoint closes cleanly');
+  assert.equal(await page.locator('dialog [data-preview]').count(),0,'real storefront Stories entrypoint closes cleanly');
   await page.evaluate(()=>closeDetail());
   await page.evaluate(()=>showSection('catalogo'));
   await page.locator('#productos-container button[title="Crear Story"]').first().click();

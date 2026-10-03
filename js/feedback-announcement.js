@@ -59,7 +59,7 @@
   }finally{if(current===generation)setBusy(false);}
  }
  function otherNoticeOpen(){
-  return ['login-overlay','modal-welcome-agent','modal-intro-precios','modal-intro-radar'].some(id=>{
+  return ['login-overlay','pth-welcome','modal-welcome-agent','modal-intro-precios','modal-intro-radar'].some(id=>{
    const el=document.getElementById(id);return el&&!el.hidden&&getComputedStyle(el).display!=='none';
   });
  }
@@ -87,7 +87,7 @@
    };
    if(otherNoticeOpen()){
     observer=new MutationObserver(()=>{if(!otherNoticeOpen())void ready();});
-    observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['class','hidden','style']});
+    observer.observe(document.body,{attributes:true,subtree:true,attributeFilter:['class','hidden','style','open']});
    }else await ready();
   }catch(_){if(current===generation)close();}
  }
