@@ -2,12 +2,13 @@
 (() => {
   'use strict';
   let storage,idb;try{storage=localStorage;idb=indexedDB;}catch(_){}
-  const api=window.PTHPendingCheckout,queue=api.create(api.indexedStore(idb)),copyApi=window.PTHOfflineCheckoutCopy,copies=copyApi.create(idb),shared=window.PTHCheckoutForm;
+  const api=window.PTHPendingCheckout,queueStore=api.indexedStore(idb),queue=api.create(queueStore),copyApi=window.PTHOfflineCheckoutCopy,copies=copyApi.create(idb),shared=window.PTHCheckoutForm;
   const owner=api.localOwner(storage)||PTHSecureData.expiredCheckoutOwner?.(),form=document.getElementById('checkout-form'),workspace=document.getElementById('checkout-workspace'),status=document.getElementById('pending-status');
-  const selection=new Map();let products=[],tariffs=[],savedCopy=null,fields=null,records=[],busy=false,departing=false,generation=0,saveIntent=null,copyStamp=null;
+  const selection=new Map();let products=[],tariffs=[],savedCopy=null,fields=null,records=[],busy=false,departing=false,generation=0,saveIntent=null,copyStamp=null,purgePromise=null;
   copyApi.bindLifecycle(window,storage,copies);
-  const inScope=token=>api.localOwner(storage)===owner&&(token===undefined||PTHSecureData.token()===token);
-  const localSessionValid=()=>{const expiry=PTHSecureData.expiresAt?.();return inScope()&&(!Number.isFinite(expiry)||expiry>Date.now());};
+  const cleanupPending=()=>typeof PTHSecureData.pendingPrivatePurgeOwners!=='function'||PTHSecureData.pendingPrivatePurgeOwners().length>0||PTHSecureData.hasPendingPrivatePurge?.(owner)===true||PTHSecureData.privatePurgePersistenceFailed?.()===true;
+  const inScope=token=>!cleanupPending()&&api.localOwner(storage)===owner&&(token===undefined||PTHSecureData.token()===token);
+  const localSessionValid=()=>{const expiry=PTHSecureData.expiresAt?.();return inScope()&&Number.isFinite(expiry)&&expiry>Date.now();};
   const normal=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
   const labels={queued:'Esperando conexión para enviar.',sending:'Comprobando y enviando. Espera la confirmación de la tienda.',uncertain:'Comprobaremos si la tienda lo recibió antes de reintentar.',blocked:'Necesita revisión. Abre tu cuenta con conexión para comprobarlo.',paused:'Los reintentos están detenidos. Comprueba si la tienda lo recibió.',expired:'El pedido venció. Revisa tus pedidos antes de preparar otro.',confirmed:'La tienda confirmó que recibió este pedido.'};
   const pendingCopy=count=>count===1?'Pedido guardado en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tu pedido automáticamente. Te avisaremos cuando la tienda confirme que lo recibió.':count+' pedidos guardados en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tus pedidos automáticamente. Te avisaremos cuando la tienda confirme que recibió cada uno.';
@@ -17,8 +18,47 @@
   function renderSelection(){const wholesale=fullLines().some(shared.isWholesale),pickup=document.getElementById('check-recogida'),pickupContainer=pickup.parentElement,addressContainer=document.getElementById('check-dir').parentElement;if(wholesale){pickup.checked=true;fields?.togglePickup();pickupContainer.style.display='none';addressContainer.style.display='none';document.getElementById('check-dir').value='Almacén Inbond (Mayorista B2B)';}else{pickupContainer.style.display='flex';addressContainer.style.display='block';}const cart=document.getElementById('cart-items');cart.replaceChildren();for(const line of selection.values()){const product=products.find(p=>p.id===line.id);const node=document.createElement('p');node.textContent=line.qty+' × '+(product?.nombre||'Producto guardado')+' · $'+line.price.toFixed(2);cart.append(node);}document.getElementById('pending-selection').textContent=[...selection.values()].reduce((sum,line)=>sum+line.qty,0)+' equipos seleccionados. La selección se mantiene al buscar.';recalculate();}
   function renderProducts(){const container=document.getElementById('pending-products');container.replaceChildren();const terms=normal(document.getElementById('pending-search').value).split(' ').filter(Boolean),rows=products.filter(p=>p.disponible==='SI'&&terms.every(term=>normal(p.nombre).includes(term)));for(const product of rows.slice(0,30)){const row=document.createElement('div');row.className='product';const name=document.createElement('span');name.textContent=product.nombre+' · $'+product.precio.toFixed(2)+' USD';const quantity=document.createElement('input');quantity.type='number';quantity.min='0';quantity.max='10000';quantity.step='1';quantity.value=selection.get(product.id)?.qty||0;quantity.setAttribute('aria-label','Cantidad de '+product.nombre);quantity.oninput=()=>{const qty=Number(quantity.value);if(qty>0){const wholesale=shared.isWholesale(product),different=[...selection.values()].some(line=>shared.isWholesale(products.find(p=>p.id===line.id))!==wholesale);if(different){status.textContent='Los productos mayoristas se piden por separado. Termina o vacía la selección actual antes de añadir este producto.';quantity.value=selection.get(product.id)?.qty||0;return;}selection.set(product.id,{id:product.id,qty,price:product.precio});}else selection.delete(product.id);renderSelection();};row.append(name,quantity);container.append(row);}if(rows.length>30){const note=document.createElement('p');note.textContent='Busca un modelo para ver más resultados.';container.append(note);}renderSelection();}
   function clearPrivateView(){records=[];products=[];tariffs=[];savedCopy=null;copyStamp=null;fields?.destroy();fields=null;selection.clear();saveIntent=null;form.reset();workspace.hidden=true;document.getElementById('pending-products').replaceChildren();document.getElementById('cart-items').replaceChildren();document.getElementById('crm-datalist').replaceChildren();document.getElementById('pending-summary').hidden=true;document.getElementById('pending-summary-text').replaceChildren();document.getElementById('pending-actions').replaceChildren();document.getElementById('pending-detail').textContent='';}
+  const cleanupActions=document.createElement('div');cleanupActions.className='actions';cleanupActions.hidden=true;status.after(cleanupActions);
+  const cleanupRetry=document.createElement('button');cleanupRetry.type='button';cleanupRetry.textContent='Volver a comprobar';cleanupRetry.onclick=async()=>{cleanupRetry.disabled=true;try{await refresh();await reconnect();}finally{cleanupRetry.disabled=false;}};cleanupActions.append(cleanupRetry);
+  const cleanupMessage='No se pudo completar el borrado de los datos locales. Mantén esta página abierta y vuelve a comprobar. No mostraremos ni enviaremos pedidos hasta terminar la limpieza.';
+  function showCleanupBlocked(){clearPrivateView();cleanupActions.hidden=false;status.textContent=cleanupMessage;document.getElementById('copy-status').textContent='Los datos guardados necesitan limpieza antes de usar este dispositivo.';}
+  async function drainPrivatePurges(){
+    if(purgePromise)return purgePromise;
+    const secure=PTHSecureData;
+    if(typeof secure.pendingPrivatePurgeOwners!=='function'||typeof secure.completePrivatePurge!=='function'||typeof secure.hasPendingPrivatePurge!=='function'){showCleanupBlocked();return false;}
+    const accounts=secure.pendingPrivatePurgeOwners();
+    if(!accounts.length){if(secure.privatePurgePersistenceFailed?.()){showCleanupBlocked();return false;}cleanupActions.hidden=true;return true;}
+    // A durable IDs-only marker is acknowledged only after both private stores
+    // were cleared. Never restore a marked account's old form while retrying.
+    ++generation;clearPrivateView();
+    purgePromise=(async()=>{
+      let complete=true;
+      for(const account of accounts){
+        try{
+          await queue.logout(account);
+          await copies.clear(account);
+          if(secure.hasPendingPrivatePurge(account)&&!secure.completePrivatePurge(account))throw Error('Cleanup marker retained');
+          if(secure.hasPendingPrivatePurge(account))throw Error('Cleanup marker still pending');
+        }catch(_){complete=false;}
+      }
+      if(cleanupPending())complete=false;
+      if(!complete)showCleanupBlocked();else cleanupActions.hidden=true;
+      return complete;
+    })();
+    try{return await purgePromise;}finally{purgePromise=null;}
+  }
+  function saveWithSessionGuard(data,intent,expectedToken){
+    const guarded=api.create({update(account,mutate){
+      return queueStore.update(account,rows=>{
+        const expiry=PTHSecureData.expiresAt?.();
+        if(account!==owner||!inScope(expectedToken)||!Number.isFinite(expiry)||expiry<=Date.now())throw Object.assign(Error('SESSION_CHANGED'),{code:'SESSION_CHANGED'});
+        return mutate(rows);
+      });
+    }});
+    return guarded.save(owner,data,intent);
+  }
   async function checkReceipt(current){
-    if(!inScope())return;const token=PTHSecureData.token(),receipt=await PTHSecureData.checkout({operation:'receipt',attempt:current.outcome?.attempt||current.attempt});
+    if(!await drainPrivatePurges()||!inScope())return;const token=PTHSecureData.token(),receipt=await PTHSecureData.checkout({operation:'receipt',attempt:current.outcome?.attempt||current.attempt});
     if(!inScope(token))return;
     if(receipt.error){status.textContent='No se pudo comprobar la recepción. Conservamos la clave del intento; revisa tus pedidos antes de preparar otro igual.';return;}
     if(receipt.data.complete){await queue.confirmed(owner,current.id,receipt.data.confirmed);if(inScope(token))await refresh();}
@@ -35,8 +75,11 @@
     if(current.attempt||current.outcome?.attempt)button(actions,'Comprobar recepción',()=>checkReceipt(current));container.append(card);
   }}
   async function refresh(){
-    const currentGeneration=++generation,token=PTHSecureData.token();
-    if(!owner||!localSessionValid()){clearPrivateView();if(owner){void copies.clear(owner).catch(()=>{});if(PTHSecureData.expiredCheckoutOwner?.()===owner)void queue.logout(owner).catch(()=>{});}status.textContent='Entra en tu misma cuenta con conexión. No enviaremos pedidos hasta comprobar tu sesión.';document.getElementById('copy-status').textContent='La copia de clientes no está disponible sin una sesión válida.';return;}
+    ++generation;
+    if(!await drainPrivatePurges())return;
+    const currentGeneration=++generation;
+    const token=PTHSecureData.token();
+    if(!owner||!localSessionValid()){clearPrivateView();status.textContent='Entra en tu misma cuenta con conexión. No enviaremos pedidos hasta comprobar tu sesión.';document.getElementById('copy-status').textContent='La copia de clientes no está disponible sin una sesión válida.';return;}
     let rows,copy;try{[rows,copy]=await Promise.all([queue.list(owner),copies.read(owner,{profile:copyApi.localProfile(storage)})]);}catch(_){if(currentGeneration===generation&&inScope(token)){status.textContent='No se pudo abrir el almacenamiento. Conserva tus datos y vuelve a intentarlo.';workspace.hidden=true;}return;}
     if(currentGeneration!==generation||!inScope(token))return;records=rows||[];savedCopy=copy;
     if(copy){if(copyStamp!==copy.savedAt){fields?.destroy();copyStamp=copy.savedAt;products=copy.products;tariffs=copy.tariffs;fields=shared.bind(document,{clients:copy.clients,tariffs,onChange:recalculate});renderProducts();}workspace.hidden=false;document.getElementById('copy-status').textContent='Copia de tu cuenta: '+copy.clients.length+' clientes · '+copy.products.length+' productos · tarifas de '+new Set(copy.tariffs.map(t=>t.municipio)).size+' municipios. Guardada '+new Date(copy.savedAt).toLocaleString('es-CU')+'.';}
@@ -45,11 +88,11 @@
     status.textContent=waiting.length?pendingCopy(waiting.length):blocked.length?'Hay '+blocked.length+' pedido'+(blocked.length===1?'':'s')+' que necesita'+(blocked.length===1?'':'n')+' revisión. Abre tu misma cuenta con conexión y usa Revisar con conexión.':records.some(row=>row.state==='confirmed')?'La tienda recibió los pedidos confirmados. Puedes preparar otro.':'Completa los datos y confirma para guardar el pedido en este teléfono.';
     document.getElementById('pending-detail').textContent=waiting.length&&blocked.length?'También hay '+blocked.length+' pedido'+(blocked.length===1?'':'s')+' pendiente'+(blocked.length===1?'':'s')+' de revisión.':'';
   }
-  async function reconnect(){if(busy||departing||navigator.onLine===false||!owner||!localSessionValid())return;busy=true;const token=PTHSecureData.token();try{const rows=await queue.list(owner);if(!inScope(token)||!rows.some(row=>row.form&&['queued','uncertain','sending'].includes(row.state)))return;const profile=await (PTHSecureData.refresh?.()||PTHSecureData.restore());if(!inScope(token))return;if(profile?.id!==owner){status.textContent='Vuelve a la misma cuenta que preparó los pedidos para enviarlos.';return;}departing=true;location.replace('/?pending_order=1');}catch(error){if(inScope(token)&&error.code!=='NETWORK_ERROR')status.textContent='Vuelve a entrar en tu misma cuenta con conexión para enviar los pedidos guardados.';}finally{busy=false;}}
-  form.onsubmit=async event=>{event.preventDefault();if(!form.reportValidity())return;const submit=document.getElementById('final-submit-btn');submit.disabled=true;const token=PTHSecureData.token();try{if(!owner||!localSessionValid()||!savedCopy||Date.now()>=savedCopy.expiresAt)throw Object.assign(Error('ACCOUNT'),{code:'ACCOUNT'});const estimate=recalculate();if(estimate.shipping===null||estimate.total===null)throw Object.assign(Error('DELIVERY'),{code:'DELIVERY'});if(!saveIntent)saveIntent={intentId:Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join(''),savedAt:Date.now()};await queue.save(owner,{lines:[...selection.values()],form:shared.readForm(document),estimate},saveIntent);if(!inScope(token))return;saveIntent=null;selection.clear();form.reset();fields.togglePickup();document.getElementById('pending-search').value='';renderProducts();await refresh();await reconnect();}catch(error){if(inScope(token))status.textContent=error.code==='INVALID'?'Selecciona productos con cantidades válidas y completa el nombre, el teléfono y la entrega.':error.code==='DELIVERY'?'Elige una zona con tarifa guardada o recogida en el almacén. No hemos guardado el pedido.':error.code==='LIMIT'?'Este teléfono ya tiene el máximo de pedidos pendientes. Envía o cancela alguno antes de preparar otro.':error.code==='ACCOUNT'?'Tu sesión o la copia guardada venció. Conserva los datos y vuelve a entrar con conexión.':'No se pudo guardar el pedido. Mantén la página abierta y conserva los datos para reintentar.';}finally{submit.disabled=false;}};
+  async function reconnect(){if(!await drainPrivatePurges())return;if(busy||departing||navigator.onLine===false||!owner||!localSessionValid())return;busy=true;const token=PTHSecureData.token();try{const rows=await queue.list(owner);if(!inScope(token)||!rows.some(row=>row.form&&['queued','uncertain','sending'].includes(row.state)))return;const profile=await (PTHSecureData.refresh?.()||PTHSecureData.restore());if(!inScope(token))return;if(profile?.id!==owner){status.textContent='Vuelve a la misma cuenta que preparó los pedidos para enviarlos.';return;}departing=true;location.replace('/?pending_order=1');}catch(error){if(inScope(token)&&error.code!=='NETWORK_ERROR')status.textContent='Vuelve a entrar en tu misma cuenta con conexión para enviar los pedidos guardados.';}finally{busy=false;}}
+  form.onsubmit=async event=>{event.preventDefault();if(!form.reportValidity())return;const submit=document.getElementById('final-submit-btn');submit.disabled=true;const token=PTHSecureData.token();try{if(!await drainPrivatePurges())return;if(!owner||!localSessionValid()||!savedCopy||Date.now()>=savedCopy.expiresAt)throw Object.assign(Error('ACCOUNT'),{code:'ACCOUNT'});const estimate=recalculate();if(estimate.shipping===null||estimate.total===null)throw Object.assign(Error('DELIVERY'),{code:'DELIVERY'});if(!saveIntent)saveIntent={intentId:Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join(''),savedAt:Date.now()};await saveWithSessionGuard({lines:[...selection.values()],form:shared.readForm(document),estimate},saveIntent,token);if(!inScope(token))return;saveIntent=null;selection.clear();form.reset();fields.togglePickup();document.getElementById('pending-search').value='';renderProducts();await refresh();await reconnect();}catch(error){if(cleanupPending()){showCleanupBlocked();}else if(inScope(token))status.textContent=error.code==='INVALID'?'Selecciona productos con cantidades válidas y completa el nombre, el teléfono y la entrega.':error.code==='DELIVERY'?'Elige una zona con tarifa guardada o recogida en el almacén. No hemos guardado el pedido.':error.code==='LIMIT'?'Este teléfono ya tiene el máximo de pedidos pendientes. Envía o cancela alguno antes de preparar otro.':['ACCOUNT','SESSION_CHANGED'].includes(error.code)?'Tu sesión o la copia guardada venció. Conserva los datos y vuelve a entrar con conexión.':'No se pudo guardar el pedido. Mantén la página abierta y conserva los datos para reintentar.';}finally{submit.disabled=false;}};
   form.addEventListener('input',()=>recalculate());document.getElementById('pending-search').oninput=renderProducts;
   // Clipboard access is a manual browser action; submitted text remains plain data.
   const pasteButton=form.querySelector('#gestor-checkout-tools button');pasteButton.onclick=async()=>{const token=PTHSecureData.token();try{const text=await navigator.clipboard.readText();if(!inScope(token))return;const parsed=shared.parseClipboard(text);for(const [field,value]of Object.entries(parsed))if(value)document.getElementById(shared.fieldIds[field]).value=value;status.textContent='Datos pegados. Revísalos antes de confirmar.';}catch(_){if(inScope(token))status.textContent='No se pudo leer el portapapeles. Pega los datos directamente en cada campo.';}};
-  window.addEventListener('storage',()=>{if(!inScope()){clearPrivateView();void refresh();}});window.addEventListener('pth:session-changed',event=>{clearPrivateView();if(owner&&['logout','expired'].includes(event.reason))void queue.logout(owner).catch(()=>{});void refresh();});
+  window.addEventListener('storage',()=>{if(!inScope())clearPrivateView();void refresh();});window.addEventListener('pth:session-changed',()=>{clearPrivateView();void refresh();});
   window.addEventListener('online',()=>void reconnect());window.addEventListener('focus',()=>{void refresh();void reconnect();});setInterval(()=>{void refresh();void reconnect();},15000);void refresh().then(reconnect);
 })();
