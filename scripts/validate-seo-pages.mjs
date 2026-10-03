@@ -65,6 +65,7 @@ for (const canonical of canonicals) {
 const categoryFolders = (await readdir(CATEGORY_ROOT, { withFileTypes: true }))
   .filter(entry => entry.isDirectory())
   .map(entry => entry.name);
+let guideCount=0;
 for (const folder of categoryFolders) {
   const html = await readFile(join(CATEGORY_ROOT, folder, 'index.html'), 'utf8');
   const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
@@ -72,6 +73,39 @@ for (const folder of categoryFolders) {
   if (!html.includes('"@type":"ItemList"')) errors.push(`${folder}: falta ItemList`);
   if (!html.includes('<h1>')) errors.push(`${folder}: falta H1 de categoría`);
   if (canonical && !sitemap.includes(`<loc>${canonical}</loc>`)) errors.push(`${folder}: categoría ausente del sitemap`);
+  if(canonical&&canonicals.has(canonical))errors.push(`${folder}: canonical duplicado`);
+  if(canonical)canonicals.add(canonical);
+  const guides=(await readdir(join(CATEGORY_ROOT,folder),{withFileTypes:true})).filter(entry=>entry.isDirectory());
+  for(const guide of guides){
+    guideCount++;
+    const name=`${folder}/${guide.name}`;
+    const guideHTML=await readFile(join(CATEGORY_ROOT,name,'index.html'),'utf8');
+    const guideCanonical=guideHTML.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
+    const guideTitle=decodeEntities(guideHTML.match(/<title>([\s\S]*?)<\/title>/)?.[1]);
+    const guideDescription=decodeEntities(guideHTML.match(/<meta name="description" content="([^"]*)"/)?.[1]);
+    if(!guideCanonical?.endsWith(`/categoria/${name}/`))errors.push(`${name}: canonical de guía incorrecto`);
+    if(guideCanonical&&canonicals.has(guideCanonical))errors.push(`${name}: canonical duplicado`);
+    if(guideCanonical)canonicals.add(guideCanonical);
+    if(!guideTitle||guideTitle.length>65)errors.push(`${name}: título de guía inválido`);
+    if(guideDescription.length<45||guideDescription.length>170)errors.push(`${name}: descripción de guía inválida`);
+    if(!guideHTML.includes('<h1>'))errors.push(`${name}: falta H1 de guía`);
+    if(!guideHTML.includes('property="og:image"'))errors.push(`${name}: falta imagen social`);
+    const indexable=!/<meta name="robots" content="[^"]*noindex/i.test(guideHTML);
+    if(indexable&&!sitemap.includes(`<loc>${guideCanonical}</loc>`))errors.push(`${name}: guía indexable ausente del sitemap`);
+    if(!indexable&&sitemap.includes(`<loc>${guideCanonical}</loc>`))errors.push(`${name}: guía noindex presente en el sitemap`);
+    try{
+      const schema=JSON.parse(guideHTML.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1]);
+      const article=schema['@graph']?.find(item=>item['@type']==='Article');
+      const crumbs=schema['@graph']?.find(item=>item['@type']==='BreadcrumbList');
+      if(article?.url!==guideCanonical||!article?.headline)errors.push(`${name}: Article incompleto`);
+      if(crumbs?.itemListElement?.length!==3)errors.push(`${name}: migas de pan incompletas`);
+    }catch{errors.push(`${name}: JSON-LD de guía inválido`);}
+    for(const href of [...guideHTML.matchAll(/href="(\/[^"#]*)"/g)].map(match=>decodeEntities(match[1]))){
+      const path=new URL(href,'https://paratuhogar.org').pathname;
+      if(!path.startsWith('/categoria/')&&!path.startsWith('/producto/'))continue;
+      try{await readFile(join(ROOT,path,'index.html'),'utf8');}catch{errors.push(`${name}: enlace interno ausente ${path}`);}
+    }
+  }
 }
 
 if (errors.length) {
@@ -79,5 +113,5 @@ if (errors.length) {
   errors.slice(0, 50).forEach(error => console.error(`- ${error}`));
   process.exitCode = 1;
 } else {
-  console.log(`SEO válido: ${folders.length} fichas, ${categoryFolders.length} categorías, ${canonicals.size} canonicals únicos y sitemap completo.`);
+  console.log(`SEO válido: ${folders.length} fichas, ${categoryFolders.length} categorías, ${guideCount} guías, ${canonicals.size} canonicals únicos y sitemap completo.`);
 }

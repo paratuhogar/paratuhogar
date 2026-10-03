@@ -2,6 +2,8 @@
 import { readFile, writeFile, mkdir, stat, readdir } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import process from 'node:process';
+import {categoryEditorial,editorialGuidesFor,renderGuidePage} from './seo-category-editorial.mjs';
+import {refreshCategoryEditorial} from './preview-category-editorial.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const SITE_URL = String(process.env.SITE_URL || 'https://paratuhogar.org').replace(/\/+$/, '');
@@ -355,11 +357,12 @@ function renderProduct(template, product, products, reviews, slugMap, indexable)
 }
 
 async function main() {
-  const [template, categoryTemplate, products, reviews] = await Promise.all([
+  const [template, categoryTemplate, products, reviews,guideTemplate] = await Promise.all([
     readFile(TEMPLATE_PATH, 'utf8'),
     readFile(CATEGORY_TEMPLATE_PATH, 'utf8'),
     loadProducts(),
-    loadVerifiedReviews()
+    loadVerifiedReviews(),
+    readFile(join(ROOT,'templates/seo-guide-page.html'),'utf8')
   ]);
   if (!products.length) throw new Error('No se encontraron productos para generar.');
   let publishedIds = [];
@@ -397,6 +400,7 @@ async function main() {
   const categories = [...new Set(products.map(product => String(product.categoria || 'Productos').trim()).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'es'));
   const generatedCategories = [];
+  const guides=editorialGuidesFor(categories.map(slugify));
   for (const category of categories) {
     const categorySlug = slugify(category) || 'productos';
     const categoryInventory = products.filter(product => String(product.categoria || 'Productos').trim() === category);
@@ -431,7 +435,11 @@ async function main() {
       const image = getImages(product)[0] || `${SITE_URL}/log.jpeg`;
       return `<article class="card"><a href="/producto/${attr(productSlug)}/"><img src="${attr(image)}" alt="${attr(product.nombre)}" width="420" height="420" loading="lazy"><div><h2>${htmlEscape(product.nombre)}</h2><strong>$${(Number(product.precio) || 0).toFixed(0)} USD</strong><span>Ver detalles</span></div></a></article>`;
     }).join('');
-    const html = render(categoryTemplate, {
+    const editorial=guides.length?categoryEditorial(categorySlug,categoryProducts,slugMap):{html:'',css:'',guideHTML:''};
+    const categorySource=editorial.guideHTML?categoryTemplate.replace(/<section class="guide"[\s\S]*?<\/section>/,`<!-- PTH_EDITORIAL_DRAFT_GUIDE_START -->\n${editorial.guideHTML}\n<!-- PTH_EDITORIAL_DRAFT_GUIDE_END -->`):categoryTemplate;
+    const html = render(categorySource, {
+      CATEGORY_EDITORIAL_CSS:editorial.css?`\n/* PTH_EDITORIAL_DRAFT_CSS_START */\n${editorial.css}\n/* PTH_EDITORIAL_DRAFT_CSS_END */`:'',
+      CATEGORY_EDITORIAL_HTML:editorial.html?`\n<!-- PTH_EDITORIAL_DRAFT_INTRO_START -->\n${editorial.html}\n<!-- PTH_EDITORIAL_DRAFT_INTRO_END -->`:'',
       SEO_TITLE: htmlEscape(title),
       SEO_DESCRIPTION: attr(description),
       CANONICAL_URL: attr(canonical),
@@ -454,6 +462,15 @@ async function main() {
       .at(-1) || '';
     generatedCategories.push({ canonical, category, lastmod });
   }
+  const navigation=render(categoryTemplate.match(/<!-- PTH_AFFILIATE_NAVIGATION_START -->[\s\S]*?<!-- PTH_AFFILIATE_NAVIGATION_END -->/)[0],{SUPABASE_URL_JSON:JSON.stringify(SUPABASE_URL),SUPABASE_ANON_KEY_JSON:JSON.stringify(SUPABASE_ANON_KEY)});
+  const generatedGuides=[];
+  for(const guide of guides){
+    const page=renderGuidePage(guideTemplate,guide,{siteURL:SITE_URL,navigation});
+    const directory=join(CATEGORY_OUTPUT_ROOT,guide.slug);
+    await mkdir(directory,{recursive:true});
+    await writeFile(join(directory,'index.html'),page.html,'utf8');
+    generatedGuides.push(page);
+  }
   const xmlEscape = value => String(value ?? '')
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;').replaceAll("'", '&apos;');
@@ -471,6 +488,7 @@ async function main() {
   const sitemapEntries = [
     ...staticUrls.map(item => `  <url><loc>${xmlEscape(item.loc)}</loc><lastmod>${item.lastmod}</lastmod></url>`),
     ...generatedCategories.map(item => `  <url><loc>${xmlEscape(item.canonical)}</loc><lastmod>${toIsoDate(item.lastmod) || staticUrls[0].lastmod}</lastmod></url>`),
+    ...generatedGuides.map(item=>`  <url><loc>${xmlEscape(item.canonical)}</loc><lastmod>${item.lastmod}</lastmod></url>`),
     ...generated.filter(page => page.indexable).map(page => {
       const lastmod = toIsoDate(page.updated) || toIsoDate(new Date());
       const image = page.mainImage
@@ -499,6 +517,7 @@ async function main() {
   if (generated.length > 5) console.log(`… y ${generated.length - 5} más.`);
   console.log(`Sitemap: ${sitemapEntries.length} URLs canónicas.`);
   console.log(`Categorías SEO: ${generatedCategories.length}.`);
+  console.log(`Guías de compra: ${generatedGuides.length}.`);
 }
 
 // Bounded technical releases can refresh navigation without reading inventory,
@@ -532,12 +551,20 @@ async function refreshNavigation() {
       if (html !== original) updates.push([path, html]);
     }
   }
+  for(const guide of editorialGuidesFor((await readdir(CATEGORY_OUTPUT_ROOT,{withFileTypes:true})).filter(entry=>entry.isDirectory()).map(entry=>entry.name))){
+    const path=join(CATEGORY_OUTPUT_ROOT,guide.slug,'index.html');
+    let original;
+    try{original=await readFile(path,'utf8');}catch(error){if(error.code==='ENOENT')continue;throw error;}
+    if(!marker.test(original))throw new Error(`Falta navegación de guía: ${guide.slug}`);
+    const html=original.replace(marker,markup);
+    if(html!==original)updates.push([path,html]);
+  }
   // Validate all source anchors before writing any page.
   for (const [path, html] of updates) await writeFile(path, html, 'utf8');
   console.log(`Navegación SEO regenerada: ${updates.length} páginas; inventario, contenido e indexación conservados.`);
 }
 
-(process.argv.includes('--refresh-navigation') ? refreshNavigation() : main()).catch(error => {
+(process.argv.includes('--refresh-navigation') ? refreshNavigation() : process.argv.includes('--refresh-editorial')?refreshCategoryEditorial(JSON_PATH,SITE_URL):main()).catch(error => {
   console.error(`Error generando páginas SEO: ${error.message}`);
   process.exitCode = 1;
 });

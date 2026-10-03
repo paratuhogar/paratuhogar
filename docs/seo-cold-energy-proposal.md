@@ -3,6 +3,7 @@
 Estado: borrador para revisión. No publicado ni enviado a origin/main.
 Base: `286f6f6625f49d5dcb08012c3f22db0f5e691351`.
 Rama aislada: `feat/seo-cold-energy-proposal`.
+Primer checkpoint local: `9655a19c0fdd5e234c155fe8bfbc83097b1e3827`. La versión integrada conserva ese checkpoint.
 
 ## Alcance preparado
 
@@ -22,7 +23,7 @@ Se propone ayudar a preparar una consulta concreta y reducir las preguntas que f
    `/categoria/mundo-frio/antes-de-confirmar-el-pedido/`.
    Modelo y unidades disponibles; coste y coordinación de entrega; garantía de la unidad; revisión del carrito; comprobante y piezas al recibir.
 
-Las tres páginas nuevas son `noindex,follow` y quedan fuera del sitemap mientras se revisa la propuesta. Usan las mismas herramientas de atribución que las categorías. No añaden medición, permisos, claves, cuentas ni acceso a datos privados.
+Las tres páginas nuevas tienen `index,follow`, canonical, metadatos sociales y JSON-LD Article/BreadcrumbList. El sitemap local añade exactamente sus tres rutas y conserva cada entrada anterior. Esta configuración está preparada para la publicación aprobada: aún no hay una publicación. Las guías se enlazan entre sí, regresan a las categorías y usan las mismas herramientas de atribución. No añaden medición, permisos, claves, cuentas ni acceso a datos privados.
 
 ## Fichas candidatas y límites de las fuentes
 
@@ -43,22 +44,26 @@ Se excluyen de comparaciones técnicas Delta 3 Clásica (potencias discordantes)
 
 ## Cómo revisar el borrador
 
-`node scripts/preview-category-editorial.mjs --json=/ruta/al/snapshot-publico-revisado.json`
+`node scripts/generate-product-pages.mjs --refresh-editorial --json=/ruta/al/snapshot-publico-revisado.json`
 
-El comando utiliza un snapshot público previamente revisado, el manifiesto y las grillas existentes. No hace consultas de red. Solo destaca fichas que siguen marcadas disponibles y presentes en la grilla. Valida las anclas de las dos categorías antes de escribir las cinco páginas; repetirlo no duplica bloques.
+El modo acotado utiliza un snapshot público previamente revisado, el manifiesto y las grillas existentes. No hace consultas de red ni regenera fichas. Solo destaca fichas que siguen marcadas disponibles y presentes en la grilla. Valida las anclas de las dos categorías y el sitemap antes de escribir; repetirlo no duplica bloques ni URLs.
 
-El generador habitual de inventario sigue intacto. Esta es una propuesta local, no una integración final en ese generador: antes de publicar habrá que aprobar los textos, integrar los bloques en `generate-product-pages.mjs`, revisar indexación/sitemap de las guías y revalidar disponibilidad y condiciones. No se debe mezclar este borrador con una regeneración de inventario.
+El generador habitual ya integra los bloques de las dos categorías y genera las tres guías con el mismo renderer que el modo acotado. La garantía y entrega de las tarjetas se toman de la ficha actual de cada producto; no están fijadas en el contenido orientativo. Mantiene los filtros de disponibilidad y precio positivo. Si el inventario de entrada no contiene ambas categorías, omite esta orientación para no enlazar rutas de categorías inexistentes. El modo de actualización de navegación también incluye las guías anidadas.
+
+Para preservar el estado comercial actual se ejecutó el modo acotado en este worktree. La generación completa se probó con fixtures temporales y sin peticiones externas. Antes de publicar solo queda aprobar el contenido y comprobar que las fichas candidatas mantienen sus condiciones y disponibilidad; los datos técnicos pendientes no se rellenan sin fuente.
 
 ## Verificación
 
-- 18 pruebas Node: generación SEO anterior, atribución anterior, escape de texto, condiciones por ficha, exclusión de agotados, conservación de grilla/metadatos/atribución, idempotencia y detención ante anclas inesperadas.
+- 20 pruebas Node: generación SEO anterior, atribución anterior, escape de texto, condiciones por ficha, exclusión de agotados, conservación de grilla/metadatos/atribución, idempotencia y detención ante anclas inesperadas. Incluyen regeneración habitual, actualización de garantía desde la ficha, navegación de guías y detección de una guía fuera del sitemap o un enlace interno roto.
 - Chromium local en 320, 390 y 1280 píxeles: cinco páginas sin desbordamiento, enlaces internos existentes, conservación del UUID/contacto al entrar y regresar de una guía. Conexiones externas bloqueadas y ninguna escritura API.
-- Validador SEO: 430 fichas, nueve categorías, canonicals únicos y sitemap completo.
+- Validador SEO: 430 fichas, nueve categorías, tres guías y 442 canonicals únicos. Las entradas anteriores del sitemap permanecen idénticas y hay exactamente tres nuevas.
 - `build-js.cjs --check` y comprobación de la guía existente pasan.
-- Ningún cambio en producto, sitemap, historial de publicación, manifiesto, aplicación, paquetes CSS, backend, precios, comisiones, pagos o información de clientes.
+- Ningún cambio en producto, historial de publicación, manifiesto, aplicación, paquetes CSS, backend, precios, comisiones, pagos o información de clientes. Las grillas y precios de las categorías permanecen idénticos.
+
+La revisión editorial está también disponible en un PDF de cinco páginas guardado en Library: `Propuesta_SEO_Mundo_Frio_Energia_2026-10-03.pdf`. Incluye las dos propuestas de categoría y el texto de las tres guías. Se generó desde los mismos originales y se revisó su composición, sin imágenes generadas ni conexiones externas.
 
 ## Publicación y reversión
 
 La revisión previa de outlines y datos pendientes está exigida por el alcance actual. No se hace push ni publicación en esta fase. El destino ya comprobado en el repositorio es GitHub Pages, rama main y raíz, con CNAME paratuhogar.org; no se afirma verificación HTTP de producción. Las comprobaciones HTTP anteriores de Pages/Actions y producción quedaron denegadas y no se reintentan.
 
-El borrador está aislado en su propia rama/worktree. Puede descartarse esa rama local conservando main y los otros worktrees. Una eventual publicación necesitará un commit separado con la integración final y su reversión acotada.
+El borrador y su integración están aislados en su propia rama/worktree. Puede descartarse esa rama local conservando main y los otros worktrees. Si se publican sus dos commits, la reversión debe aplicarlos en orden inverso, revisando conflictos con cualquier cambio de inventario posterior para conservarlo.

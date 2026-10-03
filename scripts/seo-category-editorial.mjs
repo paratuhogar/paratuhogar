@@ -1,6 +1,7 @@
 // Original draft copy: catalogue guidance, never a compatibility or delivery promise.
 const escape = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 export const CATEGORY_EDITORIAL_CSS = '.editorial{margin:0 0 32px}.editorial h2{font-size:28px;margin:0 0 14px}.editorial>p{color:#475569;line-height:1.7}.editorial-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.editorial-card{min-width:0;padding:20px;border:1px solid #dbe5f2;border-radius:20px;background:#fff}.editorial-card h3{font-size:18px;margin:0 0 10px}.editorial-card p{font-size:14px;line-height:1.7;color:#475569}.editorial-card a,.editorial-links a{color:#1a4789;font-weight:850;text-underline-offset:3px}.editorial-links{display:flex;gap:14px;flex-wrap:wrap}.editorial-note{border-left:3px solid #1a4789;padding-left:14px}.editorial-card small{display:block;margin-top:10px;color:#64748b;line-height:1.7}@media(max-width:650px){.editorial-grid{grid-template-columns:1fr}.editorial-card{padding:18px}}';
+export const EDITORIAL_UPDATED='2026-10-03';
 
 export const GUIDE_DRAFTS = [
  {
@@ -34,6 +35,7 @@ export const GUIDE_DRAFTS = [
  {
   slug:'mundo-frio/antes-de-confirmar-el-pedido',
   title:'Qué confirmar sobre entrega y garantía antes del pedido',
+  seoTitle:'Entrega y garantía: qué confirmar | ParaTuHogar',
   description:'Una lista breve para confirmar modelo, disponibilidad, importe de entrega, condiciones de garantía y forma de coordinar el pedido.',
   intro:'Antes de enviar el pedido, reúne las condiciones del producto concreto. Esta lista te ayuda a preguntar y revisar lo que falta confirmar.',
   sections:[
@@ -79,4 +81,33 @@ export function categoryEditorial(slug, products, slugMap) {
 
 export function guideBody(guide) {
  return guide.sections.map(([heading,body])=>`<section><h2>${escape(heading)}</h2><p>${escape(body)}</p></section>`).join('\n')+`<nav class="guide-links" aria-label="Continuar la consulta">${guide.links.map(([href,label])=>`<a href="${escape(href)}">${escape(label)}</a>`).join('')}</nav>`;
+}
+
+// Both category routes must exist; no broken guidance links for partial fixtures/catalogues.
+export function editorialGuidesFor(categorySlugs) {
+ const existing=new Set(categorySlugs);
+ return existing.has('energia')&&existing.has('mundo-frio')?GUIDE_DRAFTS:[];
+}
+
+export function renderGuidePage(template,guide,{siteURL='https://paratuhogar.org',navigation}) {
+ const category=guide.slug.split('/')[0];
+ const label=category==='energia'?'Energía':'Mundo frío';
+ const canonical=siteURL.replace(/\/+$/,'')+'/categoria/'+guide.slug+'/';
+ const related=GUIDE_DRAFTS.filter(item=>item!==guide).map(item=>['/categoria/'+item.slug+'/',item.title]);
+ const seen=new Set();
+ const linked={...guide,links:[...guide.links,...related].filter(([href])=>seen.has(href)?false:(seen.add(href),true))};
+ const jsonLd={'@context':'https://schema.org','@graph':[
+  {'@type':'Article',headline:guide.title,description:guide.description,inLanguage:'es',url:canonical,mainEntityOfPage:canonical,publisher:{'@type':'Organization',name:'ParaTuHogar'}},
+  {'@type':'BreadcrumbList',itemListElement:[
+   {'@type':'ListItem',position:1,name:'Inicio',item:siteURL+'/'},
+   {'@type':'ListItem',position:2,name:label,item:siteURL+'/categoria/'+category+'/'},
+   {'@type':'ListItem',position:3,name:guide.title,item:canonical}
+  ]}
+ ]};
+ const values={SEO_TITLE:escape(guide.seoTitle||guide.title+' | ParaTuHogar'),SEO_DESCRIPTION:escape(guide.description),CANONICAL_URL:escape(canonical),AFFILIATE_NAVIGATION:navigation,CATEGORY_URL:'/categoria/'+category+'/',CATEGORY_LABEL:escape(label),TITLE:escape(guide.title),INTRO:escape(guide.intro),ARTICLE_BODY:guideBody(linked),JSON_LD:JSON.stringify(jsonLd).replace(/</g,'\\u003c')};
+ const html=template.replace(/\{\{([A-Z_]+)\}\}/g,(_,key)=>{
+  if(!(key in values))throw new Error(`Falta valor de plantilla: ${key}.`);
+  return values[key];
+ });
+ return {html,canonical,lastmod:EDITORIAL_UPDATED};
 }

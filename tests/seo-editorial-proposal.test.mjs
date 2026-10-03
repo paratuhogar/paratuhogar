@@ -38,6 +38,7 @@ async function fixture(t){
  await cp(new URL('templates',root),join(dir,'templates'),{recursive:true});
  await mkdir(join(dir,'producto'),{recursive:true});
  await cp(new URL('producto/manifest.json',root),join(dir,'producto/manifest.json'));
+ await cp(new URL('sitemap.xml',root),join(dir,'sitemap.xml'));
  const pages={};
  for(const slug of ['energia','mundo-frio']){
   await mkdir(join(dir,'categoria',slug),{recursive:true});
@@ -48,7 +49,7 @@ async function fixture(t){
  await writeFile(join(dir,'snapshot.json'),JSON.stringify([candidate,unavailable]));
  return {dir,pages};
 }
-const run=dir=>execFileSync(process.execPath,['scripts/preview-category-editorial.mjs','--json=snapshot.json'],{cwd:dir,encoding:'utf8'});
+const run=dir=>execFileSync(process.execPath,['scripts/generate-product-pages.mjs','--refresh-editorial','--json=snapshot.json'],{cwd:dir,encoding:'utf8'});
 
 test('el preview conserva precios, grillas y atribución, descarta agotados y es idempotente',async t=>{
  const {dir,pages}=await fixture(t);
@@ -66,12 +67,66 @@ test('el preview conserva precios, grillas y atribución, descarta agotados y es
  assert.equal(await readFile(join(dir,'producto/manifest.json'),'utf8'),manifest);
  for(const guide of GUIDE_DRAFTS){
   const html=await readFile(join(dir,'categoria',guide.slug,'index.html'),'utf8');
-  assert.match(html,/name="robots" content="noindex,follow"/);
+  assert.match(html,/name="robots" content="index,follow/);
+  assert.match(html,/"@type":"Article"/);
+  const canonical=html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+  assert.ok((await readFile(join(dir,'sitemap.xml'),'utf8')).includes(`<loc>${canonical}</loc>`));
   assert.equal(nav(html),nav(pages.energia));
   assert.doesNotMatch(html,/google-measurement|\{\{[A-Z_]+\}\}/);
  }
  run(dir);
  for(const [i,slug] of Object.keys(pages).entries())assert.equal(await readFile(join(dir,'categoria',slug,'index.html'),'utf8'),first[i]);
+});
+
+async function normalFixture(t){
+ const {dir}=await fixture(t);
+ await writeFile(join(dir,'index.html'),'<h1>Fixture</h1>');
+ await writeFile(join(dir,'gestores.html'),'<h1>Fixture</h1>');
+ const products=[
+  {...candidate,id:'1',nombre:'MUST de prueba',categoria:'ENERGIA',precio:200,garantia:'15 días'},
+  {id:'2',slug:'refrigerador-19pies-lg-smart-inverter',nombre:'Frío de prueba',categoria:'MUNDO FRIO',precio:300,disponible:'SI',garantia:'Consultar condiciones',mensajeria:'Consulta por destino'}
+ ];
+ const generate=()=>execFileSync(process.execPath,['scripts/generate-product-pages.mjs','--json=snapshot.json'],{cwd:dir,encoding:'utf8'});
+ await writeFile(join(dir,'snapshot.json'),JSON.stringify(products));generate();
+ return {dir,products,generate};
+}
+
+test('el generador habitual crea tres guías indexables enlazadas y actualiza la garantía desde la ficha',async t=>{
+ const {dir,products,generate}=await normalFixture(t);
+ const sitemap=await readFile(join(dir,'sitemap.xml'),'utf8');
+ for(const guide of GUIDE_DRAFTS){
+  const html=await readFile(join(dir,'categoria',guide.slug,'index.html'),'utf8');
+  assert.match(html,/name="robots" content="index,follow/);
+  assert.ok(sitemap.includes(`<loc>https://paratuhogar.org/categoria/${guide.slug}/</loc>`));
+  for(const other of GUIDE_DRAFTS.filter(other=>other!==guide))assert.ok(html.includes(`href="/categoria/${other.slug}/"`));
+ }
+ const valid=spawnSync(process.execPath,['scripts/validate-seo-pages.mjs'],{cwd:dir,encoding:'utf8'});
+ assert.equal(valid.status,0,valid.stderr);
+ products[0].garantia='7 días';
+ await writeFile(join(dir,'snapshot.json'),JSON.stringify(products));generate();
+ const category=await readFile(join(dir,'categoria/energia/index.html'),'utf8');
+ assert.match(category,/Garantía informada: 7 días/);
+ assert.doesNotMatch(category,/Garantía informada: 15 días/);
+ const guidePath=join(dir,'categoria',GUIDE_DRAFTS[0].slug,'index.html');
+ const original=await readFile(guidePath,'utf8');
+ await writeFile(guidePath,original.replace('20261003-seo-affiliate1','obsolete-fixture'));
+ execFileSync(process.execPath,['scripts/generate-product-pages.mjs','--refresh-navigation'],{cwd:dir,encoding:'utf8'});
+ assert.equal(await readFile(guidePath,'utf8'),original,'navigation refresh includes nested guides without changing content');
+});
+
+test('el validador detecta una guía ausente del sitemap y un enlace interno roto',async t=>{
+ const {dir}=await normalFixture(t);
+ const sitemapPath=join(dir,'sitemap.xml');
+ const sitemap=await readFile(sitemapPath,'utf8');
+ const canonical='https://paratuhogar.org/categoria/'+GUIDE_DRAFTS[0].slug+'/';
+ await writeFile(sitemapPath,sitemap.replace(`<loc>${canonical}</loc>`,'<loc>https://example.invalid/</loc>'));
+ let result=spawnSync(process.execPath,['scripts/validate-seo-pages.mjs'],{cwd:dir,encoding:'utf8'});
+ assert.equal(result.status,1);assert.match(result.stderr,/guía indexable ausente del sitemap/);
+ await writeFile(sitemapPath,sitemap);
+ const guidePath=join(dir,'categoria',GUIDE_DRAFTS[0].slug,'index.html');
+ await writeFile(guidePath,(await readFile(guidePath,'utf8')).replace('href="/categoria/energia/"','href="/categoria/energia/no-existe/"'));
+ result=spawnSync(process.execPath,['scripts/validate-seo-pages.mjs'],{cwd:dir,encoding:'utf8'});
+ assert.equal(result.status,1);assert.match(result.stderr,/enlace interno ausente/);
 });
 
 test('una plantilla de categoría inesperada detiene el preview antes de escribir otras páginas',async t=>{
