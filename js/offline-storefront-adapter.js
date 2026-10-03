@@ -7,7 +7,9 @@
     let active=null,generation=0,reconnecting=false;
     function valid(){
       if(!active)return false;
-      if(active.owner){const profile=secureData.offlineProfile?.();if(secureData.token()!==active.token||identity(profile)!==active.identity||secureData.expiresAt?.()<=now()||active.expiresAt<=now()){clear();return false;}}
+      const cached=active;
+      if(now()<cached.savedAt||now()>=cached.expiresAt){clear();return false;}
+      if(cached.owner){const profile=secureData.offlineProfile?.();if(active!==cached)return false;if(secureData.token()!==cached.token||identity(profile)!==cached.identity||secureData.expiresAt?.()<=now()){clear();return false;}}
       return true;
     }
     function clear(){const previous=active;active=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();if(previous)onClear(previous);}
@@ -34,7 +36,7 @@
         // A signed-in device never falls through to someone else's/public copy.
         if(secureData.offlineProfile?.())return null;
         const copy=publicCopy?.();if(epoch!==generation||!copy?.products?.length||secureData.token())return null;
-        active={...copy,owner:null,clients:[],tariffs:[]};
+        active={...copy,owner:null,expiresAt:copy.savedAt+7*86400000,clients:[],tariffs:[]};
       }
       status();return active;
     }
