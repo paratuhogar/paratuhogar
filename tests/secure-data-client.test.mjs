@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-function client() {
+function client(existingStorage) {
  const requests=[];const items=new Map();
- const storage={getItem:k=>items.get(k)||null,setItem:(k,v)=>items.set(k,String(v)),removeItem:k=>items.delete(k),key:i=>[...items.keys()][i],get length(){return items.size;}};
+ const storage=existingStorage||{getItem:k=>items.get(k)||null,setItem:(k,v)=>items.set(k,String(v)),removeItem:k=>items.delete(k),key:i=>[...items.keys()][i],get length(){return items.size;}};
  const sdk={from:table=>({direct:table}),rpc:name=>({direct:name})};
  const context={localStorage:storage,console,Set,Map,Promise,AbortSignal,URL,location:{origin:'https://paratuhogar.org'},fetch:async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,status:200,json:async()=>({data:[],error:null})};},supabase:{createClient:()=>sdk}};
  context.window=context;
@@ -28,6 +28,38 @@ test('session expiry retains only the owner ID needed to check its existing tab 
  context.fetch=async()=>({status:401,json:async()=>({error:{code:'SESSION_INVALID',message:'expired'}})});
  await assert.rejects(context.PTHSecureData.restore());assert.equal(context.PTHSecureData.expiredCheckoutOwner(),'expired-owner');assert.equal(storage.getItem('pth_session'),null);assert.equal(storage.getItem('pth_secure_token'),null);
  context.PTHSecureData.clearSession();assert.equal(context.PTHSecureData.expiredCheckoutOwner(),null);
+});
+test('private cleanup is marked durably before credentials are removed and stores only the owner ID',()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'own-id',nombre:'Private account name',telefono:'private phone'}}));
+ const remove=storage.removeItem;let markedBeforeToken=false;
+ storage.removeItem=key=>{if(key==='pth_secure_token')markedBeforeToken=storage.getItem('pth_pending_private_purge_v1:own-id')==='1';remove(key);};
+ context.PTHSecureData.clearSession('expired');assert.equal(markedBeforeToken,true);
+ assert.deepEqual([...context.PTHSecureData.pendingPrivatePurgeOwners()],['own-id']);
+ const markers=Array.from({length:storage.length},(_,i)=>[storage.key(i),storage.getItem(storage.key(i))]).filter(([key])=>key.startsWith('pth_pending_private_purge_v1:'));
+ assert.deepEqual(markers,[['pth_pending_private_purge_v1:own-id','1']]);assert.doesNotMatch(JSON.stringify(markers),/Private account name|private phone|aaaaaaaa/);
+});
+test('a fresh document resumes cleanup without a token or in-memory expired owner and blocks stale offline identity',()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__'}}));
+ context.PTHSecureData.clearSession('expired');const reopened=client(storage).context;
+ assert.equal(reopened.PTHSecureData.expiredCheckoutOwner(),null);assert.equal(reopened.PTHSecureData.token(),null);assert.deepEqual([...reopened.PTHSecureData.pendingPrivatePurgeOwners()],['own']);
+ storage.setItem('pth_secure_token','b'.repeat(64));storage.setItem('pth_secure_token_expires_at',String(Date.now()+60000));storage.setItem('pth_session',JSON.stringify({data:{id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__'}}));
+ assert.equal(reopened.PTHSecureData.offlineProfile(),null);assert.equal(reopened.PTHSecureData.completePrivatePurge('own'),true);assert.equal(reopened.PTHSecureData.offlineProfile().id,'own');
+});
+test('independent owner markers survive another owner acknowledgement and cannot be cleared together',()=>{
+ const {context,storage}=client();for(const owner of ['first','second']){storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:owner}}));context.PTHSecureData.clearSession();}
+ const reopened=client(storage).context;assert.deepEqual([...reopened.PTHSecureData.pendingPrivatePurgeOwners()].sort(),['first','second']);
+ assert.equal(reopened.PTHSecureData.completePrivatePurge('first'),true);assert.deepEqual([...reopened.PTHSecureData.pendingPrivatePurgeOwners()],['second']);assert.equal(reopened.PTHSecureData.hasPendingPrivatePurge('second'),true);
+});
+test('refused marker persistence is reported while logout still invalidates credentials and blocks local reuse',()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'own'}}));const set=storage.setItem;
+ storage.setItem=(key,value)=>{if(key.startsWith('pth_pending_private_purge_v1:'))throw Error('Synthetic storage refusal');set(key,value);};
+ context.PTHSecureData.clearSession();assert.equal(storage.getItem('pth_secure_token'),null);assert.equal(storage.getItem('pth_session'),null);assert.equal(context.PTHSecureData.privatePurgePersistenceFailed(),true);assert.equal(context.PTHSecureData.hasPendingPrivatePurge('own'),true);
+ assert.equal(context.PTHSecureData.completePrivatePurge('own'),true);assert.equal(context.PTHSecureData.privatePurgePersistenceFailed(),false);
+});
+test('failed acknowledgement retains the cleanup marker and continues to block its owner',()=>{
+ const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'own'}}));context.PTHSecureData.clearSession();const remove=storage.removeItem;
+ storage.removeItem=key=>{if(key.startsWith('pth_pending_private_purge_v1:'))throw Error('Synthetic removal refusal');remove(key);};
+ assert.equal(context.PTHSecureData.completePrivatePurge('own'),false);assert.equal(context.PTHSecureData.hasPendingPrivatePurge('own'),true);assert.deepEqual([...context.PTHSecureData.pendingPrivatePurgeOwners()],['own']);
 });
 test('private RPC uses the gateway and cannot select another actor through browser credentials',async()=>{
  const {db,requests}=client();await db.rpc('mis_solicitudes_cobro',{p_gestor_id:'fake',p_password:'fake'});

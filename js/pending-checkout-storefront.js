@@ -5,14 +5,11 @@
   if (!api) return;
   let storage, idb;
   try { storage = localStorage; idb = indexedDB; } catch (_) {}
-  const queue = api.create(api.indexedStore(idb));
+  const queueStore = api.indexedStore(idb);
+  const queue = api.create(queueStore);
   const copyApi = window.PTHOfflineCheckoutCopy;
   const copies = copyApi?.create(idb);
   if (copies) copyApi.bindLifecycle(window, storage, copies);
-  // Expiry can be detected by secure-data before this deferred module starts.
-  // Clear the departing account's device data even when we missed that event.
-  const expiredOwner = window.PTHSecureData.expiredCheckoutOwner?.();
-  if (expiredOwner && api.localOwner(storage) !== expiredOwner) void Promise.allSettled([queue.logout(expiredOwner), copies?.clear(expiredOwner)]).then(() => render());
   const form = document.getElementById('checkout-form');
   const modal = document.getElementById('cart-modal');
   const confirmationHelp = document.getElementById('checkout-confirmation-help');
@@ -32,15 +29,49 @@
     expired: 'El pendiente venció. Revisa tus pedidos antes de iniciar otro.',
     confirmed: 'La tienda confirmó que recibió este pedido.'
   };
-  let active = null, busy = false, lastOwner = api.localOwner(storage), panel = null;
+  let active = null, busy = false, panel = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false;
+  let purgePromise = null;
   const savedGuidance = count => count === 1
     ? 'Pedido guardado en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tu pedido automáticamente. Te avisaremos cuando la tienda confirme que lo recibió.'
     : 'Pedidos guardados en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tus pedidos automáticamente. Te avisaremos cuando la tienda confirme que los recibió.';
   function localAccount() {
     const local = api.localOwner(storage);
-    return owner() && owner() !== local ? null : owner() || local;
+    const account = owner() && owner() !== local ? null : owner() || local;
+    return window.PTHSecureData.hasPendingPrivatePurge?.(account) ? null : account;
+  }
+  function saveWithSessionGuard(account, data, intent, expectedToken) {
+    const guarded = api.create({update(target, mutate) {
+      return queueStore.update(target, rows => {
+        const expires = window.PTHSecureData.expiresAt?.();
+        if (target !== account || !sameSession(account, expectedToken) || window.PTHSecureData.hasPendingPrivatePurge?.(account) || !Number.isFinite(expires) || expires <= Date.now()) {
+          throw Object.assign(Error('SESSION_CHANGED'), {code: 'SESSION_CHANGED', safeMessage: 'La sesión cambió o venció antes de guardar el pedido. Conserva los datos y vuelve a entrar con conexión.'});
+        }
+        return mutate(rows);
+      });
+    }});
+    return guarded.save(account, data, intent);
+  }
+  async function drainPrivatePurges() {
+    if (purgePromise) return purgePromise;
+    const secure = window.PTHSecureData;
+    const accounts = secure.pendingPrivatePurgeOwners?.() || [];
+    if (!accounts.length) return true;
+    purgePromise = (async () => {
+      let complete = true;
+      for (const account of accounts) {
+        try {
+          if (!copies) throw Error('Private copy storage unavailable');
+          await queue.logout(account);
+          await copies.clear(account);
+          if (secure.hasPendingPrivatePurge?.(account) && !secure.completePrivatePurge?.(account)) throw Error('Private purge marker retained');
+        } catch (_) { complete = false; }
+      }
+      if (!complete) message('No se pudo completar el borrado de los datos locales. Mantén esta página abierta y vuelve a comprobar; los pedidos pendientes de limpieza no se enviarán.');
+      return complete;
+    })();
+    try { return await purgePromise; } finally { purgePromise = null; }
   }
   function message(value) {
     const target = document.getElementById('pth-pending-message');
@@ -205,6 +236,8 @@
     }
   }
   async function tick() {
+    await drainPrivatePurges();
+    if (window.PTHSecureData.hasPendingPrivatePurge?.(owner())) return;
     if (busy || preparing || reviewing || !owner() || api.localOwner(storage) !== owner() || navigator.onLine === false || !productosRaw.length || !modal.classList.contains('hidden')) return;
     busy = true;
     const account = owner();
@@ -259,7 +292,7 @@
       data = snapshot();
       const key = JSON.stringify(data);
       if (!saveIntent || saveIntent.key !== key || saveIntent.owner !== account) saveIntent = {owner: account, key, intentId: Array.from(crypto.getRandomValues(new Uint8Array(32)), value => value.toString(16).padStart(2, '0')).join(''), savedAt: Date.now()};
-      await queue.save(account, data, saveIntent);
+      await saveWithSessionGuard(account, data, saveIntent, expectedToken);
       if (!sameSession(account, expectedToken)) return;
       // A late IndexedDB response cannot erase another account's inputs.
       for (const field of ['nombre', 'ci', 'tel', 'dir', 'vuelto']) {
@@ -303,7 +336,7 @@
     async interceptSubmit() { if (active) return false; if (reviewing) await saveReview(); else if (offlineMode()) await savePending(); return true; },
     verifyEstimate, async catalogReady() { await render(); await tick(); },
     saveDeliveryZones(rows) { latestTariffs = Array.isArray(rows) ? rows : []; },
-    render, tick, leaveReview
+    render, tick, leaveReview, drainPrivatePurges
   };
   const queueButton = document.createElement('button'); queueButton.type = 'button'; queueButton.id = 'pth-queue-order'; queueButton.className = 'pth-connectivity-action'; queueButton.textContent = 'Guardar como pendiente'; queueButton.hidden = true;
   const help = document.createElement('p'); help.className = 'pth-cart-draft-note'; help.textContent = 'Puedes guardar varios pedidos en este teléfono. Se envían con esta página abierta y tu misma cuenta al recuperar conexión. Los datos del cliente se borran al confirmar, cancelar, cerrar sesión o vencer la sesión. Si pasan 7 días, se borran al volver a abrir la cola.';
@@ -333,9 +366,13 @@
   };
   window.addEventListener('pth:session-changed', event => {
     const next = owner();
-    if (lastOwner && !next && ['logout', 'expired'].includes(event.reason)) void queue.logout(lastOwner).catch(() => message('El navegador no pudo borrar los datos locales. Revisa el almacenamiento de este teléfono antes de compartirlo.')).finally(render);
-    reviewing = null; saveIntent = null; lockReviewFields(false); lastOwner = next;
-    if (!next && event.reason === 'expired') message('Tu sesión venció. Los reintentos se detuvieron y se borraron los datos del cliente guardados en este teléfono. Inicia sesión y revisa tus pedidos antes de volver a prepararlos.');
+    reviewing = null; saveIntent = null; lockReviewFields(false);
+    if (!next && event.reason === 'expired') message('Tu sesión venció. Los reintentos se detuvieron. Estamos borrando los datos del cliente guardados en este teléfono.');
+    if (window.PTHSecureData.privatePurgePersistenceFailed?.()) message('El navegador no pudo guardar la limpieza pendiente. Mantén esta página abierta hasta que se borren los datos locales.');
+    void drainPrivatePurges().then(complete => {
+      if (complete && !owner() && event.reason === 'expired') message('Tu sesión venció. Se borraron los datos del cliente guardados en este teléfono. Inicia sesión y revisa tus pedidos antes de volver a prepararlos.');
+      return render();
+    });
     void render(); if (next) void tick();
   });
   window.addEventListener('online', () => { void render(); void tick(); });
@@ -346,8 +383,9 @@
       reviewing = null; saveIntent = null; lockReviewFields(false);
     }
   });
-  window.addEventListener('focus', () => { void render(); void tick(); });
+  window.addEventListener('focus', () => { void drainPrivatePurges().then(render); void render(); void tick(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { void render(); void tick(); } });
-  setInterval(() => { void render(); void tick(); }, 15000);
+  setInterval(() => { void drainPrivatePurges().then(render); void render(); void tick(); }, 15000);
+  void drainPrivatePurges().then(render);
   void render();
 })();

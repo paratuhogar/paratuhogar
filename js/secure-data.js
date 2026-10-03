@@ -9,6 +9,37 @@
  const messenger=/\/mensajeros\.html$/.test(root.location?.pathname||'');
  const tokenKey=messenger?'pth_secure_messenger_token':'pth_secure_token';
  const expiryKey=tokenKey+'_expires_at';let expiryTimer=null;
+ const purgePrefix='pth_pending_private_purge_v1:';
+ const volatilePurges=new Set();
+ const validPurgeOwner=owner=>typeof owner==='string'&&owner.length>0&&owner.length<=100;
+ function markPrivatePurge(owner){
+  if(messenger||!validPurgeOwner(owner))return false;
+  volatilePurges.add(owner);
+  try{storage.setItem(purgePrefix+encodeURIComponent(owner),'1');return true;}
+  catch(_){
+   // Free existing account caches before retrying a small IDs-only marker.
+   // Credential invalidation must still proceed if device storage refuses it.
+   try{clearCaches();storage.setItem(purgePrefix+encodeURIComponent(owner),'1');return true;}catch(_){return false;}
+  }
+ }
+ function pendingPrivatePurgeOwners(){
+  const owners=new Set(volatilePurges);
+  try{for(let i=0;i<storage.length;i++){const key=storage.key(i);if(!key?.startsWith(purgePrefix)||storage.getItem(key)!=='1')continue;try{const owner=decodeURIComponent(key.slice(purgePrefix.length));if(validPurgeOwner(owner))owners.add(owner);}catch(_){}}}catch(_){}
+  return [...owners];
+ }
+ function hasPendingPrivatePurge(owner){
+  if(!validPurgeOwner(owner))return false;
+  if(volatilePurges.has(owner))return true;
+  try{return storage.getItem(purgePrefix+encodeURIComponent(owner))==='1';}catch(_){return true;}
+ }
+ function completePrivatePurge(owner){
+  if(!validPurgeOwner(owner))return false;
+  try{storage.removeItem(purgePrefix+encodeURIComponent(owner));volatilePurges.delete(owner);return true;}catch(_){return false;}
+ }
+ function privatePurgePersistenceFailed(){
+  for(const owner of volatilePurges){try{if(storage.getItem(purgePrefix+encodeURIComponent(owner))!=='1')return true;}catch(_){return true;}}
+  return false;
+ }
  function expiresAt(){const value=Number(storage.getItem(expiryKey));return Number.isFinite(value)&&value>0?value:null;}
  function armExpiry(){if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);const expires=expiresAt();if(!expires||!root.setTimeout)return;expiryTimer=root.setTimeout(()=>{if(expiresAt()===expires){if(expires<=Date.now())clearSession('expired');else armExpiry();}},Math.min(2147483647,Math.max(0,expires-Date.now())));}
  function checkExpiry(){const expires=expiresAt();if(expires&&expires<=Date.now()){clearSession('expired');return false;}return true;}
@@ -18,7 +49,7 @@
   if(!checkExpiry()||!expiresAt()||expiresAt()>Date.now()+7*86400000)return null;
   const token=storage.getItem(tokenKey);if(!/^[a-f0-9]{64}$/.test(token||''))return null;
   let saved;try{saved=JSON.parse(storage.getItem('pth_session')||'null')?.data;}catch(_){return null;}
-  if(!saved?.id||!saved.nombre||saved.password!=='__session__'||saved.estado!=='activo'||saved.activo===false)return null;
+  if(!saved?.id||hasPendingPrivatePurge(saved.id)||!saved.nombre||saved.password!=='__session__'||saved.estado!=='activo'||saved.activo===false)return null;
   return Object.fromEntries(['id','nombre','telefono','rol','estado','activo','parent_id','parent_nombre','parent_telefono'].filter(field=>Object.hasOwn(saved,field)).map(field=>[field,saved[field]]).concat([['password','__session__']]));
  }
  function adoptOfflineProfile(){const saved=offlineProfile();if(!saved)return null;profile=saved;return {...saved};}
@@ -26,7 +57,7 @@
   for(let i=storage.length-1;i>=0;i--){const name=storage.key(i);if(/^(pth_catalogo_|pth_catalog_data|pth_ultimo_cambio_productos|pth_studio_.*(?:catalog|product|cache|custom_prices)|pth_stats)/.test(name))storage.removeItem(name);}
  }
  function notifySession(reason){if(root.dispatchEvent&&root.Event){const event=new root.Event('pth:session-changed');event.reason=reason;root.dispatchEvent(event);}}
- function clearSession(reason='logout'){let previous;try{previous=JSON.parse(storage.getItem('pth_session')||'null');}catch(_){}expiredCheckoutOwner=reason==='expired'?(profile?.id||previous?.data?.id||null):null;root.navigator?.serviceWorker?.controller?.postMessage({type:'PTH_PUSH_LOGOUT'});storage.removeItem(tokenKey);storage.removeItem(expiryKey);if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);expiryTimer=null;storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;restoration=null;clearCaches();notifySession(reason);}
+ function clearSession(reason='logout'){let previous;try{previous=JSON.parse(storage.getItem('pth_session')||'null');}catch(_){}const departingOwner=profile?.id||previous?.data?.id||null;markPrivatePurge(departingOwner);expiredCheckoutOwner=reason==='expired'?departingOwner:null;root.navigator?.serviceWorker?.controller?.postMessage({type:'PTH_PUSH_LOGOUT'});storage.removeItem(tokenKey);storage.removeItem(expiryKey);if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);expiryTimer=null;storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;restoration=null;clearCaches();notifySession(reason);}
  const identity=data=>JSON.stringify([data?.id,data?.rol,data?.parent_id,data?.parent_nombre]);
  function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);const expiry=Date.parse(data.expiresAt);if(Number.isFinite(expiry))storage.setItem(expiryKey,String(expiry));else storage.removeItem(expiryKey);armExpiry();storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));if(identity(previous?.data||previous)!==identity(profile)){clearCaches();notifySession();}}
  async function send(body,token=storage.getItem(tokenKey)){
@@ -90,6 +121,10 @@
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
+ root.PTHSecureData.pendingPrivatePurgeOwners=pendingPrivatePurgeOwners;
+ root.PTHSecureData.hasPendingPrivatePurge=hasPendingPrivatePurge;
+ root.PTHSecureData.completePrivatePurge=completePrivatePurge;
+ root.PTHSecureData.privatePurgePersistenceFailed=privatePurgePersistenceFailed;
  // Receipt is the approved capability-only read. Other operations keep the
  // existing verified session and fail if it changes while restoring.
  root.PTHSecureData.checkout=async body=>{
