@@ -143,6 +143,36 @@ async function checkShortLinks() {
 
     const lowConnectivityStorage = (() => { try { return localStorage; } catch (_) { return null; } })();
     const lowConnectivity = window.PTHLowConnectivity.create(lowConnectivityStorage);
+    const offlineStorefront = window.PTHOfflineStorefrontAdapter.create({
+        root: window, publicCopy: () => lowConnectivity.readPublic(),
+        onClear: () => {
+            productosRaw = []; catalogSourceProducts = []; selectedProduct = null; crmClients = [];
+            tarifasMensajeria = {}; tarifasMensajeriaAdminRaw = [];
+            window.currentUserData = null; window.gestorName = null; window.isAdmin = false;
+            document.getElementById('crm-datalist')?.replaceChildren();
+            document.getElementById('checkout-form')?.reset();
+            document.getElementById('cart-modal')?.classList.add('hidden');
+            document.getElementById('detail-modal')?.classList.add('hidden');
+            document.getElementById('sec-admin-master')?.classList.add('hidden');
+            document.getElementById('sec-dashboard')?.classList.add('hidden');
+            document.getElementById('gestor-command-center')?.classList.add('hidden');
+            document.getElementById('productos-container')?.replaceChildren();
+            document.getElementById('category-list')?.replaceChildren();
+        }
+    });
+    window.PTHOfflineStorefront = offlineStorefront;
+    const reconnectOfflineStorefront = () => offlineStorefront.reconnect(async () => {
+        await loadProducts();
+        if (!offlineStorefront.usingCopy()) {
+            await loadTarifasMensajeria();
+            if (!document.getElementById('cart-modal')?.classList.contains('hidden')) await loadClientCRM();
+        }
+    });
+    window.addEventListener('online', reconnectOfflineStorefront);
+    window.addEventListener('focus', reconnectOfflineStorefront);
+    window.addEventListener('offline', () => { void loadProducts(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) void reconnectOfflineStorefront(); });
+    setInterval(() => { if (!document.hidden) void reconnectOfflineStorefront(); }, 15000);
     let newCartOwner = null;
     let newCartOwnerBound = false;
     let newCartRevision = null;
@@ -338,15 +368,23 @@ async function checkShortLinks() {
 
     // ... aquí sigue tu código original (await checkShortLinks(); etc...)
     // 1. Procesar identificación (Link corto y Referral) primero
-    if (await checkShortLinks()) return;
-    await initSmartReferral();
+    if (navigator.onLine !== false) {
+        if (await checkShortLinks()) return;
+        await initSmartReferral();
+    }
 
-    try { await window.PTHSecureData.restore(); }
+    try {
+        if (navigator.onLine === false) {
+            if (!await offlineStorefront.fallback()) throw Object.assign(Error('Conecta una vez para guardar el catálogo de esta cuenta. Si ya lo guardaste, comprueba que tu sesión sigue vigente.'), {code:'OFFLINE_COPY_MISSING'});
+        } else await window.PTHSecureData.restore();
+    }
     catch (error) {
-        catalogLoadError = { error, reload: true };
-        showCatalogLoadError(error, true);
-        renderLowConnectivityPanel();
-        return;
+        if (!await offlineStorefront.fallback(error)) {
+            catalogLoadError = { error, reload: true };
+            showCatalogLoadError(error, true);
+            renderLowConnectivityPanel();
+            return;
+        }
     }
     const savedSession = localStorage.getItem('pth_session');
     if (savedSession) {
@@ -581,10 +619,11 @@ async function processRegister() {
 
     async function setupSession(name, adminMode) {
     const setupVersion = window.PTHWorkView.beginSetup();
+    const localDisplay = offlineStorefront.usingCopy();
     let welcomeNotice = Promise.resolve();
-    adminMode = window.PTHWorkView.isAdminView(window.currentUserData);
+    adminMode = !localDisplay && window.PTHWorkView.isAdminView(window.currentUserData);
     let requestedAdminTab = null;
-    try { requestedAdminTab = await window.PTHPushLinks?.resolve(); } catch (_) { /* Login/service errors keep the existing verified view. */ }
+    if (!localDisplay) try { requestedAdminTab = await window.PTHPushLinks?.resolve(); } catch (_) { /* Login/service errors keep the existing verified view. */ }
     if (requestedAdminTab) adminMode = true;
     window.gestorName = name;
     window.isAdmin = adminMode;
@@ -624,13 +663,13 @@ async function processRegister() {
 
         if (typeof applyLockedFeatures === "function") applyLockedFeatures();
         if (typeof renderFlashButton === "function") renderFlashButton();
-        if (typeof checkGamificationStatus === "function") {
+        if (!localDisplay && typeof checkGamificationStatus === "function") {
             checkGamificationStatus();
             welcomeNotice = showAgentWelcomeModal(name);
         }
 
         // --- VERIFICACIÓN DE SUBGESTOR EN TIEMPO REAL (EL FIX) ---
-        try {
+        if (!localDisplay) try {
             let hierarchyQuery = supabaseClient
                 .from('gestores')
                 .select('id, parent_id');
@@ -686,16 +725,13 @@ async function processRegister() {
         }
         // Cargar la información una sola vez, ya con el rol correcto resuelto.
         // El gestor entra directamente a su centro de trabajo.
-        await Promise.all([
-            loadProducts(),
-            loadProDashboard(name)
-        ]);
+        await Promise.all([loadProducts(), localDisplay ? Promise.resolve() : loadProDashboard(name)]);
         if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
-        loadMyPayoutRequests();
-        if(typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
-        showSection(window.PTHWorkView.canSwitch(window.currentUserData) ? 'catalogo' : 'dashboard');
+        if (!localDisplay) loadMyPayoutRequests();
+        if(!localDisplay && typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
+        showSection(localDisplay || window.PTHWorkView.canSwitch(window.currentUserData) ? 'catalogo' : 'dashboard');
         Promise.resolve(welcomeNotice).then(() => {
-            if (window.PTHWorkView.isCurrentSetup(setupVersion)) void window.PTHFeedbackAnnouncement?.show();
+            if (!localDisplay && window.PTHWorkView.isCurrentSetup(setupVersion)) void window.PTHFeedbackAnnouncement?.show();
         }).catch(() => {});
     }
 
@@ -768,7 +804,7 @@ async function processRegister() {
     }
 
     setTimeout(() => {
-        if (!adminMode && window.PTHWorkView.isCurrentSetup(setupVersion)) {
+        if (!localDisplay && !adminMode && window.PTHWorkView.isCurrentSetup(setupVersion)) {
             showRadarIntro();
         }
     }, 2000);
@@ -1745,6 +1781,37 @@ function loadDetailDescription(product) {
     });
 }
 
+async function displaySavedStorefront(error) {
+    const copy = navigator.onLine === false && offlineStorefront.current() || await offlineStorefront.fallback(error);
+    if (!copy) return false;
+    if (copy.profile) {
+        window.currentUserData = copy.profile;
+        window.gestorName = copy.profile.nombre;
+    }
+    catalogLoadError = null;
+    catalogSourceProducts = copy.products.map(product => ({...product}));
+    productosRaw = copy.products.map(product => ({...product}));
+    catalogLastSyncAt = new Date(copy.savedAt).toISOString();
+    document.getElementById('filter-high-comm').checked = false;
+    if (gestorCatalogFilter === 'comision') gestorCatalogFilter = 'disponibles';
+    const sorting = document.getElementById('sort-selector');
+    if (sorting?.value === 'comision_desc') sorting.value = 'nuevo';
+    await loadTarifasMensajeria();
+    await loadClientCRM();
+    await renderCategories();
+    renderProducts();
+    renderLowConnectivityPanel();
+    offlineStorefront.status();
+    const urlParams = new URLSearchParams(window.location.search);
+    const shared = urlParams.get('search');
+    const slug = /^\/producto\/([^/]+)\/?$/.exec(window.location.pathname)?.[1];
+    const requested = shared ? productosRaw.find(product => product.nombre === shared)
+        : slug ? productosRaw.find(product => createStableProductSlug(product) === decodeURIComponent(slug)) : null;
+    if (requested) openDetail(requested.nombre);
+    void window.PTHPendingCheckoutUI?.catalogReady();
+    return true;
+}
+
 async function loadProducts() {
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('s');
@@ -1760,6 +1827,10 @@ async function loadProducts() {
 
     try {
         catalogLoadError = null;
+        if (navigator.onLine === false) {
+            if (await displaySavedStorefront({code:'NETWORK_ERROR'})) return;
+            throw Object.assign(Error('Conecta una vez para guardar el catálogo de esta cuenta. Si ya lo guardaste, comprueba que tu sesión sigue vigente.'), {code:'OFFLINE_COPY_MISSING'});
+        }
 
         try {
             const stored = JSON.parse(localStorage.getItem('pth_referrer_smart'));
@@ -1941,6 +2012,7 @@ async function loadProducts() {
         }
 
         // Restaurar el contexto de un mensaje compartido antes de dibujar.
+        offlineStorefront.live();
         const sharedCategory = urlParams.get('catalog_category');
         const sharedQuery = urlParams.get('catalog_q');
         if (sharedCategory) activeCategory = sharedCategory.toUpperCase();
@@ -1971,6 +2043,7 @@ async function loadProducts() {
         }
 
     } catch (e) {
+        if (await displaySavedStorefront(e)) return;
         console.error("Error cargando catálogo:", e);
         catalogLoadError = { error: e, reload: false };
         showCatalogLoadError(e);
@@ -2151,7 +2224,7 @@ let categoriasPúblicas = [];
 async function renderCategories() {
     // 1. Cargamos el orden oficial del Jefe desde la Base de Datos
     let categoriasOficiales = [];
-    try {
+    if (!offlineStorefront.usingCopy()) try {
         const { data } = await supabaseClient
             .from('categorias')
             .select('nombre')
@@ -2179,6 +2252,8 @@ async function renderCategories() {
 
     container.innerHTML = allCats.map(cat => {
         const isActive = activeCategory === cat;
+        const encodedCategory = encodeURIComponent(cat).replace(/'/g, '%27');
+        const categoryLabel = escapeDetailText(cat);
 
         // --- 🚀 LA MAGIA AQUÍ: Detectar si es la categoría Mayorista ---
         const esMayorista = cat.toUpperCase().includes('MAYORISTA') || cat.toUpperCase().includes('B2B') || cat.toUpperCase().includes('MIPYME');
@@ -2193,9 +2268,9 @@ async function renderCategories() {
 
             return `
             <div class="py-2 px-1 flex items-center"> <!-- Contenedor para alinear con el resto -->
-                <button onclick="filterByCategory('${cat}')" class="relative group flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all transform hover:scale-105 active:scale-95 ${bgClass}">
+                <button onclick="filterByCategory(decodeURIComponent('${encodedCategory}'))" class="relative group flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all transform hover:scale-105 active:scale-95 ${bgClass}">
                     <span class="material-symbols-outlined ${iconColor} text-lg">local_shipping</span>
-                    ${cat}
+                    ${categoryLabel}
                     <!-- Etiqueta flotante HOT que rebota -->
                     <span class="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black animate-bounce shadow-lg border border-white">B2B</span>
                 </button>
@@ -2207,7 +2282,7 @@ async function renderCategories() {
             ? "category-tab active py-4 text-sm font-black border-b-4 border-primary text-primary transition-all px-2"
             : "category-tab py-4 text-sm font-bold text-gray-400 hover:text-primary transition-all px-2 border-b-4 border-transparent hover:border-gray-200";
 
-        return `<button onclick="filterByCategory('${cat}')" class="${styleClass}">${cat}</button>`;
+        return `<button onclick="filterByCategory(decodeURIComponent('${encodedCategory}'))" class="${styleClass}">${categoryLabel}</button>`;
     }).join('');
 }
 
@@ -2227,13 +2302,13 @@ function matchesGestorCatalogFilter(product) {
     if (!isProductCurrentlyAvailable(product)) return false;
     if (!isGestorCatalogMode() || gestorCatalogFilter === 'todos') return true;
     if (gestorCatalogFilter === 'nuevos') return isRecentCatalogProduct(product);
-    if (gestorCatalogFilter === 'comision') return Number(product.comision || 0) > 10;
+    if (gestorCatalogFilter === 'comision' && !offlineStorefront.usingCopy()) return Number(product.comision || 0) > 10;
     return true;
 }
 
 function getFilteredCatalogProducts() {
     const query = (document.getElementById('search-bar')?.value || '').trim().toLowerCase();
-    const filterHighComm = Boolean(document.getElementById('filter-high-comm')?.checked);
+    const filterHighComm = !offlineStorefront.usingCopy() && Boolean(document.getElementById('filter-high-comm')?.checked);
     return productosRaw.filter(product => {
         const name = String(product.nombre || '').toLowerCase();
         const category = String(product.categoria || '');
@@ -2250,7 +2325,7 @@ function renderGestorCatalogSummary(visibleCount) {
     const values = {
         'gestor-catalog-available': available.length,
         'gestor-catalog-new': available.filter(isRecentCatalogProduct).length,
-        'gestor-catalog-high-commission': available.filter(product => Number(product.comision || 0) > 10).length
+        'gestor-catalog-high-commission': offlineStorefront.usingCopy() ? '—' : available.filter(product => Number(product.comision || 0) > 10).length
     };
     Object.entries(values).forEach(([id, value]) => {
         const el = document.getElementById(id);
@@ -2268,6 +2343,7 @@ function renderGestorCatalogSummary(visibleCount) {
 }
 
 function setGestorCatalogFilter(filter) {
+    if (filter === 'comision' && offlineStorefront.usingCopy()) { offlineStorefront.status('Las ganancias se consultan al conectar.'); return; }
     gestorCatalogFilter = ['todos', 'disponibles', 'nuevos', 'comision'].includes(filter)
         ? filter
         : 'disponibles';
@@ -2616,14 +2692,14 @@ function renderDetailRelatedProducts(product) {
     }
 
     container.innerHTML = alternatives.map(item => {
-        const safeName = String(item.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeName = encodeURIComponent(String(item.nombre || '')).replace(/'/g, '%27');
         return `
-            <button onclick="openDetail('${safeName}')" class="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:shadow-md">
+            <button onclick="openDetail(decodeURIComponent('${safeName}'))" class="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:border-blue-300 hover:shadow-md">
                 <div class="aspect-square overflow-hidden bg-slate-50 p-2">
                     ${window.PTHProductImages.render(fixDriveUrl(item.thumbnail), item.nombre, 'h-full w-full object-contain transition duration-300 group-hover:scale-105')}
                 </div>
                 <div class="p-2">
-                    <p class="line-clamp-2 min-h-[2rem] text-[10px] font-black leading-tight text-slate-700">${item.nombre}</p>
+                    <p class="line-clamp-2 min-h-[2rem] text-[10px] font-black leading-tight text-slate-700">${escapeDetailText(item.nombre)}</p>
                     <p class="mt-1 truncate text-xs font-black text-[#1a4789]">${getPublicProductPrice(item)}</p>
                 </div>
             </button>`;
@@ -2698,28 +2774,29 @@ function renderCatalogProducts(list) {
     const productCardsHtml = visibleList.map(product => {
         const price = Number(product.precio) || 0;
         const commission = Number(product.comision) || 0;
-        const safeName = String(product.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeName = encodeURIComponent(String(product.nombre || '')).replace(/'/g, '%27');
+        const nameLabel = escapeDetailText(product.nombre);
         let priceDisplay = getPublicProductPrice(product);
 
         if (!seller) {
             return `
                 <article class="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm transition hover:shadow-xl">
-                    <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
+                    <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, decodeURIComponent(decodeURIComponent('${safeName}')))" class="aspect-square w-full overflow-hidden bg-slate-50 p-4">
                     ${window.PTHProductImages.render(fixDriveUrl(product.thumbnail), product.nombre, 'h-full w-full object-contain transition duration-500 group-hover:scale-110')}
                     </a>
                     <div class="flex flex-1 flex-col gap-2 p-4 md:p-5">
                         <div class="flex items-center gap-1 text-[8px] font-black uppercase text-emerald-700">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Disponible
                         </div>
-                        <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-slate-800">${product.nombre}</h3>
+                        <h3 class="line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-slate-800">${nameLabel}</h3>
                         <p class="text-xl font-black text-primary md:text-2xl">${priceDisplay}</p>
                         <div class="space-y-1 border-t border-slate-100 pt-2 text-[9px] font-bold text-slate-500">
-                            <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">verified_user</span><span class="truncate">${product.garantia || 'Garantía disponible'}</span></p>
-                            <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">local_shipping</span><span class="truncate">${product.mensajeria || 'Entrega coordinada'}</span></p>
+                            <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">verified_user</span><span class="truncate">${escapeDetailText(product.garantia || 'Garantía disponible')}</span></p>
+                            <p class="flex items-center gap-1"><span class="material-symbols-outlined text-xs text-blue-600">local_shipping</span><span class="truncate">${escapeDetailText(product.mensajeria || 'Entrega coordinada')}</span></p>
                         </div>
                         <div class="mt-auto grid grid-cols-[1fr_44px] gap-2 pt-1">
-                            <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="flex min-h-11 items-center justify-center rounded-xl bg-primary px-2 text-xs font-extrabold text-white shadow-md transition hover:bg-[#12396f]">Ver detalles</a>
-                            <button onclick="addProductFromCard('${safeName}')" class="flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-primary transition hover:bg-blue-100" title="Añadir ${safeName} al pedido" aria-label="Añadir ${safeName} al pedido">
+                            <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, decodeURIComponent(decodeURIComponent('${safeName}')))" class="flex min-h-11 items-center justify-center rounded-xl bg-primary px-2 text-xs font-extrabold text-white shadow-md transition hover:bg-[#12396f]">Ver detalles</a>
+                            <button onclick="addProductFromCard(decodeURIComponent('${safeName}'))" class="flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-primary transition hover:bg-blue-100" title="Añadir ${nameLabel} al pedido" aria-label="Añadir ${nameLabel} al pedido">
                                 <span class="material-symbols-outlined text-xl">add_shopping_cart</span>
                             </button>
                         </div>
@@ -2734,13 +2811,13 @@ function renderCatalogProducts(list) {
         const imageLayout = isList ? 'aspect-[4/3] md:aspect-auto md:min-h-[180px]' : 'aspect-square';
         return `
             <article class="group overflow-hidden rounded-2xl border ${unavailable ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${cardLayout}">
-                <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
+                <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, decodeURIComponent(decodeURIComponent('${safeName}')))" class="${imageLayout} relative w-full overflow-hidden bg-slate-50 p-4">
                     ${window.PTHProductImages.render(fixDriveUrl(product.thumbnail), product.nombre, `h-full w-full object-contain transition duration-500 group-hover:scale-105 ${unavailable ? 'grayscale opacity-60' : ''}`, isList ? 'list' : 'grid')}
                 </a>
                 <div class="flex min-w-0 flex-1 flex-col p-4">
                     <div class="mb-3 flex flex-wrap gap-1.5">${getCatalogProductBadges(product)}</div>
-                    <h3 class="line-clamp-2 text-sm font-black leading-snug text-slate-900">${product.nombre}</h3>
-                    <p class="mt-1 truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">${product.categoria || 'Sin categoría'}</p>
+                    <h3 class="line-clamp-2 text-sm font-black leading-snug text-slate-900">${nameLabel}</h3>
+                    <p class="mt-1 truncate text-[10px] font-bold uppercase tracking-wide text-slate-400">${escapeDetailText(product.categoria || 'Sin categoría')}</p>
                     <div class="mt-4 grid grid-cols-2 gap-2">
                         <div class="rounded-xl bg-slate-50 p-3">
                             <span class="block text-[8px] font-black uppercase text-slate-400">Cliente paga</span>
@@ -2748,26 +2825,26 @@ function renderCatalogProducts(list) {
                         </div>
                         <div class="rounded-xl bg-emerald-50 p-3">
                             <span class="block text-[8px] font-black uppercase text-emerald-600">Tu ganancia</span>
-                            <strong class="mt-1 block text-lg font-black text-emerald-700">$${commission}</strong>
+                            <strong class="mt-1 block ${offlineStorefront.usingCopy() ? 'text-xs' : 'text-lg'} font-black text-emerald-700">${offlineStorefront.usingCopy() ? 'Disponible al conectar' : '$'+commission}</strong>
                         </div>
                     </div>
                     <div class="mt-3 space-y-1.5 text-[10px] font-bold text-slate-500">
-                        <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">verified</span><span class="truncate">${product.garantia || 'Garantía por confirmar'}</span></p>
-                        <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">local_shipping</span><span class="truncate">${product.mensajeria || 'Mensajería por confirmar'}</span></p>
+                        <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">verified</span><span class="truncate">${escapeDetailText(product.garantia || 'Garantía por confirmar')}</span></p>
+                        <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">local_shipping</span><span class="truncate">${escapeDetailText(product.mensajeria || 'Mensajería por confirmar')}</span></p>
                         <p class="flex items-center gap-1.5 text-slate-400"><span class="material-symbols-outlined text-sm">update</span><span>${updatedLabel}</span></p>
                     </div>
                 </div>
                 <div class="border-t border-slate-100 bg-slate-50/80 p-3 ${isList ? 'md:flex md:flex-col md:justify-center md:border-l md:border-t-0' : ''}">
                     <div class="grid grid-cols-4 gap-1">
-                        <button onclick="copyProductOffer('${safeName}', this)" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-indigo-600" title="Copiar oferta"><span class="material-symbols-outlined text-xl">content_copy</span></button>
-                        <button onclick="shareProductWhatsApp('${safeName}')" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-emerald-600" title="Compartir por WhatsApp"><i class="fab fa-whatsapp text-xl"></i></button>
-                        <button onclick="downloadProductCardImage('${safeName}', this)" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-blue-600" title="Descargar imagen"><span class="material-symbols-outlined text-xl">download</span></button>
-                        <button onclick="generateStoryForProduct('${safeName}', this)" class="flex min-h-11 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 text-white shadow-sm" title="Crear Story"><span class="material-symbols-outlined text-xl">auto_awesome</span></button>
+                        <button onclick="copyProductOffer(decodeURIComponent('${safeName}'), this)" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-indigo-600" title="Copiar oferta"><span class="material-symbols-outlined text-xl">content_copy</span></button>
+                        <button onclick="shareProductWhatsApp(decodeURIComponent('${safeName}'))" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-emerald-600" title="Compartir por WhatsApp"><i class="fab fa-whatsapp text-xl"></i></button>
+                        <button onclick="downloadProductCardImage(decodeURIComponent('${safeName}'), this)" class="flex min-h-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white hover:text-blue-600" title="Descargar imagen"><span class="material-symbols-outlined text-xl">download</span></button>
+                        <button onclick="generateStoryForProduct(decodeURIComponent('${safeName}'), this)" class="flex min-h-11 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-orange-400 text-white shadow-sm" title="Crear Story"><span class="material-symbols-outlined text-xl">auto_awesome</span></button>
                     </div>
-                    <button onclick="addProductFromCard('${safeName}')" ${unavailable ? 'disabled' : ''} class="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-black ${unavailable ? 'cursor-not-allowed bg-slate-200 text-slate-400' : 'bg-[#1a4789] text-white shadow-md hover:bg-[#12396f]'}">
+                    <button onclick="addProductFromCard(decodeURIComponent('${safeName}'))" ${unavailable ? 'disabled' : ''} class="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-xs font-black ${unavailable ? 'cursor-not-allowed bg-slate-200 text-slate-400' : 'bg-[#1a4789] text-white shadow-md hover:bg-[#12396f]'}">
                         <span class="material-symbols-outlined text-lg">${unavailable ? 'block' : 'add_shopping_cart'}</span>${unavailable ? 'No disponible' : 'Añadir al pedido'}
                     </button>
-                    <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, '${safeName}')" class="mt-2 block w-full py-2 text-center text-[10px] font-black uppercase text-slate-500 hover:text-[#1a4789]">Ver información completa</a>
+                    <a href="${getPermanentProductUrl(product)}" onclick="openProductCard(event, decodeURIComponent(decodeURIComponent('${safeName}')))" class="mt-2 block w-full py-2 text-center text-[10px] font-black uppercase text-slate-500 hover:text-[#1a4789]">Ver información completa</a>
                 </div>
             </article>`;
     }).join('');
@@ -2842,7 +2919,7 @@ function openDetail(name, skipSolarCheck = false) {
     if(typeof isAdmin !== 'undefined' && isAdmin || window.gestorName) {
         const badge = `<div id="admin-comm-badge" class="bg-emerald-500 text-white px-3 py-2 rounded-xl font-black text-[11px] mb-4 flex justify-between items-center shadow-lg shadow-emerald-500/20 uppercase italic">
             <span>Ganancia de Agente:</span>
-            <span>$${p.comision || 0}.00</span>
+            <span>${offlineStorefront.usingCopy() ? 'Disponible al conectar' : '$'+(p.comision || 0)+'.00'}</span>
         </div>`;
         document.getElementById('detail-name').insertAdjacentHTML('beforebegin', badge);
     }
@@ -6057,6 +6134,11 @@ function toggleGestorAdvanced(forceOpen) {
 
     // Busca esta función y reemplázala completamente
 function showSection(section) {
+    if (offlineStorefront.usingCopy() && section !== 'catalogo') {
+        offlineStorefront.status('Tu Dashboard necesita conexión para mostrar pedidos, pagos y resultados actualizados.');
+        document.getElementById('pth-offline-storefront-status')?.scrollIntoView({block:'nearest'});
+        return;
+    }
     const isCat = section === 'catalogo';
 
     // Recuperar siempre el desplazamiento de la página al volver desde
@@ -9063,6 +9145,13 @@ async function loadClientCRM() {
         return;
     }
 
+    const local = offlineStorefront.current();
+    if (local) {
+        crmClients = local.owner ? local.clients.map(client => ({...client})) : [];
+        renderCheckoutClientChoices();
+        return;
+    }
+
     // Preparamos la consulta
     let query = supabaseClient
         .from('pedidos')
@@ -9075,7 +9164,9 @@ async function loadClientCRM() {
         query = query.eq('gestor', gestorActual);
     }
 
+    const scopeId = window.PTHSecureData.accountId(), scopeToken = window.PTHSecureData.token();
     const { data, error } = await query;
+    if (scopeId !== window.PTHSecureData.accountId() || scopeToken !== window.PTHSecureData.token()) return;
 
     if (!data) return;
 
@@ -9089,15 +9180,21 @@ async function loadClientCRM() {
 
     crmClients = Array.from(uniqueMap.values());
 
-    // Llenar el Datalist del HTML
+    renderCheckoutClientChoices();
+    console.log(`CRM Cargado: ${crmClients.length} clientes encontrados para ${gestorActual || 'Admin'}.`);
+}
+
+function renderCheckoutClientChoices() {
     const dataList = document.getElementById('crm-datalist');
     if(dataList) {
-        dataList.innerHTML = crmClients.map(c =>
-            `<option value="${c.cliente} | ${c.telefono}">${c.direccion ? c.direccion.substring(0,30) + '...' : ''}</option>`
-        ).join('');
+        dataList.replaceChildren();
+        for (const client of crmClients) {
+            const option = document.createElement('option');
+            option.value = String(client.cliente || '') + ' | ' + String(client.telefono || '');
+            option.textContent = client.direccion ? String(client.direccion).substring(0, 30) + '...' : '';
+            dataList.append(option);
+        }
     }
-
-    console.log(`CRM Cargado: ${crmClients.length} clientes encontrados para ${gestorActual || 'Admin'}.`);
 }
 
 // 2. AUTO-RELLENADO (Al seleccionar en el buscador)
@@ -12262,11 +12359,14 @@ let tarifasMensajeriaAdminRaw =[]; // Para el panel de administrador
 
 // 1. CARGAR DATOS (Se llama al cargar la página)
 async function loadTarifasMensajeria() {
-    const { data, error } = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true });
+    const local = offlineStorefront.current();
+    let data, error;
+    if (local) data = local.tariffs;
+    else ({data, error} = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true }));
 
     if (error || !data) return console.error("Error cargando tarifas");
 
-    window.PTHPendingCheckoutUI?.saveDeliveryZones(data);
+    if (!local) window.PTHPendingCheckoutUI?.saveDeliveryZones(data);
     tarifasMensajeriaAdminRaw = data;
     tarifasMensajeria = {}; // Reseteamos el objeto
 
@@ -12289,20 +12389,26 @@ async function loadTarifasMensajeria() {
     // Actualizamos el desplegable (Select) de Municipios en el Checkout
     const muniSelect = document.getElementById('check-municipio');
     if (muniSelect) {
-        muniSelect.innerHTML = '<option value="" disabled selected>Seleccionar Municipio...</option>';
+        const selected = muniSelect.value;
+        const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = 'Seleccionar Municipio...';
+        muniSelect.replaceChildren(placeholder);
         Array.from(listaMunicipiosUnicos).sort().forEach(muni => {
-            muniSelect.innerHTML += `<option value="${muni}">${muni}</option>`;
+            const option = document.createElement('option'); option.value = muni; option.textContent = muni; muniSelect.append(option);
         });
+        if (listaMunicipiosUnicos.has(selected)) muniSelect.value = selected;
     }
 
     // Actualizamos Datalist del Admin para sugerir municipios existentes
     const datalistMuni = document.getElementById('list-municipios');
     if (datalistMuni) {
-        datalistMuni.innerHTML = Array.from(listaMunicipiosUnicos).sort().map(m => `<option value="${m}">`).join('');
+        datalistMuni.replaceChildren();
+        for (const muni of Array.from(listaMunicipiosUnicos).sort()) {
+            const option = document.createElement('option'); option.value = muni; datalistMuni.append(option);
+        }
     }
 
     // Si el admin está logueado, dibujamos la tabla
-    renderAdminMensajeria();
+    if (!local) renderAdminMensajeria();
 }
 
 // Para asegurarnos de que cargue siempre al entrar a la web:
@@ -12974,7 +13080,7 @@ const loadProductsOriginal = loadProducts;
 loadProducts = async function() {
     await loadProductsOriginal(); // Carga todos los productos
 
-    if (window.gestorName) {
+    if (window.gestorName && !offlineStorefront.usingCopy()) {
         // Si es GESTOR: Forzar que vea los equipos con Mayor Ganancia por defecto
         document.querySelectorAll('#sort-selector').forEach(sel => sel.value = 'comision_desc');
     } else {
