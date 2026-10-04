@@ -2443,9 +2443,9 @@
     "slug": "nevera-5-pies-eko",
     "nombre": "Nevera 5 pies EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-5-pies-eko/",
-    "updated_at": "2026-09-18T17:00:29.272919+00:00"
+    "updated_at": "2026-10-04T17:32:29.056768+00:00"
   },
   {
     "id": "39054296-9de5-410e-90cc-dfb095b4bc00",
@@ -2488,9 +2488,9 @@
     "slug": "nevera-5-5-pies-royal",
     "nombre": "Nevera 5.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-5-5-pies-royal/",
-    "updated_at": "2026-09-28T23:38:29.227949+00:00"
+    "updated_at": "2026-10-04T17:33:05.934751+00:00"
   },
   {
     "id": "38a2f993-0e91-45b3-bfce-6fe954c4aff4",
@@ -2904,7 +2904,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-solar-sun-630w/",
-    "updated_at": "2026-09-16T13:06:09.900097+00:00"
+    "updated_at": "2026-10-04T20:19:20.100229+00:00"
   },
   {
     "id": "a7070633-aef0-4a3e-ac8e-0b39474dc9fd",
@@ -3235,9 +3235,9 @@
     "slug": "silla-de-escritorio-con-ruedas-classic",
     "nombre": "Silla de escritorio con ruedas Classic",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/silla-de-escritorio-con-ruedas-classic/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-04T20:36:40.448238+00:00"
   },
   {
     "id": "377bd730-a028-4ad4-9dd5-d8c0038c0d52",
