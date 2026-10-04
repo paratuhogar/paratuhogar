@@ -1,6 +1,6 @@
 {
   "source_pdf": "/guias/guia-gestores.pdf",
-  "sha256": "07cce5db6f9024ade52edb771676bb22d8d9675c1cf0752f4662b3b4d5dec372",
+  "sha256": "46b50aea2e855cbee34af49836010505f4e84bfb481e6c6042d823584feba993",
   "editable_source": "Text and layout recovered from the approved PDF; not the original authoring document.",
   "pages": [
     {
@@ -9508,12 +9508,12 @@
       "height": 820.0,
       "blocks": [
         {
-          "text": "paratuhogar\nGUÍA · 03 OCT 2026",
+          "text": "paratuhogar\nGUÍA · 04 OCT 2026",
           "bbox": [
             30.0,
-            16.603515625,
+            17.36328125,
             389.99359130859375,
-            31.603515625
+            31.36328125
           ],
           "lines": [
             {
@@ -9521,33 +9521,33 @@
               "spans": [
                 {
                   "text": "paratuhogar",
-                  "font": "DejaVuSans-Bold",
-                  "size": 15.0,
-                  "flags": 20,
+                  "font": "BitstreamVeraSans-Bold",
+                  "size": 14.0,
+                  "flags": 16,
                   "color": 16777215,
                   "bbox": [
                     30.0,
-                    16.603515625,
-                    135.47999572753906,
-                    31.603515625
+                    17.36328125,
+                    128.447998046875,
+                    31.36328125
                   ]
                 }
               ]
             },
             {
-              "text": "GUÍA · 03 OCT 2026",
+              "text": "GUÍA · 04 OCT 2026",
               "spans": [
                 {
-                  "text": "GUÍA · 03 OCT 2026",
-                  "font": "DejaVuSans",
+                  "text": "GUÍA · 04 OCT 2026",
+                  "font": "BitstreamVeraSans-Roman",
                   "size": 8.5,
-                  "flags": 4,
+                  "flags": 0,
                   "color": 16777215,
                   "bbox": [
                     305.0954895019531,
-                    20.5419921875,
+                    21.5419921875,
                     389.99359130859375,
-                    29.0419921875
+                    30.0419921875
                   ]
                 }
               ]
@@ -9555,12 +9555,12 @@
           ]
         },
         {
-          "text": "CONTROL",
+          "text": "CONTROL\nTu ranking y próxima meta",
           "bbox": [
             30.0,
             61.162109375,
-            78.24000549316406,
-            70.162109375
+            349.7879638671875,
+            103.044921875
           ],
           "lines": [
             {
@@ -9568,9 +9568,9 @@
               "spans": [
                 {
                   "text": "CONTROL",
-                  "font": "DejaVuSans-Bold",
+                  "font": "BitstreamVeraSans-Bold",
                   "size": 9.0,
-                  "flags": 20,
+                  "flags": 16,
                   "color": 4937059,
                   "bbox": [
                     30.0,
@@ -9580,32 +9580,21 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "text": "Tu ranking y próxima meta",
-          "bbox": [
-            30.0,
-            87.28515625,
-            365.0160217285156,
-            109.28515625
-          ],
-          "lines": [
+            },
             {
               "text": "Tu ranking y próxima meta",
               "spans": [
                 {
                   "text": "Tu ranking y próxima meta",
-                  "font": "DejaVuSans-Bold",
-                  "size": 22.0,
-                  "flags": 20,
+                  "font": "BitstreamVeraSans-Bold",
+                  "size": 21.0,
+                  "flags": 16,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    87.28515625,
-                    365.0160217285156,
-                    109.28515625
+                    82.044921875,
+                    349.7879638671875,
+                    103.044921875
                   ]
                 }
               ]
@@ -9613,64 +9602,64 @@
           ]
         },
         {
-          "text": "En Inicio, «Cada entrega cuenta» muestra el mes en\nhora de Cuba. Solo suman pedidos Entregados con\nfecha de entrega registrada en ese mes.",
+          "text": "En Inicio, «La cima del mes» reconoce líderes y empates.\nCierre y días restantes usan la hora de Cuba. Cada mes\nofrece una nueva oportunidad.",
           "bbox": [
             30.0,
-            132.19508361816406,
-            380.0959167480469,
-            182.8950958251953
+            125.9548568725586,
+            383.8341369628906,
+            171.6548614501953
           ],
           "lines": [
             {
-              "text": "En Inicio, «Cada entrega cuenta» muestra el mes en",
+              "text": "En Inicio, «La cima del mes» reconoce líderes y empates.",
               "spans": [
                 {
-                  "text": "En Inicio, «Cada entrega cuenta» muestra el mes en",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "En Inicio, «La cima del mes» reconoce líderes y empates.",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    132.19508361816406,
-                    380.0959167480469,
-                    145.49508666992188
+                    125.9548568725586,
+                    383.8341369628906,
+                    138.25485229492188
                   ]
                 }
               ]
             },
             {
-              "text": "hora de Cuba. Solo suman pedidos Entregados con",
+              "text": "Cierre y días restantes usan la hora de Cuba. Cada mes",
               "spans": [
                 {
-                  "text": "hora de Cuba. Solo suman pedidos Entregados con",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "Cierre y días restantes usan la hora de Cuba. Cada mes",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    150.89508056640625,
-                    370.2671813964844,
-                    164.19508361816406
+                    142.65484619140625,
+                    373.6742858886719,
+                    154.95484924316406
                   ]
                 }
               ]
             },
             {
-              "text": "fecha de entrega registrada en ese mes.",
+              "text": "ofrece una nueva oportunidad.",
               "spans": [
                 {
-                  "text": "fecha de entrega registrada en ese mes.",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "ofrece una nueva oportunidad.",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    169.5950927734375,
-                    301.1737060546875,
-                    182.8950958251953
+                    159.3548583984375,
+                    220.4901123046875,
+                    171.6548614501953
                   ]
                 }
               ]
@@ -9678,64 +9667,64 @@
           ]
         },
         {
-          "text": "Cada pedido suma una vez a quien vendió. Los\nempates comparten puesto: 1, 1, 3. Con cero\nentregas mensuales: «Sin puesto».",
+          "text": "Tu tarjeta muestra puesto, entregas y cuántas faltan para\nempatar o superar el siguiente puesto. Sin entregas: «Sin\npuesto» y metas 1, 3 y 5; después, una más.",
           "bbox": [
             30.0,
-            198.2951202392578,
-            344.5583190917969,
-            248.99513244628906
+            184.0548858642578,
+            388.2865905761719,
+            229.75489807128906
           ],
           "lines": [
             {
-              "text": "Cada pedido suma una vez a quien vendió. Los",
+              "text": "Tu tarjeta muestra puesto, entregas y cuántas faltan para",
               "spans": [
                 {
-                  "text": "Cada pedido suma una vez a quien vendió. Los",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "Tu tarjeta muestra puesto, entregas y cuántas faltan para",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    198.2951202392578,
-                    344.5583190917969,
-                    211.59512329101562
+                    184.0548858642578,
+                    388.2865905761719,
+                    196.35488891601562
                   ]
                 }
               ]
             },
             {
-              "text": "empates comparten puesto: 1, 1, 3. Con cero",
+              "text": "empatar o superar el siguiente puesto. Sin entregas: «Sin",
               "spans": [
                 {
-                  "text": "empates comparten puesto: 1, 1, 3. Con cero",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "empatar o superar el siguiente puesto. Sin entregas: «Sin",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    216.9951171875,
-                    332.8011474609375,
-                    230.2951202392578
+                    200.7548828125,
+                    386.0849914550781,
+                    213.0548858642578
                   ]
                 }
               ]
             },
             {
-              "text": "entregas mensuales: «Sin puesto».",
+              "text": "puesto» y metas 1, 3 y 5; después, una más.",
               "spans": [
                 {
-                  "text": "entregas mensuales: «Sin puesto».",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "puesto» y metas 1, 3 y 5; después, una más.",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    235.69512939453125,
-                    264.4790344238281,
-                    248.99513244628906
+                    217.45489501953125,
+                    307.31585693359375,
+                    229.75489807128906
                   ]
                 }
               ]
@@ -9743,64 +9732,46 @@
           ]
         },
         {
-          "text": "Metas: 1, 3 y 5; después una más. Los logros\nacumulados usan el historial identificado y pueden\nsuperar el resultado mensual.",
+          "text": "Pantalla real · gestor · DATOS FICTICIOS. Recorte de progreso: 2\nentregas, puesto #3; 1 para empatar y 2 para superar.",
           "bbox": [
             30.0,
-            264.3951110839844,
-            369.3628234863281,
-            315.0951232910156
+            531.76904296875,
+            352.0198974609375,
+            555.26904296875
           ],
           "lines": [
             {
-              "text": "Metas: 1, 3 y 5; después una más. Los logros",
+              "text": "Pantalla real · gestor · DATOS FICTICIOS. Recorte de progreso: 2",
               "spans": [
                 {
-                  "text": "Metas: 1, 3 y 5; después una más. Los logros",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "Pantalla real · gestor · DATOS FICTICIOS. Recorte de progreso: 2",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 10.0,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    264.3951110839844,
-                    330.5799865722656,
-                    277.69512939453125
+                    531.76904296875,
+                    352.0198974609375,
+                    541.76904296875
                   ]
                 }
               ]
             },
             {
-              "text": "acumulados usan el historial identificado y pueden",
+              "text": "entregas, puesto #3; 1 para empatar y 2 para superar.",
               "spans": [
                 {
-                  "text": "acumulados usan el historial identificado y pueden",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "entregas, puesto #3; 1 para empatar y 2 para superar.",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 10.0,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    283.0950927734375,
-                    369.3628234863281,
-                    296.3951110839844
-                  ]
-                }
-              ]
-            },
-            {
-              "text": "superar el resultado mensual.",
-              "spans": [
-                {
-                  "text": "superar el resultado mensual.",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
-                  "color": 1120295,
-                  "bbox": [
-                    30.0,
-                    301.79510498046875,
-                    229.30055236816406,
-                    315.0951232910156
+                    545.26904296875,
+                    306.550048828125,
+                    555.26904296875
                   ]
                 }
               ]
@@ -9808,64 +9779,82 @@
           ]
         },
         {
-          "text": "Los antiguos sin fecha quedan fuera del mes; no se\nborran ni cambian comisiones o pagos. Usa\n«Actualizar» con internet.",
+          "text": "Solo cuentan pedidos Entregados con fecha válida en el\nmes, una vez por vendedor. Empates: 1, 1, 3. Los\nantiguos sin fecha quedan fuera; consulta «Cómo cuenta\ncada entrega» y los avisos.",
           "bbox": [
             30.0,
-            330.4951171875,
-            373.3527526855469,
-            381.19512939453125
+            567.3215942382812,
+            382.39495849609375,
+            629.7215576171875
           ],
           "lines": [
             {
-              "text": "Los antiguos sin fecha quedan fuera del mes; no se",
+              "text": "Solo cuentan pedidos Entregados con fecha válida en el",
               "spans": [
                 {
-                  "text": "Los antiguos sin fecha quedan fuera del mes; no se",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "Solo cuentan pedidos Entregados con fecha válida en el",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    330.4951171875,
-                    373.3527526855469,
-                    343.7951354980469
+                    567.3215942382812,
+                    375.5685119628906,
+                    579.62158203125
                   ]
                 }
               ]
             },
             {
-              "text": "borran ni cambian comisiones o pagos. Usa",
+              "text": "mes, una vez por vendedor. Empates: 1, 1, 3. Los",
               "spans": [
                 {
-                  "text": "borran ni cambian comisiones o pagos. Usa",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "mes, una vez por vendedor. Empates: 1, 1, 3. Los",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    349.1950988769531,
-                    320.4720458984375,
-                    362.4951171875
+                    584.0216064453125,
+                    336.2577819824219,
+                    596.3215942382812
                   ]
                 }
               ]
             },
             {
-              "text": "«Actualizar» con internet.",
+              "text": "antiguos sin fecha quedan fuera; consulta «Cómo cuenta",
               "spans": [
                 {
-                  "text": "«Actualizar» con internet.",
-                  "font": "DejaVuSans",
-                  "size": 13.300000190734863,
-                  "flags": 4,
+                  "text": "antiguos sin fecha quedan fuera; consulta «Cómo cuenta",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    367.8951110839844,
-                    201.87591552734375,
-                    381.19512939453125
+                    600.7216186523438,
+                    382.39495849609375,
+                    613.0216064453125
+                  ]
+                }
+              ]
+            },
+            {
+              "text": "cada entrega» y los avisos.",
+              "spans": [
+                {
+                  "text": "cada entrega» y los avisos.",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
+                  "color": 1120295,
+                  "bbox": [
+                    30.0,
+                    617.4215698242188,
+                    198.11642456054688,
+                    629.7215576171875
                   ]
                 }
               ]
@@ -9873,46 +9862,82 @@
           ]
         },
         {
-          "text": "Pantalla real · datos de demostración. Ranking definitivo: ejemplo ficticio\ncon 2 entregas del mes, puesto 4 y meta 3.",
+          "text": "El podio y las cuentas cercanas orientan tu avance. Los\nhitos se celebran brevemente. «Descargar tarjeta para\ncompartir» guarda la imagen, sin enviarla. Sigue con\n«Preparar próxima venta» o «Crear pedido».",
           "bbox": [
             30.0,
-            660.5267333984375,
-            382.09918212890625,
-            683.1267700195312
+            642.12158203125,
+            372.6042175292969,
+            704.5215454101562
           ],
           "lines": [
             {
-              "text": "Pantalla real · datos de demostración. Ranking definitivo: ejemplo ficticio",
+              "text": "El podio y las cuentas cercanas orientan tu avance. Los",
               "spans": [
                 {
-                  "text": "Pantalla real · datos de demostración. Ranking definitivo: ejemplo ficticio",
-                  "font": "DejaVuSans",
-                  "size": 9.600000381469727,
-                  "flags": 4,
-                  "color": 4937059,
+                  "text": "El podio y las cuentas cercanas orientan tu avance. Los",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
+                  "color": 1120295,
                   "bbox": [
                     30.0,
-                    660.5267333984375,
-                    382.09918212890625,
-                    670.1267700195312
+                    642.12158203125,
+                    372.6042175292969,
+                    654.4215698242188
                   ]
                 }
               ]
             },
             {
-              "text": "con 2 entregas del mes, puesto 4 y meta 3.",
+              "text": "hitos se celebran brevemente. «Descargar tarjeta para",
               "spans": [
                 {
-                  "text": "con 2 entregas del mes, puesto 4 y meta 3.",
-                  "font": "DejaVuSans",
-                  "size": 9.600000381469727,
-                  "flags": 4,
-                  "color": 4937059,
+                  "text": "hitos se celebran brevemente. «Descargar tarjeta para",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
+                  "color": 1120295,
                   "bbox": [
                     30.0,
-                    673.5267333984375,
-                    239.9616241455078,
-                    683.1267700195312
+                    658.8215942382812,
+                    369.2954406738281,
+                    671.12158203125
+                  ]
+                }
+              ]
+            },
+            {
+              "text": "compartir» guarda la imagen, sin enviarla. Sigue con",
+              "spans": [
+                {
+                  "text": "compartir» guarda la imagen, sin enviarla. Sigue con",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
+                  "color": 1120295,
+                  "bbox": [
+                    30.0,
+                    675.5216064453125,
+                    357.0693359375,
+                    687.8215942382812
+                  ]
+                }
+              ]
+            },
+            {
+              "text": "«Preparar próxima venta» o «Crear pedido».",
+              "spans": [
+                {
+                  "text": "«Preparar próxima venta» o «Crear pedido».",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 12.300000190734863,
+                  "flags": 0,
+                  "color": 1120295,
+                  "bbox": [
+                    30.0,
+                    692.2215576171875,
+                    305.5077209472656,
+                    704.5215454101562
                   ]
                 }
               ]
@@ -9920,64 +9945,64 @@
           ]
         },
         {
-          "text": "La vista muestra las tres primeras cuentas y las cercanas a ti\ncon nombre público, puesto y cantidad. No expone clientes ni\nganancias ajenas. Puestos y metas no prometen premios.",
+          "text": "Historial e insignias pendientes de validar los datos: la adjudicación\nmensual sigue bloqueada. No se prometen premios. Usa «Actualizar»\ncon internet.",
           "bbox": [
             30.0,
-            701.9111328125,
-            377.2672119140625,
-            744.1111450195312
+            716.3690185546875,
+            378.9999694824219,
+            753.3690185546875
           ],
           "lines": [
             {
-              "text": "La vista muestra las tres primeras cuentas y las cercanas a ti",
+              "text": "Historial e insignias pendientes de validar los datos: la adjudicación",
               "spans": [
                 {
-                  "text": "La vista muestra las tres primeras cuentas y las cercanas a ti",
-                  "font": "DejaVuSans",
-                  "size": 11.199999809265137,
-                  "flags": 4,
+                  "text": "Historial e insignias pendientes de validar los datos: la adjudicación",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 10.0,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    701.9111328125,
-                    374.8032531738281,
-                    713.1111450195312
+                    716.3690185546875,
+                    369.70001220703125,
+                    726.3690185546875
                   ]
                 }
               ]
             },
             {
-              "text": "con nombre público, puesto y cantidad. No expone clientes ni",
+              "text": "mensual sigue bloqueada. No se prometen premios. Usa «Actualizar»",
               "spans": [
                 {
-                  "text": "con nombre público, puesto y cantidad. No expone clientes ni",
-                  "font": "DejaVuSans",
-                  "size": 11.199999809265137,
-                  "flags": 4,
+                  "text": "mensual sigue bloqueada. No se prometen premios. Usa «Actualizar»",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 10.0,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    717.4111328125,
-                    377.2672119140625,
-                    728.6111450195312
+                    729.8690185546875,
+                    378.9999694824219,
+                    739.8690185546875
                   ]
                 }
               ]
             },
             {
-              "text": "ganancias ajenas. Puestos y metas no prometen premios.",
+              "text": "con internet.",
               "spans": [
                 {
-                  "text": "ganancias ajenas. Puestos y metas no prometen premios.",
-                  "font": "DejaVuSans",
-                  "size": 11.199999809265137,
-                  "flags": 4,
+                  "text": "con internet.",
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 10.0,
+                  "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    732.9111328125,
-                    354.9344482421875,
-                    744.1111450195312
+                    743.3690185546875,
+                    94.0300064086914,
+                    753.3690185546875
                   ]
                 }
               ]
@@ -9988,9 +10013,9 @@
           "text": "Pantallas reales · datos de demostración\n18 / 20",
           "bbox": [
             30.0,
-            783.7698974609375,
-            389.995361328125,
-            791.9699096679688
+            788.5419921875,
+            389.9951171875,
+            797.0419921875
           ],
           "lines": [
             {
@@ -9998,15 +10023,15 @@
               "spans": [
                 {
                   "text": "Pantallas reales · datos de demostración",
-                  "font": "DejaVuSans",
-                  "size": 8.199999809265137,
-                  "flags": 4,
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 8.5,
+                  "flags": 0,
                   "color": 4937059,
                   "bbox": [
                     30.0,
-                    783.7698974609375,
-                    197.0832061767578,
-                    791.9699096679688
+                    788.5419921875,
+                    203.19601440429688,
+                    797.0419921875
                   ]
                 }
               ]
@@ -10016,44 +10041,15 @@
               "spans": [
                 {
                   "text": "18 / 20",
-                  "font": "DejaVuSans",
-                  "size": 8.199999809265137,
-                  "flags": 4,
+                  "font": "BitstreamVeraSans-Roman",
+                  "size": 8.5,
+                  "flags": 0,
                   "color": 4937059,
                   "bbox": [
-                    361.1559143066406,
-                    783.7698974609375,
-                    389.995361328125,
-                    791.9699096679688
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "text": "Ventaja: sigues tu avance mensual con un criterio común.",
-          "bbox": [
-            30.0,
-            752.0453491210938,
-            301.17864990234375,
-            761.3453369140625
-          ],
-          "lines": [
-            {
-              "text": "Ventaja: sigues tu avance mensual con un criterio común.",
-              "spans": [
-                {
-                  "text": "Ventaja: sigues tu avance mensual con un criterio común.",
-                  "font": "DejaVuSans",
-                  "size": 9.300000190734863,
-                  "flags": 4,
-                  "color": 2043978,
-                  "bbox": [
-                    30.0,
-                    752.0453491210938,
-                    301.17864990234375,
-                    761.3453369140625
+                    360.1005859375,
+                    788.5419921875,
+                    389.9951171875,
+                    797.0419921875
                   ]
                 }
               ]

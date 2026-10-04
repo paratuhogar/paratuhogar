@@ -30,3 +30,7 @@ El manual es un recurso estático público revisado; ocultar la tarjeta no const
 `npm run check:guide` comprueba PDF, tamaño real, huella y manifiesto. Las pruebas `tests/guide-release.test.cjs` y `tests/guide-download-browser.cjs` comprueban validación, descarga, móviles y cambios de sesión. Para revisar la descarga real, usar `PTH_GUIDE_TEST_PDF=guias/guia-gestores.pdf` al ejecutar la prueba de navegador.
 
 Revertir el commit de esta entrega revierte la tarjeta, el manifiesto y el PDF juntos. Para retirar la publicación, usar `published: false`, `status: pending` y eliminar el PDF de la misma entrega; el control de publicación exige que no quede un borrador en la ruta pública. Ocultar un enlace por sí solo no retira un archivo público.
+
+## Revisión de ranking preparada · 4 octubre 2026
+
+Revisión 2026-10-04.2: solo página 18 actualizada con el ranking publicado y captura de gestor con datos ficticios. El resto de las 19 páginas conserva texto y píxeles idénticos. PDF 942539 bytes, misma identidad Library versión 2. Esta revisión está preparada para revisión; aún no publicada al sitio. El sitio conserva 2026-10-03.1. No usar el generador del borrador para regenerar las páginas conservadas. Rollback completo en ../guide-update/rollback fuera del checkout.

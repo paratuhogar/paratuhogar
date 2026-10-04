@@ -1,0 +1,108 @@
+{
+  "pages": 20,
+  "bytes": 942539,
+  "sha256": "46b50aea2e855cbee34af49836010505f4e84bfb481e6c6042d823584feba993",
+  "unchanged_pages": 19,
+  "checks": [
+    {
+      "page": 1,
+      "pixels_identical": true,
+      "pixel_hash": "2268afb98d582eb4f2fec19f8ac9e544f2b2b9448bfa9fc77ab35833305d95b5"
+    },
+    {
+      "page": 2,
+      "pixels_identical": true,
+      "pixel_hash": "6cbca59c793d75aaf4f561f888af6a4e22136a3d6ba544b9534c4a4be783a475"
+    },
+    {
+      "page": 3,
+      "pixels_identical": true,
+      "pixel_hash": "92c5c265341424d94115987d0acfc3f5fe11769b33168b82083bcb028b809871"
+    },
+    {
+      "page": 4,
+      "pixels_identical": true,
+      "pixel_hash": "6abb7b293c294b8285722c1e89cbaa2d10d8163248363a2b732ea429f0c93895"
+    },
+    {
+      "page": 5,
+      "pixels_identical": true,
+      "pixel_hash": "b8e7c449d43e8dc54102a7e19a16c219f07f3c0c4f17237685405812dee8e144"
+    },
+    {
+      "page": 6,
+      "pixels_identical": true,
+      "pixel_hash": "d8c1c29600d802ff39317d5664343552343ce570aab634a2152785f7c356487a"
+    },
+    {
+      "page": 7,
+      "pixels_identical": true,
+      "pixel_hash": "7a934240529b7575da6c6d443b2fa6cf9e4e88241938a6e24eb48d2a7a5efb93"
+    },
+    {
+      "page": 8,
+      "pixels_identical": true,
+      "pixel_hash": "3da8036a726c3e6b6cae59b038e9841dfdb1c0696b4668eb60a1573d8db7fd7a"
+    },
+    {
+      "page": 9,
+      "pixels_identical": true,
+      "pixel_hash": "d120dde2f5f65dae1ecc7e8a5d4b1263e27e77353dc2927fee99c8ed1bb7ad65"
+    },
+    {
+      "page": 10,
+      "pixels_identical": true,
+      "pixel_hash": "e45075f1fba4fd6827a214df49a40ced5658ecbc857d26d63f463996cdb40563"
+    },
+    {
+      "page": 11,
+      "pixels_identical": true,
+      "pixel_hash": "8c0bfd8cec372c4c33788dae71fe8721c9a80dd6201c93c468e0ccfda61f0313"
+    },
+    {
+      "page": 12,
+      "pixels_identical": true,
+      "pixel_hash": "beda43294849e33f340167aed01b0caeaf85134bf0e697f128cc60e8ec13f56e"
+    },
+    {
+      "page": 13,
+      "pixels_identical": true,
+      "pixel_hash": "a3f970d7997a4c0dae8985be79a955fd2c7b4268857b13452253e1103e347aac"
+    },
+    {
+      "page": 14,
+      "pixels_identical": true,
+      "pixel_hash": "1eafd491f7cf25ab391c979ee9efe8120f9fec635ea21eb0c96faa206e555e2c"
+    },
+    {
+      "page": 15,
+      "pixels_identical": true,
+      "pixel_hash": "1589a62629fb87d32ac32ccf129074f30ae78f07517c472bf6f4413247a17ca7"
+    },
+    {
+      "page": 16,
+      "pixels_identical": true,
+      "pixel_hash": "6245af4ee9392d81c8535ef0ab33ca84aaa0c5933ffb19f2c6ec0995301dcdbc"
+    },
+    {
+      "page": 17,
+      "pixels_identical": true,
+      "pixel_hash": "95b8849df677b8cf98740887b32ce43805ee365d6f9e1de39f74e496043e042d"
+    },
+    {
+      "page": 18,
+      "pixels_identical": false,
+      "pixel_hash": "dc3138bfd46722bb599f853e99057e982aa265a02f58ed1156218c2526f3c8c4"
+    },
+    {
+      "page": 19,
+      "pixels_identical": true,
+      "pixel_hash": "1f8eb2305f3502461f9d3418bae7762190c419dc48928a9a68291b0b9dacc7e9"
+    },
+    {
+      "page": 20,
+      "pixels_identical": true,
+      "pixel_hash": "57da5e933531ea8e87a5cf12b571590b1371e9e288d534426df3cf7724dd6b6a"
+    }
+  ]
+}
