@@ -10,7 +10,9 @@ create table private.ranking_monthly_results (
  end_at timestamptz not null check(end_at>start_at),
  closed_at timestamptz not null default current_timestamp check(closed_at>=end_at),
  reliable boolean not null check(reliable),
- winners jsonb not null check(jsonb_typeof(winners)='array')
+ winners jsonb not null check(jsonb_typeof(winners)='array'),
+ -- Fail closed: no reliable coverage/eligibility evidence source exists yet.
+ constraint ranking_closure_pending_verification check(false)
 );
 alter table private.ranking_monthly_results enable row level security;
 revoke all on table private.ranking_monthly_results from public,anon,authenticated,service_role;
@@ -36,6 +38,7 @@ begin
  perform pg_advisory_xact_lock(hashtextextended('pth-ranking-close:'||p_month,0));
  select * into v_existing from private.ranking_monthly_results where month=p_month;
  if found then return jsonb_build_object('month',v_existing.month,'closedAt',v_existing.closed_at,'leaderCount',jsonb_array_length(v_existing.winners));end if;
+ raise exception 'Coverage and eligibility verification unavailable; closure disabled' using errcode='22023';
  if not exists(select 1 from pg_trigger where tgrelid='public.pedidos'::regclass and tgname='pth_record_first_delivery_date' and tgenabled in ('O','A')) then
   raise exception 'Prospective delivery timestamp recording must be enabled' using errcode='22023';
  end if;

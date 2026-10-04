@@ -25,6 +25,13 @@ const ids=Array.from({length:5},(_,i)=>`${i+1}${i+1}${i+1}${i+1}${i+1}${i+1}${i+
  // No production clock override parameter, GUC, hook or API is introduced.
  await db.exec('drop table private.ranking_monthly_results;');
  await db.exec(migration.replaceAll('current_timestamp',"timestamptz '2026-12-03T12:00:00Z'"));
+ await rejects("select public.pth_finalize_monthly_ranking('2026-11')",/closure disabled/);
+ await db.exec('set role service_role;');
+ await rejects("insert into private.ranking_monthly_results values('2026-11','2026-11-01','2026-12-01','2026-12-03',true,'[]')",/ranking_closure_pending_verification/);
+ await db.exec('reset role;drop table private.ranking_monthly_results;');
+ // Hypothetical closure/projection only: remove both fail-closed guards in this disposable database.
+ const hypothetical=migration.replace(',\n -- Fail closed: no reliable coverage/eligibility evidence source exists yet.\n constraint ranking_closure_pending_verification check(false)','').replace(" raise exception 'Coverage and eligibility verification unavailable; closure disabled' using errcode='22023';\n",'');
+ await db.exec(hypothetical.replaceAll('current_timestamp',"timestamptz '2026-12-03T12:00:00Z'"));
  for(const role of ['anon','authenticated']){
   await db.exec(`set role ${role};`);
   await rejects('select * from private.ranking_monthly_results',/permission denied/);
