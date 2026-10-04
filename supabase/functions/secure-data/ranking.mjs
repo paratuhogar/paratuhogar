@@ -17,10 +17,28 @@ export function rankingDTO(source,actorId){
   !(self.rank===null||(Number.isSafeInteger(self.rank)&&self.rank>0))||
   typeof self.participates!=='boolean'||typeof self.identityReliable!=='boolean'||
   !Array.isArray(source.top)||source.top.length>3||!Array.isArray(source.nearby)||source.nearby.length>5)fail('No se pudo comprobar la clasificación.',503);
+ const extended = {};
+ if(source.leaderCount !== undefined) {
+  if(!count(source.leaderCount) || source.leaderCount < source.top.filter(p=>p.rank===1).length) fail('Clasificación incompleta.',503);
+  extended.leaderCount=source.leaderCount;
+ }
+ const month=value=>typeof value==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value)&&value>='2026-11'&&value<period.key;
+ const badges=source.self.monthlyBadges;
+ const next=source.self.nextHigherCount;
+ if(next!==undefined&&next!==null&&(!count(next)||next<=self.count)) fail('Meta inválida.',503);
+ if(source.history!==undefined){
+  if(!Array.isArray(source.history)||source.history.length>6)fail('Historial inválido.',503);
+  extended.history=source.history.map(item=>{
+   if(!month(item.month)||!Number.isFinite(Date.parse(item.closedAt))||Date.parse(item.closedAt)>Date.parse(source.updatedAt)||!count(item.leaderCount)||item.leaderCount<1||!count(item.count)||item.count<1||!Array.isArray(item.aliases)||item.aliases.length>3||item.aliases.length>item.leaderCount)fail('Cierre inválido.',503);
+   return {month:item.month,closedAt:item.closedAt,leaderCount:item.leaderCount,count:item.count,aliases:item.aliases.map(value=>label(value)||'Cuenta')};
+  });
+ }
+ if(badges!==undefined&&(!Array.isArray(badges)||badges.length>120||badges.some(b=>!month(b.month)||!count(b.count)||b.count<1)))fail('Insignias inválidas.',503);
  return {
+  ...extended,
   period:Object.fromEntries(['key','startAt','endAt','startDate','endDate','timeZone'].map(key=>[key,period[key]])),updatedAt:source.updatedAt,
   self:{id:self.id,alias:label(self.alias)||'Cuenta',count:self.count,rank:self.rank,lifetimeCount:self.lifetimeCount,
-   undatedCount:self.undatedCount,participates:self.participates,identityReliable:self.identityReliable},
+   undatedCount:self.undatedCount,...(next===undefined?{}:{nextHigherCount:next}),...(badges===undefined?{}:{monthlyBadges:badges.map(b=>({month:b.month,count:b.count}))}),participates:self.participates,identityReliable:self.identityReliable},
   top:source.top.map(participant),nearby:source.nearby.map(participant),historyComplete:source.historyComplete===true
  };
 }

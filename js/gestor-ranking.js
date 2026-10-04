@@ -7,6 +7,7 @@
  function goal(count) { return [1, 3, 5].find(value => value > count) || count + 1; }
  function distance(data) {
   if (!data.self.count || data.self.rank === 1) return null;
+  if(data.self.nextHigherCount !== undefined) return data.self.nextHigherCount === null ? null : {tie:data.self.nextHigherCount-data.self.count,overtake:data.self.nextHigherCount-data.self.count+1,rank:null};
   const candidates = data.self.rank <= 4 ? [...data.top, ...data.nearby] : data.nearby;
   const higher = candidates.filter(p => p.count > data.self.count).sort((a,b) => a.count-b.count)[0];
   return higher ? {tie:higher.count-data.self.count, overtake:higher.count-data.self.count+1, rank:higher.rank} : null;
@@ -72,17 +73,19 @@
   titles.append(period); header.append(titles, action('Actualizar', () => load(true))); container.append(header);
   const left=daysLeft(data.period), closed=Date.now()>=Date.parse(data.period.endAt);
   container.append(el('p',closed?'El mes terminó. Actualiza para ver la nueva oportunidad.':'Cierre: '+date(data.period.endDate)+' · '+(left===0?'Último día':left+' días restantes')+' · Cada mes, una nueva oportunidad.','ranking-deadline'));
-  const leaders=data.top.filter(p=>p.rank===1);
+  const leaders=data.top.filter(p=>p.rank===1), leaderCount=data.leaderCount;
+  const monthLabel=key=>new Intl.DateTimeFormat('es',{timeZone:'America/Havana',month:'long',year:'numeric'}).format(new Date(key+'-15T12:00:00Z'));
   const summit=el('div',null,'ranking-summit'); summit.append(el('span','♛','ranking-crown'));
-  summit.append(el('p',leaders.length>1?'Liderazgo compartido · mes en curso':'Liderazgo · mes en curso','ranking-eyebrow'));
+  summit.append(el('p',(leaderCount??leaders.length)>1?'Liderazgo compartido · mes en curso':'Liderazgo · mes en curso','ranking-eyebrow'));
   if(leaders.length) for(const leader of leaders){const line=el('div',null,'ranking-leader');line.append(el('strong',leader.alias),el('span',leader.count+(leader.count===1?' entrega':' entregas')));summit.append(line);}
   else summit.append(el('strong','La primera entrega abre el camino'));
+  if(leaders.length) summit.append(el('p',leaderCount===undefined?'Selección parcial: se muestran hasta tres cuentas. Puede haber más líderes empatados, con el mismo reconocimiento.':leaderCount>1?leaderCount+' cuentas comparten la cima. '+(leaderCount>leaders.length?'Se muestran '+leaders.length+' aliases; todas tienen el mismo reconocimiento.':'Todas tienen el mismo reconocimiento.'):'Una cuenta lidera este mes.','ranking-summit-note'));
   summit.append(el('p',leaders.length?'Cada nueva entrega abre una posibilidad de llegar a la cima.':'Todavía no hay entregas con fecha este mes.','ranking-summit-note')); container.append(summit);
   const me = data.self, next = goal(me.count), remaining = next - me.count;
   if (me.participates && me.identityReliable) {
    const personal=el('div',null,'ranking-personal'); container.append(personal); const metrics = el('div', null, 'grid grid-cols-3 gap-2');
    metrics.append(metric('Tu puesto', me.rank ? '#' + me.rank : 'Sin puesto'), metric('Entregas del mes', me.count), metric('Próxima meta', next)); personal.append(metrics);
-   const gap=distance(data);personal.append(el('p',me.count===0?'Tu primera entrega te pone en marcha.':me.rank===1?'Estás en la cima. Cada nueva entrega cuenta.':gap?'Te faltan '+gap.tie+' para empatar el puesto #'+gap.rank+' y '+gap.overtake+' para superarlo.':'Sigue hacia tu próxima meta. La distancia al siguiente puesto no está disponible en este resumen.','ranking-distance'));
+   const gap=distance(data);personal.append(el('p',me.count===0?'Tu primera entrega te pone en marcha.':me.rank===1?'Estás en la cima. Cada nueva entrega cuenta.':gap?'Te faltan '+gap.tie+' para empatar '+(gap.rank?'el puesto #'+gap.rank:'el siguiente puesto')+' y '+gap.overtake+' para superarlo.':'Sigue hacia tu próxima meta. La distancia al siguiente puesto no está disponible en este resumen.','ranking-distance'));
    personal.append(action('Descargar tarjeta para compartir',()=>shareCard(data)));
    const progress = el('progress', null, 'mt-4 h-2 w-full accent-blue-700'); progress.max = next; progress.value = me.count; progress.setAttribute('aria-label', 'Entregas hacia tu próxima meta'); container.append(progress);
    container.append(el('p', 'Te ' + (remaining === 1 ? 'falta 1 entrega' : 'faltan ' + remaining + ' entregas') + ' para llegar a ' + next + ' este mes.', 'mt-2 text-xs font-bold text-slate-600'));
@@ -92,6 +95,7 @@
     const badge = el('span', (achieved ? '✓ ' : '○ ') + (amount === 1 ? 'Primera entrega' : amount + ' entregas'), 'rounded-full border border-slate-200 px-3 py-1 text-[10px] font-bold text-slate-600'); badge.dataset.achieved = String(achieved); badges.append(badge);
    }
    container.append(el('p', 'Tus logros acumulados', 'mt-4 text-[10px] font-bold text-slate-500'), badges);
+   for(const badge of me.monthlyBadges||[])container.append(el('p','♛ Liderazgo de '+monthLabel(badge.month)+' · '+badge.count+' entregas','ranking-monthly-badge'));
   } else container.append(el('p', me.participates ? 'Tu cuenta necesita una identificación inequívoca para asignar las entregas. No inventaremos un puesto.' : 'Administración · consulta del mes; esta cuenta no participa.', 'mt-4 rounded-xl bg-amber-50 p-3 text-xs font-bold text-amber-800'));
   const rules=el('details',null,'ranking-rules');rules.append(el('summary','Cómo cuenta cada entrega'));
   rules.append(el('p', 'Solo cuentan pedidos entregados con fecha de entrega registrada este mes. Cada pedido cuenta para quien lo vendió; las ventas de una cuenta colaboradora no se suman también a la principal.', 'mt-4 text-[11px] leading-relaxed text-slate-500'));
@@ -111,7 +115,12 @@
    const details = el('details', null, 'mt-3'); details.append(el('summary', 'Tu siguiente paso · cuentas cercanas', 'cursor-pointer py-2 text-xs font-black text-[#1a4789]'));
    const list = el('ol', null, 'mt-2 space-y-2'); list.dataset.rankingNearby = ''; for (const person of nearby) list.append(row(person, me.id)); details.append(list); container.append(details);
   }
-  container.append(el('p','El reconocimiento mensual se confirmará solo después del cierre. No hay ganadores históricos verificados disponibles.','ranking-history-note'));
+  const history=data.history||[];
+  if(history.length){
+   container.append(el('h3','Meses reconocidos','mt-5 text-xs font-black text-slate-800'));
+   const list=el('ol',null,'ranking-history');
+   for(const month of history){const item=el('li');item.append(el('strong',monthLabel(month.month)),el('p',month.aliases.join(' · ')+' · '+month.count+' entregas'),el('p',month.leaderCount>month.aliases.length?month.leaderCount+' líderes reconocidos. Selección de '+month.aliases.length+' aliases.':'Liderazgo '+(month.leaderCount>1?'compartido':'del mes')+' confirmado tras el cierre.'));list.append(item);}container.append(list);
+  }else container.append(el('p','El reconocimiento mensual se confirmará solo después del cierre. Todavía no hay meses cerrados y verificados para mostrar.','ranking-history-note'));
   celebrate(data,container);
   const actions = el('div', null, 'mt-5 grid grid-cols-2 gap-2');
   actions.append(action('Preparar próxima venta', () => root.openGestorTool?.('mensaje'), true), action('Crear pedido', () => {

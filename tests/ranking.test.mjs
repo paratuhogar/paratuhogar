@@ -39,3 +39,8 @@ test('review SQL grants only service-role execution and never backfills or opens
  assert.match(sql,/old\.estado is distinct from 'Entregado'/);assert.match(sql,/coalesce\(old\.fecha_entrega, statement_timestamp\(\)\)/);
  assert.match(sql,/count\(\*\) over \(partition by p\.id\)/);assert.match(sql,/candidate_count = 1/);
 });
+test('new aggregate projects leader totals, exact next target and closed bounded history without foreign UUIDs',()=>{
+ const data=summary();data.period.key='2026-12';data.period.startAt='2026-12-01T05:00:00Z';data.period.endAt='2027-01-01T05:00:00Z';data.updatedAt='2026-12-03T12:00:00Z';data.leaderCount=4;data.self.nextHigherCount=3;data.history=[{month:'2026-11',closedAt:'2026-12-01T05:00:00Z',leaderCount:4,count:8,aliases:['DEMO A','DEMO B','DEMO C'],foreignId:other}];data.self.monthlyBadges=[{month:'2026-11',count:8}];
+ const dto=rankingDTO(data,own);assert.equal(dto.leaderCount,4);assert.equal(dto.self.nextHigherCount,3);assert.deepEqual(dto.self.monthlyBadges,[{month:'2026-11',count:8}]);assert.deepEqual(dto.history[0].aliases,['DEMO A','DEMO B','DEMO C']);assert.equal(dto.history[0].foreignId,undefined);
+ for(const change of [d=>d.leaderCount=-1,d=>d.self.nextHigherCount=1,d=>d.history[0].month='2026-12',d=>d.history[0].aliases.push('D'),d=>d.self.monthlyBadges[0].month='2026-12']){const bad=structuredClone(data);change(bad);assert.throws(()=>rankingDTO(bad,own));}
+});

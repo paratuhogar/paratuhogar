@@ -17,3 +17,8 @@
 @keyframes ranking-hito { from { transform:translateY(5px); opacity:.4; } to { transform:translateY(0); opacity:1; } }
 @media(prefers-reduced-motion:reduce) { #gestor-ranking .ranking-celebration { animation:none; } }
 @media(max-width:420px) { #gestor-ranking .ranking-summit { padding:18px; } #gestor-ranking .ranking-leader strong { font-size:20px; } #gestor-ranking .ranking-leader span { font-size:12px; } #gestor-ranking .ranking-personal { padding:12px; } }
+
+#gestor-ranking .ranking-monthly-badge { margin-top:10px; padding:10px 12px; border-radius:12px; background:#fff6db; color:#614816; font-size:12px; font-weight:800; }
+#gestor-ranking .ranking-history { margin-top:10px; display:grid; gap:8px; }
+#gestor-ranking .ranking-history li { border:1px solid #dbe6f4; border-radius:12px; padding:12px; font-size:12px; line-height:1.7; }
+#gestor-ranking .ranking-history li p:last-child { color:#60738c; font-size:11px; }

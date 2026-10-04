@@ -13,6 +13,7 @@ const source=fs.readFileSync('js/gestor-ranking.js','utf8');
  for(const role of ['gestor','subgestor','admin']){
   data=summary();data.self.participates=role!=='admin';await root.PTHRanking.load(true);
   assert.match(card().textContent,/La cima del mes/);assert.equal(card().querySelectorAll('.ranking-leader').length,1);
+  assert.match(card().textContent,/Selección parcial: se muestran hasta tres cuentas/);
   if(role==='admin')assert.doesNotMatch(card().textContent,/tus entregas|Tus logros|Tu puesto/);
  }
  data=summary();data.self.count=0;data.self.rank=null;data.self.lifetimeCount=0;data.top=[];data.nearby=[];await root.PTHRanking.load(true);
@@ -25,6 +26,8 @@ const source=fs.readFileSync('js/gestor-ranking.js','utf8');
  data.top=[{id:'a',alias:'DEMO A',count:7,rank:1},{id:'b',alias:'DEMO B',count:6,rank:2},{id:'c',alias:'DEMO C',count:5,rank:3}];data.self.rank=4;data.nearby=[data.top[2],{id:own,alias:'DEMO tú',count:2,rank:4},{id:'d',alias:'DEMO D',count:1,rank:5}];await root.PTHRanking.load(true);
  assert.equal(card().querySelector('[data-ranking-nearby]').children.length,2);
  const before=calls;await Promise.all([root.PTHRanking.load(true),root.PTHRanking.load(true)]);assert.equal(calls,before+1);
+ data.period.key='2026-12';data.period.startAt='2026-12-01T05:00:00Z';data.leaderCount=4;data.self.nextHigherCount=5;data.history=[{month:'2026-11',count:9,leaderCount:4,aliases:['DEMO A','DEMO B','DEMO C']}];data.self.monthlyBadges=[{month:'2026-11',count:9}];await root.PTHRanking.load(true);
+ assert.match(card().textContent,/4 cuentas comparten la cima/);assert.match(card().textContent,/Liderazgo de noviembre de 2026/);assert.match(card().textContent,/DEMO A · DEMO B · DEMO C/);
  [...card().querySelectorAll('button')].find(b=>b.textContent==='Preparar próxima venta').click();assert.deepEqual(actions,['mensaje']);
  root.PTHRanking.clear();assert.equal(card().children.length,0);
  console.log('PASS DOM: gestor/subgestor/admin, zero/single/ties/top3/neighbors, aliases as text, milestones once, duplicate events, CTA and clearing');

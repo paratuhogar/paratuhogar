@@ -11,6 +11,7 @@ test('exact distance uses higher counts, preserves ties and never ranks zero',()
  data.self.count=0;data.self.rank=null;assert.equal(window.PTHRanking.distance(data),null);
  data.self.count=6;data.self.rank=1;assert.equal(window.PTHRanking.distance(data),null);
  data.self.count=2;data.self.rank=10;data.nearby=[{count:2,rank:10}];assert.equal(window.PTHRanking.distance(data),null);
+ data.self.nextHigherCount=3;assert.equal(window.PTHRanking.distance(data).tie,1);
 });
 test('remaining calendar days use Cuba dates across DST and month boundaries',()=>{
  const period={endDate:'2026-10-31',endAt:'2026-11-01T04:00:00Z'};
