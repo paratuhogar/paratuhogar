@@ -1,0 +1,13 @@
+# Ranking de pedidos creados en 30 días — preparación
+
+Goal: contar pedidos únicos creados durante los últimos 30 días calendario de Cuba cuyo estado actual es Entregado. Aprobación de criterio: Sentinel_0dd846afcaf08191812c51e9a88fc29a. Sin publicación en esta fase.
+
+Architecture: sustituir únicamente el agregado existente SECURITY INVOKER, manteniendo identidad única, elegibilidad actual, actor verificado, top3+vecinos y DTO privado. La ventana empieza en la primera medianoche de America/Havana de hace 29 días; termina inclusivamente en el instante del servidor. La próxima medianoche es solo vencimiento de caché, no cierre del concurso.
+
+Global constraints: ninguna modificación de pedidos, fechas, clientes, dinero, acceso, autenticación, trigger ni finalizador. Adjudicación mensual permanece bloqueada. No premios. Guía cambia solo página18; restantes19páginas idénticas. Base20bfc9e.
+
+1. Tests SQL locales nuevos: fechas de creación en inicio/exactamente ahora/futuro/fuera; Entregado sin fecha_entrega incluido; Pendiente/Cancelado excluidos; empates/child/administración/identidad ambigua; primera medianoche DST; fin mensual sin reset; permisos y barreras previas intactos. Ejecutar primero contra SQL anterior y confirmar fallos de criterio.
+2. Generar migración oficial, reemplazar summary con los mismos CTE de atribución y elegibilidad. `period.kind=created-delivered-30d`, key=fecha actual Cuba, start/endDate, startAt/endAt, cacheUntil=primera medianoche siguiente. History mensual permanece separado y vacío salvo registros fiables existentes. DTO valida forma, límites y criterio; antigua respuesta solo sirve como transición explícita, nunca etiquetada como nueva.
+3. Tests DTO/DOM y eventos antes de implementar UI: sin cuenta atrás/avisos de fecha_entrega, etiquetas Últimos30días, creación+estado claras, admin no participa, datos antiguos no se reinterpretan, caché vence en siguiente medianoche. Celebrar podio/liderazgo solo al aumentar entregas propias, claves permanentes por criterio; primera/3/5 acumuladas no se reinician al mover ventana.
+4. Implementar UI y versionar recursos estáticos; ejecutar suite Node, DOM, SQL17/18, build y revisión independiente. Auditar comparación real solo con consultas agregadas de lectura; no filas de clientes.
+5. Capturar frontend de prueba gestor/admin si Chrome soportado; no repetir reparación. Actualizar únicamente página18 de guía con screenshot gestor DEMO y regla nueva; validar PDF completo, píxeles/texto de19páginas, tamaño<5000000 y manifiesto. Guardar artefactos de revisión y rollback, commits locales; no push ni migración remota ni adjudicación.

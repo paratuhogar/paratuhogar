@@ -13,12 +13,6 @@ test('exact distance uses higher counts, preserves ties and never ranks zero',()
  data.self.count=2;data.self.rank=10;data.nearby=[{count:2,rank:10}];assert.equal(window.PTHRanking.distance(data),null);
  data.self.nextHigherCount=3;assert.equal(window.PTHRanking.distance(data).tie,1);
 });
-test('remaining calendar days use Cuba dates across DST and month boundaries',()=>{
- const period={endDate:'2026-10-31',endAt:'2026-11-01T04:00:00Z'};
- assert.equal(window.PTHRanking.daysLeft(period,'2026-10-04T02:00:00Z'),28);
- assert.equal(window.PTHRanking.daysLeft(period,'2026-11-01T03:59:59Z'),0);
- assert.equal(window.PTHRanking.daysLeft(period,'2026-11-01T04:00:00Z'),0);
-});
 test('milestones require an observed increase, do not repeat and do not invent month transitions',()=>{
  const make=(count,rank,month='2026-10',participates=true)=>({period:{key:month},self:{lifetimeCount:count,rank,participates,identityReliable:true}});
  assert.equal(window.PTHRanking.milestoneEvents(null,make(5,1)).length,0);

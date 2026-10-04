@@ -9,7 +9,9 @@ function participant(row){
 }
 export function rankingDTO(source,actorId){
  const period=source?.period,self=source?.self;
- if(!period||period.timeZone!=='America/Havana'||!/^\d{4}-\d{2}$/.test(period.key||'')||
+ const rolling=period?.kind==='created-delivered-30d';
+ if(period?.kind!==undefined&&!rolling)fail('Criterio inválido.',503);
+ if(!period||period.timeZone!=='America/Havana'||!(rolling?/^\d{4}-\d{2}-\d{2}$/:/^\d{4}-\d{2}$/).test(period.key||'')||
   !/^\d{4}-\d{2}-\d{2}$/.test(period.startDate||'')||!/^\d{4}-\d{2}-\d{2}$/.test(period.endDate||'')||
   !Number.isFinite(Date.parse(period.startAt))||!Number.isFinite(Date.parse(period.endAt))||Date.parse(period.endAt)<=Date.parse(period.startAt)||
   !Number.isFinite(Date.parse(source.updatedAt))||self?.id!==actorId||!uuid(self.id)||
@@ -17,12 +19,21 @@ export function rankingDTO(source,actorId){
   !(self.rank===null||(Number.isSafeInteger(self.rank)&&self.rank>0))||
   typeof self.participates!=='boolean'||typeof self.identityReliable!=='boolean'||
   !Array.isArray(source.top)||source.top.length>3||!Array.isArray(source.nearby)||source.nearby.length>5)fail('No se pudo comprobar la clasificación.',503);
+ if(rolling){
+  const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Havana',year:'numeric',month:'2-digit',day:'2-digit'});
+  const local=stamp=>date.format(new Date(stamp));
+  if(period.key!==period.endDate||local(source.updatedAt)!==period.endDate||local(period.startAt)!==period.startDate||
+   Date.parse(period.endAt)!==Date.parse(source.updatedAt)||Date.parse(period.endDate)-Date.parse(period.startDate)!==29*86400000||
+   !Number.isFinite(Date.parse(period.cacheUntil))||Date.parse(period.cacheUntil)<=Date.parse(period.endAt)||Date.parse(period.cacheUntil)-Date.parse(period.endAt)>26*3600000)fail('Ventana inválida.',503);
+  const tomorrow=new Date(Date.parse(period.endDate)+86400000).toISOString().slice(0,10);
+  if(local(Date.parse(period.startAt)-1)===period.startDate||local(period.cacheUntil)!==tomorrow||local(Date.parse(period.cacheUntil)-1)!==period.endDate)fail('Medianoche inválida.',503);
+ }
  const extended = {};
  if(source.leaderCount !== undefined) {
   if(!count(source.leaderCount) || source.leaderCount < source.top.filter(p=>p.rank===1).length) fail('Clasificación incompleta.',503);
   extended.leaderCount=source.leaderCount;
  }
- const month=value=>typeof value==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value)&&value>='2026-11'&&value<period.key;
+ const month=value=>typeof value==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value)&&value>='2026-11'&&value<(rolling?period.endDate.slice(0,7):period.key);
  const badges=source.self.monthlyBadges;
  const next=source.self.nextHigherCount;
  if(next!==undefined&&next!==null&&(!count(next)||next<=self.count)) fail('Meta inválida.',503);
@@ -36,7 +47,7 @@ export function rankingDTO(source,actorId){
  if(badges!==undefined&&(!Array.isArray(badges)||badges.length>120||badges.some(b=>!month(b.month)||!count(b.count)||b.count<1)))fail('Insignias inválidas.',503);
  return {
   ...extended,
-  period:Object.fromEntries(['key','startAt','endAt','startDate','endDate','timeZone'].map(key=>[key,period[key]])),updatedAt:source.updatedAt,
+  period:{...Object.fromEntries(['key','startAt','endAt','startDate','endDate','timeZone'].map(key=>[key,period[key]])),...(rolling?{kind:period.kind,cacheUntil:period.cacheUntil}:{})},updatedAt:source.updatedAt,
   self:{id:self.id,alias:label(self.alias)||'Cuenta',count:self.count,rank:self.rank,lifetimeCount:self.lifetimeCount,
    undatedCount:self.undatedCount,...(next===undefined?{}:{nextHigherCount:next}),...(badges===undefined?{}:{monthlyBadges:badges.map(b=>({month:b.month,count:b.count}))}),participates:self.participates,identityReliable:self.identityReliable},
   top:source.top.map(participant),nearby:source.nearby.map(participant),historyComplete:source.historyComplete===true

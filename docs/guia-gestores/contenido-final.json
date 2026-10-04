@@ -1,6 +1,6 @@
 {
   "source_pdf": "/guias/guia-gestores.pdf",
-  "sha256": "46b50aea2e855cbee34af49836010505f4e84bfb481e6c6042d823584feba993",
+  "sha256": "6b56c59e5bcbd7beb5ad8fc7dfea81ae24f232cab27be72f1cf33a3a09f40b37",
   "editable_source": "Text and layout recovered from the approved PDF; not the original authoring document.",
   "pages": [
     {
@@ -9602,19 +9602,19 @@
           ]
         },
         {
-          "text": "En Inicio, «La cima del mes» reconoce líderes y empates.\nCierre y días restantes usan la hora de Cuba. Cada mes\nofrece una nueva oportunidad.",
+          "text": "En Inicio, «La cima · Últimos 30 días» reconoce líderes y\nempates. Cuenta desde hace 29 días hasta hoy, con la\nhora de Cuba; la ventana avanza cada día.",
           "bbox": [
             30.0,
             125.9548568725586,
-            383.8341369628906,
+            376.7124328613281,
             171.6548614501953
           ],
           "lines": [
             {
-              "text": "En Inicio, «La cima del mes» reconoce líderes y empates.",
+              "text": "En Inicio, «La cima · Últimos 30 días» reconoce líderes y",
               "spans": [
                 {
-                  "text": "En Inicio, «La cima del mes» reconoce líderes y empates.",
+                  "text": "En Inicio, «La cima · Últimos 30 días» reconoce líderes y",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
@@ -9622,17 +9622,17 @@
                   "bbox": [
                     30.0,
                     125.9548568725586,
-                    383.8341369628906,
+                    376.7124328613281,
                     138.25485229492188
                   ]
                 }
               ]
             },
             {
-              "text": "Cierre y días restantes usan la hora de Cuba. Cada mes",
+              "text": "empates. Cuenta desde hace 29 días hasta hoy, con la",
               "spans": [
                 {
-                  "text": "Cierre y días restantes usan la hora de Cuba. Cada mes",
+                  "text": "empates. Cuenta desde hace 29 días hasta hoy, con la",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
@@ -9640,17 +9640,17 @@
                   "bbox": [
                     30.0,
                     142.65484619140625,
-                    373.6742858886719,
+                    368.2377014160156,
                     154.95484924316406
                   ]
                 }
               ]
             },
             {
-              "text": "ofrece una nueva oportunidad.",
+              "text": "hora de Cuba; la ventana avanza cada día.",
               "spans": [
                 {
-                  "text": "ofrece una nueva oportunidad.",
+                  "text": "hora de Cuba; la ventana avanza cada día.",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
@@ -9658,7 +9658,7 @@
                   "bbox": [
                     30.0,
                     159.3548583984375,
-                    220.4901123046875,
+                    294.3516540527344,
                     171.6548614501953
                   ]
                 }
@@ -9735,9 +9735,9 @@
           "text": "Pantalla real · gestor · DATOS FICTICIOS. Recorte de progreso: 2\nentregas, puesto #3; 1 para empatar y 2 para superar.",
           "bbox": [
             30.0,
-            531.76904296875,
+            527.1387329101562,
             352.0198974609375,
-            555.26904296875
+            550.6387329101562
           ],
           "lines": [
             {
@@ -9751,9 +9751,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    531.76904296875,
+                    527.1387329101562,
                     352.0198974609375,
-                    541.76904296875
+                    537.1387329101562
                   ]
                 }
               ]
@@ -9769,9 +9769,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    545.26904296875,
+                    540.6387329101562,
                     306.550048828125,
-                    555.26904296875
+                    550.6387329101562
                   ]
                 }
               ]
@@ -9779,82 +9779,82 @@
           ]
         },
         {
-          "text": "Solo cuentan pedidos Entregados con fecha válida en el\nmes, una vez por vendedor. Empates: 1, 1, 3. Los\nantiguos sin fecha quedan fuera; consulta «Cómo cuenta\ncada entrega» y los avisos.",
+          "text": "Cuenta cada pedido creado en esos 30 días que ahora\nesté Entregado, una vez por vendedor. La fecha de\nentrega no define la ventana. Empates: 1, 1, 3. Consulta\n«Cómo cuenta cada entrega».",
           "bbox": [
             30.0,
-            567.3215942382812,
-            382.39495849609375,
-            629.7215576171875
+            562.6912841796875,
+            379.5291442871094,
+            625.0912475585938
           ],
           "lines": [
             {
-              "text": "Solo cuentan pedidos Entregados con fecha válida en el",
+              "text": "Cuenta cada pedido creado en esos 30 días que ahora",
               "spans": [
                 {
-                  "text": "Solo cuentan pedidos Entregados con fecha válida en el",
+                  "text": "Cuenta cada pedido creado en esos 30 días que ahora",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    567.3215942382812,
-                    375.5685119628906,
-                    579.62158203125
+                    562.6912841796875,
+                    365.90069580078125,
+                    574.9912719726562
                   ]
                 }
               ]
             },
             {
-              "text": "mes, una vez por vendedor. Empates: 1, 1, 3. Los",
+              "text": "esté Entregado, una vez por vendedor. La fecha de",
               "spans": [
                 {
-                  "text": "mes, una vez por vendedor. Empates: 1, 1, 3. Los",
+                  "text": "esté Entregado, una vez por vendedor. La fecha de",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    584.0216064453125,
-                    336.2577819824219,
-                    596.3215942382812
+                    579.3912963867188,
+                    346.1838684082031,
+                    591.6912841796875
                   ]
                 }
               ]
             },
             {
-              "text": "antiguos sin fecha quedan fuera; consulta «Cómo cuenta",
+              "text": "entrega no define la ventana. Empates: 1, 1, 3. Consulta",
               "spans": [
                 {
-                  "text": "antiguos sin fecha quedan fuera; consulta «Cómo cuenta",
+                  "text": "entrega no define la ventana. Empates: 1, 1, 3. Consulta",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    600.7216186523438,
-                    382.39495849609375,
-                    613.0216064453125
+                    596.09130859375,
+                    379.5291442871094,
+                    608.3912963867188
                   ]
                 }
               ]
             },
             {
-              "text": "cada entrega» y los avisos.",
+              "text": "«Cómo cuenta cada entrega».",
               "spans": [
                 {
-                  "text": "cada entrega» y los avisos.",
+                  "text": "«Cómo cuenta cada entrega».",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 12.300000190734863,
                   "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    617.4215698242188,
-                    198.11642456054688,
-                    629.7215576171875
+                    612.791259765625,
+                    216.4188232421875,
+                    625.0912475585938
                   ]
                 }
               ]
@@ -9865,9 +9865,9 @@
           "text": "El podio y las cuentas cercanas orientan tu avance. Los\nhitos se celebran brevemente. «Descargar tarjeta para\ncompartir» guarda la imagen, sin enviarla. Sigue con\n«Preparar próxima venta» o «Crear pedido».",
           "bbox": [
             30.0,
-            642.12158203125,
+            637.4913330078125,
             372.6042175292969,
-            704.5215454101562
+            699.8912963867188
           ],
           "lines": [
             {
@@ -9881,9 +9881,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    642.12158203125,
+                    637.4913330078125,
                     372.6042175292969,
-                    654.4215698242188
+                    649.7913208007812
                   ]
                 }
               ]
@@ -9899,9 +9899,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    658.8215942382812,
+                    654.1913452148438,
                     369.2954406738281,
-                    671.12158203125
+                    666.4913330078125
                   ]
                 }
               ]
@@ -9917,9 +9917,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    675.5216064453125,
+                    670.891357421875,
                     357.0693359375,
-                    687.8215942382812
+                    683.1913452148438
                   ]
                 }
               ]
@@ -9935,9 +9935,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    692.2215576171875,
+                    687.59130859375,
                     305.5077209472656,
-                    704.5215454101562
+                    699.8912963867188
                   ]
                 }
               ]
@@ -9945,46 +9945,46 @@
           ]
         },
         {
-          "text": "Historial e insignias pendientes de validar los datos: la adjudicación\nmensual sigue bloqueada. No se prometen premios. Usa «Actualizar»\ncon internet.",
+          "text": "La adjudicación mensual sigue bloqueada: este ranking de 30 días no\nelige ganadores de un mes. No se prometen premios. Usa «Actualizar»\ncon internet.",
           "bbox": [
             30.0,
-            716.3690185546875,
-            378.9999694824219,
-            753.3690185546875
+            711.73876953125,
+            386.51995849609375,
+            748.73876953125
           ],
           "lines": [
             {
-              "text": "Historial e insignias pendientes de validar los datos: la adjudicación",
+              "text": "La adjudicación mensual sigue bloqueada: este ranking de 30 días no",
               "spans": [
                 {
-                  "text": "Historial e insignias pendientes de validar los datos: la adjudicación",
+                  "text": "La adjudicación mensual sigue bloqueada: este ranking de 30 días no",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 10.0,
                   "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    716.3690185546875,
-                    369.70001220703125,
-                    726.3690185546875
+                    711.73876953125,
+                    379.6099853515625,
+                    721.73876953125
                   ]
                 }
               ]
             },
             {
-              "text": "mensual sigue bloqueada. No se prometen premios. Usa «Actualizar»",
+              "text": "elige ganadores de un mes. No se prometen premios. Usa «Actualizar»",
               "spans": [
                 {
-                  "text": "mensual sigue bloqueada. No se prometen premios. Usa «Actualizar»",
+                  "text": "elige ganadores de un mes. No se prometen premios. Usa «Actualizar»",
                   "font": "BitstreamVeraSans-Roman",
                   "size": 10.0,
                   "flags": 0,
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    729.8690185546875,
-                    378.9999694824219,
-                    739.8690185546875
+                    725.23876953125,
+                    386.51995849609375,
+                    735.23876953125
                   ]
                 }
               ]
@@ -10000,9 +10000,9 @@
                   "color": 1120295,
                   "bbox": [
                     30.0,
-                    743.3690185546875,
+                    738.73876953125,
                     94.0300064086914,
-                    753.3690185546875
+                    748.73876953125
                   ]
                 }
               ]

@@ -3,7 +3,8 @@ const {parseHTML}=require('linkedom');
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
 const source=fs.readFileSync('js/gestor-ranking.js','utf8');
 (async()=>{
- const {summary,own}=await import('./fixtures/ranking.mjs');
+ const {summary:monthly,own}=await import('./fixtures/ranking.mjs');
+ const summary=()=>{const d=monthly();d.period={kind:'created-delivered-30d',key:'2026-10-04',startDate:'2026-09-05',endDate:'2026-10-04',startAt:'2026-09-05T04:00:00Z',endAt:new Date().toISOString(),cacheUntil:'2026-10-05T04:00:00Z',timeZone:'America/Havana'};return d;};
  const {window}=parseHTML('<section id="gestor-ranking"></section>');
  let data=summary(),calls=0,timers=[],storage=new Map(),actions=[];
  const root={document:window.document,addEventListener(){}};root.currentUserData={id:own};root.navigator={onLine:true};root.localStorage={getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)};root.setTimeout=fn=>timers.push(fn);root.openGestorTool=x=>actions.push(x);
@@ -12,7 +13,7 @@ const source=fs.readFileSync('js/gestor-ranking.js','utf8');
  const card=()=>root.document.getElementById('gestor-ranking');
  for(const role of ['gestor','subgestor','admin']){
   data=summary();data.self.participates=role!=='admin';await root.PTHRanking.load(true);
-  assert.match(card().textContent,/La cima del mes/);assert.equal(card().querySelectorAll('.ranking-leader').length,1);
+  assert.match(card().textContent,/Últimos 30 días/);assert.equal(card().querySelectorAll('.ranking-leader').length,1);
   assert.match(card().textContent,/Selección parcial: se muestran hasta tres cuentas/);
   if(role==='admin')assert.doesNotMatch(card().textContent,/tus entregas|Tus logros|Tu puesto/);
  }
@@ -26,7 +27,7 @@ const source=fs.readFileSync('js/gestor-ranking.js','utf8');
  data.top=[{id:'a',alias:'DEMO A',count:7,rank:1},{id:'b',alias:'DEMO B',count:6,rank:2},{id:'c',alias:'DEMO C',count:5,rank:3}];data.self.rank=4;data.nearby=[data.top[2],{id:own,alias:'DEMO tú',count:2,rank:4},{id:'d',alias:'DEMO D',count:1,rank:5}];await root.PTHRanking.load(true);
  assert.equal(card().querySelector('[data-ranking-nearby]').children.length,2);
  const before=calls;await Promise.all([root.PTHRanking.load(true),root.PTHRanking.load(true)]);assert.equal(calls,before+1);
- data.period.key='2026-12';data.period.startAt='2026-12-01T05:00:00Z';data.leaderCount=4;data.self.nextHigherCount=5;data.history=[{month:'2026-11',count:9,leaderCount:4,aliases:['DEMO A','DEMO B','DEMO C']}];data.self.monthlyBadges=[{month:'2026-11',count:9}];await root.PTHRanking.load(true);
+ data.period={kind:'created-delivered-30d',key:'2026-12-04',startAt:'2026-11-05T05:00:00.000Z',endAt:'2026-12-04T12:00:00.000Z',cacheUntil:'2026-12-05T05:00:00.000Z',startDate:'2026-11-05',endDate:'2026-12-04',timeZone:'America/Havana'};data.updatedAt=data.period.endAt;data.leaderCount=4;data.self.nextHigherCount=5;data.history=[{month:'2026-11',count:9,leaderCount:4,aliases:['DEMO A','DEMO B','DEMO C']}];data.self.monthlyBadges=[{month:'2026-11',count:9}];await root.PTHRanking.load(true);
  assert.match(card().textContent,/4 cuentas comparten la cima/);assert.match(card().textContent,/Liderazgo de noviembre de 2026/);assert.match(card().textContent,/DEMO A · DEMO B · DEMO C/);
  [...card().querySelectorAll('button')].find(b=>b.textContent==='Preparar próxima venta').click();assert.deepEqual(actions,['mensaje']);
  root.PTHRanking.clear();assert.equal(card().children.length,0);

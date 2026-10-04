@@ -1,12 +1,12 @@
 {
   "library_file_id": "libfile_19a5c74f815c81919bced7981cc57a23",
-  "library_version": 2,
-  "file_id": "file_000000007d80823084e0e0c9390b22ec",
+  "library_version": 3,
+  "file_id": "file_00000000f71082309f815e75eded523f",
   "file_name": "guia-gestores.pdf",
-  "bytes": 942539,
-  "sha256": "46b50aea2e855cbee34af49836010505f4e84bfb481e6c6042d823584feba993",
+  "bytes": 1061573,
+  "sha256": "6b56c59e5bcbd7beb5ad8fc7dfea81ae24f232cab27be72f1cf33a3a09f40b37",
   "pages": 20,
   "pages_with_images": 18,
-  "source": "Prepared Library revision 2 for review: only page 18 replaced; not published to website.",
+  "source": "Prepared Library revision 3 for review: only page 18 replaced for created-delivered rolling30 criterion; not published to website.",
   "date": "2026-10-04"
 }

@@ -33,4 +33,6 @@ Revertir el commit de esta entrega revierte la tarjeta, el manifiesto y el PDF j
 
 ## Revisión de ranking preparada · 4 octubre 2026
 
-Revisión 2026-10-04.2: solo página 18 actualizada con el ranking publicado y captura de gestor con datos ficticios. El resto de las 19 páginas conserva texto y píxeles idénticos. PDF 942539 bytes, misma identidad Library versión 2. Esta revisión está preparada para revisión; aún no publicada al sitio. El sitio conserva 2026-10-03.1. No usar el generador del borrador para regenerar las páginas conservadas. Rollback completo en ../guide-update/rollback fuera del checkout.
+Revisión 2026-10-04.2: solo página 18 actualizada con el ranking publicado y captura de gestor con datos ficticios. El resto de las 19 páginas conserva texto y píxeles idénticos. PDF 942539 bytes, misma identidad Library versión 2. Esta revisión fue publicada al sitio con commit 20bfc9e y se conserva como base del cambio de criterio. No usar el generador del borrador para regenerar las páginas conservadas. Rollback completo en ../guide-update/rollback fuera del checkout.
+
+Revisión candidata 2026-10-04.3: página 18 describe pedidos creados en los últimos 30 días calendario de Cuba que ahora estén Entregado. Captura real del frontend local con datos DEMO. Otras 19 páginas conservan texto y píxeles idénticos; Library versión 3. No publicada: el sitio sigue en 2026-10-04.2, publicada con commit 20bfc9e. No regenerar las páginas conservadas. Rollback en ../rolling30-review/rollback.

@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-04-ranking2';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-04-rolling30';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -10,7 +10,7 @@ const PTH_APP_SHELL_URL = '/index.html';
 const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/affiliate-links.js?v=20261003-alias1',
   '/js/public-name-editor.js?v=20261003-alias1',
-  '/js/gestor-ranking.js?v=20261004-ranking2',
+  '/js/gestor-ranking.js?v=20261004-rolling30',
   '/js/vendor/supabase-2.57.4.js',
   '/js/checkout-form-shared.js?v=20261003-pending2',
   '/js/offline-checkout-copy.js?v=20261003-pending2',
@@ -20,8 +20,8 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/storefront-extras.min.js?v=20261003-alias1',
   '/js/pending-checkout-storefront.js?v=20261003-pending2',
   '/js/pwa.js?v=20261003-pending2',
-  '/css/tailwind.min.css?v=20261004-ranking2',
-  '/css/gestor-ranking.css?v=20261004-ranking2',
+  '/css/tailwind.min.css?v=20261004-rolling30',
+  '/css/gestor-ranking.css?v=20261004-rolling30',
   '/css/client-followup.css?v=2',
   '/css/work-navigation.css?v=20261001-1',
   '/css/low-connectivity.css?v=20261003-pending2',

@@ -1,6 +1,6 @@
 {
   "source_pdf": "/guias/guia-gestores.pdf",
-  "sha256": "46b50aea2e855cbee34af49836010505f4e84bfb481e6c6042d823584feba993",
+  "sha256": "6b56c59e5bcbd7beb5ad8fc7dfea81ae24f232cab27be72f1cf33a3a09f40b37",
   "pages_with_images": 18,
   "images": [
     {
@@ -362,26 +362,20 @@
     },
     {
       "page": 18,
-      "file": "capturas/image-bf5a957d795638829da8.png",
-      "sha256": "bf5a957d795638829da81a4257f8a27e560a89e83afcefc119d223b4192fb91b",
-      "bytes": 64526,
-      "width": 312,
-      "height": 403,
+      "file": "capturas/image-78d51f59d9fc999027e2.png",
+      "sha256": "78d51f59d9fc999027e255472cd4496833c218101a0e4982af62e7fac65bb323",
+      "bytes": 61491,
+      "width": 302,
+      "height": 402,
       "placements": [
         [
-          100.0,
-          239.20001220703125,
-          320.0,
-          523.36669921875
+          105.0,
+          239.19998168945312,
+          315.0,
+          518.7363891601562
         ]
       ],
-      "provenance": "Captured real production frontend locally, role gestor, explicit fictitious fixture; personal progress crop. No real orders or private data.",
-      "role": "gestor",
-      "fixture": true,
-      "captured_at": "2026-10-04",
-      "code_commit": "81aa4bc2ae89ca060b60dea8f0851240087e7757",
-      "source_capture": "ranking-gestor-personal.jpg",
-      "source_capture_sha256": "a2bd4ced685eac7750c49715d4336553c2ae4ca771d84394c9f60158bf9e804d"
+      "provenance": "Embedded in the approved final PDF; retain its captions and demonstration labels."
     },
     {
       "page": 19,

@@ -1,7 +1,7 @@
 {
   "pages": 20,
-  "bytes": 942539,
-  "sha256": "46b50aea2e855cbee34af49836010505f4e84bfb481e6c6042d823584feba993",
+  "bytes": 1061573,
+  "sha256": "6b56c59e5bcbd7beb5ad8fc7dfea81ae24f232cab27be72f1cf33a3a09f40b37",
   "unchanged_pages": 19,
   "checks": [
     {
@@ -92,7 +92,7 @@
     {
       "page": 18,
       "pixels_identical": false,
-      "pixel_hash": "dc3138bfd46722bb599f853e99057e982aa265a02f58ed1156218c2526f3c8c4"
+      "pixel_hash": "74cd3484d0a125e19abdea880c4300880dcdcbeba7f71e93ff5028ec94041c59"
     },
     {
       "page": 19,
