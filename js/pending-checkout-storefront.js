@@ -32,23 +32,72 @@
   let active = null, busy = false, panel = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  let readinessGeneration=0;
-  function readiness(text) { let node=document.getElementById('pth-device-readiness'); if(!node){node=document.createElement('aside');node.id='pth-device-readiness';node.className='pth-connectivity-card';node.setAttribute('role','status');document.getElementById('admin-nav')?.before(node);}node.textContent=text;node.hidden=!localAccount(); }
-  async function checkReadiness(){
+  const shellVersion = 'pth-public-static-2026-10-05-copy1';
+  let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
+  function readiness(text) {
+    const account=localAccount();
+    let node=document.getElementById('pth-device-readiness');
+    if(!node){
+      node=document.createElement('aside');node.id='pth-device-readiness';node.className='pth-connectivity-card';node.setAttribute('role','status');node.setAttribute('aria-live','polite');
+      const summary=document.createElement('p');summary.id='pth-device-readiness-summary';
+      const result=document.createElement('p');result.id='pth-device-copy-result';
+      const retry=document.createElement('button');retry.type='button';retry.id='pth-device-retry';retry.className='pth-connectivity-action';retry.onclick=()=>void prepareDevice(true);
+      node.append(summary,result,retry);document.getElementById('admin-nav')?.before(node);
+    }
+    node.querySelector('#pth-device-readiness-summary').textContent=text;
+    const result=node.querySelector('#pth-device-copy-result');result.textContent=copyOutcome?.account===account?copyOutcome.text:'';result.hidden=!result.textContent;
+    const retry=node.querySelector('#pth-device-retry');retry.disabled=Boolean(copying||preparing||active);retry.textContent=copying?'Preparando…':'Actualizar copia de trabajo';
+    node.hidden=!account;
+  }
+  function copyResult(account,text,{dataSaved=false}={}) {
+    if(account!==localAccount())return;
+    copyOutcome={account,text,dataSaved};message(text);
+    const summary=document.getElementById('pth-device-readiness-summary')?.textContent||'Comprueba la preparación de este teléfono.';
+    readiness(summary);
+  }
+  function requestOfflineShell(repair=false) {
+    return new Promise(resolve=>{
+      let channel,finished=false;
+      const finish=value=>{if(finished)return;finished=true;clearTimeout(timeout);channel?.port1.close();resolve(value);};
+      const timeout=setTimeout(()=>finish({ready:false,reason:'timeout'}),repair?25000:10000);
+      if(!navigator.serviceWorker){finish({ready:false,reason:'unavailable'});return;}
+      navigator.serviceWorker.ready.then(registration=>{
+        if(finished)return;
+        const worker=navigator.serviceWorker.controller;
+        if(!worker){finish({ready:false,reason:'unavailable'});return;}
+        channel=new MessageChannel();channel.port1.onmessage=event=>{
+          const reply=event.data||{};
+          finish({...reply,ready:reply.ready===true&&reply.version===shellVersion,reason:reply.version!==shellVersion?'update':reply.reason,updatePending:Boolean(registration.waiting)});
+        };
+        try{worker.postMessage({type:repair?'PTH_REPAIR_OFFLINE_SHELL':'PTH_CHECK_OFFLINE_SHELL'},[channel.port2]);}
+        catch(_){finish({ready:false,reason:'unavailable'});}
+      }).catch(()=>finish({ready:false,reason:'unavailable'}));
+    });
+  }
+  async function checkReadiness({repair=false,guard=()=>true}={}){
+    if(copying&&!repair)return false;
     const epoch=++readinessGeneration,account=localAccount(),profile=PTHSecureData.offlineProfile?.();
     if(!account||!profile){document.getElementById('pth-device-readiness')?.remove();return false;}
     try{
       const copy=await copies?.read(account,{profile});
-      const ready=await new Promise(resolve=>{
-        const timeout=setTimeout(()=>resolve(false),10000);
-        navigator.serviceWorker?.ready.then(registration=>{if(!navigator.serviceWorker.controller){clearTimeout(timeout);resolve(false);return;}const channel=new MessageChannel();channel.port1.onmessage=event=>{clearTimeout(timeout);channel.port1.close();resolve(event.data?.ready===true);};registration.active.postMessage({type:'PTH_CHECK_OFFLINE_SHELL'},[channel.port2]);}).catch(()=>{clearTimeout(timeout);resolve(false);});
-      });
-      if(epoch!==readinessGeneration||account!==localAccount())return false;
-      const complete=Boolean(copy&&ready);
+      if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
+      let shell=await requestOfflineShell();
+      if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
+      if(repair&&!shell.ready&&shell.version===shellVersion&&navigator.onLine!==false){
+        readiness('Comprobando los datos guardados. Recuperando los archivos públicos que faltan para abrir la app sin conexión…');
+        shell=await requestOfflineShell(true);
+      }
+      if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
+      const complete=Boolean(copy&&shell.ready);
       if(!copy)preparedToken=null;
-      readiness(complete?'Listo para trabajar sin conexión'+(!token()?'. Tu sesión venció: entra con conexión antes de enviar.':'. Productos, clientes propios y entregas guardados en este teléfono.'):'Este teléfono aún no está listo sin conexión. Conecta para completar la copia de trabajo.');
+      if(copyOutcome?.account===account&&copyOutcome.dataSaved)copyOutcome.text=complete?'Copia guardada en este teléfono. Datos y archivos de la app comprobados para trabajar sin conexión.':'Copia de datos guardada en este teléfono. La preparación offline de la app aún está incompleta; revisa el aviso y reintenta con Internet.';
+      let notice=complete?'Listo para trabajar sin conexión. Datos guardados y archivos de la app comprobados.':copy?'Datos guardados. Faltan archivos de la app o aún no se pudieron comprobar; este teléfono no está listo para abrirla sin conexión.':shell.ready?'Archivos de la app disponibles. Falta guardar la copia de datos de tu cuenta.':'Este teléfono aún no está listo sin conexión. Falta completar los datos y los archivos de la app.';
+      if(!token())notice+=' Tu sesión necesita renovarse con conexión antes de enviar pedidos.';
+      if(!shell.ready&&shell.reason==='update')notice+=shell.updatePending?' Hay una actualización de la app pendiente: pulsa Actualizar ahora en su aviso.':' Conéctate para completar la actualización de la app.';
+      else if(!shell.ready)notice+=navigator.onLine===false?' Reintenta cuando tengas Internet.':' Mantén Internet y pulsa Actualizar copia de trabajo para reintentar.';
+      readiness(notice);
       return complete;
-    }catch(_){if(epoch===readinessGeneration)readiness('Este teléfono aún no está listo sin conexión. Comprueba el almacenamiento y reintenta con Internet.');return false;}
+    }catch(_){if(guard()&&epoch===readinessGeneration&&account===localAccount())readiness('No se pudieron comprobar los datos guardados. Este teléfono aún no está listo sin conexión. Comprueba el almacenamiento y reintenta con Internet.');return false;}
   }
   let purgePromise = null;
   const savedGuidance = count => count === 1
@@ -366,34 +415,52 @@
   document.getElementById('final-submit-btn').before(queueButton, help, copyButton, copyHelp, exitReview, status);
   queueButton.onclick = () => void savePending();
   async function prepareDevice(force=false) {
-    if (copying || preparing || active || !force && preparedToken === token()) return;
+    if(copying)return;
+    if(preparing||active){if(force)copyResult(localAccount(),'Espera a que termine el pedido en curso para actualizar la copia de trabajo.');return;}
+    if(!force&&preparedToken===token())return;
     const account = localAccount(), expectedToken = token(), helper = window.PTHOfflineCheckoutCopy;
-    if (!account || navigator.onLine === false) { message('Conéctate con tu cuenta para guardar o actualizar los clientes y las entregas.'); return; }
-    if (!helper) { message('No se pudo abrir la copia para trabajar sin conexión. Recarga la página.'); return; }
+    if(!account)return;
+    if(navigator.onLine===false){copyResult(account,'Sin conexión: no se actualizó la copia ni se descargaron archivos. La copia anterior vigente y tus pendientes se conservan. Reintenta con Internet.');await checkReadiness();return;}
+    if(!helper){copyResult(account,'No se pudo abrir la copia para trabajar sin conexión. Recarga la página con Internet; tus pendientes se conservan.');return;}
     const sessionUntil = PTHSecureData.expiresAt?.();
-    if (!Number.isFinite(sessionUntil) || sessionUntil <= Date.now()) { message('Renueva tu sesión con conexión antes de guardar los clientes y las entregas.'); return; }
-    copying = true; copyButton.disabled = true; readiness('Preparando este teléfono para trabajar sin conexión…');
-    try {
-      const profile = await PTHSecureData.restore();
-      if (!profile || profile.id !== account || !sameSession(account, expectedToken)) return;
-      const zones = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio',{ascending:true});
-      if(zones.error || !zones.data?.length) throw Error('TARIFFS_MISSING');
-      const payload = await helper.capture({client: supabaseClient, profile, products: productosRaw, tariffs: zones.data, storage, token: expectedToken, sessionUntil});
-      if (!sameSession(account, expectedToken)) return;
-      const localUntil=Date.now()+helper.AGE;
-      const saved=await (copies || helper.create(idb)).save(account, payload, {profile, consent: true, sessionUntil, localUntil, guard: () => sameSession(account, expectedToken)});
-      if(!sameSession(account,expectedToken))return;
-      PTHSecureData.rememberOfflineProfile(saved.expiresAt);
-      preparedToken=expectedToken;
-      await checkReadiness();
-      if (sameSession(account, expectedToken)) message('Copia guardada en este teléfono: tus clientes recientes, productos y tarifas están disponibles en el formulario sin conexión.');
-    } catch (error) { readiness('Este teléfono aún no está listo sin conexión. Mantén Internet y pulsa Actualizar copia de trabajo para reintentar.'); message(error.safeMessage || (error.code === 'CLIENT_SCOPE_AMBIGUOUS' ? 'La cuenta necesita revisión antes de guardar clientes en este teléfono.' : 'No se pudo guardar la copia. Conserva la conexión y vuelve a intentarlo.')); }
-    finally { copying = false; copyButton.disabled = false; }
+    if(!expectedToken||!Number.isFinite(sessionUntil)||sessionUntil<=Date.now()){copyResult(account,'Renueva tu sesión con conexión antes de actualizar los datos. Tu copia anterior vigente y los pendientes se conservan.');return;}
+    const generation=++copyGeneration;let stopped=false,deadline;
+    const current=()=>!stopped&&generation===copyGeneration&&account===localAccount()&&sameSession(account,expectedToken);
+    copying=true;copyOutcome=null;copyButton.disabled=true;copyButton.textContent='Preparando…';readiness('Guardando los datos de tu cuenta para trabajar sin conexión…');
+    const attempt=(async()=>{
+      let dataSaved=false,dataProblem=null;
+      try{
+        const profile=await PTHSecureData.restore();
+        if(!current())return;
+        if(!profile||profile.id!==account)throw Object.assign(Error('ACCOUNT'),{code:'ACCOUNT'});
+        const zones=await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio',{ascending:true});
+        if(!current())return;
+        if(zones.error||!zones.data?.length)throw Object.assign(Error('TARIFFS_MISSING'),{code:zones.error?.code||'TARIFFS_MISSING'});
+        const payload=await helper.capture({client:supabaseClient,profile,products:productosRaw,tariffs:zones.data,storage,token:expectedToken,sessionUntil});
+        if(!current())return;
+        const saved=await (copies||helper.create(idb)).save(account,payload,{profile,consent:true,sessionUntil,localUntil:Date.now()+helper.AGE,guard:current});
+        if(!current())return;
+        dataSaved=true;PTHSecureData.rememberOfflineProfile(saved.expiresAt);preparedToken=expectedToken;
+      }catch(error){
+        if(!current())return;
+        const reasons={INVALID:'Hay datos que no cumplen los límites del guardado local. Reintentar no cambia esos datos.',CLIENT_SCOPE_AMBIGUOUS:'La cuenta necesita revisión antes de guardar clientes en este teléfono.',TARIFFS_MISSING:'No se pudieron obtener tarifas de entrega válidas.',NETWORK_ERROR:'No se pudo conectar para obtener los datos.',STORAGE:'El navegador no pudo guardar los datos. Comprueba que tenga espacio disponible.'};
+        dataProblem=dataSaved?'Los datos se guardaron, pero no se pudo completar su preparación local. Comprueba el almacenamiento y reintenta.':'No se actualizó la copia de datos. '+(reasons[error.code]||'No se pudo completar el guardado; comprueba tu conexión y el almacenamiento.')+' La copia anterior vigente y tus pendientes se conservan.';
+        copyResult(account,dataProblem);
+      }
+      if(!current())return;
+      readiness('Comprobando los datos guardados y los archivos de la app para abrirla sin conexión…');
+      const complete=await checkReadiness({repair:true,guard:current});
+      if(!current())return;
+      if(!dataProblem)copyResult(account,complete?'Copia guardada en este teléfono. Datos y archivos de la app comprobados para trabajar sin conexión.':'Copia de datos guardada en este teléfono. La preparación offline de la app aún está incompleta; revisa el aviso y reintenta con Internet.',{dataSaved:true});
+    })();
+    try{await Promise.race([attempt,new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('PREPARATION_TIMEOUT')),45000);})]);}
+    catch(_){if(current()){stopped=true;++readinessGeneration;copyResult(account,'La preparación no terminó a tiempo. No se confirmó que el teléfono esté listo sin conexión. Los datos ya guardados y tus pendientes se conservan; puedes reintentar.');readiness('Preparación interrumpida. Reintenta con Internet para comprobar los datos y los archivos de la app.');}}
+    finally{stopped=true;clearTimeout(deadline);if(generation===copyGeneration){copying=false;copyButton.disabled=false;copyButton.textContent='Actualizar copia de trabajo';const summary=document.getElementById('pth-device-readiness-summary')?.textContent;if(summary)readiness(summary);}}
   }
   copyButton.onclick=()=>void prepareDevice(true);
   window.addEventListener('pth:session-changed', event => {
     const next = owner();
-    preparedToken=null; ++readinessGeneration; void checkReadiness();
+    preparedToken=null;copyOutcome=null;++copyGeneration;copying=false;copyButton.disabled=false;copyButton.textContent='Actualizar copia de trabajo';++readinessGeneration;void checkReadiness();
     reviewing = null; saveIntent = null; lockReviewFields(false);
     if (!next && event.reason === 'expired') message('Tu sesión venció. Los reintentos se detuvieron. Tus pedidos guardados se conservan; vuelve a entrar con la misma cuenta para enviarlos.');
     if (window.PTHSecureData.privatePurgePersistenceFailed?.()) message('El navegador no pudo guardar la limpieza pendiente. Mantén esta página abierta hasta que se borren los datos locales.');

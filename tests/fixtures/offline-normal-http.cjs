@@ -23,6 +23,7 @@ async function startFixture() {
     {id:'own-b', gestor:b.nombre, cliente:MARKERS.b, telefono:'5352222222', ci:'22222222222', direccion:'PRIVATE_B_ADDRESS_63', fecha:new Date().toISOString()});
   f.rows.productos.forEach((p,i) => Object.assign(p, {categoria: i?'ENERGIA':'HOGAR', descripcion:i?'Descripción equipo B':'Descripción equipo A', thumbnail:'/icons/product-placeholder.svg', created_at:new Date().toISOString()}));
   let oldWorker = false, serial = 0;
+  const assetFailures=new Map();
   const requests = [], unexpected = [];
   const json = (res, data, status=200) => {res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   const server = http.createServer(async(req,res) => {
@@ -48,7 +49,7 @@ async function startFixture() {
       if(url.pathname==='/__qa-network'){const flag=path.join(root,'../evidence/network-offline');if(url.searchParams.get('offline')==='1')fs.writeFileSync(flag,'');else fs.rmSync(flag,{force:true});return json(res,{ok:true});}
       if(url.pathname==='/__qa-expire'){f.rows.pth_secure_sessions.forEach(s=>s.expires_at=new Date(Date.now()-1000).toISOString());return json(res,{ok:true});}
       if(url.pathname==='/__qa-state'){return json(res,{writes:f.writes,orders:f.rows.pedidos.map(o=>({id:o.id,client:o.cliente,reference:o.orden_dia})),requests:requests.filter(r=>r.action).map(r=>({action:r.action,operation:r.operation,table:r.table}))});}
-      const record = {path:url.pathname, query:url.search, method:req.method}; requests.push(record);
+      const record = {path:url.pathname, query:url.search, method:req.method,hasCookie:Boolean(req.headers.cookie),hasAuthorization:Boolean(req.headers.authorization)}; requests.push(record);
       if(url.pathname === '/functions/v1/secure-data') {
         let raw=''; for await(const chunk of req) {raw += chunk; if(raw.length>150000)throw Error('Fixture body too large');}
         const body=JSON.parse(raw);record.action=body.action;record.table=body.table;record.operation=body.operation;
@@ -79,6 +80,7 @@ async function startFixture() {
       const filename=path.resolve(root,relative);
       assert.ok(filename.startsWith(root+path.sep));
       if(!fs.existsSync(filename)){record.status=404;res.writeHead(404);return res.end();}
+      if(assetFailures.has(url.pathname)){record.status=assetFailures.get(url.pathname);res.writeHead(record.status);return res.end('Synthetic public asset unavailable');}
       let body=fs.readFileSync(filename);
       if(relative==='service-worker.js'&&oldWorker)body=fs.readFileSync(path.join(__dirname,'offline-worker-before-normal.js'));
       // Only endpoint plumbing changes; the shipped SDK, DOM, worker and business rules are real.
@@ -91,6 +93,7 @@ async function startFixture() {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   origin='http://127.0.0.1:'+server.address().port;
   return {origin, f, requests, unexpected, until, actors:{a,b}, tokens:TOKENS, markers:MARKERS,
+    failAsset(path,status=503){assert.ok(path.startsWith('/')&&!path.startsWith('/functions/')&&!path.startsWith('/rest/'));if(status===null)assetFailures.delete(path);else assetFailures.set(path,status);},
     setOldWorker(value){oldWorker=value;},close:()=>new Promise(resolve=>server.close(resolve))};
 }
 module.exports={startFixture};

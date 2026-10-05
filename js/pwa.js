@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '20261005-cold7';
+  const SW_VERSION = '20261005-copy1';
   let registration = null;
   let reloadingForUpdate = false;
 

@@ -36,10 +36,10 @@ test('evicted private copy cannot reopen a prepared private form; pending intent
 });
 test('readiness rereads persisted work and refuses incomplete shell or storage eviction',async()=>{
  const d=await device();await d.secure.login('Demo A','synthetic-only');await d.prepare();let shellReady=true,notice='';
- const source=fs.readFileSync('js/pending-checkout-storefront.js','utf8'),start=source.indexOf('  async function checkReadiness()'),end=source.indexOf('  let purgePromise',start);
+ const source=fs.readFileSync('js/pending-checkout-storefront.js','utf8'),start=source.indexOf('  async function checkReadiness('),end=source.indexOf('  let purgePromise',start);
  class Channel{constructor(){const one=this.port1={onmessage:null,close(){}};this.port2={reply:data=>one.onmessage?.({data})};}}
- const context={readinessGeneration:0,preparedToken:'cached-token',localAccount:()=>pending.localOwner(d.storage),PTHSecureData:d.secure,copies:d.copies,token:()=>d.secure.token(),document:{getElementById:()=>null},readiness:text=>notice=text,setTimeout,clearTimeout,MessageChannel:Channel,navigator:{serviceWorker:{controller:{},ready:Promise.resolve({active:{postMessage:(_,ports)=>ports[0].reply({ready:shellReady})}})}}};
+ const context={copying:false,copyOutcome:null,requestOfflineShell:async()=>({ready:shellReady}),readinessGeneration:0,preparedToken:'cached-token',localAccount:()=>pending.localOwner(d.storage),PTHSecureData:d.secure,copies:d.copies,token:()=>d.secure.token(),document:{getElementById:()=>null},readiness:text=>notice=text,setTimeout,clearTimeout,MessageChannel:Channel,navigator:{onLine:true}};
  vm.runInNewContext(source.slice(start,end),context);assert.equal(await context.checkReadiness(),true);assert.match(notice,/Listo para trabajar/);
- shellReady=false;assert.equal(await context.checkReadiness(),false);assert.match(notice,/aún no está listo/);
- shellReady=true;await d.copies.clear('actor-a');assert.equal(await context.checkReadiness(),false);assert.equal(context.preparedToken,null);assert.match(notice,/aún no está listo/);assert.equal(d.f.writes,0);
+ shellReady=false;assert.equal(await context.checkReadiness(),false);assert.match(notice,/Datos guardados.*Faltan archivos/);
+ shellReady=true;await d.copies.clear('actor-a');assert.equal(await context.checkReadiness(),false);assert.equal(context.preparedToken,null);assert.match(notice,/Falta guardar la copia de datos/);assert.equal(d.f.writes,0);
 });

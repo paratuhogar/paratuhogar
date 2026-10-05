@@ -1,5 +1,5 @@
 import {mountAdminPush} from './admin-push.mjs?v=20261002-reminders1';
-import {adminPushRegistration} from './admin-push-registration.mjs?v=20261005-cold7';
+import {adminPushRegistration} from './admin-push-registration.mjs?v=20261005-copy1';
 const host=document.getElementById('push-settings');
 try{
  let timer,profile;
