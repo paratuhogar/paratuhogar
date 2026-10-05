@@ -147,13 +147,13 @@ test('unchanged idempotency token reaches insert and existing unique constraint 
 
 test('principal approval still uses own pending-order authorization and preserves stored amounts',async()=>{
  const f=await fixture({profiles:[profile('p','Shared Seller'),profile('s','Shared Seller',{parent_id:'p'})],actorId:'p'});
- const stored={id:'pending-test',parent_gestor_id:'p',parent_gestor_nombre:'Shared Seller',subgestor_nombre:'Shared Seller',cliente:'Synthetic',producto:'Stored Product',total:300,comision_total:50,comision_subgestor:15,proveedor:'Synthetic Provider'};f.rows.pedidos_subgestores.push(stored);
+ const stored={id:'pending-test',estado:'Pendiente Aprobacion',submission_token:'synthetic-submission',parent_gestor_id:'p',parent_gestor_nombre:'Shared Seller',subgestor_nombre:'Shared Seller',cliente:'Synthetic',producto:'Stored Product',total:300,comision_total:50,comision_subgestor:15,proveedor:'Synthetic Provider'};f.rows.pedidos_subgestores.push(stored);
  const body=payload('Shared Seller',{id:'pending-test',subgestor_nombre:'Shared Seller',total:1,comision_total:999});const result=await f.request(body);assert.equal(result.error,null);const order=f.rows.pedidos[0];assert.equal(order.total,300);assert.equal(order.comision_total,50);assert.equal(order.comision_subgestor,15);assert.equal(order.comision_parent,35);
  assert.equal(f.trace.some(t=>t.table==='productos'),false);
 });
 
 test('different principal cannot approve another principal pending order',async()=>{
- const f=await fixture();f.rows.pedidos_subgestores.push({id:'pending-test',parent_gestor_id:'principal-b',parent_gestor_nombre:'Shared Seller',subgestor_nombre:'Child',comision_total:50,comision_subgestor:15});
+ const f=await fixture();f.rows.pedidos_subgestores.push({id:'pending-test',estado:'Pendiente Aprobacion',parent_gestor_id:'principal-b',parent_gestor_nombre:'Shared Seller',subgestor_nombre:'Child',comision_total:50,comision_subgestor:15});
  const result=await f.request(payload('Shared Seller',{id:'pending-test',subgestor_nombre:'Child'}));assert.equal(result.status,403);assert.equal(f.writes,0);
 });
 

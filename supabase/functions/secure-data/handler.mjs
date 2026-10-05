@@ -122,6 +122,9 @@ async function canonicalSale(db,table,input,actor,checkoutPrices=false) {
     if(actorKind(actor)!=='admin') query=query.eq('parent_gestor_id',actor.id);
     const {data:pending,error}=await query.maybeSingle();
     if(error||!pending) fail('No se encontró el pedido pendiente autorizado.');
+    if(pending.estado!=='Pendiente Aprobacion') fail('Este pedido ya no está pendiente de aprobación.');
+    // The stored queue row is authoritative; a client marker never admits a key.
+    if((input.submission_token??null)!==(pending.submission_token??null)) fail('No coincide la clave del pedido pendiente.');
     if(!Number.isFinite(Number(pending.comision_total))||Number(pending.comision_subgestor)<0||Number(pending.comision_subgestor)>Number(pending.comision_total)) fail('Revisa el reparto de este pedido antes de aprobarlo.');
     row.id=pending.id;
     row.gestor=pending.parent_gestor_nombre;
@@ -174,7 +177,9 @@ async function prepareWrite(db,body,actor) {
   for(const input of values) {
     scopeFor(body.table,actor,body.op,input);
     let row={...input};
-    if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'&&String(row.submission_token||'').startsWith('pthn1.')&&!row._approval_id) fail('Usa la confirmación de pedidos nuevos para esta clave.');
+    // Only canonicalSale's authorized, pending queue lookup may retain a new key.
+    const approval=body.table==='pedidos'&&Boolean(row.subgestor_nombre);
+    if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'&&String(row.submission_token||'').startsWith('pthn1.')&&!approval) fail('Usa la confirmación de pedidos nuevos para esta clave.');
     if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert') row=await canonicalSale(db,body.table,row,actor);
     if(body.table==='gestores'&&body.op==='insert'&&kind!=='admin') {
       if(!row.nombre||!row.telefono||String(row.password||'').length<6) fail('Completa nombre, teléfono y una contraseña de al menos 6 caracteres.');
