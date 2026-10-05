@@ -11,6 +11,11 @@ function fixture(){
  return {api,root,listeners,copy,secureData,get adopted(){return adopted;},get read(){return read;},get cleared(){return cleared;},setToken:value=>token=value,setProfile:value=>savedProfile=value,setExpiry:value=>expiry=value};
 }
 test('adopts display identity only after a scoped saved copy is read',async()=>{const f=fixture();assert.equal(f.adopted,0);assert.equal((await f.api.fallback()).owner,profile.id);assert.equal(f.read,1);assert.equal(f.adopted,1);assert.equal(f.api.usingCopy(),true);assert.equal(Object.hasOwn(f.api.current(),'token'),false);});
+test('expiry preserves an active prepared same-account form context while logout still clears it',async()=>{
+ const f=fixture();f.secureData.hasOfflineContext=()=>true;await f.api.fallback();f.setToken(null);
+ f.listeners['pth:session-changed']({reason:'expired'});assert.equal(f.api.current()?.owner,profile.id);assert.equal(f.cleared,0);
+ f.secureData.hasOfflineContext=()=>false;f.setProfile(null);f.listeners['pth:session-changed']({reason:'logout'});assert.equal(f.api.current(),null);assert.equal(f.cleared,1);
+});
 test('network failure permits saved display; denial and session changes never do',async()=>{for(const error of [{status:401,code:'NETWORK_ERROR'},{status:403,code:'NETWORK_ERROR'},{code:'SESSION_CHANGED'},{code:'SESSION_EXPIRED'},{code:'FORBIDDEN'}]){const f=fixture();assert.equal(await f.api.fallback(error),null);assert.equal(f.adopted,0);}const f=fixture();f.root.navigator.onLine=true;assert.equal(await f.api.fallback({code:'VALIDATION'}),null);assert.ok(await f.api.fallback({code:'NETWORK_ERROR'}));});
 test('a live denial removes an already rendered private copy',async()=>{const f=fixture();await f.api.fallback();assert.equal(await f.api.fallback({status:403}),null);assert.equal(f.api.current(),null);assert.equal(f.cleared,1);});
 test('signed-in device with no valid own copy never uses public contacts/catalogue',async()=>{const f=fixture();f.setProfile({...profile,id:'account-b'});assert.equal(await f.api.fallback(),null);f.setProfile(null);assert.equal(await f.api.fallback(),null);});

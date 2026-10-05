@@ -13,6 +13,7 @@ export async function fixture(){
   then(resolve,reject){return Promise.resolve().then(()=>{
    trace.push({table:this.table,op:this.op});
    if(this.op==='insert'){
+    if(this.table==='pth_secure_sessions'&&!Array.isArray(this.values)){rows[this.table].push(structuredClone(this.values));return {data:null,error:null};}
     assert.equal(Array.isArray(this.values),true);const existing=rows[this.table];
     if(this.values.some(v=>existing.some(r=>r.id===v.id||r.submission_token===v.submission_token&&r.proveedor===v.proveedor)))return {data:null,error:{code:'23505'}};
     if(failInsert)return {data:null,error:{code:'synthetic-failure'}};
@@ -24,11 +25,12 @@ export async function fixture(){
    return {data:this.single?data[0]||null:structuredClone(data),error:null};
   }).then(resolve,reject);}
  }
- const handler=createHandler({db:{from:t=>new Query(t)},checkoutSecret:secret});
+ const handler=createHandler({db:{from:t=>new Query(t),rpc:async name=>({data:name==='pth_check_login_rate',error:null})},checkoutSecret:secret});
  const input=(provider,id)=>({gestor:actor.nombre,proveedor:provider,cliente:'Synthetic Customer',telefono:'synthetic-phone',ci:'none',direccion:'Synthetic address (Centro)',municipio:'Centro Habana',origen:'Manual (Panel)',orden_dia:provider+'00001',_lineas:[{producto_id:id,cantidad:1}]});
  const body={action:'checkout',table:'pedidos',inputs:[input('A','pA'),input('B','pB')],delivery:{pickup:false,municipio:'Centro Habana',localidad:'Centro'},intentId:'b'.repeat(64),intentCreatedAt:Date.now()};
- const request=async(b,auth=token)=>{const response=await handler(new Request('https://example.test',{method:'POST',headers:auth?{Authorization:'Bearer '+auth}:{},body:JSON.stringify(b)}));return response.json();};
+ let lastStatus=200;
+ const request=async(b,auth=token)=>{const response=await handler(new Request('https://example.test',{method:'POST',headers:auth?{Authorization:'Bearer '+auth}:{},body:JSON.stringify(b)}));lastStatus=response.status;return response.json();};
  const quote=()=>request({...body,operation:'quote'});
  const submit=q=>request({...body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote});
- return {rows,trace,body,request,quote,submit,historical,get writes(){return writes;},set drop(value){drop=value;},set failInsert(value){failInsert=value;}};
+ return {rows,trace,body,request,quote,submit,historical,get lastStatus(){return lastStatus;},get writes(){return writes;},set drop(value){drop=value;},set failInsert(value){failInsert=value;}};
 }

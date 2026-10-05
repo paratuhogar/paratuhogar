@@ -1,6 +1,11 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const api=require('../js/offline-checkout-copy.js');
 const now=1700000000000;
+test('prepared copy can outlast a short session within its existing seven-day local bound',async()=>{
+ const store=memory(),copies=api.create(null,{store,now:()=>now});
+ const saved=await copies.save('a',data(),{profile:{id:'a'},consent:true,sessionUntil:now+1000,localUntil:now+api.AGE});
+ assert.equal(saved.expiresAt,now+api.AGE);
+});
 const data=()=>({products:[{id:'p1',nombre:'Equipo',precio:90,disponible:'SI',categoria:'HOGAR',proveedor:'A',tamaño_envio:'Grande',password:'secret',comision:20}],clients:[{cliente:'Client A',ci:'123',telefono:'50000000',direccion:'Calle A',gestor:'Unrelated',token:'secret'}],tariffs:[{municipio:'Centro Habana',localidad:'Centro',precio_pequeno:6,precio_grande:10,password:'secret'}]});
 const memory=()=>{const rows=new Map();return {rows,async update(owner,fn){const result=fn(rows.get(owner)||null);if(result===null)rows.delete(owner);else rows.set(owner,structuredClone(result));return structuredClone(result);}};};
 const storage=profile=>{const rows=new Map([['pth_session',JSON.stringify({data:profile})],['pth_secure_token','a'.repeat(64)]]);return {getItem:key=>rows.get(key)||null,setItem:(key,value)=>rows.set(key,value),removeItem:key=>rows.delete(key)};};

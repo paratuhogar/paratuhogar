@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-04-rolling30';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-05-cold1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -13,13 +13,13 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/gestor-ranking.js?v=20261004-rolling30',
   '/js/vendor/supabase-2.57.4.js',
   '/js/checkout-form-shared.js?v=20261003-pending2',
-  '/js/offline-checkout-copy.js?v=20261003-pending2',
-  '/js/offline-storefront-adapter.js?v=20261003-pending2',
+  '/js/offline-checkout-copy.js?v=20261005-cold7',
+  '/js/offline-storefront-adapter.js?v=20261005-cold7',
   '/css/offline-storefront.css?v=20261003-pending2',
-  '/js/storefront.min.js?v=20261003-seo-affiliate1',
+  '/js/storefront.min.js?v=20261005-cold7',
   '/js/storefront-extras.min.js?v=20261003-alias1',
-  '/js/pending-checkout-storefront.js?v=20261003-pending2',
-  '/js/pwa.js?v=20261003-pending2',
+  '/js/pending-checkout-storefront.js?v=20261005-cold7',
+  '/js/pwa.js?v=20261005-cold7',
   '/css/tailwind.min.css?v=20261004-rolling30',
   '/css/gestor-ranking.css?v=20261004-rolling30',
   '/css/client-followup.css?v=2',
@@ -41,9 +41,9 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
 // Public templates, local SDK and display code only. No private responses.
 const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
   '/css/offline-order.css?v=20261003-pending2',
-  '/js/pending-checkout.js?v=20261003-pending2',
-  '/js/pending-checkout-page.js?v=20261003-pending2',
-  '/js/secure-data.js?v=20261003-ranking1',
+  '/js/pending-checkout.js?v=20261005-cold7',
+  '/js/pending-checkout-page.js?v=20261005-cold7',
+  '/js/secure-data.js?v=20261005-cold7',
   '/js/low-connectivity.js?v=20261002-lowdata1',
   '/js/public-catalog-api.js?v=20261002-lowdata1',
   '/js/offline-catalog.js?v=20261002-lowdata2',
@@ -51,11 +51,11 @@ const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, P
   '/js/image-variants.js?v=20261001-images2',
   '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
-  '/js/pending-checkout-storefront.js?v=20261003-pending2',
+  '/js/pending-checkout-storefront.js?v=20261005-cold7',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
-  '/js/secure-data.js?v=20261003-ranking1',
-  '/js/storefront.min.js?v=20261003-seo-affiliate1',
+  '/js/secure-data.js?v=20261005-cold7',
+  '/js/storefront.min.js?v=20261005-cold7',
   '/css/low-connectivity.css?v=20261003-pending2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261003-alias1',
@@ -75,7 +75,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=20261002-fasttools2',
+  '/js/pwa.js?v=20261005-cold7',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
@@ -101,6 +101,13 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('message', event => {
+  if (event.data?.type === 'PTH_CHECK_OFFLINE_SHELL') {
+    event.waitUntil((async () => {
+      const cache = await caches.open(PTH_CACHE_VERSION);
+      const assets = await Promise.all(PTH_MINIMAL_SHELL.map(url => cache.match(url)));
+      event.ports?.[0]?.postMessage({ready: assets.every(Boolean), version: PTH_CACHE_VERSION});
+    })());
+  }
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
   if (event.data?.type === 'CLEAR_PUBLIC_CACHE') {
     event.waitUntil(Promise.all([caches.delete(PTH_CACHE_VERSION), caches.delete(PTH_IMAGE_CACHE)]));

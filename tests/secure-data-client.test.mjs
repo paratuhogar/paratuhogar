@@ -2,11 +2,31 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-function client(existingStorage) {
+test('quota refusal during isolation marker cannot keep logout credentials or device context',async()=>{
+ const f=client(),actor={id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__'};
+ f.context.fetch=async()=>({status:200,json:async()=>({data:{profile:actor,expiresAt:new Date(Date.now()+600000).toISOString()},error:null})});
+ f.storage.setItem('pth_secure_token','a'.repeat(64));await f.context.PTHSecureData.restore();f.context.PTHSecureData.rememberOfflineProfile(Date.now()+600000);
+ const set=f.storage.setItem;f.storage.setItem=(key,value)=>{if(key.startsWith('pth_pending_private_purge')||key.startsWith('pth_offline_orders_isolated'))throw Error('QuotaExceededError');return set(key,value);};
+ await f.context.PTHSecureData.logout();assert.equal(f.context.PTHSecureData.token(),null);assert.equal(f.storage.getItem('pth_offline_context_v1'),null);assert.equal(f.context.PTHSecureData.offlineProfile(),null);
+});
+test('prepared device context survives expiry solely for drafting, never server restoration',async()=>{
+ const f=client(),actor={id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__'};
+ f.context.fetch=async()=>({status:200,json:async()=>({data:{profile:actor,expiresAt:new Date(Date.now()+600000).toISOString()},error:null})});
+ f.storage.setItem('pth_secure_token','a'.repeat(64));await f.context.PTHSecureData.restore();
+ assert.equal(typeof f.context.PTHSecureData.rememberOfflineProfile,'function');
+ f.context.PTHSecureData.rememberOfflineProfile(Date.now()+86400000);
+ f.context.PTHSecureData.clearSession('expired');
+ assert.equal(f.storage.getItem('pth_secure_token'),null);assert.equal(f.context.PTHSecureData.offlineProfile()?.id,'own');
+ assert.equal(await f.context.PTHSecureData.restore(),null);
+ const before=f.requests.length;await f.db.from('pedidos').select();assert.equal(f.context.PTHSecureData.token(),null);
+ assert.equal(f.context.PTHSecureData.pendingPrivatePurgeOwners().length,0);
+ f.context.PTHSecureData.clearSession();assert.equal(f.context.PTHSecureData.offlineProfile(),null);
+});
+function client(existingStorage,pathname='/') {
  const requests=[];const items=new Map();
  const storage=existingStorage||{getItem:k=>items.get(k)||null,setItem:(k,v)=>items.set(k,String(v)),removeItem:k=>items.delete(k),key:i=>[...items.keys()][i],get length(){return items.size;}};
  const sdk={from:table=>({direct:table}),rpc:name=>({direct:name})};
- const context={localStorage:storage,console,Set,Map,Promise,AbortSignal,URL,location:{origin:'https://paratuhogar.org'},fetch:async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,status:200,json:async()=>({data:[],error:null})};},supabase:{createClient:()=>sdk}};
+ const context={localStorage:storage,console,Set,Map,Promise,AbortSignal,URL,location:{origin:'https://paratuhogar.org',pathname},fetch:async(url,options)=>{requests.push(JSON.parse(options.body));return{ok:true,status:200,json:async()=>({data:[],error:null})};},supabase:{createClient:()=>sdk}};
  context.window=context;
  vm.runInNewContext(fs.readFileSync(new URL('../js/secure-data.js',import.meta.url),'utf8'),context);
  return{context,requests,storage,db:context.supabase.createClient('https://example.supabase.co','public-key')};
@@ -193,4 +213,12 @@ test('a delayed restore cannot resurrect a session after logout',async()=>{
  const pending=context.PTHSecureData.restore();context.PTHSecureData.clearSession();release();
  await assert.rejects(pending);
  assert.equal(storage.getItem('pth_secure_token'),null);assert.equal(storage.getItem('pth_session'),null);
+});
+
+test('messenger restoration cannot remove the separate salesperson draft context',async()=>{
+ const f=client(),seller={id:'seller-a',nombre:'Seller A',rol:'gestor',estado:'activo',password:'__session__'},expiry=new Date(Date.now()+600000).toISOString();
+ f.context.fetch=async()=>({status:200,json:async()=>({data:{profile:seller,expiresAt:expiry},error:null})});f.storage.setItem('pth_secure_token','a'.repeat(64));await f.context.PTHSecureData.restore();f.context.PTHSecureData.rememberOfflineProfile(Date.now()+600000);
+ const saved=f.storage.getItem('pth_offline_context_v1');f.storage.setItem('pth_secure_messenger_token','b'.repeat(64));f.storage.setItem('pth_secure_messenger_token_expires_at',String(Date.now()+600000));
+ const messenger=client(f.storage,'/mensajeros.html');messenger.context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'messenger-b',nombre:'Demo Messenger',rol:'mensajero',estado:'activo'},expiresAt:expiry},error:null})});
+ await messenger.context.PTHSecureData.restore();assert.equal(f.storage.getItem('pth_offline_context_v1'),saved);await messenger.context.PTHSecureData.logout();assert.equal(f.storage.getItem('pth_offline_context_v1'),saved);
 });

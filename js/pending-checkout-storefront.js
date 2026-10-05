@@ -17,7 +17,7 @@
   const lastStep = document.getElementById('checkout-last-step');
   const owner = () => window.PTHSecureData.accountId?.() || null;
   const token = () => window.PTHSecureData.token();
-  const offlineMode = () => navigator.onLine === false || window.PTHOfflineStorefront?.usingCopy?.() === true;
+  const offlineMode = () => navigator.onLine === false || window.PTHOfflineStorefront?.usingCopy?.() === true || !token() && Boolean(window.PTHSecureData.offlineProfile?.());
   const sameSession = (account, expectedToken) => api.localOwner(storage) === account && (!owner() || owner() === account) && token() === expectedToken;
   const pendingStates = ['queued', 'sending', 'uncertain', 'blocked', 'paused'];
   const labels = {
@@ -31,7 +31,25 @@
   };
   let active = null, busy = false, panel = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
-  let latestTariffs = [], copying = false;
+  let latestTariffs = [], copying = false, preparedToken = null;
+  let readinessGeneration=0;
+  function readiness(text) { let node=document.getElementById('pth-device-readiness'); if(!node){node=document.createElement('aside');node.id='pth-device-readiness';node.className='pth-connectivity-card';node.setAttribute('role','status');document.getElementById('admin-nav')?.before(node);}node.textContent=text;node.hidden=!localAccount(); }
+  async function checkReadiness(){
+    const epoch=++readinessGeneration,account=localAccount(),profile=PTHSecureData.offlineProfile?.();
+    if(!account||!profile){document.getElementById('pth-device-readiness')?.remove();return false;}
+    try{
+      const copy=await copies?.read(account,{profile});
+      const ready=await new Promise(resolve=>{
+        const timeout=setTimeout(()=>resolve(false),10000);
+        navigator.serviceWorker?.ready.then(registration=>{if(!navigator.serviceWorker.controller){clearTimeout(timeout);resolve(false);return;}const channel=new MessageChannel();channel.port1.onmessage=event=>{clearTimeout(timeout);channel.port1.close();resolve(event.data?.ready===true);};registration.active.postMessage({type:'PTH_CHECK_OFFLINE_SHELL'},[channel.port2]);}).catch(()=>{clearTimeout(timeout);resolve(false);});
+      });
+      if(epoch!==readinessGeneration||account!==localAccount())return false;
+      const complete=Boolean(copy&&ready);
+      if(!copy)preparedToken=null;
+      readiness(complete?'Listo para trabajar sin conexión'+(!token()?'. Tu sesión venció: entra con conexión antes de enviar.':'. Productos, clientes propios y entregas guardados en este teléfono.'):'Este teléfono aún no está listo sin conexión. Conecta para completar la copia de trabajo.');
+      return complete;
+    }catch(_){if(epoch===readinessGeneration)readiness('Este teléfono aún no está listo sin conexión. Comprueba el almacenamiento y reintenta con Internet.');return false;}
+  }
   let purgePromise = null;
   const savedGuidance = count => count === 1
     ? 'Pedido guardado en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tu pedido automáticamente. Te avisaremos cuando la tienda confirme que lo recibió.'
@@ -45,7 +63,7 @@
     const guarded = api.create({update(target, mutate) {
       return queueStore.update(target, rows => {
         const expires = window.PTHSecureData.expiresAt?.();
-        if (target !== account || !sameSession(account, expectedToken) || window.PTHSecureData.hasPendingPrivatePurge?.(account) || !Number.isFinite(expires) || expires <= Date.now()) {
+        if (target !== account || !sameSession(account, expectedToken) || window.PTHSecureData.hasPendingPrivatePurge?.(account) || (!Number.isFinite(expires) || expires <= Date.now()) && !window.PTHSecureData.hasOfflineContext?.(account)) {
           throw Object.assign(Error('SESSION_CHANGED'), {code: 'SESSION_CHANGED', safeMessage: 'La sesión cambió o venció antes de guardar el pedido. Conserva los datos y vuelve a entrar con conexión.'});
         }
         return mutate(rows);
@@ -63,7 +81,7 @@
       for (const account of accounts) {
         try {
           if (!copies) throw Error('Private copy storage unavailable');
-          await queue.logout(account);
+          if (!PTHSecureData.preserveOfflineOrders?.(account)) await queue.logout(account);
           await copies.clear(account);
           if (secure.hasPendingPrivatePurge?.(account) && !secure.completePrivatePurge?.(account)) throw Error('Private purge marker retained');
         } catch (_) { complete = false; }
@@ -238,7 +256,7 @@
   async function tick() {
     await drainPrivatePurges();
     if (window.PTHSecureData.hasPendingPrivatePurge?.(owner())) return;
-    if (busy || preparing || reviewing || !owner() || api.localOwner(storage) !== owner() || navigator.onLine === false || !productosRaw.length || !modal.classList.contains('hidden')) return;
+    if (busy || preparing || reviewing || !token() || !owner() || api.localOwner(storage) !== owner() || navigator.onLine === false || !productosRaw.length || !modal.classList.contains('hidden')) return;
     busy = true;
     const account = owner();
     try {
@@ -252,8 +270,8 @@
           await queue.run(account, async context => {
             expectedToken = token();
             if (!expectedToken || owner() !== account || !sameSession(account, expectedToken)) throw Object.assign(Error('SESSION_CHANGED'), {code: 'SESSION_CHANGED', safeMessage: 'Inicia sesión de nuevo con esta misma cuenta para enviar el pedido.'});
-            await PTHSecureData.restore();
-            if (owner() !== account || !sameSession(account, expectedToken)) throw Object.assign(Error('SESSION_CHANGED'), {code: 'SESSION_CHANGED'});
+            const verified = await PTHSecureData.refresh();
+            if (!verified || verified.id !== account || owner() !== account || !sameSession(account, expectedToken)) throw Object.assign(Error('SESSION_CHANGED'), {code: 'SESSION_CHANGED'});
             for (const attempt of context.row.priorAttempts || []) {
               const result = await PTHSecureData.checkout({operation: 'receipt', attempt}); if (result.error) throw result.error;
               if (owner() !== account || !sameSession(account, expectedToken)) throw Object.assign(Error('SESSION_CHANGED'), {code: 'SESSION_CHANGED'});
@@ -289,6 +307,7 @@
     const expectedToken = token();
     let data;
     try {
+      if (offlineMode()) { const profile=PTHSecureData.offlineProfile?.(); if (!profile || !await copies?.read(account,{profile})) throw Object.assign(Error('COPY_MISSING'),{safeMessage:'La copia de trabajo está incompleta o ya no está guardada. Conserva el formulario y conecta para preparar este teléfono.'}); }
       data = snapshot();
       const key = JSON.stringify(data);
       if (!saveIntent || saveIntent.key !== key || saveIntent.owner !== account) saveIntent = {owner: account, key, intentId: Array.from(crypto.getRandomValues(new Uint8Array(32)), value => value.toString(16).padStart(2, '0')).join(''), savedAt: Date.now()};
@@ -296,7 +315,7 @@
       if (!sameSession(account, expectedToken)) return;
       // A late IndexedDB response cannot erase another account's inputs.
       for (const field of ['nombre', 'ci', 'tel', 'dir', 'vuelto']) {
-        try { const key = 'autosave_check-' + field; if (storage.getItem(key) === data.form[field]) storage.removeItem(key); } catch (_) {}
+        try { const key = checkoutAutosaveKey('check-' + field, account); if (key && JSON.parse(storage.getItem(key)||'null')?.value === data.form[field]) storage.removeItem(key); } catch (_) {}
       }
       lowConnectivity.clearDraft(account);
       cart = []; newCartRevision = null; newCheckoutShippingOverride = null; volatileCheckoutIntent = null;
@@ -334,43 +353,52 @@
     guard() { return Boolean(active && (owner() !== active.row.owner || !sameSession(active.row.owner, active.expectedToken))); },
     shouldIntercept: () => !active && Boolean(reviewing || preparing || localAccount() && offlineMode()),
     async interceptSubmit() { if (active) return false; if (reviewing) await saveReview(); else if (offlineMode()) await savePending(); return true; },
-    verifyEstimate, async catalogReady() { await render(); await tick(); },
+    verifyEstimate, async catalogReady() { await render(); if (!offlineMode()) void prepareDevice(); await tick(); },
     saveDeliveryZones(rows) { latestTariffs = Array.isArray(rows) ? rows : []; },
     render, tick, leaveReview, drainPrivatePurges
   };
   const queueButton = document.createElement('button'); queueButton.type = 'button'; queueButton.id = 'pth-queue-order'; queueButton.className = 'pth-connectivity-action'; queueButton.textContent = 'Guardar como pendiente'; queueButton.hidden = true;
-  const help = document.createElement('p'); help.className = 'pth-cart-draft-note'; help.textContent = 'Puedes guardar varios pedidos en este teléfono. Se envían con esta página abierta y tu misma cuenta al recuperar conexión. Los datos del cliente se borran al confirmar, cancelar, cerrar sesión o vencer la sesión. Si pasan 7 días, se borran al volver a abrir la cola.';
-  const copyButton = document.createElement('button'); copyButton.type = 'button'; copyButton.id = 'pth-save-offline-copy'; copyButton.className = 'pth-connectivity-action'; copyButton.textContent = 'Guardar clientes y entregas en este teléfono'; copyButton.hidden = true;
-  const copyHelp = document.createElement('p'); copyHelp.className = 'pth-cart-draft-note'; copyHelp.textContent = 'Guarda tus clientes recientes, los productos y las tarifas para completar este mismo formulario sin conexión. Hazlo en un teléfono de uso personal; esta copia se borra al cerrar sesión o al vencer.';
+  const help = document.createElement('p'); help.className = 'pth-cart-draft-note'; help.textContent = 'Puedes guardar varios pedidos en este teléfono. Se envían con esta página abierta y tu misma cuenta al recuperar conexión. Al vencer la sesión se conservan para volver a entrar. Al cerrar sesión quedan aislados para esta cuenta. Los datos del cliente se borran al confirmar o cancelar. Si pasan 7 días, se borran al volver a abrir la cola.';
+  const copyButton = document.createElement('button'); copyButton.type = 'button'; copyButton.id = 'pth-save-offline-copy'; copyButton.className = 'pth-connectivity-action'; copyButton.textContent = 'Actualizar copia de trabajo'; copyButton.hidden = true;
+  const copyHelp = document.createElement('p'); copyHelp.className = 'pth-cart-draft-note'; copyHelp.textContent = 'Guarda tus clientes recientes, los productos y las tarifas para completar este mismo formulario sin conexión. Usa un teléfono personal. La copia se prepara automáticamente al entrar con Internet, dura hasta 7 días y se borra al cerrar sesión; los pedidos quedan aislados para tu cuenta.';
   const exitReview = document.createElement('button'); exitReview.type = 'button'; exitReview.id = 'pth-leave-pending-review'; exitReview.className = 'pth-connectivity-action'; exitReview.textContent = 'Volver a mi carrito'; exitReview.hidden = true; exitReview.onclick = leaveReview;
   const status = document.createElement('p'); status.id = 'pth-pending-message'; status.setAttribute('role', 'status');
   document.getElementById('final-submit-btn').before(queueButton, help, copyButton, copyHelp, exitReview, status);
   queueButton.onclick = () => void savePending();
-  copyButton.onclick = async () => {
-    if (copying || preparing || active) return;
+  async function prepareDevice(force=false) {
+    if (copying || preparing || active || !force && preparedToken === token()) return;
     const account = localAccount(), expectedToken = token(), helper = window.PTHOfflineCheckoutCopy;
     if (!account || navigator.onLine === false) { message('Conéctate con tu cuenta para guardar o actualizar los clientes y las entregas.'); return; }
     if (!helper) { message('No se pudo abrir la copia para trabajar sin conexión. Recarga la página.'); return; }
     const sessionUntil = PTHSecureData.expiresAt?.();
     if (!Number.isFinite(sessionUntil) || sessionUntil <= Date.now()) { message('Renueva tu sesión con conexión antes de guardar los clientes y las entregas.'); return; }
-    copying = true; copyButton.disabled = true;
+    copying = true; copyButton.disabled = true; readiness('Preparando este teléfono para trabajar sin conexión…');
     try {
       const profile = await PTHSecureData.restore();
       if (!profile || profile.id !== account || !sameSession(account, expectedToken)) return;
-      const payload = await helper.capture({client: supabaseClient, profile, products: productosRaw, tariffs: latestTariffs.length ? latestTariffs : tarifasMensajeriaAdminRaw, storage, token: expectedToken, sessionUntil});
+      const zones = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio',{ascending:true});
+      if(zones.error || !zones.data?.length) throw Error('TARIFFS_MISSING');
+      const payload = await helper.capture({client: supabaseClient, profile, products: productosRaw, tariffs: zones.data, storage, token: expectedToken, sessionUntil});
       if (!sameSession(account, expectedToken)) return;
-      await (copies || helper.create(idb)).save(account, payload, {profile, consent: true, sessionUntil, guard: () => sameSession(account, expectedToken)});
+      const localUntil=Date.now()+helper.AGE;
+      const saved=await (copies || helper.create(idb)).save(account, payload, {profile, consent: true, sessionUntil, localUntil, guard: () => sameSession(account, expectedToken)});
+      if(!sameSession(account,expectedToken))return;
+      PTHSecureData.rememberOfflineProfile(saved.expiresAt);
+      preparedToken=expectedToken;
+      await checkReadiness();
       if (sameSession(account, expectedToken)) message('Copia guardada en este teléfono: tus clientes recientes, productos y tarifas están disponibles en el formulario sin conexión.');
-    } catch (error) { message(error.safeMessage || (error.code === 'CLIENT_SCOPE_AMBIGUOUS' ? 'La cuenta necesita revisión antes de guardar clientes en este teléfono.' : 'No se pudo guardar la copia. Conserva la conexión y vuelve a intentarlo.')); }
+    } catch (error) { readiness('Este teléfono aún no está listo sin conexión. Mantén Internet y pulsa Actualizar copia de trabajo para reintentar.'); message(error.safeMessage || (error.code === 'CLIENT_SCOPE_AMBIGUOUS' ? 'La cuenta necesita revisión antes de guardar clientes en este teléfono.' : 'No se pudo guardar la copia. Conserva la conexión y vuelve a intentarlo.')); }
     finally { copying = false; copyButton.disabled = false; }
-  };
+  }
+  copyButton.onclick=()=>void prepareDevice(true);
   window.addEventListener('pth:session-changed', event => {
     const next = owner();
+    preparedToken=null; ++readinessGeneration; void checkReadiness();
     reviewing = null; saveIntent = null; lockReviewFields(false);
-    if (!next && event.reason === 'expired') message('Tu sesión venció. Los reintentos se detuvieron. Estamos borrando los datos del cliente guardados en este teléfono.');
+    if (!next && event.reason === 'expired') message('Tu sesión venció. Los reintentos se detuvieron. Tus pedidos guardados se conservan; vuelve a entrar con la misma cuenta para enviarlos.');
     if (window.PTHSecureData.privatePurgePersistenceFailed?.()) message('El navegador no pudo guardar la limpieza pendiente. Mantén esta página abierta hasta que se borren los datos locales.');
     void drainPrivatePurges().then(complete => {
-      if (complete && !owner() && event.reason === 'expired') message('Tu sesión venció. Se borraron los datos del cliente guardados en este teléfono. Inicia sesión y revisa tus pedidos antes de volver a prepararlos.');
+      if (complete && !owner() && event.reason === 'expired') message('Tu sesión venció. Tus pedidos guardados se conservan. Vuelve a entrar con la misma cuenta al recuperar conexión para enviarlos.');
       return render();
     });
     void render(); if (next) void tick();
@@ -385,7 +413,9 @@
   });
   window.addEventListener('focus', () => { void drainPrivatePurges().then(render); void render(); void tick(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { void render(); void tick(); } });
-  setInterval(() => { void drainPrivatePurges().then(render); void render(); void tick(); }, 15000);
+  setInterval(() => { void drainPrivatePurges().then(render); void render(); void checkReadiness(); if(!offlineMode())void prepareDevice(); void tick(); }, 15000);
   void drainPrivatePurges().then(render);
+  navigator.serviceWorker?.addEventListener('controllerchange',()=>void checkReadiness());
+  void checkReadiness();
   void render();
 })();

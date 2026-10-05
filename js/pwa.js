@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '20261003-pending2';
+  const SW_VERSION = '20261005-cold7';
   let registration = null;
   let reloadingForUpdate = false;
 

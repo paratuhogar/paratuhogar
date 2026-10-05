@@ -183,12 +183,14 @@ async function checkShortLinks() {
             document.getElementById('cart-count').textContent = '0';
             // Logout removes the departing account's local draft. Other accounts
             // are never restored by name or copied into the visitor cart.
-            if (!owner && event?.reason !== 'expired') lowConnectivity.clearDraft(newCartOwner);
+            // The departing account's draft stays isolated until that account returns.
             document.getElementById('cart-modal')?.classList.add('hidden');
             document.getElementById('checkout-form')?.reset();
         }
+        const accountChanged = owner !== newCartOwner;
         newCartOwner = owner;
         newCartOwnerBound = true;
+        if (accountChanged) restoreAccountFormDraft(owner);
     }
     window.addEventListener('pth:session-changed', bindNewCartAccount);
     function persistNewCartDraft() {
@@ -270,7 +272,7 @@ async function checkShortLinks() {
         } else copyDate.textContent = 'Conéctate una vez para preparar este teléfono.';
         const copyHelp = document.createElement('p'); copyHelp.id = 'pth-saved-catalog-description';
         copyHelp.textContent = currentNewCartOwner()
-            ? 'Continúa usando este catálogo y el mismo formulario cuando falte conexión. Guarda expresamente tus clientes y las tarifas desde el carrito antes de necesitarlos.'
+            ? 'Este teléfono prepara automáticamente tus productos, clientes propios y entregas después de entrar con conexión. Comprueba el aviso de preparación antes de salir sin señal.'
             : 'Este catálogo se abre aquí con los productos previamente descargados. Para preparar pedidos sin conexión, entra primero en tu cuenta y guarda tus datos de trabajo.';
         const warning = document.createElement('p'); warning.id = 'pth-saved-catalog-warning'; warning.className = 'pth-saved-catalog-warning';
         warning.textContent = 'La tienda comprueba precios, disponibilidad y mensajería al recibir el pedido. Sin conexión se verán las fotos ya guardadas en este dispositivo.';
@@ -363,9 +365,12 @@ async function checkShortLinks() {
     }
 
     try {
-        if (navigator.onLine === false) {
+        if (navigator.onLine === false || !window.PTHSecureData.token() && window.PTHSecureData.offlineProfile?.()) {
             if (!await offlineStorefront.fallback()) throw Object.assign(Error('Conecta una vez para guardar el catálogo de esta cuenta. Si ya lo guardaste, comprueba que tu sesión sigue vigente.'), {code:'OFFLINE_COPY_MISSING'});
-        } else await window.PTHSecureData.restore();
+        } else {
+            await window.PTHSecureData.restore();
+            if (!window.PTHSecureData.token() && window.PTHSecureData.offlineProfile?.()) await offlineStorefront.fallback();
+        }
     }
     catch (error) {
         if (!await offlineStorefront.fallback(error)) {
@@ -375,7 +380,7 @@ async function checkShortLinks() {
             return;
         }
     }
-    const savedSession = localStorage.getItem('pth_session');
+    const savedSession = localStorage.getItem('pth_session') || (offlineStorefront.current()?.profile ? JSON.stringify({name:offlineStorefront.current().profile.nombre,isAdmin:false,data:offlineStorefront.current().profile}) : null);
     if (savedSession) {
         // Solo los usuarios internos necesitan gráficas, Excel, editor, ZIP y PDF.
         // La sesión puede continuar aunque una herramienta secundaria no cargue.
@@ -1971,7 +1976,7 @@ let gestorCatalogView = 'grid';
 let gestorCatalogFilter = 'disponibles';
 
 function isGestorCatalogMode() {
-    return Boolean(localStorage.getItem('pth_session')) && Boolean(window.gestorName);
+    return Boolean(window.gestorName) && (Boolean(localStorage.getItem('pth_session')) || Boolean(offlineStorefront.current()?.owner));
 }
 
 function isRecentCatalogProduct(product) {
@@ -3708,7 +3713,7 @@ function toggleCartModal(show) {
         const gestorTools = document.getElementById('gestor-checkout-tools');
 
         if (gestorTools) {
-            if (session) {
+            if (session || isGestorCatalogMode()) {
                 // Si Marcel está logueado, le mostramos el botón verde de "Pegar" y el buscador CRM
                 gestorTools.classList.remove('hidden');
             } else {
@@ -8882,6 +8887,13 @@ async function loadClientCRM() {
 }
 
 function renderCheckoutClientChoices() {
+    const search = document.getElementById('crm-search');
+    if (search && !search.dataset.pthStoredClientInput) {
+        search.dataset.pthStoredClientInput = '1';
+        search.addEventListener('input', () => {
+            if (crmClients.some(client => String(client.cliente || '') + ' | ' + String(client.telefono || '') === search.value)) autofillClient(search.value);
+        });
+    }
     const dataList = document.getElementById('crm-datalist');
     if(dataList) {
         dataList.replaceChildren();
@@ -8921,30 +8933,34 @@ function autofillClient(val) {
 }
 
 // 3. SISTEMA DE AUTO-GUARDADO (Anti-pérdida de datos)
+function checkoutAutosaveKey(id, owner = currentNewCartOwner()) {
+    return owner ? 'autosave_' + id + ':' + encodeURIComponent(owner) : null;
+}
+function restoreAccountFormDraft(owner = currentNewCartOwner()) {
+    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto']) {
+        const el = document.getElementById(id); if (!el) continue;
+        let saved; try { saved = JSON.parse(localStorage.getItem(checkoutAutosaveKey(id, owner)) || 'null'); } catch (_) {}
+        const age = Date.now() - saved?.savedAt;
+        el.value = owner && saved && Number.isFinite(age) && age >= 0 && age < 7 * 86400000 ? String(saved.value || '') : '';
+    }
+}
 function initAutoSaveSystem() {
-    // Campos a vigilar
-    const fields = ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto'];
-
-    fields.forEach(id => {
-        const el = document.getElementById(id);
-        if(!el) return;
-
-        // A. Recuperar al cargar
-        let saved; try { saved = localStorage.getItem('autosave_' + id); } catch (_) {}
-        if(saved) el.value = saved;
-
-        // B. Guardar al escribir
+    restoreAccountFormDraft();
+    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto']) {
+        const el = document.getElementById(id); if (!el) continue;
         el.addEventListener('input', () => {
             if (window.PTHPendingCheckoutUI?.localForm()) return;
-            try { localStorage.setItem('autosave_' + id, el.value); } catch (_) { /* Existing optional autosave must not interrupt typing. */ }
+            const key = checkoutAutosaveKey(id); if (!key) return;
+            try { localStorage.setItem(key, JSON.stringify({value: el.value, savedAt: Date.now()})); } catch (_) {}
         });
-    });
+    }
 }
 
 function clearAutoSave() {
     // Borrar datos después de una venta exitosa
     const fields = ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto'];
     fields.forEach(id => {
+        const key = checkoutAutosaveKey(id); if (key) localStorage.removeItem(key);
         localStorage.removeItem('autosave_' + id);
         const el = document.getElementById(id);
         if(el) el.value = "";

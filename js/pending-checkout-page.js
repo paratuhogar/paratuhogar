@@ -35,7 +35,7 @@
       let complete=true;
       for(const account of accounts){
         try{
-          await queue.logout(account);
+          if(!PTHSecureData.preserveOfflineOrders?.(account))await queue.logout(account);
           await copies.clear(account);
           if(secure.hasPendingPrivatePurge(account)&&!secure.completePrivatePurge(account))throw Error('Cleanup marker retained');
           if(secure.hasPendingPrivatePurge(account))throw Error('Cleanup marker still pending');

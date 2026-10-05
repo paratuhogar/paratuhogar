@@ -9,7 +9,7 @@
       if(!active)return false;
       const cached=active;
       if(now()<cached.savedAt||now()>=cached.expiresAt){clear();return false;}
-      if(cached.owner){const profile=secureData.offlineProfile?.();if(active!==cached)return false;if(secureData.token()!==activeToken||identity(profile)!==cached.identity||secureData.expiresAt?.()<=now()){clear();return false;}}
+      if(cached.owner){const profile=secureData.offlineProfile?.();if(active!==cached)return false;if(secureData.token()!==activeToken||identity(profile)!==cached.identity||!secureData.hasOfflineContext?.(cached.owner)&&secureData.expiresAt?.()<=now()){clear();return false;}}
       return true;
     }
     function clear(){const previous=active;active=null;activeToken=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();if(previous)onClear(previous);}
@@ -18,7 +18,7 @@
       const doc=root.document;let node=doc.getElementById('pth-offline-storefront-status');
       if(!node){node=doc.createElement('aside');node.id='pth-offline-storefront-status';node.className='pth-offline-storefront-status';node.setAttribute('role','status');node.setAttribute('aria-live','polite');doc.getElementById('sec-catalogo')?.before(node);}
       const stamp=new Date(active.savedAt).toLocaleString('es-CU',{timeZone:'America/Havana',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-      node.textContent='Sin conexión con la tienda · Datos guardados el '+stamp+'. '+(active.owner?'Puedes preparar pedidos aquí. La tienda comprobará precios y disponibilidad al conectar.':'Puedes consultar este catálogo. Conecta antes de confirmar un pedido.')+(note?' '+note:'');
+      node.textContent='Sin conexión con la tienda · Datos guardados el '+stamp+'. '+(active.owner?'Puedes preparar pedidos aquí. '+(!secureData.token()?'Tu sesión venció: vuelve a entrar con conexión antes de enviarlos. ':'')+'La tienda comprobará precios y disponibilidad al conectar.':'Puedes consultar este catálogo. Conecta antes de confirmar un pedido.')+(note?' '+note:'');
     }
     async function fallback(error={code:'NETWORK_ERROR'}){
       if(error?.status===401||error?.status===403||['SESSION_INVALID','SESSION_EXPIRED','SESSION_CHANGED','FORBIDDEN'].includes(error?.code)){
@@ -26,7 +26,7 @@
       }
       if(root.navigator?.onLine!==false&&!networkFailure(error))return null;
       const epoch=++generation,token=secureData.token(),profile=secureData.offlineProfile?.();
-      if(token){
+      if(token||profile){
         if(!profile||!copies)return null;
         let copy;try{copy=await copies.read(profile.id,{profile});}catch(_){return null;}
         if(epoch!==generation||!copy||token!==secureData.token()||identity(profile)!==identity(secureData.offlineProfile?.())||copy.expiresAt<=now())return null;
@@ -42,12 +42,18 @@
     }
     function live(){active=null;activeToken=null;generation++;root.document?.getElementById('pth-offline-storefront-status')?.remove();}
     async function reconnect(reload){
-      if(reconnecting||!valid()||root.navigator?.onLine===false)return false;
+      if(reconnecting||!valid()||root.navigator?.onLine===false||active.owner&&!secureData.token())return false;
       reconnecting=true;const token=secureData.token(),epoch=generation;
       try{if(token)await secureData.refresh();if(epoch!==generation||token!==secureData.token())return false;await reload();return !active;}
       catch(_){status();return false;}finally{reconnecting=false;}
     }
-    root.addEventListener?.('pth:session-changed',clear);
+    root.addEventListener?.('pth:session-changed',event=>{
+      if(event?.reason==='expired'&&active?.owner&&secureData.hasOfflineContext?.(active.owner)){
+        const adopted=secureData.adoptOfflineProfile?.();
+        if(identity(adopted)===active.identity){activeToken=secureData.token();status();return;}
+      }
+      clear();
+    });
     root.addEventListener?.('storage',event=>{if(['pth_session','pth_secure_token','pth_secure_token_expires_at'].includes(event.key)||event.key===null){if(active&&!valid())clear();}});
     return {fallback,current:()=>valid()?active:null,usingCopy:()=>valid(),live,clear,status,reconnect};
   }

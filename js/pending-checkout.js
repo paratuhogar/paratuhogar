@@ -158,7 +158,7 @@
           try{
             const current=await read(owner,row.id);
             if(current?.id===row.id&&current.state!=='confirmed'&&current.lease?.id===lease){
-              const retryable=['NETWORK_ERROR','ORDER_OUTCOME_UNKNOWN'].includes(error.code);
+              const retryable=['NETWORK_ERROR','ORDER_OUTCOME_UNKNOWN','SESSION_CHANGED','SESSION_INVALID','SESSION_EXPIRED'].includes(error.code);
               await this.patch(owner,row.id,{state:retryable?(current.outcome?.attempt?'uncertain':'queued'):'blocked',code:error.code||'REVIEW',message:error.safeMessage||null,lease:null},lease);
             }
           }catch(_){}
@@ -168,6 +168,6 @@
       clean
     };
   }
-  function localOwner(storage){try{const profile=JSON.parse(storage.getItem('pth_session')||'null')?.data;return storage.getItem('pth_secure_token')&&typeof profile?.id==='string'?profile.id:null;}catch(_){return null;}}
+  function localOwner(storage){try{const profile=JSON.parse(storage.getItem('pth_session')||'null')?.data;if(storage.getItem('pth_secure_token')&&typeof profile?.id==='string')return profile.id;const context=JSON.parse(storage.getItem('pth_offline_context_v1')||'null'),stamp=Date.now();return context?.profile?.id&&Number.isFinite(context.savedAt)&&Number.isFinite(context.expiresAt)&&stamp>=context.savedAt&&stamp<context.expiresAt&&context.expiresAt<=context.savedAt+AGE?context.profile.id:null;}catch(_){return null;}}
   return {create,indexedStore,clean,localOwner,AGE,MAX_PENDING};
 });

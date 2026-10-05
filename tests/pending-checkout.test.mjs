@@ -32,7 +32,7 @@ test('invalid, duplicate, excessive quantities, missing delivery and unbounded d
   assert.throws(()=>pending.clean({...input,form:{...input.form,moneda:'invalid'}}),{code:'INVALID'});
 });
 test('duplicate explicit saves and concurrent tabs retain one stable intent and single active lease',async()=>{
-  const {queue}=setup(),intent={intentId:'a'.repeat(64),savedAt:Date.now()},results=await Promise.all([queue.save('a',input,intent),queue.save('a',input,intent)]);
+  const state=setup(),{queue}=state,intent={intentId:'a'.repeat(64),savedAt:state.now},results=await Promise.all([queue.save('a',input,intent),queue.save('a',input,intent)]);
   assert.equal(results[0].id,results[1].id);assert.equal((await queue.list('a')).length,1);
   let release,started;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);let attempts=0;
   const first=queue.run('a',async context=>{attempts++;started();await hold;await context.confirmed([{reference:'A1',proveedor:'A'}]);});await wait;
@@ -64,11 +64,11 @@ test('cancel before sending erases fields; cancellation or logout after a quote 
   await state.queue.confirmed('a',second.id,[{reference:'late-A1'}]);assert.equal((await state.queue.read('a',independent.id)).state,'queued','late receipt changes only its own order');await state.queue.logout('a');assert.equal((await state.queue.list('a')).some(row=>row.form),false);
 });
 test('live submissions cannot be cancelled or replaced in a second tab',async()=>{
-  const {queue}=setup(),intent={intentId:'a'.repeat(64),savedAt:Date.now()},row=await queue.save('a',input,intent);let release,started;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);
+  const state=setup(),{queue}=state,intent={intentId:'a'.repeat(64),savedAt:state.now},row=await queue.save('a',input,intent);let release,started;const wait=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>release=resolve);
   const run=queue.run('a',async()=>{started();await hold;});await wait;await assert.rejects(queue.cancel('a',row.id),{code:'BUSY'});assert.equal((await queue.save('a',input,intent)).id,row.id);await assert.rejects(queue.save('a',{...input,form:{...input.form,nombre:'Replacement'}},intent),{code:'INTENT_CONFLICT'});release();await run;
 });
-test('expired session/account rejection blocks retry and never transfers the customer to another account',async()=>{
-  for(const code of ['SESSION_CHANGED','SESSION_INVALID']){const {queue}=setup();await queue.save('a',input);await queue.run('a',()=>{throw Object.assign(Error('private raw server error'),{code,safeMessage:'Vuelve a tu cuenta.'});});const row=await queue.read('a');assert.equal(row.state,'blocked');assert.equal(row.code,code);assert.equal(await queue.read('b'),null);assert.equal(await queue.run('b',()=>assert.fail()),false);}
+test('expired session retains retryable intention in its own account for verified reauthentication',async()=>{
+  for(const code of ['SESSION_CHANGED','SESSION_INVALID','SESSION_EXPIRED']){const {queue}=setup();await queue.save('a',input);await queue.run('a',()=>{throw Object.assign(Error('private raw server error'),{code,safeMessage:'Vuelve a tu cuenta.'});});const row=await queue.read('a');assert.equal(row.state,'queued');assert.equal(row.code,code);assert.equal(await queue.read('b'),null);assert.equal(await queue.run('b',()=>assert.fail()),false);}
 });
 test('quota or storage denial cannot claim an order is saved or call the network',async()=>{
   const {queue,store}=setup();store.denied=true;await assert.rejects(queue.save('a',input),{code:'STORAGE'});assert.equal(store.rows.size,0);await assert.rejects(queue.run('a',()=>assert.fail('storage failure cannot start delivery')),{code:'STORAGE'});

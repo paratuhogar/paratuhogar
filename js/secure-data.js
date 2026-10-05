@@ -5,39 +5,40 @@
  const rpcs=new Set(['mis_solicitudes_cobro','mis_pedidos_solicitudes_cobro','solicitar_cobro_comision','solicitar_cobro_comision_pedidos','es_admin_boveda','listar_deuda_sistema','resumen_deuda_sistema','listar_pedidos_boveda','liquidar_deuda_sistema','listar_solicitudes_cobro_beatriz','registrar_adelanto_solicitud_cobro','gestionar_solicitud_cobro_beatriz','archivar_solicitudes_pagadas_beatriz','listar_adelantos_solicitudes_nomina','listar_historial_pagos_gestores','listar_historial_solicitudes_cobro_beatriz','aplicar_inactividad_gestores','owner_statistics_orders','owner_statistics_orders_v2','owner_statistics_products','owner_statistics_traffic','owner_statistics_views']);
  const url='https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data';
  const key='sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt';
- const storage=root.localStorage;let restoration=null;let profile=null;let expiredCheckoutOwner=null;
+ const storage=root.localStorage;let restoration=null;let profile=null;let expiredCheckoutOwner=null;let verifiedToken=null;
+ const offlineContextKey='pth_offline_context_v1';
  const messenger=/\/mensajeros\.html$/.test(root.location?.pathname||'');
  const tokenKey=messenger?'pth_secure_messenger_token':'pth_secure_token';
  const expiryKey=tokenKey+'_expires_at';let expiryTimer=null;
  const purgePrefix='pth_pending_private_purge_v1:';
- const volatilePurges=new Set();
+ const volatilePurges=new Set(),volatileIsolations=new Set();
  const validPurgeOwner=owner=>typeof owner==='string'&&owner.length>0&&owner.length<=100;
- function markPrivatePurge(owner){
+ function markPrivatePurge(owner,preserveOrders=false){
   if(messenger||!validPurgeOwner(owner))return false;
-  volatilePurges.add(owner);
-  try{storage.setItem(purgePrefix+encodeURIComponent(owner),'1');return true;}
+  volatilePurges.add(owner);if(preserveOrders)volatileIsolations.add(owner);
+  try{storage.setItem(purgePrefix+encodeURIComponent(owner),preserveOrders?'2':'1');return true;}
   catch(_){
    // Free existing account caches before retrying a small IDs-only marker.
    // Credential invalidation must still proceed if device storage refuses it.
-   try{clearCaches();storage.setItem(purgePrefix+encodeURIComponent(owner),'1');return true;}catch(_){return false;}
+   try{clearCaches();storage.setItem(purgePrefix+encodeURIComponent(owner),preserveOrders?'2':'1');return true;}catch(_){return false;}
   }
  }
  function pendingPrivatePurgeOwners(){
   const owners=new Set(volatilePurges);
-  try{for(let i=0;i<storage.length;i++){const key=storage.key(i);if(!key?.startsWith(purgePrefix)||storage.getItem(key)!=='1')continue;try{const owner=decodeURIComponent(key.slice(purgePrefix.length));if(validPurgeOwner(owner))owners.add(owner);}catch(_){}}}catch(_){}
+  try{for(let i=0;i<storage.length;i++){const key=storage.key(i);if(!key?.startsWith(purgePrefix)||!['1','2'].includes(storage.getItem(key)))continue;try{const owner=decodeURIComponent(key.slice(purgePrefix.length));if(validPurgeOwner(owner))owners.add(owner);}catch(_){}}}catch(_){}
   return [...owners];
  }
  function hasPendingPrivatePurge(owner){
   if(!validPurgeOwner(owner))return false;
   if(volatilePurges.has(owner))return true;
-  try{return storage.getItem(purgePrefix+encodeURIComponent(owner))==='1';}catch(_){return true;}
+  try{return ['1','2'].includes(storage.getItem(purgePrefix+encodeURIComponent(owner)));}catch(_){return true;}
  }
  function completePrivatePurge(owner){
   if(!validPurgeOwner(owner))return false;
-  try{storage.removeItem(purgePrefix+encodeURIComponent(owner));volatilePurges.delete(owner);return true;}catch(_){return false;}
+  try{storage.removeItem(purgePrefix+encodeURIComponent(owner));volatilePurges.delete(owner);volatileIsolations.delete(owner);return true;}catch(_){return false;}
  }
  function privatePurgePersistenceFailed(){
-  for(const owner of volatilePurges){try{if(storage.getItem(purgePrefix+encodeURIComponent(owner))!=='1')return true;}catch(_){return true;}}
+  for(const owner of volatilePurges){try{if(!['1','2'].includes(storage.getItem(purgePrefix+encodeURIComponent(owner))))return true;}catch(_){return true;}}
   return false;
  }
  function expiresAt(){const value=Number(storage.getItem(expiryKey));return Number.isFinite(value)&&value>0?value:null;}
@@ -46,6 +47,13 @@
  // Display-only offline identity. Protected operations still call restore()
  // and the live gateway; this never creates a successful restoration promise.
  function offlineProfile(){
+  if(!messenger){
+   let context;try{context=JSON.parse(storage.getItem(offlineContextKey)||'null');}catch(_){}
+   const saved=context?.profile,stamp=Date.now();
+   let session;try{session=JSON.parse(storage.getItem('pth_session')||'null')?.data;}catch(_){}
+   if(context&&(!Number.isFinite(context.savedAt)||!Number.isFinite(context.expiresAt)||stamp<context.savedAt||stamp>=context.expiresAt||context.expiresAt>context.savedAt+7*86400000)){storage.removeItem(offlineContextKey);context=null;}
+   if(context&&saved?.id&&saved.nombre&&saved.estado==='activo'&&saved.password==='__session__'&&!hasPendingPrivatePurge(saved.id)&&(!session||identity(session)===identity(saved)))return {...saved};
+  }
   if(!checkExpiry()||!expiresAt()||expiresAt()>Date.now()+7*86400000)return null;
   const token=storage.getItem(tokenKey);if(!/^[a-f0-9]{64}$/.test(token||''))return null;
   let saved;try{saved=JSON.parse(storage.getItem('pth_session')||'null')?.data;}catch(_){return null;}
@@ -57,9 +65,9 @@
   for(let i=storage.length-1;i>=0;i--){const name=storage.key(i);if(/^(pth_catalogo_|pth_catalog_data|pth_ultimo_cambio_productos|pth_studio_.*(?:catalog|product|cache|custom_prices)|pth_stats)/.test(name))storage.removeItem(name);}
  }
  function notifySession(reason){if(root.dispatchEvent&&root.Event){const event=new root.Event('pth:session-changed');event.reason=reason;root.dispatchEvent(event);}}
- function clearSession(reason='logout'){let previous;try{previous=JSON.parse(storage.getItem('pth_session')||'null');}catch(_){}const departingOwner=profile?.id||previous?.data?.id||null;markPrivatePurge(departingOwner);expiredCheckoutOwner=reason==='expired'?departingOwner:null;root.navigator?.serviceWorker?.controller?.postMessage({type:'PTH_PUSH_LOGOUT'});storage.removeItem(tokenKey);storage.removeItem(expiryKey);if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);expiryTimer=null;storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;restoration=null;clearCaches();notifySession(reason);}
+ function clearSession(reason='logout'){let previous;try{previous=JSON.parse(storage.getItem('pth_session')||'null');}catch(_){}let device;try{device=JSON.parse(storage.getItem(offlineContextKey)||'null');}catch(_){}const departingOwner=profile?.id||previous?.data?.id||device?.profile?.id||null;if(reason!=='expired'||!device||Date.now()>=device.expiresAt){markPrivatePurge(departingOwner,device?.profile?.id===departingOwner&&Date.now()<device.expiresAt);if(!messenger)storage.removeItem(offlineContextKey);}expiredCheckoutOwner=reason==='expired'?departingOwner:null;root.navigator?.serviceWorker?.controller?.postMessage({type:'PTH_PUSH_LOGOUT'});storage.removeItem(tokenKey);storage.removeItem(expiryKey);if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);expiryTimer=null;storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;verifiedToken=null;restoration=null;clearCaches();notifySession(reason);}
  const identity=data=>JSON.stringify([data?.id,data?.rol,data?.parent_id,data?.parent_nombre]);
- function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);const expiry=Date.parse(data.expiresAt);if(Number.isFinite(expiry))storage.setItem(expiryKey,String(expiry));else storage.removeItem(expiryKey);armExpiry();storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));if(identity(previous?.data||previous)!==identity(profile)){clearCaches();notifySession();}}
+ function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}const local=offlineProfile();profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);verifiedToken=storage.getItem(tokenKey);if(!messenger&&local&&identity(local)!==identity(profile))storage.removeItem(offlineContextKey);const expiry=Date.parse(data.expiresAt);if(Number.isFinite(expiry))storage.setItem(expiryKey,String(expiry));else storage.removeItem(expiryKey);armExpiry();storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));if(identity(previous?.data||previous)!==identity(profile)){clearCaches();notifySession();}}
  async function send(body,token=storage.getItem(tokenKey)){
   try{
    const response=await root.fetch(url,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body),keepalive:body.action==='logout',signal:AbortSignal.timeout(30000)});
@@ -119,6 +127,14 @@
  async function loginMessenger(pin){const result=await send({action:'login_messenger',pin},null);if(result.error)throw Error(result.error.message);saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
  root.PTHSecureData={push:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'push'},token);},announcement:async body=>{const token=storage.getItem(tokenKey);await restore();if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.'}};return send({...body,action:'announcement'},token);},feedback:async body=>{await restore();return send({...body,action:'feedback'});},login,loginMessenger,restore,refresh,expiresAt,clearSession,clearCaches,install,token:()=>storage.getItem(tokenKey),cacheSuffix:()=>':'+(profile?.id||'public'),logout:()=>{const token=storage.getItem(tokenKey);clearSession();return send({action:'logout'},token);}};
  root.PTHSecureData.offlineProfile=offlineProfile;
+ root.PTHSecureData.hasOfflineContext=owner=>{try{const c=JSON.parse(storage.getItem(offlineContextKey)||'null'),stamp=Date.now();return c?.profile?.id===owner&&Number.isFinite(c.savedAt)&&Number.isFinite(c.expiresAt)&&stamp>=c.savedAt&&stamp<c.expiresAt&&c.expiresAt<=c.savedAt+7*86400000;}catch(_){return false;}};
+ root.PTHSecureData.rememberOfflineProfile=until=>{
+  if(messenger||!profile?.id||!verifiedToken||verifiedToken!==storage.getItem(tokenKey)||!checkExpiry())throw Error('SESSION_CHANGED');
+  const savedAt=Date.now();if(!Number.isFinite(until)||until<=savedAt||until>savedAt+7*86400000)throw Error('INVALID');
+  const fields=['id','nombre','nombre_publico','rol','estado','activo','parent_id','parent_nombre'];
+  storage.setItem(offlineContextKey,JSON.stringify({savedAt,expiresAt:until,profile:Object.fromEntries(fields.filter(f=>Object.hasOwn(profile,f)).map(f=>[f,profile[f]]).concat([['password','__session__']]))}));
+  return offlineProfile();
+ };
  root.PTHSecureData.publicName=publicName;
  root.PTHSecureData.ranking=async()=>{
   const token=storage.getItem(tokenKey);await restore();
@@ -130,6 +146,7 @@
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
+ root.PTHSecureData.preserveOfflineOrders=owner=>{if(volatileIsolations.has(owner))return true;try{return storage.getItem(purgePrefix+encodeURIComponent(owner))==='2';}catch(_){return false;}};
  root.PTHSecureData.pendingPrivatePurgeOwners=pendingPrivatePurgeOwners;
  root.PTHSecureData.hasPendingPrivatePurge=hasPendingPrivatePurge;
  root.PTHSecureData.completePrivatePurge=completePrivatePurge;
