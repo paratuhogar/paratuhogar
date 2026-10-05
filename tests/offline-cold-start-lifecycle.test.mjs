@@ -40,6 +40,10 @@ test('readiness rereads persisted work and refuses incomplete shell or storage e
  class Channel{constructor(){const one=this.port1={onmessage:null,close(){}};this.port2={reply:data=>one.onmessage?.({data})};}}
  const context={copying:false,copyOutcome:null,requestOfflineShell:async()=>({ready:shellReady}),readinessGeneration:0,preparedToken:'cached-token',localAccount:()=>pending.localOwner(d.storage),PTHSecureData:d.secure,copies:d.copies,token:()=>d.secure.token(),document:{getElementById:()=>null},readiness:text=>notice=text,setTimeout,clearTimeout,MessageChannel:Channel,navigator:{onLine:true}};
  vm.runInNewContext(source.slice(start,end),context);assert.equal(await context.checkReadiness(),true);assert.match(notice,/Listo para trabajar/);
+ const copyNotice=' Descripciones largas disponibles con conexión: 2. Las originales siguen guardadas en la tienda.';
+ context.copyOutcome={account:'actor-a',dataSaved:true,text:'Copia guardada.'+copyNotice,copyNotice};
+ assert.equal(await context.checkReadiness(),true);assert.ok(context.copyOutcome.text.endsWith(copyNotice),'periodic readiness must keep the omission warning');
  shellReady=false;assert.equal(await context.checkReadiness(),false);assert.match(notice,/Datos guardados.*Faltan archivos/);
+ assert.ok(context.copyOutcome.text.endsWith(copyNotice),'incomplete shell must also keep the omission warning');
  shellReady=true;await d.copies.clear('actor-a');assert.equal(await context.checkReadiness(),false);assert.equal(context.preparedToken,null);assert.match(notice,/Falta guardar la copia de datos/);assert.equal(d.f.writes,0);
 });

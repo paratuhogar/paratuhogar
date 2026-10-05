@@ -1981,14 +1981,20 @@ function isGestorCatalogMode() {
 
 function isRecentCatalogProduct(product) {
     const created = new Date(product.created_at || product.fecha || 0).getTime();
-    return created > 0 && (Date.now() - created) <= 7 * 24 * 60 * 60 * 1000;
+    const age = Date.now() - created;
+    return created > 0 && age >= 0 && age <= 7 * 24 * 60 * 60 * 1000;
+}
+
+function hasHighCatalogCommission(product) {
+    const commission = Number(product.comision);
+    return Number.isFinite(commission) && commission > 10;
 }
 
 function matchesGestorCatalogFilter(product) {
     if (!isProductCurrentlyAvailable(product)) return false;
     if (!isGestorCatalogMode() || gestorCatalogFilter === 'todos') return true;
     if (gestorCatalogFilter === 'nuevos') return isRecentCatalogProduct(product);
-    if (gestorCatalogFilter === 'comision' && !offlineStorefront.usingCopy()) return Number(product.comision || 0) > 10;
+    if (gestorCatalogFilter === 'comision' && !offlineStorefront.usingCopy()) return hasHighCatalogCommission(product);
     return true;
 }
 
@@ -2000,7 +2006,7 @@ function getFilteredCatalogProducts() {
         const category = String(product.categoria || '');
         const matchSearch = !query || name.includes(query) || category.toLowerCase().includes(query);
         const matchCategory = activeCategory === 'TODOS' || category.toUpperCase().includes(activeCategory);
-        const matchCommission = !filterHighComm || Number(product.comision || 0) > 10;
+        const matchCommission = !filterHighComm || hasHighCatalogCommission(product);
         return matchSearch && matchCategory && matchCommission && matchesGestorCatalogFilter(product);
     });
 }
@@ -2011,7 +2017,7 @@ function renderGestorCatalogSummary(visibleCount) {
     const values = {
         'gestor-catalog-available': available.length,
         'gestor-catalog-new': available.filter(isRecentCatalogProduct).length,
-        'gestor-catalog-high-commission': offlineStorefront.usingCopy() ? '—' : available.filter(product => Number(product.comision || 0) > 10).length
+        'gestor-catalog-high-commission': offlineStorefront.usingCopy() ? '—' : available.filter(hasHighCatalogCommission).length
     };
     Object.entries(values).forEach(([id, value]) => {
         const el = document.getElementById(id);
@@ -10912,15 +10918,7 @@ function getProductsVisibleOnScreen() {
 
     if (ordered.length) return ordered;
 
-    const query = (document.getElementById('search-bar')?.value || '').trim().toLowerCase();
-    const highCommission = Boolean(document.getElementById('filter-high-comm')?.checked);
-    return productosRaw.filter(product => {
-        const matchesQuery = !query || String(product.nombre || '').toLowerCase().includes(query);
-        const matchesCategory = activeCategory === 'TODOS' ||
-            String(product.categoria || '').toUpperCase().includes(activeCategory);
-        const matchesCommission = !highCommission || Number(product.comision || 0) > 10;
-        return matchesQuery && matchesCategory && matchesCommission && product.disponible === 'SI';
-    });
+    return getFilteredCatalogProducts();
 }
 
 // Optional sales tools never delay catalogue startup.

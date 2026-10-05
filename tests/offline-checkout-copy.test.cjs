@@ -9,6 +9,31 @@ test('prepared copy can outlast a short session within its existing seven-day lo
 const data=()=>({products:[{id:'p1',nombre:'Equipo',precio:90,disponible:'SI',categoria:'HOGAR',proveedor:'A',tamaño_envio:'Grande',password:'secret',comision:20}],clients:[{cliente:'Client A',ci:'123',telefono:'50000000',direccion:'Calle A',gestor:'Unrelated',token:'secret'}],tariffs:[{municipio:'Centro Habana',localidad:'Centro',precio_pequeno:6,precio_grande:10,password:'secret'}]});
 const memory=()=>{const rows=new Map();return {rows,async update(owner,fn){const result=fn(rows.get(owner)||null);if(result===null)rows.delete(owner);else rows.set(owner,structuredClone(result));return structuredClone(result);}};};
 const storage=profile=>{const rows=new Map([['pth_session',JSON.stringify({data:profile})],['pth_secure_token','a'.repeat(64)]]);return {getItem:key=>rows.get(key)||null,setItem:(key,value)=>rows.set(key,value),removeItem:key=>rows.delete(key)};};
+test('capture saves all commercial data when an optional description exceeds the local bound',async()=>{
+ const profile={id:'a',nombre:'Own Sales',rol:'gestor'},local=storage(profile),raw=data();
+ raw.products.push({...raw.products[0],id:'p2',nombre:'Equipo B',descripcion:'Detalles públicos'});
+ raw.products[0].descripcion='<p>'+'D'.repeat(51570)+'</p>';
+ const original=structuredClone(raw),query={then:resolve=>resolve({data:raw.clients,error:null})};
+ for(const name of ['select','eq','order','limit','forSession'])query[name]=()=>query;
+ const captured=await api.capture({client:{from:()=>query},profile,products:raw.products,tariffs:raw.tariffs,storage:local,token:'a'.repeat(64),sessionUntil:Date.now()+10000});
+ assert.equal(captured.omittedDescriptions,1);assert.equal(captured.products.length,2);assert.equal(captured.products[0].descripcion,'');assert.equal(captured.products[1].descripcion,'Detalles públicos');
+ assert.deepEqual(captured.products[0],{...api.clean({...data(),products:[data().products[0]]}).products[0],descripcion:''});assert.deepEqual(captured.clients,api.clean(data()).clients);assert.deepEqual(captured.tariffs,api.clean(data()).tariffs);assert.deepEqual(raw,original);
+ const copies=api.create(null,{store:memory(),now:()=>now});const saved=await copies.save('a',captured,{profile,storage:local,consent:true,sessionUntil:now+1000});
+ assert.equal(saved.omittedDescriptions,1);assert.equal((await copies.read('a',{profile})).omittedDescriptions,1);
+ assert.throws(()=>api.clean(raw),{code:'INVALID'},'stored/raw descriptions remain strictly bounded');
+});
+test('description omission never hides a broken price or changes the former copy',async()=>{
+ const profile={id:'a',nombre:'Own Sales',rol:'gestor'},local=storage(profile),raw=data(),store=memory(),copies=api.create(null,{store,now:()=>now});
+ await copies.save('a',raw,{profile,storage:local,consent:true,sessionUntil:now+1000});const previous=structuredClone(store.rows.get('a'));
+ raw.products[0].descripcion='D'.repeat(51577);raw.products[0].precio=-1;
+ const query={then:resolve=>resolve({data:raw.clients,error:null})};for(const name of ['select','eq','order','limit','forSession'])query[name]=()=>query;
+ await assert.rejects(api.capture({client:{from:()=>query},profile,products:raw.products,tariffs:raw.tariffs,storage:local,token:'a'.repeat(64),sessionUntil:Date.now()+10000}),{code:'INVALID'});assert.deepEqual(store.rows.get('a'),previous);
+});
+test('description boundary uses UTF-16 units and validates omission counts',()=>{
+ const raw=data();raw.products[0].descripcion='😀'.repeat(4000);assert.equal(api.clean(raw).products[0].descripcion.length,8000);
+ raw.products[0].descripcion+='D';assert.throws(()=>api.clean(raw),{code:'INVALID'});
+ for(const omittedDescriptions of [-1,1.5,2,'1'])assert.throws(()=>api.clean({...data(),omittedDescriptions}),{code:'INVALID'});
+});
 test('copy requires explicit consent, reliable session expiry and a stable account',async()=>{const store=memory(),copies=api.create(null,{store,now:()=>now});await assert.rejects(copies.save('a',data(),{profile:{id:'a'},sessionUntil:now+1000}),{code:'CONSENT'});await assert.rejects(copies.save('a',data(),{profile:{id:'a'},consent:true}),{code:'SESSION_EXPIRED'});await assert.rejects(copies.save('a',data(),{profile:{id:'a'},consent:true,sessionUntil:now+1000,guard:()=>false}),{code:'ACCOUNT'});assert.equal(store.rows.size,0);});
 test('private whitelist, per-account visibility and session expiry purge',async()=>{const store=memory();let time=now;const copies=api.create(null,{store,now:()=>time});const saved=await copies.save('a',data(),{profile:{id:'a'},consent:true,sessionUntil:now+1000});assert.doesNotMatch(JSON.stringify(saved),/secret|comision|gestor|password|token/);assert.equal((await copies.read('a',{profile:{id:'a'}})).products[0].tamaño_envio,'Grande');assert.equal(await copies.read('b',{profile:{id:'b'}}),null);time+=1000;assert.equal(await copies.read('a',{profile:{id:'a'}}),null);assert.equal(store.rows.size,0);});
 test('7 days maximum, corrupted copy removed, quota never claims save',async()=>{const store=memory(),copies=api.create(null,{store,now:()=>now});const saved=await copies.save('a',data(),{profile:{id:'a'},consent:true,sessionUntil:now+20*86400000});assert.equal(saved.expiresAt,now+api.AGE);store.rows.get('a').products[0].precio=-1;assert.equal(await copies.read('a',{profile:{id:'a'}}),null);const refused=api.create(null,{store:{update:async()=>{throw Object.assign(Error('quota'),{code:'STORAGE'});}},now:()=>now});await assert.rejects(refused.save('a',data(),{profile:{id:'a'},consent:true,sessionUntil:now+1000}),{code:'STORAGE'});});
