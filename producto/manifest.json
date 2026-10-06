@@ -924,7 +924,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-3200w-gnercell/",
-    "updated_at": "2026-08-04T00:22:05.686564+00:00"
+    "updated_at": "2026-10-06T03:08:03.418291+00:00"
   },
   {
     "id": "6db0bfd3-0823-45aa-a480-a1ff6fd6d7d4",
@@ -1156,9 +1156,9 @@
     "slug": "estante-de-metal-5-baldas",
     "nombre": "Estante de metal 5 baldas",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estante-de-metal-5-baldas/",
-    "updated_at": "2026-09-30T19:46:03.859032+00:00"
+    "updated_at": "2026-10-06T00:37:41.277227+00:00"
   },
   {
     "id": "f488f6df-fe95-4629-b435-5640f532625d",
@@ -1183,18 +1183,18 @@
     "slug": "estanteria-esquinera-galvanizada-5-baldas-ajustable-7house-cj-1",
     "nombre": "Estanteria Esquinera Galvanizada 5 Baldas Ajustable 7HOUSE CJ.1",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estanteria-esquinera-galvanizada-5-baldas-ajustable-7house-cj-1/",
-    "updated_at": "2026-10-05T19:10:09.848268+00:00"
+    "updated_at": "2026-10-06T00:44:04.501003+00:00"
   },
   {
     "id": "63e3c644-7958-4374-a659-87de7a1e223f",
     "slug": "estanteria-esquinera-negra-5-baldas-ajustable-7house-cj-1",
     "nombre": "Estanteria Esquinera Negra 5 Baldas Ajustable 7HOUSE CJ.1",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estanteria-esquinera-negra-5-baldas-ajustable-7house-cj-1/",
-    "updated_at": "2026-10-05T19:07:39.666768+00:00"
+    "updated_at": "2026-10-06T00:43:32.608278+00:00"
   },
   {
     "id": "de0489b8-0cca-4a6e-8579-34945c62fbd3",
@@ -1219,18 +1219,18 @@
     "slug": "estanteria-metalica-negra-5-baldas-7house",
     "nombre": "Estanteria Metalica Negra 5 Baldas 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estanteria-metalica-negra-5-baldas-7house/",
-    "updated_at": "2026-10-05T19:02:31.251895+00:00"
+    "updated_at": "2026-10-06T00:41:21.392829+00:00"
   },
   {
     "id": "01441fc0-e48b-4af8-a566-0d59f6ac99ec",
     "slug": "estanteria-modular-con-5-baldas-ajustables-torre-7house",
     "nombre": "Estantería Modular con 5 Baldas Ajustables Torre 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estanteria-modular-con-5-baldas-ajustables-torre-7house/",
-    "updated_at": "2026-10-05T19:00:12.166976+00:00"
+    "updated_at": "2026-10-06T00:39:47.386807+00:00"
   },
   {
     "id": "f587fd32-ae70-421c-8c97-b904e7117d40",
@@ -1239,7 +1239,7 @@
     "categoria": "MISCELANEA",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/estanteria-modular-metalica-con-5-baldas-7house-75880/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-06T00:40:48.388559+00:00"
   },
   {
     "id": "eae92cf5-7fb4-4796-80ff-85260e02d5db",
@@ -1255,9 +1255,9 @@
     "slug": "estanteria-modular-metalica-steelsmart-con-4-baldas-7house",
     "nombre": "Estantería Modular Metálica SteelSmart con 4 Baldas 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estanteria-modular-metalica-steelsmart-con-4-baldas-7house/",
-    "updated_at": "2026-10-05T18:53:17.276489+00:00"
+    "updated_at": "2026-10-06T00:38:39.792869+00:00"
   },
   {
     "id": "35069227-8d07-4e9b-8ef9-3da2ffcbbfd2",
@@ -2236,9 +2236,9 @@
     "slug": "mesa-de-resina-redonda-7house",
     "nombre": "Mesa de Resina Redonda 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mesa-de-resina-redonda-7house/",
-    "updated_at": "2026-10-05T18:45:04.808584+00:00"
+    "updated_at": "2026-10-06T00:27:29.860386+00:00"
   },
   {
     "id": "0a806d69-c146-4c9b-97ce-99cb69751686",
@@ -2247,25 +2247,25 @@
     "categoria": "MISCELANEA",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/mesa-plegable-portatil-resina-7house-75831/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-06T00:29:19.44787+00:00"
   },
   {
     "id": "6deca436-7786-48b4-bea4-c0bfaeb3d7d0",
     "slug": "mesas-plegables-portatiles-rectangulares-7house",
     "nombre": "Mesas Plegables Portátiles Rectangulares 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mesas-plegables-portatiles-rectangulares-7house/",
-    "updated_at": "2026-10-05T18:47:46.081219+00:00"
+    "updated_at": "2026-10-06T00:28:37.332169+00:00"
   },
   {
     "id": "d3970f27-2b14-48f7-a66f-2450f9da5999",
     "slug": "mesas-plegables-rectangulares-efecto-ratan-7house",
     "nombre": "Mesas Plegables Rectangulares Efecto Ratán 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mesas-plegables-rectangulares-efecto-ratan-7house/",
-    "updated_at": "2026-10-05T18:50:02.867011+00:00"
+    "updated_at": "2026-10-06T00:29:54.734276+00:00"
   },
   {
     "id": "3cca21d8-938d-4a14-b0e8-ff0dd19a83c4",
@@ -2288,11 +2288,11 @@
   {
     "id": "dc8c8c0c-4e22-4f31-b44c-98d07209471f",
     "slug": "mini-proyector-mp720p-hdmi-wifi-android-14",
-    "nombre": "Mini proyector MP720p - HDMI WiFi Android 14",
+    "nombre": "Mini proyector MP720p - HDMI WiFi Iggual",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mini-proyector-mp720p-hdmi-wifi-android-14/",
-    "updated_at": "2026-09-23T20:44:58.218538+00:00"
+    "updated_at": "2026-10-06T01:40:34.78886+00:00"
   },
   {
     "id": "ea1d36eb-eb79-405a-8d25-ed17a6da4f97",
@@ -3314,11 +3314,11 @@
   {
     "id": "d1c8c2ec-b71d-46bc-8fcc-ed8206f198f0",
     "slug": "silla-de-escritorio-con-ruedas-classic",
-    "nombre": "Silla de escritorio con ruedas Classic",
+    "nombre": "Silla de escritorio con ruedas THINIA HOME",
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/silla-de-escritorio-con-ruedas-classic/",
-    "updated_at": "2026-10-04T20:36:40.448238+00:00"
+    "updated_at": "2026-10-06T00:26:33.280208+00:00"
   },
   {
     "id": "377bd730-a028-4ad4-9dd5-d8c0038c0d52",
@@ -3343,18 +3343,18 @@
     "slug": "silla-plegable-metalica-gris-7house",
     "nombre": "Silla Plegable Metálica Gris 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/silla-plegable-metalica-gris-7house/",
-    "updated_at": "2026-10-05T18:37:18.403435+00:00"
+    "updated_at": "2026-10-06T00:12:35.710767+00:00"
   },
   {
     "id": "a2a51b63-5ab0-4090-a33b-abf0764d0054",
     "slug": "sillas-sin-reposabrazos-7house",
     "nombre": "Sillas sin Reposabrazos 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/sillas-sin-reposabrazos-7house/",
-    "updated_at": "2026-10-05T18:41:09.53088+00:00"
+    "updated_at": "2026-10-06T00:12:41.521783+00:00"
   },
   {
     "id": "c6432b28-20d2-4f28-9024-51cf61f9bb1d",
