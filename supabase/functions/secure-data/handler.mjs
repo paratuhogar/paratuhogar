@@ -12,7 +12,7 @@ const encode=value=>new TextEncoder().encode(value);
 // Expiry is response metadata, never a profile field or a bearer capability.
 const sessionExpiries=new WeakMap();
 export async function hash(value) {return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encode(String(value)))),v=>v.toString(16).padStart(2,'0')).join('');}
-const fail=(message,status=403)=>{throw Object.assign(Error(message),{status});};
+const fail=(message,status=403,publicCode)=>{throw Object.assign(Error(message),{status,publicCode});};
 const cleanProfile=actor=>({...actor,password:'__session__'});
 const pick=(row,columns)=>!columns||columns==='*'?row:Object.fromEntries(columns.split(',').map(s=>s.trim()).filter(k=>Object.hasOwn(row,k)).map(k=>[k,row[k]]));
 const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
@@ -50,25 +50,34 @@ function applyQuery(query,body,scope=[]) {
   } else query=query.limit(Math.min(2000,Math.max(1,Number(body.limit)||1000)));
   return query;
 }
+// A failed lookup cannot prove that a session or account is invalid.
+// Stop before protected work, but let the same session retry after recovery.
+async function authLookup(read) {
+  let result;
+  try {result=await read();} catch {fail('No se pudo verificar la sesión. Intenta de nuevo.',503,'SERVICE_UNAVAILABLE');}
+  if(result.error) fail('No se pudo verificar la sesión. Intenta de nuevo.',503,'SERVICE_UNAVAILABLE');
+  return result.data;
+}
 async function parentFor(db,profile) {
   if(!profile?.parent_id) return null;
-  const {data,error}=await db.from('gestores').select('*').eq('id',profile.parent_id).maybeSingle();
-  if(error||!data||data.parent_id||data.estado!=='activo') fail('El gestor principal no está activo.',401);
+  const data=await authLookup(()=>db.from('gestores').select('*').eq('id',profile.parent_id).maybeSingle());
+  if(!data||data.parent_id||data.estado!=='activo') fail('El gestor principal no está activo.',401);
   return data;
 }
 async function resolveActor(db,token) {
   if(!token) return null;
   if(typeof token!=='string'||token.length!==64) fail('Inicia sesión de nuevo.',401);
-  const {data:session,error}=await db.from('pth_secure_sessions').select('*').eq('token_hash',await hash(token)).gt('expires_at',new Date().toISOString()).maybeSingle();
-  if(error||!session) fail('Tu sesión venció. Inicia sesión de nuevo.',401);
+  const tokenHash=await hash(token);
+  const session=await authLookup(()=>db.from('pth_secure_sessions').select('*').eq('token_hash',tokenHash).gt('expires_at',new Date().toISOString()).maybeSingle());
+  if(!session) fail('Tu sesión venció. Inicia sesión de nuevo.',401);
   if(session.mensajero_id){
-    const {data:driver}=await db.from('mensajeros').select('*').eq('id',session.mensajero_id).maybeSingle();
+    const driver=await authLookup(()=>db.from('mensajeros').select('*').eq('id',session.mensajero_id).maybeSingle());
     if(!driver?.activo||await hash(driver.pin)!==session.credential_hash)fail('Inicia sesión de nuevo.',401);
     const actor={id:driver.id,nombre:driver.nombre,telefono:driver.telefono,rol:'mensajero'};
     sessionExpiries.set(actor,session.expires_at);return actor;
   }
-  const {data:profile,error:profileError}=await db.from('gestores').select('*').eq('id',session.gestor_id).maybeSingle();
-  if(profileError||!profile||profile.estado!=='activo'||profile.activo===false||await hash(profile.password)!==session.credential_hash) fail('La cuenta o sesión ya no está activa.',401);
+  const profile=await authLookup(()=>db.from('gestores').select('*').eq('id',session.gestor_id).maybeSingle());
+  if(!profile||profile.estado!=='activo'||profile.activo===false||await hash(profile.password)!==session.credential_hash) fail('La cuenta o sesión ya no está activa.',401);
   const parent=await parentFor(db,profile);
   const actor={...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono};
   sessionExpiries.set(actor,session.expires_at);return actor;
@@ -280,7 +289,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
       else fail('Operación no permitida.');
       return new Response(JSON.stringify(result),{headers});
     } catch(error) {
-      return new Response(JSON.stringify({data:null,error:{message:error.status?error.message:'No se pudo completar la consulta segura.',code:error.status===401?'SESSION_INVALID':'ACCESS_DENIED'}}),{status:error.status||403,headers});
+      return new Response(JSON.stringify({data:null,error:{message:error.status?error.message:'No se pudo completar la consulta segura.',code:error.publicCode||(error.status===401?'SESSION_INVALID':'ACCESS_DENIED')}}),{status:error.status||403,headers});
     }
   };
 }
