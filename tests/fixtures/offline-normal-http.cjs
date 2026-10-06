@@ -24,6 +24,7 @@ async function startFixture() {
   f.rows.productos.forEach((p,i) => Object.assign(p, {categoria: i?'ENERGIA':'HOGAR', descripcion:i?'Descripción equipo B':'Descripción equipo A', thumbnail:'/icons/product-placeholder.svg', created_at:new Date().toISOString()}));
   let oldWorker = false, serial = 0;
   const assetFailures=new Map();
+  const publicOverrides=new Map();
   const requests = [], unexpected = [];
   const json = (res, data, status=200) => {res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
   const server = http.createServer(async(req,res) => {
@@ -82,6 +83,7 @@ async function startFixture() {
       if(!fs.existsSync(filename)){record.status=404;res.writeHead(404);return res.end();}
       if(assetFailures.has(url.pathname)){record.status=assetFailures.get(url.pathname);res.writeHead(record.status);return res.end('Synthetic public asset unavailable');}
       let body=fs.readFileSync(filename);
+      if(publicOverrides.has(url.pathname))body=Buffer.from(publicOverrides.get(url.pathname));
       if(relative==='service-worker.js'&&oldWorker)body=fs.readFileSync(path.join(__dirname,'offline-worker-before-normal.js'));
       // Only endpoint plumbing changes; the shipped SDK, DOM, worker and business rules are real.
       if(/\.(js|mjs)$/.test(relative))body=Buffer.from(String(body).split(remote).join(origin));
@@ -94,6 +96,7 @@ async function startFixture() {
   origin='http://127.0.0.1:'+server.address().port;
   return {origin, f, requests, unexpected, until, actors:{a,b}, tokens:TOKENS, markers:MARKERS,
     failAsset(path,status=503){assert.ok(path.startsWith('/')&&!path.startsWith('/functions/')&&!path.startsWith('/rest/'));if(status===null)assetFailures.delete(path);else assetFailures.set(path,status);},
+    publicAsset(path,body){assert.match(path,/^\/(?:index\.html|offline(?:-catalog|-order)?\.html|service-worker\.js|js\/[\w.-]+\.js)$/);if(body===null)publicOverrides.delete(path);else publicOverrides.set(path,body);},
     setOldWorker(value){oldWorker=value;},close:()=>new Promise(resolve=>server.close(resolve))};
 }
 module.exports={startFixture};

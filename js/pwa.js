@@ -1,5 +1,5 @@
 (() => {
-  const SW_VERSION = '20261005-copy2';
+  const SW_VERSION = '20261006-ready1';
   let registration = null;
   let reloadingForUpdate = false;
 
@@ -73,6 +73,7 @@
   window.addEventListener('offline', updateConnectionStatus);
   navigator.serviceWorker?.addEventListener('controllerchange', () => {
     if (reloadingForUpdate) location.reload();
+    else updateConnectionStatus();
   });
   window.addEventListener('DOMContentLoaded', () => {
     updateConnectionStatus();

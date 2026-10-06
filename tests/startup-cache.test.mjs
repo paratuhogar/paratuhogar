@@ -27,7 +27,7 @@ test('cached root remains available offline; private routes get only offline fal
 test('service worker never intercepts protected API or POST responses',()=>{const f=fixture();for(const req of [{method:'POST',url:'https://paratuhogar.org/'},{method:'GET',url:'https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data'}])f.events.fetch({request:req,respondWith:()=>assert.fail('must not cache protected response')});});
 test('catalogue upgrade installs the new reader and removes only previous static caches',async()=>{
  const f=fixture();let p;f.events.install({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.opened,['pth-public-static-2026-10-06-all-pending1']);
+ assert.deepEqual(f.opened,['pth-public-static-2026-10-06-ready1']);
  assert.ok(f.entries.has('/css/gestor-ranking.css?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/gestor-ranking.js?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));
@@ -38,10 +38,21 @@ test('catalogue upgrade installs the new reader and removes only previous static
 test('reader, storefront and notification registrars agree on the release worker version',()=>{
  const read=file=>fs.readFileSync(new URL(file,root),'utf8');
  assert.match(read('offline-catalog.html'),/offline-catalog\.js\?v=20261002-lowdata2/);
- assert.match(read('index.html'),/pwa\.js\?v=20261005-copy2/);
- assert.match(read('js/pwa.js'),/SW_VERSION = '20261005-copy2'/);
- assert.match(read('js/admin-push-registration.mjs'),/service-worker\.js\?v=20261005-copy2/);
- assert.match(read('js/admin-push-page.mjs'),/admin-push-registration\.mjs\?v=20261005-copy2/);
- assert.match(read('notifications.html'),/admin-push-page\.mjs\?v=20261005-copy2/);
- assert.match(source,/\/js\/pwa\.js\?v=20261005-copy2/);
+ assert.match(read('index.html'),/pwa\.js\?v=20261006-ready1/);
+ assert.match(read('js/pwa.js'),/SW_VERSION = '20261006-ready1'/);
+ assert.match(read('js/admin-push-registration.mjs'),/service-worker\.js\?v=20261006-ready1/);
+ assert.match(read('js/admin-push-page.mjs'),/admin-push-registration\.mjs\?v=20261006-ready1/);
+ assert.match(read('notifications.html'),/admin-push-page\.mjs\?v=20261006-ready1/);
+ assert.match(source,/\/js\/pwa\.js\?v=20261006-ready1/);
+});
+test('the storefront accepts the installed complete worker and still rejects an evicted asset',async()=>{
+ const f=fixture();let install;f.events.install({waitUntil:p=>install=p});await install;
+ const page=fs.readFileSync(new URL('js/pending-checkout-storefront.js',root),'utf8');
+ const start=page.indexOf('  function requestOfflineShell('),end=page.indexOf('  async function checkReadiness(',start);
+ class Channel{constructor(){const one=this.port1={onmessage:null,close(){}};this.port2={postMessage:data=>one.onmessage?.({data})};}}
+ const worker={postMessage(data,ports){f.events.message({data,ports,waitUntil:()=>{}});}};
+ const context={shellVersion:page.match(/const shellVersion = '([^']+)'/)[1],MessageChannel:Channel,setTimeout,clearTimeout,navigator:{serviceWorker:{ready:Promise.resolve({waiting:null}),controller:worker}}};
+ vm.runInNewContext(page.slice(start,end),context);
+ assert.equal((await context.requestOfflineShell()).ready,true,'a complete current worker must not be rejected because the screen expects an older cache');
+ f.entries.delete('/offline.html');assert.equal((await context.requestOfflineShell()).ready,false,'readiness must still verify every persisted required asset');
 });

@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-06-all-pending1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-06-ready1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -18,8 +18,8 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/css/offline-storefront.css?v=20261003-pending2',
   '/js/storefront.min.js?v=20261005-filters1',
   '/js/storefront-extras.min.js?v=20261006-all-pending1',
-  '/js/pending-checkout-storefront.js?v=20261005-copy2',
-  '/js/pwa.js?v=20261005-copy2',
+  '/js/pending-checkout-storefront.js?v=20261006-ready1',
+  '/js/pwa.js?v=20261006-ready1',
   '/css/tailwind.min.css?v=20261004-rolling30',
   '/css/gestor-ranking.css?v=20261004-rolling30',
   '/css/client-followup.css?v=2',
@@ -55,7 +55,7 @@ const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, P
   '/js/image-variants.js?v=20261001-images2',
   '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
-  '/js/pending-checkout-storefront.js?v=20261005-copy2',
+  '/js/pending-checkout-storefront.js?v=20261006-ready1',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261005-cold7',
@@ -79,7 +79,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
   '/js/image-variants.js?v=20261001-images2',
-  '/js/pwa.js?v=20261005-copy2',
+  '/js/pwa.js?v=20261006-ready1',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
   '/icons/icon-192.png',
@@ -107,7 +107,7 @@ self.addEventListener('activate', event => {
 // Repair only missing checked-in public resources. Never clear storage or
 // accept URLs/cache names from a page; concurrent retries share one repair.
 let pthShellRepair=null;
-const PTH_TEMPLATE_VERSION='20261005-copy2';
+const PTH_TEMPLATE_VERSION='20261006-ready1';
 const PTH_TEMPLATE_DEPENDENCIES={
   '/index.html':[...PTH_NORMAL_BOOT.filter(url=>/\.(?:js|mjs|css)(?:\?|$)/.test(url)),'/js/secure-data.js?v=20261005-cold7','/js/pending-checkout.js?v=20261005-cold7'],
   '/offline-catalog.html':['/css/offline-catalog.css?v=20261002-lowdata1','/js/low-connectivity.js?v=20261002-lowdata1','/js/public-catalog-api.js?v=20261002-lowdata1','/js/offline-catalog.js?v=20261002-lowdata2'],

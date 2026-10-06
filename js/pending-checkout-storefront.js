@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-10-05-copy2';
+  const shellVersion = 'pth-public-static-2026-10-06-ready1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -58,19 +58,48 @@
   function requestOfflineShell(repair=false) {
     return new Promise(resolve=>{
       let channel,finished=false;
-      const finish=value=>{if(finished)return;finished=true;clearTimeout(timeout);channel?.port1.close();resolve(value);};
+      const cleanups=[];
+      const finish=value=>{if(finished)return;finished=true;clearTimeout(timeout);channel?.port1.close();cleanups.forEach(clean=>clean());resolve(value);};
       const timeout=setTimeout(()=>finish({ready:false,reason:'timeout'}),repair?25000:10000);
       if(!navigator.serviceWorker){finish({ready:false,reason:'unavailable'});return;}
-      navigator.serviceWorker.ready.then(registration=>{
+      const serviceWorker=navigator.serviceWorker;
+      const waitFor=(target,event,condition)=>new Promise(done=>{
+        const check=()=>{if(condition()){target.removeEventListener(event,check);done();}};
+        target.addEventListener(event,check);cleanups.push(()=>target.removeEventListener(event,check));check();
+      });
+      const query=(worker,type)=>new Promise(done=>{
+        channel?.port1.close();channel=new MessageChannel();channel.port1.onmessage=event=>done(event.data||{});
+        worker.postMessage({type},[channel.port2]);
+      });
+      serviceWorker.ready.then(async registration=>{
         if(finished)return;
-        const worker=navigator.serviceWorker.controller;
-        if(!worker){finish({ready:false,reason:'unavailable'});return;}
-        channel=new MessageChannel();channel.port1.onmessage=event=>{
-          const reply=event.data||{};
-          finish({...reply,ready:reply.ready===true&&reply.version===shellVersion,reason:reply.version!==shellVersion?'update':reply.reason,updatePending:Boolean(registration.waiting)});
-        };
-        try{worker.postMessage({type:repair?'PTH_REPAIR_OFFLINE_SHELL':'PTH_CHECK_OFFLINE_SHELL'},[channel.port2]);}
-        catch(_){finish({ready:false,reason:'unavailable'});}
+        if(!serviceWorker.controller)await waitFor(serviceWorker,'controllerchange',()=>Boolean(serviceWorker.controller));
+        if(finished)return;
+        let reply=await query(serviceWorker.controller,'PTH_CHECK_OFFLINE_SHELL');
+        if(finished)return;
+        if(repair&&reply.version!==shellVersion&&navigator.onLine!==false){
+          await registration.update();
+          if(finished)return;
+          const installing=registration.installing;
+          if(installing)await waitFor(installing,'statechange',()=>['installed','redundant'].includes(installing.state));
+          if(finished)return;
+          const waiting=registration.waiting;
+          if(waiting){
+            const candidate=await query(waiting,'PTH_CHECK_OFFLINE_SHELL');
+            if(finished)return;
+            // Activate only a complete public shell compatible with this page.
+            // No reload: keep the open form, local copy and pending queue.
+            if(candidate.ready===true&&candidate.version===shellVersion){
+              waiting.postMessage({type:'SKIP_WAITING'});
+              await waitFor(serviceWorker,'controllerchange',()=>serviceWorker.controller===waiting);
+              if(finished)return;
+              reply=await query(serviceWorker.controller,'PTH_CHECK_OFFLINE_SHELL');
+            }
+          }
+        }
+        if(finished)return;
+        if(repair&&reply.version===shellVersion&&!reply.ready)reply=await query(serviceWorker.controller,'PTH_REPAIR_OFFLINE_SHELL');
+        finish({...reply,ready:reply.ready===true&&reply.version===shellVersion,reason:reply.version!==shellVersion?'update':reply.reason,updatePending:Boolean(registration.waiting)});
       }).catch(()=>finish({ready:false,reason:'unavailable'}));
     });
   }
@@ -83,7 +112,7 @@
       if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
       let shell=await requestOfflineShell();
       if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
-      if(repair&&!shell.ready&&shell.version===shellVersion&&navigator.onLine!==false){
+      if(repair&&!shell.ready&&navigator.onLine!==false){
         readiness('Comprobando los datos guardados. Recuperando los archivos públicos que faltan para abrir la app sin conexión…');
         shell=await requestOfflineShell(true);
       }
