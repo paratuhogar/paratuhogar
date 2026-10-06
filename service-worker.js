@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-05-copy2';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-06-all-pending1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -17,7 +17,7 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/offline-storefront-adapter.js?v=20261005-cold7',
   '/css/offline-storefront.css?v=20261003-pending2',
   '/js/storefront.min.js?v=20261005-filters1',
-  '/js/storefront-extras.min.js?v=20261003-welcome2',
+  '/js/storefront-extras.min.js?v=20261006-all-pending1',
   '/js/pending-checkout-storefront.js?v=20261005-copy2',
   '/js/pwa.js?v=20261005-copy2',
   '/css/tailwind.min.css?v=20261004-rolling30',

@@ -2294,7 +2294,7 @@
 
     <aside id="admin-pending-review" class="admin-pending-review" aria-labelledby="admin-pending-review-title" hidden>
         <div>
-            <h3 id="admin-pending-review-title">Nuevas solicitudes por revisar</h3>
+            <h3 id="admin-pending-review-title">Solicitudes pendientes por revisar</h3>
             <p id="admin-pending-review-total"></p>
             <p id="admin-pending-review-age" class="admin-note"></p>
             <p id="admin-pending-review-state" class="admin-note" role="status" aria-live="polite"></p>
@@ -2539,14 +2539,12 @@
     <!-- BLOQUE 1: PENDIENTES -->
 <div class="space-y-4">
     <h4 class="font-bold text-primary">Solicitudes de gestores</h4>
-    <p class="admin-note">Empieza por las pendientes de los últimos 7 días. Las más antiguas aparecen primero. Para consultar solicitudes anteriores, elige el historial. Fechas en horario de Cuba.</p>
+    <p class="admin-note">Todas las solicitudes pendientes, incluidas las antiguas. Las más antiguas aparecen primero; puedes cambiar el orden sin ocultar solicitudes. Fechas en horario de Cuba.</p>
     <div class="admin-toolbar">
-        <label for="admin-pending-filter" class="admin-note">Mostrar</label>
-        <select id="admin-pending-filter" class="admin-control" onchange="setPendingGestorFilter(this.value)">
-            <option value="recent">Últimos 7 días</option>
-            <option value="all">Historial completo: todas las pendientes</option>
-            <option value="history">Historial: más de 7 días</option>
-            <option value="unknown">Fecha por revisar</option>
+        <label for="admin-pending-order" class="admin-note">Ordenar</label>
+        <select id="admin-pending-order" class="admin-control" onchange="setPendingGestorOrder(this.value)">
+            <option value="oldest">Más antiguas primero</option>
+            <option value="newest">Más recientes primero</option>
         </select>
         <button type="button" class="admin-control" onclick="loadPendingGestores()">Actualizar solicitudes</button>
     </div>
@@ -2556,7 +2554,7 @@
             <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
                 <tr>
                     <th class="p-4">Nombre</th>
-                    <th class="p-4">WhatsApp</th>
+                    <th class="p-4">Contacto</th>
                     <th class="p-4">Fecha Solicitud</th>
                     <th class="p-4 text-right">Acción</th>
                 </tr>
@@ -3415,7 +3413,7 @@
     <p class="pth-welcome-hint">Puedes volver a esta bienvenida desde la guía en Mi Dashboard.</p>
 </dialog>
 
-<script src="js/storefront-extras.min.js?v=20261003-welcome2" defer></script>
+<script src="js/storefront-extras.min.js?v=20261006-all-pending1" defer></script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->
