@@ -1975,9 +1975,9 @@
     "slug": "lavadora-automatica-10kg-chiq",
     "nombre": "Lavadora automática 10kg CHIQ",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-10kg-chiq/",
-    "updated_at": "2026-10-06T21:07:07.685707+00:00"
+    "updated_at": "2026-10-07T15:05:04.870993+00:00"
   },
   {
     "id": "7024c540-57dd-4569-b767-eebf3aa63bb6",
@@ -3028,9 +3028,9 @@
     "slug": "picas-de-tierra-con-la-grapa",
     "nombre": "Picas de tierra con la grapa",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/picas-de-tierra-con-la-grapa/",
-    "updated_at": "2026-09-03T18:27:26.825436+00:00"
+    "updated_at": "2026-10-07T15:57:48.801664+00:00"
   },
   {
     "id": "59b8e725-d497-4552-bd71-aac8ca2398d9",
