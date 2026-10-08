@@ -3125,7 +3125,93 @@
                 <input type="email" id="reg-email" placeholder="Correo Electrónico" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <input type="tel" id="reg-tel" placeholder="Teléfono (WhatsApp)" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <input type="password" id="reg-pass" placeholder="Crea una Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
-                <button onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
+                <fieldset id="gestor-questionnaire" class="space-y-4 text-left">
+                <legend class="font-black text-lg">Solicitud de gestor</legend>
+                <p class="text-sm">Elizabeth revisará tus respuestas y decidirá personalmente. Puedes empezar sin experiencia y trabajar con otras tiendas.</p>
+                <p class="text-xs">No incluyas listas de clientes, teléfonos de terceros ni enlaces o acceso a grupos.</p>
+                <label class="block text-sm font-bold">¿Cómo conociste ParaTuHogar?<select id="q-source" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="facebook">Facebook</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="recomendacion">Recomendación</option>
+                <option value="otro">Otro</option>
+                </select>
+                </label>
+                <div id="q-block-other" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Por qué otro medio?<input id="q-sourceOther" type="text" maxlength="150" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <div id="q-block-referral" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Quién te recomendó? (opcional)<input id="q-referrer" type="text" maxlength="100" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <p class="text-xs">Puedes dejarlo vacío si prefieres no identificarle. Eso no impide entrar.</p>
+                <label class="block text-sm font-bold">¿Es gestor de ParaTuHogar?<select id="q-referrerGestor" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+                <option value="no_se">No sé</option>
+                </select>
+                </label>
+                </div>
+                <label class="block text-sm font-bold">¿Tienes experiencia vendiendo por redes?<select id="q-experience" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+                </select>
+                </label>
+                <div id="q-block-time" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Cuántos meses aproximadamente?<input id="q-experienceMonths" type="number" maxlength="300" min="0" max="1000" step="1" inputmode="numeric" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <fieldset>
+                <legend class="text-sm font-bold">¿Qué plataformas utilizas? (puedes dejarlo vacío)</legend>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Facebook">Facebook</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="WhatsApp">WhatsApp</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Instagram">Instagram</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="TikTok">TikTok</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Telegram">Telegram</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Otra">Otra</label>
+                </fieldset>
+                <label class="block text-sm font-bold">¿Cuántos clientes habituales tienes?<select id="q-clients" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="0">Todavía ninguno</option>
+                <option value="1-10">1–10</option>
+                <option value="11-30">11–30</option>
+                <option value="31-100">31–100</option>
+                <option value="100+">Más de 100</option>
+                </select>
+                </label>
+                <label class="block text-sm font-bold">¿Cómo mantienes su confianza? (si tienes clientes)<input id="q-loyalty" type="text" maxlength="300" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <label class="block text-sm font-bold">¿Utilizas grupos o canales para vender?<select id="q-channels" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+                </select>
+                </label>
+                <div id="q-block-channels" hidden class="space-y-3">
+                <label class="block text-sm font-bold">Nombre o descripción de tus grupos/canales (sin enlaces)<input id="q-channelNames" type="text" maxlength="300" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <label class="block text-sm font-bold">Tamaño aproximado (ej.: 2 grupos de 100 personas)<input id="q-channelSize" type="text" maxlength="100" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <label class="block text-sm font-bold">¿Con cuántas otras tiendas trabajas? (0 si ninguna)<input id="q-storesCount" oninput="PTHQuestionnaire.sync(document)" type="number" maxlength="300" min="0" max="1000" step="1" inputmode="numeric" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <div id="q-block-stores" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Cómo se llaman esas tiendas?<input id="q-storeNames" type="text" maxlength="300" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <p class="text-xs">Trabajar con otras tiendas no impide incorporarte a ParaTuHogar.</p>
+                </fieldset>
+                <p id="reg-status" role="status" aria-live="polite" class="text-sm">
+                </p>
+                <button id="reg-submit" type="button" onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
             </div>
 
             <!-- NUEVO: FORMULARIO RECUPERACIÓN -->
@@ -3158,7 +3244,8 @@
         </div>
 
     <!-- Scripts de Lógica -->
-    <script src="js/storefront.min.js?v=20261005-filters1" defer></script>
+    <script src="js/gestor-questionnaire.js?v=20261008-questionnaire1" defer></script>
+    <script src="js/storefront.min.js?v=20261008-questionnaire1" defer></script>
     <script src="js/pending-checkout-storefront.js?v=20261006-ready1" defer></script>
 
 
@@ -3413,7 +3500,7 @@
     <p class="pth-welcome-hint">Puedes volver a esta bienvenida desde la guía en Mi Dashboard.</p>
 </dialog>
 
-<script src="js/storefront-extras.min.js?v=20261006-all-pending1" defer></script>
+<script src="js/storefront-extras.min.js?v=20261008-questionnaire1" defer></script>
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->

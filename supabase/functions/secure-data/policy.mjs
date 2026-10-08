@@ -54,6 +54,7 @@ export function scopeFor(table,actor,operation,payload={}) {
 export function projectRow(table,source,actor,assigned=new Map()) {
   const kind=actorKind(actor);
   const row={...source};
+  if(table==='gestores'){delete row.application_token;if(kind!=='admin')delete row.questionnaire;}
   if(kind==='mensajero'){
     for(const key of Object.keys(row))if(/comision|pago_gestor|pago_subgestor|pago_sistema|estado_financiero|costo_proveedor/i.test(key))delete row[key];
     return row;

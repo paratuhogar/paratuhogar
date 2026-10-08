@@ -1,0 +1,405 @@
+<!doctype html><html lang="es"><meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="utf-8"><title>Demo aislada · solicitud de gestor</title><link rel="stylesheet" href="../css/tailwind.min.css"><style>body{background:#f8fafc;color:#172554;padding:24px}main{max-width:520px;margin:auto;background:white;padding:24px;border-radius:24px}[hidden]{display:none!important}details p{margin:12px 0;overflow-wrap:anywhere}input,select{max-width:100%}</style><main><h1 class="font-black text-xl">Demo aislada</h1><p>Solo fixtures. Ninguna conexión a producción.</p><div id="form-register" class="space-y-4">
+
+                <input type="text" id="reg-name" placeholder="Nombre y Apellido" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="email" id="reg-email" placeholder="Correo Electrónico" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="tel" id="reg-tel" placeholder="Teléfono (WhatsApp)" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <input type="password" id="reg-pass" placeholder="Crea una Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <fieldset id="gestor-questionnaire" class="space-y-4 text-left">
+                <legend class="font-black text-lg">Solicitud de gestor</legend>
+                <p class="text-sm">Elizabeth revisará tus respuestas y decidirá personalmente. Puedes empezar sin experiencia y trabajar con otras tiendas.</p>
+                <p class="text-xs">No incluyas listas de clientes, teléfonos de terceros ni enlaces o acceso a grupos.</p>
+                <label class="block text-sm font-bold">¿Cómo conociste ParaTuHogar?<select id="q-source" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="facebook">Facebook</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="recomendacion">Recomendación</option>
+                <option value="otro">Otro</option>
+                </select>
+                </label>
+                <div id="q-block-other" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Por qué otro medio?<input id="q-sourceOther" type="text" maxlength="150" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <div id="q-block-referral" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Quién te recomendó? (opcional)<input id="q-referrer" type="text" maxlength="100" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <p class="text-xs">Puedes dejarlo vacío si prefieres no identificarle. Eso no impide entrar.</p>
+                <label class="block text-sm font-bold">¿Es gestor de ParaTuHogar?<select id="q-referrerGestor" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+                <option value="no_se">No sé</option>
+                </select>
+                </label>
+                </div>
+                <label class="block text-sm font-bold">¿Tienes experiencia vendiendo por redes?<select id="q-experience" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+                </select>
+                </label>
+                <div id="q-block-time" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Cuántos meses aproximadamente?<input id="q-experienceMonths" type="number" maxlength="300" min="0" max="1000" step="1" inputmode="numeric" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <fieldset>
+                <legend class="text-sm font-bold">¿Qué plataformas utilizas? (puedes dejarlo vacío)</legend>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Facebook">Facebook</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="WhatsApp">WhatsApp</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Instagram">Instagram</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="TikTok">TikTok</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Telegram">Telegram</label>
+                <label class="inline-flex items-center gap-2 p-2 min-h-12">
+                <input type="checkbox" name="q-platform" value="Otra">Otra</label>
+                </fieldset>
+                <label class="block text-sm font-bold">¿Cuántos clientes habituales tienes?<select id="q-clients" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="0">Todavía ninguno</option>
+                <option value="1-10">1–10</option>
+                <option value="11-30">11–30</option>
+                <option value="31-100">31–100</option>
+                <option value="100+">Más de 100</option>
+                </select>
+                </label>
+                <label class="block text-sm font-bold">¿Cómo mantienes su confianza? (si tienes clientes)<input id="q-loyalty" type="text" maxlength="300" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <label class="block text-sm font-bold">¿Utilizas grupos o canales para vender?<select id="q-channels" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12" onchange="PTHQuestionnaire.sync(document)">
+                <option value="">Selecciona</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+                </select>
+                </label>
+                <div id="q-block-channels" hidden class="space-y-3">
+                <label class="block text-sm font-bold">Nombre o descripción de tus grupos/canales (sin enlaces)<input id="q-channelNames" type="text" maxlength="300" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <label class="block text-sm font-bold">Tamaño aproximado (ej.: 2 grupos de 100 personas)<input id="q-channelSize" type="text" maxlength="100" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <label class="block text-sm font-bold">¿Con cuántas otras tiendas trabajas? (0 si ninguna)<input id="q-storesCount" oninput="PTHQuestionnaire.sync(document)" type="number" maxlength="300" min="0" max="1000" step="1" inputmode="numeric" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                <div id="q-block-stores" hidden class="space-y-3">
+                <label class="block text-sm font-bold">¿Cómo se llaman esas tiendas?<input id="q-storeNames" type="text" maxlength="300" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 text-sm p-3 min-h-12">
+                </label>
+                </div>
+                <p class="text-xs">Trabajar con otras tiendas no impide incorporarte a ParaTuHogar.</p>
+                </fieldset>
+                <p id="reg-status" role="status" aria-live="polite" class="text-sm">
+                </p>
+                <button id="reg-submit" type="button" onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
+            </div>
+
+<h2 class="font-black text-lg">Vista administrativa · fixtures</h2><p>8 de octubre de 2026 · WhatsApp: contacto ficticio</p><div id="demo-admin"></div></main><script src="../js/gestor-questionnaire.js"></script><script>
+const localStorage={getItem:()=>null};
+function toggleLoginMode(){document.getElementById('reg-status').textContent='Solicitud demo enviada. Decisión manual de Elizabeth.'}
+const supabaseClient={from(){return {select(){return this},eq(){return this},maybeSingle:async()=>({data:null,error:null}),insert:async rows=>{document.getElementById('demo-admin').append(PTHQuestionnaire.render(document,rows[0].questionnaire));return {error:null}}}};
+let registrationBusy=false;
+let registrationAttempt=null;
+async function processRegister() {
+    if(registrationBusy)return;
+    const btn = document.getElementById('reg-submit');
+    const status=document.getElementById('reg-status');
+    const parentId=localStorage.getItem('pth_invitado_por_id')||null;
+    let questionnaire;
+    try{if(!parentId)questionnaire=PTHQuestionnaire.read(document);}catch(error){if(status)status.textContent=error.message;return;}
+    if(status)status.textContent='';
+    const nombre = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const tel = document.getElementById('reg-tel').value.trim();
+    const pass = document.getElementById('reg-pass').value.trim();
+
+    if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
+
+    btn.disabled = true;
+    const originalText = btn.innerText;
+    btn.innerText = "PROCESANDO REGISTRO...";
+    registrationBusy=true;
+    if(!registrationAttempt)registrationAttempt=crypto.randomUUID();
+
+    try {
+        // 1. VERIFICAR SI YA EXISTE EL TELÉFONO
+        const { data: existe, error: lookupError } = await supabaseClient.from('gestores').select('id, estado').eq('telefono', tel).maybeSingle();
+        if(lookupError)throw lookupError;
+        if (existe && !questionnaire) {
+            alert("⚠️ Este número ya está registrado. Ve a la pestaña de ENTRAR.");
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
+        }
+
+        // Determinar si viene invitado por un Gestor Principal
+        // Invitation scope is unchanged; direct applications include the questionnaire.
+
+        // 2. INSERTAR EN LA BASE DE DATOS (MÉTODO PENDIENTE SUBGESTOR)
+        const { error } = await supabaseClient
+            .from('gestores')
+            .insert([{
+                nombre: nombre,
+                email: email,
+                telefono: tel,
+                password: pass,
+                estado: parentId ? 'pendiente_subgestor' : 'pendiente', // Los subgestores esperan al padre; los directos esperan al admin
+                parent_id: parentId,
+                ...(questionnaire?{questionnaire,application_token:registrationAttempt}:{})
+            }]);
+
+        if (error) throw error;
+
+        registrationAttempt=null;
+        // 3. MOSTRAR PANTALLA DE SOLICITUD ENVIADA SI ES SUBGESTOR
+        if (parentId) {
+            const formContainer = document.getElementById('form-register');
+            if (formContainer) {
+                formContainer.innerHTML = `
+                    <div class="space-y-4 text-center py-4 animate-pop-in">
+                        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400 border border-amber-200">
+                            <span class="material-symbols-outlined text-3xl animate-pulse">hourglass_empty</span>
+                        </div>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase leading-tight">¡Solicitud Enviada!</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Tu registro como subgestor ha sido enviado con éxito.</p>
+                        <p class="text-[11px] text-slate-600 dark:text-gray-400 font-medium leading-relaxed">Tu Gestor Principal revisará tu solicitud y se pondrá en contacto contigo a través de WhatsApp para explicarte la metodología y activarte la cuenta.</p>
+
+                        <button onclick="location.reload()" class="w-full bg-slate-900 hover:bg-black text-white py-3.5 rounded-xl font-black uppercase text-xs">
+                            Volver a la Tienda
+                        </button>
+                    </div>
+                `;
+            }
+        } else {
+            alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a revisión. Elizabeth revisará tus respuestas y se pondrá en contacto contigo por WhatsApp. La decisión es manual.`);
+            toggleLoginMode('login');
+        }
+
+    } catch (e) {
+        if(status)status.textContent="No se pudo confirmar la solicitud. Tus respuestas siguen aquí; vuelve a intentar. "+e.message;
+    } finally {
+        registrationBusy=false;
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+}
+
+
+
+    // INICIO DE SESIÓN
+
+
+    // Función auxiliar para guardar en el navegador
+    function saveSessionToMemory(name, isAdmin, data) {
+        const session = {
+            name: name,
+            isAdmin: isAdmin,
+            data: data
+        };
+        localStorage.setItem('pth_session', JSON.stringify(session));
+        window.PTHAnalytics?.excludeInternal();
+    }
+
+    function closeLogin() { document.getElementById('login-overlay').classList.add('hidden'); }
+    function enterAsClient() { closeLogin(); loadProducts(); }
+
+    async function setupSession(name, adminMode) {
+    const setupVersion = window.PTHWorkView.beginSetup();
+    const localDisplay = offlineStorefront.usingCopy();
+    let welcomeNotice = Promise.resolve();
+    adminMode = !localDisplay && window.PTHWorkView.isAdminView(window.currentUserData);
+    let requestedAdminTab = null;
+    if (!localDisplay) try { requestedAdminTab = await window.PTHPushLinks?.resolve(); } catch (_) { /* Login/service errors keep the existing verified view. */ }
+    if (requestedAdminTab) adminMode = true;
+    window.gestorName = name;
+    window.isAdmin = adminMode;
+    if (!adminMode && typeof stopTrafficDashboard === 'function') stopTrafficDashboard();
+    // Remove the previous view before rendering the new one. The role/token stay intact.
+    document.getElementById('sec-admin-master')?.classList.toggle('hidden', !adminMode);
+    document.getElementById('sec-dashboard')?.classList.add('hidden');
+    document.getElementById('gestor-command-center')?.classList.toggle('hidden', adminMode);
+    window.PTHWorkView.syncButtons(window.currentUserData, adminMode);
+
+    // Forzar limpieza del buscador para eliminar el autocompletado del navegador
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) searchBar.value = '';
+
+    const label = document.getElementById('gestor-label');
+    if(label) label.innerText = adminMode ? `ADMINISTRADOR` : `AGENTE: ${name.toUpperCase()}`;
+
+    const adminNav = document.getElementById('admin-nav');
+    if(adminNav) adminNav.classList.remove('hidden');
+
+    if (adminMode) {
+        // MODO ADMINISTRADOR (Logística)
+        document.getElementById('sec-admin-master').classList.remove('hidden');
+        document.getElementById('sec-catalogo').style.display = 'none';
+        if(adminNav) adminNav.classList.add('hidden');
+        loadAdminData();
+        if (requestedAdminTab) changeAdminTab(requestedAdminTab);
+        else if (!document.getElementById('cnt-trafico')?.classList.contains('hidden') && typeof initTrafficDashboard === 'function') initTrafficDashboard();
+    } else {
+        // MODO GESTOR o SUBGESTOR (Ventas)
+        const commandCenter = document.getElementById('gestor-command-center');
+        if (commandCenter) commandCenter.classList.remove('hidden');
+
+        const publicFilters = document.getElementById('public-filters-bar');
+        if (publicFilters) publicFilters.classList.add('hidden');
+        document.querySelectorAll('.client-only-section').forEach(section => section.classList.add('hidden'));
+
+        if (typeof applyLockedFeatures === "function") applyLockedFeatures();
+        if (typeof renderFlashButton === "function") renderFlashButton();
+        if (!localDisplay && typeof checkGamificationStatus === "function") {
+            checkGamificationStatus();
+            welcomeNotice = showAgentWelcomeModal(name);
+        }
+
+        // --- VERIFICACIÓN DE SUBGESTOR EN TIEMPO REAL (EL FIX) ---
+        if (!localDisplay) try {
+            let hierarchyQuery = supabaseClient
+                .from('gestores')
+                .select('id, parent_id');
+            hierarchyQuery = window.currentUserData?.id ? hierarchyQuery.eq('id', window.currentUserData.id) : hierarchyQuery.eq('nombre', name);
+            const { data: dbGestor } = await hierarchyQuery.single();
+
+            if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
+            if (dbGestor) {
+                window.currentUserData = window.currentUserData || {};
+                window.currentUserData.id = dbGestor.id;
+                window.currentUserData.parent_id = dbGestor.parent_id;
+
+                if (dbGestor.parent_id) {
+                    // Es subgestor -> Descargar datos de contacto de su Gestor Principal
+                    const { data: parentData } = await supabaseClient
+                        .from('gestores')
+                        .select('nombre, telefono')
+                        .eq('id', dbGestor.parent_id)
+                        .maybeSingle();
+
+                    if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
+                    if (parentData) {
+                        window.currentUserData.parent_nombre = parentData.nombre;
+                        window.currentUserData.parent_telefono = parentData.telefono;
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error sincronizando rol de subgestor:", err);
+        }
+        if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
+
+        // --- ENMASCARAR BOTÓN RED DE SUBGESTORES AL SUBGESTOR ---
+        const isSubgestor = window.currentUserData && window.currentUserData.parent_id;
+        const btnSub = document.getElementById('btn-open-subgestores');
+        const btnPrices = document.getElementById('btn-dash-precios');
+        const btnAutoAssign = document.getElementById('btn-auto-assign-subcommissions');
+        if (btnPrices) {
+            btnPrices.textContent = isSubgestor ? '🏷️ Precios asignados' : '🏷️ Mis Precios (Config)';
+        }
+        if (btnAutoAssign) {
+            btnAutoAssign.classList.toggle('hidden', Boolean(isSubgestor));
+        }
+        if (btnSub) {
+            if (isSubgestor) {
+                btnSub.classList.add('hidden');
+                btnSub.style.display = 'none';
+                console.log("🔒 Botón 'Red de Subgestores' ocultado para el subgestor:", name);
+            } else {
+                btnSub.classList.remove('hidden');
+                btnSub.style.display = 'inline-flex';
+            }
+        }
+        // Cargar la información una sola vez, ya con el rol correcto resuelto.
+        // El gestor entra directamente a su centro de trabajo.
+        if (!localDisplay) window.PTHRanking?.load();
+        await Promise.all([loadProducts(), localDisplay ? Promise.resolve() : loadProDashboard(name)]);
+        if (!window.PTHWorkView.isCurrentSetup(setupVersion)) return;
+        if (!localDisplay) loadMyPayoutRequests();
+        if(!localDisplay && typeof loadAnalyticsPro === "function") loadAnalyticsPro(name);
+        showSection(localDisplay || window.PTHWorkView.canSwitch(window.currentUserData) ? 'catalogo' : 'dashboard');
+        Promise.resolve(welcomeNotice).then(() => {
+            if (!localDisplay && window.PTHWorkView.isCurrentSetup(setupVersion)) void window.PTHFeedbackAnnouncement?.show();
+        }).catch(() => {});
+    }
+
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.classList.remove('hidden');
+        btnLogout.style.display = 'inline-flex';
+    }
+
+    // CRM loads when checkout opens.
+
+    const waBtn = document.getElementById('floating-agent-contact');
+    if (waBtn) waBtn.classList.add('hidden');
+
+    // ============================================================
+    // 🛡️ LÓGICA DE BOTÓN MAESTRO (FINANCIERO) (RESTAURADA)
+    // ============================================================
+    const userData = window.currentUserData || {};
+    const VAULT_ADMIN_IDS = new Set([
+        'a5cd1515-47dc-4379-a392-cb09459b3686', // Jomil
+        '19db1f25-8615-418c-b092-1548e8f92abd'  // Beatriz Barrero
+    ]);
+    const esSuperAdmin = userData.rol === 'superadmin'
+        || name === 'Administrador'
+        || name === 'Marcel Montano'
+        || (userData.rol === 'admin' && VAULT_ADMIN_IDS.has(String(userData.id || '')));
+
+    if (esSuperAdmin) {
+        // Localizamos el contenedor de los botones del header al lado del botón de salida
+        const headerContainer = btnLogout ? btnLogout.parentElement : document.querySelector('header div.flex.items-center');
+
+        if (headerContainer && !document.getElementById('btn-master-vault')) {
+            const btnMaster = document.createElement('button');
+            btnMaster.id = 'btn-master-vault';
+            btnMaster.innerHTML = `<span class="material-symbols-outlined text-amber-900 font-bold">shield</span>`;
+
+            // Estilos: Dorado, con sombra, pulso suave para destacar
+            btnMaster.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-amber-400 hover:bg-amber-300 text-amber-900 transition-all shadow-lg shadow-amber-500/50 border-2 border-amber-200 animate-pulse ml-2";
+            btnMaster.title = "ACCESO A BÓVEDA FINANCIERA";
+            btnMaster.onclick = () => window.location.href = 'master.html';
+
+            headerContainer.insertBefore(btnMaster, btnLogout);
+        }
+    }
+
+    // Herramientas experimentales: acceso exclusivo del propietario/programador.
+    ['btn-radar-secret', 'btn-war-room'].forEach(id => document.getElementById(id)?.remove());
+    if (name === "Marcel Montano") {
+        const headerActions = document.querySelector('header .flex.items-center.gap-2.md\\:gap-4');
+
+        if (headerActions && !document.getElementById('btn-radar-secret')) {
+            const btnRadar = document.createElement('button');
+            btnRadar.id = 'btn-radar-secret';
+            btnRadar.title = "SISTEMA RADAR";
+            btnRadar.onclick = () => window.location.href = 'marcel-radar.html';
+            btnRadar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600/20 text-purple-400 border border-purple-500/40 hover:bg-purple-600 hover:text-white transition-all animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.4)]";
+            btnRadar.innerHTML = '<span class="material-symbols-outlined">radar</span>';
+            headerActions.prepend(btnRadar);
+        }
+
+        if (headerActions && !document.getElementById('btn-war-room')) {
+            const btnWar = document.createElement('button');
+            btnWar.id = 'btn-war-room';
+            btnWar.onclick = () => window.open('shadow-marketer.html', '_blank');
+            btnWar.className = "flex items-center justify-center rounded-lg h-10 w-10 bg-purple-600 text-white hover:bg-purple-500 transition-all shadow-[0_0_15px_rgba(147,51,234,0.6)] animate-pulse border border-purple-400 ml-2";
+            btnWar.innerHTML = '<span class="material-symbols-outlined">smart_toy</span>';
+            btnWar.title = "SALA DE GUERRA AI";
+            headerActions.prepend(btnWar);
+        }
+    }
+
+    setTimeout(() => {
+        if (!localDisplay && !adminMode && window.PTHWorkView.isCurrentSetup(setupVersion)) {
+            showRadarIntro();
+        }
+    }, 2000);
+}
+
+
+    // --- 2. LÓGICA DASHBOARD PRO (Ranking + Enlaces) ---
+
+    // Variable global para guardar los pedidos del gestor y poder filtrar
+let myOrdersData = [];
+
+PTHQuestionnaire.sync(document);document.getElementById('demo-admin').append(PTHQuestionnaire.render(document,null));</script></html>

@@ -475,6 +475,9 @@ function openLoginModal() {
     }
     else if (mode === 'register') {
         if(fRegister) fRegister.classList.remove('hidden');
+        const questionnaire=document.getElementById('gestor-questionnaire');
+        if(questionnaire)questionnaire.hidden=!!localStorage.getItem('pth_invitado_por_id');
+        window.PTHQuestionnaire?.sync(document);
         if(btnTabRegister) btnTabRegister.className = estiloActivo;
     }
     else if (mode === 'recover') {
@@ -499,8 +502,16 @@ async function processRecovery() {
 // ==============================================================
 // REGISTRO SEGURO (FILTRO ANTI-CLIENTES CURIOSOS)
 // ==============================================================
+let registrationBusy=false;
+let registrationAttempt=null;
 async function processRegister() {
-    const btn = document.querySelector('#form-register button');
+    if(registrationBusy)return;
+    const btn = document.getElementById('reg-submit');
+    const status=document.getElementById('reg-status');
+    const parentId=localStorage.getItem('pth_invitado_por_id')||null;
+    let questionnaire;
+    try{if(!parentId)questionnaire=PTHQuestionnaire.read(document);}catch(error){if(status)status.textContent=error.message;return;}
+    if(status)status.textContent='';
     const nombre = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const tel = document.getElementById('reg-tel').value.trim();
@@ -511,11 +522,14 @@ async function processRegister() {
     btn.disabled = true;
     const originalText = btn.innerText;
     btn.innerText = "PROCESANDO REGISTRO...";
+    registrationBusy=true;
+    if(!registrationAttempt)registrationAttempt=crypto.randomUUID();
 
     try {
         // 1. VERIFICAR SI YA EXISTE EL TELÉFONO
-        const { data: existe } = await supabaseClient.from('gestores').select('id, estado').eq('telefono', tel).maybeSingle();
-        if (existe) {
+        const { data: existe, error: lookupError } = await supabaseClient.from('gestores').select('id, estado').eq('telefono', tel).maybeSingle();
+        if(lookupError)throw lookupError;
+        if (existe && !questionnaire) {
             alert("⚠️ Este número ya está registrado. Ve a la pestaña de ENTRAR.");
             btn.disabled = false;
             btn.innerText = originalText;
@@ -523,7 +537,7 @@ async function processRegister() {
         }
 
         // Determinar si viene invitado por un Gestor Principal
-        const parentId = localStorage.getItem('pth_invitado_por_id') || null;
+        // Invitation scope is unchanged; direct applications include the questionnaire.
 
         // 2. INSERTAR EN LA BASE DE DATOS (MÉTODO PENDIENTE SUBGESTOR)
         const { error } = await supabaseClient
@@ -534,11 +548,13 @@ async function processRegister() {
                 telefono: tel,
                 password: pass,
                 estado: parentId ? 'pendiente_subgestor' : 'pendiente', // Los subgestores esperan al padre; los directos esperan al admin
-                parent_id: parentId
+                parent_id: parentId,
+                ...(questionnaire?{questionnaire,application_token:registrationAttempt}:{})
             }]);
 
         if (error) throw error;
 
+        registrationAttempt=null;
         // 3. MOSTRAR PANTALLA DE SOLICITUD ENVIADA SI ES SUBGESTOR
         if (parentId) {
             const formContainer = document.getElementById('form-register');
@@ -559,13 +575,14 @@ async function processRegister() {
                 `;
             }
         } else {
-            alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a revisión. El administrador central de la tienda te activará la cuenta en las próximas 24 horas.`);
+            alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a revisión. Elizabeth revisará tus respuestas y se pondrá en contacto contigo por WhatsApp. La decisión es manual.`);
             toggleLoginMode('login');
         }
 
     } catch (e) {
-        alert("Error al registrar: " + e.message);
+        if(status)status.textContent="No se pudo confirmar la solicitud. Tus respuestas siguen aquí; vuelve a intentar. "+e.message;
     } finally {
+        registrationBusy=false;
         btn.disabled = false;
         btn.innerText = originalText;
     }

@@ -1,3 +1,4 @@
+import './questionnaire-validation.js';
 import {announcement} from './announcement.mjs';
 import {feedback} from './feedback.mjs';
 import {pushSettings} from './push.mjs';
@@ -13,7 +14,7 @@ const encode=value=>new TextEncoder().encode(value);
 const sessionExpiries=new WeakMap();
 export async function hash(value) {return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encode(String(value)))),v=>v.toString(16).padStart(2,'0')).join('');}
 const fail=(message,status=403,publicCode)=>{throw Object.assign(Error(message),{status,publicCode});};
-const cleanProfile=actor=>({...actor,password:'__session__'});
+const cleanProfile=actor=>{const profile={...actor,password:'__session__'};delete profile.questionnaire;delete profile.application_token;return profile;};
 const pick=(row,columns)=>!columns||columns==='*'?row:Object.fromEntries(columns.split(',').map(s=>s.trim()).filter(k=>Object.hasOwn(row,k)).map(k=>[k,row[k]]));
 const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 export function validateQuery(body,actor) {
@@ -28,11 +29,11 @@ export function validateQuery(body,actor) {
     if(filter.method==='or'&&actorKind(actor)!=='admin') fail('Los filtros compuestos requieren un administrador.');
     const text=filter.method==='or'?String(filter.value):String(filter.column);
     if(table==='inventario_eventos'&&actorKind(actor)!=='admin'&&(filter.method==='or'||text==='datos_producto')) fail('No puedes filtrar instantáneas privadas de inventario.');
-    if(/password|token|credential/i.test(text)||(restricted&&financial.test(text))||(table==='gestores'&&actorKind(actor)!=='admin'&&/email|rol|activo|comision|jefe_id|fecha_rescate|acceso_vip/i.test(text))) fail('No tienes permiso para filtrar datos privados.');
+    if(/password|token|credential/i.test(text)||(restricted&&financial.test(text))||(table==='gestores'&&actorKind(actor)!=='admin'&&/email|rol|activo|comision|jefe_id|fecha_rescate|acceso_vip|questionnaire|application_token/i.test(text))) fail('No tienes permiso para filtrar datos privados.');
     if(filter.method!=='or'&&!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(filter.column)) fail('Campo de filtro no válido.');
     if(filter.method==='not'&&!['eq','neq','is','in','like','ilike'].includes(filter.operator)) fail('Operador no permitido.');
   }
-  for(const order of orders) if(!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(order.column)||/password|token/i.test(order.column)||(restricted&&financial.test(order.column))||(table==='inventario_eventos'&&actorKind(actor)!=='admin'&&order.column==='datos_producto')||(table==='gestores'&&actorKind(actor)!=='admin'&&/email|rol|activo|comision|jefe_id|fecha_rescate|acceso_vip/i.test(order.column))) fail('No tienes permiso para ordenar datos privados.');
+  for(const order of orders) if(!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(order.column)||/password|token/i.test(order.column)||(restricted&&financial.test(order.column))||(table==='inventario_eventos'&&actorKind(actor)!=='admin'&&order.column==='datos_producto')||(table==='gestores'&&actorKind(actor)!=='admin'&&/email|rol|activo|comision|jefe_id|fecha_rescate|acceso_vip|questionnaire|application_token/i.test(order.column))) fail('No tienes permiso para ordenar datos privados.');
   return body;
 }
 function applyQuery(query,body,scope=[]) {
@@ -193,6 +194,11 @@ async function prepareWrite(db,body,actor) {
     if(body.table==='gestores'&&body.op==='insert'&&kind!=='admin') {
       if(!row.nombre||!row.telefono||String(row.password||'').length<6) fail('Completa nombre, teléfono y una contraseña de al menos 6 caracteres.');
       row={nombre:row.nombre,email:row.email||null,telefono:row.telefono,password:row.password,parent_id:row.parent_id||null,rol:'gestor',estado:row.parent_id?'pendiente_subgestor':'pendiente'};
+      if(input.questionnaire!==undefined&&!row.parent_id){
+        row.questionnaire=globalThis.PTHQuestionnaire.validate(input.questionnaire);
+        if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.application_token||''))fail('Clave de solicitud no válida.',400);
+        row.application_token=input.application_token;
+      }
       if(row.parent_id) await parentFor(db,{parent_id:row.parent_id});
     }
     if(body.table==='precios_personalizados'&&kind==='gestor') {
@@ -211,6 +217,15 @@ async function dataQuery(db,body,actor) {
   const {table,op='select'}=body;
   if(table==='inventario_eventos'&&!actor)return {data:body.single?null:[],error:null,count:body.count==='exact'?0:null};
   const values=op!=='select'&&op!=='delete'?await prepareWrite(db,body,actor):undefined;
+  const application=table==='gestores'&&op==='insert'?(Array.isArray(values)&&values.length===1?values[0]:!Array.isArray(values)?values:null):null;
+  if(application?.application_token){
+    const existing=await db.from('gestores').select('id,application_token').eq('telefono',application.telefono).limit(1);
+    if(existing.error)return {data:null,error:{message:'No se pudo verificar la solicitud. Intenta de nuevo.'},count:null};
+    if(existing.data?.length){
+      if(existing.data[0].application_token===application.application_token)return {data:[],error:null,count:null};
+      return {data:null,error:{message:'Este teléfono ya está registrado. Contacta con administración si tu solicitud está pendiente.'},count:null};
+    }
+  }
   const scope=scopeFor(table,actor,op,Array.isArray(values)?values[0]:values);
   if(table==='inventario_eventos'&&actorKind(actor)==='subgestor')scope.push(['in','tipo',['nuevo','reposicion','agotado','precio']]);
   let query=db.from(table);
@@ -221,6 +236,10 @@ async function dataQuery(db,body,actor) {
   }
   query=applyQuery(query,body,scope);
   const {data,error,count}=await query;
+  if(error&&error.code==='23505'&&table==='gestores'&&op==='insert'&&(Array.isArray(values)?values.length===1:!!values)&&(Array.isArray(values)?values[0]:values)?.application_token){
+    const existing=await db.from('gestores').select('id').eq('application_token',(Array.isArray(values)?values[0]:values).application_token).eq('telefono',(Array.isArray(values)?values[0]:values).telefono).maybeSingle();
+    if(!existing.error&&existing.data)return {data:[],error:null,count:null};
+  }
   if(error) return {data:null,error:{message:error.message,code:error.code},count:null};
   let assigned=new Map();
   if(table==='productos'&&actorKind(actor)==='subgestor'&&data?.length) {

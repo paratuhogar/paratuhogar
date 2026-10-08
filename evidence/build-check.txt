@@ -1,0 +1,3 @@
+
+> check:js
+> node scripts/build-js.cjs --check

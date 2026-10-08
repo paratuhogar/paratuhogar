@@ -1,0 +1,5 @@
+
+> check:guide
+> node scripts/check-guide-release.cjs
+
+{"published":true,"bytes":1081373,"revision":"2026-10-05.4"}

@@ -231,6 +231,10 @@ function renderPendingGestores() {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-control'; button.textContent = label; button.addEventListener('click', action); actions.append(button);
         }
         tr.append(actions); host.append(tr);
+        if(window.PTHQuestionnaire){
+            const detailsRow=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=4;cell.className='p-4 admin-note';
+            cell.append(PTHQuestionnaire.render(document,row.questionnaire));detailsRow.append(cell);host.append(detailsRow);
+        }
     }
 }
 async function loadPendingGestores() {

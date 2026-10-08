@@ -1,0 +1,99 @@
+✖ novices without an identified referrer or other stores can apply (6.418442ms)
+✖ conditional fields normalize stale answers and reject incomplete visible fields (19.580919ms)
+✖ answers are private to administrators, including own profile and parent views (1.147577ms)
+✖ private answers and idempotency keys cannot be probed by filters or ordering (2.087973ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 248.555244
+
+✖ failing tests:
+
+test at tests/gestor-questionnaire.test.mjs:11:1
+✖ novices without an identified referrer or other stores can apply (6.418442ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'undefined'
+  - 'function'
+
+      at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:12:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'undefined',
+    expected: 'function',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/gestor-questionnaire.test.mjs:15:1
+✖ conditional fields normalize stale answers and reject incomplete visible fields (19.580919ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+    assert.ok(q)
+
+      at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:16:42)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/gestor-questionnaire.test.mjs:25:1
+✖ answers are private to administrators, including own profile and parent views (1.147577ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + {
+  +   referrer: 'private'
+  + }
+  - undefined
+
+      at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:28:58)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { referrer: 'private' },
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/gestor-questionnaire.test.mjs:32:1
+✖ private answers and idempotency keys cannot be probed by filters or ordering (2.087973ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:34:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
