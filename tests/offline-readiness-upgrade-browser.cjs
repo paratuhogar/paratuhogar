@@ -35,7 +35,7 @@ async function state(page){return page.evaluate(async()=>{
   for(const file of files)fixture.publicAsset('/'+file,null);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.getElementById('pth-device-readiness-summary')?.textContent.startsWith('Listo para trabajar')&&!document.getElementById('pth-device-retry')?.disabled,{},{timeout:60000});
-  const upgraded=await state(page);assert.equal(upgraded.shell.ready,true);assert.equal(upgraded.shell.version,'pth-public-static-2026-10-08-questionnaire2');assert.equal(upgraded.waiting,false);assert.deepEqual(upgraded.queue,before.queue);assert.deepEqual(upgraded.copy,before.copy);
+  const upgraded=await state(page);assert.equal(upgraded.shell.ready,true);assert.equal(upgraded.shell.version,'pth-public-static-2026-10-08-save1');assert.equal(upgraded.waiting,false);assert.deepEqual(upgraded.queue,before.queue);assert.deepEqual(upgraded.copy,before.copy);
   assert.equal(await page.locator('#pth-connection-status').isVisible(),false,'completed worker update must retire its update invitation');
   // Repeated readiness/copy checks must stay ready rather than flip back.
   await page.locator('#pth-device-retry').click();await page.waitForFunction(()=>!document.getElementById('pth-device-retry').disabled,{},{timeout:50000});
