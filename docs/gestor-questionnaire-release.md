@@ -49,8 +49,18 @@ cuestionario; nunca se convierte una solicitud pendiente en activa.
   sin SDK, fetch ni backend. No se enviaron solicitudes reales ni mensajes.
 - Chrome falló dos veces con «Unable to load browser request-header policy».
   **No hay capturas ni verificación visual real móvil/escritorio/teclado.**
-- SQL no ejecutado en base local: no hay Postgres/psql/Supabase CLI disponibles.
-  **Constraints/índice y carreras reales de Postgres requieren staging aislado.**
+- SQL ejecutado exactamente como propuesto en PGlite 0.5.8 / PostgreSQL 18.3
+  embebido local, con 17 comprobaciones correctas; evidencia en
+  `evidence/sql-local-verification.txt`. Incluye handler real con adapter local.
+  No hay Postgres/psql/Supabase CLI nativos; Docker no tiene daemon activo.
+  PGlite tiene una única conexión exclusiva: dos llamadas simultáneas del handler
+  prueban convergencia e índice, **no carreras MVCC con sesiones independientes**.
+  Supabase de producción usa PostgreSQL 17: compatibilidad/deploy/REST y concurrencia
+  multisesión todavía requieren un staging autorizado.
+- Inventario conectado: solo `paratuhogar` está activo y es producción.
+  `paratuhogar-v2` y el proyecto genérico están INACTIVE, sin autorización de
+  staging ni coste confirmado. No se reactivaron ni se creó infraestructura.
+  No se repitió Chrome en esta continuación ni se consultó/mutó producción.
 - Lectura de metadatos de producción confirmó columnas ausentes, RLS activo,
   grants de tabla únicamente postgres/service_role; no se consultaron respuestas
   ni datos personales de solicitantes. Comprobar también grants de columna antes
@@ -60,6 +70,50 @@ Dependencias de pruebas copiadas al checkout desde node_modules histórico ya
 instalado; `npm ls --depth=0` sin errores. Para reproducir desde cero: `npm ci`.
 Dos copias del validador son intencionales para empaquetado Edge; un test exige
 igualdad byte por byte. Actualizar ambas juntas.
+
+## Almacenamiento privado y alcance del despliegue
+
+Las respuestas se almacenan en la misma fila de `public.gestores`, como JSONB
+versionado, junto a la clave UUID del intento. `created_at` y WhatsApp son los
+campos existentes, no copias ni datos de terceros. No se añaden tablas, Storage,
+URLs públicas ni índices sobre respuestas. No se cambia la autorización de
+administradores: `secure-data` usa su service_role existente y solo los actores
+administradores actuales reciben `questionnaire` al consultar solicitudes.
+Los demás actores no reciben respuestas; login/restauración las elimina incluso
+para el propio solicitante. La clave `application_token` se elimina de toda
+proyección, también administrativa. Filtros/ordenación privados se rechazan.
+
+En el navegador las respuestas viven en el formulario; no se guardan en
+localStorage/sessionStorage. La clave del intento vive en memoria. El schema
+no cifra específicamente este campo: su privacidad depende de los grants
+existentes y el gateway, como el resto de la tabla protegida. RLS/grants no se
+cambian. Los tests locales simulan ese modelo; no certifican una configuración
+remota que pudiera cambiar posteriormente.
+
+**Publicación exige tres piezas: SQL + Edge Function `secure-data` + Pages.**
+Solo publicar Pages perdería las respuestas porque el backend anterior descarta
+campos adicionales. No hay nuevas Edge Functions, secretos o variables de entorno;
+se redepliega la función existente con handler/policy y el validador nuevo.
+No cambia `index.ts` ni el mecanismo de autenticación. Se requieren además los
+assets frontend y versiones de worker compatibles.
+
+## Reproducir SQL local sin infraestructura ni credenciales
+
+Se instaló únicamente un paquete de pruebas en `/tmp`; no se añadió dependencia
+a `package.json` de la aplicación ni se iniciaron servidores externos. Los roles
+`anon/authenticated/service_role` del fixture son NOLOGIN y no tienen contraseñas.
+Los nombres, teléfonos y valores de contraseña del fixture son cadenas ficticias;
+no constituyen cuentas ni credenciales de servicios.
+
+```sh
+npm install --prefix /tmp/pth-questionnaire-pg --cache /tmp/pth-questionnaire-npm-cache --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.5.8
+PTH_PGLITE_MODULE=/tmp/pth-questionnaire-pg/node_modules/@electric-sql/pglite/dist/index.js node scripts/verify-questionnaire-sql.mjs
+```
+
+El script ejecuta el SQL, las restricciones y la retirada opcional solamente en
+una base efímera en memoria; la cierra al finalizar. La retirada que borra las dos
+columnas fue comprobada con datos desechables y **no es el rollback recomendado
+para producción**. En producción se conservan las respuestas.
 
 ## Esquema y publicación, solo después de aprobación
 

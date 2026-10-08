@@ -14,3 +14,12 @@ cuestionario/flujo y check:js correcto, sin nuevos hallazgos bloqueantes.
 
 Pendiente: comprobación visual móvil/escritorio y teclado. Chrome falló dos
 veces con `Unable to load browser request-header policy`.
+
+## Revisión de verificación PostgreSQL local
+
+El mismo revisor reprodujo el script: 17 checks correctos en PostgreSQL 18.3 /
+PGlite 0.5.8, sin bloqueos. Límites confirmados: grants/RLS de tabla sintética,
+conexión exclusiva (no MVCC multisesión), rollback mediante columnas antiguas
+(no aplicación anterior completa), sin PostgREST ni despliegue Edge real.
+Después se añadieron políticas sintéticas SELECT/INSERT/UPDATE al fixture y se
+confirmó también que sus definiciones se conservan; no es auditoría remota.

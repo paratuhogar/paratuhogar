@@ -1,30 +1,18 @@
-✔ a waiting worker preserves the active offline template and its bundle until activation (136.245264ms)
-✔ double click is blocked and lost response retains answers and can retry a saved pending request (18.103598ms)
-✔ store count input is wired and revealing/hiding names disables hidden fields (3.719854ms)
-✔ server stores validated answers atomically and retry with same token does not create another applicant (67.629305ms)
-✔ invalid visible answers stop registration before insertion (6.897786ms)
-✔ administrative renderer labels old requests and treats every answer as untrusted text (2.463196ms)
-✔ browser and edge validator copies stay identical (0.463212ms)
-✔ novices without an identified referrer or other stores can apply (1.865561ms)
-✔ conditional fields normalize stale answers and reject incomplete visible fields (0.824544ms)
-✔ answers are private to administrators, including own profile and parent views (1.826324ms)
-✔ private answers and idempotency keys cannot be probed by filters or ordering (1.419112ms)
-✔ retry updates and activates a verified compatible waiting worker without reloading or touching private storage (6.510756ms)
-✔ a check alone never updates or activates a worker (1.890515ms)
-✔ retry never activates an incompatible or incomplete candidate (2.42246ms)
-✔ failed update preserves honest incomplete readiness and permits another retry (1.334399ms)
-✔ readiness acknowledges only a fully persisted application shell and rejects eviction (73.398289ms)
-✔ normal public template and local SDK reopen without private response or product image precaching (8.58489ms)
-✔ cached root remains available offline; private routes get only offline fallback (21.186195ms)
-✔ service worker never intercepts protected API or POST responses (1.150601ms)
-✔ catalogue upgrade installs the new reader and removes only previous static caches (15.57057ms)
-✔ reader, storefront and notification registrars agree on the release worker version (3.568286ms)
-✔ the storefront accepts the installed complete worker and still rejects an evicted asset (34.235494ms)
-ℹ tests 22
+✔ double click is blocked and lost response retains answers and can retry a saved pending request (16.07613ms)
+✔ store count input is wired and revealing/hiding names disables hidden fields (7.147828ms)
+✔ server stores validated answers atomically and retry with same token does not create another applicant (44.569368ms)
+✔ invalid visible answers stop registration before insertion (2.011836ms)
+✔ administrative renderer labels old requests and treats every answer as untrusted text (2.4257ms)
+✔ browser and edge validator copies stay identical (0.434733ms)
+✔ novices without an identified referrer or other stores can apply (2.016939ms)
+✔ conditional fields normalize stale answers and reject incomplete visible fields (0.884066ms)
+✔ answers are private to administrators, including own profile and parent views (3.392971ms)
+✔ private answers and idempotency keys cannot be probed by filters or ordering (1.58122ms)
+ℹ tests 10
 ℹ suites 0
-ℹ pass 22
+ℹ pass 10
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 618.416319
+ℹ duration_ms 244.277444

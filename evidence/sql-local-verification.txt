@@ -1,0 +1,19 @@
+Engine: PostgreSQL 18.3 (PGlite 0.5.8) on wasm32-unknown-emscripten, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit
+PASS exact proposed migration executes and preserves all 1201 historical fixtures
+PASS historical rows have NULL answers and token; legacy writes remain valid
+PASS table grants, RLS and existing fixture policies remain unchanged
+PASS anon and authenticated cannot read answers directly
+PASS existing service role can store and read answers without added grants
+PASS invalid object, missing/wrong version and oversized payload fail the CHECK
+PASS partial unique UUID index permits multiple NULLs and denies duplicate non-NULL tokens
+PASS invalid UUID is rejected
+PASS multirow insertion is atomic when one answer fails validation
+PASS actual Edge handler stores normalized answers in PostgreSQL and confirms retry without duplication
+PASS different token for same registered phone does not modify an applicant
+PASS simultaneous handler requests for same token create exactly one row
+PASS public Edge query hides answers/token and rejects private filters
+PASS old code projection and inserts work while keeping new answers for functional rollback
+PASS optional destructive schema removal works on disposable fixtures and preserves legacy columns/rows
+PASS missing schema fails safely without inserting or changing any request
+PASS migration rolls back atomically if a later statement fails
+Result: 17 checks passed. Local fixtures only. PGlite has one exclusive connection; this does not verify multi-session PostgreSQL MVCC or Supabase REST deployment.
