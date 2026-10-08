@@ -108,7 +108,7 @@ test('signed pickup review tolerates only normalized display delivery fields and
   await assert.rejects(queue.revise('a',row.id,{...pickup,lines:[{id:'pA',qty:2,price:100}]}),{code:'SIGNED_CHANGE'});
 });
 test('multiple customers with identical products retain separate intents, estimates, reviews and receipts',async()=>{
-  const {queue}=setup(),intentA={intentId:'a'.repeat(64),savedAt:Date.now()},intentB={intentId:'b'.repeat(64),savedAt:Date.now()};
+  const clock=setup(),{queue}=clock,intentA={intentId:'a'.repeat(64),savedAt:clock.now},intentB={intentId:'b'.repeat(64),savedAt:clock.now};
   const a=await queue.save('a',{...input,estimate:{shipping:12,total:312}},intentA),b=await queue.save('a',{...input,form:{...input.form,nombre:'Second customer'},estimate:{shipping:20}},intentB);
   assert.notEqual(a.id,b.id);assert.notEqual(a.intentId,b.intentId);assert.deepEqual(a.estimate,{equipment:300,shipping:12,total:312});assert.deepEqual(b.estimate,{equipment:300,shipping:20,total:320});
   assert.equal((await queue.read('a')).id,a.id);assert.equal((await queue.list('a')).length,2);

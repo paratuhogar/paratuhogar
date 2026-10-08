@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-10-08-save1';
+  const shellVersion = 'pth-public-static-2026-10-08-orders1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -130,8 +130,8 @@
   }
   let purgePromise = null;
   const savedGuidance = count => count === 1
-    ? 'Pedido guardado en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tu pedido automáticamente. Te avisaremos cuando la tienda confirme que lo recibió.'
-    : 'Pedidos guardados en este teléfono. Sal a buscar señal y mantén esta página abierta. Cuando recuperes conexión, enviaremos tus pedidos automáticamente. Te avisaremos cuando la tienda confirme que los recibió.';
+    ? 'Pedido guardado en este teléfono, todavía sin confirmar en la web. Mantén esta página abierta y el formulario cerrado. Comprobaremos la conexión con el servidor y te avisaremos cuando confirme su recepción. Si ya lo hiciste desde otro dispositivo, revisa ese pedido antes de repetirlo.'
+    : 'Pedidos guardados en este teléfono, todavía sin confirmar en la web. Mantén esta página abierta y el formulario cerrado. Comprobaremos la conexión con el servidor y te avisaremos cuando confirme su recepción. Si ya los hiciste desde otro dispositivo, revisa esos pedidos antes de repetirlos.';
   function localAccount() {
     const local = api.localOwner(storage);
     const account = owner() && owner() !== local ? null : owner() || local;
@@ -268,13 +268,14 @@
     if (busy || preparing || owner() !== account || api.localOwner(storage) !== account) return;
     const expectedToken = token(), previous = captureLiveForm();
     try {
-      reviewing = {id: row.id, owner: account, token: expectedToken, previous, immutable: Boolean(row.outcome?.attempt)};
+      reviewing = {id: row.id, owner: account, token: expectedToken, previous, immutable: Boolean(row.outcome?.attempt),duplicateChallenge:row.code==='POSSIBLE_DUPLICATE'?row.duplicateChallenge:null,duplicateReferences:row.duplicateReferences||[]};
       bindForm(row); toggleCartModal(true); lockReviewFields(reviewing.immutable);
       message(reviewing.immutable ? 'Revisa el total. Este intento conserva sus datos originales. Para cambiar el cliente o los productos, detén los reintentos y comprueba primero la recepción.' : 'Revisa los datos, los productos y el total. Pulsa Guardar revisión y enviar pendiente para aceptar las condiciones actuales.');
     } catch (error) { leaveReview(); message(error.safeMessage || 'No se pudo abrir el pendiente. Actualiza el catálogo y vuelve a revisarlo.'); }
     await render();
   }
   async function render() {
+    window.PTHCheckoutConfirmation?.restore();
     const generation = ++renderGeneration, account = localAccount();
     hide(queueButton, !account); hide(copyButton, !account);
     hide(help, !account); hide(copyHelp, !account);
@@ -407,12 +408,14 @@
   async function saveReview() {
     if (!reviewing || active || preparing) return;
     const review = reviewing, expectedToken = token();
+    if(review.duplicateChallenge&&!window.confirm('Ya existe un pedido reciente parecido: '+review.duplicateReferences.join(', ')+'. Si es el mismo, no lo envíes de nuevo. ¿Confirmas que es otra compra distinta?'))return;
     preparing = true;
     try {
       if (owner() !== review.owner || !sameSession(review.owner, expectedToken)) return;
       const data = api.clean(snapshot()), row = await queue.read(review.owner, review.id);
       if (owner() !== review.owner || !sameSession(review.owner, expectedToken) || row?.id !== review.id) return;
       await queue.revise(review.owner, review.id, data);
+      if(review.duplicateChallenge&&sameSession(review.owner,expectedToken))await queue.patch(review.owner,review.id,{duplicateReview:review.duplicateChallenge});
       if (owner() !== review.owner || !sameSession(review.owner, expectedToken)) return;
       lockReviewFields(false); restoreLiveForm(review.previous, review.owner, expectedToken);
       reviewing = null; message(savedGuidance(1));
@@ -425,6 +428,13 @@
     localForm: () => Boolean(active || reviewing || preparing), outcome: () => active?.row.outcome || null,
     intent: () => active ? {intentId: active.row.intentId || active.row.id, savedAt: active.row.createdAt} : null,
     async markOutcome(value) { if (active) await active.save({outcome: value}); },
+    async reviewDuplicates(quote) {
+      if(!active||!quote.duplicates?.length)return null;
+      const references=quote.duplicates.map(row=>row.reference);
+      await active.save({duplicateChallenge:quote.duplicateReview,duplicateReferences:references});
+      if(active.row.duplicateReview)return active.row.duplicateReview;
+      throw Object.assign(Error('POSSIBLE_DUPLICATE'),{code:'POSSIBLE_DUPLICATE',safeMessage:'Ya existe un pedido reciente parecido: '+references.join(', ')+'. Pulsa Revisar pendiente para comprobarlo. No se enviará automáticamente otra compra.'});
+    },
     async confirmed(receipts) { if (active) { await active.confirmed(receipts); await render(); } },
     message(value) { if (active) { active.message = value; return true; } return false; },
     failure(error, value) { if (active) active.failure = Object.assign(Error(error.code || 'REVIEW'), {code: error.code || 'REVIEW', safeMessage: error.safeMessage || value}); },

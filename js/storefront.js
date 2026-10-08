@@ -2928,6 +2928,9 @@ function getCheckoutFailureMessage(error) {
             return 'No se pudo verificar una tarifa de entrega para esta localidad. Revisa la localidad y vuelve a comprobar.';
         case 'PRODUCT_UNAVAILABLE':
             return 'Un producto cambió o dejó de estar disponible. Actualiza el catálogo y revisa el carrito.';
+        case 'POSSIBLE_DUPLICATE':
+        case 'DUPLICATE_CHECK_UNAVAILABLE':
+            return error.message || 'Revisa los pedidos recientes antes de confirmar otra compra. Tus datos se conservan.';
         default:
             return '❌ No pudimos completar el pedido. No cierres esta pantalla y vuelve a intentarlo. Si el problema continúa, informa al administrador.';
     }
@@ -2964,7 +2967,30 @@ function getCheckoutFailureMessage(error) {
         try { checkoutStorage?.removeItem(key); } catch (_) {}
     }
     function notifyNewCheckout(message) { if (!window.PTHPendingCheckoutUI?.message(message)) alert(message); }
-    async function confirmPendingCheckout(receipts) { await window.PTHPendingCheckoutUI?.confirmed(receipts); if (window.PTHPendingCheckoutUI?.active() && !window.PTHPendingCheckoutUI.guard()) document.getElementById('checkout-form').reset(); }
+    function checkoutReceiptPhone() {
+        const profile=window.currentUserData;
+        const value=profile?.parent_id?profile.parent_telefono:checkoutScope()==='visitor'?getAgentPhone():'5356071095';
+        const digits=String(value||'').replace(/\D/g,'');return digits.length===8?'53'+digits:digits;
+    }
+    window.PTHCheckoutConfirmation?.configure({load:async entry=>{
+        const account=checkoutScope(),token=window.PTHSecureData.token();
+        const columns='id,orden_dia,proveedor,cliente,telefono,ci,direccion,municipio,producto,total,costo_mensajeria,comision_total,comision_subgestor,gestor,fecha';
+        const childColumns=columns.replace(',gestor,fecha',',subgestor_nombre,created_at');
+        const codes=entry.receipts.map(r=>r.reference);
+        const fetchRows=table=>supabaseClient.from(table).select(table==='pedidos'?columns:childColumns).in('orden_dia',codes);
+        let result=await fetchRows(entry.table);
+        if(result.error)throw result.error;
+        let rows=result.data||[];
+        if(entry.table==='pedidos_subgestores'&&rows.length<codes.length){result=await fetchRows('pedidos');if(result.error)throw result.error;rows=[...rows,...(result.data||[])];}
+        if(checkoutScope()!==account||window.PTHSecureData.token()!==token)throw Error('SESSION_CHANGED');
+        const byCode=new Map(rows.map(row=>[row.orden_dia,row]));if(codes.some(code=>!byCode.has(code)))throw Error('RECEIPT_UNAVAILABLE');
+        return window.PTHCheckoutConfirmation.format(codes.map(code=>byCode.get(code)),{isSubgestor:Boolean(window.currentUserData?.parent_id),isLogged:account!=='visitor',name:window.currentUserData?.nombre,phone:getAgentPhone()});
+    }});
+    async function confirmPendingCheckout(receipts,options={}) {
+        window.PTHCheckoutConfirmation?.show({owner:checkoutScope(),table:options.table||readNewCheckoutOutcome()?.table||'pedidos',phone:options.phone||checkoutReceiptPhone(),message:options.message,receipts:receipts.map(row=>({reference:row.reference||row.orden_dia||row.id,proveedor:row.proveedor}))});
+        await window.PTHPendingCheckoutUI?.confirmed(receipts);
+        if(window.PTHPendingCheckoutUI?.active()&&!window.PTHPendingCheckoutUI.guard())document.getElementById('checkout-form').reset();
+    }
     async function checkNewCheckoutOutcome(outcome) {
         if (outcome.attempt) {
             const result = await window.PTHSecureData.checkout({operation:'receipt',attempt:outcome.attempt});
@@ -3018,7 +3044,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         const outcome = await checkNewCheckoutOutcome(previousOutcome);
         if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
         if (outcome.kind === 'confirmed') {
-            await confirmPendingCheckout(outcome.receipts);
+            await confirmPendingCheckout(outcome.receipts,{table:previousOutcome.table,phone:previousOutcome.phone});
             if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
             notifyNewCheckout('El servidor confirmó este envío: ' + outcome.receipts.map(row => row.orden_dia || row.id).join(', ') + '. No se creó otro pedido.');
             clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true;
@@ -3446,14 +3472,14 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const quote = await window.PTHSecureData.checkout({ ...request, operation: 'quote' });
     if (quote.error) throw quote.error;
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
-    if (quote.data.complete) await confirmPendingCheckout(quote.data.confirmed);
+    if (quote.data.complete) await confirmPendingCheckout(quote.data.confirmed,{table:request.table,phone:whatsappDestino});
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (quote.data.complete) {
         notifyNewCheckout('El servidor ya confirmó este envío: ' + quote.data.confirmed.map(row => row.reference).join(', ') + '. No se creó otro pedido.');
         clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
     window.PTHPendingCheckoutUI?.verifyEstimate(quote.data);
-    await markNewCheckoutOutcome({ token: submissionToken, attempt: quote.data.attempt, table: request.table, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart) });
+    await markNewCheckoutOutcome({ token: submissionToken, attempt: quote.data.attempt, table: request.table, phone:whatsappDestino, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart) });
     const changedTerms = quote.data.terms.some(term => {
         const expected = promesas.find(input => input.proveedor === term.proveedor);
         return !expected || Math.abs(Number(expected.total)-Number(term.total)) > 0.001 || Math.abs(Number(expected.costo_mensajeria)-Number(term.costo_mensajeria)) > 0.001 || expected.garantia_venta !== term.garantia_venta;
@@ -3465,10 +3491,25 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         newCheckoutShippingOverride = { fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: municipioC, localidad: localidadC, pickup: isRecogida, cost: quote.data.terms.reduce((sum,term) => sum + Number(term.costo_mensajeria),0) };
         renderCart(); notifyNewCheckout('El servidor comprobó nuevas condiciones de precio, garantía o entrega. Revisa el total actualizado y pulsa Confirmar Pedido nuevamente.'); return;
     }
-    const result = await window.PTHSecureData.checkout({ ...request, operation: 'submit', attempt: quote.data.attempt, quote: quote.data.quote });
+    let duplicateReview=null;
+    if(quote.data.duplicates?.length){
+        if(window.PTHPendingCheckoutUI?.active())duplicateReview=await window.PTHPendingCheckoutUI.reviewDuplicates(quote.data);
+        else {
+            const refs=quote.data.duplicates.map(row=>'#'+row.reference).join(', ');
+            if(!confirm('Ya existe un pedido reciente parecido: '+refs+'.\n\nSi es el mismo pedido, pulsa Cancelar y revísalo en Mi dashboard. ¿Confirmas que esta es otra compra distinta?'))return;
+            duplicateReview=quote.data.duplicateReview;
+        }
+    }
+    assertSubmissionScope();
+    const result = await window.PTHSecureData.checkout({ ...request, operation: 'submit', attempt: quote.data.attempt, quote: quote.data.quote,duplicateReview });
     if (result.error) throw result.error;
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
-    if (result.data?.complete) await confirmPendingCheckout(result.data.confirmed);
+    if (result.data?.complete) {
+        // Messages must use acknowledged references, never freshly reserved
+        // numbers from a retry. Recovered receipts reload the scoped vale.
+        const fresh=result.data.confirmed.every(row=>protectionOrderIds.includes(row.reference));
+        await confirmPendingCheckout(result.data.confirmed,{table:request.table,phone:whatsappDestino,message:fresh?mensajeRaw.trim():null});
+    }
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (!result.data?.complete) throw Object.assign(new Error('Unconfirmed write'),{code:'ORDER_OUTCOME_UNKNOWN'});
     if (previousOutcome || result.data.confirmed.some(row => !protectionOrderIds.includes(row.reference))) {
@@ -3531,19 +3572,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     // === NUEVO: VERIFICAR SI DEBE GENERAR PDF MAYORISTA ===
     const isB2BOrder = cart.some(item => (item.categoria || "").toUpperCase().includes('MAYORISTA') || (item.categoria || "").toUpperCase().includes('B2B') || (item.categoria || "").toUpperCase().includes('MIPYME'));
 
+    // Complete cleanup now, while this submission still owns the form. A
+    // delayed PDF must never erase a newer cart or another account's draft.
+    cart = []; newCartRevision = null; volatileCheckoutIntent = null;
+    document.getElementById('cart-count').textContent = '0';
+    clearAutoSave();
+    toggleCartModal(false);
     setTimeout(() => {
+        if (!inSubmissionScope()) return;
         if(isB2BOrder) {
             generarComprobanteB2B(datosParaPDF, 'descargar');
         } else {
             generarComprobanteVenta(datosParaPDF, 'descargar');
         }
 
-        setTimeout(() => {
-            cart = [];
-            clearAutoSave();
-            toggleCartModal(false);
-            location.reload();
-        }, 2000);
+        // Keep the acknowledged receipt and WhatsApp button visible.
     }, 1500);
     checkoutSubmitGuard.succeed();
     checkoutFinished = true;
@@ -3553,7 +3596,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (!inSubmissionScope()) return;
         if (checkoutFinished) {
             notifyNewCheckout('El servidor confirmó el pedido. No necesitas enviarlo otra vez. No se pudo completar el comprobante o la comunicación; revisa el pedido en tu panel.');
-            cart = []; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false);
+            cart = []; newCartRevision = null; volatileCheckoutIntent = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false);
         } else notifyNewCheckout(getCheckoutFailureMessage(checkoutError));
     } finally {
         if (!checkoutFinished) checkoutSubmitGuard.fail();

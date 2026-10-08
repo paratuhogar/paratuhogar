@@ -56,14 +56,14 @@ test('a template from a newer app release remains missing and reports an app upd
   const result=await f.message();assert.equal(result.ready,false);assert.equal(result.reason,'update');assert.equal(result.missingCount,1);assert.equal(f.puts.length,0);assert.ok(f.entries.has('/offline.html'));
 });
 test('an HTML fallback with HTTP 200 cannot satisfy a missing JavaScript or stylesheet',async()=>{
-  for(const url of ['/js/pending-checkout-storefront.js?v=20261008-save1','/css/offline-order.css?v=20261003-pending2']){
+  for(const url of ['/js/pending-checkout-storefront.js?v=20261008-orders1','/css/offline-order.css?v=20261003-pending2']){
     const f=fixture();await f.install();f.entries.delete(url);f.fetchWith(async()=>{const r=new Response('<html>fallback</html>',{headers:{'content-type':'text/html'}});Object.defineProperty(r,'type',{value:'basic'});return r;});
     const result=await f.message();assert.equal(result.ready,false);assert.equal(result.missingCount,1);assert.equal(f.puts.length,0);
   }
 });
 test('unquoted future scripts, maintenance pages and external essential scripts cannot declare readiness',async()=>{
   const html=fs.readFileSync(new URL('index.html',root),'utf8');
-  for(const content of [html.replace('src="js/pending-checkout-storefront.js?v=20261008-save1"','src=/js/pending-checkout-storefront.js?v=next-release'),'<html><body>Maintenance</body></html>',html.replace('src="js/pending-checkout-storefront.js?v=20261008-save1"','src="https://external.test/next-release.js"')]){
+  for(const content of [html.replace('src="js/pending-checkout-storefront.js?v=20261008-orders1"','src=/js/pending-checkout-storefront.js?v=next-release'),'<html><body>Maintenance</body></html>',html.replace('src="js/pending-checkout-storefront.js?v=20261008-orders1"','src="https://external.test/next-release.js"')]){
     const f=fixture();await f.install();f.entries.delete('/index.html');f.fetchWith(async()=>{const r=new Response(content,{headers:{'content-type':'text/html'}});Object.defineProperty(r,'type',{value:'basic'});return r;});
     const result=await f.message();assert.equal(result.ready,false);assert.equal(result.reason,'update');assert.equal(f.puts.length,0);
   }

@@ -158,7 +158,7 @@
           try{
             const current=await read(owner,row.id);
             if(current?.id===row.id&&current.state!=='confirmed'&&current.lease?.id===lease){
-              const retryable=['NETWORK_ERROR','ORDER_OUTCOME_UNKNOWN','SESSION_CHANGED','SESSION_INVALID','SESSION_EXPIRED'].includes(error.code);
+              const retryable=['NETWORK_ERROR','ORDER_OUTCOME_UNKNOWN','SESSION_CHANGED','SESSION_INVALID','SESSION_EXPIRED','DUPLICATE_CHECK_UNAVAILABLE'].includes(error.code);
               await this.patch(owner,row.id,{state:retryable?(current.outcome?.attempt?'uncertain':'queued'):'blocked',code:error.code||'REVIEW',message:error.safeMessage||null,lease:null},lease);
             }
           }catch(_){}

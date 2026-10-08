@@ -5,6 +5,8 @@ const hex=bytes=>Array.from(new Uint8Array(bytes),v=>v.toString(16).padStart(2,'
 const unhex=value=>new Uint8Array(value.match(/../g).map(v=>parseInt(v,16)));
 const fail=(code,message)=>{throw Object.assign(Error(message),{checkoutCode:code});};
 const cents=value=>Math.round(Number(value)*100);
+const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+const customerPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.length===10&&digits.startsWith('53')?digits.slice(2):digits;};
 const inputFields=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','proveedor','origen'];
 function clean(body){
   if(!['pedidos','pedidos_subgestores'].includes(body.table)||!Array.isArray(body.inputs)||!body.inputs.length||body.inputs.length>30)fail('CHECKOUT_INVALID','Revisa los productos del pedido.');
@@ -99,6 +101,43 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     return rows;
   }
   const terms=rows=>rows.map(row=>({proveedor:row.proveedor,total:row.total,costo_mensajeria:row.costo_mensajeria,producto:row.producto,garantia_venta:row.garantia_venta,garantia_dias:row.garantia_dias??null,prices:row._checkout_prices||[]}));
+  async function recentDuplicates(rows,actor){
+    // Only this signed-in seller's recent orders. No public lookup, name-based
+    // ownership expansion, customer records, or commission data in the reply.
+    if(!actor?.id)return [];
+    const child=Boolean(actor.parent_id),since=new Date(now()-86400000).toISOString(),found=[],actorTag=await sign('actor:'+actor.id);
+    for(const table of child?['pedidos_subgestores','pedidos']:['pedidos']){
+      const date=table==='pedidos'?'fecha':'created_at';
+      let query=db.from(table).select('id,orden_dia,proveedor,cliente,telefono,ci,producto,total,estado,subgestor_nombre,submission_token,'+date)
+        .gte(date,since);
+      query=child?query.eq(table==='pedidos'?'subgestor_nombre':'subgestor_id',table==='pedidos'?actor.nombre:actor.id):query.eq('gestor',actor.nombre);
+      if(child&&table==='pedidos')query=query.eq('gestor',actor.parent_nombre);
+      const result=await query.order(date,{ascending:false}).limit(201);
+      if(result.error||!Array.isArray(result.data)||result.data.length>200)fail('DUPLICATE_CHECK_UNAVAILABLE','No pudimos comprobar posibles pedidos repetidos. Tus datos se conservan; reintenta la comprobación.');
+      for(const candidate of result.data){
+        if(normalized(candidate.estado)==='cancelado'||!child&&candidate.subgestor_nombre)continue;
+        // A name is only a query prefilter. The signed checkout initiator ID
+        // must match, including approved children and same-named siblings.
+        let prior;try{prior=await parse(candidate.submission_token);}catch(_){continue;}
+        if(prior.actor!==actorTag)continue;
+        const match=rows.some(row=>{
+          const phone=customerPhone(row.telefono),ci=String(row.ci||'').replace(/\D/g,'');
+          const sameCustomer=phone.length>=8&&phone===customerPhone(candidate.telefono)||ci.length>=6&&ci===String(candidate.ci||'').replace(/\D/g,'');
+          return sameCustomer&&normalized(row.cliente)===normalized(candidate.cliente)&&row.proveedor===candidate.proveedor&&normalized(row.producto)===normalized(candidate.producto)&&cents(row.total)===cents(candidate.total);
+        });
+        if(match)found.push({reference:candidate.orden_dia||candidate.id,proveedor:candidate.proveedor});
+      }
+    }
+    return [...new Map(found.map(row=>[row.reference,row])).values()].sort((a,b)=>a.reference.localeCompare(b.reference));
+  }
+  async function duplicateProof(token,duplicates){
+    const prefix=['pthd1',now(),await sign('duplicates:'+JSON.stringify(duplicates)),await sign('attempt:'+token)].join('.');
+    return prefix+'.'+await sign(prefix);
+  }
+  async function reviewedDuplicates(proof,token,duplicates){
+    const parts=String(proof||'').split('.');
+    return parts.length===5&&parts[0]==='pthd1'&&/^\d{13}$/.test(parts[1])&&now()-Number(parts[1])>=0&&now()-Number(parts[1])<=ATTEMPT_AGE&&parts[2]===await sign('duplicates:'+JSON.stringify(duplicates))&&parts[3]===await sign('attempt:'+token)&&await verify(parts.slice(0,4).join('.'),parts[4]);
+  }
   return async function checkout(body,actor){
     try{
       if(!signingSecret)fail('CHECKOUT_UNAVAILABLE','La confirmación de pedidos nuevos no está disponible.');
@@ -126,13 +165,15 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
       if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
       const rows=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
+      const duplicates=await recentDuplicates(rows,actor);
       const stamp=now(),digest=await sign('terms:'+JSON.stringify(currentTerms));
       if(body.operation==='quote'){
         const prefix=['pthq1',stamp,digest,await sign('attempt:'+token)].join('.');
-        return {data:{attempt:token,quote:prefix+'.'+await sign(prefix),terms:currentTerms,...existing},error:null};
+        return {data:{attempt:token,quote:prefix+'.'+await sign(prefix),terms:currentTerms,duplicates,duplicateReview:duplicates.length?await duplicateProof(token,duplicates):null,...existing},error:null};
       }
       const proof=String(body.quote||'').split('.');
       if(proof.length!==5||proof[0]!=='pthq1'||!/^\d{13}$/.test(proof[1])||now()-Number(proof[1])<0||now()-Number(proof[1])>QUOTE_AGE||proof[2]!==digest||proof[3]!==await sign('attempt:'+token)||!await verify(proof.slice(0,4).join('.'),proof[4]))fail('CONDITIONS_CHANGED','Cambió el precio, la disponibilidad o la entrega. Comprueba el carrito y confirma nuevamente.');
+      if(duplicates.length&&!await reviewedDuplicates(body.duplicateReview,token,duplicates))fail('POSSIBLE_DUPLICATE','Hay un pedido reciente parecido: '+duplicates.map(row=>row.reference).join(', ')+'. Revisa si ya se recibió antes de confirmar una compra distinta.');
       const originals=new Map(body.inputs.map(input=>[input.proveedor,input]));
       for(const [index,row] of rows.entries()){const reference=originals.get(row.proveedor)?.orden_dia;if(typeof reference!=='string'||!reference||reference.length>100)fail('CHECKOUT_INVALID','No se pudo verificar la referencia del pedido.');row.orden_dia=reference;
         delete row._checkout_prices;
