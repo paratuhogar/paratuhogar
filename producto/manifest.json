@@ -868,9 +868,9 @@
     "slug": "escalera-de-tijera-4-pasos",
     "nombre": "Escalera de tijera  4 pasos",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/escalera-de-tijera-4-pasos/",
-    "updated_at": "2026-09-25T14:18:41.692635+00:00"
+    "updated_at": "2026-10-08T18:20:42.53681+00:00"
   },
   {
     "id": "60118fb2-3ef6-4903-955d-b623e014b738",
@@ -940,9 +940,9 @@
     "slug": "estacion-de-energia-6kw-con-14-3kwh-must",
     "nombre": "Estación de energia 6kw con 14.3kwh Must",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
-    "updated_at": "2026-10-03T04:15:47.445192+00:00"
+    "updated_at": "2026-10-08T13:50:58.116715+00:00"
   },
   {
     "id": "a1f0b1be-6fe1-4db0-849c-5932a246c5f4",
@@ -2686,9 +2686,9 @@
     "slug": "nevera-vertical-7pies-aucma",
     "nombre": "Nevera Exhibidora Vertical 7pies AUCMA",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-vertical-7pies-aucma/",
-    "updated_at": "2026-09-25T14:11:26.865895+00:00"
+    "updated_at": "2026-10-08T17:26:15.028278+00:00"
   },
   {
     "id": "65f40aa4-97dc-4def-a87c-b3a5ef640b94",
@@ -2812,9 +2812,9 @@
     "slug": "olla-de-presion-7l-impronta",
     "nombre": "Olla de presión 7L Impronta",
     "categoria": "COCINA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/olla-de-presion-7l-impronta/",
-    "updated_at": "2026-09-12T17:01:53.558325+00:00"
+    "updated_at": "2026-10-08T18:33:24.041019+00:00"
   },
   {
     "id": "216dde2c-e55f-459f-bede-194b73b812f8",
@@ -3215,11 +3215,11 @@
   {
     "id": "66d01b30-be09-4577-908a-870dc1e62b1e",
     "slug": "refrigerador-de-7-5-pies-lemax",
-    "nombre": "Refrigerador de 7.5 pies Lemax",
+    "nombre": "Refrigerador de 7 pies Lemax",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-de-7-5-pies-lemax/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-08T15:27:09.159463+00:00"
   },
   {
     "id": "38acd7e3-9e78-4cfa-bf93-fb838946f5d1",
@@ -3379,9 +3379,9 @@
     "slug": "smart-mini-dc-ups",
     "nombre": "Smart Mini DC UPS",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-mini-dc-ups/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-08T19:08:13.77569+00:00"
   },
   {
     "id": "e40ffe5a-7929-4e62-8302-0fae13d64427",
@@ -3390,7 +3390,7 @@
     "categoria": "TECNOLOGÍA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-mini-dc-ups-marsriva-kp1-ec/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-08T19:08:23.578294+00:00"
   },
   {
     "id": "72ee7999-4078-4305-a34f-04a8c78bb8b5",
@@ -3588,7 +3588,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1-5-t-reymo-inverter/",
-    "updated_at": "2026-09-16T21:37:02.11463+00:00"
+    "updated_at": "2026-10-08T21:30:51.546758+00:00"
   },
   {
     "id": "6a0a9cec-64f8-4aff-b93e-ea82577874b9",
@@ -3651,7 +3651,7 @@
     "categoria": "MUNDO FRIO ",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-reymo-inverter/",
-    "updated_at": "2026-09-17T12:55:31.175729+00:00"
+    "updated_at": "2026-10-08T21:30:18.620624+00:00"
   },
   {
     "id": "2db9fd9c-0780-4385-b6b3-8bd54a0b82c4",
