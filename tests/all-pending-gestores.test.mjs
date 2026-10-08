@@ -9,12 +9,12 @@ const code = source.slice(source.indexOf('let pendingGestoresCache'), source.ind
 const now = Date.parse('2026-10-06T00:51:00Z');
 const row = (id, days, extra = {}) => ({ id, nombre: id, estado: 'pendiente', created_at: new Date(now - days * 86400000).toISOString(), ...extra });
 
-function fixture(rows = [], failAt = -1) {
+function fixture(rows = [], failAt = -1, withQuestionnaire = false) {
     const elements = new Map(), reads = [], events = {}, actions = [];
     const element = () => ({ children: [], textContent: '', value: '', hidden: false,
         append(...children) { this.children.push(...children); },
         replaceChildren(...children) { this.children = children; this.textContent = ''; },
-        setAttribute(name, value) { this[name] = value; }, addEventListener() {}, focus() {}, scrollIntoView() {} });
+        setAttribute(name, value) { this[name] = value; }, addEventListener(name, handler) { this[name] = handler; }, focus() {}, scrollIntoView() {} });
     const document = { getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); }, createElement: element };
     const context = vm.createContext({ Date: class extends Date { static now() { return now; } }, console, Set, document,
         window: { addEventListener(name, handler) { events[name] = handler; } }, PTHAdminData: data,
@@ -31,6 +31,7 @@ function fixture(rows = [], failAt = -1) {
         } }, globalAgentsList: [], renderAgentTeamTable() {}, changeAdminTab() {},
         approveGestorOnly(...args) { actions.push(args); }, approveGestor(...args) { actions.push(args); }
     });
+    if(withQuestionnaire){context.window.PTHQuestionnaire=context.PTHQuestionnaire={render(_document,answers){const box=element();box.textContent=answers?'Respuestas del cuestionario':'Solicitud anterior al cuestionario';box.open=false;return box;}};}
     vm.runInContext(code, context);
     return { run: s => vm.runInContext(s, context), elements, reads, events, actions,
         visible: () => document.getElementById('list-admin-aprobaciones').children.map(tr => tr.children[0].textContent) };
@@ -82,4 +83,21 @@ test('exact page multiples are complete; a later page failure never publishes a 
     await failed.run('loadPendingGestores()');
     assert.equal(failed.visible().length, 0); assert.equal(failed.elements.get('admin-pending-count').hidden, true);
     assert.equal(failed.elements.get('admin-pending-review').hidden, true);
+});
+
+
+test('each questionnaire has an explicit accessible review button bound to its own request', async () => {
+ const f=fixture([row('old',70),row('first',1,{questionnaire:{version:1}}),row('second',0,{questionnaire:{version:1}})],-1,true);
+ await f.run('loadPendingGestores()');
+ const rows=f.elements.get('list-admin-aprobaciones').children;
+ assert.equal(rows.length,6);
+ assert.equal(rows[1].children[0].children[0].textContent,'Solicitud anterior al cuestionario');
+ const buttons=rows[2].children[3].children;
+ const view=buttons.find(b=>b.textContent==='Ver respuestas');
+ assert.ok(view,'visible entry per application');assert.equal(view['aria-expanded'],'false');
+ assert.equal(view['aria-label'],'Ver respuestas de first');view.click();
+ assert.equal(rows[3].children[0].children[0].open,true);
+ assert.equal(rows[5].children[0].children[0].open,false,'another request remains closed');
+ assert.equal(view['aria-expanded'],'true');view.click();assert.equal(view['aria-expanded'],'false');
+ assert.equal(f.actions.length,0,'viewing never activates or rejects');
 });

@@ -134,3 +134,26 @@ anulables e índice: el código anterior los ignora y conserva respuestas nuevas
 SQL incluye procedimiento opcional de retirada, **solo después de backup privado
 aprobado y decisión de retención**; eliminar columnas borraría respuestas. No
 es necesario eliminarlas para rollback funcional. No cambiar grants ni roles.
+
+## Acceso administrativo explícito — 8 octubre 2026
+
+Ubicación: iniciar sesión con una cuenta administradora existente → Master Control
+→ Solicitudes de gestores → «Ver respuestas» en la fila del solicitante. La tarjeta
+«Revisar solicitudes» también abre esta pestaña. Respuestas debajo de esa misma
+solicitud, con nombre, fecha y contacto existentes. Solo principales pendientes;
+no se añade una vista de encuestas a gestores activos. Solicitudes sin respuestas
+conservan «Solicitud anterior al cuestionario». La mejora añade el botón, su
+estado accesible y una instrucción visible, sin cambiar Activar/Rechazar.
+
+502 tests pasan, check:js y revisión independiente sin hallazgos bloqueantes.
+Fixture generado desde markup y renderer reales mediante
+`node scripts/admin-questionnaire-demo.cjs`, sin SDK, sesión ni conexiones.
+Navegador integrado verificó el acceso por pestaña, siete grupos del solicitante,
+solicitud de julio, apertura/cierre por Enter, 1280 px y 375 px. Capturas
+`evidence/admin-questionnaire-desktop.jpg` y `admin-questionnaire-mobile.jpg`.
+La página móvil tiene scrollWidth 375; tabla 417 dentro de viewport 325, con
+desplazamiento horizontal existente. No se verificó sesión administrativa real
+ni se consultaron solicitantes reales. Permisos/roles/grants/RLS intactos.
+
+Rollback de esta mejora: revertir este commit de frontend, manteniendo la primera
+publicación y todas las respuestas en Supabase. Sin nueva migración ni redeploy Edge.

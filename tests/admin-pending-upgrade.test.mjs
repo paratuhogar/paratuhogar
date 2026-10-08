@@ -7,7 +7,7 @@ const source = fs.readFileSync(new URL('../service-worker.js', import.meta.url),
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const previousCache = 'pth-public-static-2026-10-05-copy2';
 const previousBundle = '/js/storefront-extras.min.js?v=20261003-welcome2';
-const nextBundle = '/js/storefront-extras.min.js?v=20261008-questionnaire1';
+const nextBundle = '/js/storefront-extras.min.js?v=20261008-questionnaire2';
 
 test('a waiting worker preserves the active offline template and its bundle until activation', async () => {
     const stores = new Map(), deleted = [];

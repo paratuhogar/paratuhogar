@@ -1,0 +1,4 @@
+502 tests pass; check:js pass; independent review: 25 relevant tests pass, no blockers.
+Browser fixture: administration entry, per-request button, 7 groups, old request label, Enter close/open verified.
+Desktop1280 and mobile375 checked; no page horizontal overflow, existing table scroll remains.
+No real administration session, applicants queried, decisions or messages.

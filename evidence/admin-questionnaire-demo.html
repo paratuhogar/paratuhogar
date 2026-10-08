@@ -1,0 +1,118 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none';script-src 'self' 'unsafe-inline';style-src 'self' 'unsafe-inline';connect-src 'none'"><title>Administración · respuestas por solicitud · fixtures</title><link rel="stylesheet" href="../css/tailwind.min.css"><link rel="stylesheet" href="../css/admin-panel.css"><style>body{padding:24px;color:#172554;background:#f8fafc}main{max-width:1100px;margin:auto}details p{padding:8px;overflow-wrap:anywhere}summary{cursor:pointer;font-weight:700;padding:8px}</style></head><body><main><h1>Administración · demo aislada</h1><p>Datos ficticios; sin sesión, SDK, conexión ni decisiones reales.</p><button class="admin-control" id="tab-aprobaciones" onclick="openPendingGestorReview()">Solicitudes de gestores</button><div id="cnt-aprobaciones" class="tab-cnt hidden space-y-8">
+
+    <!-- BLOQUE 1: PENDIENTES -->
+<div class="space-y-4">
+    <h4 class="font-bold text-primary">Solicitudes de gestores</h4>
+    <p class="admin-note">Todas las solicitudes pendientes, incluidas las antiguas. Las más antiguas aparecen primero; puedes cambiar el orden sin ocultar solicitudes. Fechas en horario de Cuba. Pulsa «Ver respuestas» en cada solicitud para revisar su cuestionario; las solicitudes antiguas llevan una etiqueta.</p>
+    <div class="admin-toolbar">
+        <label for="admin-pending-order" class="admin-note">Ordenar</label>
+        <select id="admin-pending-order" class="admin-control" onchange="setPendingGestorOrder(this.value)">
+            <option value="oldest">Más antiguas primero</option>
+            <option value="newest">Más recientes primero</option>
+        </select>
+        <button type="button" class="admin-control" onclick="loadPendingGestores()">Actualizar solicitudes</button>
+    </div>
+    <p id="admin-pending-summary" class="admin-note" role="status" aria-live="polite">Cargando solicitudes…</p>
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm admin-table-scroll">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b">
+                <tr>
+                    <th class="p-4">Nombre</th>
+                    <th class="p-4">Contacto</th>
+                    <th class="p-4">Fecha Solicitud</th>
+                    <th class="p-4 text-right">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="list-admin-aprobaciones" class="divide-y dark:divide-gray-700">
+                <!-- JS inyecta aquí -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</div></main><script src="../js/admin-panel-data.js"></script><script src="../js/gestor-questionnaire.js"></script><script>
+let pendingGestoresCache = [];
+let pendingGestorOrder = 'oldest';
+let pendingGestoresLoading = false;
+let pendingGestoresGeneration = 0;
+let pendingGestoresUpdatedAt = null;
+let pendingGestoresRefreshFailed = false;
+function setPendingGestorOrder(value) {
+    if (!['oldest', 'newest'].includes(value)) return;
+    pendingGestorOrder = value;
+    const order = document.getElementById('admin-pending-order');
+    if (order) order.value = value;
+    renderPendingGestores();
+}
+function openPendingGestorReview() {
+    setPendingGestorOrder('oldest');
+    const order = document.getElementById('admin-pending-order');
+    changeAdminTab('aprobaciones');
+    order?.focus();
+    order?.scrollIntoView({ block: 'nearest' });
+}
+function setPendingGestorReviewState(message) {
+    const status = document.getElementById('admin-pending-review-state');
+    if (status) status.textContent = message;
+}
+function renderPendingGestores() {
+    const host = document.getElementById('list-admin-aprobaciones');
+    if (!host) return;
+    const now = Date.now(), data = PTHAdminData;
+    const review = data.pendingReview(pendingGestoresCache, now, 'all');
+    const badge = document.getElementById('admin-pending-count');
+    if (badge) { badge.hidden = !review.total || pendingGestoresRefreshFailed; badge.textContent = String(review.total); badge.setAttribute('aria-label', `${review.total} solicitudes pendientes`); }
+    const lastUpdate = pendingGestoresUpdatedAt ? data.date(new Date(pendingGestoresUpdatedAt).toISOString()) : 'Pendiente de actualización';
+    const card = document.getElementById('admin-pending-review');
+    if (card) {
+        card.hidden = !review.total || pendingGestoresRefreshFailed;
+        document.getElementById('admin-pending-review-total').textContent = `${review.total} ${review.total === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'}`;
+        document.getElementById('admin-pending-review-age').textContent = `${review.over24h} esperan más de 24 horas · ${review.over48h} más de 48 horas.${review.oldest ? ` La más antigua: ${data.date(review.oldest)}.` : ''}`;
+        setPendingGestorReviewState(pendingGestoresRefreshFailed ? 'No se pudieron actualizar las solicitudes. Este contador es de la última consulta; vuelve a actualizar.' : `Actualizado: ${lastUpdate}.`);
+    }
+    const summary = document.getElementById('admin-pending-summary');
+    if (summary) summary.textContent = `${review.total} solicitudes pendientes en total · ${review.unknown} con fecha por revisar. ${pendingGestoresRefreshFailed ? 'La última actualización falló; estos datos pueden estar desactualizados.' : `Actualizado: ${lastUpdate}.`}`;
+    host.replaceChildren();
+    const rows = review.rows;
+    if (pendingGestorOrder === 'newest') rows.sort((a, b) => {
+        const validA = data.bucket(a, now) !== 'unknown', validB = data.bucket(b, now) !== 'unknown';
+        if (validA !== validB) return validA ? -1 : 1;
+        return validA ? data.timestamp(b.created_at) - data.timestamp(a.created_at) : 0;
+    });
+    if (!rows.length) { host.innerHTML = '<tr><td colspan="4" class="p-6 text-center admin-note">No hay solicitudes pendientes.</td></tr>'; return; }
+    for (const row of rows) {
+        const tr = document.createElement('tr');
+        tr.className = 'text-xs border-b dark:border-gray-700';
+        const contact = [row.telefono, row.email].filter(Boolean).join(' · ') || 'Sin contacto registrado';
+        const date = data.date(row.created_at) + (data.bucket(row, now) === 'unknown' ? ' · Fecha por revisar' : '');
+        for (const value of [row.nombre, contact, date]) {
+            const td = document.createElement('td'); td.className = 'p-4 admin-note'; td.textContent = value; tr.append(td);
+        }
+        const actions = document.createElement('td'); actions.className = 'p-4 text-right';
+        const questionnaire = window.PTHQuestionnaire ? PTHQuestionnaire.render(document,row.questionnaire) : null;
+        if (questionnaire && row.questionnaire) {
+            const view = document.createElement('button'); view.type = 'button'; view.className = 'admin-control'; view.textContent = 'Ver respuestas';
+            view.setAttribute('aria-label', `Ver respuestas de ${row.nombre}`); view.setAttribute('aria-expanded', 'false');
+            const syncExpanded = () => view.setAttribute('aria-expanded', String(questionnaire.open));
+            questionnaire.addEventListener('toggle', syncExpanded);
+            view.addEventListener('click', () => { questionnaire.open = !questionnaire.open; syncExpanded(); if(questionnaire.open) questionnaire.scrollIntoView({block:'nearest'}); });
+            actions.append(view);
+        }
+        for (const [label, action] of [['Activar', () => approveGestorOnly(row.id, row.nombre)], ['Rechazar', () => approveGestor(row.id, 'bloqueado')]]) {
+            const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-control'; button.textContent = label; button.addEventListener('click', action); actions.append(button);
+        }
+        tr.append(actions); host.append(tr);
+        if(questionnaire){
+            const detailsRow=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=4;cell.className='p-4 admin-note';
+            cell.append(questionnaire);detailsRow.append(cell);host.append(detailsRow);
+        }
+    }
+}
+
+function changeAdminTab(){document.getElementById('cnt-aprobaciones').classList.remove('hidden')}
+function approveGestorOnly(){throw Error('Decisiones deshabilitadas en fixture')}
+function approveGestor(){throw Error('Decisiones deshabilitadas en fixture')}
+function loadPendingGestores(){renderPendingGestores()}
+pendingGestoresCache=[{id:'old-fixture',nombre:'Solicitud antigua demo',telefono:'contacto ficticio',estado:'pendiente',created_at:'2026-07-01T12:00:00Z'},{id:'new-fixture',nombre:'Solicitante demo con encuesta',telefono:'WhatsApp ficticio',estado:'pendiente',created_at:'2026-10-08T12:00:00Z',questionnaire:{"version":1,"source":"recomendacion","referrer":"","referrerGestor":"no_se","experience":"no","platforms":["WhatsApp"],"clients":"0","loyalty":"","channels":"no","storesCount":2,"storeNames":"Tienda Demo A, Tienda Demo B"}}];
+renderPendingGestores();document.querySelectorAll('#list-admin-aprobaciones button').forEach(b=>{if(b.textContent!=='Ver respuestas')b.disabled=true});
+</script></body></html>

@@ -227,13 +227,22 @@ function renderPendingGestores() {
             const td = document.createElement('td'); td.className = 'p-4 admin-note'; td.textContent = value; tr.append(td);
         }
         const actions = document.createElement('td'); actions.className = 'p-4 text-right';
+        const questionnaire = window.PTHQuestionnaire ? PTHQuestionnaire.render(document,row.questionnaire) : null;
+        if (questionnaire && row.questionnaire) {
+            const view = document.createElement('button'); view.type = 'button'; view.className = 'admin-control'; view.textContent = 'Ver respuestas';
+            view.setAttribute('aria-label', `Ver respuestas de ${row.nombre}`); view.setAttribute('aria-expanded', 'false');
+            const syncExpanded = () => view.setAttribute('aria-expanded', String(questionnaire.open));
+            questionnaire.addEventListener('toggle', syncExpanded);
+            view.addEventListener('click', () => { questionnaire.open = !questionnaire.open; syncExpanded(); if(questionnaire.open) questionnaire.scrollIntoView({block:'nearest'}); });
+            actions.append(view);
+        }
         for (const [label, action] of [['Activar', () => approveGestorOnly(row.id, row.nombre)], ['Rechazar', () => approveGestor(row.id, 'bloqueado')]]) {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-control'; button.textContent = label; button.addEventListener('click', action); actions.append(button);
         }
         tr.append(actions); host.append(tr);
-        if(window.PTHQuestionnaire){
+        if(questionnaire){
             const detailsRow=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=4;cell.className='p-4 admin-note';
-            cell.append(PTHQuestionnaire.render(document,row.questionnaire));detailsRow.append(cell);host.append(detailsRow);
+            cell.append(questionnaire);detailsRow.append(cell);host.append(detailsRow);
         }
     }
 }

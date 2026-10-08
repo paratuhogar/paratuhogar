@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-08-questionnaire1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-08-questionnaire2';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -16,9 +16,9 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/offline-checkout-copy.js?v=20261005-copy2',
   '/js/offline-storefront-adapter.js?v=20261005-cold7',
   '/css/offline-storefront.css?v=20261003-pending2',
-  '/js/gestor-questionnaire.js?v=20261008-questionnaire1',
-  '/js/storefront.min.js?v=20261008-questionnaire1',
-  '/js/storefront-extras.min.js?v=20261008-questionnaire1',
+  '/js/gestor-questionnaire.js?v=20261008-questionnaire2',
+  '/js/storefront.min.js?v=20261008-questionnaire2',
+  '/js/storefront-extras.min.js?v=20261008-questionnaire2',
   '/js/pending-checkout-storefront.js?v=20261006-ready1',
   '/js/pwa.js?v=20261006-ready1',
   '/css/tailwind.min.css?v=20261004-rolling30',
@@ -60,8 +60,8 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261005-cold7',
-  '/js/gestor-questionnaire.js?v=20261008-questionnaire1',
-  '/js/storefront.min.js?v=20261008-questionnaire1',
+  '/js/gestor-questionnaire.js?v=20261008-questionnaire2',
+  '/js/storefront.min.js?v=20261008-questionnaire2',
   '/css/low-connectivity.css?v=20261003-pending2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261003-alias1',
