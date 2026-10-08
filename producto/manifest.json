@@ -2893,9 +2893,9 @@
     "slug": "panel-30v-400w",
     "nombre": "Panel 30V 400W",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/panel-30v-400w/",
-    "updated_at": "2026-09-20T18:04:19.277585+00:00"
+    "updated_at": "2026-10-08T01:14:17.528811+00:00"
   },
   {
     "id": "0adb7441-c880-4a38-8379-74916ebda61c",
