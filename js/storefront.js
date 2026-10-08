@@ -10637,7 +10637,7 @@ async function renderGestorPricing() {
                     <div class="flex justify-between items-center mb-2 border-b border-gray-150 pb-2">
                         <span class="text-[9px] font-black uppercase text-indigo-400">Mostrar a mis Subgestores</span>
                         <label class="relative inline-flex items-center cursor-pointer select-none">
-                            <input type="checkbox" id="input-visible-${p.id}" ${visibleSubgestor ? 'checked' : ''} onchange="saveMyPrice('${p.id}', ${p.precio}, ${p.comision})" class="sr-only peer">
+                            <input type="checkbox" id="input-visible-${p.id}" ${visibleSubgestor ? 'checked' : ''} onchange="saveMyPrice('${p.id}', ${p.precio}, ${p.comision}, event)" class="sr-only peer">
                             <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
                         </label>
                     </div>
@@ -10653,7 +10653,7 @@ async function renderGestorPricing() {
                             oninput="calcGainUI('${p.id}', ${p.precio}, ${p.comision}, ${isFlexible})"
                             class="w-full rounded-lg border-gray-200 text-xs font-black text-slate-700 px-3 py-1.5">
 
-                        <button onclick="saveMyPrice('${p.id}', ${p.precio}, ${p.comision})"
+                        <button onclick="saveMyPrice('${p.id}', ${p.precio}, ${p.comision}, event)"
                             class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 rounded-lg font-bold text-xs shadow-md active:scale-95 transition-all">
                             <span class="material-symbols-outlined text-lg">save</span>
                         </button>
@@ -10713,7 +10713,10 @@ window.calcGainUI = function(id, basePrice, baseComm, isFlexible) {
 
 // Hacemos la función global asignándola a window
 // --- GUARDAR PRECIO Y COMISIÓN CON SOPORTE PARA DESCUENTOS ---
-window.saveMyPrice = async function(prodId, basePrice, baseComm) {
+window.saveMyPrice = async function(prodId, basePrice, baseComm, event) {
+    // currentTarget is cleared after dispatch; retain the control before awaiting.
+    const btn = event.currentTarget;
+    const isToggle = event.type === 'change';
     const hierarchy = await resolveSalesHierarchy(window.gestorName);
     if (hierarchy?.isSubgestor) {
         return alert(`🔒 Tus precios y comisiones los configura ${hierarchy.parent.nombre}.`);
@@ -10738,10 +10741,7 @@ window.saveMyPrice = async function(prodId, basePrice, baseComm) {
         return alert(`El precio mínimo permitido (al costo) es $${minPrice}`);
     }
 
-    const btn = event.currentTarget;
     const originalContent = btn.innerHTML;
-
-    const isToggle = event.type === 'change';
     if (!isToggle) {
         btn.innerHTML = `<span class="loader" style="width:15px;height:15px;border:2px solid white;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span>`;
         btn.disabled = true;
