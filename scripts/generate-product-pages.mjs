@@ -4,6 +4,7 @@ import { resolve, dirname, join } from 'node:path';
 import process from 'node:process';
 import {categoryEditorial,editorialGuidesFor,renderGuidePage} from './seo-category-editorial.mjs';
 import {refreshCategoryEditorial} from './preview-category-editorial.mjs';
+import {stripHtml,truncate,metaDescription,reviewedProductCopy,isSolarPanel,relatedProducts} from './seo-product-content.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const SITE_URL = String(process.env.SITE_URL || 'https://paratuhogar.org').replace(/\/+$/, '');
@@ -61,28 +62,6 @@ const htmlEscape = value => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 const attr = htmlEscape;
-const stripHtml = value => String(value ?? '')
-  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-  .replace(/<[^>]*>/g, ' ')
-  .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&')
-  .replace(/\s+/g, ' ').trim();
-const truncate = (value, max) => {
-  const clean = stripHtml(value);
-  return clean.length <= max ? clean : clean.slice(0, max).replace(/\s+\S*$/, '').replace(/[,:;.!?\s]+$/, '');
-};
-const metaDescription = (value, fallback, max = 158) => {
-  const clean = stripHtml(value);
-  if (clean.length >= 45 && clean.length <= max) return clean;
-  if (clean.length > max) {
-    const sentences = clean.match(/[^.!?]+[.!?]+/g) || [];
-    const complete = sentences.reduce((result, sentence) => (
-      `${result} ${sentence}`.trim().length <= max ? `${result} ${sentence}`.trim() : result
-    ), '');
-    if (complete.length >= 70) return complete;
-  }
-  return truncate(fallback, max);
-};
 const slugify = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
 const absoluteUrl = value => {
@@ -172,16 +151,6 @@ function productDescription(product) {
     || `<p>${htmlEscape(`${product.nombre}. Consulta sus características, garantía y opciones de entrega con nuestro equipo.`)}</p>`;
 }
 
-function relatedProducts(product, products, limit = 4) {
-  const price = Number(product.precio) || 0;
-  return products.filter(other => other !== product && isAvailable(other) && hasValidPrice(other))
-    .map(other => ({
-      product: other,
-      score: (String(other.categoria || '').toLowerCase() === String(product.categoria || '').toLowerCase() ? 0 : 4)
-        + (price ? Math.abs((Number(other.precio) || 0) - price) / price : 1)
-    })).sort((a, b) => a.score - b.score).slice(0, limit).map(item => item.product);
-}
-
 function render(template, values) {
   return template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key) => values[key] ?? '');
 }
@@ -197,19 +166,20 @@ function renderProduct(template, product, products, reviews, slugMap, indexable)
   const mainImage = images[0] || `${SITE_URL}/log.jpeg`;
   const canonical = `${SITE_URL}/producto/${slug}/`;
   const categoryCanonical = `${SITE_URL}/categoria/${slugify(category) || 'productos'}/`;
-  const rawDescription = stripHtml(product.seo_description || product.descripcion || '');
+  const reviewedCopy = reviewedProductCopy(product);
+  const rawDescription = stripHtml(product.seo_description || reviewedCopy.description || product.descripcion || '');
   const descriptionText = metaDescription(
     rawDescription,
     `${name} en ParaTuHogar, Cuba. Consulta precio en USD, fotos reales, garantía, entrega y atención personalizada. Disponibilidad actualizada.`
   );
-  const seoTitle = truncate(product.seo_title || `${name} | Precio y detalles en Cuba`, 60);
+  const seoTitle = truncate(product.seo_title || reviewedCopy.title || `${name} | Precio y detalles en Cuba`, 60);
   const warranty = String(product.garantia || 'Garantía disponible').trim();
   const delivery = String(product.mensajeria || 'Entrega coordinada').trim();
   const updated = product.inventario_actualizado_en || product.updated_at || product.fecha_actualizacion;
   const updatedText = updated ? `Inventario actualizado el ${new Intl.DateTimeFormat('es-CU', { dateStyle: 'medium' }).format(new Date(updated))}.` : 'Disponibilidad sujeta a confirmación al realizar el pedido.';
   const specs = parseSpecifications(product);
   const sheet = absoluteUrl(product.ficha_tecnica_url || product.ficha_tecnica || product.pdf_url || '');
-  const related = relatedProducts(product, products);
+  const related = relatedProducts(product, products, isAvailable, hasValidPrice);
   const productReviews = reviews.filter(review =>
     (review.producto_id && String(review.producto_id) === String(product.id))
     || String(review.producto_nombre || '').trim().toLowerCase() === name.toLowerCase()
@@ -334,6 +304,8 @@ function renderProduct(template, product, products, reviews, slugMap, indexable)
       CATEGORY_URL: attr(categoryCanonical),
       MAIN_IMAGE: attr(mainImage),
       THUMBNAILS: thumbnails,
+      HERO_CLASS: isSolarPanel(product) ? ' energy-panel' : '',
+      PANEL_NAVIGATION: isSolarPanel(product) ? `<nav class="panel-navigation" aria-label="Explorar energía solar"><a href="#informacion-equipo">Ver características del panel</a><a href="${attr(categoryCanonical)}">Comparar equipos de energía</a></nav>` : '',
       STATUS_TEXT: available ? '● Disponible ahora' : 'Temporalmente agotado',
       STATUS_BG: available ? '#ecfdf5' : '#f1f5f9',
       STATUS_COLOR: available ? '#047857' : '#64748b',
@@ -436,6 +408,10 @@ async function main() {
       return `<article class="card"><a href="/producto/${attr(productSlug)}/"><img src="${attr(image)}" alt="${attr(product.nombre)}" width="420" height="420" loading="lazy"><div><h2>${htmlEscape(product.nombre)}</h2><strong>$${(Number(product.precio) || 0).toFixed(0)} USD</strong><span>Ver detalles</span></div></a></article>`;
     }).join('');
     const editorial=guides.length?categoryEditorial(categorySlug,categoryProducts,slugMap):{html:'',css:'',guideHTML:''};
+    // Link previously public panels even while out of stock; never expose drafts.
+    const archivedPanels = categorySlug === 'energia' ? generated.filter(page =>
+      page.indexable && !page.available && isSolarPanel(page.product)) : [];
+    const panelLinks = archivedPanels.length ? `<section class="guide panel-archive" aria-labelledby="otros-paneles"><h2 id="otros-paneles">Otros modelos de paneles solares</h2><p>Estos modelos están temporalmente agotados. Consulta sus características o compara los equipos disponibles del catálogo.</p><ul>${archivedPanels.map(page => `<li><a href="/producto/${attr(page.slug)}/">${htmlEscape(page.product.nombre)}</a></li>`).join('')}</ul></section>` : '';
     const categorySource=editorial.guideHTML?categoryTemplate.replace(/<section class="guide"[\s\S]*?<\/section>/,`<!-- PTH_EDITORIAL_DRAFT_GUIDE_START -->\n${editorial.guideHTML}\n<!-- PTH_EDITORIAL_DRAFT_GUIDE_END -->`):categoryTemplate;
     const html = render(categorySource, {
       CATEGORY_EDITORIAL_CSS:editorial.css?`\n/* PTH_EDITORIAL_DRAFT_CSS_START */\n${editorial.css}\n/* PTH_EDITORIAL_DRAFT_CSS_END */`:'',
@@ -450,6 +426,7 @@ async function main() {
       CATEGORY_SLUG: attr(categorySlug),
       PRODUCT_COUNT: String(categoryProducts.length),
       PRODUCT_CARDS: cards || '<p>No hay equipos disponibles en esta categoría por el momento. <a href="/">Consulta otras opciones del catálogo</a>.</p>',
+      CATEGORY_PANEL_LINKS: panelLinks,
       JSON_LD: JSON.stringify(jsonLd).replace(/</g, '\\u003c')
     });
     const directory = join(CATEGORY_OUTPUT_ROOT, categorySlug);

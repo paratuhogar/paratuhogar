@@ -23,7 +23,7 @@ jobs:
       - name: Generar fichas y sitemap
         run: node scripts/generate-product-pages.mjs
       - name: Comprobar indexación y disponibilidad sin servicios externos
-        run: node --test tests/seo-generation.test.mjs
+        run: node --test tests/seo-generation.test.mjs tests/seo-product-content.test.mjs
       - name: Validar metadatos, JSON-LD y sitemap
         run: node scripts/validate-seo-pages.mjs
       - name: Guardar solamente cambios reales
