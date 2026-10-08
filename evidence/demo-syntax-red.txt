@@ -1,0 +1,50 @@
+✔ double click is blocked and lost response retains answers and can retry a saved pending request (15.65612ms)
+✔ store count input is wired and revealing/hiding names disables hidden fields (5.936853ms)
+✔ server stores validated answers atomically and retry with same token does not create another applicant (307.917463ms)
+✔ invalid visible answers stop registration before insertion (4.678436ms)
+✔ administrative renderer labels old requests and treats every answer as untrusted text (5.875683ms)
+✔ browser and edge validator copies stay identical (0.69372ms)
+✖ standalone demo fixture contains valid inline JavaScript (4.602878ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 626.049677
+
+✖ failing tests:
+
+test at tests/gestor-questionnaire-flow.test.mjs:53:1
+✖ standalone demo fixture contains valid inline JavaScript (4.602878ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "Unexpected token ';'"
+      at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire-flow.test.mjs:55:75)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: evalmachine.<anonymous>:4
+    const supabaseClient={from(){return {select(){return this},eq(){return this},maybeSingle:async()=>({data:null,error:null}),insert:async rows=>{document.getElementById('demo-admin').append(PTHQuestionnaire.render(document,rows[0].questionnaire));return {error:null}}}};
+                                                                                                                                                                                                                                                                               ^
+
+    SyntaxError: Unexpected token ';'
+        at new Script (node:vm:117:7)
+        at file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire-flow.test.mjs:55:92
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire-flow.test.mjs:55:75)
+        at Test.runInAsyncScope (node:async_hooks:228:14)
+        at Test.run (node:internal/test_runner/test:1118:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+        at Test.postRun (node:internal/test_runner/test:1247:19)
+        at Test.run (node:internal/test_runner/test:1175:12),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }

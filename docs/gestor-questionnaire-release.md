@@ -35,7 +35,7 @@ cuestionario; nunca se convierte una solicitud pendiente en activa.
 
 ## Evidencia y límites
 
-- `node --test tests/*.test.*`: 499 pruebas pasan, cero fallos.
+- `node --test tests/*.test.*`: 501 pruebas pasan, cero fallos.
 - `npm run check:js`: pasa; bundles regenerados.
 - `npm run build:css`: compilación; revisar salida en evidence/css-build.txt.
 - `npm run check:guide`: salida en evidence/guide-check.txt.
@@ -47,24 +47,23 @@ cuestionario; nunca se convierte una solicitud pendiente en activa.
 - `evidence/independent-review.md`: revisión externa y resolución de hallazgos.
 - `evidence/questionnaire-demo.html`: fixture local generado desde código real,
   sin SDK, fetch ni backend. No se enviaron solicitudes reales ni mensajes.
-- Chrome falló dos veces con «Unable to load browser request-header policy».
-  **No hay capturas ni verificación visual real móvil/escritorio/teclado.**
-- SQL ejecutado exactamente como propuesto en PGlite 0.5.8 / PostgreSQL 18.3
-  embebido local, con 17 comprobaciones correctas; evidencia en
-  `evidence/sql-local-verification.txt`. Incluye handler real con adapter local.
-  No hay Postgres/psql/Supabase CLI nativos; Docker no tiene daemon activo.
-  PGlite tiene una única conexión exclusiva: dos llamadas simultáneas del handler
-  prueban convergencia e índice, **no carreras MVCC con sesiones independientes**.
-  Supabase de producción usa PostgreSQL 17: compatibilidad/deploy/REST y concurrencia
-  multisesión todavía requieren un staging autorizado.
-- Inventario conectado: solo `paratuhogar` está activo y es producción.
-  `paratuhogar-v2` y el proyecto genérico están INACTIVE, sin autorización de
-  staging ni coste confirmado. No se reactivaron ni se creó infraestructura.
-  No se repitió Chrome en esta continuación ni se consultó/mutó producción.
-- Lectura de metadatos de producción confirmó columnas ausentes, RLS activo,
-  grants de tabla únicamente postgres/service_role; no se consultaron respuestas
-  ni datos personales de solicitantes. Comprobar también grants de columna antes
-  de publicar, y no ampliar acceso si difieren.
+- Demo aislada revisada en navegador integrado: formulario de 375 px y escritorio
+  de 1280 px, condicionales, envío ficticio, agrupación administrativa, etiqueta
+  antigua y un avance de foco por Tab. Capturas en evidence/questionnaire-mobile.jpg
+  y questionnaire-desktop.jpg; no prueban el modal completo de producción.
+- Modal real: se reprodujo recorte superior a 1280×720 antes del arreglo. Se cambió
+  justify-center por justify-start conservando my-auto. La verificación visual
+  posterior está pendiente: navegador y reset devolvieron `Transport closed`.
+  questionnaire-modal-before-fix-1280x720.jpg documenta únicamente el fallo previo.
+- Evidencia histórica: 17 comprobaciones en PGlite/PostgreSQL 18.3 antes de la
+  restricción actual. No certifica PostgREST, despliegue Edge ni carreras MVCC.
+  No se ejecutó Docker ni PostgreSQL local en esta continuación.
+- Lectura de metadatos de Supabase: PostgreSQL 17.6; columnas propuestas ausentes;
+  RLS activo, grants de tabla solo postgres/service_role, sin grants de columna
+  para anon/authenticated. No se consultaron datos personales ni se escribió.
+  Véase evidence/supabase-schema-readonly.md.
+- La integración real SQL + Edge + REST permanece sin probar: requiere cambios
+  que todavía no están autorizados en producción. No se crea otro entorno.
 
 Dependencias de pruebas copiadas al checkout desde node_modules histórico ya
 instalado; `npm ls --depth=0` sin errores. Para reproducir desde cero: `npm ci`.
@@ -97,39 +96,20 @@ se redepliega la función existente con handler/policy y el validador nuevo.
 No cambia `index.ts` ni el mecanismo de autenticación. Se requieren además los
 assets frontend y versiones de worker compatibles.
 
-## Reproducir SQL local sin infraestructura ni credenciales
-
-Se instaló únicamente un paquete de pruebas en `/tmp`; no se añadió dependencia
-a `package.json` de la aplicación ni se iniciaron servidores externos. Los roles
-`anon/authenticated/service_role` del fixture son NOLOGIN y no tienen contraseñas.
-Los nombres, teléfonos y valores de contraseña del fixture son cadenas ficticias;
-no constituyen cuentas ni credenciales de servicios.
-
-```sh
-npm install --prefix /tmp/pth-questionnaire-pg --cache /tmp/pth-questionnaire-npm-cache --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.5.8
-PTH_PGLITE_MODULE=/tmp/pth-questionnaire-pg/node_modules/@electric-sql/pglite/dist/index.js node scripts/verify-questionnaire-sql.mjs
-```
-
-El script ejecuta el SQL, las restricciones y la retirada opcional solamente en
-una base efímera en memoria; la cierra al finalizar. La retirada que borra las dos
-columnas fue comprobada con datos desechables y **no es el rollback recomendado
-para producción**. En producción se conservan las respuestas.
-
 ## Esquema y publicación, solo después de aprobación
 
 1. Revisar este candidato y SQL `supabase/proposals/gestor-questionnaire.sql`.
    Añade dos columnas anulables (`questionnaire jsonb`, `application_token uuid`),
    check de objeto/versión/tamaño e índice único parcial de token. Sin backfill,
    sin cambios de grants/RLS y sin alterar filas antiguas.
-2. En staging aislado con fixtures, ejecutar SQL y verificar constraints,
-   duplicados concurrentes, idempotencia, compatibilidad con registros legacy,
-   errores de esquema faltante y acceso denegado a anon/authenticated por REST.
-   Confirmar que el gateway actual usa service_role y proyecta solo al admin.
-3. Resolver Chrome y abrir demo local: `node scripts/questionnaire-demo.cjs`,
-   `python3 -m http.server 8080 --bind 127.0.0.1`, luego
-   `http://127.0.0.1:8080/evidence/questionnaire-demo.html`.
-   Revisar 375×812 y 1280×900: desplazamiento completo, condicionales, labels,
-   foco/teclado, legibilidad, envío y grupos administrativos. Solo fixtures.
+2. Completar la revisión visual del modal real con fixtures al reconectar el
+   navegador integrado. Generar con `node scripts/questionnaire-demo.cjs` y servir
+   desde localhost; abrir evidence/questionnaire-modal-demo.html a 375×812 y
+   1280×900. Revisar desplazamiento superior/inferior, teclado y reintento.
+3. Revisar el límite de integración pendiente y aprobar explícitamente SQL y
+   publicación por el flujo existente de Supabase; sin Docker, PostgreSQL local,
+   nuevas credenciales ni otro entorno. La sintaxis propuesta usa funciones
+   compatibles con PostgreSQL 17.6; esto no sustituye ejecución real.
 4. Revalidar main remoto y conciliar nuevos cambios sin sobrescribir trabajo.
    Repetir tests/build. Obtener aprobación de publicación y migración.
 5. Antes de SQL productivo, verificar backups existentes y exportación privada
@@ -141,8 +121,9 @@ para producción**. En producción se conservan las respuestas.
    CSS, validador y worker/versiones coordinados. Nunca desplegar frontend nuevo
    antes de backend y columnas. No publicar fixtures/evidence como páginas
    enlazadas al producto ni usarlos para solicitudes reales.
-8. Verificar recepción únicamente en staging; en producción realizar solo
-   comprobaciones de lectura/autorizadas, sin crear solicitudes ni decidir.
+8. En producción realizar solo comprobaciones de lectura autorizadas, sin
+   crear solicitudes reales ni decidir sobre solicitantes. Observar errores del
+   flujo normal y revertir frontend/Edge si aparecen, conservando respuestas.
 
 ## Rollback
 

@@ -1,0 +1,3 @@
+questionnaire-demo.html: inline syntax OK
+questionnaire-modal-demo.html: inline syntax OK
+Both generated from current source; actual modal visual verification pending Transport closed.

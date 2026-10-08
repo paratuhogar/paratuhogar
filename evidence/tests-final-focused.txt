@@ -1,18 +1,20 @@
-✔ double click is blocked and lost response retains answers and can retry a saved pending request (16.07613ms)
-✔ store count input is wired and revealing/hiding names disables hidden fields (7.147828ms)
-✔ server stores validated answers atomically and retry with same token does not create another applicant (44.569368ms)
-✔ invalid visible answers stop registration before insertion (2.011836ms)
-✔ administrative renderer labels old requests and treats every answer as untrusted text (2.4257ms)
-✔ browser and edge validator copies stay identical (0.434733ms)
-✔ novices without an identified referrer or other stores can apply (2.016939ms)
-✔ conditional fields normalize stale answers and reject incomplete visible fields (0.884066ms)
-✔ answers are private to administrators, including own profile and parent views (3.392971ms)
-✔ private answers and idempotency keys cannot be probed by filters or ordering (1.58122ms)
-ℹ tests 10
+✔ double click is blocked and lost response retains answers and can retry a saved pending request (95.389851ms)
+✔ store count input is wired and revealing/hiding names disables hidden fields (6.275329ms)
+✔ server stores validated answers atomically and retry with same token does not create another applicant (845.108546ms)
+✔ invalid visible answers stop registration before insertion (2.597131ms)
+✔ administrative renderer labels old requests and treats every answer as untrusted text (2.601194ms)
+✔ browser and edge validator copies stay identical (0.917319ms)
+✔ standalone demo fixture contains valid inline JavaScript (14.123135ms)
+✔ novices without an identified referrer or other stores can apply (13.683683ms)
+✔ conditional fields normalize stale answers and reject incomplete visible fields (1.718038ms)
+✔ answers are private to administrators, including own profile and parent views (65.909514ms)
+✔ private answers and idempotency keys cannot be probed by filters or ordering (3.113351ms)
+✔ validation messages use visible Spanish questions instead of storage keys (2.82569ms)
+ℹ tests 12
 ℹ suites 0
-ℹ pass 10
+ℹ pass 12
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 244.277444
+ℹ duration_ms 4454.276529

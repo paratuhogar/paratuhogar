@@ -1,0 +1,46 @@
+✔ novices without an identified referrer or other stores can apply (3.853367ms)
+✔ conditional fields normalize stale answers and reject incomplete visible fields (1.635688ms)
+✔ answers are private to administrators, including own profile and parent views (3.468907ms)
+✔ private answers and idempotency keys cannot be probed by filters or ordering (1.241884ms)
+✖ validation messages use visible Spanish questions instead of storage keys (2.299031ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 371.021635
+
+✖ failing tests:
+
+test at tests/gestor-questionnaire.test.mjs:38:1
+✖ validation messages use visible Spanish questions instead of storage keys (2.299031ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /cómo conociste ParaTuHogar/. Input:
+
+  'Error: Selecciona una opción: source'
+
+      at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:39:9)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Selecciona una opción: source
+        at choice (evalmachine.<anonymous>:9:66)
+        at Object.validate (evalmachine.<anonymous>:10:74)
+        at file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:39:45
+        at getActual (node:assert:611:5)
+        at strict.throws (node:assert:759:24)
+        at TestContext.<anonymous> (file:///Users/marcel/Documents/Codex/2026-10-08/task/repo/tests/gestor-questionnaire.test.mjs:39:9)
+        at Test.runInAsyncScope (node:async_hooks:228:14)
+        at Test.run (node:internal/test_runner/test:1118:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+        at Test.postRun (node:internal/test_runner/test:1247:19),
+    expected: /cómo conociste ParaTuHogar/,
+    operator: 'throws',
+    diff: 'simple'
+  }

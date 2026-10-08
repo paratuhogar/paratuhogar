@@ -1,12 +1,13 @@
 /* Shared browser/server validation; answers are rendered only as text. */
 (function(root){
  'use strict';
+ const labels={source:'cómo conociste ParaTuHogar',referrerGestor:'si tu referente es gestor',experience:'si tienes experiencia vendiendo por redes',clients:'cuántos clientes habituales tienes',channels:'si utilizas grupos o canales',sourceOther:'el otro medio por el que nos conociste',referrer:'el nombre del referente',loyalty:'cómo mantienes la confianza de tus clientes',channelNames:'la descripción de tus grupos o canales',channelSize:'el tamaño aproximado de tus grupos o canales',storeNames:'los nombres de las tiendas'};
  const options={source:['facebook','whatsapp','recomendacion','otro'],referrerGestor:['si','no','no_se'],experience:['si','no'],clients:['0','1-10','11-30','31-100','100+'],channels:['si','no']};
  function validate(input){
   if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Completa el cuestionario.');
   const out={version:1};
-  const text=(key,max=300,required=false)=>{const value=input[key]??'';if(typeof value!=='string'||value.length>max)throw Error('Revisa la respuesta: '+key);const result=value.trim();if(required&&!result)throw Error('Completa la respuesta: '+key);return result;};
-  const choice=key=>{if(!options[key].includes(input[key]))throw Error('Selecciona una opción: '+key);return input[key];};
+  const text=(key,max=300,required=false)=>{const value=input[key]??'';if(typeof value!=='string'||value.length>max)throw Error('Revisa '+labels[key]+'.');const result=value.trim();if(required&&!result)throw Error('Completa '+labels[key]+'.');return result;};
+  const choice=key=>{if(!options[key].includes(input[key]))throw Error('Selecciona '+labels[key]+'.');return input[key];};
   for(const key of ['source','experience','clients','channels'])out[key]=choice(key);
   out.sourceOther=out.source==='otro'?text('sourceOther',150,true):'';
   out.referrer=out.source==='recomendacion'?text('referrer',100):'';

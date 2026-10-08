@@ -35,3 +35,7 @@ test('private answers and idempotency keys cannot be probed by filters or orderi
  assert.throws(()=>validateQuery({table:'gestores',orders:[{column}]},actor));
  }
 });
+test('validation messages use visible Spanish questions instead of storage keys',()=>{
+ assert.throws(()=>context.PTHQuestionnaire.validate({...valid,source:''}),/cómo conociste ParaTuHogar/);
+ assert.throws(()=>context.PTHQuestionnaire.validate({...valid,storesCount:2,storeNames:''}),/nombres de las tiendas/);
+});

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="light" lang="es">
-<head>
-    <base href="/">
+<head><base href="../"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'">
+    
     <meta charset="utf-8"/>
     <!-- La caché se controla mediante versiones de recursos. Evitamos no-store
          para que los teléfonos reutilicen archivos durante cortes de datos. -->
@@ -37,75 +37,50 @@
     <link rel="stylesheet" href="css/client-followup.css?v=2">
     <link rel="stylesheet" href="css/work-navigation.css?v=20261001-1">
     <link rel="stylesheet" href="css/gestor-guide.css?v=20261003-dashboard2">
-    <script src="js/gestor-guide.js?v=20261003-dashboard2" defer></script>
+    
     <link rel="stylesheet" href="css/gestor-ranking.css?v=20261004-rolling30">
     <link rel="stylesheet" href="css/work-welcome.css?v=20261003-welcome2">
-    <script src="js/work-welcome.js?v=20261003-welcome2" defer></script>
+    
     <link rel="stylesheet" href="css/low-connectivity.css?v=20261003-pending2">
-    <script src="js/low-connectivity.js?v=20261002-lowdata1" defer></script>
-    <script src="js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
+    
+    
     <meta name="pth-offline-shell-version" content="20261006-ready1">
-    <script src="js/pwa.js?v=20261006-ready1" defer></script>
+    
     <link rel="stylesheet" href="css/offline-storefront.css?v=20261003-pending2">
     <link rel="stylesheet" href="css/admin-panel.css?v=20261003-recent2">
-    <script src="js/admin-panel-data.js?v=20261003-recent2" defer></script>
+    
     <link rel="stylesheet" href="css/feedback-announcement.css?v=20261001-1">
-    <script src="js/product-availability-form.js?v=20260924-1" defer></script>
-    <script src="js/product-description-editor.js?v=20260924-1" defer></script>
-    <script src="js/checkout-submit-guard.js?v=20261002-lowdata1" defer></script>
-    <script src="js/pending-checkout.js?v=20261005-cold7" defer></script>
-    <script src="js/checkout-form-shared.js?v=20261003-pending2" defer></script>
-    <script src="js/offline-checkout-copy.js?v=20261005-copy2" defer></script>
-    <script src="js/checkout-recovery.js?v=20261002-lowdata1" defer></script>
+    
+    
+    
+    
+    
+    
+    
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
-    <script src="js/vendor/supabase-2.57.4.js" defer></script>
-    <script src="js/secure-data.js?v=20261005-cold7" defer></script>
-    <script src="js/gestor-ranking.js?v=20261004-rolling30" defer></script>
-    <script src="js/affiliate-links.js?v=20261003-alias1" defer></script>
-    <script src="js/public-name-editor.js?v=20261003-alias1" defer></script>
-    <script src="js/offline-storefront-adapter.js?v=20261005-cold7" defer></script>
-    <script src="js/feedback-announcement.js?v=20261003-welcome2" defer></script>
-    <script src="js/image-variants.js?v=20261001-images2" defer></script>
-    <script src="js/product-images.js?v=20261002-fasttools2" defer></script>
-    <script src="js/product-description-loader.js?v=20261001-images2" defer></script>
-    <script src="js/admin-work-view.js?v=20260930-admins2" defer></script>
-    <script src="js/admin-push-links.js?v=20261002-reminders1" defer></script>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
          gráficas, Excel, editor, ZIP ni PDF para consultar el catálogo. -->
-    <script src="js/internal-assets.js?v=20261003-sharefix1" defer></script>
-    <script>
-        let quill = null;
-        function loadInternalAssets() { window.PTHAssets?.scheduleSession(); }
-        async function prepareProductEditor() {
-            if (!window.PTHAssets) return;
-            try {
-                await window.PTHAssets.load('editor');
-                quill = ProductDescriptionEditorApi.ensureProductDescriptionEditor({QuillCtor: window.Quill, currentEditor: quill});
-            } catch (_) { /* The native editor remains usable while offline. */ }
-        }
-    </script>
+    
+    
 
     <!-- === 5. DATOS ESTRUCTURADOS DE GOOGLE (LOCAL BUSINESS) === -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "ElectronicsStore",
-      "name": "ParaTuHogar",
-      "image": "https://paratuhogar.org/log.jpeg",
-      "description": "Venta de electrodomésticos, plantas eléctricas, baterías de litio y climatización con entrega en La Habana, Cuba.",
-      "url": "https://paratuhogar.org",
-      "telephone": "+5356071095",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "La Habana",
-        "addressCountry": "CU"
-      }
-    }
-    </script>
+    
 
     <!-- 6. Configuración de Diseño (ANEB Theme) -->
 
@@ -387,48 +362,7 @@
 </style>
 
     <!-- === PREGUNTAS FRECUENTES PARA GOOGLE E IA (FAQ SCHEMA) === -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [{
-    "@type": "Question",
-    "name": "¿Cuáles son los métodos de pago aceptados en ParaTuHogar?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Aceptamos pagos al momento de recibir el producto. Puedes pagar en USD en efectivo, EUR en efectivo, transferencia por Zelle desde USA, o en CUP (pesos cubanos) calculados al cambio del día."
-    }
-  }, {
-    "@type": "Question",
-    "name": "¿Hacen envíos a domicilio en La Habana?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Sí, realizamos entregas rápidas entre 24 y 48 horas en todos los municipios de La Habana. El costo de la mensajería varía según el municipio, pero también ofrecemos la opción de recogida gratuita en nuestro almacén."
-    }
-  }, {
-    "@type": "Question",
-    "name": "¿Qué tipo de electrodomésticos venden para Cuba?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Vendemos splits Inverter, refrigeradores, congeladores, plantas eléctricas, baterías de litio, estaciones de energía Ecoflow, Smart TVs y efectos de cocina como ollas reina."
-    }
-  }, {
-    "@type": "Question",
-    "name": "¿Los equipos tienen garantía?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Sí, todos nuestros equipos se entregan con factura y garantía real. El cliente debe revisar el equipo antes de que el mensajero se retire."
-    }
-  }, {
-    "@type": "Question",
-    "name": "¿Venden al por mayor para MIPYMES en Cuba?",
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": "Sí, tenemos una sección exclusiva Mayorista / B2B para MIPYMES y TCP, con la documentación legal necesaria para la importación y nacionalización desde el Almacén Inbond en el Reparto Eléctrico."
-    }
-  }]
-}
-</script>
+
 
 <!-- Escudo de emergencia por si falla el diseño externo en conexiones lentas -->
     <style>
@@ -445,7 +379,7 @@
         }
     </style>
 
-<script defer src="/js/google-measurement.js?v=20260928-google-1"></script>
+
 </head>
 
 <body class="bg-background-light dark:bg-background-dark text-[#121717] dark:text-gray-100">
@@ -3081,7 +3015,7 @@
 </div>
 
 <!-- === PANTALLA DE ACCESO (LOGIN / REGISTRO) === -->
-<div id="login-overlay" class="fixed inset-0 z-[9999] bg-background-light dark:bg-background-dark flex flex-col items-center justify-start p-6 transition-all duration-500 overflow-y-auto hidden">
+<div id="login-overlay" class="fixed inset-0 z-[9999] bg-background-light dark:bg-background-dark flex flex-col items-center justify-start p-6 transition-all duration-500 overflow-y-auto">
     <div class="w-full max-w-sm text-center space-y-6 my-auto">
 
         <!-- Logo -->
@@ -3100,7 +3034,7 @@
             </div>
 
             <!-- FORMULARIO LOGIN -->
-            <div id="form-login" class="space-y-4">
+            <div id="form-login" class="space-y-4 hidden">
                 <input type="text" id="log-user" placeholder="Tu Nombre de Usuario" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <div class="relative w-full">
     <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3 pr-10">
@@ -3119,7 +3053,7 @@
             </div>
 
             <!-- FORMULARIO REGISTRO -->
-            <div id="form-register" class="space-y-4 hidden">
+            <div id="form-register" class="space-y-4">
 
                 <input type="text" id="reg-name" placeholder="Nombre y Apellido" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
                 <input type="email" id="reg-email" placeholder="Correo Electrónico" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
@@ -3244,9 +3178,9 @@
         </div>
 
     <!-- Scripts de Lógica -->
-    <script src="js/gestor-questionnaire.js?v=20261008-questionnaire1" defer></script>
-    <script src="js/storefront.min.js?v=20261008-questionnaire1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261006-ready1" defer></script>
+    
+    
+    
 
 
 
@@ -3500,7 +3434,7 @@
     <p class="pth-welcome-hint">Puedes volver a esta bienvenida desde la guía en Mi Dashboard.</p>
 </dialog>
 
-<script src="js/storefront-extras.min.js?v=20261008-questionnaire1" defer></script>
+
 
 <!-- === MODAL DE EDICIÓN FINANCIERA RÁPIDA === -->
 <!-- === MODAL DE EDICIÓN MAESTRA TOTAL (LOGÍSTICA) === -->
@@ -3907,7 +3841,101 @@
 </div>
 
 <!-- Tutorial y seguimiento se cargan bajo demanda para usuarios internos. -->
-</body>
+<script src="../js/gestor-questionnaire.js"></script><script>
+const localStorage={getItem:()=>null};
+const alert=message=>{document.getElementById('reg-status').textContent=message};
+function toggleLoginMode(){document.getElementById('reg-status').textContent='Solicitud demo enviada. Decisión manual de Elizabeth.'}
+const supabaseClient={from(){return {select(){return this},eq(){return this},maybeSingle:async()=>({data:null,error:null}),insert:async rows=>{return {error:null}}}}};
+let registrationBusy=false;
+let registrationAttempt=null;
+async function processRegister() {
+    if(registrationBusy)return;
+    const btn = document.getElementById('reg-submit');
+    const status=document.getElementById('reg-status');
+    const parentId=localStorage.getItem('pth_invitado_por_id')||null;
+    let questionnaire;
+    try{if(!parentId)questionnaire=PTHQuestionnaire.read(document);}catch(error){if(status)status.textContent=error.message;return;}
+    if(status)status.textContent='';
+    const nombre = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const tel = document.getElementById('reg-tel').value.trim();
+    const pass = document.getElementById('reg-pass').value.trim();
+
+    if(!nombre || !pass || !tel) return alert("Nombre, Teléfono y Contraseña son obligatorios.");
+
+    btn.disabled = true;
+    const originalText = btn.innerText;
+    btn.innerText = "PROCESANDO REGISTRO...";
+    registrationBusy=true;
+    if(!registrationAttempt)registrationAttempt=crypto.randomUUID();
+
+    try {
+        // 1. VERIFICAR SI YA EXISTE EL TELÉFONO
+        const { data: existe, error: lookupError } = await supabaseClient.from('gestores').select('id, estado').eq('telefono', tel).maybeSingle();
+        if(lookupError)throw lookupError;
+        if (existe && !questionnaire) {
+            alert("⚠️ Este número ya está registrado. Ve a la pestaña de ENTRAR.");
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
+        }
+
+        // Determinar si viene invitado por un Gestor Principal
+        // Invitation scope is unchanged; direct applications include the questionnaire.
+
+        // 2. INSERTAR EN LA BASE DE DATOS (MÉTODO PENDIENTE SUBGESTOR)
+        const { error } = await supabaseClient
+            .from('gestores')
+            .insert([{
+                nombre: nombre,
+                email: email,
+                telefono: tel,
+                password: pass,
+                estado: parentId ? 'pendiente_subgestor' : 'pendiente', // Los subgestores esperan al padre; los directos esperan al admin
+                parent_id: parentId,
+                ...(questionnaire?{questionnaire,application_token:registrationAttempt}:{})
+            }]);
+
+        if (error) throw error;
+
+        registrationAttempt=null;
+        // 3. MOSTRAR PANTALLA DE SOLICITUD ENVIADA SI ES SUBGESTOR
+        if (parentId) {
+            const formContainer = document.getElementById('form-register');
+            if (formContainer) {
+                formContainer.innerHTML = `
+                    <div class="space-y-4 text-center py-4 animate-pop-in">
+                        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400 border border-amber-200">
+                            <span class="material-symbols-outlined text-3xl animate-pulse">hourglass_empty</span>
+                        </div>
+                        <h3 class="text-lg font-black text-slate-800 dark:text-white uppercase leading-tight">¡Solicitud Enviada!</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Tu registro como subgestor ha sido enviado con éxito.</p>
+                        <p class="text-[11px] text-slate-600 dark:text-gray-400 font-medium leading-relaxed">Tu Gestor Principal revisará tu solicitud y se pondrá en contacto contigo a través de WhatsApp para explicarte la metodología y activarte la cuenta.</p>
+
+                        <button onclick="location.reload()" class="w-full bg-slate-900 hover:bg-black text-white py-3.5 rounded-xl font-black uppercase text-xs">
+                            Volver a la Tienda
+                        </button>
+                    </div>
+                `;
+            }
+        } else {
+            alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a revisión. Elizabeth revisará tus respuestas y se pondrá en contacto contigo por WhatsApp. La decisión es manual.`);
+            toggleLoginMode('login');
+        }
+
+    } catch (e) {
+        if(status)status.textContent="No se pudo confirmar la solicitud. Tus respuestas siguen aquí; vuelve a intentar. "+e.message;
+    } finally {
+        registrationBusy=false;
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+}
+
+
+
+
+PTHQuestionnaire.sync(document);</script></body>
 
 </body>
 

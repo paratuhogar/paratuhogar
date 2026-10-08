@@ -23,3 +23,12 @@ conexión exclusiva (no MVCC multisesión), rollback mediante columnas antiguas
 (no aplicación anterior completa), sin PostgREST ni despliegue Edge real.
 Después se añadieron políticas sintéticas SELECT/INSERT/UPDATE al fixture y se
 confirmó también que sus definiciones se conservan; no es auditoría remota.
+
+## Revisión final
+
+Revisor confirmó 16 pruebas relevantes y check:js, sin nuevos hallazgos críticos.
+Los tres hallazgos anteriores siguen corregidos. No hay cambios a lista negra,
+acciones administrativas, roles o grants. El arreglo justify-start/my-auto es
+coherente, pero la prueba visual del modal tras el cambio queda pendiente por
+Transport closed. Metadatos 17.6 no sustituyen integración o despliegue real.
+No ejecutó Docker/PostgreSQL local ni escrituras externas en esta revisión.

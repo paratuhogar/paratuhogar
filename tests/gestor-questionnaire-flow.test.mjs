@@ -50,3 +50,7 @@ test('administrative renderer labels old requests and treats every answer as unt
 test('browser and edge validator copies stay identical',()=>{
  assert.equal(fs.readFileSync(new URL('../js/gestor-questionnaire.js',import.meta.url),'utf8'),fs.readFileSync(new URL('../supabase/functions/secure-data/questionnaire-validation.js',import.meta.url),'utf8'));
 });
+test('standalone demo fixture contains valid inline JavaScript',()=>{
+ const html=fs.readFileSync(new URL('../evidence/questionnaire-demo.html',import.meta.url),'utf8');
+ for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g))assert.doesNotThrow(()=>new vm.Script(match[1]));
+});
