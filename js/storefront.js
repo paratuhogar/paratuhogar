@@ -381,6 +381,8 @@ async function checkShortLinks() {
         }
     }
     const savedSession = localStorage.getItem('pth_session') || (offlineStorefront.current()?.profile ? JSON.stringify({name:offlineStorefront.current().profile.nombre,isAdmin:false,data:offlineStorefront.current().profile}) : null);
+    const needsSessionLogin = navigator.onLine !== false && !window.PTHSecureData.token()
+        && (window.PTHSecureData.expiredCheckoutOwner?.() || window.PTHSecureData.sessionExpired?.());
     if (savedSession) {
         // Solo los usuarios internos necesitan gráficas, Excel, editor, ZIP y PDF.
         // La sesión puede continuar aunque una herramienta secundaria no cargue.
@@ -390,12 +392,13 @@ async function checkShortLinks() {
         loadInternalAssets();
     } else {
         const overlay = document.getElementById('login-overlay');
-        if (overlay) overlay.classList.add('hidden');
+        if (overlay && !needsSessionLogin) overlay.classList.add('hidden');
         window.gestorName = null;
         window.isAdmin = false;
         window.currentUserData = null;
         loadProducts();
     }
+    if (needsSessionLogin) openLoginModal('Tu sesión venció. Vuelve a entrar para continuar. Tus pedidos pendientes se conservan en este teléfono.');
 
     initAutoSaveSystem();
     bindNewCartAccount();
@@ -419,9 +422,18 @@ async function checkShortLinks() {
         referrerData = incoming ? window.PTHAffiliate.remember(incoming) : window.PTHAffiliate.read();
     }
 // Función para abrir la ventana de inicio de sesión manualmente
-function openLoginModal() {
+function openLoginModal(message = '') {
     const loginOverlay = document.getElementById('login-overlay');
     if (loginOverlay) {
+        let notice = document.getElementById('pth-session-login-notice');
+        if (message && !notice) {
+            notice = document.createElement('p');
+            notice.id = 'pth-session-login-notice';
+            notice.className = 'text-sm font-bold text-amber-700 bg-amber-50 p-4 rounded-xl';
+            notice.setAttribute('role', 'status');
+            loginOverlay.prepend(notice);
+        }
+        if (notice) { notice.textContent = message; notice.hidden = !message; }
         loginOverlay.classList.remove('hidden');
         // Asegurarnos de que inicie en la pestaña de "Entrar" y no "Registrarme"
         if(typeof toggleLoginMode === 'function') toggleLoginMode('login');
@@ -429,6 +441,11 @@ function openLoginModal() {
         console.error("Error: No se encontró el elemento login-overlay en el HTML");
     }
 }
+window.addEventListener('pth:session-changed', event => {
+    if (event.reason === 'expired' && navigator.onLine !== false) {
+        openLoginModal('Tu sesión venció. Vuelve a entrar para continuar. Tus pedidos pendientes se conservan en este teléfono.');
+    }
+});
 
 
     // Ejecutar inmediatamente al cargar el script
@@ -10603,6 +10620,10 @@ function showDashSection(section) {
 async function renderGestorPricing() {
     const container = document.getElementById('list-gestor-precios');
     if(!container) return;
+    if (!window.PTHSecureData.token()) {
+        container.textContent = 'Vuelve a entrar con conexión para consultar o modificar tu configuración.';
+        return;
+    }
 
     const hierarchy = await resolveSalesHierarchy(window.gestorName);
     const esSubgestor = Boolean(hierarchy?.isSubgestor);
@@ -10760,7 +10781,17 @@ window.saveMyPrice = async function(prodId, basePrice, baseComm, event) {
     // currentTarget is cleared after dispatch; retain the control before awaiting.
     const btn = event.currentTarget;
     const isToggle = event.type === 'change';
-    const hierarchy = await resolveSalesHierarchy(window.gestorName);
+    let hierarchy;
+    try {
+        await window.PTHSecureData.restore();
+        if (!window.PTHSecureData.token()) throw Object.assign(new Error('Tu sesión venció.'), { code: 'SESSION_INVALID', status: 401 });
+        hierarchy = await resolveSalesHierarchy(window.gestorName);
+    } catch (error) {
+        if (error.code === 'SESSION_INVALID' || error.status === 401) {
+            openLoginModal('Tu sesión venció. Vuelve a entrar para guardar los cambios. Tus pedidos pendientes se conservan.');
+        } else alert('Error al guardar: ' + error.message);
+        return;
+    }
     if (hierarchy?.isSubgestor) {
         return alert(`🔒 Tus precios y comisiones los configura ${hierarchy.parent.nombre}.`);
     }
@@ -10851,7 +10882,9 @@ window.saveMyPrice = async function(prodId, basePrice, baseComm, event) {
         }
 
     } catch (e) {
-        alert("Error al guardar: " + e.message);
+        if (e.code === 'SESSION_INVALID' || e.status === 401) {
+            openLoginModal('Tu sesión venció. Vuelve a entrar para guardar los cambios. Tus pedidos pendientes se conservan.');
+        } else alert("Error al guardar: " + e.message);
         if (!isToggle) {
             btn.innerHTML = originalContent;
             btn.disabled = false;

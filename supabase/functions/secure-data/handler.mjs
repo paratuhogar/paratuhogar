@@ -12,6 +12,7 @@ const ORIGINS=new Set(['https://paratuhogar.org','https://www.paratuhogar.org','
 const encode=value=>new TextEncoder().encode(value);
 // Expiry is response metadata, never a profile field or a bearer capability.
 const sessionExpiries=new WeakMap();
+const DAY=86400000,SELLER_SESSION_AGE=30*DAY;
 export async function hash(value) {return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encode(String(value)))),v=>v.toString(16).padStart(2,'0')).join('');}
 const fail=(message,status=403,publicCode)=>{throw Object.assign(Error(message),{status,publicCode});};
 const cleanProfile=actor=>{const profile={...actor,password:'__session__'};delete profile.questionnaire;delete profile.application_token;return profile;};
@@ -62,8 +63,24 @@ async function authLookup(read) {
 async function parentFor(db,profile) {
   if(!profile?.parent_id) return null;
   const data=await authLookup(()=>db.from('gestores').select('*').eq('id',profile.parent_id).maybeSingle());
-  if(!data||data.parent_id||data.estado!=='activo') fail('El gestor principal no está activo.',401);
+  if(!data||data.parent_id||data.estado!=='activo'||data.activo===false) fail('El gestor principal no está activo.',401);
   return data;
+}
+async function renewSellerSession(db,session,actor) {
+  if(!['gestor','subgestor'].includes(actorKind(actor)))return session.expires_at;
+  const now=Date.now();
+  // Activity slides the window at most once a day, never by trusting the browser.
+  if(Date.parse(session.expires_at)>now+SELLER_SESSION_AGE-DAY)return session.expires_at;
+  const expiresAt=new Date(now+SELLER_SESSION_AGE).toISOString();
+  const changed=await authLookup(()=>db.from('pth_secure_sessions').update({expires_at:expiresAt})
+    .eq('token_hash',session.token_hash).eq('expires_at',session.expires_at)
+    .gt('expires_at',new Date(now).toISOString()).select('expires_at').maybeSingle());
+  if(changed)return changed.expires_at;
+  // Another request may have renewed it; a deleted/revoked session stays invalid.
+  const current=await authLookup(()=>db.from('pth_secure_sessions').select('expires_at')
+    .eq('token_hash',session.token_hash).gt('expires_at',new Date().toISOString()).maybeSingle());
+  if(!current)fail('Tu sesión venció. Vuelve a entrar para continuar.',401);
+  return current.expires_at;
 }
 async function resolveActor(db,token) {
   if(!token) return null;
@@ -81,7 +98,7 @@ async function resolveActor(db,token) {
   if(!profile||profile.estado!=='activo'||profile.activo===false||await hash(profile.password)!==session.credential_hash) fail('La cuenta o sesión ya no está activa.',401);
   const parent=await parentFor(db,profile);
   const actor={...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono};
-  sessionExpiries.set(actor,session.expires_at);return actor;
+  sessionExpiries.set(actor,await renewSellerSession(db,session,actor));return actor;
 }
 async function login(db,body,request) {
   const username=String(body.username||'').trim();
@@ -104,7 +121,7 @@ async function login(db,body,request) {
   if(profile.estado!=='activo'||profile.activo===false) fail('Tu cuenta necesita revisión. Contacta con tu gestor o administrador.',401);
   const parent=await parentFor(db,profile);
   const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
-  const expiresAt=new Date(Date.now()+7*86400000).toISOString();
+  const expiresAt=new Date(Date.now()+(['gestor','subgestor'].includes(actorKind(profile))?SELLER_SESSION_AGE:7*DAY)).toISOString();
   const {error:sessionError}=await db.from('pth_secure_sessions').insert({token_hash:await hash(token),gestor_id:profile.id,credential_hash:await hash(password),expires_at:expiresAt});
   if(sessionError) fail('No se pudo iniciar la sesión.',503);
   return {token,expiresAt,profile:cleanProfile({...profile,parent_nombre:parent?.nombre,parent_telefono:parent?.telefono})};
@@ -215,6 +232,7 @@ async function prepareWrite(db,body,actor) {
 async function dataQuery(db,body,actor) {
   validateQuery(body,actor);
   const {table,op='select'}=body;
+  if(table==='precios_personalizados'&&op!=='select'&&!actor)fail('Tu sesión venció. Vuelve a entrar para guardar los cambios.',401);
   if(table==='inventario_eventos'&&!actor)return {data:body.single?null:[],error:null,count:body.count==='exact'?0:null};
   const values=op!=='select'&&op!=='delete'?await prepareWrite(db,body,actor):undefined;
   const application=table==='gestores'&&op==='insert'?(Array.isArray(values)&&values.length===1?values[0]:!Array.isArray(values)?values:null):null;
@@ -306,7 +324,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
       else if(body.action==='query') result=await dataQuery(db,body,actor);
       else if(body.action==='rpc') result=await rpcQuery(db,body,actor);
       else fail('Operación no permitida.');
-      return new Response(JSON.stringify(result),{headers});
+      return new Response(JSON.stringify({...result,...(actor?{sessionExpiresAt:sessionExpiries.get(actor)}:{})}),{headers});
     } catch(error) {
       return new Response(JSON.stringify({data:null,error:{message:error.status?error.message:'No se pudo completar la consulta segura.',code:error.publicCode||(error.status===401?'SESSION_INVALID':'ACCESS_DENIED')}}),{status:error.status||403,headers});
     }

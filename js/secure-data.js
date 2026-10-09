@@ -10,6 +10,9 @@
  const messenger=/\/mensajeros\.html$/.test(root.location?.pathname||'');
  const tokenKey=messenger?'pth_secure_messenger_token':'pth_secure_token';
  const expiryKey=tokenKey+'_expires_at';let expiryTimer=null;
+ const expiredNoticeKey=tokenKey+'_expired';
+ function rememberExpiry(expired){try{if(expired)storage.setItem(expiredNoticeKey,'1');else storage.removeItem(expiredNoticeKey);}catch(_){}}
+ function sessionExpired(){try{return storage.getItem(expiredNoticeKey)==='1';}catch(_){return false;}}
  const purgePrefix='pth_pending_private_purge_v1:';
  const volatilePurges=new Set(),volatileIsolations=new Set();
  const validPurgeOwner=owner=>typeof owner==='string'&&owner.length>0&&owner.length<=100;
@@ -54,7 +57,7 @@
    if(context&&(!Number.isFinite(context.savedAt)||!Number.isFinite(context.expiresAt)||stamp<context.savedAt||stamp>=context.expiresAt||context.expiresAt>context.savedAt+7*86400000)){storage.removeItem(offlineContextKey);context=null;}
    if(context&&saved?.id&&saved.nombre&&saved.estado==='activo'&&saved.password==='__session__'&&!hasPendingPrivatePurge(saved.id)&&(!session||identity(session)===identity(saved)))return {...saved};
   }
-  if(!checkExpiry()||!expiresAt()||expiresAt()>Date.now()+7*86400000)return null;
+  if(!checkExpiry()||!expiresAt()||expiresAt()>Date.now()+30*86400000)return null;
   const token=storage.getItem(tokenKey);if(!/^[a-f0-9]{64}$/.test(token||''))return null;
   let saved;try{saved=JSON.parse(storage.getItem('pth_session')||'null')?.data;}catch(_){return null;}
   if(!saved?.id||hasPendingPrivatePurge(saved.id)||!saved.nombre||saved.password!=='__session__'||saved.estado!=='activo'||saved.activo===false)return null;
@@ -65,13 +68,17 @@
   for(let i=storage.length-1;i>=0;i--){const name=storage.key(i);if(/^(pth_catalogo_|pth_catalog_data|pth_ultimo_cambio_productos|pth_studio_.*(?:catalog|product|cache|custom_prices)|pth_stats)/.test(name))storage.removeItem(name);}
  }
  function notifySession(reason){if(root.dispatchEvent&&root.Event){const event=new root.Event('pth:session-changed');event.reason=reason;root.dispatchEvent(event);}}
- function clearSession(reason='logout'){let previous;try{previous=JSON.parse(storage.getItem('pth_session')||'null');}catch(_){}let device;try{device=JSON.parse(storage.getItem(offlineContextKey)||'null');}catch(_){}const departingOwner=profile?.id||previous?.data?.id||device?.profile?.id||null;if(reason!=='expired'||!device||Date.now()>=device.expiresAt){markPrivatePurge(departingOwner,device?.profile?.id===departingOwner&&Date.now()<device.expiresAt);if(!messenger)storage.removeItem(offlineContextKey);}expiredCheckoutOwner=reason==='expired'?departingOwner:null;root.navigator?.serviceWorker?.controller?.postMessage({type:'PTH_PUSH_LOGOUT'});storage.removeItem(tokenKey);storage.removeItem(expiryKey);if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);expiryTimer=null;storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;verifiedToken=null;restoration=null;clearCaches();notifySession(reason);}
+ function clearSession(reason='logout'){let previous;try{previous=JSON.parse(storage.getItem('pth_session')||'null');}catch(_){}let device;try{device=JSON.parse(storage.getItem(offlineContextKey)||'null');}catch(_){}const departingOwner=profile?.id||previous?.data?.id||device?.profile?.id||null;if(reason!=='expired'||!device||Date.now()>=device.expiresAt){markPrivatePurge(departingOwner,reason==='expired'||device?.profile?.id===departingOwner&&Date.now()<device.expiresAt);if(!messenger)storage.removeItem(offlineContextKey);}expiredCheckoutOwner=reason==='expired'?departingOwner:null;rememberExpiry(reason==='expired');root.navigator?.serviceWorker?.controller?.postMessage({type:'PTH_PUSH_LOGOUT'});storage.removeItem(tokenKey);storage.removeItem(expiryKey);if(expiryTimer!==null&&root.clearTimeout)root.clearTimeout(expiryTimer);expiryTimer=null;storage.removeItem(messenger?'pth_messenger_session':'pth_session');profile=null;verifiedToken=null;restoration=null;clearCaches();notifySession(reason);}
  const identity=data=>JSON.stringify([data?.id,data?.rol,data?.parent_id,data?.parent_nombre]);
- function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}const local=offlineProfile();profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);verifiedToken=storage.getItem(tokenKey);if(!messenger&&local&&identity(local)!==identity(profile))storage.removeItem(offlineContextKey);const expiry=Date.parse(data.expiresAt);if(Number.isFinite(expiry))storage.setItem(expiryKey,String(expiry));else storage.removeItem(expiryKey);armExpiry();storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));if(identity(previous?.data||previous)!==identity(profile)){clearCaches();notifySession();}}
+ function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}const sameToken=verifiedToken&&verifiedToken===(data.token||storage.getItem(tokenKey)),knownExpiry=sameToken?expiresAt():null;const local=offlineProfile();profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);verifiedToken=storage.getItem(tokenKey);if(!messenger&&local&&identity(local)!==identity(profile))storage.removeItem(offlineContextKey);const expiry=Date.parse(data.expiresAt);if(Number.isFinite(expiry))storage.setItem(expiryKey,String(Math.max(expiry,knownExpiry||0)));else storage.removeItem(expiryKey);armExpiry();storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));rememberExpiry(false);if(identity(previous?.data||previous)!==identity(profile)){clearCaches();notifySession();}}
  async function send(body,token=storage.getItem(tokenKey)){
   try{
    const response=await root.fetch(url,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body),keepalive:body.action==='logout',signal:AbortSignal.timeout(30000)});
    const result=await response.json();
+   const renewed=Date.parse(result.sessionExpiresAt);
+   if(response.status===200&&token&&token===storage.getItem(tokenKey)&&Number.isFinite(renewed)&&renewed>Date.now()&&renewed<=Date.now()+30*86400000&&renewed>(expiresAt()||0)){
+    storage.setItem(expiryKey,String(renewed));armExpiry();
+   }
    if(result.error)result.error.status=response.status;
    if(response.status===401&&body.action!=='login'&&token===storage.getItem(tokenKey))clearSession('expired');
    return result;
@@ -146,6 +153,7 @@
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
+ root.PTHSecureData.sessionExpired=sessionExpired;
  root.PTHSecureData.preserveOfflineOrders=owner=>{if(volatileIsolations.has(owner))return true;try{return storage.getItem(purgePrefix+encodeURIComponent(owner))==='2';}catch(_){return false;}};
  root.PTHSecureData.pendingPrivatePurgeOwners=pendingPrivatePurgeOwners;
  root.PTHSecureData.hasPendingPrivatePurge=hasPendingPrivatePurge;

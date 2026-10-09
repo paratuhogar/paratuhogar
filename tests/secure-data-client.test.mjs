@@ -74,11 +74,11 @@ test('session expiry retains only the owner ID needed to check its existing tab 
 test('private cleanup is marked durably before credentials are removed and stores only the owner ID',()=>{
  const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'own-id',nombre:'Private account name',telefono:'private phone'}}));
  const remove=storage.removeItem;let markedBeforeToken=false;
- storage.removeItem=key=>{if(key==='pth_secure_token')markedBeforeToken=storage.getItem('pth_pending_private_purge_v1:own-id')==='1';remove(key);};
+ storage.removeItem=key=>{if(key==='pth_secure_token')markedBeforeToken=storage.getItem('pth_pending_private_purge_v1:own-id')==='2';remove(key);};
  context.PTHSecureData.clearSession('expired');assert.equal(markedBeforeToken,true);
  assert.deepEqual([...context.PTHSecureData.pendingPrivatePurgeOwners()],['own-id']);
  const markers=Array.from({length:storage.length},(_,i)=>[storage.key(i),storage.getItem(storage.key(i))]).filter(([key])=>key.startsWith('pth_pending_private_purge_v1:'));
- assert.deepEqual(markers,[['pth_pending_private_purge_v1:own-id','1']]);assert.doesNotMatch(JSON.stringify(markers),/Private account name|private phone|aaaaaaaa/);
+ assert.deepEqual(markers,[['pth_pending_private_purge_v1:own-id','2']]);assert.equal(context.PTHSecureData.preserveOfflineOrders('own-id'),true);assert.doesNotMatch(JSON.stringify(markers),/Private account name|private phone|aaaaaaaa/);
 });
 test('a fresh document resumes cleanup without a token or in-memory expired owner and blocks stale offline identity',()=>{
  const {context,storage}=client();storage.setItem('pth_secure_token','a'.repeat(64));storage.setItem('pth_session',JSON.stringify({data:{id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__'}}));

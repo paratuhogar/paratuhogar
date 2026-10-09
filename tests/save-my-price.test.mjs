@@ -6,8 +6,14 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../js/storefront.js', import.meta.url), 'utf8');
 const start = source.indexOf('window.saveMyPrice = async function(');
 const handler = source.slice(start, source.indexOf('// Función para actualizar la etiqueta', start));
+test('expired local display does not query protected price configuration',async()=>{
+  const container={textContent:''};
+  const context={document:{getElementById:()=>container},PTHSecureData:{token:()=>null},resolveSalesHierarchy(){assert.fail('No price lookup without session');},supabaseClient:{from(){assert.fail('No protected query without session');}}};context.window=context;
+  const begin=source.indexOf('async function renderGestorPricing()');vm.runInNewContext(source.slice(begin,start),context);
+  await context.renderGestorPricing();assert.match(container.textContent,/entrar/);
+});
 
-function fixture({ type = 'click', existing = false, failure = false, subgestor = false, price = '100' } = {}) {
+function fixture({ type = 'click', existing = false, failure = false, subgestor = false, price = '100', expired = false, serverExpired = false, unavailable = false } = {}) {
   const button = { innerHTML: 'Guardar', disabled: false, classList: { replace() {} } };
   const event = { currentTarget: button, type };
   const calls = [], alerts = [], timers = [];
@@ -16,7 +22,7 @@ function fixture({ type = 'click', existing = false, failure = false, subgestor 
   const query = {
     select() { calls.push(['select']); return this; },
     eq(key, value) { calls.push(['eq', key, value]); return this; },
-    limit: async () => ({ data: existing ? [{ id: 'fixture-existing' }] : [], error: null }),
+    limit: async () => ({ data: existing ? [{ id: 'fixture-existing' }] : [], error: serverExpired ? {code:'SESSION_INVALID',status:401,message:'expired'} : null }),
     update(payload) { calls.push(['update', payload]); return this; },
     insert: async payload => { calls.push(['insert', payload]); return { error: failure ? { message: 'fixture failure' } : null }; },
     then(resolve) { resolve({ error: failure ? { message: 'fixture failure' } : null }); }
@@ -28,7 +34,8 @@ function fixture({ type = 'click', existing = false, failure = false, subgestor 
     supabaseClient: { from(table) { assert.equal(table, 'precios_personalizados'); return query; } },
     alert: message => alerts.push(message),
     setTimeout: callback => timers.push(callback),
-    PTHSecureData: { clearCaches() { calls.push(['clearCaches']); } },
+    PTHSecureData: { token: () => expired ? null : 'synthetic-token', async restore() { if(unavailable)throw Object.assign(Error('Servicio no disponible'),{status:503}); }, clearCaches() { calls.push(['clearCaches']); } },
+    openLoginModal(message) { calls.push(['login',message]); },
     localStorage: { removeItem(key) { calls.push(['removeItem', key]); } },
     loadProducts() { calls.push(['loadProducts']); }
   };
@@ -92,3 +99,15 @@ for (const options of [{ subgestor: true }, { price: '79' }, { price: 'invalid' 
     assert.equal(f.alerts.length, 1);
   });
 }
+
+for(const options of [{expired:true},{serverExpired:true}])test(`expired save opens login and never writes: ${JSON.stringify(options)}`,async()=>{
+ const f=fixture(options);await f.run();
+ assert.ok(f.calls.some(c=>c[0]==='login'));
+ assert.equal(f.calls.some(c=>['insert','update'].includes(c[0])),false);
+ assert.equal(f.button.disabled,false);assert.equal(f.button.innerHTML,'Guardar');
+});
+test('a temporary session verification failure neither logs out nor writes',async()=>{
+ const f=fixture({unavailable:true});await f.run();
+ assert.equal(f.calls.some(c=>c[0]==='login'),false);assert.equal(f.calls.some(c=>['insert','update'].includes(c[0])),false);
+ assert.match(f.alerts[0],/Servicio no disponible/);
+});

@@ -20,6 +20,7 @@ export async function sessionFixture({child=false,courier=false}={}){
    const stage=this.table==='pth_secure_sessions'?'session':this.table==='mensajeros'?'courier':this.table==='gestores'?(this.id==='parent'?'parent':'profile'):'protected';
    if(state.delay)await state.delay;
    if(state.failure?.stage===stage){if(state.failure.mode==='throw')throw Error('Synthetic infrastructure interruption');return {data:null,error:{message:'Synthetic infrastructure interruption',code:'CONNECTION_ERROR'}};}
+   if(this.table==='pth_secure_sessions'&&this.op==='update'&&state.beforeSessionUpdate)await state.beforeSessionUpdate();
    const matches=(rows[this.table]||[]).filter(row=>this.filters.every(filter=>filter(row)));
    if(this.op==='insert'){
     // Same uniqueness boundary as the existing submission_token/proveedor migration.
@@ -27,10 +28,10 @@ export async function sessionFixture({child=false,courier=false}={}){
     state.writes++;rows[this.table].push(...structuredClone(this.values));return {data:this.returning?this.values:null,error:null};
    }
    if(this.op==='update'){state.writes++;matches.forEach(row=>Object.assign(row,this.values));}
-   return {data:this.single?matches[0]||null:matches,error:null};
+   return {data:structuredClone(this.single?matches[0]||null:matches),error:null};
   }).then(resolve,reject);}
  }
- const handler=createHandler({db:{from:table=>new Query(table)}});
+ const handler=createHandler({db:{from:table=>new Query(table),rpc:async()=>({data:true,error:null})}});
  const fetch=async(_url,options)=>{
   const body=JSON.parse(options.body);state.requests.push(body);
   if(state.network)throw Error('Synthetic offline');
