@@ -517,9 +517,9 @@
     "slug": "movil-redmi-a5",
     "nombre": "Celular Redmi A5",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/movil-redmi-a5/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-09T20:38:03.983737+00:00"
   },
   {
     "id": "7ea8ee7f-fa66-43d3-8207-f2f6c3b366a1",
@@ -637,6 +637,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/cocina-de-gas-2q-daytron/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "a378f79e-57b6-484a-be9b-71640c6e2bcd",
+    "slug": "cocina-de-gas-4q-con-horno-premier",
+    "nombre": "Cocina de gas 4Q con horno PREMIER",
+    "categoria": "COCINA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/cocina-de-gas-4q-con-horno-premier/",
+    "updated_at": "2026-10-09T21:34:10.727385+00:00"
   },
   {
     "id": "b01712bb-4d79-473b-961b-cf6da9c47d06",
@@ -2493,6 +2502,15 @@
     "updated_at": "2026-09-24T17:07:08.598271+00:00"
   },
   {
+    "id": "8e051ce8-436b-4b9f-8af9-491b32621b62",
+    "slug": "nevera-3-5-pies-royal-inverter",
+    "nombre": "Nevera 3.5 pies Royal Inverter",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal-inverter/",
+    "updated_at": "2026-10-09T17:29:51.889577+00:00"
+  },
+  {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
     "slug": "nevera-3-5-pies-sankey",
     "nombre": "Nevera 3.5 pies Sankey",
@@ -2788,6 +2806,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nox-fuente-atx-urano-pro-650w-bronze/",
     "updated_at": "2026-07-31T18:58:14.838821+00:00"
+  },
+  {
+    "id": "8a40b5f7-547f-4f52-ba94-d2e533a66dde",
+    "slug": "olla-arrocera-1-8l-eko",
+    "nombre": "Olla Arrocera 1.8L  EKO",
+    "categoria": "COCINA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/olla-arrocera-1-8l-eko/",
+    "updated_at": "2026-10-09T21:27:20.886025+00:00"
   },
   {
     "id": "a3e0fbc2-02b6-40be-9bee-7c99a9715d9e",
@@ -3094,6 +3121,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/reflector-solar-eko-40w/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "6e69ada9-83d8-4c93-8f4a-306f2c9f107a",
+    "slug": "refrigerador-10-pies-lemax",
+    "nombre": "Refrigerador 10 pies LEMAX",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/refrigerador-10-pies-lemax/",
+    "updated_at": "2026-10-09T14:26:25.695462+00:00"
   },
   {
     "id": "c9dfca1d-431b-4c64-b631-7d97d924eb9c",

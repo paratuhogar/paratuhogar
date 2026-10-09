@@ -2,13 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url><loc>https://paratuhogar.org/</loc><lastmod>2026-10-09</lastmod></url>
   <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-10-09</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-10-08</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-10-09</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-10-08</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-10-07</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-10-08</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-10-08</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-10-09</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-10-02</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-10-08</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-10-09</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/transporte/</loc><lastmod>2026-10-02</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/ventiladores/</loc><lastmod>2026-09-25</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/que-revisar-antes-de-elegir/</loc><lastmod>2026-10-03</lastmod></url>
@@ -40,7 +40,7 @@
   <url><loc>https://paratuhogar.org/producto/caja-fuerte-digital/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Cajafuertedigital.jpg</image:loc><image:title>Caja fuerte digital</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/calentador-de-agua-ruden-30-l/</loc><lastmod>2026-09-14</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Calentadorruden1.jpeg</image:loc><image:title>Calentador de agua Ruden - 30 L</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/calentador-de-agua-ruden-50l/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Calentadorruden1.jpeg</image:loc><image:title>Calentador de agua Ruden - 50L</image:title></image:image></url>
-  <url><loc>https://paratuhogar.org/producto/movil-redmi-a5/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/RedmiA5.jpeg</image:loc><image:title>Celular Redmi A5</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/movil-redmi-a5/</loc><lastmod>2026-10-09</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/RedmiA5.jpeg</image:loc><image:title>Celular Redmi A5</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/celular-samsung-galaxy-a16/</loc><lastmod>2026-08-20</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SamsungA16.jpg</image:loc><image:title>Celular Samsung Galaxy A16</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/chasis-atx-semitorre-apc-100u3-con-fuente-de-350w/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Chasisatxaisens.jpg</image:loc><image:title>Chasis ATX Semitorre APC-100U3 con fuente de 350w</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/chasis-gaming-cougar-archon-2-mesh-rgb-semitorre-atx-matx-panel-frontal-mesh-vidrio-templa/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/CougarSemitorreArchon2.jpg</image:loc><image:title>Chasis Gaming Cougar Archon 2 Mesh RGB | Semitorre ATX/mATX | Panel Frontal Mesh | Vidrio Templado | USB 3.0 | Negro</image:title></image:image></url>
@@ -144,6 +144,7 @@
   <url><loc>https://paratuhogar.org/producto/procesador-amd-ryzen-3-3200g/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/AMD_ryzen3G2.webp</image:loc><image:title>PROCESADOR AMD RYZEN 3 3200G</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/reflector-solar-120w/</loc><lastmod>2026-08-17</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Reflectorsolar-120W.jpeg</image:loc><image:title>Reflector solar - 120W</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/reflector-solar-80w/</loc><lastmod>2026-08-10</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Reflectorsolar-80w.jpeg</image:loc><image:title>Reflector solar - 80w</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/refrigerador-10-pies-lemax/</loc><lastmod>2026-10-09</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Refrilemax7.5.jpeg</image:loc><image:title>Refrigerador 10 pies LEMAX</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/refrigerador-11-48-pies-hisense/</loc><lastmod>2026-09-11</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/RefrigeradorHisense11.48piesinverter.jpeg</image:loc><image:title>Refrigerador 11.48 pies Hisense Inverter</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/refrigerador-11-7-pies-premium/</loc><lastmod>2026-08-01</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Refri11.7pies_Premium.jpeg</image:loc><image:title>Refrigerador 11.7 pies Premium</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/refrigerador-19pies-lg-smart-inverter/</loc><lastmod>2026-08-18</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Refrigeradorlg19inverter.jpeg</image:loc><image:title>Refrigerador 19pies LG Smart Inverter</image:title></image:image></url>
