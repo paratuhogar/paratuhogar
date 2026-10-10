@@ -103,7 +103,7 @@ async function resolveActor(db,token) {
 async function login(db,body,request) {
   const username=String(body.username||'').trim();
   const password=String(body.password||'').trim();
-  if(!username||!password||username.length>200||password.length>512) fail('Usuario o contraseña incorrectos.',401);
+  if(!username||!password||username.length>200||password.length>512) fail('Usuario o contraseña incorrectos. Intenta con tu teléfono registrado y contraseña; en Cuba puedes usar ocho dígitos o +53.',401);
   const ip=request.headers.get('x-forwarded-for')?.split(',')[0]||'unknown';
   const phone=username.replace(/\D/g,'').replace(/^53(?=\d{8}$)/,'');
   const rateIdentity=phone.length===8?phone:normalized(username);
@@ -116,7 +116,7 @@ async function login(db,body,request) {
   const identity=normalized(username);
   const exact=(rows||[]).filter(g=>g.id===username||normalized(g.nombre)===identity||normalized(g.email)===identity||(phone.length===8&&String(g.telefono||'').replace(/\D/g,'').replace(/^53(?=\d{8}$)/,'')===phone));
   const matches=exact.length?exact:(rows||[]).filter(g=>normalized(g.nombre).startsWith(`${identity} `));
-  if(matches.length!==1) fail('Usuario o contraseña incorrectos.',401);
+  if(matches.length!==1) fail('Usuario o contraseña incorrectos. Intenta con tu teléfono registrado y contraseña; en Cuba puedes usar ocho dígitos o +53.',401);
   const profile=matches[0];
   if(profile.estado!=='activo'||profile.activo===false) fail('Tu cuenta necesita revisión. Contacta con tu gestor o administrador.',401);
   const parent=await parentFor(db,profile);

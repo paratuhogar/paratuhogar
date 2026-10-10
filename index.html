@@ -3101,7 +3101,9 @@
 
             <!-- FORMULARIO LOGIN -->
             <div id="form-login" class="space-y-4">
-                <input type="text" id="log-user" placeholder="Tu Nombre de Usuario" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <label for="log-user" class="block text-sm font-bold">Teléfono o nombre de usuario</label>
+                <input type="text" id="log-user" autocomplete="username" aria-describedby="login-phone-help" placeholder="Teléfono (recomendado) o nombre" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3">
+                <p id="login-phone-help" class="text-xs text-gray-500">Te recomendamos entrar con tu teléfono registrado. En Cuba: ocho dígitos, con o sin +53; puedes incluir espacios.</p>
                 <div class="relative w-full">
     <input type="password" id="log-pass" placeholder="Contraseña" class="w-full rounded-xl border-gray-200 dark:bg-gray-900 font-bold text-sm p-3 pr-10">
     <button type="button" onclick="togglePassword('log-pass', 'eye-log')" class="absolute right-3 top-3.5 text-gray-400 hover:text-primary">
