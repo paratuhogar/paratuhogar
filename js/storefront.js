@@ -138,7 +138,7 @@ async function checkShortLinks() {
     const offlineStorefront = window.PTHOfflineStorefrontAdapter.create({
         root: window, publicCopy: () => lowConnectivity.readPublic(),
         onClear: () => {
-            productosRaw = []; catalogSourceProducts = []; selectedProduct = null; crmClients = [];
+            productosRaw = []; catalogSourceProducts = []; selectedProduct = null; crmClients = []; checkoutClientChoices?.destroy(); checkoutClientChoices = null; crmLoadVersion++;
             tarifasMensajeria = {}; tarifasMensajeriaAdminRaw = [];
             window.currentUserData = null; window.gestorName = null; window.isAdmin = false;
             document.getElementById('crm-datalist')?.replaceChildren();
@@ -8918,8 +8918,22 @@ function alertLockedFeature(faltan) {
 
 // 1. CARGA DE CLIENTES (CRM) - VERSIÓN PRIVADA
 let crmClients = [];
+let checkoutClientChoices = null;
+let crmLoadVersion = 0;
+window.addEventListener('pth:session-changed', () => {
+    crmLoadVersion++;
+    crmClients = [];
+    checkoutClientChoices?.destroy();
+    checkoutClientChoices = null;
+    const search = document.getElementById('crm-search');
+    if (search) search.value = '';
+});
 
 async function loadClientCRM() {
+    const loadVersion = ++crmLoadVersion;
+    const scopeId = window.PTHSecureData.accountId(), scopeToken = window.PTHSecureData.token();
+    crmClients = [];
+    renderCheckoutClientChoices();
     // Obtenemos quién está conectado
     const gestorActual = window.gestorName;
     const esAdmin = window.isAdmin;
@@ -8944,14 +8958,14 @@ async function loadClientCRM() {
         .order('fecha', { ascending: false })
         .limit(300); // Revisamos los últimos 1000
 
-    // FILTRO DE ORO: Si NO es admin, filtra solo sus ventas
+    // The protected gateway applies the validated actor's mandatory scope.
+    // Keep the narrower seller view for administrators browsing as a gestor.
+    // Subgestoras need their own column, never their parent's gestor name.
     if (!esAdmin && gestorActual) {
-        query = query.eq('gestor', gestorActual);
+        query = query.eq(window.currentUserData?.parent_id ? 'subgestor_nombre' : 'gestor', gestorActual);
     }
-
-    const scopeId = window.PTHSecureData.accountId(), scopeToken = window.PTHSecureData.token();
     const { data, error } = await query;
-    if (scopeId !== window.PTHSecureData.accountId() || scopeToken !== window.PTHSecureData.token()) return;
+    if (loadVersion !== crmLoadVersion || scopeId !== window.PTHSecureData.accountId() || scopeToken !== window.PTHSecureData.token()) return;
 
     if (!data) return;
 
@@ -8970,49 +8984,14 @@ async function loadClientCRM() {
 }
 
 function renderCheckoutClientChoices() {
-    const search = document.getElementById('crm-search');
-    if (search && !search.dataset.pthStoredClientInput) {
-        search.dataset.pthStoredClientInput = '1';
-        search.addEventListener('input', () => {
-            if (crmClients.some(client => String(client.cliente || '') + ' | ' + String(client.telefono || '') === search.value)) autofillClient(search.value);
-        });
-    }
-    const dataList = document.getElementById('crm-datalist');
-    if(dataList) {
-        dataList.replaceChildren();
-        for (const client of crmClients) {
-            const option = document.createElement('option');
-            option.value = String(client.cliente || '') + ' | ' + String(client.telefono || '');
-            option.textContent = client.direccion ? String(client.direccion).substring(0, 30) + '...' : '';
-            dataList.append(option);
-        }
-    }
+    if (!document.getElementById('crm-search')) return;
+    if (!checkoutClientChoices) checkoutClientChoices = window.PTHCheckoutForm.bindClients(document);
+    checkoutClientChoices.update(crmClients);
 }
 
-// 2. AUTO-RELLENADO (Al seleccionar en el buscador)
+// Only a current unambiguous saved option can complete the form.
 function autofillClient(val) {
-    if(!val) return;
-
-    // Intentamos buscar en la base de datos
-    const phoneKey = val.split('|')[1]?.trim();
-    const client = crmClients.find(c => c.telefono === phoneKey);
-
-    if (client) {
-        // CASO 1: CLIENTE RECURRENTE (EXISTE)
-        document.getElementById('check-nombre').value = client.cliente || '';
-        document.getElementById('check-ci').value = client.ci || '';
-        document.getElementById('check-tel').value = client.telefono || '';
-        document.getElementById('check-dir').value = client.direccion || '';
-    } else {
-        // CASO 2: CLIENTE NUEVO (NO EXISTE EN LA LISTA)
-        // Si lo que escribiste en el buscador no es un cliente viejo,
-        // asumimos que es el NOMBRE del nuevo cliente.
-
-        // Solo copiamos si el campo nombre está vacío para no borrar lo que hayas pegado
-        if(document.getElementById('check-nombre').value === "") {
-             document.getElementById('check-nombre').value = val.replace('|', '').trim();
-        }
-    }
+    return checkoutClientChoices?.select(val) || false;
 }
 
 // 3. SISTEMA DE AUTO-GUARDADO (Anti-pérdida de datos)

@@ -10,7 +10,7 @@
   <script src="/js/low-connectivity.js?v=20261002-lowdata1" defer></script>
   <script src="/js/secure-data.js?v=20261009-session1" defer></script>
   <script src="/js/pending-checkout.js?v=20261008-orders1" defer></script>
-  <script src="/js/checkout-form-shared.js?v=20261003-pending2" defer></script>
+  <script src="/js/checkout-form-shared.js?v=20261010-crm1" defer></script>
   <script src="/js/offline-checkout-copy.js?v=20261005-copy2" defer></script>
   <script src="/js/pending-checkout-page.js?v=20261005-cold7" defer></script>
 </head>
@@ -50,11 +50,11 @@
         </button>
 
         <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
-            <label class="block text-xs font-black text-indigo-500 uppercase mb-2 ml-1" for="check-nombre">Buscar Cliente Recurrente</label>
+            <label class="block text-xs font-black text-indigo-500 uppercase mb-2 ml-1" for="crm-search">Buscar Cliente Recurrente</label>
             <div class="relative">
                 <span class="checkout-icon" aria-hidden="true">⌕</span>
                 <input type="text" id="crm-search" list="crm-datalist"
-                    placeholder="Escribe nombre..."
+                    placeholder="Escribe y elige nombre y teléfono"
                     class="w-full pl-12 pr-4 py-3.5 bg-white border-0 rounded-xl text-base font-bold text-indigo-900 shadow-sm ring-1 ring-indigo-200 focus:ring-2 focus:ring-indigo-500 placeholder:text-indigo-300">
             </div>
             <datalist id="crm-datalist"></datalist>

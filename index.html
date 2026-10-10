@@ -54,7 +54,7 @@
     <script src="js/product-description-editor.js?v=20260924-1" defer></script>
     <script src="js/checkout-submit-guard.js?v=20261002-lowdata1" defer></script>
     <script src="js/pending-checkout.js?v=20261008-orders1" defer></script>
-    <script src="js/checkout-form-shared.js?v=20261003-pending2" defer></script>
+    <script src="js/checkout-form-shared.js?v=20261010-crm1" defer></script>
     <script src="js/offline-checkout-copy.js?v=20261005-copy2" defer></script>
     <script src="js/checkout-recovery.js?v=20261002-lowdata1" defer></script>
 
@@ -2042,11 +2042,11 @@
         </button>
 
         <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
-            <label class="block text-xs font-black text-indigo-500 uppercase mb-2 ml-1">Buscar Cliente Recurrente</label>
+            <label for="crm-search" class="block text-xs font-black text-indigo-500 uppercase mb-2 ml-1">Buscar Cliente Recurrente</label>
             <div class="relative">
                 <span class="material-symbols-outlined absolute left-4 top-3.5 text-indigo-400 text-xl">person_search</span>
-                <input type="text" id="crm-search" list="crm-datalist" onchange="autofillClient(this.value)"
-                    placeholder="Escribe nombre..."
+                <input type="text" id="crm-search" list="crm-datalist"
+                    placeholder="Escribe y elige nombre y teléfono"
                     class="w-full pl-12 pr-4 py-3.5 bg-white border-0 rounded-xl text-base font-bold text-indigo-900 shadow-sm ring-1 ring-indigo-200 focus:ring-2 focus:ring-indigo-500 placeholder:text-indigo-300">
             </div>
             <datalist id="crm-datalist"></datalist>
@@ -3248,8 +3248,8 @@
     <!-- Scripts de Lógica -->
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/checkout-confirmation.js?v=20261008-orders1" defer></script>
-    <script src="js/storefront.min.js?v=20261009-session1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261009-session1" defer></script>
+    <script src="js/storefront.min.js?v=20261010-crm1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261010-crm1" defer></script>
 
 
 
