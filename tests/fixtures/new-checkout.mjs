@@ -7,9 +7,10 @@ export async function fixture(){
  const rows={gestores:[actor,{...actor,id:'same-name-other'}],pth_secure_sessions:[{token_hash:await hash(token),gestor_id:actor.id,credential_hash:await hash(actor.password),expires_at:'2099-01-01'}],productos:[{id:'pA',nombre:'Equipo A',precio:100,comision:10,precio_flexible:'NO',proveedor:'A',disponible:'SI',garantia:'1 año','tamaño_envio':'Pequeño'},{id:'pB',nombre:'Equipo B',precio:200,comision:20,precio_flexible:'NO',proveedor:'B',disponible:'SI',garantia:'1 año','tamaño_envio':'Pequeño'}],precios_personalizados:[],pedidos:[structuredClone(historical)],pedidos_subgestores:[],tarifas_mensajeria:[{municipio:'Centro Habana',localidad:'Centro',precio_pequeno:6,precio_grande:10}]};
  let writes=0,drop=false,failInsert=false;
  class Query{
-  constructor(table){this.table=table;this.filters=[];this.op='select';this.single=false;}
-  select(){return this;}eq(c,v){this.filters.push(r=>r[c]===v);return this;}gt(c,v){this.filters.push(r=>r[c]>v);return this;}gte(c,v){this.filters.push(r=>r[c]>=v);return this;}in(c,v){this.filters.push(r=>v.includes(r[c]));return this;}order(){return this;}range(){return this;}limit(){return this;}maybeSingle(){this.single=true;return this;}
+  constructor(table){this.table=table;this.filters=[];this.op='select';this.single=false;this.returning=false;this.columns='*';}
+  select(columns='*'){this.returning=true;this.columns=columns;return this;}eq(c,v){this.filters.push(r=>r[c]===v);return this;}gt(c,v){this.filters.push(r=>r[c]>v);return this;}gte(c,v){this.filters.push(r=>r[c]>=v);return this;}in(c,v){this.filters.push(r=>v.includes(r[c]));return this;}order(){return this;}range(){return this;}limit(){return this;}maybeSingle(){this.single=true;return this;}
   insert(values){this.op='insert';this.values=values;return this;}
+  update(values){assert.ok(values&&typeof values==='object'&&!Array.isArray(values));this.op='update';this.values=structuredClone(values);this.returning=false;return this;}
   then(resolve,reject){return Promise.resolve().then(()=>{
    trace.push({table:this.table,op:this.op});
    if(this.op==='insert'){
@@ -21,16 +22,25 @@ export async function fixture(){
     if(drop)return {data:null,error:{code:'synthetic-response-loss'}};
     return {data:saved,error:null};
    }
-   const data=(rows[this.table]||[]).filter(r=>this.filters.every(f=>f(r)));if(this.single&&data.length>1)return{data:null,error:{code:'PGRST116'}};
+   const data=(rows[this.table]||[]).filter(r=>this.filters.every(f=>f(r)));
+   if(this.op==='update'){
+    for(const row of data)Object.assign(row,structuredClone(this.values));
+    if(!this.returning)return {data:null,error:null};
+    if(this.single&&data.length>1)return {data:null,error:{code:'PGRST116'}};
+    const projected=data.map(row=>this.columns==='*'?structuredClone(row):Object.fromEntries(this.columns.split(',').map(column=>[column.trim(),structuredClone(row[column.trim()])])));
+    return {data:this.single?projected[0]||null:projected,error:null};
+   }
+   if(this.single&&data.length>1)return{data:null,error:{code:'PGRST116'}};
    return {data:this.single?data[0]||null:structuredClone(data),error:null};
   }).then(resolve,reject);}
  }
- const handler=createHandler({db:{from:t=>new Query(t),rpc:async name=>({data:name==='pth_check_login_rate',error:null})},checkoutSecret:secret});
+ const db={from:t=>new Query(t),rpc:async name=>({data:name==='pth_check_login_rate',error:null})};
+ const handler=createHandler({db,checkoutSecret:secret});
  const input=(provider,id)=>({gestor:actor.nombre,proveedor:provider,cliente:'Synthetic Customer',telefono:'synthetic-phone',ci:'none',direccion:'Synthetic address (Centro)',municipio:'Centro Habana',origen:'Manual (Panel)',orden_dia:provider+'00001',_lineas:[{producto_id:id,cantidad:1}]});
  const body={action:'checkout',table:'pedidos',inputs:[input('A','pA'),input('B','pB')],delivery:{pickup:false,municipio:'Centro Habana',localidad:'Centro'},intentId:'b'.repeat(64),intentCreatedAt:Date.now()};
  let lastStatus=200;
  const request=async(b,auth=token)=>{const response=await handler(new Request('https://example.test',{method:'POST',headers:auth?{Authorization:'Bearer '+auth}:{},body:JSON.stringify(b)}));lastStatus=response.status;return response.json();};
  const quote=()=>request({...body,operation:'quote'});
  const submit=q=>request({...body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote});
- return {rows,trace,body,request,quote,submit,historical,get lastStatus(){return lastStatus;},get writes(){return writes;},set drop(value){drop=value;},set failInsert(value){failInsert=value;}};
+ return {db,rows,trace,body,request,quote,submit,historical,get lastStatus(){return lastStatus;},get writes(){return writes;},set drop(value){drop=value;},set failInsert(value){failInsert=value;}};
 }

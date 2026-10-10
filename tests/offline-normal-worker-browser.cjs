@@ -46,6 +46,8 @@ async function deviceOffline(context,page,offline) {
 async function openCart(page,name='Equipo A') {
   await page.evaluate(name=>{closeDetail();showSection('catalogo');addProductFromCard(name);},name);
   await page.waitForFunction(()=>!document.getElementById('cart-modal').classList.contains('hidden'));
+  // addItemToCart schedules CRM focus; wait for that UI transition before typing.
+  await page.waitForFunction(()=>document.activeElement===document.getElementById('crm-search'));
 }
 async function saveCopy(page) {
   await page.locator('#pth-save-offline-copy').click();
@@ -57,7 +59,9 @@ async function saveCopy(page) {
 }
 async function rows(page,owner='actor-a') {return page.evaluate(owner=>PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)).list(owner),owner);}
 async function fillOrder(page,name) {
+  await page.waitForFunction(()=>!PTHPendingCheckoutUI.localForm());
   await openCart(page);
+  await page.waitForFunction(()=>!document.getElementById('final-submit-btn').disabled);
   await page.locator('#check-nombre').fill(name);
   await page.locator('#check-ci').fill('11111111111');await page.locator('#check-tel').fill('5351111111');
   await page.locator('#check-municipio').selectOption('Centro Habana');await page.locator('#check-localidad').selectOption('Centro');
@@ -66,7 +70,8 @@ async function fillOrder(page,name) {
   assert.match(await page.locator('#resumen-envio').innerText(),/6/);
   assert.match(await page.locator('#total-convertido').innerText(),/106/);
   await page.locator('#final-submit-btn').click();
-  await page.waitForFunction(()=>document.getElementById('cart-modal').classList.contains('hidden'));
+  try { await page.waitForFunction(()=>document.getElementById('cart-modal').classList.contains('hidden')&&!PTHPendingCheckoutUI.localForm()); }
+  catch(error){console.error('Synthetic pending-form diagnostic:',await page.evaluate(()=>({message:document.getElementById('pth-pending-message')?.textContent,valid:document.getElementById('checkout-form').checkValidity(),form:PTHCheckoutForm.readForm(document),cart:cart.map(p=>({id:p.id,qty:p.qty})),online:navigator.onLine,usingCopy:PTHOfflineStorefront.usingCopy()})));console.error('Synthetic queued states:',(await rows(page)).map(r=>({state:r.state,code:r.code})));throw error;}
 }
 async function auditCache(page,fixture) {
   const cached=await page.evaluate(async()=>{
@@ -114,10 +119,10 @@ async function upgradeAndCompatibility(browser,fixture) {
   // are not a reliable wait for completion across Playwright versions).
   await eventually(()=>page.evaluate(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.waiting)),Boolean,'new real worker waiting');
   await page.locator('#pth-connection-status [data-pth-status-action]').filter({hasText:'Actualizar ahora'}).click();
-  await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.includes('20261003-pending2'));
+  await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.includes('20261006-ready1'));
   await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===2);
   const names=await page.evaluate(()=>caches.keys());
-  assert.equal(names.includes('pth-public-static-2026-10-02-pending1'),false);assert.ok(names.includes('pth-public-static-2026-10-03-pending2'));
+  assert.equal(names.includes('pth-public-static-2026-10-02-pending1'),false);assert.ok(names.includes('pth-public-static-2026-10-10-crm1'));
   assert.ok(names.includes('pth-public-images-v1'));assert.ok(names.includes('unrelated-public-synthetic'));
   await openCart(page);
   const size=await page.locator('#checkout-form').boundingBox();assert.ok(size&&size.width<=320);
@@ -161,25 +166,28 @@ async function accountPrivacy(browser,fixture) {
   await page.waitForFunction(()=>document.querySelectorAll('#crm-datalist option').length===1);
   assert.deepEqual(await page.locator('#crm-datalist option').evaluateAll(nodes=>nodes.map(n=>n.value)),[fixture.markers.b+' | 5352222222']);
   assert.equal((await rows(page,'actor-b')).length,0);
-  // Quota refusal keeps the editable normal form and does not claim success.
+  // Quota refusal preserves the existing valid copy and editable draft.
+  await saveCopy(page);await openCart(page);
+  const beforeQuotaCopy=(await privateCopies(page)).find(copy=>copy.owner==='actor-b');assert.ok(beforeQuotaCopy);
   await page.locator('#check-nombre').fill('SYNTHETIC_QUOTA_DRAFT');
   await page.evaluate(()=>{window.fixturePut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(...args){if(this.name==='copies')throw new DOMException('Synthetic quota','QuotaExceededError');return window.fixturePut.apply(this,args);};});
   await page.locator('#pth-save-offline-copy').click();
-  await page.waitForFunction(()=>document.getElementById('pth-pending-message').textContent.includes('No se pudo guardar la copia'));
+  await page.waitForFunction(()=>document.getElementById('pth-device-copy-result')?.textContent.startsWith('No se actualizó la copia de datos.'));
   assert.equal(await page.locator('#check-nombre').inputValue(),'SYNTHETIC_QUOTA_DRAFT');
   await page.evaluate(()=>{IDBObjectStore.prototype.put=window.fixturePut;delete window.fixturePut;});
-  assert.equal((await privateCopies(page)).some(copy=>copy.owner==='actor-b'),false);
+  assert.deepEqual((await privateCopies(page)).find(copy=>copy.owner==='actor-b'),beforeQuotaCopy);
   await saveCopy(page);await deviceOffline(context,page,true);await page.reload({waitUntil:'domcontentloaded'});await deviceOffline(context,page,true);await page.waitForFunction(()=>PTHOfflineStorefront.usingCopy());
   await fillOrder(page,'SYNTHETIC_B_LOGOUT_PRIVATE');
   await page.evaluate(()=>PTHSecureData.clearSession());
-  await eventually(()=>rows(page,'actor-b'),value=>value.every(row=>!row.form),'logout purges queued customer fields');
+  const retainedB=await rows(page,'actor-b');assert.equal(retainedB.length,1);assert.equal(retainedB[0].form.nombre,'SYNTHETIC_B_LOGOUT_PRIVATE');
+  assert.equal(await page.evaluate(()=>PTHSecureData.token()),null);await page.waitForFunction(()=>document.getElementById('pth-pending-order-panel').hidden&&document.querySelectorAll('#crm-datalist option').length===0);assert.equal((await page.locator('body').innerText()).includes('SYNTHETIC_B_LOGOUT_PRIVATE'),false);
   await eventually(()=>privateCopies(page),value=>!value.some(copy=>copy.owner==='actor-b'),'logout purges own copy');
   assert.equal(await page.locator('#crm-datalist option').count(),0);assert.equal(await page.locator('#cart-modal').isVisible(),false);
   assert.equal(fixture.f.writes,baseline);await auditCache(page,fixture);assert.deepEqual(errors,[]);
-  console.log('PASS real shared-origin account change clears A UI/copy, B sees only own CRM/queue; copy quota keeps editable draft; logout erases B queue/customer copy; 320px offline normal form');
+  console.log('PASS real shared-origin account change clears A UI/copy, B sees only own CRM/queue; copy quota keeps editable draft; logout retains isolated B queue and erases customer copy; 320px offline normal form');
   await context.close();
 }
-async function expiredReopening(browser,fixture,interrupted=false,logout=false) {
+async function expiredReopening(browser,fixture,interrupted=false,logout=false,prepared=true) {
   const baseline=fixture.f.writes;
   const {context}=await makeContext(browser,fixture,390);
   let page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -187,6 +195,7 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false) 
   const utility=await context.newPage();await utility.goto(fixture.origin+'/__storage');
   await deviceOffline(context,page,true);await page.reload({waitUntil:'domcontentloaded'});await deviceOffline(context,page,true);await page.waitForFunction(()=>PTHOfflineStorefront.usingCopy());
   await fillOrder(page,'SYNTHETIC_EXPIRED_CUSTOMER');assert.equal((await rows(page)).length,1);
+  if(!prepared)await page.evaluate(()=>localStorage.removeItem('pth_offline_context_v1'));
   if(interrupted) {
     if(logout) {
       // A transient failed transaction followed by navigation must retain the
@@ -196,7 +205,7 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false) 
         IDBDatabase.prototype.transaction=function(stores,mode,...args){if(mode==='readwrite')throw new DOMException('Synthetic interrupted cleanup','AbortError');return original.call(this,stores,mode,...args);};
         PTHSecureData.clearSession();
       });
-      assert.equal(await page.evaluate(()=>localStorage.getItem('pth_pending_private_purge_v1:actor-a')),'1','failed cleanup must retain a durable owner-only marker');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('pth_pending_private_purge_v1:actor-a')),'2','failed cleanup must retain a durable owner-only marker');
     } else await page.evaluate(()=>localStorage.setItem('pth_secure_token_expires_at',String(Date.now()-1)));
     await page.reload({waitUntil:'domcontentloaded'});await deviceOffline(context,page,true);
   } else {
@@ -207,14 +216,16 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false) 
   }
   await page.waitForFunction(()=>Boolean(window.PTHPendingCheckoutUI));
   console.log('Expired reopening diagnostics:',await page.evaluate(()=>({token:PTHSecureData.token()?true:false,expired:PTHSecureData.expiredCheckoutOwner(),events:window.fixtureSessionEvents})),(await rows(page)).map(row=>({state:row.state,form:Boolean(row.form),attempt:Boolean(row.outcome?.attempt)})));
-  await eventually(()=>rows(page),value=>value.every(row=>!row.form),'expired before deferred bridge purges queued customer fields');
-  await eventually(()=>privateCopies(page),value=>!value.some(copy=>copy.owner==='actor-a'),'expired reopening clears saved own CRM copy');
+  const retained=await rows(page);assert.equal(retained.length,1);assert.equal(retained[0].form.nombre,'SYNTHETIC_EXPIRED_CUSTOMER');assert.notEqual(retained[0].state,'confirmed');
+  if(logout||!prepared)await eventually(()=>privateCopies(page),value=>!value.some(copy=>copy.owner==='actor-a'),'no prepared context leaves a saved own CRM copy');
+  else assert.ok((await privateCopies(page)).some(copy=>copy.owner==='actor-a'),'prepared seven-day copy survives the shorter live-session expiry');
   await eventually(()=>page.evaluate(()=>PTHSecureData.pendingPrivatePurgeOwners?.()||[]),owners=>!owners.includes('actor-a'),'successful queue and CRM purges retire cleanup marker');
-  assert.equal(await page.evaluate(()=>PTHSecureData.token()),null);assert.ok(!await page.evaluate(()=>PTHOfflineStorefront.current()?.owner));
-  assert.equal(await page.locator('#crm-datalist option').count(),0);assert.equal(await page.locator('#cart-modal').isVisible(),false);
-  assert.equal((await page.locator('body').innerText()).includes('SYNTHETIC_EXPIRED_CUSTOMER'),false);
+  assert.equal(await page.evaluate(()=>PTHSecureData.token()),null);assert.equal(await page.locator('#cart-modal').isVisible(),false);
+  if(logout||!prepared){assert.ok(!await page.evaluate(()=>PTHOfflineStorefront.current()?.owner));assert.equal(await page.locator('#crm-datalist option').count(),0);assert.equal((await page.locator('body').innerText()).includes('SYNTHETIC_EXPIRED_CUSTOMER'),false);}
+  else assert.equal(await page.evaluate(()=>PTHSecureData.offlineProfile()?.id),'actor-a');
+  assert.equal(await page.locator('#pth-session-login-notice').isVisible(),false,'offline reopening does not force an unavailable login');
   assert.equal(fixture.f.writes,baseline);await auditCache(page,fixture);assert.deepEqual(errors,[]);
-  console.log('PASS '+(logout?'logout cleanup aborted then reload':interrupted?'interrupted active expiry cleanup/reload':'session expired while app closed')+' on actual cached normal reopening: token, own CRM copy and unsent customer fields erased; no order sent');
+  console.log('PASS '+(logout?'logout cleanup aborted then reload':interrupted?'interrupted active expiry cleanup/reload':'session expired while app closed')+' on actual cached normal reopening: token absent, queued order retained under its owner, prepared copy '+(logout||!prepared?'cleared':'bounded and retained')+'; no forced login offline, no order sent');
   await context.close();
 }
 
@@ -248,7 +259,7 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false) 
     await page.waitForFunction(()=>document.getElementById('detail-name').textContent==='Equipo A'&&!document.getElementById('detail-modal').classList.contains('hidden'));
     assert.equal(await page.evaluate(()=>document.baseURI),fixture.origin+'/');
     await openCart(page);
-    assert.deepEqual(await page.locator('#crm-datalist option').allTextContents(),['PRIVATE_A_ADDRESS_47...']);
+    assert.deepEqual(await page.locator('#crm-datalist option').allTextContents(),[fixture.markers.address]);
     await page.locator('#crm-search').fill(fixture.markers.a+' | 5351111111');await page.locator('#crm-search').dispatchEvent('change');
     assert.equal(await page.locator('#check-nombre').inputValue(),fixture.markers.a);assert.equal(await page.locator('#check-dir').inputValue(),fixture.markers.address);
     await page.evaluate(()=>{cart=[];renderCart();toggleCartModal(false);});
@@ -267,6 +278,7 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false) 
     await upgradeAndCompatibility(browser,fixture);
     await accountPrivacy(browser,fixture);
     await expiredReopening(browser,fixture);
+    await expiredReopening(browser,fixture,false,false,false);
     await expiredReopening(browser,fixture,true);
     await expiredReopening(browser,fixture,true,true);
   } catch(error) {console.error('Requests at failure:',fixture.requests.slice(-12));console.error('Optional REST:',fixture.unexpected);throw error;}
