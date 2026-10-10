@@ -1370,11 +1370,11 @@
   {
     "id": "f19837a3-6a25-446d-8283-f3e71d85aed2",
     "slug": "freidora-de-aire-eko0005-5-7l",
-    "nombre": "Freidora de aire EKO0005 - 5.7L",
+    "nombre": "Freidora de aire EKO0005 - 6.5L",
     "categoria": "COCINA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/freidora-de-aire-eko0005-5-7l/",
-    "updated_at": "2026-08-11T19:00:59.688294+00:00"
+    "updated_at": "2026-10-10T14:35:22.271571+00:00"
   },
   {
     "id": "421d4aba-ef16-4caa-8476-31609129f69e",
@@ -2812,9 +2812,9 @@
     "slug": "olla-arrocera-1-8l-eko",
     "nombre": "Olla Arrocera 1.8L  EKO",
     "categoria": "COCINA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/olla-arrocera-1-8l-eko/",
-    "updated_at": "2026-10-09T21:27:20.886025+00:00"
+    "updated_at": "2026-10-10T14:57:00.616062+00:00"
   },
   {
     "id": "a3e0fbc2-02b6-40be-9bee-7c99a9715d9e",
@@ -3667,9 +3667,9 @@
     "slug": "split-1t-milexus",
     "nombre": "Split 1T -MILEXUS",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-milexus/",
-    "updated_at": "2026-09-07T14:44:17.613818+00:00"
+    "updated_at": "2026-10-10T14:33:13.011503+00:00"
   },
   {
     "id": "1f71a083-a501-45e5-b9ca-0bfa8e11e56b",
