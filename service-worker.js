@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-10-crm1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-11-receipts1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -20,7 +20,7 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/checkout-confirmation.js?v=20261008-orders1',
   '/js/storefront.min.js?v=20261010-crm1',
   '/js/storefront-extras.min.js?v=20261008-questionnaire2',
-  '/js/pending-checkout-storefront.js?v=20261010-crm1',
+  '/js/pending-checkout-storefront.js?v=20261011-receipts1',
   '/js/pwa.js?v=20261006-ready1',
   '/css/tailwind.min.css?v=20261004-rolling30',
   '/css/gestor-ranking.css?v=20261004-rolling30',
@@ -57,7 +57,7 @@ const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, P
   '/js/image-variants.js?v=20261001-images2',
   '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
-  '/js/pending-checkout-storefront.js?v=20261010-crm1',
+  '/js/pending-checkout-storefront.js?v=20261011-receipts1',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261009-session1',

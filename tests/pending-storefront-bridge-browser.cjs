@@ -94,7 +94,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     dropSubmitResponse=true;await c.setOffline(false);await p.evaluate(()=>PTHPendingCheckoutUI.tick());
     rows=await waitForRows(p,r=>r.some(x=>x.state==='uncertain')&&r.some(x=>x.state==='confirmed'),'receipt loss plus independent second order');assert.equal(f.writes,2);dropSubmitResponse=false;
     await p.evaluate(()=>PTHPendingCheckoutUI.tick());await waitForRows(p,r=>r.every(x=>x.state==='confirmed'),'both receipts confirmed');assert.equal(f.writes,2);
-    const after=await p.evaluate(()=>({cart:cart.map(p=>({...p})),revision:newCartRevision,draft:lowConnectivity.readDraft('actor-a'),form:PTHCheckoutForm.readForm(document)}));assert.deepEqual(after,before);assert.equal(c.pages().length,1);assert.match(await p.locator('#pth-pending-order-panel').innerText(),/Referencia: /);assert.equal((await list(p)).some(r=>r.form||r.lines),false);assert.deepEqual(errors,[]);await c.close();
+    const after=await p.evaluate(()=>({cart:cart.map(p=>({...p})),revision:newCartRevision,draft:lowConnectivity.readDraft('actor-a'),form:PTHCheckoutForm.readForm(document)}));assert.deepEqual(after,before);assert.equal(c.pages().length,1);assert.equal(await p.locator('#pth-pending-order-panel').isVisible(),false);assert.equal(await p.locator('#pth-saved-receipts-link').isVisible(),true);assert.ok((await list(p)).every(row=>row.receipts?.length>0));assert.equal((await list(p)).some(r=>r.form||r.lines),false);assert.deepEqual(errors,[]);await c.close();
   }
   // A fresh delivery quote blocks only the affected order. Explicit review
   // displays and accepts the real cost before that order can be submitted.

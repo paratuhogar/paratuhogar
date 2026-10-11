@@ -122,7 +122,7 @@ async function upgradeAndCompatibility(browser,fixture) {
   await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.includes('20261006-ready1'));
   await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===2);
   const names=await page.evaluate(()=>caches.keys());
-  assert.equal(names.includes('pth-public-static-2026-10-02-pending1'),false);assert.ok(names.includes('pth-public-static-2026-10-10-crm1'));
+  assert.equal(names.includes('pth-public-static-2026-10-02-pending1'),false);assert.ok(names.includes('pth-public-static-2026-10-11-receipts1'));
   assert.ok(names.includes('pth-public-images-v1'));assert.ok(names.includes('unrelated-public-synthetic'));
   await openCart(page);
   const size=await page.locator('#checkout-form').boundingBox();assert.ok(size&&size.width<=320);
@@ -268,7 +268,7 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false,p
     await page.close();page=await context.newPage();await deviceOffline(context,page,true);await ready(page,fixture,'/index.html?ref=synthetic-link');await deviceOffline(context,page,true);await page.waitForFunction(()=>PTHOfflineStorefront.usingCopy());
     assert.equal((await rows(page)).length,2);assert.match(await page.locator('#pth-pending-order-panel').innerText(),/2 pedidos pendientes/);
     await deviceOffline(context,page,false);console.log('Restored transport while normal storefront remains open');
-    await page.waitForFunction(()=>{const sections=[...document.querySelectorAll('#pth-pending-order-panel section')];return sections.length===2&&sections.every(section=>section.querySelector('[role=status]')?.textContent==='La tienda confirmó que recibió este pedido.');},{},{timeout:45000});
+    await page.waitForFunction(()=>document.getElementById('pth-pending-order-panel')?.hidden&&!document.getElementById('pth-saved-receipts-link')?.hidden,{},{timeout:45000});
     assert.equal(fixture.f.writes,2);assert.deepEqual(fixture.f.rows.pedidos[0],fixture.f.historical);
     pending=await rows(page);assert.ok(pending.every(row=>!row.form&&!row.lines&&row.receipts?.length===1));
     assert.equal(context.pages().length,1,'automatic pending flush must not open WhatsApp or extra tabs');assert.deepEqual(downloads,[],'automatic pending flush must not download PDFs');

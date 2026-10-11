@@ -29,10 +29,10 @@
     expired: 'El pendiente venció. Revisa tus pedidos antes de iniciar otro.',
     confirmed: 'La tienda confirmó que recibió este pedido.'
   };
-  let active = null, busy = false, panel = null;
+  let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-10-10-crm1';
+  const shellVersion = 'pth-public-static-2026-10-11-receipts1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -277,6 +277,7 @@
   async function render() {
     window.PTHCheckoutConfirmation?.restore();
     const generation = ++renderGeneration, account = localAccount();
+    if (receiptsLink) hide(receiptsLink, true);
     hide(queueButton, !account); hide(copyButton, !account);
     hide(help, !account); hide(copyHelp, !account);
     hide(exitReview, !reviewing);
@@ -300,8 +301,20 @@
       const catalog = document.getElementById('sec-catalogo'); if (!catalog) return;
       panel = document.createElement('aside'); panel.id = 'pth-pending-order-panel'; panel.className = 'pth-connectivity-card pth-pending-card'; panel.style.margin = '24px'; catalog.before(panel);
     }
-    panel.replaceChildren(); panel.dataset.owner = account; hide(panel, !rows.length);
-    if (!rows.length) return;
+    // Receipt history remains in the queue; only its large notification is hidden.
+    const onlyReceipts = rows.length > 0 && rows.every(row => row.state === 'confirmed' && !row.form
+      && Array.isArray(row.receipts) && row.receipts.length > 0
+      && row.receipts.every(receipt => typeof receipt.reference === 'string' && receipt.reference.trim()));
+    if (!receiptsLink) {
+      receiptsLink = document.createElement('a'); receiptsLink.id = 'pth-saved-receipts-link';
+      receiptsLink.href = '/offline-order.html'; receiptsLink.textContent = 'Ver recibos guardados';
+      receiptsLink.style.cssText = 'margin:12px 24px;padding:8px 0;font-size:13px;line-height:44px;text-decoration:underline';
+      panel.after(receiptsLink);
+    }
+    receiptsLink.dataset.owner = account; hide(receiptsLink, !onlyReceipts);
+    if (onlyReceipts) receiptsLink.style.display = 'inline-block';
+    panel.replaceChildren(); panel.dataset.owner = account; hide(panel, !rows.length || onlyReceipts);
+    if (!rows.length || onlyReceipts) return;
     const pending = rows.filter(row => row.form && pendingStates.includes(row.state));
     const ready = pending.filter(row => ['queued', 'sending', 'uncertain'].includes(row.state));
     const heading = document.createElement('h3'); heading.textContent = pending.length === 1 ? '1 pedido pendiente en este teléfono' : pending.length ? pending.length + ' pedidos pendientes en este teléfono' : 'Estado de los pedidos guardados';
