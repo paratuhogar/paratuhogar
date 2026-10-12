@@ -7,45 +7,64 @@
   const token=()=>root.PTHSecureData.token();
   const valid=entry=>entry&&entry.owner===owner()&&['pedidos','pedidos_subgestores'].includes(entry.table)&&/^\d{8,15}$/.test(entry.phone||'')&&Array.isArray(entry.receipts)&&entry.receipts.length>0&&entry.receipts.length<=30&&entry.receipts.every(r=>typeof r.reference==='string'&&r.reference.length>0&&r.reference.length<=200)&&Number.isFinite(entry.savedAt)&&Date.now()-entry.savedAt>=0&&Date.now()-entry.savedAt<age;
   const inScope=entry=>entry.owner===owner()&&entry.token===token();
-  function persist(){try{root.localStorage.setItem(key,JSON.stringify(entries.map(({owner,table,phone,receipts,savedAt})=>({owner,table,phone,receipts,savedAt}))));}catch(_) {}}
+  const signature=e=>e.table+'|'+e.receipts.map(r=>r.reference).join('|');
+  const actionable=entry=>inScope(entry)&&entries.includes(entry)&&!entry.dismissed;
+  function retained(values){
+    const current=values.filter(e=>valid(e)&&inScope(e)).sort((a,b)=>a.savedAt-b.savedAt);
+    const visible=new Set(current.filter(e=>!e.dismissed).slice(-25));
+    // Keep closed receipts throughout the existing seven-day retention, so
+    // the visible-card limit cannot turn a repeated receipt into a new notice.
+    return current.filter(e=>e.dismissed||visible.has(e));
+  }
+  function persist(){restore();try{root.localStorage.setItem(key,JSON.stringify(entries.map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts,savedAt,dismissed:Boolean(dismissed)}))));}catch(_) {}}
   function url(entry){return 'https://api.whatsapp.com/send?phone='+entry.phone+'&text='+encodeURIComponent(entry.message||'Pedido confirmado: '+entry.receipts.map(r=>'#'+r.reference).join(', ')+'. Por favor, revisa los detalles en la web.');}
   function render(){
-    if(!entries.length){panel?.remove();panel=null;return;}
+    const visible=entries.filter(entry=>!entry.dismissed);
+    if(!visible.length){panel?.remove();panel=null;return;}
     if(!panel){const target=root.document.getElementById('sec-catalogo');if(!target)return;panel=root.document.createElement('aside');panel.id='pth-checkout-confirmations';panel.className='pth-connectivity-card';panel.style.margin='24px';panel.setAttribute('aria-label','Pedidos confirmados y envío por WhatsApp');target.before(panel);}
     panel.replaceChildren();
-    for(const entry of entries){
-      const section=root.document.createElement('section'),title=root.document.createElement('h3'),status=root.document.createElement('p'),button=root.document.createElement('button');
+    for(const entry of visible){
+      const section=root.document.createElement('section'),title=root.document.createElement('h3'),status=root.document.createElement('p'),button=root.document.createElement('button'),close=root.document.createElement('button');
       title.textContent='Pedido recibido: '+entry.receipts.map(r=>'#'+r.reference).join(', ');
-      status.textContent='Ya está guardado en la web. Abre WhatsApp y pulsa Enviar para comunicarlo. No necesitas repetir el pedido.';
+      status.textContent=entry.loading?'Recuperando el vale confirmado…':entry.recoveryFailed?'No se pudo recuperar el vale. Reintenta con conexión o revísalo en Mi dashboard. No crees otro pedido.':'Pedido guardado. Si ya lo enviaste por WhatsApp, puedes cerrar este aviso.';
       button.type='button';button.className='pth-connectivity-action';button.textContent='Enviar pedido por WhatsApp';
+      button.disabled=Boolean(entry.loading);
+      close.type='button';close.className='pth-connectivity-action';close.textContent='Cerrar';close.disabled=Boolean(entry.loading||entry.recoveryFailed);
+      close.onclick=()=>{
+        if(!actionable(entry)||entry.loading||entry.recoveryFailed)return;
+        // Dismiss this notice only. Keep its receipt and every pending order;
+        // opening WhatsApp is never evidence that a message was sent.
+        entry.dismissed=true;persist();render();
+      };
       button.onclick=()=>{
-        if(!inScope(entry))return;
+        if(!actionable(entry)||entry.loading)return;
         if(entry.message||!load||entry.owner==='visitor'){root.open(url(entry),'_blank','noopener,noreferrer');return;}
         // A restored receipt needs a scoped read. The second, explicit click
         // opens WhatsApp synchronously so async popup restrictions cannot hide it.
-        button.disabled=true;status.textContent='Recuperando el vale confirmado…';
-        return Promise.resolve(load(entry)).then(message=>{
-          if(!inScope(entry))return;
+        entry.loading=true;entry.recoveryFailed=false;button.disabled=true;close.disabled=true;status.textContent='Recuperando el vale confirmado…';
+        return new Promise(resolve=>resolve(load(entry))).then(message=>{
+          if(!actionable(entry))return;
           if(!message)throw Error('RECEIPT_UNAVAILABLE');
           entry.message=message;button.textContent='Abrir WhatsApp';status.textContent='Vale listo. Pulsa Abrir WhatsApp y después Enviar.';
-        }).catch(()=>{if(inScope(entry))status.textContent='No se pudo recuperar el vale. Reintenta con conexión o revísalo en Mi dashboard. No crees otro pedido.';}).finally(()=>{if(inScope(entry))button.disabled=false;});
+        }).catch(()=>{if(actionable(entry)){entry.recoveryFailed=true;status.textContent='No se pudo recuperar el vale. Reintenta con conexión o revísalo en Mi dashboard. No crees otro pedido.';}}).finally(()=>{entry.loading=false;if(actionable(entry)){button.disabled=false;close.disabled=Boolean(entry.recoveryFailed);render();}});
       };
-      section.append(title,status,button);panel.append(section);
+      section.append(title,status,button,close);panel.append(section);
     }
   }
   function restore(){
     let saved=[];try{saved=JSON.parse(root.localStorage.getItem(key)||'[]');}catch(_){}
-    const signature=e=>e.table+'|'+e.receipts.map(r=>r.reference).join('|');
+    let dismissalChanged=false;
     const previous=new Map(entries.filter(e=>valid(e)&&inScope(e)).map(e=>[signature(e),e]));
     const restored=new Map((Array.isArray(saved)?saved:[]).filter(valid).map(e=>{
       const before=previous.get(signature(e));
-      const entry=before||{owner:e.owner,table:e.table,phone:e.phone,receipts:e.receipts.map(r=>({reference:r.reference,proveedor:r.proveedor})),savedAt:e.savedAt,token:token(),message:null};
+      if(before&&e.dismissed===true&&!before.dismissed){before.dismissed=true;dismissalChanged=true;}
+      const entry=before||{owner:e.owner,table:e.table,phone:e.phone,receipts:e.receipts.map(r=>({reference:r.reference,proveedor:r.proveedor})),savedAt:e.savedAt,dismissed:e.dismissed===true,token:token(),message:null};
       return [signature(entry),entry];
     }));
     // A quota/read failure cannot erase an acknowledged in-memory receipt.
     for(const [id,entry] of previous)restored.set(id,entry);
-    const next=[...restored.values()].sort((a,b)=>a.savedAt-b.savedAt).slice(-25);
-    if(next.length===entries.length&&next.every((entry,i)=>entry===entries[i]))return;
+    const next=retained([...restored.values()]);
+    if(!dismissalChanged&&next.length===entries.length&&next.every((entry,i)=>entry===entries[i]))return;
     entries=next;render();
   }
   root.PTHCheckoutConfirmation={
@@ -62,9 +81,9 @@
       }).join('\n------------------------------------\n\n');
     },
     configure(options){load=options.load;restore();},restore,
-    show(value){const entry={...value,savedAt:Date.now(),token:token()};if(!valid(entry))return;entries=entries.filter(e=>inScope(e)&&e.receipts.map(r=>r.reference).join('|')!==entry.receipts.map(r=>r.reference).join('|'));entries.push(entry);entries=entries.slice(-25);persist();render();},
+    show(value){const entry={...value,savedAt:Date.now(),token:token(),dismissed:false};if(!valid(entry))return;restore();entries=entries.filter(inScope);if(entries.some(e=>signature(e)===signature(entry)))return;entries.push(entry);entries=retained(entries);persist();render();},
     clear(){entries=[];try{root.localStorage.removeItem(key);}catch(_){}render();}
   };
   root.addEventListener('pth:session-changed',()=>root.PTHCheckoutConfirmation.clear());
-  root.addEventListener('storage',()=>{entries=entries.filter(inScope);render();});
+  root.addEventListener('storage',restore);
 })(window);
