@@ -2470,9 +2470,9 @@
     "slug": "nevera-12-5-pies-royal",
     "nombre": "Nevera 12.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-12-5-pies-royal/",
-    "updated_at": "2026-10-11T00:36:33.016918+00:00"
+    "updated_at": "2026-10-11T23:45:24.417432+00:00"
   },
   {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
@@ -3496,9 +3496,9 @@
     "slug": "smart-tv-40-samsung",
     "nombre": "Smart TV 40 Samsung",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-10-02T16:41:32.219347+00:00"
+    "updated_at": "2026-10-11T23:45:11.398934+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
