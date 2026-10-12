@@ -4,7 +4,7 @@ const source=fs.readFileSync(new URL('../js/storefront.js',import.meta.url),'utf
 const start=source.indexOf('let registrationBusy=false;');const end=source.indexOf('\nasync function ',source.indexOf('async function processRegister()',start)+40);
 const valid={source:'recomendacion',referrer:'',referrerGestor:'no_se',experience:'no',platforms:[],clients:'0',loyalty:'',channels:'no',storesCount:0};
 function fixture(){
- const fields=new Map(Object.entries({'reg-submit':{disabled:false,innerText:'Enviar'},'reg-status':{textContent:''},'reg-name':{value:'Solicitud Demo'},'reg-email':{value:'demo@example.test'},'reg-tel':{value:'demo-phone'},'reg-pass':{value:'fixture-only'}}));
+ const fields=new Map(Object.entries({'reg-submit':{disabled:false,innerText:'Enviar'},'reg-status':{textContent:''},'reg-name':{value:'Solicitud Demo'},'reg-email':{value:'demo@example.test'},'reg-tel':{value:'demo-phone'},'reg-pass':{value:'fixture-only'},'reg-whatsapp':{href:''}}));
  let reads=0,inserts=0,mode=null,release;
  const context=vm.createContext({document:{getElementById:id=>fields.get(id)},localStorage:{getItem:()=>null},crypto:{randomUUID:()=> '00000000-0000-4000-8000-000000000001'},PTHQuestionnaire:{read:()=>valid},alert:message=>{fields.get('reg-status').textContent=message},toggleLoginMode:value=>{mode=value},supabaseClient:{from(){return{select(){return this},eq(){return this},maybeSingle:async()=>{reads++;return {data:inserts?{id:'saved',estado:'pendiente'}:null,error:null}},insert:async()=>{inserts++;if(inserts===1){await new Promise(resolve=>release=resolve);return {error:{message:'response lost'}}}return {error:null}}}}}});
  vm.runInContext(source.slice(start,end),context);
@@ -13,7 +13,7 @@ function fixture(){
 test('double click is blocked and lost response retains answers and can retry a saved pending request',async()=>{
  const f=fixture();const first=f.run();await new Promise(resolve=>setImmediate(resolve));await f.run();assert.equal(f.count(),1);f.release();await first;
  assert.equal(f.fields.get('reg-submit').disabled,false);assert.match(f.fields.get('reg-status').textContent,/vuelve a intentar/);assert.equal(f.fields.get('reg-name').value,'Solicitud Demo');
- await f.run();assert.equal(f.count(),2);assert.equal(f.mode(),'login');
+ await f.run();assert.equal(f.count(),2);assert.equal(f.mode(),'application-sent');assert.equal(f.fields.get('reg-pass').value,'');const link=new URL(f.fields.get('reg-whatsapp').href);assert.equal(link.origin,'https://wa.me');assert.equal(link.pathname,'/5356071095');assert.match(link.searchParams.get('text'),/Solicitud Demo/);assert.match(link.searchParams.get('text'),/demo-phone/);assert.doesNotMatch(link.searchParams.get('text'),/fixture-only|demo@example|application_token|00000000/);
 });
 test('store count input is wired and revealing/hiding names disables hidden fields',()=>{
  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');assert.match(html,/id="q-storesCount" oninput="PTHQuestionnaire.sync\(document\)"/);

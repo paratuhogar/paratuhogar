@@ -467,6 +467,7 @@ window.addEventListener('pth:session-changed', event => {
     const fLogin = document.getElementById('form-login');
     const fRegister = document.getElementById('form-register');
     const fRecover = document.getElementById('form-recover'); // Este es el nuevo
+    const fSuccess = document.getElementById('reg-success');
 
     // 2. Obtener los botones de las pestañas
     const btnTabLogin = document.getElementById('tab-login-btn');
@@ -476,6 +477,7 @@ window.addEventListener('pth:session-changed', event => {
     if(fLogin) fLogin.classList.add('hidden');
     if(fRegister) fRegister.classList.add('hidden');
     if(fRecover) fRecover.classList.add('hidden');
+    if(fSuccess) fSuccess.classList.add('hidden');
 
     // 4. RESETEAR ESTILOS DE PESTAÑAS (Ponerlas grises)
     // Usamos border-transparent para que no se vea la línea azul
@@ -496,6 +498,9 @@ window.addEventListener('pth:session-changed', event => {
         if(questionnaire)questionnaire.hidden=!!localStorage.getItem('pth_invitado_por_id');
         window.PTHQuestionnaire?.sync(document);
         if(btnTabRegister) btnTabRegister.className = estiloActivo;
+    }
+    else if (mode === 'application-sent') {
+        if(fSuccess) fSuccess.classList.remove('hidden');
     }
     else if (mode === 'recover') {
         // AQUÍ ESTÁ EL ARREGLO: Mostramos el form de recuperar y dejamos las pestañas apagadas
@@ -592,8 +597,10 @@ async function processRegister() {
                 `;
             }
         } else {
-            alert(`✅ Solicitud enviada correctamente, ${nombre.split(' ')[0]}.\n\nTu perfil ha sido enviado a revisión. Elizabeth revisará tus respuestas y se pondrá en contacto contigo por WhatsApp. La decisión es manual.`);
-            toggleLoginMode('login');
+            const message = `Hola, soy ${nombre}. Quiero ser gestor de ParaTuHogar. Mi teléfono es ${tel}. Mi solicitud ya quedó registrada en la web y está pendiente de revisión.`;
+            document.getElementById('reg-whatsapp').href = `https://wa.me/5356071095?text=${encodeURIComponent(message)}`;
+            document.getElementById('reg-pass').value = '';
+            toggleLoginMode('application-sent');
         }
 
     } catch (e) {

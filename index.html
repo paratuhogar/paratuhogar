@@ -3216,6 +3216,14 @@
                 <button id="reg-submit" type="button" onclick="processRegister()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase shadow-lg">Crear Cuenta</button>
             </div>
 
+            <div id="reg-success" class="space-y-4 text-center py-4 hidden">
+                <h3 class="text-lg font-black text-slate-800 dark:text-white">Solicitud guardada en la web</h3>
+                <p role="status" aria-live="polite" class="text-sm">Elizabeth revisará tus respuestas y decidirá personalmente. Tu solicitud está pendiente de revisión.</p>
+                <p class="text-sm">Puedes avisar a la tienda por WhatsApp. Se preparará un mensaje; revísalo y pulsa Enviar. Tu solicitud se conserva aunque no lo envíes.</p>
+                <a id="reg-whatsapp" target="_blank" rel="noopener noreferrer" class="w-full inline-flex items-center justify-center bg-[#25D366] text-white py-4 rounded-xl font-black text-sm">Enviar mi solicitud por WhatsApp</a>
+                <button type="button" onclick="closeLogin()" class="w-full bg-gray-900 text-white py-4 rounded-xl font-black uppercase text-xs">Volver a la tienda</button>
+            </div>
+
             <!-- NUEVO: FORMULARIO RECUPERACIÓN -->
             <div id="form-recover" class="space-y-4 hidden">
                 <div class="bg-blue-50 p-3 rounded-xl mb-4 border border-blue-100">
@@ -3248,8 +3256,8 @@
     <!-- Scripts de Lógica -->
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/checkout-confirmation.js?v=20261008-orders1" defer></script>
-    <script src="js/storefront.min.js?v=20261010-crm1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261011-receipts1" defer></script>
+    <script src="js/storefront.min.js?v=20261012-application1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261012-application1" defer></script>
 
 
 
