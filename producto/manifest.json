@@ -2506,9 +2506,9 @@
     "slug": "nevera-3-5-pies-royal-inverter",
     "nombre": "Nevera 3.5 pies Royal Inverter",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal-inverter/",
-    "updated_at": "2026-10-09T17:29:51.889577+00:00"
+    "updated_at": "2026-10-13T15:14:40.738373+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
@@ -3129,7 +3129,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-10-pies-lemax/",
-    "updated_at": "2026-10-09T14:26:25.695462+00:00"
+    "updated_at": "2026-10-13T15:17:34.556605+00:00"
   },
   {
     "id": "c9dfca1d-431b-4c64-b631-7d97d924eb9c",
@@ -3190,9 +3190,9 @@
     "slug": "refrigerador-19pies-lg-smart-inverter",
     "nombre": "Refrigerador 19pies LG Smart Inverter",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-19pies-lg-smart-inverter/",
-    "updated_at": "2026-08-18T21:30:55.778415+00:00"
+    "updated_at": "2026-10-13T15:17:45.146955+00:00"
   },
   {
     "id": "196063c7-f3f8-4e20-af42-b43579f29c41",
@@ -3255,7 +3255,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-de-7-5-pies-lemax/",
-    "updated_at": "2026-10-08T15:27:09.159463+00:00"
+    "updated_at": "2026-10-13T15:18:03.562638+00:00"
   },
   {
     "id": "38acd7e3-9e78-4cfa-bf93-fb838946f5d1",
