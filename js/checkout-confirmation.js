@@ -16,7 +16,13 @@
     // the visible-card limit cannot turn a repeated receipt into a new notice.
     return current.filter(e=>e.dismissed||visible.has(e));
   }
-  function persist(){restore();try{root.localStorage.setItem(key,JSON.stringify(entries.map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts,savedAt,dismissed:Boolean(dismissed)}))));}catch(_) {}}
+  function persist(reopened){
+    restore();
+    // Only an explicit re-send may override a stored dismissal. Ordinary
+    // repeated acknowledgments still merge the closed state across tabs.
+    if(reopened&&valid(reopened)&&inScope(reopened)){reopened.dismissed=false;entries=retained([...entries.filter(e=>signature(e)!==signature(reopened)),reopened]);}
+    try{root.localStorage.setItem(key,JSON.stringify(entries.map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts,savedAt,dismissed:Boolean(dismissed)}))));}catch(_) {}
+  }
   function url(entry){return 'https://api.whatsapp.com/send?phone='+entry.phone+'&text='+encodeURIComponent(entry.message||'Pedido confirmado: '+entry.receipts.map(r=>'#'+r.reference).join(', ')+'. Por favor, revisa los detalles en la web.');}
   function render(){
     const visible=entries.filter(entry=>!entry.dismissed);
@@ -68,7 +74,7 @@
     entries=next;render();
   }
   root.PTHCheckoutConfirmation={
-    format(rows,{isSubgestor=false,isLogged=true,name='',phone=''}={}){
+    format(rows,{isSubgestor=false,isLogged=true,name='',phone='',commercialPhones={}}={}){
       return rows.map(row=>{
         const total=Number(row.total)||0,shipping=Number(row.costo_mensajeria)||0;
         let text='🧾 *PEDIDO CONFIRMADO #'+row.orden_dia+'*\n📅 Fecha: '+new Date(row.fecha||row.created_at).toLocaleDateString()+'\n\n';
@@ -76,12 +82,22 @@
         if(row.ci&&row.ci!=='No especificado')text+='CI: '+row.ci+'\n';
         text+='\n🛒 *DETALLE*\n'+String(row.producto||'').split(' + ').map(p=>'📦 '+p).join('\n')+'\n\n💰 *TOTAL A PAGAR: $'+total+' USD*\n(Equipos: $'+(total-shipping)+' + Envío: $'+shipping+')\n';
         const payment=String(row.direccion||'').match(/\[PAGO:\s*([^\]]+)\]/i);if(payment)text+='💳 *MÉTODO PAGO:* '+payment[1]+'\n';
-        if(isLogged){text+='\n👮‍♂️ *DATOS INTERNOS*\nComercial: '+(isSubgestor?name:row.gestor||name)+'\nComisión'+(isSubgestor?' asignada al subgestor':'')+': $'+(Number(isSubgestor?row.comision_subgestor:row.comision_total)||0)+'\nTel Comercial: '+phone+'\n';}
+        if(isLogged){
+          const commercial=isSubgestor?name:row.gestor||name;
+          const commercialPhone=Object.prototype.hasOwnProperty.call(commercialPhones,commercial)?commercialPhones[commercial]:commercial===name?phone:'';
+          text+='\n👮‍♂️ *DATOS INTERNOS*\nComercial: '+commercial+'\nComisión'+(isSubgestor?' asignada al subgestor':'')+': $'+(Number(isSubgestor?row.comision_subgestor:row.comision_total)||0)+'\nTel Comercial: '+(commercialPhone||'No disponible')+'\n';
+        }
         return text;
       }).join('\n------------------------------------\n\n');
     },
     configure(options){load=options.load;restore();},restore,
-    show(value){const entry={...value,savedAt:Date.now(),token:token(),dismissed:false};if(!valid(entry))return;restore();entries=entries.filter(inScope);if(entries.some(e=>signature(e)===signature(entry)))return;entries.push(entry);entries=retained(entries);persist();render();},
+    show(value,{reopen=false}={}){
+      const entry={...value,savedAt:Date.now(),token:token(),dismissed:false};if(!valid(entry))return;
+      restore();entries=entries.filter(inScope);
+      if(entries.some(e=>signature(e)===signature(entry))&&!reopen)return;
+      entries=entries.filter(e=>signature(e)!==signature(entry));entries.push(entry);entries=retained(entries);
+      persist(reopen?entry:undefined);render();
+    },
     clear(){entries=[];try{root.localStorage.removeItem(key);}catch(_){}render();}
   };
   root.addEventListener('pth:session-changed',()=>root.PTHCheckoutConfirmation.clear());

@@ -122,7 +122,7 @@ async function upgradeAndCompatibility(browser,fixture) {
   await page.waitForFunction(()=>navigator.serviceWorker.controller?.scriptURL.includes('20261006-ready1'));
   await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===2);
   const names=await page.evaluate(()=>caches.keys());
-  assert.equal(names.includes('pth-public-static-2026-10-02-pending1'),false);assert.ok(names.includes('pth-public-static-2026-10-12-confirmation1'));
+  assert.equal(names.includes('pth-public-static-2026-10-02-pending1'),false);assert.ok(names.includes('pth-public-static-2026-10-14-commercial1'));
   assert.ok(names.includes('pth-public-images-v1'));assert.ok(names.includes('unrelated-public-synthetic'));
   await openCart(page);
   const size=await page.locator('#checkout-form').boundingBox();assert.ok(size&&size.width<=320);

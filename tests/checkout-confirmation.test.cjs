@@ -1,5 +1,28 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm');
+test('voucher never pairs another seller name with the active account phone',()=>{
+ const f=setup();
+ const message=f.api.format([{orden_dia:'A-320',gestor:'Vendedora',producto:'Escalera',total:44,comision_total:5}],{name:'Administradora',phone:'5356071095'});
+ assert.match(message,/Comercial: Vendedora/);
+ assert.doesNotMatch(message,/Tel Comercial: 5356071095/);
+});
+test('recovered vouchers resolve a separate verified phone for each commercial',()=>{
+ const f=setup();
+ const message=f.api.format([{orden_dia:'A-320',gestor:'Vendedora',total:44},{orden_dia:'A-321',gestor:'Otro comercial',total:30}],{name:'Administradora',phone:'5356071095',commercialPhones:{Vendedora:'5355842338','Otro comercial':'5351122334'}});
+ assert.match(message,/Tel Comercial: 5355842338/);
+ assert.match(message,/Tel Comercial: 5351122334/);
+ assert.doesNotMatch(message,/Tel Comercial: 5356071095/);
+});
+test('an explicit re-send can reopen a dismissed receipt without duplicating it',()=>{
+ const f=setup(),value={owner:'a',table:'pedidos',phone:'5356071095',receipts:[{reference:'A-320'}],message:'Comercial: Vendedora\nTel Comercial: 5355842338'};
+ f.api.show(value);
+ const panel=f.nodes.get('pth-checkout-confirmations');panel.children[0].children.find(n=>n.tagName==='button'&&n.textContent==='Cerrar').onclick();
+ f.api.show(value,{reopen:true});
+ const reopened=f.nodes.get('pth-checkout-confirmations');assert.equal(reopened.removed,undefined);
+ reopened.children[0].children.find(n=>n.tagName==='button'&&n.textContent==='Enviar pedido por WhatsApp').onclick();
+ assert.match(new URL(f.opened[0][0]).searchParams.get('text'),/Tel Comercial: 5355842338/);
+ assert.equal(JSON.parse(f.data.get('pth_checkout_confirmations_v1')).length,1);
+});
 // Catch disappearing confirmations, wrong receipt numbers and stale-account actions.
 function setup(data=new Map()){
  const nodes=new Map();class Node{constructor(tag){this.tagName=tag;this.children=[];this.hidden=false;this.style={};}append(...n){this.children.push(...n);}replaceChildren(...n){this.children=n;}remove(){this.removed=true;}setAttribute(k,v){this[k]=v;}before(n){nodes.set(n.id,n);}querySelector(){return null;}}

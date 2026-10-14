@@ -3008,7 +3008,11 @@ function getCheckoutFailureMessage(error) {
         if(entry.table==='pedidos_subgestores'&&rows.length<codes.length){result=await fetchRows('pedidos');if(result.error)throw result.error;rows=[...rows,...(result.data||[])];}
         if(checkoutScope()!==account||window.PTHSecureData.token()!==token)throw Error('SESSION_CHANGED');
         const byCode=new Map(rows.map(row=>[row.orden_dia,row]));if(codes.some(code=>!byCode.has(code)))throw Error('RECEIPT_UNAVAILABLE');
-        return window.PTHCheckoutConfirmation.format(codes.map(code=>byCode.get(code)),{isSubgestor:Boolean(window.currentUserData?.parent_id),isLogged:account!=='visitor',name:window.currentUserData?.nombre,phone:getAgentPhone()});
+        const isSubgestor=Boolean(window.currentUserData?.parent_id),name=window.currentUserData?.nombre;
+        const names=[...new Set(rows.map(row=>isSubgestor?name:row.gestor).filter(Boolean))];
+        const commercialPhones=Object.fromEntries(await Promise.all(names.map(async commercial=>[commercial,await obtenerTelefonoGestor(commercial)])));
+        if(checkoutScope()!==account||window.PTHSecureData.token()!==token)throw Error('SESSION_CHANGED');
+        return window.PTHCheckoutConfirmation.format(codes.map(code=>byCode.get(code)),{isSubgestor,isLogged:account!=='visitor',name,commercialPhones});
     }});
     async function confirmPendingCheckout(receipts,options={}) {
         window.PTHCheckoutConfirmation?.show({owner:checkoutScope(),table:options.table||readNewCheckoutOutcome()?.table||'pedidos',phone:options.phone||checkoutReceiptPhone(),message:options.message,receipts:receipts.map(row=>({reference:row.reference||row.orden_dia||row.id,proveedor:row.proveedor}))});
@@ -3336,7 +3340,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     let mensajeRaw = "";
     const promesas = [];
     const protectionOrderIds = [];
-    const agentPhone = getAgentPhone();
+    // The verified order owner may differ from the account taking the order.
+    const agentPhone = normalizeCommercialPhone(checkoutHierarchy?.agent?.telefono) || 'No disponible';
 
     // Bandera para asignar el envío global SOLO a un vale (por si hay múltiples proveedores)
     let envioYaCobrado = false;
@@ -7135,6 +7140,12 @@ async function handleImageUpload(input) {
     }
 }
 
+function normalizeCommercialPhone(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (!/^\d{8,15}$/.test(digits)) return '';
+    return digits.length === 8 ? '53' + digits : digits;
+}
+
 function getAgentPhone() {
     let rawNum = "";
 
@@ -7143,22 +7154,15 @@ function getAgentPhone() {
         rawNum = window.currentUserData.telefono;
     } else {
         // 2. Intentar sacar el teléfono de la URL si no hay sesión
-        rawNum = new URLSearchParams(window.location.search).get('tel') || "";
+        const params = new URLSearchParams(window.location.search);
+        rawNum = params.get('contact') || params.get('tel') || "";
     }
 
     // Si no hay número en ningún lado, devolver el del dueño
     if (!rawNum) return '5356071095';
 
     // LIMPIEZA Y FORMATO CUBA
-    let limpio = rawNum.replace(/\D/g, ''); // Quita el + y espacios
-
-    // Si el número tiene 8 dígitos (ej: 58183649), le ponemos el 53 delante
-    if (limpio.length === 8) {
-        limpio = '53' + limpio;
-    }
-
-    // Si el número tiene 10 dígitos y empieza con 53, está perfecto
-    return limpio;
+    return normalizeCommercialPhone(rawNum);
 }
 
 // --- GUARDAR EL PRODUCTO COMPLETO EN LA TABLA ---
@@ -11541,12 +11545,21 @@ async function reenviarPedidoAdmin(id) {
         mensaje += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vuelto}\n`;
     }
 
-    const miTel = getAgentPhone();
+    const commercialName = esSubgestor ? window.currentUserData.nombre : p.gestor;
+    const resendToken = window.PTHSecureData.token();
+    // Reserve the window on the click, not after a slow network lookup.
+    let whatsappWindow = null;
+    try { whatsappWindow = window.open('about:blank', '_blank'); if (whatsappWindow) whatsappWindow.opener = null; } catch (_) {}
+    let miTel;
+    try {
+        miTel = await obtenerTelefonoGestor(commercialName) || 'No disponible';
+        if (window.PTHSecureData.token() !== resendToken) throw Object.assign(new Error('La sesión cambió. Vuelve a intentar.'), {code:'SESSION_CHANGED'});
+    } catch (error) { whatsappWindow?.close(); throw error; }
     mensaje += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*`;
 
     if (esSubgestor) {
         // El subgestor envía a su principal informando su propia comisión y nombre
-        mensaje += `\nComercial: ${window.currentUserData.nombre}\n`;
+        mensaje += `\nComercial: ${commercialName}\n`;
         mensaje += `Comisión: $${p.comision_total}\n`; // Mostrará su comisión correspondiente ($8)
         mensaje += `Tel Comercial: ${miTel}\n`;
     } else {
@@ -11554,7 +11567,9 @@ async function reenviarPedidoAdmin(id) {
         mensaje += ` (SOLO ALMACÉN)\nComercial: ${p.gestor}\nComisión: $${p.comision_total}\nTel Comercial: ${miTel}\n`;
     }
 
-    window.open(`https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${encodeURIComponent(mensaje)}`, '_blank');
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappDestino}&text=${encodeURIComponent(mensaje)}`;
+    if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.location.replace(whatsappUrl);
+    else window.PTHCheckoutConfirmation?.show({owner:window.PTHSecureData.accountId(),table:esSubgestor&&p.created_at?'pedidos_subgestores':'pedidos',phone:whatsappDestino,message:mensaje,receipts:[{reference:p.orden_dia||p.id,proveedor:p.proveedor}]},{reopen:true});
 }
 
 // --- FUNCIÓN PARA REENVIAR VALE (DESDE ADMIN) ---
@@ -11605,15 +11620,18 @@ function reenviarValeAdmin(id) {
 
 async function obtenerTelefonoGestor(gestorName) {
     if (!gestorName || gestorName === 'Venta Directa') return null;
+    const token = window.PTHSecureData.token();
+    let result;
     try {
-        const { data } = await supabaseClient
+        result = await supabaseClient
             .from('gestores')
             .select('telefono')
             .eq('nombre', gestorName)
             .maybeSingle();
-        if (data) return data.telefono;
-    } catch(e) {}
-    return null;
+    } catch(e) { result = {error:e}; }
+    // Do not finish a private re-send after changing accounts mid-query.
+    if (window.PTHSecureData.token() !== token) throw Object.assign(new Error('La sesión cambió. Vuelve a intentar.'), {code:'SESSION_CHANGED'});
+    return result.error ? null : normalizeCommercialPhone(result.data?.telefono) || null;
 }
 
 
