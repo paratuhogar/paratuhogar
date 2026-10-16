@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-10-15</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-10-15</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-10-16</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-10-16</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-10-15</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-10-15</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-10-07</lastmod></url>
@@ -48,6 +48,7 @@
   <url><loc>https://paratuhogar.org/producto/cocina-con-horno-6q-rudenkov/</loc><lastmod>2026-08-14</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Cocinaconhorno6QRudenkov.jpg</image:loc><image:title>Cocina con horno 6Q Rudenkov</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/cocina-de-gas-1q-eko/</loc><lastmod>2026-09-05</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Cocinaekotg8411.jpeg</image:loc><image:title>Cocina de gas 1Q EKO</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/cocina-de-gas-4q-daytron/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/1768935768726_0_cocina_dayton_4Q_jpg.jpg</image:loc><image:title>Cocina de gas 4Q Daytron</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/cocina-induccion-royal/</loc><lastmod>2026-10-15</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/CocinaInduccionRoyal.jpeg</image:loc><image:title>Cocina induccion Royal</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/cocina-infrarroja-1500w-eko/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/CocinaInfrarroja1500W_EKO.jpeg</image:loc><image:title>Cocina infrarroja 1500W EKO</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/colchon-camero-eko/</loc><lastmod>2026-09-08</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/ColchoncameroEKO.jpg</image:loc><image:title>Colchón Camero - EKO</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/combo-teclado-mouse-iggual/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/kitratonteclado.webp</image:loc><image:title>Combo teclado + mouse - Iggual</image:title></image:image></url>

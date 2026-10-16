@@ -679,9 +679,9 @@
     "slug": "cocina-induccion-royal",
     "nombre": "Cocina induccion Royal",
     "categoria": "COCINA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/cocina-induccion-royal/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-15T21:48:11.404394+00:00"
   },
   {
     "id": "cc637960-4e03-4492-8ec8-5dbdf6684e3e",
