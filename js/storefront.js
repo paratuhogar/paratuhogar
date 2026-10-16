@@ -497,6 +497,7 @@ window.addEventListener('pth:session-changed', event => {
         const questionnaire=document.getElementById('gestor-questionnaire');
         if(questionnaire)questionnaire.hidden=!!localStorage.getItem('pth_invitado_por_id');
         window.PTHQuestionnaire?.sync(document);
+        window.PTHRegistrationSteps?.init();
         if(btnTabRegister) btnTabRegister.className = estiloActivo;
     }
     else if (mode === 'application-sent') {
