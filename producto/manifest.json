@@ -1714,9 +1714,9 @@
     "slug": "juego-de-bano",
     "nombre": "Juego de baño",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/juego-de-bano/",
-    "updated_at": "2026-08-14T14:31:51.050425+00:00"
+    "updated_at": "2026-10-16T13:26:23.726312+00:00"
   },
   {
     "id": "184c649b-cce1-4bab-94a5-b959bf939cf1",
@@ -2587,9 +2587,9 @@
     "slug": "nevera-5-5-pies-royal",
     "nombre": "Nevera 5.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-5-5-pies-royal/",
-    "updated_at": "2026-10-15T15:09:21.026165+00:00"
+    "updated_at": "2026-10-16T13:58:53.159715+00:00"
   },
   {
     "id": "38a2f993-0e91-45b3-bfce-6fe954c4aff4",
