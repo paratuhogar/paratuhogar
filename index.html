@@ -2546,12 +2546,7 @@
     <!-- BLOQUE 1: PENDIENTES -->
 <div class="space-y-4">
     <h4 class="font-bold text-primary">Solicitudes de gestores</h4>
-    <p class="admin-note">Cuentas principales por estado actual, sin límite de antigüedad. Activas incluye cuentas históricas y no acredita aprobación ni solicitudes recientes. Fecha de registro en horario de Cuba; no hay fecha auditada de aprobación o cambio de estado. Subgestores se revisan por separado. Pulsa «Ver respuestas» para consultar las encuestas existentes en cualquiera de los tres estados.</p>
-    <div class="admin-toolbar" role="group" aria-label="Estado actual de cuentas principales">
-        <button type="button" class="admin-control" id="admin-applications-pendiente" aria-pressed="true" onclick="setApplicationStatus('pendiente')">Pendientes</button>
-        <button type="button" class="admin-control" id="admin-applications-activo" aria-pressed="false" onclick="setApplicationStatus('activo')">Activas</button>
-        <button type="button" class="admin-control" id="admin-applications-bloqueado" aria-pressed="false" onclick="setApplicationStatus('bloqueado')">Bloqueadas</button>
-    </div>
+    <p class="admin-note">Todas las solicitudes pendientes de cuentas principales, incluidas las antiguas. Las más antiguas aparecen primero; puedes cambiar el orden sin ocultar solicitudes. Fecha de registro en horario de Cuba; no indica fecha de cambio de estado ni tiempo pendiente desde una reapertura. Subgestores se revisan por separado. Pulsa «Ver respuestas» para consultar el cuestionario de cada solicitud.</p>
     <div class="admin-toolbar">
         <label for="admin-pending-order" class="admin-note">Ordenar</label>
         <select id="admin-pending-order" class="admin-control" onchange="setPendingGestorOrder(this.value)">

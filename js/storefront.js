@@ -6279,7 +6279,7 @@ async function saveFinancialChanges() {
 // --- FUNCIÓN PARA APROBAR O RECHAZAR GESTORES ---
 async function approveGestor(id, nuevoEstado, nombre = "", telefono = "") {
     const confirmacion = confirm(nuevoEstado === 'bloqueado'
-        ? `¿Desactivar la solicitud de ${nombre} y marcar la cuenta como bloqueada? Impide el acceso; no aprueba ni activa a la persona como gestor. Las respuestas se conservan para consulta en Bloqueadas.`
+        ? `¿Desactivar la solicitud de ${nombre} y marcar la cuenta como bloqueada? Impide el acceso; no aprueba ni activa a la persona como gestor. Las respuestas se conservan.`
         : `¿Estás seguro de que quieres cambiar el estado de ${nombre} a ${nuevoEstado}?`);
     if (!confirmacion) return;
 

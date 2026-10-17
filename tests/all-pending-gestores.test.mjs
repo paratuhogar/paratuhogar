@@ -102,31 +102,21 @@ test('each questionnaire has an explicit accessible review button bound to its o
  assert.equal(f.actions.length,0,'viewing never activates or rejects');
 });
 
-test('status views retain questionnaires, count only principals and expose no new decisions', async () => {
- const f=fixture([row('waiting',70),row('active',90,{estado:'activo',questionnaire:{version:1}}),row('blocked',90,{estado:'bloqueado',questionnaire:{version:1}}),row('child',1,{estado:'activo',parent_id:'parent'}),row('other',1,{estado:'pendiente_subgestor'}),row('absent',1,{estado:'ausente_definitivo'}),row('active',90,{estado:'activo'})],-1,true);
+test('only pending principals are listed even when other states have questionnaires', async () => {
+ const f=fixture([row('waiting',70,{questionnaire:{version:1}}),row('active',90,{estado:'activo',questionnaire:{version:1}}),row('blocked',90,{estado:'bloqueado',questionnaire:{version:1}}),row('child',1,{parent_id:'parent',questionnaire:{version:1}}),row('other',1,{estado:'pendiente_subgestor'}),row('absent',1,{estado:'ausente_definitivo'})],-1,true);
  await f.run('loadPendingGestores()');
- for(const [state,name] of [['activo','active'],['bloqueado','blocked']]){
-  f.run(`setApplicationStatus('${state}')`);
-  const rows=f.elements.get('list-admin-aprobaciones').children;
-  assert.equal(rows.length,2);assert.equal(rows[0].children[0].textContent,name);
-  const buttons=rows[0].children[3].children;
-  assert.deepEqual(buttons.map(b=>b.textContent),['Ver respuestas']);buttons[0].click();
-  assert.equal(rows[1].children[0].children[0].open,true);
-  assert.ok(f.elements.get(`admin-applications-${state}`).textContent.includes('(1)'));
- }
+ assert.equal(f.visible().length,2);assert.equal(f.visible()[0],'waiting');
+ assert.equal(f.elements.get('admin-pending-count').textContent,'1');
+ assert.ok(f.elements.get('admin-pending-summary').textContent.includes('1 con encuesta registrada'));
+ assert.equal(f.run('typeof setApplicationStatus'),'undefined');
  assert.equal(f.actions.length,0);
- f.run('setApplicationStatus("pendiente")');assert.equal(f.visible()[0],'waiting');
- f.run('setApplicationStatus("pendiente_subgestor")');assert.equal(f.visible()[0],'waiting');
 });
 
-test('changed status keeps questionnaire review available and refresh failure warns in every view',async()=>{
+test('leaving pending removes a request from this view; error and session cleanup remain safe',async()=>{
  const r=row('changing',1,{questionnaire:{version:1}}),f=fixture([r],-1,true);
  await f.run('loadPendingGestores()');r.estado='bloqueado';await f.run('loadPendingGestores()');
- assert.equal(f.visible().length,0);f.run('setApplicationStatus("bloqueado")');assert.equal(f.visible()[0],'changing');
- f.run('pendingGestoresRefreshFailed=true; setApplicationStatus("activo")');
+ assert.equal(f.visible().length,0);assert.equal(f.elements.get('admin-pending-count').textContent,'0');
+ f.run('pendingGestoresRefreshFailed=true; renderPendingGestores()');
  assert.ok(f.elements.get('admin-pending-summary').textContent.includes('desactualizados'));
  f.events['pth:session-changed']();assert.equal(f.visible().length,0);
- assert.equal(f.elements.get('admin-applications-bloqueado').textContent,'Bloqueadas');
- assert.equal(f.elements.get('admin-applications-pendiente')['aria-pressed'],'true');
- f.run('setApplicationStatus("bloqueado")');assert.equal(f.visible().length,0);
 });

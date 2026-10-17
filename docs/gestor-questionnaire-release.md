@@ -209,3 +209,30 @@ Rollback: descartar este candidato local. Si en otro momento se autoriza y aplic
 revertir solo su commit de UI y sus bundles, preservando todo trabajo posterior.
 No requiere SQL, migración, redeploy Edge, borrado de respuestas o cambios de estado.
 Publicación sigue pendiente de autorización, fuera de este encargo.
+
+## Ajuste autorizado: solo pendientes — 17 octubre 2026, 12:39 UTC
+
+La instrucción posterior de Marcel («Manten solo las pendientes, al final son las
+que interesan ver», Sentinel_13869e48b38881919dc78b1e796c95e0) sustituye la vista
+por estados anterior y autoriza publicar este ajuste. Base remota revalidada:
+c764118dc0cbd9786af05e5b057c1808f5394f14. Se retiran los botones y selector de
+estado; solo se muestran solicitudes de principales con estado pendiente,
+incluidas antiguas, con conteo y encuestas. Los registros activos/bloqueados no
+aparecen en esa lista aunque tengan encuesta. La sección de equipo y subgestores
+existente no cambia. Se conservan fecha de registro, explicación de antigüedad,
+render seguro y etiqueta/confirmación de bloqueo; esta ya no remite a una pestaña
+Bloqueadas inexistente. Sin cambio de estados, datos, roles, permisos o auth.
+
+44 pruebas dirigidas pasan; build:js, check:js y diff --check pasan. Chromium
+local 375/1280: ausencia de pestañas de estados y registros activos/bloqueados,
+encuesta pendiente accesible, ordenación, vacío y error; sin pageerrors ni
+desbordamiento global. Evidencias nuevas: `admin-pending-only-browser.json` y
+`admin-pending-only-{375,1280}.png`; evidencia anterior de tres vistas es histórica.
+No se consultó DB ni modificaron Rodney/Natali u otras cuentas. Sin pruebas reales.
+
+Rollback específico: revertir únicamente el commit de este ajuste, conservando
+los commits ajenos/posteriores y todos los datos. Eso restablecería las tres vistas
+del commit c764118d; no ejecutar sin una nueva decisión explícita porque la
+preferencia vigente es solo pendientes. No hacer reset general ni rollback DB.
+Push y despliegue se reportan por separado: verificable el ref remoto por git;
+Actions/Pages/checks Forbidden y HTTP público 403 no se reintentan ni se eluden.
