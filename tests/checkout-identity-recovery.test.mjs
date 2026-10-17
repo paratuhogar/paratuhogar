@@ -36,7 +36,7 @@ function fixture({profiles=[account('a'),account('b')],self=null,failure=null}={
  const context={console:{error(){},log(){}},Set,Map,Date,Promise,
   document:{getElementById:node},sessionStorage:storage,localStorage:storage,currentUserData:self,
   PTHSecureData:{token:()=>self?'synthetic-token':null,cacheSuffix:()=>':'+(self?.id||'public')},
-  PTHCheckoutSubmitGuard:{createCheckoutSubmitGuard:s=>guardModule.createCheckoutSubmitGuard(s,undefined,()=> 'synthetic-submission')},
+  PTHCheckoutSubmitGuard:{waitForCheckout:guardModule.waitForCheckout,createCheckoutSubmitGuard:s=>guardModule.createCheckoutSubmitGuard(s,undefined,()=> 'synthetic-submission')},
   supabaseClient:{from:table=>new Query(table),rpc:()=>assert.fail('Must not reserve an order number for invalid identity')},
   cart:[{id:'product',nombre:'Synthetic Product',qty:1,garantia:'1 año'}],isProductCurrentlyAvailable:p=>p.disponible==='SI',
   alert:m=>alerts.push(m),confirm:()=>true,obtenerDuenoReal:async()=> 'Shared Display Name',

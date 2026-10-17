@@ -32,7 +32,7 @@ function setup(data=new Map()){
  const root={document,localStorage:storage,PTHSecureData:{accountId:()=>owner,token:()=>token},addEventListener:(n,fn)=>events[n]=fn,open:(...args)=>{opened.push(args);return null;}};
  const context={window:root,module:{exports:{}},Date,URL,console};
  try{vm.runInNewContext(fs.readFileSync(new URL('../js/checkout-confirmation.js',`file://${__filename}`),'utf8'),context);}catch(e){if(e.code!=='ENOENT')throw e;}
- return {api:root.PTHCheckoutConfirmation,root,data,nodes,opened,emit(name){events[name]?.();},switchAccount(){owner='b';token='session-b';events['pth:session-changed']?.();}};
+ return {api:root.PTHCheckoutConfirmation,root,data,nodes,opened,emit(name){events[name]?.();},switchAccount(next='b'){owner=next;token='session-'+next;events['pth:session-changed']?.();}};
 }
 const confirmed=(f,reference='CA-1539',extra={})=>f.api.show({owner:'a',table:'pedidos',phone:'5356071095',receipts:[{reference}],message:'Synthetic confirmed order',...extra});
 const sections=f=>{const card=f.nodes.get('pth-checkout-confirmations');return card&&!card.removed?card.children:[];};
@@ -41,7 +41,7 @@ const close=f=>{const button=action(f,'Cerrar');assert.ok(button,'confirmed rece
 
 test('close hides only the selected confirmation and keeps receipts and pending state',()=>{
  const f=setup();f.data.set('synthetic-pending-orders','queued and failed orders');confirmed(f);confirmed(f,'CA-1540');
- const wa=action(f,'Enviar pedido por WhatsApp');close(f);close(f); // closes each independent receipt
+ const wa=action(f,'Enviar pedido por WhatsApp');close(f); // closing the latest leaves historical receipts hidden
  assert.equal(sections(f).length,0);assert.equal(f.data.get('synthetic-pending-orders'),'queued and failed orders');
  const saved=JSON.parse(f.data.get('pth_checkout_confirmations_v1'));assert.equal(saved.length,2);assert.equal(saved[0].receipts[0].reference,'CA-1539');
  wa.onclick();assert.equal(f.opened.length,0,'a stale action cannot reopen a closed notice');
@@ -63,8 +63,8 @@ test('receipt recovery and its failure cannot be dismissed until a successful re
  const f=setup();confirmed(f,'CA-1539',{message:null});let release;f.api.configure({load:()=>new Promise(resolve=>release=resolve)});
  const promise=action(f,'Enviar pedido por WhatsApp').onclick();assert.equal(action(f,'Cerrar')?.disabled,true);action(f,'Cerrar').onclick();assert.equal(sections(f).length,1);
  release(null);await promise;assert.match(sections(f)[0].children[1].textContent,/No se pudo recuperar/);assert.equal(action(f,'Cerrar').disabled,true);action(f,'Cerrar').onclick();assert.equal(sections(f).length,1);
- confirmed(f,'CA-1540');assert.match(sections(f)[0].children[1].textContent,/No se pudo recuperar/);assert.equal(action(f,'Cerrar').disabled,true);
- f.api.configure({load:async()=> 'Synthetic recovered receipt'});await action(f,'Enviar pedido por WhatsApp').onclick();assert.equal(action(f,'Cerrar').disabled,false);close(f);assert.equal(sections(f).length,1);assert.equal(f.opened.length,0);
+
+ f.api.configure({load:async()=> 'Synthetic recovered receipt'});await action(f,'Enviar pedido por WhatsApp').onclick();assert.equal(action(f,'Cerrar').disabled,false);close(f);assert.equal(sections(f).length,0);assert.equal(f.opened.length,0);
 });
 test('storage write refusal cannot resurrect a closed confirmation during navigation',()=>{
  const f=setup();confirmed(f);f.root.localStorage.setItem=()=>{throw Error('QuotaExceeded');};close(f);f.api.restore();f.emit('storage');assert.equal(sections(f).length,0);
@@ -82,7 +82,7 @@ test('a new acknowledgment synchronizes another tab dismissal even before its st
  const reload=setup(a.data);reload.api.configure({});assert.equal(sections(reload).length,1);
 });
 test('closed receipt remains dismissed after more than 25 newer confirmations',()=>{
- const f=setup();confirmed(f);close(f);for(let i=0;i<26;i++)confirmed(f,'CA-'+(1540+i));confirmed(f);assert.equal(sections(f).length,25);assert.ok(sections(f).every(s=>!s.children[0].textContent.includes('CA-1539')));
+ const f=setup();confirmed(f);close(f);for(let i=0;i<26;i++)confirmed(f,'CA-'+(1540+i));confirmed(f);assert.equal(sections(f).length,1);assert.ok(sections(f).every(s=>!s.children[0].textContent.includes('CA-1539')));
  const reload=setup(f.data);reload.api.configure({});confirmed(reload);assert.ok(sections(reload).every(s=>!s.children[0].textContent.includes('CA-1539')));
  assert.ok(JSON.parse(f.data.get('pth_checkout_confirmations_v1')).some(e=>e.receipts[0].reference==='CA-1539'),'closed receipt remains stored within its seven-day retention');
 });
@@ -116,3 +116,20 @@ test('storage refusal cannot remove an acknowledged receipt from the current pag
  f.api.show({owner:'a',table:'pedidos',phone:'5356071095',receipts:[{reference:'CA-1539'}],message:'Confirmed order'});f.api.restore();
  assert.ok(!f.nodes.get('pth-checkout-confirmations').removed);
 });
+
+test('normal view shows latest logical order only and closing never reveals historical receipts',()=>{
+ const f=setup();confirmed(f,'A-340');confirmed(f,'A-343');
+ confirmed(f,'A-344',{receipts:[{reference:'A-344'},{reference:'B-50'}]});
+ assert.equal(sections(f).length,1);assert.match(sections(f)[0].children[0].textContent,/A-344.*B-50/);
+ close(f);assert.equal(sections(f).length,0);
+ const reloaded=setup(f.data);reloaded.api.configure({});assert.equal(sections(reloaded).length,0);
+ assert.equal(JSON.parse(f.data.get('pth_checkout_confirmations_v1')).length,3);
+});
+
+ test('switching accounts preserves scoped minimal history and dismissals',()=>{
+ const f=setup();confirmed(f);close(f);f.switchAccount();
+ f.api.show({owner:'b',table:'pedidos',phone:'5356071095',receipts:[{reference:'B-10'}]});
+ assert.equal(sections(f).length,1);assert.match(sections(f)[0].children[0].textContent,/B-10/);
+ f.switchAccount('a');f.api.restore();assert.equal(sections(f).length,0);
+ assert.equal(JSON.parse(f.data.get('pth_checkout_confirmations_v1')).length,2);
+ });

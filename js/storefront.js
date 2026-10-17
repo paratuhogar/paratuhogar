@@ -3055,6 +3055,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const submissionSession = window.PTHSecureData.token();
     const inSubmissionScope = () => checkoutScope() === submissionOwner && window.PTHSecureData.token() === submissionSession && !window.PTHPendingCheckoutUI?.guard();
     const assertSubmissionScope = () => { if (!inSubmissionScope()) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'}); };
+    const waitForCheckout = window.PTHCheckoutSubmitGuard.waitForCheckout;
     let checkoutFinished = false;
     let btn = null;
 
@@ -3070,7 +3071,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     if (window.PTHPendingCheckoutUI?.guard()) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     const previousOutcome = readNewCheckoutOutcome();
     if (previousOutcome) {
-        const outcome = await checkNewCheckoutOutcome(previousOutcome);
+        const outcome = await waitForCheckout(checkNewCheckoutOutcome(previousOutcome));
         if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
         if (outcome.kind === 'confirmed') {
             await confirmPendingCheckout(outcome.receipts,{table:previousOutcome.table,phone:previousOutcome.phone});
@@ -3093,10 +3094,10 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     let verifiedCheckoutProducts;
     try {
         const idsEnCarrito = cart.map(item => item.id);
-        const { data: dbProducts, error: dbError } = await supabaseClient
+        const { data: dbProducts, error: dbError } = await waitForCheckout(supabaseClient
             .from('productos')
             .select('id,nombre,disponible,precio,comision,precio_flexible,proveedor,garantia,mensajeria')
-            .in('id', idsEnCarrito);
+            .in('id', idsEnCarrito));
 
         assertSubmissionScope();
 
@@ -3184,11 +3185,11 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         blacklistCandidates.add('53' + telLimpioCheck);
     }
 
-    const { data: blockedMatches, error: blacklistError } = await supabaseClient
+    const { data: blockedMatches, error: blacklistError } = await waitForCheckout(supabaseClient
         .from('blacklist')
         .select('tipo, motivo, telefono')
         .in('telefono', [...blacklistCandidates])
-        .limit(1);
+        .limit(1));
 
     assertSubmissionScope();
 
@@ -3224,9 +3225,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const vueltoC = (valVuelto && valVuelto > 0) ? `${valVuelto}` : "no";
 
     // EL CEREBRO: DETECTAR QUIÉN SE LLEVA LA COMISIÓN
-    let activeGestor = await obtenerDuenoReal(telC);
+    let activeGestor = await waitForCheckout(obtenerDuenoReal(telC));
     assertSubmissionScope();
-    const checkoutHierarchy = await resolveSalesHierarchy(activeGestor);
+    const checkoutHierarchy = await waitForCheckout(resolveSalesHierarchy(activeGestor));
     const canonicalGestor = checkoutHierarchy?.agent?.nombre || activeGestor;
     assertSubmissionScope();
     const orderSubgestor = checkoutHierarchy?.isSubgestor ? checkoutHierarchy : null;
@@ -3242,11 +3243,11 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     let checkoutCustomPrices = [];
     const pricingOwner = checkoutHierarchy?.pricingOwnerName;
     if (pricingOwner) {
-        const { data: customRows, error: customRowsError } = await supabaseClient
+        const { data: customRows, error: customRowsError } = await waitForCheckout(supabaseClient
             .from('precios_personalizados')
             .select('producto_id, nuevo_precio, comision_subgestor')
             .eq('gestor', pricingOwner)
-            .in('producto_id', cartProductIds);
+            .in('producto_id', cartProductIds));
         assertSubmissionScope();
         if (customRowsError) throw customRowsError;
         checkoutCustomPrices = customRows || [];
@@ -3356,8 +3357,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         try {
             // El consecutivo se reserva en Supabase con bloqueo transaccional.
             // Así nunca depende de una lectura parcial del navegador ni de los últimos 20 pedidos.
-            const { data: consecutivo, error: errConsecutivo } = await supabaseClient
-                .rpc('reservar_consecutivo_pedido', { p_proveedor: prov });
+            const { data: consecutivo, error: errConsecutivo } = await waitForCheckout(supabaseClient
+                .rpc('reservar_consecutivo_pedido', { p_proveedor: prov }));
 
             if (errConsecutivo || !consecutivo) {
                 throw errConsecutivo || new Error('Supabase no devolvió un consecutivo');
@@ -3499,7 +3500,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
     const intent = window.PTHPendingCheckoutUI?.intent() || draft || volatileCheckoutIntent;
     const request = { table: orderSubgestor ? 'pedidos_subgestores' : 'pedidos', inputs: promesas, delivery: { pickup: isRecogida, municipio: municipioC, localidad: localidadC }, intentId: intent.intentId, intentCreatedAt: intent.savedAt, attempt: previousOutcome?.attempt };
-    const quote = await window.PTHSecureData.checkout({ ...request, operation: 'quote' });
+    const quote = await waitForCheckout(window.PTHSecureData.checkout({ ...request, operation: 'quote' }));
     if (quote.error) throw quote.error;
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (quote.data.complete) await confirmPendingCheckout(quote.data.confirmed,{table:request.table,phone:whatsappDestino});
@@ -3531,7 +3532,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
     assertSubmissionScope();
-    const result = await window.PTHSecureData.checkout({ ...request, operation: 'submit', attempt: quote.data.attempt, quote: quote.data.quote,duplicateReview });
+    const result = await waitForCheckout(window.PTHSecureData.checkout({ ...request, operation: 'submit', attempt: quote.data.attempt, quote: quote.data.quote,duplicateReview }));
     if (result.error) throw result.error;
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (result.data?.complete) {
@@ -3555,7 +3556,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     checkoutFinished = true;
 
     if (activeGestor !== 'Venta Directa') {
-        const protection = await recordCustomerClosure(telC, canonicalGestor, protectionOrderIds.join(','));
+        const protection = await waitForCheckout(recordCustomerClosure(telC, canonicalGestor, protectionOrderIds.join(',')));
         assertSubmissionScope();
         if (protection.transferred) {
             console.log(`🔄 Cliente transferido por cierre completo: ${protection.previousOwner} → ${activeGestor}`);

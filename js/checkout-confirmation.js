@@ -5,27 +5,31 @@
   let entries=[],load=null,panel=null;
   const owner=()=>root.PTHSecureData.accountId?.()||'visitor';
   const token=()=>root.PTHSecureData.token();
-  const valid=entry=>entry&&entry.owner===owner()&&['pedidos','pedidos_subgestores'].includes(entry.table)&&/^\d{8,15}$/.test(entry.phone||'')&&Array.isArray(entry.receipts)&&entry.receipts.length>0&&entry.receipts.length<=30&&entry.receipts.every(r=>typeof r.reference==='string'&&r.reference.length>0&&r.reference.length<=200)&&Number.isFinite(entry.savedAt)&&Date.now()-entry.savedAt>=0&&Date.now()-entry.savedAt<age;
+  const valid=(entry,account=owner())=>entry&&entry.owner===account&&['pedidos','pedidos_subgestores'].includes(entry.table)&&/^\d{8,15}$/.test(entry.phone||'')&&Array.isArray(entry.receipts)&&entry.receipts.length>0&&entry.receipts.length<=30&&entry.receipts.every(r=>typeof r.reference==='string'&&r.reference.length>0&&r.reference.length<=200)&&Number.isFinite(entry.savedAt)&&Date.now()-entry.savedAt>=0&&Date.now()-entry.savedAt<age;
   const inScope=entry=>entry.owner===owner()&&entry.token===token();
   const signature=e=>e.table+'|'+e.receipts.map(r=>r.reference).join('|');
-  const actionable=entry=>inScope(entry)&&entries.includes(entry)&&!entry.dismissed;
+  const actionable=entry=>inScope(entry)&&entries.at(-1)===entry&&!entry.dismissed;
   function retained(values){
     const current=values.filter(e=>valid(e)&&inScope(e)).sort((a,b)=>a.savedAt-b.savedAt);
-    const visible=new Set(current.filter(e=>!e.dismissed).slice(-25));
-    // Keep closed receipts throughout the existing seven-day retention, so
-    // the visible-card limit cannot turn a repeated receipt into a new notice.
-    return current.filter(e=>e.dismissed||visible.has(e));
+    // Keep every minimal receipt within the existing seven-day retention.
+    return current;
   }
   function persist(reopened){
     restore();
     // Only an explicit re-send may override a stored dismissal. Ordinary
     // repeated acknowledgments still merge the closed state across tabs.
     if(reopened&&valid(reopened)&&inScope(reopened)){reopened.dismissed=false;entries=retained([...entries.filter(e=>signature(e)!==signature(reopened)),reopened]);}
-    try{root.localStorage.setItem(key,JSON.stringify(entries.map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts,savedAt,dismissed:Boolean(dismissed)}))));}catch(_) {}
+    try {
+      const saved=JSON.parse(root.localStorage.getItem(key)||'[]');
+      const others=(Array.isArray(saved)?saved:[]).filter(e=>e&&typeof e.owner==='string'&&e.owner!==owner()&&valid(e,e.owner));
+      const minimal=[...others,...entries].map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts:receipts.map(({reference,proveedor})=>({reference,proveedor})),savedAt,dismissed:Boolean(dismissed)}));
+      root.localStorage.setItem(key,JSON.stringify(minimal));
+    } catch(_) {}
   }
   function url(entry){return 'https://api.whatsapp.com/send?phone='+entry.phone+'&text='+encodeURIComponent(entry.message||'Pedido confirmado: '+entry.receipts.map(r=>'#'+r.reference).join(', ')+'. Por favor, revisa los detalles en la web.');}
   function render(){
-    const visible=entries.filter(entry=>!entry.dismissed);
+    // Select before dismissal: closing the latest must not reveal older notices.
+    const visible=entries.slice(-1).filter(entry=>!entry.dismissed);
     if(!visible.length){panel?.remove();panel=null;return;}
     if(!panel){const target=root.document.getElementById('sec-catalogo');if(!target)return;panel=root.document.createElement('aside');panel.id='pth-checkout-confirmations';panel.className='pth-connectivity-card';panel.style.margin='24px';panel.setAttribute('aria-label','Pedidos confirmados y envío por WhatsApp');target.before(panel);}
     panel.replaceChildren();
@@ -61,7 +65,7 @@
     let saved=[];try{saved=JSON.parse(root.localStorage.getItem(key)||'[]');}catch(_){}
     let dismissalChanged=false;
     const previous=new Map(entries.filter(e=>valid(e)&&inScope(e)).map(e=>[signature(e),e]));
-    const restored=new Map((Array.isArray(saved)?saved:[]).filter(valid).map(e=>{
+    const restored=new Map((Array.isArray(saved)?saved:[]).filter(e=>valid(e)).map(e=>{
       const before=previous.get(signature(e));
       if(before&&e.dismissed===true&&!before.dismissed){before.dismissed=true;dismissalChanged=true;}
       const entry=before||{owner:e.owner,table:e.table,phone:e.phone,receipts:e.receipts.map(r=>({reference:r.reference,proveedor:r.proveedor})),savedAt:e.savedAt,dismissed:e.dismissed===true,token:token(),message:null};
@@ -98,7 +102,7 @@
       entries=entries.filter(e=>signature(e)!==signature(entry));entries.push(entry);entries=retained(entries);
       persist(reopen?entry:undefined);render();
     },
-    clear(){entries=[];try{root.localStorage.removeItem(key);}catch(_){}render();}
+    clear(){entries=[];render();}
   };
   root.addEventListener('pth:session-changed',()=>root.PTHCheckoutConfirmation.clear());
   root.addEventListener('storage',restore);

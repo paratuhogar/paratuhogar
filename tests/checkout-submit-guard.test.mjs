@@ -34,3 +34,15 @@ test('borra la clave únicamente después de un envío confirmado', () => {
   assert.equal(guard.token(), null);
   assert.deepEqual(guard.acquire(), { accepted: true, token: 'token-1' });
 });
+
+test('network deadline releases the caller while ignoring late completion and retaining retry token', async () => {
+  const guard = createCheckoutSubmitGuard(memoryStorage(), 'checkout', () => 'same-intent');
+  const attempt = guard.acquire();
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  await assert.rejects(guardModule.waitForCheckout(pending, 10), {code:'NETWORK_ERROR'});
+  guard.fail();
+  assert.equal(guard.acquire().token, attempt.token);
+  finish({confirmed:true});
+  assert.equal(guard.token(), attempt.token);
+});

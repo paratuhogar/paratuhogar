@@ -48,5 +48,16 @@
     };
   }
 
-  return { createCheckoutSubmitGuard };
+  // Bound only network reads/results, never a workflow with later side effects.
+  // A timed-out submit retains its recorded attempt for receipt recovery.
+  function waitForCheckout(value, milliseconds = 45000) {
+    let timer;
+    return Promise.race([
+      Promise.resolve(value),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(Object.assign(
+        new Error('No se recibió respuesta del servidor. Conservamos el intento; vuelve a comprobar su recepción.'),
+        {code: 'NETWORK_ERROR'})), milliseconds); })
+    ]).finally(() => clearTimeout(timer));
+  }
+  return { createCheckoutSubmitGuard, waitForCheckout };
 });
