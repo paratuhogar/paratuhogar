@@ -157,9 +157,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-10-05T15:29:31.603945+00:00"
+    "updated_at": "2026-10-17T02:49:51.081269+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -1075,9 +1075,9 @@
     "slug": "estacion-portatil-ecoflow-delta-3",
     "nombre": "Estación portátil - Ecoflow Delta 3",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-17T02:44:10.35111+00:00"
   },
   {
     "id": "4132edb9-3b94-4e7d-ac25-8f563d17163b",
