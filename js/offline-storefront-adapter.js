@@ -17,8 +17,10 @@
       if(!valid()||!root.document)return;
       const doc=root.document;let node=doc.getElementById('pth-offline-storefront-status');
       if(!node){node=doc.createElement('aside');node.id='pth-offline-storefront-status';node.className='pth-offline-storefront-status';node.setAttribute('role','status');node.setAttribute('aria-live','polite');doc.getElementById('sec-catalogo')?.before(node);}
-      const stamp=new Date(active.savedAt).toLocaleString('es-CU',{timeZone:'America/Havana',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-      node.textContent='Sin conexión con la tienda · Datos guardados el '+stamp+'. '+(active.owner?'Puedes preparar pedidos aquí. '+(!secureData.token()?'Tu sesión venció: vuelve a entrar con conexión antes de enviarlos. ':'')+'La tienda comprobará precios y disponibilidad al conectar.':'Puedes consultar este catálogo. Conecta antes de confirmar un pedido.')+(note?' '+note:'');
+      node.replaceChildren();
+      const text=doc.createElement('span');text.textContent=note||'Sin conexión con la tienda. Revisa tu copia de trabajo.';
+      const link=doc.createElement('button');link.type='button';link.className='pth-connectivity-action';link.textContent='Revisar conexión';link.onclick=()=>root.showSection?.('dashboard');
+      node.append(text,link);
     }
     async function fallback(error={code:'NETWORK_ERROR'}){
       if(error?.status===401||error?.status===403||['SESSION_INVALID','SESSION_EXPIRED','SESSION_CHANGED','FORBIDDEN'].includes(error?.code)){

@@ -46,7 +46,7 @@
     <script src="js/public-catalog-api.js?v=20261002-lowdata1" defer></script>
     <meta name="pth-offline-shell-version" content="20261006-ready1">
     <script src="js/pwa.js?v=20261006-ready1" defer></script>
-    <link rel="stylesheet" href="css/offline-storefront.css?v=20261003-pending2">
+    <link rel="stylesheet" href="css/offline-storefront.css?v=20261017-worksettings1">
     <link rel="stylesheet" href="css/admin-panel.css?v=20261003-recent2">
     <script src="js/admin-panel-data.js?v=20261003-recent2" defer></script>
     <link rel="stylesheet" href="css/feedback-announcement.css?v=20261001-1">
@@ -65,7 +65,7 @@
     <script src="js/gestor-ranking.js?v=20261004-rolling30" defer></script>
     <script src="js/affiliate-links.js?v=20261003-alias1" defer></script>
     <script src="js/public-name-editor.js?v=20261003-alias1" defer></script>
-    <script src="js/offline-storefront-adapter.js?v=20261005-cold7" defer></script>
+    <script src="js/offline-storefront-adapter.js?v=20261017-worksettings1" defer></script>
     <script src="js/feedback-announcement.js?v=20261003-welcome2" defer></script>
     <script src="js/image-variants.js?v=20261001-images2" defer></script>
     <script src="js/product-images.js?v=20261002-fasttools2" defer></script>
@@ -471,12 +471,13 @@
                         <div class="text-white/80 flex items-center justify-center pl-4">
                             <span class="material-symbols-outlined text-xl">search</span>
                         </div>
-                        <input id="search-bar" name="search_query_hidden" type="search" autocomplete="new-password" role="presentation" data-lpignore="true" oninput="filterProducts()" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
+                        <input id="search-bar" name="search_query_hidden" type="search" autocomplete="new-password" aria-label="Buscar productos" data-lpignore="true" oninput="filterProducts()" class="form-input flex w-full min-w-0 flex-1 border-none bg-transparent text-white focus:ring-0 h-full placeholder:text-white/60 px-3 text-sm font-normal" placeholder="Buscar refrigerador, split..." />
                     </div>
                 </label>
             </div>
         </div>
 
+        <button type="button" onclick="showSection('dashboard')" class="text-white p-2" aria-label="Trabajo sin conexión y ahorro de datos">Conexión</button>
         <!-- Botones de Acción (Carrito, Login, Moneda) -->
         <div class="flex items-center gap-2 md:gap-4">
             <!-- Selector Moneda -->
@@ -941,6 +942,12 @@
 
         <!-- 3. SECCIÓN DASHBOARD (Independiente) -->
         <section id="sec-dashboard" class="hidden px-6 py-8 space-y-6">
+        <section id="pth-offline-work" aria-labelledby="pth-offline-work-title">
+            <button type="button" onclick="showSection('catalogo')" class="pth-connectivity-action">Volver al catálogo</button>
+            <h2 id="pth-offline-work-title" tabindex="-1" class="text-xl font-black">Trabajo sin conexión</h2>
+            <p>Prepara este dispositivo con Internet y revisa aquí tu copia y el ahorro de datos.</p>
+            <div id="pth-offline-options"></div>
+        </section>
         <aside id="pth-guide-download" hidden aria-labelledby="pth-guide-title">
             <div class="pth-guide-copy">
                 <h2 id="pth-guide-title">Guía para gestores</h2>
@@ -3257,8 +3264,8 @@
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/gestor-registration-steps.js?v=20261016-captacion1" defer></script>
     <script src="js/checkout-confirmation.js?v=20261017-checkout1" defer></script>
-    <script src="js/storefront.min.js?v=20261017-checkout1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261017-checkout1" defer></script>
+    <script src="js/storefront.min.js?v=20261017-worksettings1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261017-worksettings1" defer></script>
 
 
 

@@ -234,7 +234,7 @@ async function checkShortLinks() {
         bindNewCartAccount();
         let panel = document.getElementById('pth-low-data-panel');
         if (!panel) { panel = document.createElement('aside'); panel.id = 'pth-low-data-panel'; panel.className = 'pth-low-data-panel'; grid.before(panel); }
-        const focusId = panel.contains(document.activeElement) ? document.activeElement.id : '';
+        const focusId = document.getElementById('pth-offline-options')?.contains(document.activeElement) ? document.activeElement.id : '';
         panel.replaceChildren();
         const cards = document.createElement('div'); cards.className = 'pth-connectivity-cards';
         const savingCard = document.createElement('section'); savingCard.className = 'pth-connectivity-card';
@@ -280,7 +280,9 @@ async function checkShortLinks() {
         cards.append(savingCard, savedCard);
         // Keep existing manual receipt/cart actions separate from the copy's date.
         const status = document.createElement('p'); status.setAttribute('role', 'status'); status.className = 'pth-connectivity-status';
-        panel.append(cards, status);
+        document.getElementById('pth-offline-options')?.querySelector('.pth-connectivity-cards')?.remove();
+        document.getElementById('pth-offline-options')?.append(cards);
+        panel.append(status);
         const expiredOwner = window.PTHSecureData.expiredCheckoutOwner?.();
         if (expiredOwner && !currentNewCartOwner()) {
             let pending; try { pending = JSON.parse(checkoutStorage?.getItem('pth_checkout_submission_token:' + expiredOwner + ':outcome') || 'null'); } catch (_) {}
@@ -5893,6 +5895,7 @@ function renderGestorHomeFromCache() {
 
 function openGestorTool(tool) {
     showSection('catalogo');
+    if (tool === 'catalogo') return;
     setTimeout(() => {
         if (tool === 'catalogo') {
             const search = document.getElementById('search-bar');
@@ -5935,11 +5938,7 @@ function toggleGestorAdvanced(forceOpen) {
 
     // Busca esta función y reemplázala completamente
 function showSection(section) {
-    if (offlineStorefront.usingCopy() && section !== 'catalogo') {
-        offlineStorefront.status('Tu Dashboard necesita conexión para mostrar pedidos, pagos y resultados actualizados.');
-        document.getElementById('pth-offline-storefront-status')?.scrollIntoView({block:'nearest'});
-        return;
-    }
+    document.getElementById('sec-dashboard').classList.toggle('pth-offline-settings-only', offlineStorefront.usingCopy());
     const isCat = section === 'catalogo';
 
     // Recuperar siempre el desplazamiento de la página al volver desde
@@ -5957,7 +5956,7 @@ function showSection(section) {
     document.getElementById('tab-dash').setAttribute('aria-pressed', String(!isCat));
 
     // 3. CORRECCIÓN PRINCIPAL: Cargar el Dashboard PRO si entramos a la sección dashboard
-    if (!isCat) {
+    if (!isCat && !offlineStorefront.usingCopy()) {
         // Obtenemos el nombre del gestor de la variable global
         const currentGestor = window.gestorName;
         if (currentGestor && !myOrdersData.length) {
@@ -5968,6 +5967,8 @@ function showSection(section) {
     }
 
     window.scrollTo(0,0);
+    if (isCat) document.getElementById('search-bar')?.focus({preventScroll:true});
+    else document.getElementById('pth-offline-work-title')?.focus({preventScroll:true});
 }
 
     // GESTORES

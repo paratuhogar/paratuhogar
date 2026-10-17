@@ -1,0 +1,34 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const {startFixture}=require('./fixtures/offline-normal-http.cjs');
+(async()=>{const fixture=await startFixture(),browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
+const evidence='/workspace/scratch/work-settings';fs.mkdirSync(evidence,{recursive:true});
+try {for(const width of [390,1440]) {const context=await browser.newContext({viewport:{width,height:900}});
+    await context.addInitScript(({actor,token,until})=>{if(location.hostname!=='127.0.0.1')return;sessionStorage.setItem('pth_intro_vista','true');sessionStorage.setItem('pth_entry_logged','true');for(const [k,v]of Object.entries({pth_last_seen_level:'0',info_precios_v1:'true',sl_tutorial_completed_v1:'true',pth_subgestor_onboarding_v1:'true'}))localStorage.setItem(k,v);if(!localStorage.getItem('fixture_initialized')){localStorage.setItem('fixture_initialized','1');localStorage.setItem('pth_secure_token',token);localStorage.setItem('pth_secure_token_expires_at',String(until));localStorage.setItem('pth_session',JSON.stringify({name:actor.nombre,isAdmin:false,data:{...actor,password:'__session__'}}));}},{actor:fixture.actors.a,token:fixture.tokens.a,until:fixture.until});
+
+await context.route('**/*',route=>new URL(route.request().url()).origin===fixture.origin?route.continue():route.abort());
+const page=await context.newPage();page.on('dialog',d=>d.dismiss());
+await page.goto(fixture.origin+'/');await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===2&&document.getElementById('pth-device-retry'));
+await page.waitForTimeout(1500);await page.evaluate(()=>showSection('catalogo'));
+assert.equal(await page.locator('#pth-data-saving-toggle').isVisible(),false);
+assert.equal(await page.evaluate(()=>document.activeElement.id),'search-bar');
+await page.screenshot({path:evidence+'/catalog-'+width+'.png'});
+await page.evaluate(()=>showSection('dashboard'));
+await page.locator('#pth-data-saving-toggle').click();
+assert.equal(await page.locator('#pth-data-saving-toggle').getAttribute('aria-pressed'),'true');
+await page.screenshot({path:evidence+'/dashboard-'+width+'.png'});
+await page.evaluate(()=>openGestorTool('catalogo'));await page.waitForTimeout(200);
+assert.equal(await page.evaluate(()=>document.activeElement.id),'search-bar');
+assert.equal(await page.evaluate(()=>window.scrollY),0);
+await page.reload();await page.waitForFunction(()=>document.getElementById('pth-data-saving-toggle'));
+assert.equal(await page.locator('#pth-data-saving-toggle').getAttribute('aria-pressed'),'true');
+await page.waitForFunction(()=>document.getElementById('pth-device-readiness-summary')?.textContent.startsWith('Listo'),{},{timeout:50000});
+await page.evaluate(async()=>{const q=PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB));const row=await q.save('actor-a',{lines:[{id:'pA',qty:1,price:100}],form:{nombre:'DEMO retained pending',tel:'5350000000',pickup:true,moneda:'USD (Efectivo)'},estimate:{shipping:0}});await q.patch('actor-a',row.id,{state:'paused'});await PTHPendingCheckoutUI.render();});
+await page.evaluate(()=>showSection('catalogo'));assert.equal(await page.locator('#pth-pending-order-panel summary').isVisible(),true);
+await page.locator('#pth-pending-order-panel summary').click();assert.equal(await page.getByText('DEMO retained pending',{exact:true}).isVisible(),true);
+await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.PTHOfflineStorefront?.usingCopy());
+await page.evaluate(()=>showSection('dashboard'));assert.equal(await page.locator('#pth-device-retry').isVisible(),true);assert.equal(await page.locator('#pth-data-saving-toggle').isVisible(),true);
+await page.screenshot({path:evidence+'/offline-'+width+'.png'});
+await context.close();console.log('PASS viewport '+width+' catalog, dashboard, persistence, focus, scroll, offline');}
+assert.equal(fixture.f.writes,0);
+}finally{await browser.close();await fixture.close();}})().catch(e=>{console.error(e);process.exitCode=1});

@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-10-17-checkout1';
+  const shellVersion = 'pth-public-static-2026-10-17-worksettings1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -42,7 +42,7 @@
       const summary=document.createElement('p');summary.id='pth-device-readiness-summary';
       const result=document.createElement('p');result.id='pth-device-copy-result';
       const retry=document.createElement('button');retry.type='button';retry.id='pth-device-retry';retry.className='pth-connectivity-action';retry.onclick=()=>void prepareDevice(true);
-      node.append(summary,result,retry);document.getElementById('admin-nav')?.before(node);
+      node.append(summary,result,retry);document.getElementById('pth-offline-options')?.append(node);
     }
     node.querySelector('#pth-device-readiness-summary').textContent=text;
     const result=node.querySelector('#pth-device-copy-result');result.textContent=copyOutcome?.account===account?copyOutcome.text:'';result.hidden=!result.textContent;
@@ -278,7 +278,7 @@
     window.PTHCheckoutConfirmation?.restore();
     const generation = ++renderGeneration, account = localAccount();
     if (receiptsLink) hide(receiptsLink, true);
-    hide(queueButton, !account); hide(copyButton, !account);
+    hide(queueButton, !account); hide(copyButton, true);
     hide(help, !account); hide(copyHelp, !account);
     hide(exitReview, !reviewing);
     const submit = document.getElementById('final-submit-btn');
@@ -299,7 +299,7 @@
     if (reviewing && !rows.some(row => row.id === reviewing.id && row.form)) leaveReview();
     if (!panel) {
       const catalog = document.getElementById('sec-catalogo'); if (!catalog) return;
-      panel = document.createElement('aside'); panel.id = 'pth-pending-order-panel'; panel.className = 'pth-connectivity-card pth-pending-card'; panel.style.margin = '24px'; catalog.before(panel);
+      panel = document.createElement('details'); panel.id = 'pth-pending-order-panel'; panel.className = 'pth-connectivity-card pth-pending-card'; panel.style.margin = '24px'; catalog.before(panel);
     }
     // Receipt history remains in the queue; only its large notification is hidden.
     const onlyReceipts = rows.length > 0 && rows.every(row => row.state === 'confirmed' && !row.form
@@ -317,7 +317,8 @@
     if (!rows.length || onlyReceipts) return;
     const pending = rows.filter(row => row.form && pendingStates.includes(row.state));
     const ready = pending.filter(row => ['queued', 'sending', 'uncertain'].includes(row.state));
-    const heading = document.createElement('h3'); heading.textContent = pending.length === 1 ? '1 pedido pendiente en este teléfono' : pending.length ? pending.length + ' pedidos pendientes en este teléfono' : 'Estado de los pedidos guardados';
+    const heading = document.createElement('summary'); heading.textContent = pending.length === 1 ? '1 pedido pendiente en este teléfono' : pending.length ? pending.length + ' pedidos pendientes en este teléfono' : 'Estado de los pedidos guardados';
+    heading.textContent += ' · Revisar';
     panel.append(heading);
     if (ready.length) {
       const guidance = document.createElement('p'); guidance.className = 'pth-pending-guidance'; guidance.textContent = savedGuidance(ready.length); panel.append(guidance);
@@ -464,7 +465,8 @@
   const copyHelp = document.createElement('p'); copyHelp.className = 'pth-cart-draft-note'; copyHelp.textContent = 'Guarda tus clientes recientes, los productos y las tarifas para completar este mismo formulario sin conexión. Usa un teléfono personal. La copia se prepara automáticamente al entrar con Internet, dura hasta 7 días y se borra al cerrar sesión; los pedidos quedan aislados para tu cuenta.';
   const exitReview = document.createElement('button'); exitReview.type = 'button'; exitReview.id = 'pth-leave-pending-review'; exitReview.className = 'pth-connectivity-action'; exitReview.textContent = 'Volver a mi carrito'; exitReview.hidden = true; exitReview.onclick = leaveReview;
   const status = document.createElement('p'); status.id = 'pth-pending-message'; status.setAttribute('role', 'status');
-  document.getElementById('final-submit-btn').before(queueButton, help, copyButton, copyHelp, exitReview, status);
+  document.getElementById('final-submit-btn').before(queueButton, help, exitReview, status);
+  document.getElementById('pth-offline-options')?.append(copyButton, copyHelp);
   queueButton.onclick = () => void savePending();
   async function prepareDevice(force=false) {
     if(copying)return;
