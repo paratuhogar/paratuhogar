@@ -171,6 +171,12 @@ async function saveFinancialChanges() {
 // =========================================================
 let pendingGestoresCache = [];
 let pendingGestorOrder = 'oldest';
+let applicationStatus = 'pendiente';
+function setApplicationStatus(value) {
+    if (!['pendiente', 'activo', 'bloqueado'].includes(value)) return;
+    applicationStatus = value;
+    renderPendingGestores();
+}
 let pendingGestoresLoading = false;
 let pendingGestoresGeneration = 0;
 let pendingGestoresUpdatedAt = null;
@@ -183,6 +189,7 @@ function setPendingGestorOrder(value) {
     renderPendingGestores();
 }
 function openPendingGestorReview() {
+    applicationStatus = 'pendiente';
     setPendingGestorOrder('oldest');
     const order = document.getElementById('admin-pending-order');
     changeAdminTab('aprobaciones');
@@ -205,19 +212,30 @@ function renderPendingGestores() {
     if (card) {
         card.hidden = !review.total || pendingGestoresRefreshFailed;
         document.getElementById('admin-pending-review-total').textContent = `${review.total} ${review.total === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'}`;
-        document.getElementById('admin-pending-review-age').textContent = `${review.over24h} esperan más de 24 horas · ${review.over48h} más de 48 horas.${review.oldest ? ` La más antigua: ${data.date(review.oldest)}.` : ''}`;
+        document.getElementById('admin-pending-review-age').textContent = `${review.over24h} registradas hace más de 24 horas · ${review.over48h} hace más de 48 horas.${review.oldest ? ` Registro más antiguo: ${data.date(review.oldest)}.` : ''}`;
         setPendingGestorReviewState(pendingGestoresRefreshFailed ? 'No se pudieron actualizar las solicitudes. Este contador es de la última consulta; vuelve a actualizar.' : `Actualizado: ${lastUpdate}.`);
     }
     const summary = document.getElementById('admin-pending-summary');
-    if (summary) summary.textContent = `${review.total} solicitudes pendientes en total · ${review.unknown} con fecha por revisar. ${pendingGestoresRefreshFailed ? 'La última actualización falló; estos datos pueden estar desactualizados.' : `Actualizado: ${lastUpdate}.`}`;
+    const labels = { pendiente: 'Pendientes', activo: 'Activas', bloqueado: 'Bloqueadas' };
+    const seen = new Set();
+    const principals = pendingGestoresCache.filter(row => row.id && !row.parent_id && !seen.has(row.id) && seen.add(row.id));
+    for (const [state, label] of Object.entries(labels)) {
+        const tab = document.getElementById(`admin-applications-${state}`);
+        if (tab) { tab.textContent = `${label} (${principals.filter(row => row.estado === state).length})`; tab.setAttribute('aria-pressed', String(applicationStatus === state)); }
+    }
+    const rows = applicationStatus === 'pendiente' ? review.rows : principals.filter(row => row.estado === applicationStatus).sort((a,b) => {
+        const validA = data.bucket(a, now) !== 'unknown', validB = data.bucket(b, now) !== 'unknown';
+        if (validA !== validB) return validA ? -1 : 1;
+        return validA ? data.timestamp(a.created_at) - data.timestamp(b.created_at) : 0;
+    });
+    if (summary) summary.textContent = `${labels[applicationStatus]}: ${rows.length} ${rows.length === 1 ? 'cuenta principal' : 'cuentas principales'} · ${rows.filter(row => row.questionnaire).length} con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. ${pendingGestoresRefreshFailed ? 'La última actualización falló; estos datos pueden estar desactualizados.' : `Consulta actualizada: ${lastUpdate}.`}`;
     host.replaceChildren();
-    const rows = review.rows;
     if (pendingGestorOrder === 'newest') rows.sort((a, b) => {
         const validA = data.bucket(a, now) !== 'unknown', validB = data.bucket(b, now) !== 'unknown';
         if (validA !== validB) return validA ? -1 : 1;
         return validA ? data.timestamp(b.created_at) - data.timestamp(a.created_at) : 0;
     });
-    if (!rows.length) { host.innerHTML = '<tr><td colspan="4" class="p-6 text-center admin-note">No hay solicitudes pendientes.</td></tr>'; return; }
+    if (!rows.length) { host.innerHTML = '<tr><td colspan="4" class="p-6 text-center admin-note">No hay cuentas principales en este estado.</td></tr>'; return; }
     for (const row of rows) {
         const tr = document.createElement('tr');
         tr.className = 'text-xs border-b dark:border-gray-700';
@@ -233,10 +251,10 @@ function renderPendingGestores() {
             view.setAttribute('aria-label', `Ver respuestas de ${row.nombre}`); view.setAttribute('aria-expanded', 'false');
             const syncExpanded = () => view.setAttribute('aria-expanded', String(questionnaire.open));
             questionnaire.addEventListener('toggle', syncExpanded);
-            view.addEventListener('click', () => { questionnaire.open = !questionnaire.open; syncExpanded(); if(questionnaire.open) questionnaire.scrollIntoView({block:'nearest'}); });
+            view.addEventListener('click', () => { questionnaire.open = !questionnaire.open; syncExpanded(); if(questionnaire.open) questionnaire.scrollIntoView({block:'nearest', inline:'start'}); });
             actions.append(view);
         }
-        for (const [label, action] of [['Activar', () => approveGestorOnly(row.id, row.nombre)], ['Rechazar', () => approveGestor(row.id, 'bloqueado')]]) {
+        for (const [label, action] of (applicationStatus === 'pendiente' ? [['Activar', () => approveGestorOnly(row.id, row.nombre)], ['Desactivar solicitud (bloquear)', () => approveGestor(row.id, 'bloqueado', row.nombre)]] : [])) {
             const button = document.createElement('button'); button.type = 'button'; button.className = 'admin-control'; button.textContent = label; button.addEventListener('click', action); actions.append(button);
         }
         tr.append(actions); host.append(tr);
@@ -267,11 +285,10 @@ async function loadPendingGestores() {
     // inactividad ahora se ejecuta mediante la función SQL auditada de 30 días,
     // con fecha base 6 de agosto de 2026 y solo para gestores principales.
 
-    const pendientes = gestoresDB.filter(g => !g.parent_id && g.estado === 'pendiente');
     const activos = gestoresDB.filter(g => !g.parent_id && (g.estado === 'activo' || g.estado === 'ausente_definitivo'));
 
     if (generation !== pendingGestoresGeneration) return;
-    pendingGestoresCache = pendientes;
+    pendingGestoresCache = gestoresDB;
     pendingGestoresUpdatedAt = Date.now();
     pendingGestoresRefreshFailed = false;
     renderPendingGestores();
@@ -334,13 +351,17 @@ async function loadPendingGestores() {
 
 window.addEventListener('pth:session-changed', () => {
     pendingGestoresGeneration++; pendingGestoresLoading = false;
-    pendingGestoresCache = []; pendingGestorOrder = 'oldest';
+    pendingGestoresCache = []; pendingGestorOrder = 'oldest'; applicationStatus = 'pendiente';
     pendingGestoresUpdatedAt = null; pendingGestoresRefreshFailed = false;
     document.getElementById('list-admin-aprobaciones')?.replaceChildren();
     const badge = document.getElementById('admin-pending-count'); if (badge) badge.hidden = true;
     const card = document.getElementById('admin-pending-review'); if (card) card.hidden = true;
     for (const id of ['admin-pending-review-total', 'admin-pending-review-age', 'admin-pending-review-state', 'admin-pending-summary']) document.getElementById(id)?.replaceChildren();
     const order = document.getElementById('admin-pending-order'); if (order) order.value = 'oldest';
+    for (const [state, label] of Object.entries({pendiente:'Pendientes', activo:'Activas', bloqueado:'Bloqueadas'})) {
+        const tab = document.getElementById(`admin-applications-${state}`);
+        if (tab) { tab.textContent = label; tab.setAttribute('aria-pressed', String(state === 'pendiente')); }
+    }
 });
 
 // =========================================================

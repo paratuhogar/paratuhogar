@@ -1,0 +1,14 @@
+Candidate: 626 tests, 616 pass, 10 fail.
+Base origin/main 50b54eaf with same dependencies: 624 tests, 614 pass, same 10 failures.
+44 targeted tests passed; check:js and diff --check passed.
+Inherited failing tests (listed twice by Node reporter):
+✖ administrator switches to catalogue and back without changing identity, token or role
+✖ sales preference survives page setup but is isolated to the verified account
+✖ Jomil and Beatriz enter the panel and switch views with their existing admin role
+✖ every server-recognized administrative role can switch but parent-linked accounts cannot
+✖ gestors and parent-linked accounts cannot select administrative view
+✖ repeated taps cannot race two simultaneous view changes
+✖ an HTML fallback with HTTP 200 cannot satisfy a missing JavaScript or stylesheet
+✖ unquoted future scripts, maintenance pages and external essential scripts cannot declare readiness
+✖ normal public template and local SDK reopen without private response or product image precaching
+✖ catalogue upgrade installs the new reader and removes only previous static caches

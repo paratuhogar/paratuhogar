@@ -12,6 +12,7 @@ function approveGestorOnly(){throw Error('Decisiones deshabilitadas en fixture')
 function approveGestor(){throw Error('Decisiones deshabilitadas en fixture')}
 function loadPendingGestores(){renderPendingGestores()}
 pendingGestoresCache=[{id:'old-fixture',nombre:'Solicitud antigua demo',telefono:'contacto ficticio',estado:'pendiente',created_at:'2026-07-01T12:00:00Z'},{id:'new-fixture',nombre:'Solicitante demo con encuesta',telefono:'WhatsApp ficticio',estado:'pendiente',created_at:'2026-10-08T12:00:00Z',questionnaire:${JSON.stringify(answer)}}];
+pendingGestoresCache.push({id:'active-fixture',nombre:'Cuenta activa histórica demo',estado:'activo',created_at:'2025-05-01T12:00:00Z',questionnaire:${JSON.stringify(answer)}},{id:'blocked-fixture',nombre:'Cuenta bloqueada demo',estado:'bloqueado',created_at:'2026-06-01T12:00:00Z',questionnaire:${JSON.stringify(answer)}});
 renderPendingGestores();document.querySelectorAll('#list-admin-aprobaciones button').forEach(b=>{if(b.textContent!=='Ver respuestas')b.disabled=true});
 </script></body></html>`;
 fs.writeFileSync(path.join(root,'evidence/admin-questionnaire-demo.html'),demo);

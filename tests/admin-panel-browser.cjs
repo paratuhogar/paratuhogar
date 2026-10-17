@@ -32,7 +32,7 @@ function contrast(color,bg){const lum=c=>{const a=c.match(/[\d.]+/g).slice(0,3).
   const bodyBackground=await page.locator('body').evaluate(n=>getComputedStyle(n).backgroundColor);
   const sectionHeading=await page.locator('#cnt-aprobaciones h4').first().evaluate(n=>getComputedStyle(n).color);assert.ok(contrast(sectionHeading,bodyBackground)>=4.5);
   const sectionNote=await page.locator('#admin-pending-summary').evaluate(n=>getComputedStyle(n).color);assert.ok(contrast(sectionNote,bodyBackground)>=4.5);
-  assert.ok((await page.locator('#admin-pending-review-age').textContent()).includes('2 esperan más de 24 horas · 2 más de 48 horas'));
+  assert.ok((await page.locator('#admin-pending-review-age').textContent()).includes('2 registradas hace más de 24 horas · 2 hace más de 48 horas'));
   const cardColors=await page.locator('#admin-pending-review').evaluate(n=>{const s=getComputedStyle(n);return {bg:s.backgroundColor,color:s.color,animation:s.animationName,duration:s.animationDuration};});
   assert.ok(contrast(cardColors.color,cardColors.bg)>=4.5);assert.equal(cardColors.animation,'admin-pending-breathe');assert.equal(cardColors.duration,'4s');
   const noteColors=await page.locator('#admin-pending-review-age').evaluate(n=>getComputedStyle(n).color);assert.ok(contrast(noteColors,cardColors.bg)>=4.5);

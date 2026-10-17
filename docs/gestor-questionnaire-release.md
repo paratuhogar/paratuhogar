@@ -157,3 +157,55 @@ ni se consultaron solicitantes reales. Permisos/roles/grants/RLS intactos.
 
 Rollback de esta mejora: revertir este commit de frontend, manteniendo la primera
 publicación y todas las respuestas en Supabase. Sin nueva migración ni redeploy Edge.
+
+## Candidato local: consulta administrativa por estado — 17 octubre 2026
+
+Base `origin/main` 50b54eafce05a7b42c55c00ce486ed55b370f1e1, rama
+`candidate/admin-application-status`, checkout `/workspace/admin-application-status`.
+No publicado. Checkout c454c374 intacto; no se incorporó el candidato de descarga
+de imagen c09fdab0 ni cambios SEO, reclutamiento o dashboard.
+
+En Master Control → Solicitudes de gestores, tres botones de estado: Pendientes,
+Activas y Bloqueadas. Cada uno cuenta cuentas principales únicas por id, sin
+parent_id y con estado exacto pendiente/activo/bloqueado, respectivamente, sin
+corte de fechas. No incluye ausente_definitivo en Activas ni subgestores en ninguna
+vista. El equipo existente conserva su criterio anterior y sus permisos.
+Activas no significa aprobadas ni recientes. La fecha mostrada es created_at
+(registro), nunca aprobación ni reapertura; los indicadores de antigüedad también
+se describen como antigüedad de registro. No existe audit para deducir transiciones.
+
+La misma carga paginada existente conserva los campos y encuestas, ahora
+consultables en los tres estados. Tras cambiar estado y actualizar, la encuesta
+queda en la pestaña correspondiente. Activas/Bloqueadas solo ofrecen lectura;
+Pendientes conserva Activar y el bloqueo existente, ahora rotulado «Desactivar
+solicitud (bloquear)». Su confirmación identifica a la persona, explica que impide
+acceso y conserva respuestas, y distingue bloqueo de aprobación. Sin nueva acción
+de reapertura, cambios auth, roles, grants o DB. Ninguna cuenta fue restaurada,
+activada ni bloqueada; Natali y Rodney/Ronny quedan fuera de este trabajo.
+
+Verificación: 44 pruebas dirigidas pasan (estados, conteos, cambio de estado,
+paginación, error, encuesta segura, aislamiento de respuestas y subgestores).
+Suite completa: 616/626; mismos diez fallos en main limpio con las mismas
+dependencias: 614/624, relacionados con fixtures de cambio de vista y caché.
+Detalle: `evidence/admin-status-validation.txt`. Bundles regenerados;
+`npm run check:js` y `git diff --check` pasan. Sin cambios de CSS ni worker.
+
+Fixture local desde markup y renderer reales: `node scripts/admin-questionnaire-demo.cjs`.
+Chromium con Playwright, servido únicamente en 127.0.0.1: comprobó 375 y 1280 px,
+las tres pestañas, abrir encuestas, acciones solo en pendientes, vacío/error y
+cero pageerrors; scrollWidth coincide con viewport. La tabla conserva su scroll
+horizontal existente. Evidencia `evidence/admin-status-browser.json` y seis
+capturas `admin-status-{pendiente,activo,bloqueado}-{375,1280}.png`. Abrir file://
+fue bloqueado por política de navegador; no se insistió con ese protocolo.
+No se usaron túneles públicos ni Actions/Pages. No se probó sesión productiva,
+no hubo consultas DB ni pedidos/solicitudes reales, Docker o PostgreSQL local.
+
+Revisión independiente de solo lectura completada por otro agente: corrigió dos
+hallazgos (texto de antigüedad y limpieza de conteos/selección al cambiar sesión),
+revisó nuevamente y confirmó sin hallazgos bloqueantes. Cambios de autenticación,
+autorización, acceso comercial y aprobación fuera del alcance permanecen intactos.
+
+Rollback: descartar este candidato local. Si en otro momento se autoriza y aplica,
+revertir solo su commit de UI y sus bundles, preservando todo trabajo posterior.
+No requiere SQL, migración, redeploy Edge, borrado de respuestas o cambios de estado.
+Publicación sigue pendiente de autorización, fuera de este encargo.

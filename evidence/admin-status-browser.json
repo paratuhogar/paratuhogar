@@ -1,0 +1,38 @@
+[
+  {
+    "width": 375,
+    "state": "pendiente",
+    "summary": "Pendientes: 2 cuentas principales · 1 con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. Consulta actualizada: Pendiente de actualización.",
+    "pageWidth": 375
+  },
+  {
+    "width": 375,
+    "state": "activo",
+    "summary": "Activas: 1 cuenta principal · 1 con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. Consulta actualizada: Pendiente de actualización.",
+    "pageWidth": 375
+  },
+  {
+    "width": 375,
+    "state": "bloqueado",
+    "summary": "Bloqueadas: 1 cuenta principal · 1 con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. Consulta actualizada: Pendiente de actualización.",
+    "pageWidth": 375
+  },
+  {
+    "width": 1280,
+    "state": "pendiente",
+    "summary": "Pendientes: 2 cuentas principales · 1 con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. Consulta actualizada: Pendiente de actualización.",
+    "pageWidth": 1280
+  },
+  {
+    "width": 1280,
+    "state": "activo",
+    "summary": "Activas: 1 cuenta principal · 1 con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. Consulta actualizada: Pendiente de actualización.",
+    "pageWidth": 1280
+  },
+  {
+    "width": 1280,
+    "state": "bloqueado",
+    "summary": "Bloqueadas: 1 cuenta principal · 1 con encuesta registrada. Estado actual; no acredita aprobación ni fecha de cambio. Consulta actualizada: Pendiente de actualización.",
+    "pageWidth": 1280
+  }
+]
