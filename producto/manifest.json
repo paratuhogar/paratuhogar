@@ -2641,9 +2641,9 @@
     "slug": "nevera-7-pies-rukenkov",
     "nombre": "Nevera 7 pies Rukenkov",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-rukenkov/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-17T17:11:57.314523+00:00"
   },
   {
     "id": "bd585dd5-b9a5-4951-a1a0-f62d6dbfc4c6",
@@ -2653,6 +2653,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-premium/",
     "updated_at": "2026-08-01T12:57:55.499741+00:00"
+  },
+  {
+    "id": "e1ab3aea-0eea-478a-bd85-eddf0730bb4b",
+    "slug": "nevera-7-8-pies-royal",
+    "nombre": "Nevera 7.8 pies Royal",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-7-8-pies-royal/",
+    "updated_at": "2026-10-17T18:08:58.944447+00:00"
   },
   {
     "id": "b60245c8-ae5f-41e2-b82a-341ac3ceea17",
