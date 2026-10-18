@@ -929,7 +929,7 @@
   {
     "id": "bb64f2f2-5436-4505-9d83-90cc96518d25",
     "slug": "estacion-de-energia-3200w-gnercell",
-    "nombre": "Estación de energía 3200W Gnercell",
+    "nombre": "Estación de energía 3200W/2048Wh Gnercell",
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-3200w-gnercell/",
@@ -956,7 +956,7 @@
   {
     "id": "a1f0b1be-6fe1-4db0-849c-5932a246c5f4",
     "slug": "estacion-de-energia-800w-gnercell",
-    "nombre": "Estación de energía 800W Gnercell",
+    "nombre": "Estación de energía 800W/512Wh Gnercell",
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-800w-gnercell/",
@@ -1714,9 +1714,9 @@
     "slug": "juego-de-bano",
     "nombre": "Juego de baño",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/juego-de-bano/",
-    "updated_at": "2026-10-16T13:26:23.726312+00:00"
+    "updated_at": "2026-10-18T16:53:56.254899+00:00"
   },
   {
     "id": "184c649b-cce1-4bab-94a5-b959bf939cf1",
