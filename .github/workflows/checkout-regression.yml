@@ -1,0 +1,37 @@
+name: Pedidos - regresión de envío
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checkout-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checkout-recovery:
+    name: checkout-recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar navegador de pruebas aislado
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pth-checkout" --no-save --ignore-scripts playwright@1.57.0
+          "$RUNNER_TEMP/pth-checkout/node_modules/.bin/playwright" install --with-deps chromium
+          echo "NODE_PATH=$RUNNER_TEMP/pth-checkout/node_modules" >> "$GITHUB_ENV"
+          PTH_TEST_CHROME=$(NODE_PATH="$RUNNER_TEMP/pth-checkout/node_modules" node -p 'require("playwright").chromium.executablePath()')
+          echo "PTH_CHROMIUM=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
+      - name: Verificar envío, recibos y recuperación de pedidos
+        run: npm run check:checkout-release
