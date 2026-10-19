@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import pending from '../js/pending-checkout.js';
 import {fixture} from './fixtures/new-checkout.mjs';
+import {sessionFixture} from './fixtures/session-infrastructure.mjs';
 
 function memory(){const rows=new Map();let chain=Promise.resolve(),denied=false;return {rows,set denied(value){denied=value;},update(owner,mutate){const work=chain.then(()=>{if(denied)throw Object.assign(Error('STORAGE'),{code:'STORAGE'});const next=mutate(structuredClone(rows.get(owner)||null));if(next==null)rows.delete(owner);else rows.set(owner,structuredClone(next));return structuredClone(next);});chain=work.catch(()=>{});return work;}};}
 const input={lines:[{id:'pA',qty:1,price:100},{id:'pB',qty:1,price:200}],form:{nombre:'Synthetic Customer',tel:'synthetic-phone',ci:'none',dir:'Synthetic address',municipio:'Centro Habana',localidad:'Centro',moneda:'USD (Efectivo)',notas:'<script>Do not execute submitted text</script>',vuelto:''}};
@@ -17,6 +18,54 @@ function bridge(f,queue,owner,options={}){return async context=>{
   if(result.error)throw Object.assign(Error('response lost'),{code:'ORDER_OUTCOME_UNKNOWN'});
   assert.equal(result.data.complete,true);await context.confirmed(result.data.confirmed);
 };}
+
+for (const signed of [false,true]) test(`temporary session service failure retains ${signed?'signed':'unsent'} pending for recovery`,async()=>{
+  const service=await sessionFixture(),f=await fixture(),{queue}=setup();
+  const saved=await queue.save('a',input);
+  if(signed)await queue.run('a',bridge(f,queue,'a',{afterQuote:true}));
+  const before=await queue.read('a',saved.id);
+  service.state.failure={stage:'session',mode:'throw'};
+  await queue.run('a',async()=>{
+    const result=await service.request({action:'session'});
+    assert.equal(result.status,503);
+    throw result.error;
+  });
+  const after=await queue.read('a',saved.id);
+  assert.equal(after.state,signed?'uncertain':'queued');
+  assert.equal(after.code,'SERVICE_UNAVAILABLE');
+  assert.deepEqual(after.form,before.form);
+  assert.deepEqual(after.outcome,before.outcome);
+  assert.equal(after.intentId,before.intentId);
+  assert.equal(after.lease,null);
+  assert.equal(await queue.read('b'),null);
+  assert.equal(f.writes,0);
+  service.state.failure=null;
+  assert.equal(await queue.run('a',bridge(f,queue,'a')),true);
+  assert.equal((await queue.read('a',saved.id)).state,'confirmed');
+  assert.equal(f.writes,1);
+  assert.equal(await queue.run('a',bridge(f,queue,'a')),false);
+  assert.equal(f.writes,1);
+});
+
+test('temporary service failure after acceptance recovers receipt without another write',async()=>{
+  const f=await fixture(),{queue}=setup();const saved=await queue.save('a',input);
+  await queue.run('a',async context=>{
+    const body={...f.body,intentId:context.row.intentId,intentCreatedAt:context.row.createdAt};
+    const quote=await f.request({...body,operation:'quote'});
+    await context.save({outcome:{attempt:quote.data.attempt}});
+    const result=await f.request({...body,operation:'submit',attempt:quote.data.attempt,quote:quote.data.quote});
+    assert.equal(result.data.complete,true);
+    throw {code:'SERVICE_UNAVAILABLE',status:503};
+  });
+  const uncertain=await queue.read('a',saved.id);
+  assert.equal(uncertain.state,'uncertain');assert.equal(f.writes,1);
+  // Also exercise the existing explicit recovery action for old blocked rows.
+  await queue.patch('a',saved.id,{state:'blocked'});
+  await queue.retry('a',saved.id);
+  assert.equal((await queue.read('a',saved.id)).outcome.attempt,uncertain.outcome.attempt);
+  await queue.run('a',bridge(f,queue,'a'));
+  assert.equal((await queue.read('a',saved.id)).state,'confirmed');assert.equal(f.writes,1);
+});
 
 test('requires explicit valid account and selection; minimizes stored fields without copying secrets',async()=>{
   const {queue}=setup();await assert.rejects(queue.save(null,input),{code:'ACCOUNT'});
