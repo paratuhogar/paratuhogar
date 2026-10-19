@@ -1,5 +1,17 @@
 # Gestor feedback: implementation and release gate
 
+## Required checkout regression gate — 2026-10-19
+
+Every release that can affect checkout, sessions, offline copies, workers, pending queues or customer-form recovery must pass `npm run check:checkout-release` against the exact release tree. The `Pedidos - regresión de envío` workflow runs this command for every pull request to main, push to main and manual dispatch. Its `checkout-recovery` job has read-only repository permission and uses an isolated, pinned Playwright installation; all business requests in browser tests are routed to a loopback-only synthetic gateway. No credentials, production orders, stock reservations or live customer fixtures are required or permitted.
+
+The gate runs the checkout/session/queue/offline Node regressions and both real-browser recovery tests. Required behavior includes 503 and deadline recovery, lost-response receipt lookup, genuine 401 rejection, double-submit exclusion, stable intent and provider idempotency, tab close/reopen persistence, legacy pending recovery, account separation and no success before server receipt. New tests assert that repeated temporary failures release their lease without creating another intention or reporting confirmation, and that a resolved sender without confirmation remains blocked for review.
+
+A green check is evidence for the tested commit, not proof of a customer's order. Before publishing a different commit, rerun the gate. Inspect the actual Actions run and its test output; a queued, cancelled, skipped or missing run is not a pass. Preserve prior confirmed receipts and pending rows in rollback, and verify deployed public assets separately after publication.
+
+**Enforcement limit:** Pages currently deploys directly from main independently of this test workflow. Adding the workflow does not itself make this status required or prevent a direct push from deploying before CI finishes. Branch protection/ruleset or a Pages deployment workflow tied to this gate needs a separate approved repository-setting/deployment change. Until that is approved, run the gate before an authorized direct publication and inspect its Actions result afterward; do not call the deployment technically blocked by CI.
+
+**Known runtime limits:** retryable pending rows are checked every 15 seconds while the page is open with the same valid account; there is no retry-count cap or exponential backoff. A row's seven-day customer-data lifetime still applies, and an unsigned expired row cannot be resent. Signed attempts retain receipt recovery metadata. The existing explicit stop/review actions must remain available. The 30-second fetch signal and 45-second checkout-result deadline are covered, but the scheduler's pre-handler session/receipt checks and IndexedDB operations do not have an additional application-level deadline; this gate does not prove a browser or storage operation can never stall. Do not race an entire workflow or a storage transaction to conceal such a stall. Report a reproduced gap before changing that runtime behavior.
+
 Prepared 2026-10-01. **Database and gateway deployed; frontend release approved after the successful owner pilot and final assessment. See the latest release assessment below.**
 
 ## Verified source and services

@@ -67,6 +67,29 @@ test('temporary service failure after acceptance recovers receipt without anothe
   assert.equal((await queue.read('a',saved.id)).state,'confirmed');assert.equal(f.writes,1);
 });
 
+test('repeated temporary failures release the lease, retain one intention and never claim receipt',async()=>{
+  const f=await fixture(),state=setup(),{queue}=state;
+  const original=await queue.save('a',input);
+  for(let n=0;n<4;n++){
+    await queue.run('a',()=>{throw {code:n%2?'NETWORK_ERROR':'SERVICE_UNAVAILABLE'};});
+    const row=await queue.read('a',original.id);
+    assert.equal(row.state,'queued');assert.equal(row.lease,null);
+    assert.equal(row.intentId,original.intentId);assert.deepEqual(row.form,original.form);
+    assert.equal(row.receipts?.length||0,0);assert.equal((await queue.list('a')).length,1);
+    assert.equal(f.writes,0);state.advance(15000);
+  }
+  await queue.run('a',bridge(f,queue,'a'));
+  assert.equal((await queue.read('a',original.id)).state,'confirmed');assert.equal(f.writes,1);
+});
+
+test('a resolved sender without server confirmation cannot turn pending into success',async()=>{
+  const {queue}=setup(),original=await queue.save('a',input);
+  await queue.run('a',async()=>({complete:true}));
+  const row=await queue.read('a',original.id);
+  assert.equal(row.state,'blocked');assert.equal(row.code,'REVIEW');assert.equal(row.lease,null);
+  assert.deepEqual(row.form,original.form);assert.equal(row.receipts?.length||0,0);
+});
+
 test('requires explicit valid account and selection; minimizes stored fields without copying secrets',async()=>{
   const {queue}=setup();await assert.rejects(queue.save(null,input),{code:'ACCOUNT'});
   const row=await queue.save('a',{...input,token:'do-not-store',password:'do-not-store',form:{...input.form,token:'do-not-store'}});
