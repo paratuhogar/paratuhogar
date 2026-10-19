@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: checkout-regression-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   checkout-recovery:
@@ -35,3 +35,73 @@ jobs:
           echo "PTH_CHROMIUM=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
       - name: Verificar envío, recibos y recuperación de pedidos
         run: npm run check:checkout-release
+
+  pages-build:
+    needs: checkout-recovery
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/configure-pages@v5
+      - name: Conservar construcción Jekyll de Pages
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Registrar procedencia pública sin datos privados
+        run: |
+          node -e 'require("fs").writeFileSync("_site/deployment-version.json",JSON.stringify({commit:process.env.GITHUB_SHA,run:process.env.GITHUB_RUN_ID})+"\n")'
+          cmp index.html _site/index.html
+          cmp js/pending-checkout.js _site/js/pending-checkout.js
+          cmp service-worker.js _site/service-worker.js
+          cmp CNAME _site/CNAME
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./_site
+
+  pages-deploy:
+    needs: [checkout-recovery, pages-build]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: pages-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Comprobar fuente Actions y main vigente
+        id: source
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pages = await github.rest.repos.getPages(context.repo);
+            const branch = await github.rest.repos.getBranch({...context.repo, branch: 'main'});
+            core.setOutput('build-type', pages.data.build_type);
+            core.setOutput('head-sha', branch.data.commit.sha);
+      - name: Rechazar checks fallidos, ruta alternativa y commits obsoletos
+        env:
+          PTH_MAIN_SHA: ${{ steps.source.outputs.head-sha }}
+          PTH_PAGES_BUILD_TYPE: ${{ steps.source.outputs.build-type }}
+          PTH_CHECKOUT_RESULT: ${{ needs.checkout-recovery.result }}
+          PTH_BUILD_RESULT: ${{ needs.pages-build.result }}
+        run: node scripts/pages-publication-policy.cjs
+      - name: Publicar solamente el artefacto de este workflow y commit
+        id: deployment
+        uses: actions/deploy-pages@v4
