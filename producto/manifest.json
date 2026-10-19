@@ -1507,9 +1507,9 @@
     "slug": "impresora-epson-ecotank-et-2870",
     "nombre": "Impresora Epson EcoTank ET - 2870",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/impresora-epson-ecotank-et-2870/",
-    "updated_at": "2026-09-28T14:31:22.800719+00:00"
+    "updated_at": "2026-10-19T15:39:21.450422+00:00"
   },
   {
     "id": "41c003da-1fe3-42e2-9865-44a294673aa3",
@@ -2641,9 +2641,9 @@
     "slug": "nevera-7-pies-rukenkov",
     "nombre": "Nevera 7 pies Rukenkov",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-rukenkov/",
-    "updated_at": "2026-10-17T17:11:57.314523+00:00"
+    "updated_at": "2026-10-19T17:31:21.749562+00:00"
   },
   {
     "id": "bd585dd5-b9a5-4951-a1a0-f62d6dbfc4c6",
@@ -3424,9 +3424,9 @@
     "slug": "smart-mini-dc-ups",
     "nombre": "Smart Mini DC UPS",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-mini-dc-ups/",
-    "updated_at": "2026-10-08T19:08:13.77569+00:00"
+    "updated_at": "2026-10-19T16:19:38.736722+00:00"
   },
   {
     "id": "e40ffe5a-7929-4e62-8302-0fae13d64427",
