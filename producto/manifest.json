@@ -1030,9 +1030,9 @@
     "slug": "estacion-de-energia-portatil-oukitel-2400w",
     "nombre": "Estación de Energía Portátil OUKITEL -  2400W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-portatil-oukitel-2400w/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-20T16:22:18.115562+00:00"
   },
   {
     "id": "12caf6e0-3c75-4d86-809e-1d01bb1c3363",
@@ -1057,9 +1057,9 @@
     "slug": "estacion-de-energia-portatil-oukitel-1800w",
     "nombre": "Estación de Energía Portátil OUKITEL - 1800W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-portatil-oukitel-1800w/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-20T16:22:55.954723+00:00"
   },
   {
     "id": "4b8cd9e4-a2da-4309-9816-578b8f325b11",
@@ -1714,9 +1714,9 @@
     "slug": "juego-de-bano",
     "nombre": "Juego de baño",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/juego-de-bano/",
-    "updated_at": "2026-10-18T16:53:56.254899+00:00"
+    "updated_at": "2026-10-20T16:16:30.486928+00:00"
   },
   {
     "id": "184c649b-cce1-4bab-94a5-b959bf939cf1",
@@ -3863,11 +3863,11 @@
   {
     "id": "ba8bf0fc-cff2-41ad-9d91-e295805ef406",
     "slug": "taza-tanque-monolitica",
-    "nombre": "Taza tanque monolítica",
+    "nombre": "Taza tanque monolítica Rudenkov",
     "categoria": "MISCELANEA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/taza-tanque-monolitica/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-20T15:59:25.329696+00:00"
   },
   {
     "id": "03c16bc8-899d-46ea-8d7d-bc93725118e1",
