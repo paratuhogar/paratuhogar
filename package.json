@@ -6,7 +6,7 @@
     "build:js": "node scripts/build-js.cjs",
     "check:js": "node scripts/build-js.cjs --check",
     "check:guide": "node scripts/check-guide-release.cjs",
-    "test:checkout:unit": "node --test tests/checkout-*.test.mjs tests/checkout-*.test.cjs tests/new-checkout.test.mjs tests/pending-checkout.test.mjs tests/session-infrastructure-recovery.test.mjs tests/session-expiry-notice.test.mjs tests/session-renewal.test.mjs tests/offline-checkout-copy.test.cjs tests/offline-storefront-adapter.test.cjs tests/offline-context-owner.test.cjs tests/offline-expired-startup.test.cjs tests/offline-shell-upgrade.test.mjs tests/offline-shell-repair.test.mjs tests/startup-cache.test.mjs tests/offline-cold-start-lifecycle.test.mjs",
+    "test:checkout:unit": "node --test tests/checkout-*.test.mjs tests/checkout-*.test.cjs tests/new-checkout.test.mjs tests/pending-checkout.test.mjs tests/session-infrastructure-recovery.test.mjs tests/session-expiry-notice.test.mjs tests/session-renewal.test.mjs tests/offline-checkout-copy.test.cjs tests/offline-storefront-adapter.test.cjs tests/offline-context-owner.test.cjs tests/offline-expired-startup.test.cjs tests/offline-shell-upgrade.test.mjs tests/offline-shell-repair.test.mjs tests/startup-cache.test.mjs tests/offline-cold-start-lifecycle.test.mjs tests/pages-publication-policy.test.cjs",
     "test:checkout:browser": "node tests/pending-service-recovery-browser.cjs && node tests/checkout-recovery-latest-browser.cjs",
     "check:checkout-release": "npm run test:checkout:unit && npm run test:checkout:browser"
   },
