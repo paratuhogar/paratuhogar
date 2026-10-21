@@ -85,9 +85,9 @@
     "slug": "backups-marsriva-1000va-600w",
     "nombre": "Backups - Marsriva 1000VA/600W",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/backups-marsriva-1000va-600w/",
-    "updated_at": "2026-09-10T01:05:01.060696+00:00"
+    "updated_at": "2026-10-21T01:22:41.35307+00:00"
   },
   {
     "id": "b878a3c1-84f3-4ea1-8885-836a3b37df31",
@@ -159,7 +159,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-10-17T02:49:51.081269+00:00"
+    "updated_at": "2026-10-21T00:58:14.679094+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -195,7 +195,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-200ah-10-24kwh/",
-    "updated_at": "2026-09-24T02:50:39.100925+00:00"
+    "updated_at": "2026-10-21T01:00:46.40902+00:00"
   },
   {
     "id": "66e416a4-be87-4acf-ac4c-fb8624ee6122",
@@ -204,7 +204,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-300ah-15-36-kwh/",
-    "updated_at": "2026-09-24T02:50:02.586256+00:00"
+    "updated_at": "2026-10-21T01:00:19.137411+00:00"
   },
   {
     "id": "55c74f91-df1b-4ffa-aa37-89e83c2d45b5",
@@ -945,15 +945,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "353a04ce-2dcb-4a3b-a466-67dd856c2f45",
-    "slug": "estacion-de-energia-6kw-con-14-3kwh-must",
-    "nombre": "Estación de energia 6kw con 14.3kwh Must",
-    "categoria": "ENERGIA",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
-    "updated_at": "2026-10-08T13:50:58.116715+00:00"
-  },
-  {
     "id": "a1f0b1be-6fe1-4db0-849c-5932a246c5f4",
     "slug": "estacion-de-energia-800w-gnercell",
     "nombre": "Estación de energía 800W/512Wh Gnercell",
@@ -1656,6 +1647,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "353a04ce-2dcb-4a3b-a466-67dd856c2f45",
+    "slug": "estacion-de-energia-6kw-con-14-3kwh-must",
+    "nombre": "Inversor 6kw con 15kwh Must",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
+    "updated_at": "2026-10-21T00:54:38.757319+00:00"
+  },
+  {
     "id": "dd1681e8-57ae-4f86-bd9d-6cc67ce0c435",
     "slug": "inversor-6kw-con-bateria-15kwh-saco-todo-en-1",
     "nombre": "Inversor 6kw con batería 15kwh SACO (Todo en 1)",
@@ -2140,6 +2140,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/lg-27g411a-b-monitor-27-fhd-ips-144hz-1ms-slim/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "dbfbd6b7-ea7c-4f0a-9e30-bccfa400fca0",
+    "slug": "licuadora-black-decker",
+    "nombre": "Licuadora Black & Decker",
+    "categoria": "COCINA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/licuadora-black-decker/",
+    "updated_at": "2026-10-21T02:15:04.454273+00:00"
   },
   {
     "id": "a99be9e2-4a96-4f17-b540-f3641473dd1d",
@@ -2898,6 +2907,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "98fee89b-ce9f-473a-a36d-b5d43bf61e7a",
+    "slug": "olla-reina-6l-unizuki",
+    "nombre": "Olla reina 6L UNIZUKI",
+    "categoria": "COCINA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/olla-reina-6l-unizuki/",
+    "updated_at": "2026-10-21T02:33:30.61339+00:00"
+  },
+  {
     "id": "1407f1bc-c6c9-4337-a81d-6c231f727a87",
     "slug": "pack-de-tinta-compatible-inktec-4x1l-para-epson-cmyk",
     "nombre": "Pack de Tinta Compatible Inktec 4x1L para Epson - CMYK",
@@ -3103,6 +3121,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/procesador-amd-ryzen-3-3200g/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "fc113c45-6730-4a7d-b531-783632260cbb",
+    "slug": "protector-de-voltaje-triple-eurolite",
+    "nombre": "Protector de voltaje triple EUROLITE",
+    "categoria": "MISCELANEA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/protector-de-voltaje-triple-eurolite/",
+    "updated_at": "2026-10-21T02:18:28.987266+00:00"
   },
   {
     "id": "95ff3c3c-94ec-4281-a589-b7f9381cd0c8",
@@ -3978,6 +4005,15 @@
     "updated_at": "2026-09-05T15:56:54.816707+00:00"
   },
   {
+    "id": "d1511a74-52cb-41f6-a49b-652d329bfbeb",
+    "slug": "ventilador-recargable-20k-mah-royal",
+    "nombre": "Ventilador recargable 20K mAh Royal",
+    "categoria": "VENTILADORES",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/ventilador-recargable-20k-mah-royal/",
+    "updated_at": "2026-10-21T02:28:12.645003+00:00"
+  },
+  {
     "id": "919c5bc5-b7a5-425e-b948-d7d06ef8bd83",
     "slug": "ventilador-recargable-eko",
     "nombre": "Ventilador recargable EKO",
@@ -4011,7 +4047,7 @@
     "categoria": "VENTILADORES",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-x11-bateria-20-000-mah/",
-    "updated_at": "2026-10-15T01:01:31.720906+00:00"
+    "updated_at": "2026-10-21T00:26:11.570564+00:00"
   },
   {
     "id": "a0d80dd5-a984-4793-bd24-e84746294e9a",
