@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import guardModule from '../js/checkout-submit-guard.js';
+import checkoutForm from '../js/checkout-form-shared.js';
 
 const source=fs.readFileSync(new URL('../js/storefront.js',import.meta.url),'utf8');
 const between=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start)));
@@ -33,7 +34,8 @@ function fixture({profiles=[account('a'),account('b')],self=null,failure=null}={
    return{data:this.single?matches[0]||null:matches,error:null};
   }).then(resolve,reject);}
  }
- const context={console:{error(){},log(){}},Set,Map,Date,Promise,
+ node('check-ci').value='00123456789';
+ const context={console:{error(){},log(){}},Set,Map,Date,Promise,PTHCheckoutForm:checkoutForm,
   document:{getElementById:node},sessionStorage:storage,localStorage:storage,currentUserData:self,
   PTHSecureData:{token:()=>self?'synthetic-token':null,cacheSuffix:()=>':'+(self?.id||'public')},
   PTHCheckoutSubmitGuard:{waitForCheckout:guardModule.waitForCheckout,createCheckoutSubmitGuard:s=>guardModule.createCheckoutSubmitGuard(s,undefined,()=> 'synthetic-submission')},

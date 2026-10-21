@@ -292,8 +292,8 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db,pushEnv={},pushPilot,checkoutSecret}) {
-  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret});
+export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom}) {
+  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom});
   return async request=>{
     const origin=request.headers.get('Origin');
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};

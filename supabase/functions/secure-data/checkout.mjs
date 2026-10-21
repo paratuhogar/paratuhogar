@@ -41,7 +41,7 @@ export function deliveryCost(products,lines,delivery,tariff){
   if(!Number.isFinite(value)||value<0)fail('DELIVERY_UNAVAILABLE','La tarifa de entrega necesita revisión.');
   return cents(value)/100;
 }
-export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now}){
+export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity}){
   let signingKey;
   const key=()=>signingKey||(signingKey=crypto.subtle.importKey('raw',encode('pth-new-checkout-v1:'+signingSecret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']));
   const sign=async value=>hex(await crypto.subtle.sign('HMAC',await key(),encode(value)));
@@ -164,6 +164,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       const existing=await receipts(token,attempt);
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
       if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
+      if(payload.intentCreatedAt>=ciRequiredFrom&&payload.inputs.some(row=>typeof row.ci!=='string'||!/^[0-9]{11}$/.test(row.ci)))fail('CI_REQUIRED','Completa el carnet de identidad con exactamente 11 dígitos.');
       const rows=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
       const duplicates=await recentDuplicates(rows,actor);
       const stamp=now(),digest=await sign('terms:'+JSON.stringify(currentTerms));

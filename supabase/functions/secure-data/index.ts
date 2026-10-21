@@ -10,4 +10,8 @@ async function pushPilot(body:object){
  });
  return response.ok;
 }
-Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}));
+// Non-secret rollout timestamp, pinned to Supabase UTC rather than laptop time.
+const identityStart=Deno.env.get('PTH_CHECKOUT_CI_REQUIRED_FROM')||'2026-10-21T21:07:00.000Z';
+const ciRequiredFrom=identityStart?Date.parse(identityStart):Infinity;
+if(Number.isNaN(ciRequiredFrom))throw Error('Invalid checkout CI activation date');
+Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),ciRequiredFrom}));

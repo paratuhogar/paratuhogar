@@ -2,6 +2,12 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PTHCheckoutForm=api;})(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
   const fieldIds={nombre:'check-nombre',ci:'check-ci',tel:'check-tel',municipio:'check-municipio',localidad:'check-localidad',dir:'check-dir',notas:'check-notas',moneda:'check-moneda-pago',vuelto:'check-vuelto'};
+  function validateIdentity(value,required=true){
+    const ci=String(value??'').trim();
+    if(required&&!/^[0-9]{11}$/.test(ci))throw Object.assign(Error('Completa el carnet de identidad con exactamente 11 dígitos.'),{code:'CI_REQUIRED',safeMessage:'Completa el carnet de identidad con exactamente 11 dígitos.'});
+    return ci;
+  }
+  function setIdentityRequired(doc,required){const input=doc.getElementById('check-ci');if(input){input.required=required;input.pattern=required?'[0-9]{11}':'.*';}}
   function tariffMap(rows){
     const map=Object.create(null);
     for(const row of rows||[]){
@@ -99,5 +105,5 @@
     let nombre='',dir='';if(split>=0){nombre=cleaned.substring(0,split);dir=cleaned.substring(split);}else if(cleaned.includes(',')){const parts=cleaned.split(',').sort((a,b)=>a.length-b.length);nombre=parts[0];dir=parts.slice(1).join(', ');}else nombre=cleaned;
     const trim=part=>part.replace(/^[\s,.-]+|[\s,.-]+$/g,'').trim();return {nombre:trim(nombre).replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.substring(1).toLowerCase()),ci,tel,dir:trim(dir)};
   }
-  return {fieldIds,tariffMap,shipping,estimate,isWholesale,readForm,fillClient,bindClients,bind,parseClipboard};
+  return {fieldIds,tariffMap,shipping,estimate,isWholesale,readForm,fillClient,bindClients,bind,parseClipboard,validateIdentity,setIdentityRequired};
 });

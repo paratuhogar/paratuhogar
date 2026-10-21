@@ -26,11 +26,12 @@
     });
     const form={};for(const field of fields){const value=String(input.form?.[field]??'').trim();if(value.length>(field==='dir'||field==='notas'?4000:200))fail('INVALID');form[field]=value;}
     form.pickup=input.form?.pickup===true;form.assisted=input.form?.assisted===true;
+    if(input.identityRequired===true&&!/^[0-9]{11}$/.test(form.ci))throw Object.assign(Error('Completa el carnet de identidad con exactamente 11 dígitos.'),{code:'CI_REQUIRED',safeMessage:'Completa el carnet de identidad con exactamente 11 dígitos.'});
     if(!form.nombre||!form.tel||!form.pickup&&(!form.municipio||!form.localidad||!form.dir))fail('INVALID');
     if(!['USD (Efectivo)','EUR (Efectivo)','Zelle','CUP (Al cambio)'].includes(form.moneda))fail('INVALID');
     if(form.vuelto&&(!Number.isFinite(Number(form.vuelto))||Number(form.vuelto)<0))fail('INVALID');
     const equipment=lines.reduce((sum,p)=>sum+p.price*p.qty,0);
-    return {lines,form,estimate:estimate(input.estimate||{shipping:form.pickup?0:null},equipment)};
+    return {lines,form,estimate:estimate(input.estimate||{shipping:form.pickup?0:null},equipment),...(input.identityRequired===true?{identityRequired:true}:{})};
   }
   function indexedStore(idb){
     const connections=new Map();

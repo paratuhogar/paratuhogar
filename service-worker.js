@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-10-19-ordersretry1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-10-21-ci1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -12,16 +12,16 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/public-name-editor.js?v=20261003-alias1',
   '/js/gestor-ranking.js?v=20261004-rolling30',
   '/js/vendor/supabase-2.57.4.js',
-  '/js/checkout-form-shared.js?v=20261010-crm1',
+  '/js/checkout-form-shared.js?v=20261021-ci1',
   '/js/offline-checkout-copy.js?v=20261005-copy2',
   '/js/offline-storefront-adapter.js?v=20261017-worksettings1',
   '/css/offline-storefront.css?v=20261017-worksettings1',
   '/js/gestor-questionnaire.js?v=20261008-questionnaire2',
   '/js/gestor-registration-steps.js?v=20261016-captacion1',
   '/js/checkout-confirmation.js?v=20261017-checkout1',
-  '/js/storefront.min.js?v=20261017-worksettings1',
+  '/js/storefront.min.js?v=20261021-ci1',
   '/js/storefront-extras.min.js?v=20261008-questionnaire2',
-  '/js/pending-checkout-storefront.js?v=20261019-ordersretry1',
+  '/js/pending-checkout-storefront.js?v=20261021-ci1',
   '/js/pwa.js?v=20261006-ready1',
   '/css/tailwind.min.css?v=20261004-rolling30',
   '/css/gestor-ranking.css?v=20261004-rolling30',
@@ -48,8 +48,8 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
 // Public templates, local SDK and display code only. No private responses.
 const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
   '/css/offline-order.css?v=20261003-pending2',
-  '/js/pending-checkout.js?v=20261019-ordersretry1',
-  '/js/pending-checkout-page.js?v=20261005-cold7',
+  '/js/pending-checkout.js?v=20261021-ci1',
+  '/js/pending-checkout-page.js?v=20261021-ci1',
   '/js/secure-data.js?v=20261009-session1',
   '/js/low-connectivity.js?v=20261002-lowdata1',
   '/js/public-catalog-api.js?v=20261002-lowdata1',
@@ -58,13 +58,13 @@ const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, P
   '/js/image-variants.js?v=20261001-images2',
   '/js/product-images.js?v=20261002-fasttools2'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
-  '/js/pending-checkout-storefront.js?v=20261019-ordersretry1',
+  '/js/pending-checkout-storefront.js?v=20261021-ci1',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261009-session1',
   '/js/gestor-questionnaire.js?v=20261008-questionnaire2',
   '/js/gestor-registration-steps.js?v=20261016-captacion1',
-  '/js/storefront.min.js?v=20261017-worksettings1',
+  '/js/storefront.min.js?v=20261021-ci1',
   '/css/low-connectivity.css?v=20261003-pending2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261003-alias1',
@@ -114,9 +114,9 @@ self.addEventListener('activate', event => {
 let pthShellRepair=null;
 const PTH_TEMPLATE_VERSION='20261006-ready1';
 const PTH_TEMPLATE_DEPENDENCIES={
-  '/index.html':[...PTH_NORMAL_BOOT.filter(url=>/\.(?:js|mjs|css)(?:\?|$)/.test(url)),'/js/secure-data.js?v=20261009-session1','/js/pending-checkout.js?v=20261019-ordersretry1'],
+  '/index.html':[...PTH_NORMAL_BOOT.filter(url=>/\.(?:js|mjs|css)(?:\?|$)/.test(url)),'/js/secure-data.js?v=20261009-session1','/js/pending-checkout.js?v=20261021-ci1'],
   '/offline-catalog.html':['/css/offline-catalog.css?v=20261002-lowdata1','/js/low-connectivity.js?v=20261002-lowdata1','/js/public-catalog-api.js?v=20261002-lowdata1','/js/offline-catalog.js?v=20261002-lowdata2'],
-  '/offline-order.html':['/css/tailwind.min.css?v=20261004-rolling30','/css/offline-order.css?v=20261003-pending2','/js/secure-data.js?v=20261009-session1','/js/pending-checkout.js?v=20261019-ordersretry1','/js/checkout-form-shared.js?v=20261010-crm1','/js/offline-checkout-copy.js?v=20261005-copy2','/js/pending-checkout-page.js?v=20261005-cold7'],
+  '/offline-order.html':['/css/tailwind.min.css?v=20261004-rolling30','/css/offline-order.css?v=20261003-pending2','/js/secure-data.js?v=20261009-session1','/js/pending-checkout.js?v=20261021-ci1','/js/checkout-form-shared.js?v=20261021-ci1','/js/offline-checkout-copy.js?v=20261005-copy2','/js/pending-checkout-page.js?v=20261021-ci1'],
   '/offline.html':[]
 };
 function templateAttribute(tag,name){

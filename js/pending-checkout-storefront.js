@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-10-19-ordersretry1';
+  const shellVersion = 'pth-public-static-2026-10-21-ci1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -191,7 +191,7 @@
       estimate.shipping = Number(newCheckoutShippingOverride.cost);
       estimate.total = estimate.equipment + estimate.shipping;
     }
-    return {lines: cart.map(product => ({id: product.id, qty: product.qty, price: Number(product.precio_venta)})), form: values, estimate};
+    return {lines: cart.map(product => ({id: product.id, qty: product.qty, price: Number(product.precio_venta)})), form: values, estimate,identityRequired:reviewing?reviewing.identityRequired:true};
   }
   function lockReviewFields(locked) {
     for (const input of form.querySelectorAll('input,select,textarea')) {
@@ -206,6 +206,7 @@
       cart: cart.map(product => ({...product})), revision: newCartRevision,
       shipping: newCheckoutShippingOverride, intent: volatileCheckoutIntent,
       modalClass: modal.className, inert: modal.inert,
+      identityPattern:document.getElementById('check-ci').pattern,
       controls: [...form.querySelectorAll('input,select,textarea,button')].map(node => ({
         node, value: node.value, checked: node.checked, disabled: node.disabled,
         readOnly: node.readOnly, required: node.required, text: node.tagName === 'BUTTON' ? node.textContent : null,
@@ -229,8 +230,10 @@
     }
     document.getElementById('cart-count').textContent = String(cart.reduce((sum, product) => sum + product.qty, 0));
     recalcularTotalFinal(); modal.className = saved.modalClass; modal.inert = saved.inert;
+    document.getElementById('check-ci').pattern=saved.identityPattern;
   }
   function bindForm(row) {
+    window.PTHCheckoutForm.setIdentityRequired(document,row.identityRequired===true);
     if (row.lines.some(line => !productosRaw.some(product => product.id === line.id))) throw Object.assign(Error('PRODUCT_UNAVAILABLE'), {code: 'PRODUCT_UNAVAILABLE', safeMessage: 'Un producto no está disponible. Revisa el pendiente.'});
     cart = row.lines.map(line => {
       const product = productosRaw.find(item => item.id === line.id);
@@ -268,7 +271,7 @@
     if (busy || preparing || owner() !== account || api.localOwner(storage) !== account) return;
     const expectedToken = token(), previous = captureLiveForm();
     try {
-      reviewing = {id: row.id, owner: account, token: expectedToken, previous, immutable: Boolean(row.outcome?.attempt),duplicateChallenge:row.code==='POSSIBLE_DUPLICATE'?row.duplicateChallenge:null,duplicateReferences:row.duplicateReferences||[]};
+      reviewing = {id: row.id, owner: account, token: expectedToken, previous, identityRequired:row.identityRequired===true,immutable: Boolean(row.outcome?.attempt),duplicateChallenge:row.code==='POSSIBLE_DUPLICATE'?row.duplicateChallenge:null,duplicateReferences:row.duplicateReferences||[]};
       bindForm(row); toggleCartModal(true); lockReviewFields(reviewing.immutable);
       message(reviewing.immutable ? 'Revisa el total. Este intento conserva sus datos originales. Para cambiar el cliente o los productos, detén los reintentos y comprueba primero la recepción.' : 'Revisa los datos, los productos y el total. Pulsa Guardar revisión y enviar pendiente para aceptar las condiciones actuales.');
     } catch (error) { leaveReview(); message(error.safeMessage || 'No se pudo abrir el pendiente. Actualiza el catálogo y vuelve a revisarlo.'); }

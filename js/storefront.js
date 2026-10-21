@@ -2936,6 +2936,8 @@ function buildSubgestorWhatsappSummary(orderSubgestor, assignedCommission) {
 
 function getCheckoutFailureMessage(error) {
     switch (error?.code) {
+        case 'CI_REQUIRED':
+            return 'Completa el carnet de identidad con exactamente 11 dígitos. El pedido no se ha enviado.';
         case 'SELLER_IDENTITY_AMBIGUOUS':
             return 'El enlace de atención necesita revisión. Pide al contacto que te lo envió que lo revise antes de confirmar. Tus datos siguen en esta pantalla.';
         case 'SELLER_NOT_FOUND':
@@ -3173,7 +3175,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // === CAPTURA DE DATOS DEL FORMULARIO ===
     const nombreC = document.getElementById('check-nombre').value;
-    const ciC = document.getElementById('check-ci').value || "No especificado";
+    const ciC = window.PTHCheckoutForm.validateIdentity(document.getElementById('check-ci').value,!window.PTHPendingCheckoutUI?.active()||window.PTHPendingCheckoutUI.active().row.identityRequired===true) || "No especificado";
     const telC = document.getElementById('check-tel').value;
 
     // 👇 INICIO DEL ESCUDO PROTECTOR (LISTA NEGRA) 👇
@@ -3794,6 +3796,7 @@ function renderFloatingWA(nombre, telefono) {
 function toggleCartModal(show) {
     const cartModal = document.getElementById('cart-modal');
     if (!cartModal) return;
+    if(show&&!window.PTHPendingCheckoutUI?.localForm())window.PTHCheckoutForm.setIdentityRequired(document,true);
 
     // 1. Abre o cierra el modal
     cartModal.classList.toggle('hidden', !show);

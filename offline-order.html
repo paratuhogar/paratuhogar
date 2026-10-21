@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="/css/offline-order.css?v=20261003-pending2">
   <script src="/js/low-connectivity.js?v=20261002-lowdata1" defer></script>
   <script src="/js/secure-data.js?v=20261009-session1" defer></script>
-  <script src="/js/pending-checkout.js?v=20261019-ordersretry1" defer></script>
-  <script src="/js/checkout-form-shared.js?v=20261010-crm1" defer></script>
+  <script src="/js/pending-checkout.js?v=20261021-ci1" defer></script>
+  <script src="/js/checkout-form-shared.js?v=20261021-ci1" defer></script>
   <script src="/js/offline-checkout-copy.js?v=20261005-copy2" defer></script>
-  <script src="/js/pending-checkout-page.js?v=20261005-cold7" defer></script>
+  <script src="/js/pending-checkout-page.js?v=20261021-ci1" defer></script>
 </head>
 <body>
   <header><a href="/">paratuhogar</a><a href="/offline-catalog.html">Volver al catálogo</a></header>
@@ -74,7 +74,7 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1" for="check-ci">Carnet (CI)</label>
-                <input type="text" id="check-ci" placeholder="Opcional"
+                <input type="text" id="check-ci" placeholder="11 dígitos" inputmode="numeric" maxlength="11" pattern="[0-9]{11}" required
                     class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300">
             </div>
             <div>

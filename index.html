@@ -53,8 +53,8 @@
     <script src="js/product-availability-form.js?v=20260924-1" defer></script>
     <script src="js/product-description-editor.js?v=20260924-1" defer></script>
     <script src="js/checkout-submit-guard.js?v=20261017-checkout1" defer></script>
-    <script src="js/pending-checkout.js?v=20261019-ordersretry1" defer></script>
-    <script src="js/checkout-form-shared.js?v=20261010-crm1" defer></script>
+    <script src="js/pending-checkout.js?v=20261021-ci1" defer></script>
+    <script src="js/checkout-form-shared.js?v=20261021-ci1" defer></script>
     <script src="js/offline-checkout-copy.js?v=20261005-copy2" defer></script>
     <script src="js/checkout-recovery.js?v=20261002-lowdata1" defer></script>
 
@@ -2073,7 +2073,7 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Carnet (CI)</label>
-                <input type="text" id="check-ci" placeholder="Opcional"
+                <input type="text" id="check-ci" placeholder="11 dígitos" inputmode="numeric" maxlength="11" pattern="[0-9]{11}" required
                     class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300">
             </div>
             <div>
@@ -3264,8 +3264,8 @@
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/gestor-registration-steps.js?v=20261016-captacion1" defer></script>
     <script src="js/checkout-confirmation.js?v=20261017-checkout1" defer></script>
-    <script src="js/storefront.min.js?v=20261017-worksettings1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261019-ordersretry1" defer></script>
+    <script src="js/storefront.min.js?v=20261021-ci1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261021-ci1" defer></script>
 
 
 
