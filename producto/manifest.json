@@ -438,7 +438,7 @@
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/caja-fuerte-digital/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-21T14:35:08.584279+00:00"
   },
   {
     "id": "38d5e13f-f81f-4c48-9aee-72a29b5ddd86",
@@ -1023,7 +1023,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-portatil-oukitel-2400w/",
-    "updated_at": "2026-10-20T16:22:18.115562+00:00"
+    "updated_at": "2026-10-21T14:46:52.710532+00:00"
   },
   {
     "id": "12caf6e0-3c75-4d86-809e-1d01bb1c3363",
@@ -1050,7 +1050,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-portatil-oukitel-1800w/",
-    "updated_at": "2026-10-20T16:22:55.954723+00:00"
+    "updated_at": "2026-10-21T14:47:18.692926+00:00"
   },
   {
     "id": "4b8cd9e4-a2da-4309-9816-578b8f325b11",
@@ -1921,9 +1921,9 @@
     "slug": "lampara-multifuncional-30w-liper-panel-solar-2-bombillos-led",
     "nombre": "Lámpara multifuncional 30w Liper + Panel Solar  + 2 bombillos led",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lampara-multifuncional-30w-liper-panel-solar-2-bombillos-led/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-21T15:00:44.917001+00:00"
   },
   {
     "id": "529e885e-68e3-4ba9-bca0-7fdca987faea",
@@ -2515,9 +2515,9 @@
     "slug": "nevera-3-5-pies-royal-inverter",
     "nombre": "Nevera 3.5 pies Royal Inverter",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal-inverter/",
-    "updated_at": "2026-10-14T18:49:07.730458+00:00"
+    "updated_at": "2026-10-21T16:38:39.593358+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
@@ -2821,9 +2821,9 @@
     "slug": "nox-fuente-atx-urano-pro-650w-bronze",
     "nombre": "NOX  Fuente ATX Urano PRO 650W Bronze",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nox-fuente-atx-urano-pro-650w-bronze/",
-    "updated_at": "2026-07-31T18:58:14.838821+00:00"
+    "updated_at": "2026-10-21T14:48:36.778328+00:00"
   },
   {
     "id": "8a40b5f7-547f-4f52-ba94-d2e533a66dde",
@@ -3163,9 +3163,9 @@
     "slug": "refrigerador-10-pies-lemax",
     "nombre": "Refrigerador 10 pies LEMAX",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-10-pies-lemax/",
-    "updated_at": "2026-10-13T15:17:34.556605+00:00"
+    "updated_at": "2026-10-21T16:02:21.739701+00:00"
   },
   {
     "id": "c9dfca1d-431b-4c64-b631-7d97d924eb9c",
@@ -4000,9 +4000,9 @@
     "slug": "ventilador-recargable-16-eko",
     "nombre": "Ventilador recargable 16\" EKO",
     "categoria": "VENTILADORES",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-16-eko/",
-    "updated_at": "2026-09-05T15:56:54.816707+00:00"
+    "updated_at": "2026-10-21T17:09:29.094635+00:00"
   },
   {
     "id": "d1511a74-52cb-41f6-a49b-652d329bfbeb",
