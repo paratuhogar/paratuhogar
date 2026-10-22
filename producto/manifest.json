@@ -2385,6 +2385,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "965ffe1d-f286-4b35-bc87-37301ed76bb5",
+    "slug": "moto-electrica-volta-2026-bateria-de-litio",
+    "nombre": "Moto Eléctrica 72V Leiliang 2026 (NUEVA sin batería)",
+    "categoria": "TRANSPORTE ",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/moto-electrica-volta-2026-bateria-de-litio/",
+    "updated_at": "2026-10-22T01:01:24.835274+00:00"
+  },
+  {
     "id": "2889f03a-09e9-4732-a51b-53c301ed1c49",
     "slug": "moto-electrica-bucatti-aguila-2026",
     "nombre": "Moto eléctrica Bucatti Águila 2026",
@@ -2392,15 +2401,6 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/moto-electrica-bucatti-aguila-2026/",
     "updated_at": "2026-08-31T19:41:46.196513+00:00"
-  },
-  {
-    "id": "965ffe1d-f286-4b35-bc87-37301ed76bb5",
-    "slug": "moto-electrica-volta-2026-bateria-de-litio",
-    "nombre": "Moto Eléctrica Leiliang 2026 Batería de Litio",
-    "categoria": "TRANSPORTE ",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/moto-electrica-volta-2026-bateria-de-litio/",
-    "updated_at": "2026-09-22T16:21:41.126609+00:00"
   },
   {
     "id": "1e0ff4fb-0984-49ec-8b5e-fef3b3c1e3a2",
@@ -2614,9 +2614,9 @@
     "slug": "nevera-7-pies-haitech",
     "nombre": "Nevera 5.6 pies Haitech",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
-    "updated_at": "2026-09-25T15:45:09.204411+00:00"
+    "updated_at": "2026-10-21T23:45:10.683905+00:00"
   },
   {
     "id": "36adbce8-bc55-4f8b-8b60-3a3a0c903ce6",
