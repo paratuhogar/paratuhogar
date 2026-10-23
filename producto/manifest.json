@@ -3447,15 +3447,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "ddd8e070-ebb4-4314-972c-9ee5da8050d1",
-    "slug": "smart-mini-dc-ups",
-    "nombre": "Smart Mini DC UPS",
-    "categoria": "ENERGIA",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/smart-mini-dc-ups/",
-    "updated_at": "2026-10-19T16:19:38.736722+00:00"
-  },
-  {
     "id": "e40ffe5a-7929-4e62-8302-0fae13d64427",
     "slug": "smart-mini-dc-ups-marsriva-kp1-ec",
     "nombre": "Smart mini DC UPS - Marsriva KP1 EC",
@@ -3463,6 +3454,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-mini-dc-ups-marsriva-kp1-ec/",
     "updated_at": "2026-10-08T19:08:23.578294+00:00"
+  },
+  {
+    "id": "ddd8e070-ebb4-4314-972c-9ee5da8050d1",
+    "slug": "smart-mini-dc-ups",
+    "nombre": "Smart Mini DC UPS KP3",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-mini-dc-ups/",
+    "updated_at": "2026-10-23T18:40:09.976469+00:00"
   },
   {
     "id": "72ee7999-4078-4305-a34f-04a8c78bb8b5",
