@@ -85,18 +85,18 @@
     "slug": "backups-marsriva-1000va-600w",
     "nombre": "Backups - Marsriva 1000VA/600W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/backups-marsriva-1000va-600w/",
-    "updated_at": "2026-10-21T01:22:41.35307+00:00"
+    "updated_at": "2026-10-23T00:03:49.97839+00:00"
   },
   {
     "id": "b878a3c1-84f3-4ea1-8885-836a3b37df31",
     "slug": "backups-marsriva-1500va-900w",
     "nombre": "Backups - Marsriva 1500VA/900W",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/backups-marsriva-1500va-900w/",
-    "updated_at": "2026-07-30T16:58:47.39998+00:00"
+    "updated_at": "2026-10-23T00:03:30.911968+00:00"
   },
   {
     "id": "784396ff-146d-458b-a97c-aca64c0c0487",
@@ -157,9 +157,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-10-21T00:58:14.679094+00:00"
+    "updated_at": "2026-10-22T23:48:14.406275+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -355,9 +355,9 @@
     "slug": "bomba-turbina-sumergible-solar-cr-turbo",
     "nombre": "BOMBA / TURBINA SUMERGIBLE SOLAR CR-TURBO",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bomba-turbina-sumergible-solar-cr-turbo/",
-    "updated_at": "2026-10-03T02:48:34.680538+00:00"
+    "updated_at": "2026-10-23T00:08:50.747469+00:00"
   },
   {
     "id": "be693e8a-1db5-4dda-b522-d96f823d244e",
@@ -3343,9 +3343,9 @@
     "slug": "refrigerador-royal-side-by-side-20-pies",
     "nombre": "Refrigerador Royal Side by Side 20 pies",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-royal-side-by-side-20-pies/",
-    "updated_at": "2026-09-08T17:28:19.723716+00:00"
+    "updated_at": "2026-10-23T00:09:16.651373+00:00"
   },
   {
     "id": "c3bfc469-0799-4eb3-a861-6c9945604a73",
