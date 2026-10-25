@@ -3744,6 +3744,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "40f82b55-4ae4-4ee3-beee-be2d45ce5b19",
+    "slug": "split-saco",
+    "nombre": "Split 1T Saco",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/split-saco/",
+    "updated_at": "2026-10-25T16:56:37.334745+00:00"
+  },
+  {
     "id": "91ed6d4a-b79d-4e8f-ac57-bdacb1614594",
     "slug": "split-1t-well",
     "nombre": "Split 1T WELL",
@@ -3805,15 +3814,6 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/split-royal-1t/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
-  },
-  {
-    "id": "40f82b55-4ae4-4ee3-beee-be2d45ce5b19",
-    "slug": "split-saco",
-    "nombre": "Split Saco",
-    "categoria": "MUNDO FRIO",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/split-saco/",
-    "updated_at": "2026-10-25T15:40:24.129288+00:00"
   },
   {
     "id": "6c7ff7e2-b501-48aa-8214-e402276a599a",
