@@ -3258,6 +3258,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "8826dab7-cc2f-4e4b-9478-217e0c1952a6",
+    "slug": "refrigerador-8-5-pies-royal",
+    "nombre": "Refrigerador 8.5 pies Royal",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/refrigerador-8-5-pies-royal/",
+    "updated_at": "2026-10-24T21:22:09.147895+00:00"
+  },
+  {
     "id": "5c67b520-97f8-4d45-a35c-516ea3673577",
     "slug": "refrigerador-8-75-pies-sankey",
     "nombre": "Refrigerador 8.75 pies Sankey",
@@ -3586,9 +3595,9 @@
     "slug": "smart-tv-55-lg-uhd-ai",
     "nombre": "Smart TV 55 - LG UHD AI",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-55-lg-uhd-ai/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-25T03:13:45.143983+00:00"
   },
   {
     "id": "ac450f91-4427-4145-b9f0-88ff7000d18b",
