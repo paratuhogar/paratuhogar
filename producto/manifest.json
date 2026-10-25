@@ -3807,6 +3807,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "40f82b55-4ae4-4ee3-beee-be2d45ce5b19",
+    "slug": "split-saco",
+    "nombre": "Split Saco",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/split-saco/",
+    "updated_at": "2026-10-25T15:40:24.129288+00:00"
+  },
+  {
     "id": "6c7ff7e2-b501-48aa-8214-e402276a599a",
     "slug": "ssd-interno-adata-960gb-sata-iii-3d-nand-qlc-2-5-pulgadas",
     "nombre": "SSD Interno ADATA 960GB SATA III | 3D NAND QLC | 2.5 Pulgadas",
