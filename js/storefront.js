@@ -6019,49 +6019,88 @@ let pedidosRawAdmin = []; // Añade esta línea antes de la función
 
 let inventoryRawAdmin = []; // Variable global vital para el inventario
 
-async function loadAdminData() {
-    // 1. CARGA PRIORITARIA: MENSAJEROS (Se cargan primero para tenerlos listos antes de dibujar la logística)
-    await loadMensajerosEnAdmin();
+let adminLoadInFlight = null;
+let adminReloadQueued = false;
+let adminLoadVersion = 0;
 
-    // 2. Cargamos los datos masivos de pedidos, productos y visitas
-    const { data: pedidos } = await supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false});
-    const { data: productos } = await supabaseClient.from('productos').select('*').order('nombre', {ascending: true});
-    const { data: vistas } = await supabaseClient.from('metricas_vistas').select('*');
+function loadAdminData() {
+    if (adminLoadInFlight) {
+        // A write may have finished after the active request took its snapshot.
+        // Coalesce callers, but make one fresh pass before resolving them.
+        adminReloadQueued = true;
+        return adminLoadInFlight;
+    }
+    adminLoadInFlight = (async () => {
+        do {
+            adminReloadQueued = false;
+            await loadAdminDataPass();
+        } while (adminReloadQueued);
+    })().finally(() => { adminLoadInFlight = null; });
+    return adminLoadInFlight;
+}
 
-    // 3. Procesar Pedidos
-    if (pedidos) {
+async function loadAdminDataPass() {
+    const version = ++adminLoadVersion;
+    const owner = window.currentUserData?.id;
+    const isCurrent = () => version === adminLoadVersion && owner === window.currentUserData?.id;
+    const status = document.getElementById('admin-refresh-status');
+    if (status) status.textContent = 'Actualizando…';
+    const read = query => Promise.resolve(query).catch(error => ({ data: null, error }));
+    // Independent network requests start together. Only logistics depends on
+    // messenger data; neither inventory nor visit analytics can hold it up.
+    const messengersReady = Promise.resolve(loadMensajerosEnAdmin()).catch(error => console.error('Mensajeros:', error));
+    const ordersReady = read(supabaseClient.from('pedidos').select('*').order('fecha', {ascending: false}));
+    const productsReady = read(supabaseClient.from('productos').select('*').order('nombre', {ascending: true}));
+    const viewsReady = read(supabaseClient.from('metricas_vistas').select('*'));
+
+    const logisticsReady = Promise.all([ordersReady, messengersReady]).then(([{ data: pedidos, error }]) => {
+        if (!isCurrent()) return;
+        if (error || !pedidos) {
+            if (status) status.textContent = 'No se pudieron actualizar los pedidos. Reintenta.';
+            return;
+        }
         pedidosRawAdmin = pedidos;
         populateLogisticaFilters();
-        renderAdminLogistica(); // <--- Ahora sí, listadoMensajerosAdmin ya tendrá los datos de MARCELITO y otros listos
+        renderAdminLogistica();
         renderAdminCortes();
         updateAdminStats(pedidos);
-        calculateProductSales();
-
-        // Intentamos cargar analíticas (en try-catch para que si fallan no rompan nada más)
-        try {
-            renderAnaliticaGestores(pedidos);
-            renderAnaliticaProveedores(pedidos);
-            renderAnaliticaCancelacion(pedidos);
-        } catch(e) { console.log("Analítica parcial pendiente de datos"); }
-    }
-
-    // 4. Procesar Inventario
-    if (productos) {
-        inventoryRawAdmin = productos; // Guardamos en global
+        if (status) status.textContent = 'Pedidos actualizados';
+    });
+    const inventoryReady = productsReady.then(({ data: productos, error }) => {
+        if (!isCurrent() || error || !productos) return;
+        inventoryRawAdmin = productos;
         populateInventarioProveedorFilter();
-        renderAdminInventario(productos); // Pasamos los datos
-    }
-
-    // 5. Procesar Cruce de datos
-    if (pedidos && productos) {
+        renderAdminInventario(productos);
+    });
+    // Secondary analytics run after operational rendering, without extending
+    // the refresh lock. Ignore late responses from an older refresh/account.
+    void Promise.all([logisticsReady, inventoryReady, ordersReady, productsReady]).then(([, , orders, products]) => {
+        if (!isCurrent() || orders.error || !orders.data) return;
         try {
-            renderAnaliticaZombies(pedidos, productos);
-            renderAnaliticaConversion(pedidos, vistas || []);
-        } catch(e) { console.log("Cruce de datos pendiente"); }
+            calculateProductSales();
+            renderAnaliticaGestores(orders.data);
+            renderAnaliticaProveedores(orders.data);
+            renderAnaliticaCancelacion(orders.data);
+            if (!products.error && products.data) {
+                renderAnaliticaZombies(orders.data, products.data);
+            }
+        } catch(e) { console.log('Analítica parcial pendiente de datos'); }
+    }).catch(error => console.error('Analítica del panel:', error));
+    void Promise.all([logisticsReady, ordersReady, viewsReady]).then(([, orders, views]) => {
+        if (!isCurrent() || orders.error || !orders.data || views.error || !views.data) return;
+        renderAnaliticaConversion(orders.data, views.data);
+    }).catch(error => console.error('Conversión del panel:', error));
+    try {
+        await Promise.all([logisticsReady, inventoryReady]);
+        if (isCurrent()) {
+            for (const load of [loadPendingGestores, loadAdminReports, loadAdminCategorias]) {
+                void Promise.resolve().then(() => { if (isCurrent()) return load(); }).catch(error => console.error('Sección secundaria:', error));
+            }
+        }
+    } catch (error) {
+        if (isCurrent() && status) status.textContent = 'No se pudo completar la actualización. Reintenta.';
+        console.error('Actualización del panel:', error);
     }
-    loadPendingGestores();
-    loadAdminReports();
-    loadAdminCategorias();
 }
 
 // =================================================================
