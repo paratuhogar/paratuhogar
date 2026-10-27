@@ -258,7 +258,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-must-10kw/",
-    "updated_at": "2026-09-24T02:30:26.835476+00:00"
+    "updated_at": "2026-10-27T14:37:23.386351+00:00"
   },
   {
     "id": "027605c8-21f0-41a3-a620-21a74a7018ae",
@@ -2524,9 +2524,9 @@
     "slug": "nevera-3-5-pies-royal",
     "nombre": "Nevera 3.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal/",
-    "updated_at": "2026-10-27T00:57:09.448715+00:00"
+    "updated_at": "2026-10-27T16:25:49.725138+00:00"
   },
   {
     "id": "8e051ce8-436b-4b9f-8af9-491b32621b62",
@@ -4029,7 +4029,7 @@
     "categoria": "VENTILADORES",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-12-eko/",
-    "updated_at": "2026-09-07T20:29:46.913987+00:00"
+    "updated_at": "2026-10-27T17:46:15.544662+00:00"
   },
   {
     "id": "83715a1f-084b-4009-9fa6-86f86f1332f6",
@@ -4045,9 +4045,9 @@
     "slug": "ventilador-recargable-16-eko",
     "nombre": "Ventilador recargable 16\" EKO",
     "categoria": "VENTILADORES",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-16-eko/",
-    "updated_at": "2026-10-21T17:09:29.094635+00:00"
+    "updated_at": "2026-10-27T17:46:19.818401+00:00"
   },
   {
     "id": "d1511a74-52cb-41f6-a49b-652d329bfbeb",
