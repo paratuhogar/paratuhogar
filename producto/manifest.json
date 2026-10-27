@@ -621,6 +621,15 @@
     "updated_at": "2026-08-14T13:22:12.654788+00:00"
   },
   {
+    "id": "f05ae901-7e99-4d3e-9520-edf08104dc38",
+    "slug": "cocina-de-gas-2q-challenger",
+    "nombre": "Cocina de gas - 2Q Challenger",
+    "categoria": "COCINA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/cocina-de-gas-2q-challenger/",
+    "updated_at": "2026-10-27T00:53:18.366133+00:00"
+  },
+  {
     "id": "d64e5e9e-9eb5-4223-8b88-d261957cdb12",
     "slug": "cocina-de-gas-1q-eko",
     "nombre": "Cocina de gas 1Q EKO",
@@ -2511,6 +2520,15 @@
     "updated_at": "2026-09-24T17:07:08.598271+00:00"
   },
   {
+    "id": "cb6e12a2-5c21-4bc3-9525-9f87cef479c6",
+    "slug": "nevera-3-5-pies-royal",
+    "nombre": "Nevera 3.5 pies Royal",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal/",
+    "updated_at": "2026-10-27T00:57:09.448715+00:00"
+  },
+  {
     "id": "8e051ce8-436b-4b9f-8af9-491b32621b62",
     "slug": "nevera-3-5-pies-royal-inverter",
     "nombre": "Nevera 3.5 pies Royal Inverter",
@@ -3382,6 +3400,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/router-tl-mr100/",
     "updated_at": "2026-08-27T15:40:13.283094+00:00"
+  },
+  {
+    "id": "cb298ae9-624c-4a27-9350-70e48b8b757c",
+    "slug": "sandwichera-challenger",
+    "nombre": "Sandwichera Challenger",
+    "categoria": "COCINA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/sandwichera-challenger/",
+    "updated_at": "2026-10-27T00:48:14.837335+00:00"
   },
   {
     "id": "f25d9f76-46fc-4f99-ab07-a1c14e64547e",
