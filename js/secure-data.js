@@ -143,6 +143,13 @@
   return offlineProfile();
  };
  root.PTHSecureData.publicName=publicName;
+ root.PTHSecureData.reviewSubgestor=async body=>{
+  const token=storage.getItem(tokenKey);await restore();
+  if(!token||token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió. Vuelve a abrir la lista.'}};
+  const result=await send({...body,action:'subgestor_review'},token);
+  if(token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió. Vuelve a abrir la lista.'}};
+  return result;
+ };
  root.PTHSecureData.ranking=async()=>{
   const token=storage.getItem(tokenKey);await restore();
   const changed=()=>!token||token!==storage.getItem(tokenKey);

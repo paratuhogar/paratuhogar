@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+test('review requests pin the account and discard a late private result after logout',async()=>{
+ const f=client();f.storage.setItem('pth_secure_token','a'.repeat(64));let release;
+ f.context.fetch=async(_url,options)=>{const body=JSON.parse(options.body);if(body.action==='session')return{status:200,json:async()=>({data:{profile:{id:'own',rol:'admin'},expiresAt:new Date(Date.now()+600000).toISOString()},error:null})};return new Promise(resolve=>{release=()=>resolve({status:200,json:async()=>({data:{rows:[{cliente:'Private late result'}]},error:null})});});};
+ const pending=f.context.PTHSecureData.reviewSubgestor({operation:'list'});while(!release)await new Promise(resolve=>setImmediate(resolve));f.context.PTHSecureData.clearSession();release();
+ assert.match((await pending).error.message,/sesión cambió/);
+});
 test('quota refusal during isolation marker cannot keep logout credentials or device context',async()=>{
  const f=client(),actor={id:'own',nombre:'Own',rol:'gestor',estado:'activo',password:'__session__'};
  f.context.fetch=async()=>({status:200,json:async()=>({data:{profile:actor,expiresAt:new Date(Date.now()+600000).toISOString()},error:null})});

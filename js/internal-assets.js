@@ -3,6 +3,7 @@
  'use strict';
  const pending=new Map();
  const definitions={
+  subgestorReview:[['style','css/subgestor-review.css?v=20261027-subreview1','pth-subgestor-review-css'],['script','js/subgestor-review.js?v=20261027-subreview1','pth-subgestor-review-js']],
   sales:[['script','js/sales-tools.min.js?v=20261003-alias1','pth-sales-tools-js',30000]],
   story:[['style','css/content-studio.css?v=20261002-quickstory1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261003-sharefix1','pth-studio-jobs-js'],['script','js/quick-story.js?v=20261003-sharefix1','pth-quick-story-js']],
   studio:[['style','css/content-studio.css?v=20261002-quickstory1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261002-studio4','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261003-sharefix1','pth-studio-jobs-js'],['script','js/studio-collection.js?v=20261003-sharefix1','pth-studio-collection-js'],['script','js/content-studio.js?v=20261003-sharefix1','pth-content-studio-js']],

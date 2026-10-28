@@ -24,101 +24,35 @@ async function pendingFixture(){
  return {f,pending,payload,body,approve:(input=payload,token=parentToken)=>f.request(input,token)};
 }
 
-test('parent approves a signed new child checkout while preserving its server snapshot and receipt',async()=>{
- const {f,pending,approve}=await pendingFixture();
- const before=structuredClone(pending);const result=await approve();
- assert.equal(result.error,null);assert.equal(f.writes,2);
- const order=f.rows.pedidos.find(row=>row.id===pending.id);
- for(const field of ['submission_token','proveedor','cliente','telefono','ci','direccion','municipio','producto','total','costo_mensajeria','comision_total','comision_subgestor','orden_dia','garantia_venta','garantia_dias','subgestor_nombre'])assert.deepEqual(order[field],before[field],field);
- assert.equal(order.gestor,before.parent_gestor_nombre);assert.equal(order.estado,'Pendiente');assert.equal(order.pago_gestor,'Pendiente');assert.equal(order.pago_subgestor,'Pendiente');
- assert.equal(order.comision_parent,Number(before.comision_total)-Number(before.comision_subgestor));
- assert.deepEqual(f.rows.pedidos_subgestores[0],before);assert.deepEqual(f.rows.pedidos[0],f.historical);
- const receipt=await f.request({action:'checkout',operation:'receipt',attempt:before.submission_token},null);assert.equal(receipt.data.complete,true);
-});
-
-test('other same-name principal, child and anonymous callers cannot approve even with exact ID and token',async()=>{
- for(const token of [otherToken,childToken,null]){
-  const {f,approve}=await pendingFixture();const result=await approve(undefined,token);
-  assert.ok(result.error);assert.equal(f.writes,1);assert.equal(f.rows.pedidos.length,1);
+// Approval moved to a service-only transaction. Token/snapshot preservation,
+// rollback and idempotence are exercised against PostgreSQL in the SQL script.
+for(const tokenValue of [null,'legacy-submission','pthn1.forged'])test('old approval route cannot bypass review with token '+tokenValue,async()=>{
+ const {f,pending,payload,approve}=await pendingFixture();
+ pending.submission_token=tokenValue;payload.values[0].submission_token=tokenValue;
+ const before=structuredClone(pending);
+ for(const token of [parentToken,childToken,otherToken,null]){
+  const reply=await approve(payload,token);assert.ok(reply.error);assert.equal(f.writes,1);
  }
+ assert.deepEqual(pending,before);assert.equal(f.rows.pedidos.length,1);
 });
 
-test('approval rejects missing, unrelated or tampered tokens after the authorized queue lookup',async()=>{
- for(const mutation of [row=>delete row.submission_token,row=>row.submission_token='pthn1.unrelated',row=>row.submission_token+='x',row=>row.submission_token='legacy-other',row=>row.submission_token=null]){
-  const {f,payload,approve}=await pendingFixture();mutation(payload.values[0]);
-  const result=await approve();assert.ok(result.error);assert.match(result.error.message,/clave del pedido/);
-  assert.equal(f.writes,1);assert.ok(f.trace.some(t=>t.table==='pedidos_subgestores'&&t.op==='select'));
- }
-});
-
-test('client approval marker cannot admit a reserved token through either generic creation route',async()=>{
+test('reserved checkout tokens still cannot enter through generic order creation',async()=>{
  for(const table of ['pedidos','pedidos_subgestores']){
   const f=await fixture();const result=await f.request({action:'query',table,op:'insert',values:{...f.body.inputs[0],submission_token:'pthn1.forged',_approval_id:'forged'}});
-  assert.ok(result.error);assert.equal(result.error.message,'Usa la confirmación de pedidos nuevos para esta clave.');assert.equal(f.writes,0);
-  assert.equal(f.trace.some(t=>t.table==='productos'),false);
+  assert.ok(result.error);assert.equal(f.writes,0);
  }
 });
 
-test('an approval payload cannot change the saved financial, customer, seller or lifecycle fields',async()=>{
- const {f,pending,payload,approve}=await pendingFixture();
- Object.assign(payload.values[0],{gestor:'Forged',subgestor_nombre:'Forged',parent_gestor_id:'other',cliente:'Forged',telefono:'Forged',producto:'Forged',total:1,comision_total:999,comision_subgestor:999,comision_parent:999,estado:'Entregado',pago_gestor:'Pagado',pago_subgestor:'Pagado',proveedor:'Forged',_approval_id:'forged'});
- const result=await approve();assert.equal(result.error,null);
- const order=f.rows.pedidos.find(row=>row.id===pending.id);
- assert.equal(order.gestor,pending.parent_gestor_nombre);assert.equal(order.cliente,pending.cliente);assert.equal(order.total,pending.total);assert.equal(order.comision_total,pending.comision_total);assert.equal(order.subgestor_nombre,pending.subgestor_nombre);assert.equal(order.proveedor,pending.proveedor);assert.equal(order.estado,'Pendiente');assert.equal(order.pago_gestor,'Pendiente');
- assert.equal('_approval_id' in order,false);assert.equal('parent_gestor_id' in order,false);
-});
-
-test('nonpending or removed queue rows cannot create another approved order',async()=>{
- for(const state of ['Aprobado','Cancelado','Entregado',null]){
-  const {f,pending,approve}=await pendingFixture();pending.estado=state;const result=await approve();assert.ok(result.error);assert.equal(f.writes,1);
- }
- const {f,pending,approve}=await pendingFixture();assert.equal((await approve()).error,null);
- f.rows.pedidos_subgestores=f.rows.pedidos_subgestores.filter(row=>row.id!==pending.id);
- const result=await approve();assert.ok(result.error);assert.equal(f.writes,2);assert.equal(f.rows.pedidos.filter(row=>row.id===pending.id).length,1);
-});
-
-test('concurrent retries and sequential double clicks are fenced by existing primary key and token uniqueness',async()=>{
- const {f,pending,approve}=await pendingFixture();
- const results=await Promise.all([approve(),approve()]);
- assert.equal(results.filter(r=>r.error===null).length,1);assert.equal(results.filter(r=>r.error?.code==='23505').length,1);
- assert.equal((await approve()).error.code,'23505');assert.equal(f.writes,2);assert.equal(f.rows.pedidos.filter(row=>row.id===pending.id).length,1);
- assert.equal(f.trace.some(t=>['upsert','update','delete'].includes(t.op)),false);
-});
-
-test('insert failure preserves the queue; lost response never permits a second order on retry',async()=>{
- const {f,pending,approve}=await pendingFixture();const before=structuredClone(pending);
- f.failInsert=true;assert.ok((await approve()).error);assert.equal(f.writes,1);assert.deepEqual(pending,before);
- f.failInsert=false;f.drop=true;assert.ok((await approve()).error);assert.equal(f.writes,2);assert.deepEqual(pending,before);
- f.drop=false;assert.equal((await approve()).error.code,'23505');assert.equal(f.writes,2);assert.equal(f.rows.pedidos.filter(row=>row.id===pending.id).length,1);
-});
-
-for(const token of [null,'legacy-submission'])test(`legacy queue approval preserves its exact stored token (${token})`,async()=>{
- const {f,pending,payload,approve}=await pendingFixture();pending.submission_token=token;payload.values[0].submission_token=token;
- const result=await approve();assert.equal(result.error,null);assert.equal(f.rows.pedidos.find(row=>row.id===pending.id).submission_token,token);
-});
-
-test('a different valid signed child attempt is not authority to approve a saved queue row',async()=>{
- const {f,payload,body,approve}=await pendingFixture();
- const other=await f.request({...body,operation:'quote',intentId:'e'.repeat(64)},childToken);assert.equal(other.error,null);
- assert.notEqual(other.data.attempt,payload.values[0].submission_token);payload.values[0].submission_token=other.data.attempt;
- const result=await approve();assert.match(result.error.message,/clave del pedido/);assert.equal(f.writes,1);
-});
-
-test('the unchanged panel sends its exact approval payload through the fixed gateway without a client marker',async()=>{
- const {f,pending}=await pendingFixture();
+test('updated parent control sends only saved ID/version and retains voucher amounts',async()=>{
+ const {f,pending}=await pendingFixture();pending.review_version='a'.repeat(32);
  const html=await readFile(new URL('../subgestores.html',import.meta.url),'utf8');
  const start=html.indexOf('async function aprobarPedido(pedidoId)');
  const source=html.slice(start,html.indexOf('async function rechazarPedido',start));
- assert.ok(start>=0);
- const alerts=[],vouchers=[],sent=[];let reloads=0,removals=0;
- const context={pedidosPendientes:[pending],currentParent:f.rows.gestores[0],confirm:()=>true,alert:message=>alerts.push(message),openSubgestorVoucher:row=>vouchers.push(row),loadData:()=>reloads++,supabaseClient:{from:table=>({
-  insert:values=>{sent.push(values);return f.request({action:'query',table,op:'insert',values});},
-  // Cleanup is stubbed: this test verifies the real panel payload and gateway insert, not a DB transaction.
-  delete:()=>({eq:async(column,value)=>{assert.equal(table,'pedidos_subgestores');assert.equal(column,'id');assert.equal(value,pending.id);removals++;return {error:null};}})
- })}};
+ const sent=[],vouchers=[],alerts=[];let reloads=0;
+ const secure={token:()=> 'unchanged',reviewSubgestor:async body=>{sent.push(body);return {data:{id:pending.id},error:null};}};
+ const context={parentReviewBusy:false,pedidosPendientes:[pending],confirm:()=>true,alert:m=>alerts.push(m),openSubgestorVoucher:p=>vouchers.push(p),loadData:async()=>reloads++,window:{PTHSecureData:secure}};
  vm.runInNewContext(source+'; globalThis.approve=aprobarPedido;',context);
  await context.approve(pending.id);
- assert.equal(sent[0][0].submission_token,pending.submission_token);assert.equal('_approval_id' in sent[0][0],false);
- assert.equal(f.rows.pedidos.filter(row=>row.id===pending.id).length,1);assert.equal(vouchers.length,1);assert.equal(removals,1);assert.equal(reloads,1);
- assert.match(alerts[0],/Pedido aprobado/);
+ assert.equal(sent.length,1);assert.equal(sent[0].operation,'approve');assert.equal(sent[0].id,pending.id);assert.equal(sent[0].expected,pending.review_version);
+ assert.equal('total' in sent[0],false);assert.equal('comision_total' in sent[0],false);assert.equal(vouchers[0].comision_total,pending.comision_total);assert.equal(reloads,1);
 });

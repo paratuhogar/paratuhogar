@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './fixtures/new-checkout.mjs';
+test('rejected child orders retain their original receipt but do not warn against a genuinely new attempt',async()=>{
+ const f=await fixture(),parent={...f.rows.gestores[0],id:'parent-a',nombre:'Parent A'};
+ f.rows.gestores.push(parent);f.rows.gestores[0].parent_id=parent.id;
+ f.body.table='pedidos_subgestores';f.body.inputs.forEach(row=>{row.subgestor_id='actor-a';row.gestor=parent.nombre;row.telefono='51112233';});
+ const first=await f.quote();assert.equal((await f.submit(first)).data.complete,true);
+ for(const row of f.rows.pedidos_subgestores)row.estado='Rechazado';
+ assert.equal((await f.request({action:'checkout',operation:'receipt',attempt:first.data.attempt},null)).data.complete,true);
+ const body=structuredClone(f.body);body.intentId='f'.repeat(64);
+ const next=await f.request({...body,operation:'quote'});assert.equal(next.error,null);assert.deepEqual(next.data.duplicates,[]);
+});
 
 async function sold() {
   const f=await fixture();

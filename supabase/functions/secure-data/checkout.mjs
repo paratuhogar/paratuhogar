@@ -115,7 +115,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       const result=await query.order(date,{ascending:false}).limit(201);
       if(result.error||!Array.isArray(result.data)||result.data.length>200)fail('DUPLICATE_CHECK_UNAVAILABLE','No pudimos comprobar posibles pedidos repetidos. Tus datos se conservan; reintenta la comprobación.');
       for(const candidate of result.data){
-        if(normalized(candidate.estado)==='cancelado'||!child&&candidate.subgestor_nombre)continue;
+        if(['cancelado','rechazado'].includes(normalized(candidate.estado))||!child&&candidate.subgestor_nombre)continue;
         // A name is only a query prefilter. The signed checkout initiator ID
         // must match, including approved children and same-named siblings.
         let prior;try{prior=await parse(candidate.submission_token);}catch(_){continue;}

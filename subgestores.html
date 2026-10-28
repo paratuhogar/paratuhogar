@@ -313,6 +313,7 @@
                 <label class="text-[9px] font-black text-slate-400 uppercase">Dirección de Entrega</label>
                 <textarea id="edit-direccion" rows="3" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3"></textarea>
             </div>
+            <div><label for="edit-vuelto" class="text-[9px] font-black text-slate-400 uppercase">Vuelto de ($), vacío si no necesita</label><input id="edit-vuelto" inputmode="decimal" class="w-full bg-slate-950 border-slate-800 text-xs rounded-xl p-3"></div>
 
             <div class="flex gap-2 pt-2">
                 <button onclick="document.getElementById('modal-edit-order').classList.add('hidden')" class="flex-1 py-3 bg-slate-800 text-slate-400 rounded-xl text-xs font-black uppercase">Cancelar</button>
@@ -323,7 +324,8 @@
 
     <!-- SUPABASE CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/secure-data.js?v=20261009-session1"></script>
+    <script src="js/secure-data.js?v=20261027-subreview1"></script>
+    <script src="js/subgestor-review.js?v=20261027-subreview1"></script>
     <script>
         // CONFIGURACIÓN SUPABASE (CORREGIDA)
         const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
@@ -465,14 +467,21 @@
 
         // 3. CARGA DE PEDIDOS POR APROBAR
         async function loadPedidosPendientes() {
-            const { data, error } = await supabaseClient
-                .from('pedidos_subgestores')
-                .select('*')
-                .eq('parent_gestor_id', currentParent.id)
-                .eq('estado', 'Pendiente Aprobacion')
-                .order('created_at', { ascending: false });
-
-            if (error) return;
+            const owner = currentParent.id, token = window.PTHSecureData.token();
+            const data = [];
+            try {
+                let offset = 0, hasMore;
+                do {
+                    const result = await window.PTHSecureData.reviewSubgestor({operation:'list',offset});
+                    if (owner !== currentParent?.id || token !== window.PTHSecureData.token()) return;
+                    if (result.error || !Array.isArray(result.data?.rows)) throw Error(result.error?.message || 'No se pudo leer la cola.');
+                    data.push(...result.data.rows.filter(row => row.parent_gestor_id === owner));
+                    hasMore = result.data.hasMore; offset += 50;
+                } while (hasMore);
+            } catch(error) {
+                document.getElementById('list-pedidos-pendientes').textContent = error.message + ' Actualiza para reintentar.';
+                return;
+            }
 
             pedidosPendientes = data || [];
             document.getElementById('counter-pedidos').innerText = `${pedidosPendientes.length} pendientes`;
@@ -483,69 +492,11 @@
                 return;
             }
 
-            // Traemos productos y precios personalizados para realizar un recálculo en tiempo real
-            let allProds = [];
-            let customPrices = [];
-            try {
-                const { data: prods } = await supabaseClient
-                    .from('productos')
-                    .select('id, nombre, comision, precio');
-                allProds = prods || [];
-
-                const { data: customs } = await supabaseClient
-                    .from('precios_personalizados')
-                    .select('producto_id, comision_subgestor, nuevo_precio')
-                    .eq('gestor', currentParent.nombre);
-                customPrices = customs || [];
-            } catch (e) {
-                console.error("Error al sincronizar tablas de comisión:", e);
-            }
-
+            const reviewSafeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
             container.innerHTML = pedidosPendientes.map(p => {
-                // Cálculo cruzado en tiempo real por producto
-                const lines = p.producto.split(' + ');
-                let calculatedTotalComm = 0;
-                let calculatedSubgestorComm = 0;
-
-                lines.forEach(line => {
-                    let qty = 1;
-                    const qtyMatch = line.match(/^(\d+)x/);
-                    if (qtyMatch) qty = parseInt(qtyMatch[1]);
-
-                    let nombreLimpio = line.replace(/^\d+x\s+/, '').split('[')[0].trim();
-                    
-                    const prod = allProds.find(pr => pr.nombre.trim().toUpperCase() === nombreLimpio.toUpperCase());
-                    if (prod) {
-                        const custom = customPrices.find(cp => cp.producto_id === prod.id);
-                        
-                        const baseComm = parseFloat(prod.comision) || 0;
-                        const basePrice = parseFloat(prod.precio) || 0;
-                        
-                        // Si aumentaste el precio del producto flexible
-                        const nuevoPrecioParent = custom ? parseFloat(custom.nuevo_precio) : basePrice;
-                        const extraParent = (nuevoPrecioParent > basePrice) ? (nuevoPrecioParent - basePrice) : 0;
-                        
-                        const itemTotalComm = baseComm + extraParent;
-                        // Sin una asignación explícita del gestor principal, la
-                        // comisión del subgestor es cero. Nunca se inventa un 70%.
-                        const itemSubComm = custom ? (parseFloat(custom.comision_subgestor) || 0) : 0;
-
-                        calculatedTotalComm += (itemTotalComm * qty);
-                        calculatedSubgestorComm += (itemSubComm * qty);
-                    }
-                });
-
-                // Respaldo de seguridad en caso de fallo de consulta
-                if (calculatedTotalComm === 0) {
-                    calculatedTotalComm = p.comision_total || 0;
-                    calculatedSubgestorComm = p.comision_subgestor !== undefined && p.comision_subgestor !== null 
-                        ? parseFloat(p.comision_subgestor) 
-                        : parseFloat((calculatedTotalComm * 0.70).toFixed(0));
-                }
-
-                // Sincronizamos las comisiones calculadas en la memoria local de la orden
-                p.comision_total_calculada = calculatedTotalComm;
-                p.comision_subgestor_calculada = calculatedSubgestorComm;
+                // Show exactly the saved snapshot that the server will approve.
+                const calculatedTotalComm = Number(p.comision_total) || 0;
+                const calculatedSubgestorComm = Number(p.comision_subgestor) || 0;
 
                 const defaultParentComm = calculatedTotalComm - calculatedSubgestorComm;
 
@@ -553,13 +504,13 @@
                 <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-[10px] font-black uppercase text-blue-400">Enviado por: ${p.subgestor_nombre}</span>
+                            <span class="text-[10px] font-black uppercase text-blue-400">Enviado por: ${reviewSafeText(p.subgestor_nombre)}</span>
                             <span class="text-[9px] text-slate-500 font-bold">${new Date(p.created_at).toLocaleDateString()}</span>
                         </div>
-                        <h4 class="text-base font-black text-slate-100 uppercase">${p.cliente}</h4>
-                        <p class="text-xs text-slate-500 font-mono">${p.telefono} | CI: ${p.ci || '---'}</p>
-                        <p class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded-lg border border-slate-800">${p.direccion}</p>
-                        <p class="text-xs text-slate-300 font-bold mt-3">📦 ${p.producto}</p>
+                        <h4 class="text-base font-black text-slate-100 uppercase">${reviewSafeText(p.cliente)}</h4>
+                        <p class="text-xs text-slate-500 font-mono">${reviewSafeText(p.telefono)} | CI: ${reviewSafeText(p.ci || '---')}</p>
+                        <p class="text-xs text-slate-400 mt-2 bg-slate-950 p-2 rounded-lg border border-slate-800">${reviewSafeText(p.direccion)}</p>
+                        <p class="text-xs text-slate-300 font-bold mt-3">📦 ${reviewSafeText(p.producto)}</p>
                         
                         <!-- PANEL CONTROL NUMÉRICO DE COMISIONES -->
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 mt-4">
@@ -653,102 +604,66 @@
             openSubgestorVoucher(pedido);
         };
 
+        let parentReviewBusy = false;
+        let editingPendingOrder = null;
         async function aprobarPedido(pedidoId) {
             const p = pedidosPendientes.find(item => item.id === pedidoId);
-            if (!p) return;
-
-            // La comisión aprobada es exactamente la configurada en el panel
-            // del gestor principal; no se puede modificar pedido por pedido.
-            const comisionSub = Number(p.comision_subgestor_calculada) || 0;
-
-            // Utilizamos el valor calculado en tiempo real
-            const totalCommReal = p.comision_total_calculada || p.comision_total || 0;
-
-            // Validaciones de seguridad financiera
-            if (isNaN(comisionSub) || comisionSub < 0) {
-                alert("⚠️ Por favor ingresa un monto válido de comisión para el subgestor.");
-                return;
-            }
-            if (comisionSub > totalCommReal) {
-                alert(`⚠️ La comisión asignada al subgestor ($${comisionSub}) no puede ser mayor que la comisión total disponible ($${totalCommReal}).`);
-                return;
-            }
-
-            const comisionParent = Number((totalCommReal - comisionSub).toFixed(2));
-
-            const confirmar = confirm(`¿Aprobar pedido?\n\n• Para Subgestor: $${comisionSub}\n• Para ti (Ganancia): $${comisionParent}\n\nLa orden se enviará a la administración central.`);
-            if(!confirmar) return;
-
+            if (!p || parentReviewBusy) return;
+            if (!confirm('¿Aprobar #' + p.orden_dia + ' y enviarlo a logística con sus importes guardados?')) return;
+            parentReviewBusy = true;
+            const token = window.PTHSecureData.token();
             try {
-                // C. Insertar en la tabla "pedidos" principal de la tienda
-                const { error: errorInsert } = await supabaseClient
-                    .from('pedidos')
-                    .insert([{
-                        id: p.id,
-                        gestor: currentParent.nombre, // Para que el admin le pague al principal
-                        cliente: p.cliente,
-                        ci: p.ci,
-                        telefono: p.telefono,
-                        direccion: p.direccion,
-                        municipio: p.municipio,
-                        producto: p.producto,
-                        total: p.total,
-                        costo_mensajeria: p.costo_mensajeria,
-                        comision_total: totalCommReal, 
-                        estado: 'Pendiente',
-                        pago_gestor: 'Pendiente',
-                        proveedor: p.proveedor,
-                        origen: 'Subgestor',
-                        orden_dia: p.orden_dia,
-                        submission_token: p.submission_token || null,
-                        
-                        // Registro de la división de comisiones
-                        subgestor_nombre: p.subgestor_nombre,
-                        comision_subgestor: comisionSub,
-                        comision_parent: comisionParent,
-                        pago_subgestor: 'Pendiente'
-                    }]);
-
-                if (errorInsert) throw errorInsert;
-
-                // D. Eliminar de la cola temporal
-                await supabaseClient
-                    .from('pedidos_subgestores')
-                    .delete()
-                    .eq('id', p.id);
-
-                openSubgestorVoucher({ ...p, comision_total: totalCommReal });
-                alert("✅ Pedido aprobado y vale enviado a administración.");
-                loadData();
-
-            } catch (e) {
-                alert("Error al procesar la aprobación: " + e.message);
-            }
+                const result = await window.PTHSecureData.reviewSubgestor({operation:'approve',id:p.id,expected:p.review_version});
+                if (token !== window.PTHSecureData.token()) return;
+                if (result.error) throw Error(result.error.message);
+                openSubgestorVoucher(p);
+                alert(result.data.replayed?'El pedido ya había sido aprobado. Se conserva la aprobación original.':'✅ Pedido aprobado. Ya está disponible en logística.');
+                await loadData();
+            } catch(error) { alert('No se pudo confirmar la aprobación: ' + error.message); }
+            finally { parentReviewBusy = false; }
         }
 
         async function rechazarPedido(id) {
-            if (!confirm("¿Rechazar y borrar este pedido de forma permanente?")) return;
-            await supabaseClient.from('pedidos_subgestores').delete().eq('id', id);
-            loadData();
+            const p = pedidosPendientes.find(item => item.id === id);
+            if (!p || parentReviewBusy) return;
+            const reason = prompt('Motivo del rechazo de #' + p.orden_dia + ':');
+            if (reason === null) return;
+            if (!reason.trim()) return alert('Debes indicar el motivo del rechazo.');
+            if (!confirm('¿Rechazar este pedido? Se conservará el registro del motivo.')) return;
+            parentReviewBusy = true;
+            const token = window.PTHSecureData.token();
+            try {
+                const result = await window.PTHSecureData.reviewSubgestor({operation:'reject',id,expected:p.review_version,reason});
+                if (token !== window.PTHSecureData.token()) return;
+                if (result.error) throw Error(result.error.message);
+                alert(result.data.replayed?'El pedido ya había sido rechazado. Se conserva el motivo original.':'Pedido rechazado. El motivo quedó registrado.');
+                await loadData();
+            } catch(error) { alert(error.message); }
+            finally { parentReviewBusy = false; }
         }
 
         // 5. EDICIÓN DEL PEDIDO ANTES DE APROBAR
         function editarPedido(id) {
             const p = pedidosPendientes.find(item => item.id === id);
             if(!p) return;
+            editingPendingOrder = {...p};
 
             document.getElementById('edit-id').value = p.id;
             document.getElementById('edit-cliente').value = p.cliente || '';
             document.getElementById('edit-telefono').value = p.telefono || '';
             document.getElementById('edit-ci').value = p.ci || '';
             document.getElementById('edit-municipio').value = p.municipio || '';
-            document.getElementById('edit-direccion').value = p.direccion || '';
+            const delivery = window.PTHSubgestorReview.splitDelivery(p.direccion);
+            document.getElementById('edit-direccion').value = delivery.direccion;
+            document.getElementById('edit-vuelto').value = delivery.vuelto;
 
             document.getElementById('modal-edit-order').classList.remove('hidden');
         }
 
         async function guardarCambiosPedido() {
             const id = document.getElementById('edit-id').value;
+            const pending = editingPendingOrder;
+            if (!pending || pending.id !== id || parentReviewBusy) return;
             
             const updates = {
                 cliente: document.getElementById('edit-cliente').value.trim(),
@@ -758,18 +673,19 @@
                 direccion: document.getElementById('edit-direccion').value.trim()
             };
 
-            const { error } = await supabaseClient
-                .from('pedidos_subgestores')
-                .update(updates)
-                .eq('id', id);
-
-            if (!error) {
-                alert("✅ Pedido corregido.");
+            const token = window.PTHSecureData.token();
+            try {
+                updates.direccion = window.PTHSubgestorReview.deliveryWithChange(updates.direccion,document.getElementById('edit-vuelto').value);
+                parentReviewBusy = true;
+                const result = await window.PTHSecureData.reviewSubgestor({operation:'edit',id,expected:pending.review_version,changes:updates});
+                if (token !== window.PTHSecureData.token()) return;
+                if (result.error) throw Error(result.error.message);
+                alert('✅ Pedido corregido.');
                 document.getElementById('modal-edit-order').classList.add('hidden');
-                loadPedidosPendientes();
-            } else {
-                alert("Error al actualizar.");
-            }
+                editingPendingOrder = null;
+                await loadPedidosPendientes();
+            } catch(error) { alert(error.message); }
+            finally { parentReviewBusy = false; }
         }
 
         // 6. CONTROL DE EQUIPO (SUBGESTORES - LIMPIO)
@@ -838,6 +754,7 @@
             .from('pedidos_subgestores')
             .select('*')
             .in('subgestor_id', subgestoresIds)
+            .eq('estado', 'Pendiente Aprobacion')
             .order('created_at', { ascending: false });
 
         const aprobadosRaw = pedidosAprobados || [];

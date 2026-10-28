@@ -7,7 +7,6 @@ const root = new URL('../', import.meta.url);
 
 test('el checkout bloquea reenvíos y conserva una clave idempotente por proveedor', async () => {
   const html = readStorefront();
-  const subgestores = await readFile(new URL('subgestores.html', root), 'utf8');
   const migration = await readFile(
     new URL('supabase/migrations/20260918_checkout_idempotencia.sql', root),
     'utf8'
@@ -18,7 +17,8 @@ test('el checkout bloquea reenvíos y conserva una clave idempotente por proveed
   assert.match(html, /submission_token:\s*submissionToken/);
   assert.match(html, /checkoutSubmitGuard\.succeed\(\)/);
   assert.match(html, /checkoutSubmitGuard\.fail\(\)/);
-  assert.match(subgestores, /submission_token:\s*p\.submission_token/);
+  // Parent approval now passes only ID/version. Stored token preservation is
+  // exercised by verify-subgestor-review-sql.mjs, not a browser payload string.
   assert.match(migration, /alter table public\.pedidos[\s\S]*add column if not exists submission_token/i);
   assert.match(migration, /alter table public\.pedidos_subgestores[\s\S]*add column if not exists submission_token/i);
   assert.match(migration, /unique index[\s\S]*pedidos[\s\S]*submission_token[\s\S]*proveedor/i);

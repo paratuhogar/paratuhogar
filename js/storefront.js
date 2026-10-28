@@ -865,7 +865,7 @@ async function loadProDashboard(nombreGestor) {
         const listaPendientes = (pendientes || []).map(p => ({
             ...p,
             fecha: p.created_at,
-            estado: 'Pendiente',
+            estado: p.estado === 'Rechazado' ? 'Rechazado' : 'Pendiente',
             comision_total: p.comision_subgestor,
             pago_gestor: 'Pendiente',
             origen: 'Manual (Panel)'
@@ -889,7 +889,7 @@ async function loadProDashboard(nombreGestor) {
 
     // 2. Cálculos Financieros
     const misEntregados = misVentas.filter(p => p.estado === 'Entregado');
-    const misPendientes = misVentas.filter(p => p.estado !== 'Entregado' && p.estado !== 'Cancelado');
+    const misPendientes = misVentas.filter(p => !['Entregado','Cancelado','Rechazado'].includes(p.estado));
 
     const porCobrar = misEntregados
         .filter(p => p.pago_gestor === 'Pendiente' || !p.pago_gestor)
@@ -7019,6 +7019,13 @@ function changeAdminTab(tab) {
     const target = document.getElementById('cnt-' + tab);
     if (target) {
         target.classList.remove('hidden');
+        if (tab === 'subgestores') {
+            window.PTHAssets.load('subgestorReview').then(() => {
+                if (!target.classList.contains('hidden')) return window.PTHSubgestorReview.open();
+            }).catch(() => {
+                document.getElementById('admin-subgestor-review').textContent = 'No se pudo cargar la revisión. Vuelve a abrir la pestaña para reintentar.';
+            });
+        }
 
         // --- NUEVO: Si entramos a tráfico, cargamos las gráficas ---
         // El 'typeof' evita errores si aún no has cargado el archivo admin-stats.js

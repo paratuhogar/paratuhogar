@@ -5,6 +5,7 @@ import {pushSettings} from './push.mjs';
 import {createCheckoutService} from './checkout.mjs';
 import {publicName} from './public-name.mjs';
 import {ranking} from './ranking.mjs';
+import {reviewSubgestor} from './subgestor-review.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
@@ -232,6 +233,11 @@ async function prepareWrite(db,body,actor) {
 async function dataQuery(db,body,actor) {
   validateQuery(body,actor);
   const {table,op='select'}=body;
+  const inputs=Array.isArray(body.values)?body.values:[body.values];
+  if((table==='pedidos_subgestores'&&['update','delete','upsert'].includes(op)) ||
+     (table==='pedidos'&&['insert','upsert'].includes(op)&&inputs.some(row=>row?.subgestor_nombre))) {
+    fail('Actualiza la página y usa la revisión de pedidos para guardar, aprobar o rechazar.',409);
+  }
   if(table==='precios_personalizados'&&op!=='select'&&!actor)fail('Tu sesión venció. Vuelve a entrar para guardar los cambios.',401);
   if(table==='inventario_eventos'&&!actor)return {data:body.single?null:[],error:null,count:body.count==='exact'?0:null};
   const values=op!=='select'&&op!=='delete'?await prepareWrite(db,body,actor):undefined;
@@ -318,6 +324,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequired
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='public_name') result=await publicName(db,body,actor);
       else if(body.action==='ranking') result=await ranking(db,body,actor);
+      else if(body.action==='subgestor_review') result=await reviewSubgestor(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
       else if(body.action==='checkout') result=await checkout(body,actor);
