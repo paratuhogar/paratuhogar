@@ -202,9 +202,9 @@
     "slug": "bateria-de-litio-sako-51-2v-300ah-15-36-kwh",
     "nombre": "Batería de Litio SAKO 51.2V 300Ah – 15.36 kWh",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-300ah-15-36-kwh/",
-    "updated_at": "2026-10-21T01:00:19.137411+00:00"
+    "updated_at": "2026-10-29T17:19:29.01457+00:00"
   },
   {
     "id": "55c74f91-df1b-4ffa-aa37-89e83c2d45b5",
@@ -1917,6 +1917,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "1e2f251b-b3a0-49d2-9216-f56cbe36676b",
+    "slug": "kit-solar-inversor-12kw-srne-con-bateria-30kwh-srne",
+    "nombre": "Kit Solar Inversor 12kw SRNE con batería 30kWh SRNE",
+    "categoria": "ENERGIA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/kit-solar-inversor-12kw-srne-con-bateria-30kwh-srne/",
+    "updated_at": "2026-10-29T22:32:40.112991+00:00"
+  },
+  {
     "id": "713f8507-da79-4e14-ad6e-b3d4463c372c",
     "slug": "lampara-led-solar-vive-el-sol-1400w",
     "nombre": "Lámpara LED Solar “VIVE EL SOL” – 1400W",
@@ -2580,7 +2589,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-5-pies-konka/",
-    "updated_at": "2026-09-25T15:15:37.17258+00:00"
+    "updated_at": "2026-10-29T21:59:49.894173+00:00"
   },
   {
     "id": "46b0ae55-8789-450b-ac80-a6c8ea3e9700",
