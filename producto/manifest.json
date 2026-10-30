@@ -3312,6 +3312,15 @@
     "updated_at": "2026-09-22T14:26:11.895781+00:00"
   },
   {
+    "id": "892e8dc2-e061-457c-b461-639d14da3f5d",
+    "slug": "refrigerador-7-3pies-royal",
+    "nombre": "REFRIGERADOR 7.3pies ROYAL",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/refrigerador-7-3pies-royal/",
+    "updated_at": "2026-10-30T15:48:29.459905+00:00"
+  },
+  {
     "id": "c9bc122f-0db0-44a1-bf2a-2cdf94b8db70",
     "slug": "refrigerador-7-45-pies-chiq",
     "nombre": "Refrigerador 7.45 pies CHIQ",
@@ -3456,6 +3465,15 @@
     "updated_at": "2026-10-27T00:48:14.837335+00:00"
   },
   {
+    "id": "044f09d0-5db2-4136-beda-77387eb45a0f",
+    "slug": "secadora-royal-a-vapor-8kgs",
+    "nombre": "SECADORA ROYAL A VAPOR   8KGS",
+    "categoria": "LAVADORAS",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/secadora-royal-a-vapor-8kgs/",
+    "updated_at": "2026-10-30T16:13:23.942961+00:00"
+  },
+  {
     "id": "f25d9f76-46fc-4f99-ab07-a1c14e64547e",
     "slug": "silicon-power-sata-iii-ssd-s55-240gb",
     "nombre": "Silicon Power SATA III SSD S55 - 240GB",
@@ -3505,9 +3523,9 @@
     "slug": "silla-plegable-metalica-gris-7house",
     "nombre": "Silla Plegable Metálica Gris 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/silla-plegable-metalica-gris-7house/",
-    "updated_at": "2026-10-06T00:12:35.710767+00:00"
+    "updated_at": "2026-10-30T17:28:07.363787+00:00"
   },
   {
     "id": "a2a51b63-5ab0-4090-a33b-abf0764d0054",
