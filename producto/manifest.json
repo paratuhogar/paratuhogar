@@ -490,9 +490,9 @@
     "slug": "calentador-de-agua-ruden-50l",
     "nombre": "Calentador de agua Ruden - 50L",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/calentador-de-agua-ruden-50l/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-30T01:35:10.929759+00:00"
   },
   {
     "id": "4a378cbe-8f2b-48bb-9fcf-89797394e256",
@@ -580,9 +580,9 @@
     "slug": "cocina-20-royal",
     "nombre": "Cocina 20\" Royal",
     "categoria": "COCINA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/cocina-20-royal/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-30T02:11:02.956356+00:00"
   },
   {
     "id": "617e9ade-555c-4b19-9ba9-c2ba8681b9ca",
@@ -1305,6 +1305,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "ba6365f0-057c-4967-939e-eb9c1b027556",
+    "slug": "exhibidora-vertical-godline-13-5-pies",
+    "nombre": "EXHIBIDORA VERTICAL GODLINE   13.5 PIES",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/exhibidora-vertical-godline-13-5-pies/",
+    "updated_at": "2026-10-30T02:02:21.559116+00:00"
+  },
+  {
     "id": "47ee7219-ad64-4d18-9fd0-5b0b41ce3112",
     "slug": "filtro-de-agua",
     "nombre": "Filtro de agua",
@@ -1662,16 +1671,16 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
-    "updated_at": "2026-10-21T00:54:38.757319+00:00"
+    "updated_at": "2026-10-30T01:36:30.679905+00:00"
   },
   {
     "id": "dd1681e8-57ae-4f86-bd9d-6cc67ce0c435",
     "slug": "inversor-6kw-con-bateria-15kwh-saco-todo-en-1",
     "nombre": "Inversor 6kw con batería 15kwh SACO (Todo en 1)",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/inversor-6kw-con-bateria-15kwh-saco-todo-en-1/",
-    "updated_at": "2026-09-05T22:15:20.525434+00:00"
+    "updated_at": "2026-10-30T01:36:55.039213+00:00"
   },
   {
     "id": "f53effe6-4422-4f54-a4f5-5a49170f280d",
@@ -2002,9 +2011,9 @@
     "slug": "lavadora-automatica-10kg-chiq",
     "nombre": "Lavadora automática 10kg CHIQ",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-10kg-chiq/",
-    "updated_at": "2026-10-26T13:30:26.361689+00:00"
+    "updated_at": "2026-10-30T01:44:58.350545+00:00"
   },
   {
     "id": "7024c540-57dd-4569-b767-eebf3aa63bb6",
@@ -2077,6 +2086,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-royal-9kg/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "f5212cc6-ac77-43a0-8a72-2c536567237d",
+    "slug": "lavadora-semiautomatica-daytron-6kgs",
+    "nombre": "LAVADORA SEMIAUTOMÁTICA   DAYTRON  6KGS",
+    "categoria": "LAVADORAS",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-daytron-6kgs/",
+    "updated_at": "2026-10-30T02:03:07.345945+00:00"
   },
   {
     "id": "75ba0598-772c-4961-9122-a5dcaa54f0d2",
@@ -2587,9 +2605,9 @@
     "slug": "nevera-5-pies-konka",
     "nombre": "Nevera 5 pies KONKA",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-5-pies-konka/",
-    "updated_at": "2026-10-29T21:59:49.894173+00:00"
+    "updated_at": "2026-10-30T01:44:28.418548+00:00"
   },
   {
     "id": "46b0ae55-8789-450b-ac80-a6c8ea3e9700",
@@ -2671,6 +2689,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-enerlife/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "20f04cdd-57bb-493e-b24e-d4c2d40c7f9b",
+    "slug": "nevera-7pies-konka",
+    "nombre": "Nevera 7 pies Konka",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-7pies-konka/",
+    "updated_at": "2026-10-30T02:03:59.300773+00:00"
   },
   {
     "id": "2ddf15b1-7948-4133-afb5-b9634f0ce3c4",
@@ -3159,6 +3186,15 @@
     "updated_at": "2026-10-26T16:04:10.487184+00:00"
   },
   {
+    "id": "c1cdf489-2d81-40e2-b587-1d9a2d7ed25c",
+    "slug": "raqueta-mata-mosquitos",
+    "nombre": "Raqueta mata mosquitos",
+    "categoria": "MISCELANEA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/raqueta-mata-mosquitos/",
+    "updated_at": "2026-10-30T01:54:33.88184+00:00"
+  },
+  {
     "id": "95ff3c3c-94ec-4281-a589-b7f9381cd0c8",
     "slug": "reflector-solar-120w",
     "nombre": "Reflector solar - 120W",
@@ -3291,7 +3327,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-8-5-pies-royal/",
-    "updated_at": "2026-10-25T07:13:38.023872+00:00"
+    "updated_at": "2026-10-30T01:45:34.215444+00:00"
   },
   {
     "id": "5c67b520-97f8-4d45-a35c-516ea3673577",
@@ -3579,7 +3615,7 @@
     "categoria": "SMART TV",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-10-20T00:00:54.497427+00:00"
+    "updated_at": "2026-10-30T02:20:15.619116+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
@@ -3728,11 +3764,11 @@
   {
     "id": "f4ce8b54-da86-4bf4-a7e1-07a52b482c7b",
     "slug": "split-1t-godline-venta-mayorista",
-    "nombre": "Split 1T  GODLINE *Venta  Mayorista*",
+    "nombre": "Split 1T  GODLINE",
     "categoria": "MUNDO FRIO ",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-godline-venta-mayorista/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-10-30T02:08:33.157504+00:00"
   },
   {
     "id": "7306dce3-836a-494a-bf58-a4c6a8aa41c7",
