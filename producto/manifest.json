@@ -1732,9 +1732,9 @@
     "slug": "juego-de-bano",
     "nombre": "Juego de baño",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/juego-de-bano/",
-    "updated_at": "2026-10-20T16:16:30.486928+00:00"
+    "updated_at": "2026-10-31T01:37:04.450758+00:00"
   },
   {
     "id": "184c649b-cce1-4bab-94a5-b959bf939cf1",
