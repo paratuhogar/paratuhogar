@@ -2047,9 +2047,9 @@
     "slug": "lavadora-automatica-9kg-lg",
     "nombre": "Lavadora automática 9Kg LG",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-lg/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-01T00:54:24.262525+00:00"
   },
   {
     "id": "b7d336f8-1faa-411e-961e-952b7f5694a9",
@@ -2380,9 +2380,9 @@
     "slug": "minibar-reymo",
     "nombre": "Minibar Reymo",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/minibar-reymo/",
-    "updated_at": "2026-09-07T19:02:44.860874+00:00"
+    "updated_at": "2026-11-01T00:52:19.949326+00:00"
   },
   {
     "id": "d21db876-c96b-46d7-a03c-f376a443a0b3",
@@ -2562,7 +2562,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal-inverter/",
-    "updated_at": "2026-10-26T16:04:34.985356+00:00"
+    "updated_at": "2026-11-01T04:13:53.345238+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
@@ -3469,9 +3469,9 @@
     "slug": "secadora-royal-a-vapor-8kgs",
     "nombre": "SECADORA ROYAL A VAPOR   8KGS",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/secadora-royal-a-vapor-8kgs/",
-    "updated_at": "2026-10-30T16:13:23.942961+00:00"
+    "updated_at": "2026-11-01T02:07:37.127244+00:00"
   },
   {
     "id": "f25d9f76-46fc-4f99-ab07-a1c14e64547e",
