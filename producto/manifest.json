@@ -1084,18 +1084,18 @@
     "slug": "estacion-portatil-ecoflow-delta-3-clasica",
     "nombre": "Estación portátil - Ecoflow Delta 3 Clásica",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3-clasica/",
-    "updated_at": "2026-10-23T15:21:24.837458+00:00"
+    "updated_at": "2026-11-01T17:06:34.268448+00:00"
   },
   {
     "id": "4756718f-2263-4b41-8990-81708f50d980",
     "slug": "estacion-portatil-1800w-delta-3",
     "nombre": "Estación portátil 1800W DELTA 3",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-1800w-delta-3/",
-    "updated_at": "2026-10-23T15:21:50.264297+00:00"
+    "updated_at": "2026-11-01T16:28:33.489333+00:00"
   },
   {
     "id": "d0008aa6-dfdc-4c68-bba1-21c6c89fdff6",
@@ -2365,6 +2365,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/mini-proyector-steren-pro-260/",
     "updated_at": "2026-09-29T17:32:13.414119+00:00"
+  },
+  {
+    "id": "95943746-c6db-4ac4-84f3-9a8ea5987553",
+    "slug": "minibar-rudenkov",
+    "nombre": "Minibar 3.2 pies Rudenkov",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/minibar-rudenkov/",
+    "updated_at": "2026-11-01T15:55:24.593142+00:00"
   },
   {
     "id": "923522df-dfb9-46ea-b720-5a958b98bedf",
