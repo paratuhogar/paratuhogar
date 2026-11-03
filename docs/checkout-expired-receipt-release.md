@@ -22,8 +22,11 @@ retention, account changes, leases and idempotency.
 The required release gate is `npm run check:checkout-release`. Run and inspect it
 on GitHub Actions before merging this change or deploying the gateway. Chromium
 is intentionally not launched in the managed executor, where an earlier
-diagnostic already found SIGABRT/EPERM; the unchanged CI workflow runs the real
-browser checks against loopback synthetic fixtures. A missing/skipped/failed gate
+diagnostic already found SIGABRT/EPERM; the CI workflow runs the same real
+browser checks against loopback synthetic fixtures. The first PR run stopped
+before tests because `ubuntu-latest` selected Ubuntu 26.04, unsupported by pinned
+Playwright 1.57.0. The runner is now pinned to supported Ubuntu 24.04 without
+changing any tests or permissions. A missing/skipped/failed gate
 does not authorize deployment.
 
 Before release, deployed `secure-data` v32 matched all 13 local runtime files.

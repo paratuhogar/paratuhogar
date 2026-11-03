@@ -133,8 +133,9 @@ test('overlapping expired receipt reads never relax quote/submit validation or c
  const {f,q,receipt,request}=await agedFixture(t,{accepted:true}),before=structuredClone(f.rows),from=f.db.from;
  let release,started;const blocked=new Promise(resolve=>{release=resolve;}),reading=new Promise(resolve=>{started=resolve;});
  f.db.from=table=>{const query=from(table),then=query.then.bind(query);if(table==='pedidos')query.then=(ok,no)=>Promise.resolve().then(async()=>{started();await blocked;return then(value=>value);}).then(ok,no);return query;};
- const first=receipt();await reading;
+ const first=receipt();
  try{
+  await Promise.race([reading,first.then(()=>assert.fail('receipt must read the DB before returning'))]);
   for(const operation of ['quote','submit'])assert.equal((await request({...f.body,operation,attempt:q.data.attempt,quote:q.data.quote})).error.code,'ATTEMPT_EXPIRED');
  }finally{release();}
  const results=await Promise.all([first,receipt(),receipt()]);assert.ok(results.every(row=>row.data.complete));

@@ -17,7 +17,8 @@ concurrency:
 jobs:
   checkout-recovery:
     name: checkout-recovery
-    runs-on: ubuntu-latest
+    # Playwright 1.57.0 supports Ubuntu 24.04; latest may select Ubuntu 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
