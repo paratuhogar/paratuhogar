@@ -3,7 +3,7 @@ begin;
 grant usage on schema pth_private to service_role;
 grant select,insert,update on pth_private.pedido_consecutivos to service_role;
 
-create function public.pth_insert_checkout(p_table text,p_rows jsonb)
+create or replace function public.pth_insert_checkout(p_table text,p_rows jsonb)
 returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
 declare
  item jsonb; k text; attempt_key text; supplier text; next_number bigint;
@@ -18,7 +18,7 @@ begin
  if p_table='pedidos' then allowed:=allowed||array['gestor','origen','pago_gestor'];
  else allowed:=allowed||array['subgestor_id','subgestor_nombre','parent_gestor_id','parent_gestor_nombre','comision_subgestor'];end if;
  attempt_key:=p_rows->0->>'submission_token';
- if attempt_key is null or length(attempt_key)>600 or attempt_key not like 'pthn1.%'
+ if attempt_key is null or length(attempt_key)>600 or attempt_key !~ '^pthn[12]\.'
  then raise exception 'Clave no válida';end if;
  for item in select value from jsonb_array_elements(p_rows) loop
   if jsonb_typeof(item) is distinct from 'object' then raise exception 'Fila no válida';end if;

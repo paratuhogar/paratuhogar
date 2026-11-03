@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 const {PGlite}=await import(pathToFileURL(process.env.PTH_PGLITE_MODULE).href);
 const db=new PGlite();let checks=0;
 const id=n=>'10000000-0000-4000-8000-'+String(n).padStart(12,'0');
-const token=n=>'pthn1.1793700000000.p.1.'+String(n).padStart(64,'0')+'.'+'a'.repeat(64)+'.'+'b'.repeat(64)+'.'+'c'.repeat(64)+'.'+'d'.repeat(64);
+const token=n=>(n%2?'pthn1':'pthn2')+'.1793700000000.p.1.'+String(n).padStart(64,'0')+'.'+'a'.repeat(64)+'.'+'b'.repeat(64)+'.'+'c'.repeat(64)+'.'+'d'.repeat(64);
 const row=(n,provider='RO',key=n)=>({id:id(n),submission_token:token(key),proveedor:provider,cliente:'Synthetic',telefono:'50000000',direccion:'Synthetic street',municipio:'Almacén',producto:'1x Fixture',total:53,costo_mensajeria:3,comision_total:7,gestor:'Synthetic parent',estado:'Pendiente',pago_gestor:'Pendiente'});
 const call=(rows,table='pedidos')=>db.query('select pth_insert_checkout($1,$2) result',[table,JSON.stringify(rows)]).then(r=>r.rows[0].result);
 const count=async(table)=>Number((await db.query('select count(*) n from '+table)).rows[0].n);

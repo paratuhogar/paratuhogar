@@ -207,7 +207,7 @@ async function prepareWrite(db,body,actor) {
     let row={...input};
     // Only canonicalSale's authorized, pending queue lookup may retain a new key.
     const approval=body.table==='pedidos'&&Boolean(row.subgestor_nombre);
-    if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'&&String(row.submission_token||'').startsWith('pthn1.')&&!approval) fail('Usa la confirmación de pedidos nuevos para esta clave.');
+    if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'&&/^pthn[12]\./.test(String(row.submission_token||''))&&!approval) fail('Usa la confirmación de pedidos nuevos para esta clave.');
     if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert') row=await canonicalSale(db,body.table,row,actor);
     if(body.table==='gestores'&&body.op==='insert'&&kind!=='admin') {
       if(!row.nombre||!row.telefono||String(row.password||'').length<6) fail('Completa nombre, teléfono y una contraseña de al menos 6 caracteres.');

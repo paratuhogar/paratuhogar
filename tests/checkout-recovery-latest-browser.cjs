@@ -45,7 +45,9 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
 
 
   if(process.env.PTH_ATOMIC_NUMBERING==='1')for(const width of [390,1280]){
-    f=await fixture();const {c,errors}=await context();const p=await main(c);await p.setViewportSize({width,height:844});await fillCart(p);
+    f=await fixture();const {c,errors}=await context();const p=await main(c);await p.setViewportSize({width,height:844});
+    if(process.env.PTH_PHONE_CLOCK_TEST==='1')await p.evaluate(hours=>{const original=Date.now;Date.now=()=>original()+hours*3600000;},width===390?1:-1);
+    await fillCart(p);
     await p.evaluate(()=>{
       const rpc=supabaseClient.rpc.bind(supabaseClient);supabaseClient.rpc=(name,...args)=>{if(name==='reservar_consecutivo_pedido')throw Error('RESERVATION_FORBIDDEN');return rpc(name,...args);};
       window.openedUrls=[];window.open=url=>openedUrls.push(url);
@@ -53,6 +55,10 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     });
     await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
     assert.equal(f.writes,1,'checkout must work without a reservation RPC');
+    if(process.env.PTH_PHONE_CLOCK_TEST==='1'){
+      const issued=f.rows.pedidos.find(row=>row.submission_token?.startsWith('pthn2.')).submission_token.split('.')[1];
+      assert.ok(Math.abs(Number(issued)-Date.now())<5000,'attempt timestamp must follow server, not simulated phone');
+    }
     assert.match(await p.locator('#pth-checkout-confirmations').innerText(),/A-1.*B-1/);
     await p.locator('#pth-checkout-confirmations').getByRole('button',{name:'Enviar pedido por WhatsApp'}).click();
     const message=await p.evaluate(()=>decodeURIComponent(openedUrls.at(-1)));

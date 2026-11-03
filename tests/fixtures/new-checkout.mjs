@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createHandler,hash} from '../../supabase/functions/secure-data/handler.mjs';
 const secret='synthetic-only-signing-material-not-a-production-secret';
-export async function fixture({ciRequiredFrom}={}){
+export async function fixture({ciRequiredFrom,serverNow=()=>Date.now()}={}){
  const actor={id:'actor-a',nombre:'Shared Seller',rol:'gestor',estado:'activo',password:'synthetic-only',parent_id:null},token='a'.repeat(64),trace=[];
  const historical={id:'historical-order',gestor:actor.nombre,proveedor:'A',cliente:'Historical private name',telefono:'old private phone',total:999,comision_total:37,pago_gestor:'Pagado',estado:'Entregado',fecha:'2025-01-01',submission_token:'legacy-key'};
  const rows={gestores:[actor,{...actor,id:'same-name-other'}],pth_secure_sessions:[{token_hash:await hash(token),gestor_id:actor.id,credential_hash:await hash(actor.password),expires_at:'2099-01-01'}],productos:[{id:'pA',nombre:'Equipo A',precio:100,comision:10,precio_flexible:'NO',proveedor:'A',disponible:'SI',garantia:'1 año','tamaño_envio':'Pequeño'},{id:'pB',nombre:'Equipo B',precio:200,comision:20,precio_flexible:'NO',proveedor:'B',disponible:'SI',garantia:'1 año','tamaño_envio':'Pequeño'}],precios_personalizados:[],pedidos:[structuredClone(historical)],pedidos_subgestores:[],tarifas_mensajeria:[{municipio:'Centro Habana',localidad:'Centro',precio_pequeno:6,precio_grande:10}]};
@@ -34,8 +34,13 @@ export async function fixture({ciRequiredFrom}={}){
    return {data:this.single?data[0]||null:structuredClone(data),error:null};
   }).then(resolve,reject);}
  }
- const counters=new Map();
+ const counters=new Map(),clocks=new Map();
  const db={from:t=>new Query(t),rpc:async(name,args)=>{
+  if(name==='pth_checkout_clock'){
+   trace.push({op:args.p_create?'clock-create':'select',name});
+   if(args.p_create&&!clocks.has(args.p_nonce))clocks.set(args.p_nonce,serverNow());
+   return clocks.has(args.p_nonce)?{data:{issuedAt:clocks.get(args.p_nonce),serverNow:serverNow()},error:null}:{data:null,error:{code:'P0001'}};
+  }
   if(name!=='pth_insert_checkout')return {data:name==='pth_check_login_rate',error:null};
   trace.push({op:'rpc',name});
   assert.ok(['pedidos','pedidos_subgestores'].includes(args.p_table));

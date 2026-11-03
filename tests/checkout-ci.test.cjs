@@ -24,7 +24,8 @@ test('server rejects new missing CI but preserves an earlier pending intent with
  const f=await fixture({ciRequiredFrom:Date.now()-10000});
  assert.equal((await f.quote()).error?.code,'CI_REQUIRED');assert.equal(f.writes,0);
  f.body.intentCreatedAt-=20000;
- const q=await f.quote();assert.equal(q.error,null);assert.equal((await f.submit(q)).data.complete,true);
+ const {legacyAttempt}=await import('./fixtures/legacy-checkout-key.mjs');
+ const q=await f.request({...f.body,operation:'quote',attempt:await legacyAttempt(f)});assert.equal(q.error,null);assert.equal((await f.submit(q)).data.complete,true);
  assert.deepEqual(f.rows.pedidos[0],f.historical);
 });
 test('server accepts an eleven-digit CI on each provider after activation',async()=>{

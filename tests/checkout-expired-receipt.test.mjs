@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {fixture} from './fixtures/new-checkout.mjs';
 import {createHandler,hash} from '../supabase/functions/secure-data/handler.mjs';
 import {createCheckoutService} from '../supabase/functions/secure-data/checkout.mjs';
+import {legacyAttempt} from './fixtures/legacy-checkout-key.mjs';
 
 const DAY=86400000,secret='synthetic-only-signing-material-not-a-production-secret';
 // Mint and optionally accept with the real gateway under an earlier clock,
@@ -10,9 +11,9 @@ const DAY=86400000,secret='synthetic-only-signing-material-not-a-production-secr
 async function agedFixture(t,{offset=-8*DAY,accepted=false,child=false}={}){
  const issued=Date.now()+offset;
  t.mock.method(Date,'now',()=>issued);
- let f,q;
+ let f,q,serverClock=issued;
  try{
-  f=await fixture();
+  f=await fixture({serverNow:()=>serverClock});
   if(child){
    f.rows.gestores[0].parent_id='parent';
    f.rows.gestores.push({...f.rows.gestores[0],id:'parent',nombre:'Parent',parent_id:null});
@@ -28,7 +29,7 @@ async function agedFixture(t,{offset=-8*DAY,accepted=false,child=false}={}){
     row.fecha=new Date(issued).toISOString();row.created_at=new Date(issued).toISOString();
    }
   }
- }finally{t.mock.restoreAll();}
+ }finally{t.mock.restoreAll();serverClock=Date.now();}
  const handler=createHandler({db:f.db,checkoutSecret:secret});
  const request=async(body,auth='a'.repeat(64))=>{
   const response=await handler(new Request('https://example.test',{method:'POST',headers:auth?{Authorization:'Bearer '+auth}:{},body:JSON.stringify(body)}));
@@ -36,7 +37,7 @@ async function agedFixture(t,{offset=-8*DAY,accepted=false,child=false}={}){
   return response.json();
  };
  f.trace.length=0;
- return {f,q,request,receipt:(extra={},auth=null)=>request({action:'checkout',operation:'receipt',attempt:q.data.attempt,...extra},auth)};
+ return {f,q,request,setClock:value=>{serverClock=value;},receipt:(extra={},auth=null)=>request({action:'checkout',operation:'receipt',attempt:q.data.attempt,...extra},auth)};
 }
 function unchanged(f,before,writes){
  assert.deepEqual(f.rows,before);assert.equal(f.writes,writes);
@@ -93,12 +94,13 @@ test('expired signatures and signed fields cannot be forged to enumerate receipt
  assert.equal(f.trace.length,0,'invalid capability must not reach the DB');unchanged(f,before,1);
 });
 
-test('future signed attempt and future draft remain rejected for receipt, quote and submit',async t=>{
- const {f,q,receipt,request}=await agedFixture(t,{offset:DAY}),before=structuredClone(f.rows);
- assert.equal((await receipt()).error.code,'ATTEMPT_EXPIRED');
- for(const operation of ['quote','submit'])assert.equal((await request({...f.body,operation,attempt:q.data.attempt,quote:q.data.quote})).error.code,'ATTEMPT_EXPIRED');
- assert.equal((await request({...f.body,operation:'quote'})).error.code,'ATTEMPT_EXPIRED');
- unchanged(f,before,0);
+test('a future phone-dated legacy key can read its receipt but cannot be sent or renewed',async()=>{
+ const f=await fixture();f.body.intentCreatedAt+=3600000;const attempt=await legacyAttempt(f);
+ f.rows.pedidos.push({id:'synthetic-old-receipt',submission_token:attempt,proveedor:'A',orden_dia:'A-OLD',fecha:new Date().toISOString()});
+ const read=await f.request({action:'checkout',operation:'receipt',attempt},null);
+ assert.deepEqual(read.data.confirmed,[{proveedor:'A',reference:'A-OLD'}]);
+ for(const operation of ['quote','submit'])assert.equal((await f.request({...f.body,operation,attempt})).error.code,'ATTEMPT_EXPIRED');
+ assert.equal(f.writes,0);
 });
 
 test('receipt capability stays session independent and cannot be rebound to another account or token',async t=>{
@@ -143,11 +145,11 @@ test('overlapping expired receipt reads never relax quote/submit validation or c
 });
 
 test('seven-day sending boundary remains strict even after a receipt lookup',async t=>{
- const {f,q}=await agedFixture(t,{accepted:true});let clock=f.body.intentCreatedAt+7*DAY;
+ const {f,q,setClock}=await agedFixture(t,{accepted:true});let clock=f.body.intentCreatedAt+7*DAY;setClock(clock);
  const service=createCheckoutService({db:f.db,signingSecret:secret,now:()=>clock,canonicalSale:()=>assert.fail('accepted rows must not be rewritten')});
  const body={...f.body,operation:'quote',attempt:q.data.attempt};
  assert.equal((await service(body,f.rows.gestores[0])).data.complete,true);
- clock++;
+ clock++;setClock(clock);
  assert.equal((await service({operation:'receipt',attempt:q.data.attempt},null)).data.complete,true);
  for(const operation of ['quote','submit'])assert.equal((await service({...body,operation},f.rows.gestores[0])).error.code,'ATTEMPT_EXPIRED');
  assert.equal(f.writes,1);

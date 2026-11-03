@@ -36,6 +36,8 @@ jobs:
           echo "PTH_CHROMIUM=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
           echo "PTH_PGLITE_MODULE=$RUNNER_TEMP/pth-checkout/node_modules/@electric-sql/pglite/dist/index.js" >> "$GITHUB_ENV"
       - name: Verificar numeración transaccional con PostgreSQL aislado
-        run: node scripts/verify-atomic-order-numbering-sql.mjs
+        run: |
+          node scripts/verify-atomic-order-numbering-sql.mjs
+          node scripts/verify-checkout-server-clock-sql.mjs
       - name: Verificar envío, recibos y recuperación de pedidos
         run: npm run check:checkout-release

@@ -49,19 +49,27 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
   async function parse(token,{allowExpired=false}={}){
     if(typeof token!=='string'||token.length>600)fail('ATTEMPT_INVALID','No se pudo verificar la clave del intento.');
     const parts=token.split('.');
-    if(parts.length!==9||parts[0]!=='pthn1'||!/^\d{13}$/.test(parts[1])||!['p','s'].includes(parts[2])||!/^\d{1,2}$/.test(parts[3])||parts.slice(4,8).some(p=>!/^[a-f0-9]{64}$/.test(p))||!await verify(parts.slice(0,8).join('.'),parts[8]))fail('ATTEMPT_INVALID','No se pudo verificar la clave del intento.');
-    const age=now()-Number(parts[1]);if(age<0||!allowExpired&&age>ATTEMPT_AGE)fail('ATTEMPT_EXPIRED','Este intento venció. Revisa si el pedido llegó antes de iniciar otro.');
-    return {table:parts[2]==='p'?'pedidos':'pedidos_subgestores',count:Number(parts[3]),nonce:parts[4],actor:parts[5],payload:parts[6],providers:parts[7],issued:Number(parts[1])};
+    if(parts.length!==9||!['pthn1','pthn2'].includes(parts[0])||!/^\d{13}$/.test(parts[1])||!['p','s'].includes(parts[2])||!/^\d{1,2}$/.test(parts[3])||parts.slice(4,8).some(p=>!/^[a-f0-9]{64}$/.test(p))||!await verify(parts.slice(0,8).join('.'),parts[8]))fail('ATTEMPT_INVALID','No se pudo verificar la clave del intento.');
+    const age=now()-Number(parts[1]);if(parts[0]==='pthn1'&&!allowExpired&&(age<0||age>ATTEMPT_AGE))fail('ATTEMPT_EXPIRED','Revisa la recepción del intento anterior antes de preparar otro. No se reenviará automáticamente.');
+    return {version:parts[0],table:parts[2]==='p'?'pedidos':'pedidos_subgestores',count:Number(parts[3]),nonce:parts[4],actor:parts[5],payload:parts[6],providers:parts[7],issued:Number(parts[1])};
+  }
+  const signedPayload=(payload,version)=>{if(version==='pthn1')return JSON.stringify(payload);const {intentCreatedAt,...semantic}=payload;return JSON.stringify(semantic);};
+  async function clock(nonce,create=false){
+    const {data,error}=await db.rpc('pth_checkout_clock',{p_nonce:nonce,p_create:create});
+    if(error||!Number.isSafeInteger(data?.issuedAt)||!Number.isSafeInteger(data?.serverNow)||data.issuedAt>data.serverNow)fail('CHECKOUT_UNAVAILABLE','No se pudo comprobar la hora del intento. Conserva el pedido y reintenta la comprobación.');
+    if(data.serverNow-data.issuedAt>ATTEMPT_AGE)fail('ATTEMPT_EXPIRED','Este intento venció según la hora del servidor. Revisa su recepción antes de preparar otro.');
+    return data.issuedAt;
   }
   async function receipts(token,attempt){
     const table=attempt.table,dateField=table==='pedidos'?'fecha':'created_at';
-    const result=await db.from(table).select('id,orden_dia,proveedor,'+dateField).eq('submission_token',token).gte(dateField,new Date(attempt.issued-1000).toISOString());
+    // The exact signed capability is authoritative, including old phone-dated keys.
+    const result=await db.from(table).select('id,orden_dia,proveedor,'+dateField).eq('submission_token',token);
     if(result.error||!Array.isArray(result.data))fail('ORDER_OUTCOME_UNKNOWN','No se pudo comprobar la confirmación. Reintenta la consulta.');
     let found=result.data;
     // Approval may move a new child order into the existing principal table.
     // The exact signed key follows it; no name or historical ownership lookup.
     if(table==='pedidos_subgestores'&&found.length<attempt.count){
-      const approved=await db.from('pedidos').select('id,orden_dia,proveedor,fecha').eq('submission_token',token).gte('fecha',new Date(attempt.issued-1000).toISOString());
+      const approved=await db.from('pedidos').select('id,orden_dia,proveedor,fecha').eq('submission_token',token);
       if(approved.error||!Array.isArray(approved.data))fail('ORDER_OUTCOME_UNKNOWN','No se pudo comprobar la confirmación. Reintenta la consulta.');
       found=[...found,...approved.data];
     }
@@ -143,7 +151,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(!signingSecret)fail('CHECKOUT_UNAVAILABLE','La confirmación de pedidos nuevos no está disponible.');
       if(body.operation==='receipt'){
         // Expiry stops sending, not recovery of an already accepted receipt.
-        // Keep signature/format checks and future-date rejection for this read.
+        // Keep signature/format checks; the phone's old timestamp cannot hide receipts.
         const attempt=await parse(body.attempt,{allowExpired:true});return {data:await receipts(body.attempt,attempt),error:null};
       }
       if(!['quote','submit'].includes(body.operation))fail('CHECKOUT_INVALID','Operación de pedido no válida.');
@@ -153,20 +161,20 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(token){
         attempt=await parse(token);
         if(attempt.actor!==actorTag)fail('SESSION_CHANGED','Vuelve a la cuenta que inició este pedido. Puedes comprobar el recibo sin sesión.');
-        if(attempt.table!==payload.table||attempt.payload!==await sign('payload:'+attempt.nonce+':'+JSON.stringify(payload)))fail('PAYLOAD_CHANGED','Los datos del intento cambiaron. Comprueba primero el recibo antes de iniciar otro pedido.');
+        if(attempt.table!==payload.table||attempt.payload!==await sign('payload:'+attempt.nonce+':'+signedPayload(payload,attempt.version)))fail('PAYLOAD_CHANGED','Los datos del intento cambiaron. Comprueba primero el recibo antes de iniciar otro pedido.');
+        if(attempt.version==='pthn2'&&await clock(attempt.nonce)!==attempt.issued)fail('ATTEMPT_INVALID','No coincide la hora registrada del intento.');
       }else{
         if(body.operation!=='quote')fail('ATTEMPT_INVALID','Primero comprueba las condiciones del pedido.');
-        const age=now()-payload.intentCreatedAt;if(age<0||age>ATTEMPT_AGE)fail('ATTEMPT_EXPIRED','El borrador venció. Revisa tus pedidos antes de iniciar otro.');
         // Same random draft intent across tabs produces the same attempt. The
         // payload MAC binds customer/products/delivery without storing them.
-        const nonce=await sign('nonce:'+actorTag+':'+payload.table+':'+payload.intentId),issued=payload.intentCreatedAt;
-        const prefix=['pthn1',issued,payload.table==='pedidos'?'p':'s',payload.inputs.length,nonce,actorTag,await sign('payload:'+nonce+':'+JSON.stringify(payload)),await sign('providers:'+JSON.stringify(payload.inputs.map(row=>row.proveedor)))].join('.');
+        const nonce=await sign('nonce:'+actorTag+':'+payload.table+':'+payload.intentId),issued=await clock(nonce,true);
+        const prefix=['pthn2',issued,payload.table==='pedidos'?'p':'s',payload.inputs.length,nonce,actorTag,await sign('payload:'+nonce+':'+signedPayload(payload,'pthn2')),await sign('providers:'+JSON.stringify(payload.inputs.map(row=>row.proveedor)))].join('.');
         token=prefix+'.'+await sign(prefix);attempt=await parse(token);
       }
       const existing=await receipts(token,attempt);
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
       if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
-      if(payload.intentCreatedAt>=ciRequiredFrom&&payload.inputs.some(row=>typeof row.ci!=='string'||!/^[0-9]{11}$/.test(row.ci)))fail('CI_REQUIRED','Completa el carnet de identidad con exactamente 11 dígitos.');
+      if((attempt.version==='pthn2'?attempt.issued:payload.intentCreatedAt)>=ciRequiredFrom&&payload.inputs.some(row=>typeof row.ci!=='string'||!/^[0-9]{11}$/.test(row.ci)))fail('CI_REQUIRED','Completa el carnet de identidad con exactamente 11 dígitos.');
       const rows=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
       const duplicates=await recentDuplicates(rows,actor);
       const stamp=now(),digest=await sign('terms:'+JSON.stringify(currentTerms));
