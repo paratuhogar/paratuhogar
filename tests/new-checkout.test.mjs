@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createCheckoutService,deliveryCost} from '../supabase/functions/secure-data/checkout.mjs';
+import {deliveryCost} from '../supabase/functions/secure-data/checkout.mjs';
 import {fixture} from './fixtures/new-checkout.mjs';
-const secret='synthetic-only-signing-material-not-a-production-secret';
 test('new quote and atomic multi-provider insertion preserve historical data and existing commission rules',async()=>{
  const f=await fixture(),q=await f.quote();assert.equal(q.error,null);assert.deepEqual(q.data.terms.map(t=>t.total),[106,200]);assert.equal(q.data.attempt.includes('Synthetic Customer'),false);
  const r=await f.submit(q);assert.equal(r.data.complete,true);assert.equal(f.writes,1);assert.equal(f.rows.pedidos.length,3);assert.deepEqual(f.rows.pedidos[0],f.historical);assert.deepEqual(f.rows.pedidos.slice(1).map(r=>r.comision_total),[10,20]);assert.equal(f.trace.some(t=>['update','delete','upsert'].includes(t.op)),false);
@@ -25,10 +24,10 @@ test('attempt reuse binds customer, products, delivery and actor; changed-payloa
  assert.equal((await f.request({...f.body,operation:'quote',attempt:q.data.attempt},null)).error.code,'SESSION_CHANGED');
  const different=structuredClone(f.body);different.inputs[0].cliente='Another Customer';const q2=await f.request({...different,operation:'quote'});const results=await Promise.all([f.submit(q),f.request({...different,operation:'submit',attempt:q2.data.attempt,quote:q2.data.quote})]);assert.equal(results.filter(r=>r.data?.complete).length,1);assert.equal(f.writes,1);assert.equal(f.rows.pedidos.length,3);
 });
-test('forged, legacy and expired keys cannot enumerate old orders; reserved new prefix cannot bypass the endpoint',async()=>{
+test('forged and legacy keys cannot enumerate old orders; reserved new prefix cannot bypass the endpoint',async()=>{
  const f=await fixture(),q=await f.quote();for(const key of ['legacy-key',q.data.attempt.slice(0,-1)+'x','pthn1.fake']){assert.equal((await f.request({action:'checkout',operation:'receipt',attempt:key},null)).error.code,'ATTEMPT_INVALID');}
  const bypass=await f.request({action:'query',table:'pedidos',op:'insert',values:{...f.body.inputs[0],submission_token:q.data.attempt}});assert.ok(bypass.error);assert.equal(f.writes,0);
- let now=f.body.intentCreatedAt;const service=createCheckoutService({db:{from(){throw Error('must not query expired attempts');}},canonicalSale(){},signingSecret:secret,now:()=>now+8*86400000});assert.equal((await service({operation:'receipt',attempt:q.data.attempt},null)).error.code,'ATTEMPT_EXPIRED');assert.deepEqual(f.rows.pedidos[0],f.historical);
+ assert.deepEqual(f.rows.pedidos[0],f.historical);
 });
 test('same draft intent with completely different providers cannot race into two accepted checkouts',async()=>{
  const f=await fixture(),other=structuredClone(f.body);

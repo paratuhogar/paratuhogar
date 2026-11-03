@@ -46,11 +46,11 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
   const key=()=>signingKey||(signingKey=crypto.subtle.importKey('raw',encode('pth-new-checkout-v1:'+signingSecret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']));
   const sign=async value=>hex(await crypto.subtle.sign('HMAC',await key(),encode(value)));
   const verify=async(value,signature)=>/^[a-f0-9]{64}$/.test(signature||'')&&await crypto.subtle.verify('HMAC',await key(),unhex(signature),encode(value));
-  async function parse(token){
+  async function parse(token,{allowExpired=false}={}){
     if(typeof token!=='string'||token.length>600)fail('ATTEMPT_INVALID','No se pudo verificar la clave del intento.');
     const parts=token.split('.');
     if(parts.length!==9||parts[0]!=='pthn1'||!/^\d{13}$/.test(parts[1])||!['p','s'].includes(parts[2])||!/^\d{1,2}$/.test(parts[3])||parts.slice(4,8).some(p=>!/^[a-f0-9]{64}$/.test(p))||!await verify(parts.slice(0,8).join('.'),parts[8]))fail('ATTEMPT_INVALID','No se pudo verificar la clave del intento.');
-    const age=now()-Number(parts[1]);if(age<0||age>ATTEMPT_AGE)fail('ATTEMPT_EXPIRED','Este intento venció. Revisa si el pedido llegó antes de iniciar otro.');
+    const age=now()-Number(parts[1]);if(age<0||!allowExpired&&age>ATTEMPT_AGE)fail('ATTEMPT_EXPIRED','Este intento venció. Revisa si el pedido llegó antes de iniciar otro.');
     return {table:parts[2]==='p'?'pedidos':'pedidos_subgestores',count:Number(parts[3]),nonce:parts[4],actor:parts[5],payload:parts[6],providers:parts[7],issued:Number(parts[1])};
   }
   async function receipts(token,attempt){
@@ -142,7 +142,9 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     try{
       if(!signingSecret)fail('CHECKOUT_UNAVAILABLE','La confirmación de pedidos nuevos no está disponible.');
       if(body.operation==='receipt'){
-        const attempt=await parse(body.attempt);return {data:await receipts(body.attempt,attempt),error:null};
+        // Expiry stops sending, not recovery of an already accepted receipt.
+        // Keep signature/format checks and future-date rejection for this read.
+        const attempt=await parse(body.attempt,{allowExpired:true});return {data:await receipts(body.attempt,attempt),error:null};
       }
       if(!['quote','submit'].includes(body.operation))fail('CHECKOUT_INVALID','Operación de pedido no válida.');
       if(actor?.rol==='mensajero')fail('CHECKOUT_INVALID','Esta cuenta no puede iniciar pedidos.');
