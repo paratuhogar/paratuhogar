@@ -157,9 +157,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-10-22T23:48:14.406275+00:00"
+    "updated_at": "2026-11-02T22:20:53.899546+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -1307,7 +1307,7 @@
   {
     "id": "ba6365f0-057c-4967-939e-eb9c1b027556",
     "slug": "exhibidora-vertical-godline-13-5-pies",
-    "nombre": "EXHIBIDORA VERTICAL GODLINE   13.5 PIES",
+    "nombre": "EXHIBIDORA VERTICAL  13.5 PIES GODLINE",
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/exhibidora-vertical-godline-13-5-pies/",
@@ -2013,7 +2013,7 @@
     "categoria": "LAVADORAS",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-10kg-chiq/",
-    "updated_at": "2026-10-30T12:58:59.947402+00:00"
+    "updated_at": "2026-11-02T17:08:23.957972+00:00"
   },
   {
     "id": "7024c540-57dd-4569-b767-eebf3aa63bb6",
@@ -2094,7 +2094,7 @@
     "categoria": "LAVADORAS",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-daytron-6kgs/",
-    "updated_at": "2026-10-30T02:03:07.345945+00:00"
+    "updated_at": "2026-11-02T17:12:26.066579+00:00"
   },
   {
     "id": "75ba0598-772c-4961-9122-a5dcaa54f0d2",
@@ -2184,7 +2184,7 @@
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/licuadora-black-decker/",
-    "updated_at": "2026-10-26T16:03:02.027146+00:00"
+    "updated_at": "2026-11-02T16:40:51.858094+00:00"
   },
   {
     "id": "a99be9e2-4a96-4f17-b540-f3641473dd1d",
@@ -2571,7 +2571,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal-inverter/",
-    "updated_at": "2026-11-01T04:13:53.345238+00:00"
+    "updated_at": "2026-11-02T16:38:09.049881+00:00"
   },
   {
     "id": "210eae1f-170e-4b41-a746-aac60a32c31c",
@@ -2976,7 +2976,7 @@
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/olla-reina-6l-unizuki/",
-    "updated_at": "2026-10-21T02:33:30.61339+00:00"
+    "updated_at": "2026-11-02T16:40:30.666579+00:00"
   },
   {
     "id": "1407f1bc-c6c9-4337-a81d-6c231f727a87",
@@ -2992,9 +2992,9 @@
     "slug": "pack-de-tinta-universal-para-impresoras4-1l",
     "nombre": "Pack de tinta universal para impresoras4×1L",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/pack-de-tinta-universal-para-impresoras4-1l/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-02T18:44:39.019008+00:00"
   },
   {
     "id": "0a8f8e8d-d92b-44d2-b3e9-d1f2b7b4147e",
@@ -3192,7 +3192,7 @@
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/protector-de-voltaje-triple-eurolite/",
-    "updated_at": "2026-10-26T16:04:10.487184+00:00"
+    "updated_at": "2026-11-02T16:41:24.995705+00:00"
   },
   {
     "id": "c1cdf489-2d81-40e2-b587-1d9a2d7ed25c",
@@ -3289,9 +3289,9 @@
     "slug": "refrigerador-14-8-pies-premium",
     "nombre": "Refrigerador 14.8 pies Premium",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-14-8-pies-premium/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-02T16:58:01.909892+00:00"
   },
   {
     "id": "117cb6cc-d1ce-4aa8-939c-2e1ccc134ff9",
@@ -3325,9 +3325,9 @@
     "slug": "refrigerador-7-3pies-royal",
     "nombre": "REFRIGERADOR 7.3pies ROYAL",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-7-3pies-royal/",
-    "updated_at": "2026-10-30T15:48:29.459905+00:00"
+    "updated_at": "2026-11-02T16:43:29.424767+00:00"
   },
   {
     "id": "c9bc122f-0db0-44a1-bf2a-2cdf94b8db70",
@@ -3345,7 +3345,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-8-5-pies-royal/",
-    "updated_at": "2026-10-30T01:45:34.215444+00:00"
+    "updated_at": "2026-11-02T23:14:50.68198+00:00"
   },
   {
     "id": "5c67b520-97f8-4d45-a35c-516ea3673577",
@@ -3400,6 +3400,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-enerlife-enr-208fw-7-pies/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "ba8b3459-14bf-4e14-90f4-99f2dea5fe57",
+    "slug": "refrigerador-lemax-7-5-pies-efecto-espejo",
+    "nombre": "REFRIGERADOR LEMAX 7.5 PIES EFECTO ESPEJO",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/refrigerador-lemax-7-5-pies-efecto-espejo/",
+    "updated_at": "2026-11-02T17:03:12.651354+00:00"
   },
   {
     "id": "8a877c73-19b8-4455-b6c8-479ffc0dc8b7",
@@ -3476,7 +3485,7 @@
   {
     "id": "044f09d0-5db2-4136-beda-77387eb45a0f",
     "slug": "secadora-royal-a-vapor-8kgs",
-    "nombre": "SECADORA ROYAL A VAPOR   8KGS",
+    "nombre": "SECADORA 8KG A VAPOR ROYAL",
     "categoria": "LAVADORAS",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/secadora-royal-a-vapor-8kgs/",
@@ -4128,7 +4137,7 @@
     "categoria": "VENTILADORES",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-20k-mah-royal/",
-    "updated_at": "2026-10-26T16:03:35.653736+00:00"
+    "updated_at": "2026-11-02T16:41:09.692913+00:00"
   },
   {
     "id": "919c5bc5-b7a5-425e-b948-d7d06ef8bd83",
