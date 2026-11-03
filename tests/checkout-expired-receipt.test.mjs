@@ -46,7 +46,7 @@ function unchanged(f,before,writes){
 test('expired accepted receipt recovers exact minimal references without a session or any write',async t=>{
  const {f,q,receipt}=await agedFixture(t,{accepted:true}),before=structuredClone(f.rows),writes=f.writes;
  const result=await receipt();
- assert.equal(result.error,null);assert.deepEqual(result.data,{complete:true,confirmed:[{proveedor:'A',reference:'A00001'},{proveedor:'B',reference:'B00001'}]});
+ assert.equal(result.error,null);assert.deepEqual(result.data,{complete:true,confirmed:[{proveedor:'A',reference:'A-1'},{proveedor:'B',reference:'B-1'}]});
  assert.doesNotMatch(JSON.stringify(result),/Synthetic Customer|telefono|cliente|direccion|comision|total|pago/);
  assert.equal(q.data.attempt.split('.')[1],String(f.body.intentCreatedAt));
  unchanged(f,before,writes);
@@ -65,7 +65,7 @@ test('expired partial receipt reports only persisted providers and cannot author
  const {f,receipt,request,q}=await agedFixture(t,{accepted:true});
  f.rows.pedidos.splice(f.rows.pedidos.findIndex(row=>row.submission_token===q.data.attempt&&row.proveedor==='B'),1);
  const before=structuredClone(f.rows),writes=f.writes,result=await receipt();
- assert.deepEqual(result,{data:{confirmed:[{proveedor:'A',reference:'A00001'}],complete:false},error:null});
+ assert.deepEqual(result,{data:{confirmed:[{proveedor:'A',reference:'A-1'}],complete:false},error:null});
  assert.equal((await request({...f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote})).error.code,'ATTEMPT_EXPIRED');
  unchanged(f,before,writes);
 });
@@ -79,7 +79,7 @@ test('expired child receipt follows the exact key through approval and fails clo
  f.db.from=table=>{const query=from(table);if(table==='pedidos')query.then=(ok,no)=>Promise.resolve({data:null,error:{code:'synthetic-outage'}}).then(ok,no);return query;};
  assert.equal((await receipt()).error.code,'ORDER_OUTCOME_UNKNOWN');
  f.db.from=from;
- assert.deepEqual((await receipt()).data.confirmed.map(row=>row.reference).sort(),['A00001','B00001']);
+ assert.deepEqual((await receipt()).data.confirmed.map(row=>row.reference).sort(),['A-1','B-1']);
  assert.equal(f.rows.pedidos.filter(row=>row.submission_token===q.data.attempt).length,1);
  unchanged(f,before,writes);
 });

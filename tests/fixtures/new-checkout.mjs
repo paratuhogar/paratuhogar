@@ -34,7 +34,22 @@ export async function fixture({ciRequiredFrom}={}){
    return {data:this.single?data[0]||null:structuredClone(data),error:null};
   }).then(resolve,reject);}
  }
- const db={from:t=>new Query(t),rpc:async name=>({data:name==='pth_check_login_rate',error:null})};
+ const counters=new Map();
+ const db={from:t=>new Query(t),rpc:async(name,args)=>{
+  if(name!=='pth_insert_checkout')return {data:name==='pth_check_login_rate',error:null};
+  trace.push({op:'rpc',name});
+  assert.ok(['pedidos','pedidos_subgestores'].includes(args.p_table));
+  assert.ok(Array.isArray(args.p_rows)&&args.p_rows.length>0);
+  assert.ok(args.p_rows.every(r=>!Object.hasOwn(r,'orden_dia')&&!Object.hasOwn(r,'_checkout_prices')));
+  const values=args.p_rows,existing=rows[args.p_table];
+  const receipts=[...rows.pedidos,...rows.pedidos_subgestores].filter(r=>r.submission_token===values[0].submission_token);
+  if(receipts.length)return {data:receipts,error:null};
+  if(values.some(v=>[...rows.pedidos,...rows.pedidos_subgestores].some(r=>r.id===v.id)))return {data:null,error:{code:'P0001'}};
+  if(failInsert)return {data:null,error:{code:'synthetic-failure'}};
+  const saved=values.map(v=>{const n=(counters.get(v.proveedor)||0)+1;counters.set(v.proveedor,n);return {...structuredClone(v),orden_dia:v.proveedor+'-'+n,fecha:new Date().toISOString(),created_at:new Date().toISOString()};});
+  writes++;existing.push(...saved);
+  return drop?{data:null,error:{code:'synthetic-response-loss'}}:{data:saved,error:null};
+ }};
  const handler=createHandler({db,checkoutSecret:secret,ciRequiredFrom});
  const input=(provider,id)=>({gestor:actor.nombre,proveedor:provider,cliente:'Synthetic Customer',telefono:'synthetic-phone',ci:'none',direccion:'Synthetic address (Centro)',municipio:'Centro Habana',origen:'Manual (Panel)',orden_dia:provider+'00001',_lineas:[{producto_id:id,cantidad:1}]});
  const body={action:'checkout',table:'pedidos',inputs:[input('A','pA'),input('B','pB')],delivery:{pickup:false,municipio:'Centro Habana',localidad:'Centro'},intentId:'b'.repeat(64),intentCreatedAt:Date.now()};

@@ -3344,6 +3344,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }, {});
 
     let mensajeRaw = "";
+    const whatsappParts = [];
     const promesas = [];
     const protectionOrderIds = [];
     // The verified order owner may differ from the account taking the order.
@@ -3356,25 +3357,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // GENERAR VALES Y MENSAJE
     for (const [prov, productos] of Object.entries(gruposPorProveedor)) {
-
-        let codPedido = "";
-        try {
-            // El consecutivo se reserva en Supabase con bloqueo transaccional.
-            // Así nunca depende de una lectura parcial del navegador ni de los últimos 20 pedidos.
-            const { data: consecutivo, error: errConsecutivo } = await waitForCheckout(supabaseClient
-                .rpc('reservar_consecutivo_pedido', { p_proveedor: prov }));
-
-            if (errConsecutivo || !consecutivo) {
-                throw errConsecutivo || new Error('Supabase no devolvió un consecutivo');
-            }
-
-            codPedido = String(consecutivo).trim();
-        } catch (e) {
-            console.error('No se pudo reservar el consecutivo del pedido:', e);
-            notifyNewCheckout('❌ No se pudo reservar el consecutivo del pedido. No se envió a WhatsApp ni se guardó un código temporal. Vuelve a intentarlo.');
-            throw e;
-        }
-        protectionOrderIds.push(codPedido);
 
         let detalleCuerpo = "";
         let subtotalProductos = 0;
@@ -3404,26 +3386,27 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         let totalUSDVale = subtotalProductos + envioTotalVale;
 
         // CONSTRUCCIÓN DEL MENSAJE DE WHATSAPP (Añadido Reparto)
-        mensajeRaw += `🧾 *NUEVO PEDIDO #${codPedido}*\n📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
-        mensajeRaw += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}\n📍 Zona: ${localidadC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
+        let mensajeVale = `📅 Fecha: ${new Date().toLocaleDateString()}\n\n`;
+        mensajeVale += `👤 *CLIENTE*\nNombre: ${nombreC}\nTel: ${telC}\nDirección: ${dirC}\n📍 Zona: ${localidadC}, ${municipioC}\n${ciC !== "No especificado" ? "CI: "+ciC : ""}\n\n`;
 
         if (notasC) {
-            mensajeRaw += `📝 *NOTAS / OBSERVACIONES:*\n${notasC}\n\n`;
+            mensajeVale += `📝 *NOTAS / OBSERVACIONES:*\n${notasC}\n\n`;
         }
 
-        mensajeRaw += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
-        mensajeRaw += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
-        mensajeRaw += `💳 *MÉTODO PAGO:* ${metodoPagoSeleccionado}\n`;
+        mensajeVale += `🛒 *DETALLE*\n${detalleCuerpo}\n`;
+        mensajeVale += `💰 *TOTAL A PAGAR: $${totalUSDVale} USD*\n(Equipos: $${subtotalProductos} + Envío: $${envioTotalVale})\n`;
+        mensajeVale += `💳 *MÉTODO PAGO:* ${metodoPagoSeleccionado}\n`;
 
-        if(vueltoC !== "no") mensajeRaw += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vueltoC}\n`;
+        if(vueltoC !== "no") mensajeVale += `⚠️ *OJO VUELTO:* Necesita vuelto de $${vueltoC}\n`;
 
         if (orderSubgestor && isLogged) {
-            mensajeRaw += buildSubgestorWhatsappSummary(orderSubgestor, comisionTotalVale);
+            mensajeVale += buildSubgestorWhatsappSummary(orderSubgestor, comisionTotalVale);
         } else if (isLogged) {
-            mensajeRaw += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${canonicalGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
+            mensajeVale += `\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${canonicalGestor}\nComisión: $${comisionTotalVale}\nTel Comercial: ${agentPhone}\n`;
         }
 
-        mensajeRaw += `\n------------------------------------\n\n`;
+        mensajeVale += `\n------------------------------------\n\n`;
+        whatsappParts.push({proveedor:prov,body:mensajeVale});
 
         // GUARDAR EN BASE DE DATOS (Incluyendo Localidad)
 
@@ -3464,7 +3447,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 costo_mensajeria: envioTotalVale,
                 comision_total: comisionOriginalPoolVale, // <-- Guardamos la comisión completa original de la tienda ($5)
                 comision_subgestor: comisionTotalVale,   // <-- Guardamos la comisión del subgestor por separado ($3)
-                orden_dia: codPedido,                     // <-- Guardamos el consecutivo generado para que no se pierda
                 proveedor: prov,
                 garantia_venta: garantiaVentaVale,
                 garantia_dias: garantiaDiasVale,
@@ -3487,7 +3469,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
                 estado: 'Pendiente',
                 pago_gestor: 'Pendiente',
                 proveedor: prov,
-                orden_dia: codPedido,
                 origen: origenPedido,
                 garantia_venta: garantiaVentaVale,
                 garantia_dias: garantiaDiasVale,
@@ -3540,14 +3521,21 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     if (result.error) throw result.error;
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (result.data?.complete) {
+        const confirmed = result.data.confirmed;
+        if (!Array.isArray(confirmed) || confirmed.length !== whatsappParts.length ||
+            whatsappParts.some(part=>!confirmed.some(row=>row.proveedor===part.proveedor&&typeof row.reference==='string'&&row.reference))) {
+            throw Object.assign(new Error('Incomplete references'),{code:'ORDER_OUTCOME_UNKNOWN'});
+        }
+        protectionOrderIds.push(...confirmed.map(row=>row.reference));
+        mensajeRaw = whatsappParts.map(part=>`🧾 *NUEVO PEDIDO #${confirmed.find(row=>row.proveedor===part.proveedor).reference}*\n`+part.body).join('');
         // Messages must use acknowledged references, never freshly reserved
         // numbers from a retry. Recovered receipts reload the scoped vale.
-        const fresh=result.data.confirmed.every(row=>protectionOrderIds.includes(row.reference));
+        const fresh=!previousOutcome;
         await confirmPendingCheckout(result.data.confirmed,{table:request.table,phone:whatsappDestino,message:fresh?mensajeRaw.trim():null});
     }
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (!result.data?.complete) throw Object.assign(new Error('Unconfirmed write'),{code:'ORDER_OUTCOME_UNKNOWN'});
-    if (previousOutcome || result.data.confirmed.some(row => !protectionOrderIds.includes(row.reference))) {
+    if (previousOutcome) {
         notifyNewCheckout('El servidor confirmó este envío: ' + result.data.confirmed.map(row => row.reference).join(', ') + '. No necesitas enviarlo otra vez.');
         clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
@@ -3599,6 +3587,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         ci: ciC,
         telefono: telC,
         direccion: dirPDF,
+        referencias: [...protectionOrderIds],
         totalUSD: totalGlobalProductos + envioTotalGlobal,
         mensajeria: envioTotalGlobal,
         items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
@@ -10388,6 +10377,9 @@ async function generarComprobanteVenta(datosPedido, accion) {
         `$${i.price.toLocaleString()}.00`,
         `$${(i.price * i.qty).toLocaleString()}.00`
     ]);
+    if (Array.isArray(datosPedido.referencias)) {
+        filasTabla.unshift(...datosPedido.referencias.filter(ref=>typeof ref==='string'&&ref).map(ref=>['PEDIDO CONFIRMADO #'+ref,'','','']));
+    }
 
     if (Number(datosPedido.mensajeria) > 0) {
         filasTabla.push([

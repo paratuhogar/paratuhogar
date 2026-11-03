@@ -1,36 +1,14 @@
-import readStorefront from './read-storefront.cjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import {fixture} from './fixtures/new-checkout.mjs';
 
-const root = new URL('../', import.meta.url);
-
-test('los consecutivos se reservan de forma atómica y se reutilizan en el pedido', async () => {
-  const html = readStorefront();
-  const squadron = await readFile(new URL('sistema-escuadron.js', root), 'utf8');
-  const sql = await readFile(
-    new URL('supabase/migrations/20260909_consecutivos_pedidos_atomicos.sql', root),
-    'utf8'
-  );
-
-  assert.match(sql, /create table if not exists pth_private\.pedido_consecutivos/i);
-  assert.match(sql, /pg_advisory_xact_lock/i);
-  assert.match(sql, /create or replace function public\.reservar_consecutivo_pedido/i);
-  assert.match(sql, /update pth_private\.pedido_consecutivos/i);
-  assert.match(sql, /regexp_match/i);
-  assert.match(sql, /grant execute on function public\.reservar_consecutivo_pedido/i);
-
-  assert.match(html, /rpc\(['"]reservar_consecutivo_pedido['"]/);
-  const numberingBlock = html.slice(html.indexOf('let codPedido = "";'), html.indexOf('protectionOrderIds.push(codPedido)'));
-  assert.doesNotMatch(numberingBlock, /\.limit\(20\)\s*;/);
-  assert.doesNotMatch(numberingBlock, /TEMP-\$\{random\}/);
-  assert.match(numberingBlock, /No se pudo reservar el consecutivo/i);
-
-  assert.match(squadron, /rpc\(['"]reservar_consecutivo_pedido['"]/);
-  const approvalBlock = squadron.slice(
-    squadron.indexOf('async function approveSubOrder'),
-    squadron.indexOf('// Mensaje WhatsApp', squadron.indexOf('async function approveSubOrder'))
-  );
-  assert.doesNotMatch(approvalBlock, /\.limit\(20\)\s*;/);
-  assert.doesNotMatch(approvalBlock, /maxNum/);
+test('old cached pages cannot dictate a number; accepted historical orders stay unchanged',async()=>{
+ const f=await fixture();
+ f.body.inputs[0].orden_dia='A-999';f.body.inputs[1].orden_dia='B-888';
+ const q=await f.quote();assert.equal(q.error,null);assert.equal(f.writes,0);
+ const r=await f.submit(q);assert.equal(r.error,null);
+ assert.deepEqual(r.data.confirmed,[{proveedor:'A',reference:'A-1'},{proveedor:'B',reference:'B-1'}]);
+ assert.deepEqual(f.rows.pedidos[0],f.historical);
+ const lost=await f.request({action:'checkout',operation:'receipt',attempt:q.data.attempt},null);
+ assert.deepEqual(lost.data.confirmed,r.data.confirmed);assert.equal(f.writes,1);
 });

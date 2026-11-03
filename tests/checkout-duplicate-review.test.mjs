@@ -23,7 +23,7 @@ test('another device needs explicit review before repeating the same recent sale
   const {f,body}=await sold();body.inputs.forEach(row=>row.telefono='+53 5 1112233');
   const q=await f.request({...body,operation:'quote'});
   assert.ok(Array.isArray(q.data.duplicates),'quote must report possible repeats');
-  assert.deepEqual(q.data.duplicates.map(x=>x.reference),['A00001','B00001']);
+  assert.deepEqual(q.data.duplicates.map(x=>x.reference),['A-1','B-1']);
   assert.equal(typeof q.data.duplicateReview,'string');
   const r=await f.request({...body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote});
   assert.equal(r.error.code,'POSSIBLE_DUPLICATE');assert.equal(f.writes,1);
@@ -80,7 +80,7 @@ test('a child still reviews its own approved signed sale',async()=>{
   // Approval carries the signed attempt unchanged into the existing table.
   f.rows.pedidos.push(...f.rows.pedidos_subgestores.map(row=>({...row,gestor:parent.nombre,estado:'Pendiente'})));f.rows.pedidos_subgestores.length=0;
   const body=structuredClone(f.body);body.intentId='e'.repeat(64);
-  const q=await f.request({...body,operation:'quote'});assert.equal(q.error,null);assert.deepEqual(q.data.duplicates.map(r=>r.reference),['A00001','B00001']);
+  const q=await f.request({...body,operation:'quote'});assert.equal(q.error,null);assert.deepEqual(q.data.duplicates.map(r=>r.reference),['A-1','B-1']);
 });
 test('oversized recent lookup fails safely instead of assuming there are no duplicates',async()=>{
   const {f,body}=await sold();

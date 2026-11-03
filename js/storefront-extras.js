@@ -577,7 +577,8 @@ async function generarComprobanteB2B(datosPedido, accion) {
 
     // Generar código
     const randomCode = Math.floor(1000 + Math.random() * 9000);
-    const numOferta = `#REF-${randomCode}`;
+    const referencias = Array.isArray(datosPedido.referencias) ? datosPedido.referencias.filter(ref=>typeof ref==='string'&&ref) : [];
+    const numOferta = referencias.length ? '#'+referencias[0]+(referencias.length>1?' +'+(referencias.length-1):'') : `#REF-${randomCode}`;
 
     // Paleta de Colores (Estilo Imagen 2)
     const cBlack = [17, 17, 17];
@@ -663,6 +664,7 @@ async function generarComprobanteB2B(datosPedido, accion) {
         `$ ${i.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
         `$ ${(i.price * i.qty).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
     ]);
+    filasTabla.unshift(...referencias.map(ref=>['PEDIDO CONFIRMADO #'+ref,'','','']));
 
     doc.autoTable({
         startY: 85,

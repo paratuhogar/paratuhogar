@@ -44,6 +44,24 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   async function fillCart(p){await p.evaluate(()=>{addProductFromCard('Equipo A');addProductFromCard('Equipo B');toggleCartModal(true);document.getElementById('check-recogida').checked=true;toggleRecogidaEnAlmacen();document.getElementById('check-nombre').value='Synthetic Customer';document.getElementById('check-tel').value='synthetic-phone';document.getElementById('check-ci').value='00123456789';document.getElementById('check-notas').value='<script>untrusted submitted text</script>';});}
 
 
+  if(process.env.PTH_ATOMIC_NUMBERING==='1')for(const width of [390,1280]){
+    f=await fixture();const {c,errors}=await context();const p=await main(c);await p.setViewportSize({width,height:844});await fillCart(p);
+    await p.evaluate(()=>{
+      const rpc=supabaseClient.rpc.bind(supabaseClient);supabaseClient.rpc=(name,...args)=>{if(name==='reservar_consecutivo_pedido')throw Error('RESERVATION_FORBIDDEN');return rpc(name,...args);};
+      window.openedUrls=[];window.open=url=>openedUrls.push(url);
+      generarComprobanteVenta=value=>{window.pdfPayload=value;};
+    });
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    assert.equal(f.writes,1,'checkout must work without a reservation RPC');
+    assert.match(await p.locator('#pth-checkout-confirmations').innerText(),/A-1.*B-1/);
+    await p.locator('#pth-checkout-confirmations').getByRole('button',{name:'Enviar pedido por WhatsApp'}).click();
+    const message=await p.evaluate(()=>decodeURIComponent(openedUrls.at(-1)));
+    assert.match(message,/#A-1/);assert.match(message,/#B-1/);assert.doesNotMatch(message,/undefined|FORGED|PENDIENTE/);
+    await p.waitForFunction(()=>Boolean(window.pdfPayload));assert.deepEqual(await p.evaluate(()=>pdfPayload.referencias),['A-1','B-1']);
+    assert.equal(await p.evaluate(()=>cart.length),0);assert.deepEqual(errors,[]);
+    await c.close();console.log('PASS atomic numbering, no reservation, confirmed WhatsApp references',width);
+  }
+  if(process.env.PTH_ATOMIC_NUMBERING==='1')return;
   for(const width of [390,1280]) {
     f=await fixture();const {c,errors}=await context();let p=await main(c);await p.setViewportSize({width,height:844});await fillCart(p);
     const baseline=process.env.PTH_REPRO_BASELINE==='1';
