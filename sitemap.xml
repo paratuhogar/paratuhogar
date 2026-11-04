@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-11-03</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-11-03</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-11-04</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-11-02</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-11-02</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-11-02</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-11-04</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-11-03</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-10-30</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-10-26</lastmod></url>
@@ -111,7 +111,7 @@
   <url><loc>https://paratuhogar.org/producto/licuadora-black-decker/</loc><lastmod>2026-11-02</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Licuadorablanc%26decker.png</image:loc><image:title>Licuadora Black &amp; Decker</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/memoria-ram-4gb-adata-2666-hz/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Adata4gb2666.jpeg</image:loc><image:title>Memoria ram 4gb Adata 2666 hz</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/memoria-ram-adata-8gb-2666-hz/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Adata8gb2666.webp</image:loc><image:title>Memoria Ram Adata 8gb 2666 hz</image:title></image:image></url>
-  <url><loc>https://paratuhogar.org/producto/mesa-de-resina-redonda-7house/</loc><lastmod>2026-10-06</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Mesaplastcarmelita.jpg</image:loc><image:title>Mesa de Resina Redonda 7HOUSE</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/mesa-de-resina-redonda-7house/</loc><lastmod>2026-11-04</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Mesaplastcarmelita.jpg</image:loc><image:title>Mesa de Resina Redonda 7HOUSE</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/mesas-plegables-portatiles-rectangulares-7house/</loc><lastmod>2026-11-02</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Mesaplegablerect.jpg</image:loc><image:title>Mesas Plegables Portátiles Rectangulares 7HOUSE</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/mesas-plegables-rectangulares-efecto-ratan-7house/</loc><lastmod>2026-10-06</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Mesaplegablerectratan.jpg</image:loc><image:title>Mesas Plegables Rectangulares Efecto Ratán 7HOUSE</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/mini-dc-ups-nemo/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Miniupsnemo.jpeg</image:loc><image:title>Mini DC UPS - Nemo</image:title></image:image></url>
