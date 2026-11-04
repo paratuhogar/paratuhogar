@@ -586,8 +586,10 @@
             const commission = Number(pedido?.comision_subgestor) || 0;
             const formatAmount = value => Number.isInteger(value) ? String(value) : value.toFixed(2);
             const location = municipality ? ` (${municipality})` : '';
+            const ci = String(pedido?.ci || '').trim();
+            const identityLine = ci && ci !== 'No especificado' ? `CI: ${ci}\n` : '';
 
-            return `🧾 *NUEVO PEDIDO #${orderCode}*\n📅 Fecha: ${date}\n\n👤 *CLIENTE*\nNombre: ${customer}\nTel: ${phone}\nDirección: ${address}${location}\n\n🛒 *DETALLE*\n📦 ${product}\n💰 *TOTAL A PAGAR: $${formatAmount(total)} USD*\n(Equipos: $${formatAmount(equipmentTotal)} + Envío: $${formatAmount(shipping)})\n\n💳 *MÉTODO PAGO:* Por confirmar\n\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${String(commercialName || 'No asignado').trim()}\nSubgestor: ${String(pedido?.subgestor_nombre || 'No asignado').trim()}\nComisión asignada al subgestor: $${formatAmount(commission)}\n------------------------------------`;
+            return `🧾 *NUEVO PEDIDO #${orderCode}*\n📅 Fecha: ${date}\n\n👤 *CLIENTE*\nNombre: ${customer}\nTel: ${phone}\nDirección: ${address}${location}\n${identityLine}\n🛒 *DETALLE*\n📦 ${product}\n💰 *TOTAL A PAGAR: $${formatAmount(total)} USD*\n(Equipos: $${formatAmount(equipmentTotal)} + Envío: $${formatAmount(shipping)})\n\n💳 *MÉTODO PAGO:* Por confirmar\n\n------------------------------------\n👮‍♂️ *DATOS INTERNOS*\nComercial: ${String(commercialName || 'No asignado').trim()}\nSubgestor: ${String(pedido?.subgestor_nombre || 'No asignado').trim()}\nComisión asignada al subgestor: $${formatAmount(commission)}\n------------------------------------`;
         }
 
         function openSubgestorVoucher(pedido) {

@@ -43,6 +43,21 @@ test('la nómina de subgestores ofrece reenviar el vale por WhatsApp', async () 
   assert.match(html, /ENVIAR VALE/);
 });
 
+test('el vale aprobado conserva el CI completo bajo la dirección y omite CI ausentes antiguos', async () => {
+  const html = await readFile(new URL('subgestores.html', root), 'utf8');
+  const source = html.match(/function buildSubgestorApprovalVoucher\([\s\S]*?\n\s*\}/)?.[0];
+  assert.ok(source);
+  const context = {};
+  vm.runInNewContext(`${source}; build = buildSubgestorApprovalVoucher;`, context);
+  const pedido = { orden_dia: 'A-999', direccion: 'Calle de prueba', ci: ' 00112233445 ' };
+  const before = JSON.stringify(pedido);
+  assert.match(context.build(pedido, 'Gestor'), /Dirección: Calle de prueba\nCI: 00112233445\n/);
+  assert.equal(JSON.stringify(pedido), before, 'Generar el vale no debe modificar el pedido');
+  for (const ci of [undefined, null, '', '   ', 'No especificado', ' No especificado ']) {
+    assert.doesNotMatch(context.build({ ...pedido, ci }, 'Gestor'), /CI:/);
+  }
+});
+
 test('el tour móvil no oscurece la página y posiciona su tarjeta dentro de la ventana', async () => {
   const html = await readFile(new URL('subgestores.html', root), 'utf8');
 
