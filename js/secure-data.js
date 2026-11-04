@@ -72,9 +72,30 @@
  const identity=data=>JSON.stringify([data?.id,data?.rol,data?.parent_id,data?.parent_nombre]);
  function saveSession(data){let previous=null;try{previous=JSON.parse(storage.getItem(messenger?'pth_messenger_session':'pth_session')||'null');}catch(_){}const sameToken=verifiedToken&&verifiedToken===(data.token||storage.getItem(tokenKey)),knownExpiry=sameToken?expiresAt():null;const local=offlineProfile();profile=data.profile;if(data.token)storage.setItem(tokenKey,data.token);verifiedToken=storage.getItem(tokenKey);if(!messenger&&local&&identity(local)!==identity(profile))storage.removeItem(offlineContextKey);const expiry=Date.parse(data.expiresAt);if(Number.isFinite(expiry))storage.setItem(expiryKey,String(Math.max(expiry,knownExpiry||0)));else storage.removeItem(expiryKey);armExpiry();storage.setItem(messenger?'pth_messenger_session':'pth_session',JSON.stringify(messenger?profile:{name:profile.nombre,isAdmin:!profile.parent_id&&['admin','administrador','superadmin','logistica'].includes(String(profile.rol).toLowerCase()),data:profile}));rememberExpiry(false);if(identity(previous?.data||previous)!==identity(profile)){clearCaches();notifySession();}}
  async function send(body,token=storage.getItem(tokenKey)){
-  try{
-   const response=await root.fetch(url,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify(body),keepalive:body.action==='logout',signal:AbortSignal.timeout(30000)});
-   const result=await response.json();
+  // Explicit read-only allowlist: never replay login, checkout submission,
+  // RPCs, approvals, payments or generic writes after an uncertain outcome.
+  const retryable=body.action==='session'||body.action==='query'&&body.op==='select';
+  const payload=JSON.stringify(body);
+  for(let attempt=0;attempt<2;attempt++){
+   let response,result;
+   try{
+    response=await root.fetch(url,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:payload,keepalive:body.action==='logout',signal:AbortSignal.timeout(30000)});
+   }catch(error){return{data:null,error:{message:error?.name==='TimeoutError'||error?.name==='AbortError'?'El servidor tardó demasiado en responder. Intenta de nuevo.':'No se pudo conectar con el servidor. Comprueba tu conexión e intenta de nuevo; no se usará una conexión sin protección.',code:error?.name==='TimeoutError'||error?.name==='AbortError'?'REQUEST_TIMEOUT':'NETWORK_ERROR'}};}
+   try{result=await response.json();}catch(error){
+    if(![502,503,504].includes(response.status)&&(error?.name==='TimeoutError'||error?.name==='AbortError'))return{data:null,error:{message:'El servidor tardó demasiado en responder. Intenta de nuevo.',code:'REQUEST_TIMEOUT'}};
+    result=null;
+   }
+   if(token&&body.action!=='logout'&&token!==storage.getItem(tokenKey))return{data:null,error:{message:'La sesión cambió. Vuelve a intentar.',code:'SESSION_CHANGED'}};
+   if([502,503,504].includes(response.status)){
+    if(retryable&&attempt===0){
+     await new Promise(resolve=>root.setTimeout?root.setTimeout(resolve,500):resolve());
+     if(token&&token!==storage.getItem(tokenKey))return{data:null,error:{message:'La sesión cambió. Vuelve a intentar.',code:'SESSION_CHANGED'}};
+     continue;
+    }
+    const message=typeof result?.error?.message==='string'?result.error.message:'El servidor está temporalmente no disponible. Intenta de nuevo en unos momentos.';
+    return{data:null,error:{message,code:'SERVICE_UNAVAILABLE',status:response.status}};
+   }
+   if(!result||typeof result!=='object'||Array.isArray(result)||!Object.hasOwn(result,'data')&&!result.error)return{data:null,error:{message:'El servidor devolvió una respuesta no válida. Intenta de nuevo.',code:'INVALID_RESPONSE',status:response.status}};
    const renewed=Date.parse(result.sessionExpiresAt);
    if(response.status===200&&token&&token===storage.getItem(tokenKey)&&Number.isFinite(renewed)&&renewed>Date.now()&&renewed<=Date.now()+30*86400000&&renewed>(expiresAt()||0)){
     storage.setItem(expiryKey,String(renewed));armExpiry();
@@ -82,7 +103,7 @@
    if(result.error)result.error.status=response.status;
    if(response.status===401&&body.action!=='login'&&token===storage.getItem(tokenKey))clearSession('expired');
    return result;
-  }catch(error){return{data:null,error:{message:'No se pudo conectar con el servidor. Intenta de nuevo; no se usará una conexión sin protección.',code:'NETWORK_ERROR'}};}
+  }
  }
  async function login(username,password){const result=await send({action:'login',username,password},null);if(result.error)throw Error(result.error.message);saveSession(result.data);restoration=Promise.resolve(profile);return profile;}
  function restore(){

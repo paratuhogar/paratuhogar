@@ -107,7 +107,7 @@ test('product failures show a safe real error and a working retry, not an empty-
  assert.equal(typeof f.node('[data-catalog-retry]').click,'function');
  assert.doesNotMatch(f.node('productos-container').innerHTML,/No encontramos productos/);
  f.failProducts(false);await f.node('[data-catalog-retry]').click();
- assert.equal(f.context.productosRaw.length,1);assert.equal(f.productReads,2);
+ assert.equal(f.context.productosRaw.length,1);assert.equal(f.productReads,3);
 });
 test('failed personalized prices are not silently rendered as zero assigned commission',async()=>{
  const f=fixture();f.failPrices(true);await f.load();

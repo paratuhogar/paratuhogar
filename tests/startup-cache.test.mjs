@@ -20,7 +20,7 @@ test('normal public template and local SDK reopen without private response or pr
  assert.ok(f.entries.has('/js/checkout-confirmation.js?v=20261017-checkout1'),'persistent receipt action is in the offline shell');
  assert.equal([...f.entries.keys()].some(u=>/img_productos|functions\/v1|feedback\.html|notifications\.html|pedidos|secure_sessions/.test(u)),false);
  assert.ok(f.entries.has('/offline-order.html'));
- assert.ok(f.entries.has('/js/secure-data.js?v=20261103-numbering1'),'static gateway adapter only; API responses are never cached');
+ assert.ok(f.entries.has('/js/secure-data.js?v=20261104-recovery1'),'static gateway adapter only; API responses are never cached');
 });
 test('cached root remains available offline; private routes get only offline fallback',async()=>{const f=fixture();let p;f.events.install({waitUntil:x=>p=x});await p;f.offline();
  for(const [url,expected] of [['/','/index.html'],['/?ref=cuenta','/index.html'],['/index.html','/index.html'],['/producto/modelo/','/index.html'],['/offline-catalog.html','/offline-catalog.html'],['/offline-catalog.html?catalog_q=panel','/offline-catalog.html'],['/offline-order.html','/offline-order.html'],['/offline-order.html?x=1','/offline-order.html'],['/feedback.html','/offline.html'],['/notifications.html','/offline.html'],['/catalog-maker.html','/offline.html']]){let response;f.events.fetch({request:{method:'GET',mode:'navigate',url:'https://paratuhogar.org'+url},respondWith:x=>response=x});assert.equal(await (await response).text(),fs.readFileSync(new URL(expected.slice(1),root),'utf8'));}
@@ -28,7 +28,7 @@ test('cached root remains available offline; private routes get only offline fal
 test('service worker never intercepts protected API or POST responses',()=>{const f=fixture();for(const req of [{method:'POST',url:'https://paratuhogar.org/'},{method:'GET',url:'https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data'}])f.events.fetch({request:req,respondWith:()=>assert.fail('must not cache protected response')});});
 test('catalogue upgrade installs the new reader and removes only previous static caches',async()=>{
  const f=fixture();let p;f.events.install({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.opened,['pth-public-static-2026-11-03-numbering1']);
+ assert.deepEqual(f.opened,['pth-public-static-2026-11-04-recovery1']);
  assert.ok(f.entries.has('/css/gestor-ranking.css?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/gestor-ranking.js?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));

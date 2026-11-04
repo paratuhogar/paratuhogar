@@ -196,7 +196,7 @@ test('server restore errors do not become a public profile or dispatch a protect
  const {context,storage,db}=client();storage.setItem('pth_secure_token','a'.repeat(64));let calls=0;
  context.fetch=async()=>{calls++;return{status:503,json:async()=>({data:null,error:{message:'Servicio temporalmente no disponible',code:'ACCESS_DENIED'}})};};
  const result=await db.from('productos').insert([{nombre:'No escribir'}]);
- assert.equal(calls,1);assert.equal(result.data,null);assert.equal(result.error.status,503);
+ assert.equal(calls,2);assert.equal(result.data,null);assert.equal(result.error.status,503);
  assert.equal(storage.getItem('pth_secure_token'),'a'.repeat(64));
 });
 test('invalid sessions are cleared and reported instead of querying as anonymous',async()=>{
