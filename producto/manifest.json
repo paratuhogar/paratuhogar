@@ -342,6 +342,15 @@
     "updated_at": "2026-09-23T21:01:52.215368+00:00"
   },
   {
+    "id": "461bbbe4-734a-46b6-b5bb-bc67720ce6d9",
+    "slug": "bocinas-2-1-logitech-z313",
+    "nombre": "Bocinas 2.1 Logitech Z313",
+    "categoria": "TECNOLOGÍA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/bocinas-2-1-logitech-z313/",
+    "updated_at": "2026-11-05T02:30:19.665808+00:00"
+  },
+  {
     "id": "435f9f98-447d-4365-b10b-a5f1ba22cc47",
     "slug": "bocinas-logitech-z150-sonido-estereo",
     "nombre": "Bocinas Logitech Z150 *Sonido Estéreo*",
@@ -1671,7 +1680,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
-    "updated_at": "2026-10-30T01:36:30.679905+00:00"
+    "updated_at": "2026-11-05T03:51:03.323072+00:00"
   },
   {
     "id": "dd1681e8-57ae-4f86-bd9d-6cc67ce0c435",
@@ -1930,9 +1939,9 @@
     "slug": "kit-solar-inversor-12kw-srne-con-bateria-30kwh-srne",
     "nombre": "Kit Solar Inversor 12kw SRNE con batería 30kWh SRNE",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/kit-solar-inversor-12kw-srne-con-bateria-30kwh-srne/",
-    "updated_at": "2026-10-29T22:32:40.112991+00:00"
+    "updated_at": "2026-11-05T03:51:18.487305+00:00"
   },
   {
     "id": "713f8507-da79-4e14-ad6e-b3d4463c372c",
@@ -2724,16 +2733,16 @@
     "categoria": "MUNDO FRIO",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-premium/",
-    "updated_at": "2026-08-01T12:57:55.499741+00:00"
+    "updated_at": "2026-11-04T20:04:41.248293+00:00"
   },
   {
     "id": "e1ab3aea-0eea-478a-bd85-eddf0730bb4b",
     "slug": "nevera-7-8-pies-royal",
     "nombre": "Nevera 7.8 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-royal/",
-    "updated_at": "2026-10-22T18:26:32.031386+00:00"
+    "updated_at": "2026-11-04T20:05:04.73567+00:00"
   },
   {
     "id": "b60245c8-ae5f-41e2-b82a-341ac3ceea17",
@@ -3343,9 +3352,9 @@
     "slug": "refrigerador-8-5-pies-royal",
     "nombre": "Refrigerador 8.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-8-5-pies-royal/",
-    "updated_at": "2026-11-02T23:14:50.68198+00:00"
+    "updated_at": "2026-11-04T23:51:49.12607+00:00"
   },
   {
     "id": "5c67b520-97f8-4d45-a35c-516ea3673577",
@@ -3382,6 +3391,24 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-de-7-5-pies-lemax/",
     "updated_at": "2026-10-22T13:46:59.377231+00:00"
+  },
+  {
+    "id": "53d0d840-2607-456d-9d09-00fcf601e91f",
+    "slug": "refrigerador-doble-puerta-14-pies-rudenkov",
+    "nombre": "Refrigerador doble puerta 14 pies Rudenkov",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/refrigerador-doble-puerta-14-pies-rudenkov/",
+    "updated_at": "2026-11-05T02:32:58.206687+00:00"
+  },
+  {
+    "id": "1401db89-0f62-4a12-9bf9-9dd975ac3994",
+    "slug": "refrigerador-doble-puerta-18-pies-rukenkov",
+    "nombre": "Refrigerador doble puerta 18 pies Rukenkov",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/refrigerador-doble-puerta-18-pies-rukenkov/",
+    "updated_at": "2026-11-05T02:34:00.894468+00:00"
   },
   {
     "id": "38acd7e3-9e78-4cfa-bf93-fb838946f5d1",
