@@ -222,7 +222,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-infinisolar-de-5k-52v-100amp/",
-    "updated_at": "2026-10-17T23:24:29.450422+00:00"
+    "updated_at": "2026-11-07T16:00:06.56057+00:00"
   },
   {
     "id": "172cbce1-e7a2-4af3-85ec-69807efba685",
@@ -2101,9 +2101,9 @@
     "slug": "lavadora-semiautomatica-daytron-6kgs",
     "nombre": "LAVADORA SEMIAUTOMÁTICA   DAYTRON  6KGS",
     "categoria": "LAVADORAS",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-daytron-6kgs/",
-    "updated_at": "2026-11-02T17:12:26.066579+00:00"
+    "updated_at": "2026-11-07T14:28:15.863855+00:00"
   },
   {
     "id": "75ba0598-772c-4961-9122-a5dcaa54f0d2",
