@@ -886,9 +886,9 @@
     "slug": "ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w",
     "nombre": "EcoFlow Estación de Energía DELTA 3 Max 2048Wh 2400W",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w/",
-    "updated_at": "2026-07-31T19:39:25.88048+00:00"
+    "updated_at": "2026-11-08T14:16:34.429407+00:00"
   },
   {
     "id": "f63730bb-6ff4-458a-b1e0-1687ab11d6b8",
@@ -2677,9 +2677,9 @@
     "slug": "nevera-7-pies-haitech",
     "nombre": "Nevera 5.6 pies Haitech",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
-    "updated_at": "2026-10-26T15:00:24.905582+00:00"
+    "updated_at": "2026-11-08T14:14:52.549602+00:00"
   },
   {
     "id": "36adbce8-bc55-4f8b-8b60-3a3a0c903ce6",
@@ -2740,9 +2740,9 @@
     "slug": "nevera-7-8-pies-royal",
     "nombre": "Nevera 7.8 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-royal/",
-    "updated_at": "2026-11-04T20:05:04.73567+00:00"
+    "updated_at": "2026-11-08T14:53:39.748665+00:00"
   },
   {
     "id": "b60245c8-ae5f-41e2-b82a-341ac3ceea17",
@@ -3053,11 +3053,11 @@
   {
     "id": "be913ffb-4a2c-46d3-bf41-3b1f829d2586",
     "slug": "panel-solar-615w-bifaciales-lobgi-himo-7",
-    "nombre": "Panel Solar 615W Bifaciales - Lobgi Himo- 7",
+    "nombre": "Panel Solar 620W Bifaciales - Lobgi Himo- 7",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-solar-615w-bifaciales-lobgi-himo-7/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-08T20:10:52.460044+00:00"
   },
   {
     "id": "c41b2de9-6af1-4fbf-a284-e1cb3a7c3971",
