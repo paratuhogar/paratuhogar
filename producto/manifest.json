@@ -157,9 +157,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-11-02T22:20:53.899546+00:00"
+    "updated_at": "2026-11-09T15:09:09.600811+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -888,7 +888,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w/",
-    "updated_at": "2026-11-08T14:16:34.429407+00:00"
+    "updated_at": "2026-11-09T14:27:44.408932+00:00"
   },
   {
     "id": "f63730bb-6ff4-458a-b1e0-1687ab11d6b8",
@@ -1095,7 +1095,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3-clasica/",
-    "updated_at": "2026-11-01T17:06:34.268448+00:00"
+    "updated_at": "2026-11-09T19:40:14.680599+00:00"
   },
   {
     "id": "4756718f-2263-4b41-8990-81708f50d980",
@@ -1237,9 +1237,9 @@
     "slug": "estanteria-metalica-negra-5-baldas-7house",
     "nombre": "Estanteria Metalica Negra 5 Baldas 7HOUSE",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estanteria-metalica-negra-5-baldas-7house/",
-    "updated_at": "2026-10-06T00:41:21.392829+00:00"
+    "updated_at": "2026-11-09T14:53:42.425235+00:00"
   },
   {
     "id": "01441fc0-e48b-4af8-a566-0d59f6ac99ec",
@@ -2571,7 +2571,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal/",
-    "updated_at": "2026-10-27T16:25:49.725138+00:00"
+    "updated_at": "2026-11-09T19:42:40.481384+00:00"
   },
   {
     "id": "8e051ce8-436b-4b9f-8af9-491b32621b62",
@@ -2740,9 +2740,9 @@
     "slug": "nevera-7-8-pies-royal",
     "nombre": "Nevera 7.8 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-royal/",
-    "updated_at": "2026-11-08T14:53:39.748665+00:00"
+    "updated_at": "2026-11-09T19:42:50.829377+00:00"
   },
   {
     "id": "b60245c8-ae5f-41e2-b82a-341ac3ceea17",
