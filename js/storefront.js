@@ -12842,8 +12842,11 @@ function agregarNuevoProveedor() {
 
 // --- AUTO-ASIGNACIÓN DEL 50% DE COMISIÓN (VERSIÓN BLINDADA MULTI-ARRAY) ---
     async function autoAssignHalfCommissions() {
+        const btn = document.getElementById('btn-auto-assign-subcommissions');
+        if (!btn || btn.disabled) return;
         const gestorActual = window.gestorName;
-        if (!gestorActual) return alert("Error de sesión. Por favor recarga la página.");
+        const sessionToken = window.PTHSecureData.token();
+        if (!gestorActual || !sessionToken) return alert("Error de sesión. Por favor recarga la página.");
 
         const hierarchy = await resolveSalesHierarchy(gestorActual);
         if (hierarchy?.isSubgestor) {
@@ -12853,11 +12856,13 @@ function agregarNuevoProveedor() {
         const confirmar = confirm("¿Deseas asignar automáticamente el 50% de la comisión de todos los productos en stock donde aún no has definido una comisión para tus subgestores?\n\n(Las comisiones que ya configuraste de manera manual se mantendrán intactas).");
         if (!confirmar) return;
 
-        const btn = event.currentTarget;
+        if (btn.disabled) return;
         const originalHTML = btn.innerHTML;
         btn.innerHTML = `<span class="loader" style="width:12px;height:12px;border:2px solid currentColor;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span> Procesando...`;
         btn.disabled = true;
 
+        let confirmed = 0;
+        let totalOperaciones = 0;
         try {
             // 1. Obtener todos los productos en stock actualmente
             const { data: productosBase, error: errProd } = await supabaseClient
@@ -12914,7 +12919,7 @@ function agregarNuevoProveedor() {
                 }
             });
 
-            const totalOperaciones = toInsert.length + toUpdate.length;
+            totalOperaciones = toInsert.length + toUpdate.length;
 
             if (totalOperaciones === 0) {
                 alert("ℹ️ Todos tus productos activos ya cuentan con comisiones de subgestor personalizadas.");
@@ -12923,35 +12928,32 @@ function agregarNuevoProveedor() {
                 return;
             }
 
-            // 3. Ejecutar las operaciones correspondientes de forma limpia en Supabase
-            if (toInsert.length > 0) {
-                const { error: errIns } = await supabaseClient
-                    .from('precios_personalizados')
-                    .insert(toInsert);
-                if (errIns) throw errIns;
-            }
-
-            if (toUpdate.length > 0) {
-                const { error: errUpd } = await supabaseClient
-                    .from('precios_personalizados')
-                    .upsert(toUpdate);
-                if (errUpd) throw errUpd;
+            // El servidor acepta como máximo 100 filas por escritura.
+            const batchSize = 100;
+            for (const [operation, rows] of [['insert', toInsert], ['upsert', toUpdate]]) {
+                for (let offset = 0; offset < rows.length; offset += batchSize) {
+                    const batch = rows.slice(offset, offset + batchSize);
+                    const { error } = await supabaseClient.from('precios_personalizados')[operation](batch).forSession(sessionToken);
+                    if (error) throw error;
+                    confirmed += batch.length;
+                }
             }
 
             alert(`✅ ¡Asignación masiva exitosa!\nSe han configurado ${totalOperaciones} productos con el 50% de comisión para tu red.`);
 
-            // Forzar limpieza de caché y refrescar vistas
-            window.PTHSecureData.clearCaches();
-            localStorage.removeItem('pth_catalogo_cache_time');
-            renderGestorPricing();
-            loadProducts();
-
         } catch (e) {
             console.error(e);
-            alert("❌ Ocurrió un error al procesar la asignación masiva: " + e.message);
+            const progress = totalOperaciones ? ` Confirmados: ${confirmed} de ${totalOperaciones}. Revisa los ajustes antes de volver a intentar.` : '';
+            alert("❌ Ocurrió un error al procesar la asignación masiva: " + e.message + progress);
         } finally {
             btn.innerHTML = originalHTML;
             btn.disabled = false;
+            if (totalOperaciones > 0) {
+                window.PTHSecureData.clearCaches();
+                localStorage.removeItem('pth_catalogo_cache_time');
+                renderGestorPricing();
+                loadProducts();
+            }
         }
     }
 
