@@ -321,7 +321,7 @@
     "categoria": "TRANSPORTE ",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bicimoto-topmaq-evolution-2026/",
-    "updated_at": "2026-10-24T14:42:00.426111+00:00"
+    "updated_at": "2026-11-10T14:26:04.451936+00:00"
   },
   {
     "id": "a45013d2-7a92-4388-857e-17f79de69059",
@@ -2191,9 +2191,9 @@
     "slug": "licuadora-black-decker",
     "nombre": "Licuadora Black & Decker",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/licuadora-black-decker/",
-    "updated_at": "2026-11-02T16:40:51.858094+00:00"
+    "updated_at": "2026-11-10T11:22:42.951686+00:00"
   },
   {
     "id": "a99be9e2-4a96-4f17-b540-f3641473dd1d",
@@ -3694,9 +3694,9 @@
     "slug": "smart-tv-43-lg-uhd-ai",
     "nombre": "Smart TV 43 - LG UHD AI",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-43-lg-uhd-ai/",
-    "updated_at": "2026-10-26T16:48:47.527581+00:00"
+    "updated_at": "2026-11-10T14:01:57.867789+00:00"
   },
   {
     "id": "8b6e322d-4640-4a0c-9aa9-4da50413ba9a",
