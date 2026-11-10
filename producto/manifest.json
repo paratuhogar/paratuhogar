@@ -1095,7 +1095,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3-clasica/",
-    "updated_at": "2026-11-09T19:40:14.680599+00:00"
+    "updated_at": "2026-11-10T00:40:16.682429+00:00"
   },
   {
     "id": "4756718f-2263-4b41-8990-81708f50d980",
@@ -2371,9 +2371,9 @@
     "slug": "mini-proyector-steren-pro-260",
     "nombre": "Mini Proyector Steren PRO-260",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/mini-proyector-steren-pro-260/",
-    "updated_at": "2026-09-29T17:32:13.414119+00:00"
+    "updated_at": "2026-11-10T02:10:04.210773+00:00"
   },
   {
     "id": "95943746-c6db-4ac4-84f3-9a8ea5987553",
@@ -3202,6 +3202,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/protector-de-voltaje-triple-eurolite/",
     "updated_at": "2026-11-02T16:41:24.995705+00:00"
+  },
+  {
+    "id": "c24fd709-2f29-4faa-84de-041075e63e1b",
+    "slug": "proyector-multimedia-full-hd-steren-pro-380",
+    "nombre": "Proyector Multimedia Full HD Steren Pro-380",
+    "categoria": "TECNOLOGÍA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/proyector-multimedia-full-hd-steren-pro-380/",
+    "updated_at": "2026-11-10T02:27:08.25528+00:00"
   },
   {
     "id": "c1cdf489-2d81-40e2-b587-1d9a2d7ed25c",
