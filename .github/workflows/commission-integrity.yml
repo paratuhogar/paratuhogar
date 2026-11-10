@@ -1,0 +1,52 @@
+name: Comisiones - integridad aislada
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [codex/commission-preserve-existing, main]
+permissions:
+  contents: read
+concurrency:
+  group: commission-integrity-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar herramientas de prueba aisladas
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: |
+          npm ci --ignore-scripts
+          npm install --prefix "$RUNNER_TEMP/pth-commissions" --no-save --ignore-scripts playwright@1.57.0 @embedded-postgres/linux-x64@17.6.0-beta.15 pg@8.23.1 @electric-sql/pglite@0.5.8
+          "$RUNNER_TEMP/pth-commissions/node_modules/.bin/playwright" install --with-deps chromium
+          PG_NATIVE="$RUNNER_TEMP/pth-commissions/node_modules/@embedded-postgres/linux-x64/native"
+          for lib in "$PG_NATIVE"/lib/*.so.60.2; do ln -sf "$(basename "$lib")" "${lib%.2}"; done
+          echo "NODE_PATH=$RUNNER_TEMP/pth-commissions/node_modules" >> "$GITHUB_ENV"
+          echo "PTH_NATIVE_PG=$PG_NATIVE" >> "$GITHUB_ENV"
+          echo "PTH_PG_MODULE=$RUNNER_TEMP/pth-commissions/node_modules/pg" >> "$GITHUB_ENV"
+          echo "PTH_PGLITE_MODULE=$RUNNER_TEMP/pth-commissions/node_modules/@electric-sql/pglite" >> "$GITHUB_ENV"
+          PTH_TEST_CHROME=$(NODE_PATH="$RUNNER_TEMP/pth-commissions/node_modules" node -p 'require("playwright").chromium.executablePath()')
+          echo "PTH_CHROMIUM=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
+          echo "PTH_CHROMIUM_PATH=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
+      - name: Verificar compilación y regresiones unitarias
+        run: |
+          npm run check:js
+          node --test tests/*.test.mjs tests/*.test.cjs
+      - name: Verificar SQL y permisos sin conexión a producción
+        run: node tests/commission-assignment-embedded.cjs
+      - name: Verificar concurrencia real en PostgreSQL temporal
+        run: node tests/commission-assignment-database.cjs
+      - name: Verificar botón en navegador aislado
+        run: node tests/half-commission-browser.cjs
+      - name: Verificar recuperación de pedidos y caché
+        run: |
+          npm run check:checkout-release
+          node tests/checkout-crm-cache-browser.cjs

@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-11-09-commissions1';
+  const shellVersion = 'pth-public-static-2026-11-10-commissions2';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();

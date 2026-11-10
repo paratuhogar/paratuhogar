@@ -228,3 +228,17 @@ test('messenger restoration cannot remove the separate salesperson draft context
  const messenger=client(f.storage,'/mensajeros.html');messenger.context.fetch=async()=>({status:200,json:async()=>({data:{profile:{id:'messenger-b',nombre:'Demo Messenger',rol:'mensajero',estado:'activo'},expiresAt:expiry},error:null})});
  await messenger.context.PTHSecureData.restore();assert.equal(f.storage.getItem('pth_offline_context_v1'),saved);await messenger.context.PTHSecureData.logout();assert.equal(f.storage.getItem('pth_offline_context_v1'),saved);
 });
+
+test('commission batches pin session and strip all unapproved fields',async()=>{
+ const f=client(),token='a'.repeat(64),bodies=[];f.storage.setItem('pth_secure_token',token);
+ f.context.fetch=async(_url,options)=>{const body=JSON.parse(options.body);bodies.push(body);return{status:200,json:async()=>body.action==='session'?{data:{profile:{id:'own',nombre:'Own',rol:'gestor',estado:'activo'},expiresAt:new Date(Date.now()+600000).toISOString()}}:{data:{batchId:'test'}}};};
+ const result=await f.context.PTHSecureData.assignHalfCommissions({batchId:'test',productIds:['id'],gestor:'other',comision:99},token);
+ assert.deepEqual(bodies.at(-1),{action:'assign_half_commissions',batchId:'test',productIds:['id']});assert.equal(result.data.batchId,'test');
+ f.context.PTHSecureData.clearSession();const before=bodies.length;
+ assert.equal((await f.context.PTHSecureData.assignHalfCommissions({batchId:'test',productIds:['id']},token)).error.code,'SESSION_CHANGED');assert.equal(bodies.length,before);
+});
+test('commission mutation never retries a gateway failure automatically',async()=>{
+ const f=client(),token='a'.repeat(64);f.storage.setItem('pth_secure_token',token);let mutations=0;
+ f.context.fetch=async(_url,options)=>{const body=JSON.parse(options.body);if(body.action==='session')return{status:200,json:async()=>({data:{profile:{id:'own',rol:'gestor'},expiresAt:new Date(Date.now()+600000).toISOString()}})};mutations++;return{status:503,json:async()=>({error:{message:'busy'}})};};
+ const result=await f.context.PTHSecureData.assignHalfCommissions({batchId:'test',productIds:['id']},token);assert.equal(mutations,1);assert.equal(result.error.code,'SERVICE_UNAVAILABLE');
+});

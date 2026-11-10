@@ -6,6 +6,7 @@ import {createCheckoutService} from './checkout.mjs';
 import {publicName} from './public-name.mjs';
 import {ranking} from './ranking.mjs';
 import {reviewSubgestor} from './subgestor-review.mjs';
+import {assignHalfCommissions} from './commission-assignment.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
 
 const ALLOWED_FILTERS=new Set(['eq','neq','gt','gte','lt','lte','like','ilike','is','in','not','or']);
@@ -239,6 +240,9 @@ async function dataQuery(db,body,actor) {
     fail('Actualiza la página y usa la revisión de pedidos para guardar, aprobar o rechazar.',409);
   }
   if(table==='precios_personalizados'&&op!=='select'&&!actor)fail('Tu sesión venció. Vuelve a entrar para guardar los cambios.',401);
+  // Old bulk clients must not overwrite existing prices/commissions, including
+  // explicit zeroes. The new action inserts only missing pairs atomically.
+  if(table==='precios_personalizados'&&(op==='upsert'||op==='insert'&&inputs.length>1))fail('Actualiza la página para usar la asignación de comisiones protegida.',409,'COMMISSION_CLIENT_OUTDATED');
   if(table==='inventario_eventos'&&!actor)return {data:body.single?null:[],error:null,count:body.count==='exact'?0:null};
   const values=op!=='select'&&op!=='delete'?await prepareWrite(db,body,actor):undefined;
   const application=table==='gestores'&&op==='insert'?(Array.isArray(values)&&values.length===1?values[0]:!Array.isArray(values)?values:null):null;
@@ -325,6 +329,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequired
       else if(body.action==='public_name') result=await publicName(db,body,actor);
       else if(body.action==='ranking') result=await ranking(db,body,actor);
       else if(body.action==='subgestor_review') result=await reviewSubgestor(db,body,actor);
+      else if(body.action==='assign_half_commissions') result=await assignHalfCommissions(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
       else if(body.action==='checkout') result=await checkout(body,actor);

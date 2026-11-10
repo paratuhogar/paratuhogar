@@ -12840,122 +12840,104 @@ function agregarNuevoProveedor() {
     }
 }
 
-// --- AUTO-ASIGNACIÓN DEL 50% DE COMISIÓN (VERSIÓN BLINDADA MULTI-ARRAY) ---
-    async function autoAssignHalfCommissions() {
-        const btn = document.getElementById('btn-auto-assign-subcommissions');
-        if (!btn || btn.disabled) return;
-        const gestorActual = window.gestorName;
-        const sessionToken = window.PTHSecureData.token();
-        if (!gestorActual || !sessionToken) return alert("Error de sesión. Por favor recarga la página.");
-
-        const hierarchy = await resolveSalesHierarchy(gestorActual);
-        if (hierarchy?.isSubgestor) {
-            return alert(`🔒 Solo ${hierarchy.parent.nombre}, como gestor principal, puede asignar comisiones.`);
+// Only unconfigured products are eligible. Existing rows (including zero/null
+// commissions and legacy duplicates) are never changed by this operation.
+let halfCommissionAssignment = null;
+let halfCommissionBusy = false;
+async function autoAssignHalfCommissions(event) {
+    const btn = event?.currentTarget || document.getElementById('btn-auto-assign-subcommissions');
+    if (halfCommissionBusy || !btn) return;
+    halfCommissionBusy = true;
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+    let token;
+    let received = false;
+    try {
+        const api = window.PTHSecureData;
+        token = api.token();
+        await api.restore();
+        const owner = api.accountId();
+        const assertSession = () => {
+            if (!token || token !== api.token() || owner !== api.accountId()) {
+                halfCommissionAssignment = null;
+                throw new Error('La sesión cambió. Vuelve a entrar antes de continuar.');
+            }
+        };
+        assertSession();
+        const hierarchy = await resolveSalesHierarchy(window.gestorName);
+        assertSession();
+        if (hierarchy?.isSubgestor) throw new Error('Solo el gestor principal puede asignar comisiones.');
+        if (halfCommissionAssignment?.owner !== owner) halfCommissionAssignment = null;
+        const resume = halfCommissionAssignment !== null;
+        if (!confirm(resume
+            ? '¿Continuar la asignación pendiente? Se verificará el mismo lote sin duplicar registros. Las comisiones existentes seguirán intactas.'
+            : '¿Asignar el 50% de la comisión base, redondeado hacia abajo, a los productos disponibles SIN configuración?\n\nNo se cambiarán precios, visibilidad ni comisiones existentes, incluso si están en cero.')) return;
+        assertSession();
+        if (!resume) {
+            const productIds = [];
+            for (let offset = 0; ; offset += 1000) {
+                const {data, error} = await supabaseClient.from('productos').select('id')
+                    .eq('disponible', 'SI').order('id').range(offset, offset + 999).forSession(token);
+                assertSession();
+                if (error) throw error;
+                if (!Array.isArray(data)) throw new Error('No se pudo verificar el catálogo.');
+                productIds.push(...data.map(product => product.id));
+                if (data.length < 1000) break;
+            }
+            const uniqueIds = [...new Set(productIds)];
+            if (!uniqueIds.length) { alert('No hay productos disponibles para configurar.'); return; }
+            const batches = [];
+            for (let i = 0; i < uniqueIds.length; i += 100) {
+                batches.push({batchId: crypto.randomUUID(), productIds: uniqueIds.slice(i, i + 100)});
+            }
+            halfCommissionAssignment = {owner, batches, next: 0, inserted: 0, skippedExisting: 0, skippedUnavailable: 0};
         }
-
-        const confirmar = confirm("¿Deseas asignar automáticamente el 50% de la comisión de todos los productos en stock donde aún no has definido una comisión para tus subgestores?\n\n(Las comisiones que ya configuraste de manera manual se mantendrán intactas).");
-        if (!confirmar) return;
-
-        if (btn.disabled) return;
-        const originalHTML = btn.innerHTML;
-        btn.innerHTML = `<span class="loader" style="width:12px;height:12px;border:2px solid currentColor;border-bottom-color:transparent;border-radius:50%;display:inline-block;animation:rotation 1s linear infinite"></span> Procesando...`;
-        btn.disabled = true;
-
-        let confirmed = 0;
-        let totalOperaciones = 0;
-        try {
-            // 1. Obtener todos los productos en stock actualmente
-            const { data: productosBase, error: errProd } = await supabaseClient
-                .from('productos')
-                .select('*')
-                .eq('disponible', 'SI');
-
-            if (errProd) throw errProd;
-
-            // 2. Obtener precios personalizados guardados por este gestor
-            const { data: misPrecios, error: errPrecios } = await supabaseClient
-                .from('precios_personalizados')
-                .select('*')
-                .eq('gestor', gestorActual);
-
-            if (errPrecios) throw errPrecios;
-
-            // Listas separadas para evitar conflicto de llaves en PostgREST
-            const toInsert = [];
-            const toUpdate = [];
-
-            productosBase.forEach(p => {
-                const saved = misPrecios.find(c => c.producto_id === p.id);
-                const hasCustomCom = saved && parseFloat(saved.comision_subgestor) > 0;
-
-                // Solo actuamos sobre aquellos productos donde no se ha definido comisión (es nula o 0)
-                if (!hasCustomCom) {
-                    const baseComm = parseFloat(p.comision) || 0;
-                    const halfComm = Math.floor(baseComm / 2); // Redondear comisión hacia abajo de forma entera
-
-                    if (saved && saved.id) {
-                        // Si ya existía el registro de precio, va a la lista de UPDATE (con ID de la fila)
-                        toUpdate.push({
-                            id: saved.id,
-                            gestor: gestorActual,
-                            producto_id: p.id,
-                            nuevo_precio: saved.nuevo_precio,
-                            comision_subgestor: halfComm,
-                            // No se debe perder una decisión expresa de ocultar un producto.
-                            // Las filas antiguas sin decisión se normalizan como visibles.
-                            visible_subgestor: saved.visible_subgestor !== false
-                        });
-                    } else {
-                        // Si es un producto totalmente nuevo para este gestor, va a la lista de INSERT (absolutamente sin ID)
-                        toInsert.push({
-                            gestor: gestorActual,
-                            producto_id: p.id,
-                            nuevo_precio: p.precio,
-                            comision_subgestor: halfComm,
-                            // No dependemos del valor por defecto de la base de datos.
-                            visible_subgestor: true
-                        });
-                    }
-                }
-            });
-
-            totalOperaciones = toInsert.length + toUpdate.length;
-
-            if (totalOperaciones === 0) {
-                alert("ℹ️ Todos tus productos activos ya cuentan con comisiones de subgestor personalizadas.");
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-                return;
+        const job = halfCommissionAssignment;
+        while (job.next < job.batches.length) {
+            assertSession();
+            btn.textContent = `Procesando lote ${job.next + 1} de ${job.batches.length}...`;
+            const batch = job.batches[job.next];
+            // No automatic replay after a lost response. A user retry uses this
+            // exact batch ID and the server returns its transactional receipt.
+            const {data, error} = await api.assignHalfCommissions(batch, token);
+            assertSession();
+            if (error) throw error;
+            if (!data || data.batchId !== batch.batchId || data.requested !== batch.productIds.length ||
+                !['inserted', 'skippedExisting', 'skippedUnavailable'].every(key => Number.isInteger(data[key]) && data[key] >= 0) ||
+                data.inserted + data.skippedExisting + data.skippedUnavailable !== data.requested) {
+                throw new Error('No se pudo confirmar el resultado del lote.');
             }
-
-            // El servidor acepta como máximo 100 filas por escritura.
-            const batchSize = 100;
-            for (const [operation, rows] of [['insert', toInsert], ['upsert', toUpdate]]) {
-                for (let offset = 0; offset < rows.length; offset += batchSize) {
-                    const batch = rows.slice(offset, offset + batchSize);
-                    const { error } = await supabaseClient.from('precios_personalizados')[operation](batch).forSession(sessionToken);
-                    if (error) throw error;
-                    confirmed += batch.length;
-                }
-            }
-
-            alert(`✅ ¡Asignación masiva exitosa!\nSe han configurado ${totalOperaciones} productos con el 50% de comisión para tu red.`);
-
-        } catch (e) {
-            console.error(e);
-            const progress = totalOperaciones ? ` Confirmados: ${confirmed} de ${totalOperaciones}. Revisa los ajustes antes de volver a intentar.` : '';
-            alert("❌ Ocurrió un error al procesar la asignación masiva: " + e.message + progress);
-        } finally {
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-            if (totalOperaciones > 0) {
-                window.PTHSecureData.clearCaches();
-                localStorage.removeItem('pth_catalogo_cache_time');
-                renderGestorPricing();
-                loadProducts();
+            job.inserted += data.inserted;
+            job.skippedExisting += data.skippedExisting;
+            job.skippedUnavailable += data.skippedUnavailable;
+            job.next++;
+            received = true;
+        }
+        halfCommissionAssignment = null;
+        alert(`✅ Asignación terminada.\nProductos nuevos configurados: ${job.inserted}.\nConfiguraciones existentes conservadas: ${job.skippedExisting}.\nNo disponibles u omitidos: ${job.skippedUnavailable}.`);
+    } catch (error) {
+        const job = halfCommissionAssignment;
+        const progress = job ? `\nLotes confirmados: ${job.next} de ${job.batches.length}. Productos nuevos confirmados: ${job.inserted}.\nEl último lote puede haberse guardado. Pulsa el botón de nuevo para verificarlo y continuar sin duplicar registros.` : '';
+        alert('No se completó la asignación: ' + (error.message || 'Error de conexión.') + progress);
+    } finally {
+        // Invalidate even after an uncertain response: never leave the old view
+        // suggesting that a committed, unacknowledged batch did not happen.
+        let sameSession = false;
+        try { sameSession = token && token === window.PTHSecureData.token(); } catch (_) { /* Release UI even if storage is unavailable. */ }
+        if (sameSession) {
+            try { window.PTHSecureData.clearCaches(); } catch (_) { /* Optional cached display. */ }
+            try { localStorage.removeItem('pth_catalogo_cache_time'); } catch (_) { /* Storage can be full. */ }
+            if (received) {
+                Promise.resolve().then(() => renderGestorPricing()).catch(() => {});
+                Promise.resolve().then(() => loadProducts()).catch(() => {});
             }
         }
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        halfCommissionBusy = false;
     }
+}
 
 
 // =====================================================

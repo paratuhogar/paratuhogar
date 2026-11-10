@@ -195,6 +195,13 @@
   if(token!==storage.getItem(tokenKey))return {data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}};
   return send({...body,action:'checkout'},token);
  };
+ root.PTHSecureData.assignHalfCommissions=async(body,expectedToken)=>{
+  const token=expectedToken;await restore();
+  const changed=()=>!token||token!==storage.getItem(tokenKey);
+  if(changed())return{data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}};
+  const result=await send({action:'assign_half_commissions',batchId:body.batchId,productIds:body.productIds},token);
+  return changed()?{data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}}:result;
+ };
  armExpiry();
  if(root.supabase?.createClient){const create=root.supabase.createClient.bind(root.supabase);root.supabase.createClient=(...args)=>install(create(...args));}
 })(window);
