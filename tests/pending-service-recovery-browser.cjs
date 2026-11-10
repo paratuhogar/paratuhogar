@@ -70,13 +70,23 @@ const executablePath=process.env.PTH_CHROMIUM||'/usr/bin/chromium';
   // A real handler 401 must still invalidate the browser credential, not retry as a verified user.
   const denied=await context(),p=await denied.newPage();await p.goto(fixture.origin);
   await p.waitForFunction(()=>window.PTHSecureData&&window.PTHPendingCheckoutUI&&PTHSecureData.accountId());
+  // Observe the actual browser rejection, even when another page request wins
+  // the race to clear the token before refresh handles its own response.
+  const browser401=p.waitForResponse(response=>{
+   const url=new URL(response.url());
+   return url.origin===fixture.origin&&url.pathname==='/functions/v1/secure-data'
+    &&response.status()===401&&response.request().headers().authorization===`Bearer ${fixture.tokens.a}`;
+  });
   fixture.f.rows.pth_secure_sessions=[];
   const invalid=await fixture.f.request({action:'session'},fixture.tokens.a);
   assert.equal(fixture.f.lastStatus,401);assert.equal(invalid.error.code,'SESSION_INVALID');
   console.log('Checking genuine 401');
   const rejection=await p.evaluate(async()=>{try{await PTHSecureData.refresh();return null;}catch(e){return {status:e.status,code:e.code,tokenPresent:Boolean(PTHSecureData.token())};}});
-  // A concurrent real page request can receive the 401 first and clear it.
-  if(rejection){assert.equal(rejection.status,401);assert.equal(rejection.code,'SESSION_INVALID');}
+  const deniedResponse=await browser401;
+  assert.equal((await deniedResponse.json()).error.code,'SESSION_INVALID');
+  // SESSION_CHANGED is safe only with the witnessed 401 and removed token.
+  if(rejection?.code==='SESSION_CHANGED')assert.equal(rejection.tokenPresent,false);
+  else if(rejection){assert.equal(rejection.status,401);assert.equal(rejection.code,'SESSION_INVALID');}
   assert.equal(await p.evaluate(()=>Boolean(PTHSecureData.token())),false);
   await p.evaluate(()=>PTHPendingCheckoutUI.catalogReady());assert.equal(fixture.f.writes,1);
   await denied.close();
