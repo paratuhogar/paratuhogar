@@ -1093,9 +1093,9 @@
     "slug": "estacion-portatil-ecoflow-delta-3-clasica",
     "nombre": "Estación portátil - Ecoflow Delta 3 Clásica",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3-clasica/",
-    "updated_at": "2026-11-10T00:40:16.682429+00:00"
+    "updated_at": "2026-11-11T13:48:22.550973+00:00"
   },
   {
     "id": "4756718f-2263-4b41-8990-81708f50d980",
@@ -2506,9 +2506,9 @@
     "slug": "nevera-10-pies-royal",
     "nombre": "Nevera 10 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-10-pies-royal/",
-    "updated_at": "2026-11-04T18:24:17.318404+00:00"
+    "updated_at": "2026-11-11T13:38:56.148479+00:00"
   },
   {
     "id": "52c0e7a5-de6e-4655-8208-1d9374cdb601",
@@ -2538,13 +2538,22 @@
     "updated_at": "2026-10-11T23:45:24.417432+00:00"
   },
   {
+    "id": "57564af5-3ff7-40d0-9e42-ce0219a73a75",
+    "slug": "nevera-20-pies-milexus-doble-puerta",
+    "nombre": "Nevera 20 pies Milexus Doble Puerta",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-20-pies-milexus-doble-puerta/",
+    "updated_at": "2026-11-11T15:38:36.654726+00:00"
+  },
+  {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
     "slug": "nevera-28-pies-royal",
     "nombre": "Nevera 28 pies Royal",
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-28-pies-royal/",
-    "updated_at": "2026-11-06T02:24:52.000398+00:00"
+    "updated_at": "2026-11-11T17:48:46.608604+00:00"
   },
   {
     "id": "f71753a1-1a6f-47ec-b9ac-64d8fbd436b9",
@@ -2677,9 +2686,9 @@
     "slug": "nevera-7-pies-haitech",
     "nombre": "Nevera 5.6 pies Haitech",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
-    "updated_at": "2026-11-08T14:14:52.549602+00:00"
+    "updated_at": "2026-11-11T18:01:46.613494+00:00"
   },
   {
     "id": "36adbce8-bc55-4f8b-8b60-3a3a0c903ce6",
@@ -2740,9 +2749,9 @@
     "slug": "nevera-7-8-pies-royal",
     "nombre": "Nevera 7.8 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-7-8-pies-royal/",
-    "updated_at": "2026-11-09T19:42:50.829377+00:00"
+    "updated_at": "2026-11-11T18:02:33.561923+00:00"
   },
   {
     "id": "b60245c8-ae5f-41e2-b82a-341ac3ceea17",
@@ -3057,7 +3066,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-solar-615w-bifaciales-lobgi-himo-7/",
-    "updated_at": "2026-11-08T20:10:52.460044+00:00"
+    "updated_at": "2026-11-11T12:58:57.040753+00:00"
   },
   {
     "id": "c41b2de9-6af1-4fbf-a284-e1cb3a7c3971",
@@ -4054,9 +4063,9 @@
     "slug": "taza-tanque-monolitica",
     "nombre": "Taza tanque monolítica Rudenkov",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/taza-tanque-monolitica/",
-    "updated_at": "2026-10-20T15:59:25.329696+00:00"
+    "updated_at": "2026-11-11T16:52:15.440559+00:00"
   },
   {
     "id": "03c16bc8-899d-46ea-8d7d-bc93725118e1",
