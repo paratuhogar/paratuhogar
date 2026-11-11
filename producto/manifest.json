@@ -193,9 +193,9 @@
     "slug": "bateria-de-litio-sako-51-2v-200ah-10-24kwh",
     "nombre": "Batería de Litio SAKO 51.2V 200Ah – 10.24kWh",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-de-litio-sako-51-2v-200ah-10-24kwh/",
-    "updated_at": "2026-10-21T01:00:46.40902+00:00"
+    "updated_at": "2026-11-11T03:02:28.183904+00:00"
   },
   {
     "id": "66e416a4-be87-4acf-ac4c-fb8624ee6122",
@@ -886,9 +886,9 @@
     "slug": "ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w",
     "nombre": "EcoFlow Estación de Energía DELTA 3 Max 2048Wh 2400W",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/ecoflow-estacion-de-energia-delta-3-max-2048wh-2400w/",
-    "updated_at": "2026-11-09T14:27:44.408932+00:00"
+    "updated_at": "2026-11-11T01:51:41.794047+00:00"
   },
   {
     "id": "f63730bb-6ff4-458a-b1e0-1687ab11d6b8",
@@ -1633,9 +1633,9 @@
     "slug": "inversor-5kw-sako",
     "nombre": "Inversor 5kw Sako",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/inversor-5kw-sako/",
-    "updated_at": "2026-09-24T02:48:08.944002+00:00"
+    "updated_at": "2026-11-11T03:03:33.040392+00:00"
   },
   {
     "id": "33c43fff-21cd-4804-8a9e-c741e6247ef6",
@@ -1957,9 +1957,9 @@
     "slug": "lampara-multifuncional-30w-liper-panel-solar-2-bombillos-led",
     "nombre": "Lámpara multifuncional 30w Liper + Panel Solar  + 2 bombillos led",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lampara-multifuncional-30w-liper-panel-solar-2-bombillos-led/",
-    "updated_at": "2026-10-21T15:00:44.917001+00:00"
+    "updated_at": "2026-11-10T21:30:29.423415+00:00"
   },
   {
     "id": "529e885e-68e3-4ba9-bca0-7fdca987faea",
@@ -2191,9 +2191,9 @@
     "slug": "licuadora-black-decker",
     "nombre": "Licuadora Black & Decker",
     "categoria": "COCINA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/licuadora-black-decker/",
-    "updated_at": "2026-11-10T11:22:42.951686+00:00"
+    "updated_at": "2026-11-10T21:37:12.704311+00:00"
   },
   {
     "id": "a99be9e2-4a96-4f17-b540-f3641473dd1d",
@@ -3444,7 +3444,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-lemax-7-5-pies-efecto-espejo/",
-    "updated_at": "2026-11-02T17:03:12.651354+00:00"
+    "updated_at": "2026-11-11T02:58:36.210118+00:00"
   },
   {
     "id": "8a877c73-19b8-4455-b6c8-479ffc0dc8b7",
@@ -3894,7 +3894,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/split-saco/",
-    "updated_at": "2026-10-25T16:56:37.334745+00:00"
+    "updated_at": "2026-11-11T03:04:50.545916+00:00"
   },
   {
     "id": "91ed6d4a-b79d-4e8f-ac57-bdacb1614594",
