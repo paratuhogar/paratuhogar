@@ -139,9 +139,9 @@
     "slug": "bateria-12v-9ah-innpo",
     "nombre": "Bateria 12v 9ah - INNPO",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-12v-9ah-innpo/",
-    "updated_at": "2026-11-09T02:38:02.672713+00:00"
+    "updated_at": "2026-11-12T00:43:13.359604+00:00"
   },
   {
     "id": "ae24bb29-4c43-4af4-b081-bdfa98b6d453",
@@ -2160,15 +2160,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "179a5bd5-958a-49d4-a914-e9ae7775ad16",
-    "slug": "lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim",
-    "nombre": "LG 24G411A-B Monitor 24\" FHD IPS 144Hz 1ms Slim",
-    "categoria": "TECNOLOGÍA",
-    "disponible": true,
-    "url": "https://paratuhogar.org/producto/lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
-  },
-  {
     "id": "9c04551b-ce5b-43db-82cd-590a5a4441bb",
     "slug": "lg-24gs50f-b-monitor-23-7-180hz-1ms",
     "nombre": "LG 24GS50F-B Monitor 23.7\" 180Hz 1ms",
@@ -2403,6 +2394,51 @@
     "updated_at": "2026-11-01T00:52:19.949326+00:00"
   },
   {
+    "id": "41949087-be25-472d-9294-96248cb41dba",
+    "slug": "monitor-23-8-iggual",
+    "nombre": "Monitor 23.8\" Iggual",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/monitor-23-8-iggual/",
+    "updated_at": "2026-11-12T02:54:07.55814+00:00"
+  },
+  {
+    "id": "d65336f6-5c4e-416e-8a42-0e75a8543569",
+    "slug": "monitor-24-viewsonic-va24e2-h",
+    "nombre": "Monitor 24\"  ViewSonic VA24E2-H",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/monitor-24-viewsonic-va24e2-h/",
+    "updated_at": "2026-11-12T02:49:29.094256+00:00"
+  },
+  {
+    "id": "179a5bd5-958a-49d4-a914-e9ae7775ad16",
+    "slug": "lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim",
+    "nombre": "Monitor 24\" LG 24G411A-B  FHD IPS 144Hz 1ms Slim",
+    "categoria": "TECNOLOGÍA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim/",
+    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "c6ed4097-c972-4596-a645-e683368593ef",
+    "slug": "monitor-24-lg-24u411a-b",
+    "nombre": "Monitor 24\" LG 24U411A-B",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/monitor-24-lg-24u411a-b/",
+    "updated_at": "2026-11-12T03:05:03.346115+00:00"
+  },
+  {
+    "id": "3fbe1200-0b38-43ff-a25d-99e361fb1674",
+    "slug": "monitor-24-msi-pro-mp241-e14v",
+    "nombre": "Monitor 24\" MSI PRO MP241 E14V",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/monitor-24-msi-pro-mp241-e14v/",
+    "updated_at": "2026-11-12T02:58:02.338303+00:00"
+  },
+  {
     "id": "d21db876-c96b-46d7-a03c-f376a443a0b3",
     "slug": "monitor-24-viewsonic-full-hd",
     "nombre": "Monitor 24\" ViewSonic Full HD",
@@ -2410,6 +2446,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/monitor-24-viewsonic-full-hd/",
     "updated_at": "2026-09-23T21:18:48.663731+00:00"
+  },
+  {
+    "id": "17d21300-7bcc-44f6-a0aa-3427b513e37f",
+    "slug": "monitor-lg-curvo-32-32g600a-b",
+    "nombre": "Monitor 32\"  LG Curvo 32G600A-B",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/monitor-lg-curvo-32-32g600a-b/",
+    "updated_at": "2026-11-12T02:39:36.930477+00:00"
   },
   {
     "id": "ffa969b1-3d99-4586-ad2b-f97c200d76da",
@@ -2455,6 +2500,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/moto-electrica-bucatti-aguila-2026/",
     "updated_at": "2026-08-31T19:41:46.196513+00:00"
+  },
+  {
+    "id": "404ef190-b252-4b2b-ae01-9bc998991c3f",
+    "slug": "moto-electrica-yoazaky-707-galactica",
+    "nombre": "Moto eléctrica Yoazaky 707 Galactica",
+    "categoria": "TRANSPORTE",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/moto-electrica-yoazaky-707-galactica/",
+    "updated_at": "2026-11-12T03:26:39.901246+00:00"
   },
   {
     "id": "1e0ff4fb-0984-49ec-8b5e-fef3b3c1e3a2",
@@ -2821,9 +2875,9 @@
     "slug": "nevera-exibidora-royal-39pies",
     "nombre": "Nevera Exibidora Royal 39pies",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-exibidora-royal-39pies/",
-    "updated_at": "2026-08-18T21:33:52.498454+00:00"
+    "updated_at": "2026-11-12T01:02:26.733174+00:00"
   },
   {
     "id": "4425232e-fd56-4ad5-9537-03feea4ba7d4",
@@ -3901,9 +3955,9 @@
     "slug": "split-saco",
     "nombre": "Split 1T Saco",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-saco/",
-    "updated_at": "2026-11-11T03:04:50.545916+00:00"
+    "updated_at": "2026-11-11T19:49:14.926305+00:00"
   },
   {
     "id": "91ed6d4a-b79d-4e8f-ac57-bdacb1614594",
