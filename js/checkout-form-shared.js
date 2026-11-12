@@ -15,7 +15,9 @@
       const pq=Number(row.precio_pequeno??row.pq),gr=Number(row.precio_grande??row.gr);
       if(!Number.isFinite(pq)||pq<0||!Number.isFinite(gr)||gr<0)continue;
       if(!map[row.municipio])map[row.municipio]=Object.create(null);
-      map[row.municipio][row.localidad]={pq,gr};
+      const medium=row.precio_mediano??row.md;
+      const md=medium==null||String(medium).trim()===''?null:Number(medium);
+      map[row.municipio][row.localidad]={pq,gr,md};
     }
     return map;
   }
@@ -25,9 +27,12 @@
     const map=Array.isArray(tariffs)?tariffMap(tariffs):tariffs;
     const tariff=map?.[municipio]?.[localidad];if(!tariff)return null;
     const large=lines.some(item=>item.tamaño_envio==='Grande');
-    let cost=Number(large?tariff.gr:tariff.pq);if(!Number.isFinite(cost)||cost<0)return null;
+    const medium=!large&&lines.some(item=>item.tamaño_envio==='Mediano');
+    const rate=large?tariff.gr:medium?tariff.md:tariff.pq;
+    if(medium&&(rate==null||String(rate).trim()===''))return null;
+    let cost=Number(rate);if(!Number.isFinite(cost)||cost<0)return null;
     const providerA=lines.some(item=>{const provider=String(item.proveedor||'').toUpperCase();return provider==='A'||provider.includes('PROVEEDOR A');});
-    if(providerA&&!large){
+    if(providerA&&!large&&!medium){
       const vacuum=lines.some(item=>String(item.nombre||'').toUpperCase().includes('ASPIRADORA'));
       const far=['Plaza de la Revolución','Playa','Cotorro','Habana del Este'];
       cost=vacuum&&far.includes(municipio)||municipio==='Cotorro'||municipio==='Habana del Este'?10:6;

@@ -2917,7 +2917,7 @@ function changeQty(index, delta) {
 
     // Actualizar cajas nuevas
     if(document.getElementById('resumen-equipos')) document.getElementById('resumen-equipos').innerText = `$${totalEquipos.toLocaleString()}`;
-    if(document.getElementById('resumen-envio')) document.getElementById('resumen-envio').innerText = costoEnvio === null ? 'Selecciona la entrega' : costoEnvio === 0 ? "GRATIS" : `$${costoEnvio.toLocaleString()}`;
+    if(document.getElementById('resumen-envio')) document.getElementById('resumen-envio').innerText = costoEnvio === null ? (document.getElementById('check-localidad')?.value ? 'Tarifa por confirmar' : 'Selecciona la entrega') : costoEnvio === 0 ? "GRATIS" : `$${costoEnvio.toLocaleString()}`;
 
     const elTotal = document.getElementById('total-convertido');
     if(elTotal) elTotal.innerText = totalUSD === null ? 'Falta la mensajería' : `$${totalUSD.toLocaleString()}`;
@@ -11981,6 +11981,7 @@ async function loadTarifasMensajeria() {
         tarifasMensajeria[item.municipio][item.localidad] = {
             pq: parseFloat(item.precio_pequeno) || 0,
             gr: parseFloat(item.precio_grande) || 0,
+            md: item.precio_mediano ?? null,
             id: item.id
         };
         listaMunicipiosUnicos.add(item.municipio);
@@ -12042,6 +12043,9 @@ function renderAdminMensajeria() {
                 <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">$${t.precio_pequeno}</span>
             </td>
             <td class="p-4 text-center align-middle">
+                <span class="text-xs font-black text-indigo-600">${t.precio_mediano == null ? 'Por confirmar' : '$' + Number(t.precio_mediano)}</span>
+            </td>
+            <td class="p-4 text-center align-middle">
                 <span class="text-xs font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">$${t.precio_grande}</span>
             </td>
             <td class="p-4 text-right align-middle">
@@ -12063,8 +12067,11 @@ async function adminSaveMensajeria() {
     const localidad = document.getElementById('m-localidad').value.trim();
     const precio_pq = parseFloat(document.getElementById('m-precio-pq').value);
     const precio_gr = parseFloat(document.getElementById('m-precio-gr').value);
+    const medio = document.getElementById('m-precio-md').value.trim();
+    const precio_md = medio === '' ? null : Number(medio);
 
-    if (!municipio || !localidad || isNaN(precio_pq) || isNaN(precio_gr)) {
+    if (!municipio || !localidad || !Number.isFinite(precio_pq) || !Number.isFinite(precio_gr) ||
+        (precio_md !== null && (!Number.isFinite(precio_md) || precio_md < 0))) {
         return alert("⚠️ Por favor completa todos los campos correctamente.");
     }
 
@@ -12074,17 +12081,10 @@ async function adminSaveMensajeria() {
     btn.disabled = true;
 
     try {
-        if (id) {
-            // EDITAR
-            await supabaseClient.from('tarifas_mensajeria').update({
-                municipio, localidad, precio_pequeno: precio_pq, precio_grande: precio_gr
-            }).eq('id', id);
-        } else {
-            // CREAR NUEVO
-            await supabaseClient.from('tarifas_mensajeria').insert([{
-                municipio, localidad, precio_pequeno: precio_pq, precio_grande: precio_gr
-            }]);
-        }
+        const row = { municipio, localidad, precio_pequeno: precio_pq, precio_mediano: precio_md, precio_grande: precio_gr };
+        const table = supabaseClient.from('tarifas_mensajeria');
+        const { error } = await (id ? table.update(row).eq('id', id) : table.insert([row]));
+        if (error) throw error;
 
         limpiarFormMensajeria();
         await loadTarifasMensajeria(); // Recargar datos desde la nube
@@ -12101,7 +12101,8 @@ async function adminSaveMensajeria() {
 async function adminDeleteMensajeria(id, localidad) {
     if (!confirm(`¿Estás seguro de eliminar el costo de envío para "${localidad}"?`)) return;
 
-    await supabaseClient.from('tarifas_mensajeria').delete().eq('id', id);
+    const { error } = await supabaseClient.from('tarifas_mensajeria').delete().eq('id', id);
+    if (error) return alert("Error al eliminar: " + error.message);
     loadTarifasMensajeria(); // Recargar de la nube
 }
 
@@ -12115,6 +12116,7 @@ function adminEditMensajeria(id) {
     document.getElementById('m-localidad').value = tarifa.localidad;
     document.getElementById('m-precio-pq').value = tarifa.precio_pequeno;
     document.getElementById('m-precio-gr').value = tarifa.precio_grande;
+    document.getElementById('m-precio-md').value = tarifa.precio_mediano ?? "";
 
     document.getElementById('mensajeria-form-title').innerText = "Editando Tarifa";
     document.getElementById('btn-save-mensajeria').innerText = "Actualizar Tarifa";
@@ -12127,6 +12129,7 @@ function limpiarFormMensajeria() {
     document.getElementById('m-localidad').value = "";
     document.getElementById('m-precio-pq').value = "";
     document.getElementById('m-precio-gr').value = "";
+    document.getElementById('m-precio-md').value = "";
 
     document.getElementById('mensajeria-form-title').innerText = "Añadir Nueva Tarifa";
     document.getElementById('btn-save-mensajeria').innerText = "Guardar Tarifa";
@@ -12183,6 +12186,7 @@ window.obtenerCostoMensajeriaGlobal = function() {
     if (newCheckoutShippingOverride && newCheckoutShippingOverride.fingerprint === window.PTHLowConnectivity.fingerprint(cart) && newCheckoutShippingOverride.municipio === municipio && newCheckoutShippingOverride.localidad === localidad && !newCheckoutShippingOverride.pickup) return newCheckoutShippingOverride.cost;
 
     if (window.PTHCheckoutForm) return window.PTHCheckoutForm.shipping({ lines: cart, municipio, localidad, pickup: false, tariffs: tarifasMensajeria });
+    if (cart.some(item => item.tamaño_envio === 'Mediano')) return null;
 
     if (!municipio || !localidad) return 0;
 

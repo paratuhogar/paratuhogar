@@ -1,4 +1,4 @@
-export const PROTECTED_TABLES = new Set(['productos','gestores','pedidos','pedidos_subgestores','precios_personalizados','inventario_eventos','caja_gestores','solicitudes_cobro','solicitudes_cobro_detalle','solicitudes_cobro_adelantos','configuracion_equipo','mensajeros']);
+export const PROTECTED_TABLES = new Set(['productos','gestores','pedidos','pedidos_subgestores','precios_personalizados','inventario_eventos','caja_gestores','solicitudes_cobro','solicitudes_cobro_detalle','solicitudes_cobro_adelantos','configuracion_equipo','mensajeros','tarifas_mensajeria']);
 export const MY_RPCS = new Set(['mis_solicitudes_cobro','mis_pedidos_solicitudes_cobro','solicitar_cobro_comision','solicitar_cobro_comision_pedidos']);
 export const ADMIN_RPCS = new Set(['es_admin_boveda','listar_deuda_sistema','resumen_deuda_sistema','listar_pedidos_boveda','liquidar_deuda_sistema','listar_solicitudes_cobro_beatriz','registrar_adelanto_solicitud_cobro','gestionar_solicitud_cobro_beatriz','archivar_solicitudes_pagadas_beatriz','listar_adelantos_solicitudes_nomina','listar_historial_pagos_gestores','listar_historial_solicitudes_cobro_beatriz','aplicar_inactividad_gestores','owner_statistics_orders','owner_statistics_orders_v2','owner_statistics_products','owner_statistics_traffic','owner_statistics_views']);
 export const OWNER_IDS = new Set(['38f20b63-a845-4a03-8d10-9a57da2ac2c4','6193f310-1e3f-4404-b874-977d0e23a6a0']);
@@ -12,6 +12,7 @@ export function actorKind(actor) {
 export function scopeFor(table,actor,operation,payload={}) {
   if (!PROTECTED_TABLES.has(table)) throw Error('Operación no permitida.');
   const kind=actorKind(actor);
+  if(table==='tarifas_mensajeria'&&operation==='select')return [];
   if(kind==='admin') return [];
   if(kind==='mensajero'){
     if(table==='pedidos'&&operation==='select')return [['eq','mensajero_id',actor.id]];

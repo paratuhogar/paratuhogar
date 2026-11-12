@@ -31,9 +31,12 @@ export function deliveryCost(products,lines,delivery,tariff){
   if(delivery.pickup)return 0;
   if(!tariff)fail('DELIVERY_UNAVAILABLE','No se pudo verificar la tarifa de esta localidad. Revisa la entrega.');
   const large=products.some(p=>p['tamaño_envio']==='Grande');
-  let value=Number(large?tariff.precio_grande:tariff.precio_pequeno);
+  const medium=!large&&products.some(p=>p['tamaño_envio']==='Mediano');
+  const rate=large?tariff.precio_grande:medium?tariff.precio_mediano:tariff.precio_pequeno;
+  if(medium&&(rate==null||String(rate).trim()===''))fail('DELIVERY_UNAVAILABLE','Tarifa mediana por confirmar para esta localidad.');
+  let value=Number(rate);
   const supplierA=products.some(p=>String(p.proveedor||'').toUpperCase()==='A'||String(p.proveedor||'').toUpperCase().includes('PROVEEDOR A'));
-  if(supplierA&&!large){
+  if(supplierA&&!large&&!medium){
     const vacuum=products.some(p=>String(p.nombre||'').toUpperCase().includes('ASPIRADORA'));
     value=vacuum&&['Plaza de la Revolución','Playa','Cotorro','Habana del Este'].includes(delivery.municipio)||['Cotorro','Habana del Este'].includes(delivery.municipio)?10:6;
   }
@@ -84,7 +87,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     if(products.some(p=>p.disponible!=='SI'))fail('PRODUCT_UNAVAILABLE','Un producto dejó de estar disponible. Revisa el carrito.');
     let tariff;
     if(!payload.delivery.pickup){
-      const result=await db.from('tarifas_mensajeria').select('precio_pequeno,precio_grande').eq('municipio',payload.delivery.municipio).eq('localidad',payload.delivery.localidad).maybeSingle();
+      const result=await db.from('tarifas_mensajeria').select('precio_pequeno,precio_mediano,precio_grande').eq('municipio',payload.delivery.municipio).eq('localidad',payload.delivery.localidad).maybeSingle();
       if(result.error||!result.data)fail('DELIVERY_UNAVAILABLE','No se pudo verificar una tarifa única para la localidad. Revisa la entrega.');tariff=result.data;
     }
     const shipping=deliveryCost(products,allLines,payload.delivery,tariff),rows=[];

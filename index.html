@@ -54,14 +54,14 @@
     <script src="js/product-description-editor.js?v=20260924-1" defer></script>
     <script src="js/checkout-submit-guard.js?v=20261017-checkout1" defer></script>
     <script src="js/pending-checkout.js?v=20261021-ci1" defer></script>
-    <script src="js/checkout-form-shared.js?v=20261021-ci1" defer></script>
-    <script src="js/offline-checkout-copy.js?v=20261005-copy2" defer></script>
+    <script src="js/checkout-form-shared.js?v=20261112-medium1" defer></script>
+    <script src="js/offline-checkout-copy.js?v=20261112-medium1" defer></script>
     <script src="js/checkout-recovery.js?v=20261002-lowdata1" defer></script>
 
     <!-- 3. Dependencia pública esencial -->
     <!-- Supabase -->
     <script src="js/vendor/supabase-2.57.4.js" defer></script>
-    <script src="js/secure-data.js?v=20261110-commissions2" defer></script>
+    <script src="js/secure-data.js?v=20261112-medium1" defer></script>
     <script src="js/gestor-ranking.js?v=20261004-rolling30" defer></script>
     <script src="js/affiliate-links.js?v=20261003-alias1" defer></script>
     <script src="js/public-name-editor.js?v=20261003-alias1" defer></script>
@@ -2508,6 +2508,11 @@
             </div>
 
             <div class="md:col-span-1">
+                <label for="m-precio-md" class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Mediano ($)</label>
+                <input type="number" min="0" step="0.01" id="m-precio-md" placeholder="Por confirmar" class="w-full rounded-xl border-gray-200 text-sm font-black text-indigo-600">
+            </div>
+
+            <div class="md:col-span-1">
                 <label class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Grande ($)</label>
                 <input type="number" id="m-precio-gr" placeholder="Ej: 10" class="w-full rounded-xl border-gray-200 text-sm font-black text-amber-600">
             </div>
@@ -2527,6 +2532,7 @@
                     <th class="p-4">Municipio</th>
                     <th class="p-4">Localidad</th>
                     <th class="p-4 text-center">Eq. Pequeño (Olla)</th>
+                    <th class="p-4 text-center">Eq. Mediano</th>
                     <th class="p-4 text-center">Eq. Grande (Refrigerador)</th>
                     <th class="p-4 text-right">Acciones</th>
                 </tr>
@@ -2982,6 +2988,7 @@
             <label class="text-[10px] font-black uppercase text-gray-400 ml-1">Tamaño para el Envío</label>
             <select id="p-tamano-envio" class="w-full rounded-xl border-gray-100 font-bold text-gray-700">
                 <option value="Pequeño">📦 Pequeño (Olla)</option>
+                <option value="Mediano">📦 Mediano</option>
                 <option value="Grande">🚚 Grande (Refrigerador)</option>
             </select>
         </div>
@@ -3267,8 +3274,8 @@
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/gestor-registration-steps.js?v=20261016-captacion1" defer></script>
     <script src="js/checkout-confirmation.js?v=20261017-checkout1" defer></script>
-    <script src="js/storefront.min.js?v=20261110-commissions2" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261110-commissions2" defer></script>
+    <script src="js/storefront.min.js?v=20261112-medium1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261112-medium1" defer></script>
 
 
 
