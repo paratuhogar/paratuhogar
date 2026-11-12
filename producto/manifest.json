@@ -2596,9 +2596,9 @@
     "slug": "nevera-20-pies-milexus-doble-puerta",
     "nombre": "Nevera 20 pies Milexus Doble Puerta",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-20-pies-milexus-doble-puerta/",
-    "updated_at": "2026-11-11T15:38:36.654726+00:00"
+    "updated_at": "2026-11-12T14:32:25.885761+00:00"
   },
   {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
@@ -2992,9 +2992,9 @@
     "slug": "olla-de-presion-7l-impronta",
     "nombre": "Olla de presión 7L Impronta",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/olla-de-presion-7l-impronta/",
-    "updated_at": "2026-10-08T18:33:24.041019+00:00"
+    "updated_at": "2026-11-12T12:54:59.226211+00:00"
   },
   {
     "id": "216dde2c-e55f-459f-bede-194b73b812f8",
@@ -3507,7 +3507,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-lemax-7-5-pies-efecto-espejo/",
-    "updated_at": "2026-11-11T02:58:36.210118+00:00"
+    "updated_at": "2026-11-12T15:23:03.393287+00:00"
   },
   {
     "id": "8a877c73-19b8-4455-b6c8-479ffc0dc8b7",
