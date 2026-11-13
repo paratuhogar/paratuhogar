@@ -157,9 +157,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-11-09T15:09:09.600811+00:00"
+    "updated_at": "2026-11-12T23:02:57.917964+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -400,9 +400,9 @@
     "slug": "butacon-reclinable",
     "nombre": "Butacon reclinable",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/butacon-reclinable/",
-    "updated_at": "2026-09-06T20:41:28.597093+00:00"
+    "updated_at": "2026-11-13T02:43:24.220677+00:00"
   },
   {
     "id": "cf091c90-3713-472b-acbc-3d1baaf69f8f",
@@ -744,7 +744,7 @@
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/colchon-camero-eko/",
-    "updated_at": "2026-09-08T01:35:33.083023+00:00"
+    "updated_at": "2026-11-13T02:44:48.916819+00:00"
   },
   {
     "id": "3d35a4d0-5b84-4337-aa4a-e4d464c83670",
@@ -2020,9 +2020,9 @@
     "slug": "lavadora-automatica-10kg-chiq",
     "nombre": "Lavadora automática 10kg CHIQ",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-10kg-chiq/",
-    "updated_at": "2026-11-07T23:01:55.302601+00:00"
+    "updated_at": "2026-11-13T02:54:13.308938+00:00"
   },
   {
     "id": "7024c540-57dd-4569-b767-eebf3aa63bb6",
@@ -3838,9 +3838,9 @@
     "slug": "sofa-cama",
     "nombre": "Sofa cama",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/sofa-cama/",
-    "updated_at": "2026-09-06T20:43:19.631438+00:00"
+    "updated_at": "2026-11-13T02:52:16.292246+00:00"
   },
   {
     "id": "aef39a5f-8d13-4c00-8397-9d91923054ef",
@@ -3874,9 +3874,9 @@
     "slug": "split-1-5-t-reymo-inverter",
     "nombre": "Split 1.5 T REYMO (inverter)",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1-5-t-reymo-inverter/",
-    "updated_at": "2026-10-24T20:22:16.650165+00:00"
+    "updated_at": "2026-11-13T02:52:11.725008+00:00"
   },
   {
     "id": "6a0a9cec-64f8-4aff-b93e-ea82577874b9",
@@ -3917,11 +3917,11 @@
   {
     "id": "4e3225fb-8964-47f5-8f85-1dbb1996d935",
     "slug": "split-1t-milexus",
-    "nombre": "Split 1T -MILEXUS",
+    "nombre": "Split 1T MILEXUS",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-milexus/",
-    "updated_at": "2026-10-14T13:15:32.964042+00:00"
+    "updated_at": "2026-11-13T02:51:49.374989+00:00"
   },
   {
     "id": "1f71a083-a501-45e5-b9ca-0bfa8e11e56b",
@@ -3937,9 +3937,9 @@
     "slug": "split-1t-reymo-inverter",
     "nombre": "Split 1T Reymo Inverter",
     "categoria": "MUNDO FRIO ",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-reymo-inverter/",
-    "updated_at": "2026-10-24T20:22:37.974955+00:00"
+    "updated_at": "2026-11-13T02:52:02.523113+00:00"
   },
   {
     "id": "2db9fd9c-0780-4385-b6b3-8bd54a0b82c4",
