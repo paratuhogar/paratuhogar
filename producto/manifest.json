@@ -2398,18 +2398,18 @@
     "slug": "monitor-23-8-iggual",
     "nombre": "Monitor 23.8\" Iggual",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/monitor-23-8-iggual/",
-    "updated_at": "2026-11-12T02:54:07.55814+00:00"
+    "updated_at": "2026-11-13T17:41:06.275853+00:00"
   },
   {
     "id": "d65336f6-5c4e-416e-8a42-0e75a8543569",
     "slug": "monitor-24-viewsonic-va24e2-h",
     "nombre": "Monitor 24\"  ViewSonic VA24E2-H",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/monitor-24-viewsonic-va24e2-h/",
-    "updated_at": "2026-11-12T02:49:29.094256+00:00"
+    "updated_at": "2026-11-13T17:40:46.646287+00:00"
   },
   {
     "id": "179a5bd5-958a-49d4-a914-e9ae7775ad16",
@@ -2418,25 +2418,25 @@
     "categoria": "TECNOLOGÍA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-13T17:39:23.439973+00:00"
   },
   {
     "id": "c6ed4097-c972-4596-a645-e683368593ef",
     "slug": "monitor-24-lg-24u411a-b",
     "nombre": "Monitor 24\" LG 24U411A-B",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/monitor-24-lg-24u411a-b/",
-    "updated_at": "2026-11-12T03:05:03.346115+00:00"
+    "updated_at": "2026-11-13T17:39:52.281733+00:00"
   },
   {
     "id": "3fbe1200-0b38-43ff-a25d-99e361fb1674",
     "slug": "monitor-24-msi-pro-mp241-e14v",
     "nombre": "Monitor 24\" MSI PRO MP241 E14V",
     "categoria": "TECNOLOGÍA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/monitor-24-msi-pro-mp241-e14v/",
-    "updated_at": "2026-11-12T02:58:02.338303+00:00"
+    "updated_at": "2026-11-13T17:40:23.036781+00:00"
   },
   {
     "id": "d21db876-c96b-46d7-a03c-f376a443a0b3",
@@ -2599,6 +2599,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-20-pies-milexus-doble-puerta/",
     "updated_at": "2026-11-12T14:32:25.885761+00:00"
+  },
+  {
+    "id": "ef1ef338-e127-4caf-ab9c-9f8e0d25039a",
+    "slug": "nevera-23-4-pies-godline-doble-puerta",
+    "nombre": "Nevera 23.4 pies Godline Doble puerta",
+    "categoria": "MUNDO FRIO",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/nevera-23-4-pies-godline-doble-puerta/",
+    "updated_at": "2026-11-13T17:02:34.308934+00:00"
   },
   {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
