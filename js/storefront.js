@@ -2913,6 +2913,7 @@ function changeQty(index, delta) {
     function recalcularTotalFinal() {
     const totalEquipos = cart.reduce((acc, item) => acc + (item.precio_venta * item.qty), 0);
     const costoEnvio = obtenerCostoMensajeriaGlobal();
+    renderExpressShipping();
     const totalUSD = costoEnvio === null ? null : totalEquipos + costoEnvio;
 
     // Actualizar cajas nuevas
@@ -3003,7 +3004,7 @@ function getCheckoutFailureMessage(error) {
     }
     window.PTHCheckoutConfirmation?.configure({load:async entry=>{
         const account=checkoutScope(),token=window.PTHSecureData.token();
-        const columns='id,orden_dia,proveedor,cliente,telefono,ci,direccion,municipio,producto,total,costo_mensajeria,comision_total,comision_subgestor,gestor,fecha';
+        const columns='id,orden_dia,proveedor,cliente,telefono,ci,direccion,municipio,producto,total,costo_mensajeria,servicio_mensajeria,plazo_mensajeria_minutos,comision_total,comision_subgestor,gestor,fecha';
         const childColumns=columns.replace(',gestor,fecha',',subgestor_nombre,created_at');
         const codes=entry.receipts.map(r=>r.reference);
         const fetchRows=table=>supabaseClient.from(table).select(table==='pedidos'?columns:childColumns).in('orden_dia',codes);
@@ -3020,7 +3021,7 @@ function getCheckoutFailureMessage(error) {
         return window.PTHCheckoutConfirmation.format(codes.map(code=>byCode.get(code)),{isSubgestor,isLogged:account!=='visitor',name,commercialPhones});
     }});
     async function confirmPendingCheckout(receipts,options={}) {
-        window.PTHCheckoutConfirmation?.show({owner:checkoutScope(),table:options.table||readNewCheckoutOutcome()?.table||'pedidos',phone:options.phone||checkoutReceiptPhone(),message:options.message,receipts:receipts.map(row=>({reference:row.reference||row.orden_dia||row.id,proveedor:row.proveedor}))});
+        window.PTHCheckoutConfirmation?.show({owner:checkoutScope(),table:options.table||readNewCheckoutOutcome()?.table||'pedidos',phone:options.phone||checkoutReceiptPhone(),message:options.message,receipts:receipts.map(row=>({...row,reference:row.reference||row.orden_dia||row.id}))});
         await window.PTHPendingCheckoutUI?.confirmed(receipts);
         if(window.PTHPendingCheckoutUI?.active()&&!window.PTHPendingCheckoutUI.guard())document.getElementById('checkout-form').reset();
     }
@@ -3028,7 +3029,7 @@ function getCheckoutFailureMessage(error) {
         if (outcome.attempt) {
             const result = await window.PTHSecureData.checkout({operation:'receipt',attempt:outcome.attempt});
             if (result.error) throw result.error;
-            return {kind:result.data.complete?'confirmed':result.data.confirmed.length?'partial':'absent',receipts:result.data.confirmed.map(row=>({orden_dia:row.reference,proveedor:row.proveedor}))};
+            return {kind:result.data.complete?'confirmed':result.data.confirmed.length?'partial':'absent',receipts:result.data.confirmed.map(row=>({...row,orden_dia:row.reference}))};
         }
         return window.PTHCheckoutRecovery.check({
             authenticated: checkoutScope() !== 'visitor', table: outcome.table, token: outcome.token, providers: outcome.providers, codes: outcome.codes,
@@ -3062,6 +3063,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const waitForCheckout = window.PTHCheckoutSubmitGuard.waitForCheckout;
     let checkoutFinished = false;
     let btn = null;
+    let expressSelected = false;
 
     try {
     if (typeof lowConnectivity !== 'undefined' && lowConnectivity.wasSent(newCartOwner,newCartRevision)) {
@@ -3100,7 +3102,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         const idsEnCarrito = cart.map(item => item.id);
         const { data: dbProducts, error: dbError } = await waitForCheckout(supabaseClient
             .from('productos')
-            .select('id,nombre,disponible,precio,comision,precio_flexible,proveedor,garantia,mensajeria')
+            .select('id,nombre,disponible,precio,comision,precio_flexible,proveedor,garantia,mensajeria,tamaño_envio,categoria')
             .in('id', idsEnCarrito));
 
         assertSubmissionScope();
@@ -3146,6 +3148,11 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // === 2. NUEVO: CÁLCULO GLOBAL DE ENVÍO ===
     const envioTotalGlobal = typeof obtenerCostoMensajeriaGlobal === 'function' ? obtenerCostoMensajeriaGlobal() : 0;
+    expressSelected = expressShippingSelected();
+    if (previousOutcome && Boolean(previousOutcome.express) !== expressSelected) {
+        notifyNewCheckout('Conserva el servicio del intento anterior para comprobar el pedido: ' + (previousOutcome.express ? 'Exprés' : 'Ordinaria') + '.');
+        return;
+    }
     if (envioTotalGlobal === null) {
         notifyNewCheckout('No hay una tarifa de entrega disponible para esta zona. Comprueba municipio y localidad antes de confirmar.');
         return;
@@ -3264,7 +3271,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             priceMismatches.push(item.nombre);
             return;
         }
-        for (const field of ['proveedor','garantia','mensajeria']) {
+        for (const field of ['proveedor','garantia','mensajeria','tamaño_envio','categoria']) {
             if (base[field] !== undefined && String(item[field] || '') !== String(base[field] || '')) {
                 priceMismatches.push(`${item.nombre}: cambió ${field === 'proveedor' ? 'la entrega' : field === 'garantia' ? 'la garantía' : 'el envío'}`);
                 item[field] = base[field];
@@ -3485,6 +3492,10 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     }
     const intent = window.PTHPendingCheckoutUI?.intent() || draft || volatileCheckoutIntent;
     const request = { table: orderSubgestor ? 'pedidos_subgestores' : 'pedidos', inputs: promesas, delivery: { pickup: isRecogida, municipio: municipioC, localidad: localidadC }, intentId: intent.intentId, intentCreatedAt: intent.savedAt, attempt: previousOutcome?.attempt };
+    const deliveryUnchanged = () => expressSelected === expressShippingSelected()
+        && Boolean(document.getElementById('check-recogida')?.checked) === isRecogida
+        && (isRecogida || (document.getElementById('check-municipio').value === municipioC && document.getElementById('check-localidad').value === localidadC));
+    if (expressSelected) request.delivery.service = 'express';
     const quote = await waitForCheckout(window.PTHSecureData.checkout({ ...request, operation: 'quote' }));
     if (quote.error) throw quote.error;
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
@@ -3495,7 +3506,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
     window.PTHPendingCheckoutUI?.verifyEstimate(quote.data);
-    await markNewCheckoutOutcome({ token: submissionToken, attempt: quote.data.attempt, table: request.table, phone:whatsappDestino, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart) });
+    const pendingOutcome = { token: submissionToken, attempt: quote.data.attempt, table: request.table, phone:whatsappDestino, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart), ...(expressSelected ? {express:true} : {}) };
+    if (window.PTHPendingCheckoutUI?.active()) await markNewCheckoutOutcome(pendingOutcome);
     const changedTerms = quote.data.terms.some(term => {
         const expected = promesas.find(input => input.proveedor === term.proveedor);
         return !expected || Math.abs(Number(expected.total)-Number(term.total)) > 0.001 || Math.abs(Number(expected.costo_mensajeria)-Number(term.costo_mensajeria)) > 0.001 || expected.garantia_venta !== term.garantia_venta;
@@ -3504,7 +3516,8 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         for (const term of quote.data.terms) for (const price of term.prices || []) {
             const item = cart.find(row => row.id === price.id); if (item) { item.precio = price.price; item.precio_venta = price.price; if (price.garantia) item.garantia = price.garantia; }
         }
-        newCheckoutShippingOverride = { fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: municipioC, localidad: localidadC, pickup: isRecogida, cost: quote.data.terms.reduce((sum,term) => sum + Number(term.costo_mensajeria),0) };
+        if (expressSelected) await loadTarifasMensajeria();
+        else newCheckoutShippingOverride = { fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: municipioC, localidad: localidadC, pickup: isRecogida, cost: quote.data.terms.reduce((sum,term) => sum + Number(term.costo_mensajeria),0) };
         renderCart(); notifyNewCheckout('El servidor comprobó nuevas condiciones de precio, garantía o entrega. Revisa el total actualizado y pulsa Confirmar Pedido nuevamente.'); return;
     }
     let duplicateReview=null;
@@ -3517,8 +3530,34 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         }
     }
     assertSubmissionScope();
+    if (!deliveryUnchanged()) {
+        notifyNewCheckout('Cambió el servicio o la zona de entrega. Revisa el total y confirma nuevamente. No se envió el pedido.');
+        return;
+    }
+    if (expressSelected) {
+        const minutes = quote.data.terms[0]?.plazo_mensajeria_minutos;
+        if (!Number.isInteger(minutes) || minutes <= 0 || quote.data.terms.some(t => t.servicio_mensajeria !== 'express' || t.plazo_mensajeria_minutos !== minutes)) {
+            notifyNewCheckout('El servidor no confirmó el servicio exprés. No se envió el pedido.');
+            return;
+        }
+        if (!confirm(`Confirmar envío exprés por $${envioTotalGlobal.toFixed(2)} USD · ${minutes} min estimados.`)) return;
+        for (const part of whatsappParts) part.body += `\n🚚 Exprés · ${minutes} min estimados\n`;
+    }
+    if (!window.PTHPendingCheckoutUI?.active()) await markNewCheckoutOutcome(pendingOutcome);
+    assertSubmissionScope();
+    if (!deliveryUnchanged()) {
+        if (!previousOutcome) clearNewCheckoutOutcome();
+        notifyNewCheckout('Cambió el servicio o la zona de entrega. Revisa el total y confirma nuevamente. No se envió el pedido.');
+        return;
+    }
     const result = await waitForCheckout(window.PTHSecureData.checkout({ ...request, operation: 'submit', attempt: quote.data.attempt, quote: quote.data.quote,duplicateReview }));
-    if (result.error) throw result.error;
+    assertSubmissionScope();
+    if (result.error) {
+        // These gateway replies precede insertion. Never clear a marker
+        // from an earlier attempt whose result was already uncertain.
+        if (!previousOutcome && ['CONDITIONS_CHANGED','DELIVERY_UNAVAILABLE','PRODUCT_UNAVAILABLE','POSSIBLE_DUPLICATE'].includes(result.error.code)) clearNewCheckoutOutcome();
+        throw result.error;
+    }
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
     if (result.data?.complete) {
         const confirmed = result.data.confirmed;
@@ -3621,6 +3660,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (checkoutFinished) {
             notifyNewCheckout('El servidor confirmó el pedido. No necesitas enviarlo otra vez. No se pudo completar el comprobante o la comunicación; revisa el pedido en tu panel.');
             cart = []; newCartRevision = null; volatileCheckoutIntent = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false);
+        } else if (expressSelected && ['DELIVERY_UNAVAILABLE','CONDITIONS_CHANGED'].includes(checkoutError.code)) {
+            try { await loadTarifasMensajeria(); } catch (_) {}
+            if (inSubmissionScope()) notifyNewCheckout('El servidor no pudo confirmar el exprés. Revisa el servicio disponible para esta entrega y confirma nuevamente.');
         } else notifyNewCheckout(getCheckoutFailureMessage(checkoutError));
     } finally {
         if (!checkoutFinished) checkoutSubmitGuard.fail();
@@ -3785,6 +3827,8 @@ function renderFloatingWA(nombre, telefono) {
 function toggleCartModal(show) {
     const cartModal = document.getElementById('cart-modal');
     if (!cartModal) return;
+    const shippingService = document.getElementById('check-shipping-service');
+    if (!cart.length && shippingService) shippingService.value = 'ordinary';
     if(show&&!window.PTHPendingCheckoutUI?.localForm())window.PTHCheckoutForm.setIdentityRequired(document,true);
 
     // 1. Abre o cierra el modal
@@ -6706,6 +6750,7 @@ function renderAdminLogistica() {
                         <div class="flex items-center text-[9px] font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">
                             <span class="material-symbols-outlined text-[12px] mr-1 text-slate-400">two_wheeler</span>
                             Pago Envío: ${envioDisplay}
+                            ${p.servicio_mensajeria === 'express' ? `<span class="ml-1 font-bold">Exprés · ${Number(p.plazo_mensajeria_minutos)} min estimados</span>` : ''}
                         </div>
 
                         <!-- EL NUEVO BOTÓN DE LÁPIZ -->
@@ -11979,6 +12024,7 @@ async function loadTarifasMensajeria() {
         }
         // Creamos la estructura { pq: 6, gr: 10 }
         tarifasMensajeria[item.municipio][item.localidad] = {
+            ...Object.fromEntries(Object.entries(item).filter(([key]) => /^(precio|minutos)_expres_(pequeno|mediano|grande)$/.test(key))),
             pq: parseFloat(item.precio_pequeno) || 0,
             gr: parseFloat(item.precio_grande) || 0,
             md: item.precio_mediano ?? null,
@@ -12010,6 +12056,7 @@ async function loadTarifasMensajeria() {
 
     // Si el admin está logueado, dibujamos la tabla
     if (!local) renderAdminMensajeria();
+    recalcularTotalFinal();
 }
 
 // Para asegurarnos de que cargue siempre al entrar a la web:
@@ -12030,6 +12077,10 @@ function renderAdminMensajeria() {
         t.municipio.toLowerCase().includes(query) ||
         t.localidad.toLowerCase().includes(query)
     );
+    const expressSummary = (row, size) => {
+        const price = row['precio_expres_' + size], minutes = row['minutos_expres_' + size];
+        return price == null || minutes == null ? '' : `<span class="block mt-1 text-xs font-bold text-blue-700 dark:text-blue-300">Exprés $${Number(price).toFixed(2)} · ${Number(minutes)} min</span>`;
+    };
 
     container.innerHTML = filtradas.map(t => `
         <tr class="hover:bg-slate-50 dark:hover:bg-gray-900/50 transition-colors">
@@ -12041,12 +12092,15 @@ function renderAdminMensajeria() {
             </td>
             <td class="p-4 text-center align-middle">
                 <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">$${t.precio_pequeno}</span>
+                ${expressSummary(t, 'pequeno')}
             </td>
             <td class="p-4 text-center align-middle">
                 <span class="text-xs font-black text-indigo-600">${t.precio_mediano == null ? 'Por confirmar' : '$' + Number(t.precio_mediano)}</span>
+                ${expressSummary(t, 'mediano')}
             </td>
             <td class="p-4 text-center align-middle">
                 <span class="text-xs font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">$${t.precio_grande}</span>
+                ${expressSummary(t, 'grande')}
             </td>
             <td class="p-4 text-right align-middle">
                 <button onclick="adminEditMensajeria('${t.id}')" class="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm" title="Editar Precio">
@@ -12082,6 +12136,8 @@ async function adminSaveMensajeria() {
 
     try {
         const row = { municipio, localidad, precio_pequeno: precio_pq, precio_mediano: precio_md, precio_grande: precio_gr };
+        if (String(window.currentUserData?.rol).toLowerCase() !== 'logistica')
+            Object.assign(row, window.PTHCheckoutForm.expressTariffFields(key => document.getElementById(key)?.value, row));
         const table = supabaseClient.from('tarifas_mensajeria');
         const { error } = await (id ? table.update(row).eq('id', id) : table.insert([row]));
         if (error) throw error;
@@ -12117,6 +12173,7 @@ function adminEditMensajeria(id) {
     document.getElementById('m-precio-pq').value = tarifa.precio_pequeno;
     document.getElementById('m-precio-gr').value = tarifa.precio_grande;
     document.getElementById('m-precio-md').value = tarifa.precio_mediano ?? "";
+    fillExpressTariffFields(tarifa);
 
     document.getElementById('mensajeria-form-title').innerText = "Editando Tarifa";
     document.getElementById('btn-save-mensajeria').innerText = "Actualizar Tarifa";
@@ -12130,6 +12187,7 @@ function limpiarFormMensajeria() {
     document.getElementById('m-precio-pq').value = "";
     document.getElementById('m-precio-gr').value = "";
     document.getElementById('m-precio-md').value = "";
+    fillExpressTariffFields({});
 
     document.getElementById('mensajeria-form-title').innerText = "Añadir Nueva Tarifa";
     document.getElementById('btn-save-mensajeria').innerText = "Guardar Tarifa";
@@ -12176,7 +12234,37 @@ function carritoTieneEquipoGrande() {
 }
 
 // 4. Calcular el precio final de la mensajería
+function fillExpressTariffFields(row) {
+    const readOnly = String(window.currentUserData?.rol).toLowerCase() === 'logistica';
+    for (const size of ['pequeno','mediano','grande']) {
+        for (const prefix of ['precio_expres_', 'minutos_expres_']) {
+            const key = prefix + size, field = document.getElementById(key);
+            if (field) { field.value = row[key] ?? ''; field.disabled = readOnly; }
+        }
+    }
+}
+function expressShippingSelected() {
+    return !window.PTHPendingCheckoutUI?.localForm() && document.getElementById('check-shipping-service')?.value === 'express';
+}
+function checkoutExpressOffer() {
+    if (window.navigator?.onLine === false || window.PTHPendingCheckoutUI?.localForm()) return null;
+    return window.PTHCheckoutForm?.expressOffer({
+        lines: cart, pickup: document.getElementById('check-recogida')?.checked,
+        municipio: document.getElementById('check-municipio')?.value,
+        localidad: document.getElementById('check-localidad')?.value, tariffs: tarifasMensajeria
+    }) ?? null;
+}
+function renderExpressShipping() {
+    const select = document.getElementById('check-shipping-service'), panel = document.getElementById('check-express-panel');
+    if (!select || !panel) return;
+    const offer = checkoutExpressOffer(), option = select.options[1];
+    option.disabled = !offer;
+    option.textContent = offer ? `Exprés — $${offer.price.toFixed(2)} USD · ${offer.minutes} min estimados` : 'Exprés no disponible';
+    panel.classList.toggle('hidden', !offer && !expressShippingSelected());
+    document.getElementById('check-express-status').textContent = !offer && expressShippingSelected() ? 'Exprés no está disponible. Elige Ordinaria o revisa la entrega.' : '';
+}
 window.obtenerCostoMensajeriaGlobal = function() {
+    if (expressShippingSelected()) return checkoutExpressOffer()?.price ?? null;
     // Si marcó recogida, el envío es 0
     const isRecogida = document.getElementById('check-recogida')?.checked;
     if (isRecogida) return 0;

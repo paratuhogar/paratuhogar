@@ -36,6 +36,15 @@ function setup(data=new Map()){
 }
 const confirmed=(f,reference='CA-1539',extra={})=>f.api.show({owner:'a',table:'pedidos',phone:'5356071095',receipts:[{reference}],message:'Synthetic confirmed order',...extra});
 const sections=f=>{const card=f.nodes.get('pth-checkout-confirmations');return card&&!card.removed?card.children:[];};
+test('a restored visitor receipt preserves the express estimate without private order data',()=>{
+ const a=setup();a.switchAccount('visitor');
+ a.api.show({owner:'visitor',table:'pedidos',phone:'5356071095',receipts:[{reference:'A-1',proveedor:'A',servicio_mensajeria:'express',plazo_mensajeria_minutos:60,cliente:'private name'}]});
+ const b=setup(a.data);b.switchAccount('visitor');b.api.restore();
+ assert.match(sections(b)[0].children[0].textContent,/Exprés · 60 min estimados/);
+ sections(b)[0].children.find(n=>n.tagName==='button'&&n.textContent==='Enviar pedido por WhatsApp').onclick();
+ assert.match(new URL(b.opened[0][0]).searchParams.get('text'),/Exprés · 60 min estimados/);
+ assert.doesNotMatch([...b.data.values()].join(''),/private name/);
+});
 const action=(f,text,index=0)=>sections(f)[index]?.children.find(n=>n.tagName==='button'&&n.textContent===text);
 const close=f=>{const button=action(f,'Cerrar');assert.ok(button,'confirmed receipt must have a Close action');button.onclick();};
 

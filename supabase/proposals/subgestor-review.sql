@@ -1,6 +1,6 @@
 -- Deploy before the gateway/UI. No historical orders are changed.
 begin;
-create table public.pth_subgestor_review_events (
+create table if not exists public.pth_subgestor_review_events (
  id uuid primary key default gen_random_uuid(),
  pedido_id uuid not null,
  decision text not null check(decision in ('edit','approve','reject')),
@@ -13,13 +13,13 @@ create table public.pth_subgestor_review_events (
  changes jsonb not null default '{}'::jsonb,
  created_at timestamptz not null default now()
 );
-create unique index pth_subgestor_review_final on public.pth_subgestor_review_events(pedido_id) where decision in ('approve','reject');
-create index pth_subgestor_review_recent on public.pth_subgestor_review_events(created_at desc,id);
+create unique index if not exists pth_subgestor_review_final on public.pth_subgestor_review_events(pedido_id) where decision in ('approve','reject');
+create index if not exists pth_subgestor_review_recent on public.pth_subgestor_review_events(created_at desc,id);
 alter table public.pth_subgestor_review_events enable row level security;
 revoke all on public.pth_subgestor_review_events from public,anon,authenticated,service_role;
 grant select,insert on public.pth_subgestor_review_events to service_role;
 
-create function public.pth_review_subgestor(
+create or replace function public.pth_review_subgestor(
  p_actor_id uuid,p_operation text,p_id uuid default null,p_expected text default null,
  p_changes jsonb default '{}'::jsonb,p_reason text default null,p_search text default '',p_offset integer default 0
 ) returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
@@ -87,10 +87,10 @@ begin
   if p.orden_dia is null or trim(p.orden_dia)='' then raise exception 'El pedido no tiene referencia verificable';end if;
    insert into public.pedidos(id,gestor,cliente,ci,telefono,direccion,municipio,producto,total,costo_mensajeria,
     comision_total,comision_subgestor,comision_parent,estado,pago_gestor,pago_subgestor,proveedor,origen,
-    orden_dia,submission_token,subgestor_nombre,garantia_venta,garantia_dias)
+    orden_dia,submission_token,subgestor_nombre,garantia_venta,garantia_dias,servicio_mensajeria,plazo_mensajeria_minutos)
    values(p.id,p.parent_gestor_nombre,p.cliente,p.ci,p.telefono,p.direccion,p.municipio,p.producto,p.total,p.costo_mensajeria,
     p.comision_total,p.comision_subgestor,p.comision_total-p.comision_subgestor,'Pendiente','Pendiente','Pendiente',p.proveedor,'Subgestor',
-    p.orden_dia,p.submission_token,p.subgestor_nombre,p.garantia_venta,p.garantia_dias);
+    p.orden_dia,p.submission_token,p.subgestor_nombre,p.garantia_venta,p.garantia_dias,p.servicio_mensajeria,p.plazo_mensajeria_minutos);
  end if;
  insert into public.pth_subgestor_review_events(pedido_id,decision,actor_id,actor_name,parent_id,reference,reason,snapshot,changes)
  values(p.id,final_operation,a.id,a.nombre,p.parent_gestor_id,p.orden_dia,nullif(trim(p_reason),''),to_jsonb(p),coalesce(p_changes,'{}'));

@@ -44,6 +44,57 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
   async function fillCart(p){await p.evaluate(()=>{addProductFromCard('Equipo A');addProductFromCard('Equipo B');toggleCartModal(true);document.getElementById('check-recogida').checked=true;toggleRecogidaEnAlmacen();document.getElementById('check-nombre').value='Synthetic Customer';document.getElementById('check-tel').value='synthetic-phone';document.getElementById('check-ci').value='00123456789';document.getElementById('check-notas').value='<script>untrusted submitted text</script>';});}
 
 
+  if(process.env.PTH_EXPRESS_SHIPPING==='1'){
+    f=await fixture();
+    Object.assign(f.rows.tarifas_mensajeria[0],{precio_expres_pequeno:12,minutos_expres_pequeno:60});
+    const {c,errors}=await context();const p=await main(c);await fillCart(p);
+    await p.evaluate(async()=>{
+      await loadTarifasMensajeria();
+      document.getElementById('check-recogida').checked=false;toggleRecogidaEnAlmacen();
+      document.getElementById('check-municipio').value='Centro Habana';actualizarLocalidades();
+      document.getElementById('check-localidad').value='Centro';document.getElementById('check-dir').value='Synthetic address';
+      recalcularTotalFinal();window.openedUrls=[];window.open=url=>openedUrls.push(url);
+      generarComprobanteVenta=()=>{};
+    });
+    const service=p.locator('#check-shipping-service');
+    assert.equal(await service.inputValue(),'ordinary');
+    await p.evaluate(()=>{
+      const checkout=PTHSecureData.checkout;
+      PTHSecureData.checkout=async request=>{
+        const result=await checkout(request);
+        if(request.operation==='quote'){document.getElementById('check-shipping-service').value='express';recalcularTotalFinal();}
+        return result;
+      };
+      window.restoreCheckout=()=>{PTHSecureData.checkout=checkout;};
+    });
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    assert.equal(f.writes,0);assert.match(await p.evaluate(()=>checkoutAlerts.at(-1)),/Cambió el servicio/);
+    assert.equal(await service.inputValue(),'express');
+    await p.evaluate(()=>{
+      restoreCheckout();window.confirm=message=>!message.includes('Confirmar envío exprés');
+    });
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    assert.equal(f.writes,0);
+    await p.evaluate(()=>{
+      window.confirm=()=>true;
+      const checkout=PTHSecureData.checkout;
+      PTHSecureData.checkout=async request=>{
+        const result=await checkout(request);
+        return request.operation==='submit'?{data:null,error:{code:'ORDER_OUTCOME_UNKNOWN'}}:result;
+      };
+      window.restoreCheckout=()=>{PTHSecureData.checkout=checkout;};
+    });
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    assert.equal(f.writes,1);
+    await p.evaluate(()=>{restoreCheckout();document.getElementById('check-shipping-service').value='ordinary';});
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    assert.equal(f.writes,1);
+    const saved=f.rows.pedidos.slice(1);
+    assert.deepEqual(saved.map(r=>[r.servicio_mensajeria,r.plazo_mensajeria_minutos,r.costo_mensajeria]),[['express',60,12],['express',60,0]]);
+    assert.match(await p.locator('#pth-checkout-confirmations').innerText(),/Exprés · 60 min estimados/);
+    assert.deepEqual(errors,[]);await c.close();console.log('PASS express selection, confirmation, atomic charge and lost receipt');
+    return;
+  }
   if(process.env.PTH_ATOMIC_NUMBERING==='1')for(const width of [390,1280]){
     f=await fixture();const {c,errors}=await context();const p=await main(c);await p.setViewportSize({width,height:844});
     if(process.env.PTH_PHONE_CLOCK_TEST==='1')await p.evaluate(hours=>{const original=Date.now;Date.now=()=>original()+hours*3600000;},width===390?1:-1);

@@ -39,5 +39,8 @@ jobs:
         run: |
           node scripts/verify-atomic-order-numbering-sql.mjs
           node scripts/verify-checkout-server-clock-sql.mjs
+          node scripts/verify-subgestor-review-sql.mjs
       - name: Verificar envío, recibos y recuperación de pedidos
-        run: npm run check:checkout-release
+        run: |
+          npm run check:checkout-release
+          PTH_EXPRESS_SHIPPING=1 node tests/checkout-recovery-latest-browser.cjs

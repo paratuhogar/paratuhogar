@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-11-12-medium1';
+  const shellVersion = 'pth-public-static-2026-11-12-express1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -229,10 +229,12 @@
       if (value.text !== null) input.textContent = value.text;
     }
     document.getElementById('cart-count').textContent = String(cart.reduce((sum, product) => sum + product.qty, 0));
-    recalcularTotalFinal(); modal.className = saved.modalClass; modal.inert = saved.inert;
+    modal.className = saved.modalClass; modal.inert = saved.inert;
     document.getElementById('check-ci').pattern=saved.identityPattern;
   }
   function bindForm(row) {
+    const shippingService = document.getElementById('check-shipping-service');
+    if (shippingService) shippingService.value = 'ordinary';
     window.PTHCheckoutForm.setIdentityRequired(document,row.identityRequired===true);
     if (row.lines.some(line => !productosRaw.some(product => product.id === line.id))) throw Object.assign(Error('PRODUCT_UNAVAILABLE'), {code: 'PRODUCT_UNAVAILABLE', safeMessage: 'Un producto no está disponible. Revisa el pendiente.'});
     cart = row.lines.map(line => {
@@ -265,7 +267,7 @@
     const review = reviewing;
     lockReviewFields(false);
     restoreLiveForm(review.previous, review.owner, review.token);
-    reviewing = null; void render();
+    reviewing = null; recalcularTotalFinal(); void render();
   }
   async function openReview(row, account) {
     if (busy || preparing || owner() !== account || api.localOwner(storage) !== account) return;
@@ -386,7 +388,10 @@
         } finally {
           restoreLiveForm(previous, account, expectedToken);
           active = null;
-          if (previous) modal.inert = owner() === account && sameSession(account, expectedToken) ? previous.inert : false;
+          if (previous) {
+            modal.inert = owner() === account && sameSession(account, expectedToken) ? previous.inert : false;
+            if (sameSession(account, expectedToken)) recalcularTotalFinal();
+          }
         }
       }
     } catch (_) { message('No se pudo guardar el estado de los pendientes. Mantén la página abierta y vuelve a comprobar.'); }
@@ -394,6 +399,10 @@
   }
   async function savePending() {
     if (preparing || active || reviewing) return;
+    if (document.getElementById('check-shipping-service')?.value === 'express') {
+      message('Exprés requiere confirmar en línea. Para guardar un pendiente, elige Ordinaria.');
+      return;
+    }
     const account = localAccount();
     if (!account) { message('Vuelve a tu cuenta para guardar un pendiente.'); return; }
     if (!form.reportValidity()) return;
@@ -435,7 +444,7 @@
       if(review.duplicateChallenge&&sameSession(review.owner,expectedToken))await queue.patch(review.owner,review.id,{duplicateReview:review.duplicateChallenge});
       if (owner() !== review.owner || !sameSession(review.owner, expectedToken)) return;
       lockReviewFields(false); restoreLiveForm(review.previous, review.owner, expectedToken);
-      reviewing = null; message(savedGuidance(1));
+      reviewing = null; recalcularTotalFinal(); message(savedGuidance(1));
     } catch (error) { message(error.safeMessage || (error.code === 'SIGNED_CHANGE' ? 'Este intento conserva sus datos originales. Detén los reintentos y comprueba el recibo antes de cambiarlo.' : 'No se pudo guardar la revisión. El pendiente anterior se conserva.')); }
     finally { preparing = false; await render(); }
     void tick();

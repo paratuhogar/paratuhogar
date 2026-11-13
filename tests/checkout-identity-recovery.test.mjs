@@ -42,6 +42,7 @@ function fixture({profiles=[account('a'),account('b')],self=null,failure=null}={
   supabaseClient:{from:table=>new Query(table),rpc:()=>assert.fail('Must not reserve an order number for invalid identity')},
   cart:[{id:'product',nombre:'Synthetic Product',qty:1,garantia:'1 año'}],isProductCurrentlyAvailable:p=>p.disponible==='SI',
   alert:m=>alerts.push(m),confirm:()=>true,obtenerDuenoReal:async()=> 'Shared Display Name',
+  expressShippingSelected:()=>false,
   open:()=>assert.fail('Must not open WhatsApp for invalid identity')
  };
  context.window=context;vm.createContext(context);vm.runInContext(hierarchyCode+messageCode+checkoutCode,context);

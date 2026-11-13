@@ -41,6 +41,31 @@
     return cost;
   }
   const isWholesale=item=>['MAYORISTA','B2B','MIPYME'].some(term=>String(item?.categoria||'').toUpperCase().includes(term));
+  function expressOffer(args){
+    if(args.pickup||!args.lines?.length||args.lines.some(isWholesale))return null;
+    const ordinary=shipping(args);
+    if(ordinary===null)return null;
+    const tariff=Array.isArray(args.tariffs)?args.tariffs.find(t=>t.municipio===args.municipio&&t.localidad===args.localidad):args.tariffs?.[args.municipio]?.[args.localidad];
+    const size=args.lines.some(p=>p.tamaño_envio==='Grande')?'grande':args.lines.some(p=>p.tamaño_envio==='Mediano')?'mediano':'pequeno';
+    const base=tariff?.['precio_'+size]??tariff?.[{pequeno:'pq',mediano:'md',grande:'gr'}[size]];
+    const price=Number(tariff?.['precio_expres_'+size]),minutes=Number(tariff?.['minutos_expres_'+size]);
+    const cents=Math.round(price*100);
+    if(base==null||String(base).trim()===''||!Number.isFinite(Number(base))||Number(base)<0||!Number.isSafeInteger(cents)||cents<=Math.round(ordinary*100)||cents<=Math.round(Number(base)*100)||!Number.isInteger(minutes)||minutes<1||minutes>2147483647)return null;
+    return {price:cents/100,minutes};
+  }
+  function expressTariffFields(read,ordinary){
+    const fields={};
+    for(const size of ['pequeno','mediano','grande']){
+      const priceKey='precio_expres_'+size,minutesKey='minutos_expres_'+size;
+      const price=String(read(priceKey)??'').trim(),minutes=String(read(minutesKey)??'').trim();
+      if(!price&&!minutes){fields[priceKey]=null;fields[minutesKey]=null;continue;}
+      const base=ordinary['precio_'+size];
+      if(!/^\d+(?:\.\d{1,2})?$/.test(price)||Number(price)>=1e10||base==null||!Number.isFinite(base)||Math.round(Number(price)*100)<=Math.round(base*100)||!/^\d+$/.test(minutes)||Number(minutes)<1||Number(minutes)>2147483647)
+        throw Error('Exprés ('+size+'): indica un precio superior al ordinario y un plazo entero positivo.');
+      fields[priceKey]=Number(price);fields[minutesKey]=Number(minutes);
+    }
+    return fields;
+  }
   function estimate(input={}){
     const equipment=(input.lines||[]).reduce((sum,item)=>sum+Number(item.precio_venta??item.price??item.precio)*Number(item.qty),0);
     const delivery=shipping(input);
@@ -110,5 +135,5 @@
     let nombre='',dir='';if(split>=0){nombre=cleaned.substring(0,split);dir=cleaned.substring(split);}else if(cleaned.includes(',')){const parts=cleaned.split(',').sort((a,b)=>a.length-b.length);nombre=parts[0];dir=parts.slice(1).join(', ');}else nombre=cleaned;
     const trim=part=>part.replace(/^[\s,.-]+|[\s,.-]+$/g,'').trim();return {nombre:trim(nombre).replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.substring(1).toLowerCase()),ci,tel,dir:trim(dir)};
   }
-  return {fieldIds,tariffMap,shipping,estimate,isWholesale,readForm,fillClient,bindClients,bind,parseClipboard,validateIdentity,setIdentityRequired};
+  return {fieldIds,tariffMap,shipping,expressOffer,expressTariffFields,estimate,isWholesale,readForm,fillClient,bindClients,bind,parseClipboard,validateIdentity,setIdentityRequired};
 });

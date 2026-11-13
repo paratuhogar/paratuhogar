@@ -21,7 +21,12 @@ try{
  create table pedidos_subgestores(id uuid primary key,subgestor_id uuid,subgestor_nombre text not null,parent_gestor_id uuid,parent_gestor_nombre text not null,cliente text not null,telefono text not null,ci text,direccion text not null,municipio text not null,producto text not null,total numeric not null,costo_mensajeria numeric,comision_total numeric,comision_subgestor numeric,proveedor text,estado text default 'Pendiente Aprobacion',created_at timestamptz default now(),orden_dia text,garantia_venta text,garantia_dias integer,submission_token text);
  grant select on gestores to service_role;grant select,insert,update,delete on pedidos,pedidos_subgestores to service_role;`);
  for(const [who,name,role,owner] of [[admin,'Admin','admin',null],[parent,'Parent','gestor',null],[other,'Other','gestor',null],[child,'Child','admin',parent]])await db.query("insert into gestores values($1,$2,'activo',true,$3,$4)",[who,name,role,owner]);
- await seed();await db.exec(fs.readFileSync(sqlPath,'utf8'));
+ await seed();
+ await db.exec('create table tarifas_mensajeria(precio_pequeno numeric,precio_mediano numeric,precio_grande numeric);');
+ await db.exec(fs.readFileSync(new URL('../supabase/proposals/express-shipping.sql',import.meta.url),'utf8'));
+ await db.exec("update pedidos_subgestores set servicio_mensajeria='express',plazo_mensajeria_minutos=60");
+ await db.exec(fs.readFileSync(sqlPath,'utf8'));
+ await db.exec(fs.readFileSync(sqlPath,'utf8'));
  await check('migration leaves historical pending rows untouched',async()=>{assert.equal((await db.query('select count(*)::int n from pedidos_subgestores')).rows[0].n,1);});
  await check('anonymous/authenticated cannot execute the internal function or read audit',async()=>{
   for(const role of ['anon','authenticated']){await db.exec('set role '+role);try{await assert.rejects(()=>call('list'));await assert.rejects(()=>db.query('select * from pth_subgestor_review_events'));}finally{await db.exec('reset role');}}
@@ -38,6 +43,7 @@ try{
   const r=await call('approve',1,admin,await version(1));assert.equal(r.reference,'CA-1');
   const row=(await db.query('select * from pedidos')).rows[0];assert.equal(row.id,id(1));assert.equal(row.gestor,'Parent');assert.equal(Number(row.total),53);assert.equal(Number(row.comision_total),7);assert.equal(Number(row.comision_subgestor),3);assert.equal(Number(row.comision_parent),4);assert.equal(row.estado,'Pendiente');assert.equal(row.submission_token,'signed-fixture');
   assert.equal((await db.query('select count(*)::int n from pedidos_subgestores')).rows[0].n,0);
+  assert.equal(row.servicio_mensajeria,'express');assert.equal(row.plazo_mensajeria_minutos,60);assert.equal(Number(row.costo_mensajeria),3);
  });
  await check('same approval replay is idempotent; conflicting rejection and foreign principal fail',async()=>{
   assert.equal((await call('approve',1,parent,initial)).replayed,true);await assert.rejects(()=>call('reject',1,admin,initial,{},'Conflict'));await assert.rejects(()=>call('approve',1,other,initial));assert.equal((await db.query('select count(*)::int n from pedidos')).rows[0].n,1);

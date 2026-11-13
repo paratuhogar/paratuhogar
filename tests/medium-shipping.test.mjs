@@ -4,6 +4,24 @@ import form from '../js/checkout-form-shared.js';
 import {deliveryCost} from '../supabase/functions/secure-data/checkout.mjs';
 import {scopeFor} from '../supabase/functions/secure-data/policy.mjs';
 
+test('express offer compares the final price against ordinary including quantity surcharge', () => {
+  const rate = {pq:6, gr:18, precio_expres_pequeno:10, minutos_expres_pequeno:60};
+  const args = {municipio:'Playa', localidad:'Centro', tariffs:{Playa:{Centro:rate}}, lines:[{qty:1}]};
+  assert.deepEqual(form.expressOffer(args), {price:10, minutes:60});
+  assert.equal(form.expressOffer({...args, lines:[{qty:5}]}).price, 10);
+  assert.equal(form.expressOffer({...args, pickup:true}), null);
+  assert.equal(form.expressOffer({...args, tariffs:{Playa:{Centro:{...rate,precio_expres_pequeno:9}}}, lines:[{qty:5}]}), null);
+  assert.equal(form.expressOffer({...args, tariffs:[]}), null);
+});
+test('admin form requires both fields and rejects a price equal to ordinary', () => {
+  const ordinary={precio_pequeno:6};
+  const read=fields=>key=>fields[key];
+  assert.equal(form.expressTariffFields(read({}),ordinary).precio_expres_pequeno,null);
+  assert.throws(()=>form.expressTariffFields(read({precio_expres_pequeno:'10'}),ordinary));
+  assert.throws(()=>form.expressTariffFields(read({precio_expres_pequeno:'6',minutos_expres_pequeno:'60'}),ordinary));
+  assert.equal(form.expressTariffFields(read({precio_expres_pequeno:'10',minutos_expres_pequeno:'60'}),ordinary).minutos_expres_pequeno,60);
+});
+
 test('tariffs remain publicly readable but only administrators may write', () => {
   assert.deepEqual(scopeFor('tarifas_mensajeria', null, 'select'), []);
   for (const op of ['insert','update','upsert','delete']) {

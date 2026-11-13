@@ -9,7 +9,7 @@ declare
  item jsonb; k text; attempt_key text; supplier text; next_number bigint;
  highest bigint; existing jsonb; answer jsonb:='[]'::jsonb; reference text;
  allowed text[]:=array['id','submission_token','proveedor','cliente','telefono','ci',
-  'direccion','municipio','producto','total','costo_mensajeria','comision_total',
+  'direccion','municipio','producto','total','costo_mensajeria','comision_total','servicio_mensajeria','plazo_mensajeria_minutos',
   'estado','garantia_venta','garantia_dias'];
 begin
  if p_table is null or p_table not in ('pedidos','pedidos_subgestores')
@@ -75,20 +75,22 @@ begin
   reference:=supplier||'-'||next_number;
   if p_table='pedidos' then
    insert into public.pedidos(id,submission_token,proveedor,cliente,telefono,ci,direccion,municipio,producto,
-    total,costo_mensajeria,comision_total,estado,garantia_venta,garantia_dias,gestor,origen,pago_gestor,orden_dia)
+    total,costo_mensajeria,comision_total,estado,garantia_venta,garantia_dias,gestor,origen,pago_gestor,orden_dia,servicio_mensajeria,plazo_mensajeria_minutos)
    values((item->>'id')::uuid,attempt_key,item->>'proveedor',item->>'cliente',item->>'telefono',item->>'ci',
     item->>'direccion',item->>'municipio',item->>'producto',(item->>'total')::numeric,
     (item->>'costo_mensajeria')::numeric,(item->>'comision_total')::numeric,item->>'estado',
-    item->>'garantia_venta',(item->>'garantia_dias')::integer,item->>'gestor',item->>'origen',item->>'pago_gestor',reference);
+    item->>'garantia_venta',(item->>'garantia_dias')::integer,item->>'gestor',item->>'origen',item->>'pago_gestor',reference,
+    coalesce(item->>'servicio_mensajeria','ordinary'),(item->>'plazo_mensajeria_minutos')::integer);
   else
    insert into public.pedidos_subgestores(id,submission_token,proveedor,cliente,telefono,ci,direccion,municipio,producto,
     total,costo_mensajeria,comision_total,estado,garantia_venta,garantia_dias,subgestor_id,subgestor_nombre,
-    parent_gestor_id,parent_gestor_nombre,comision_subgestor,orden_dia)
+    parent_gestor_id,parent_gestor_nombre,comision_subgestor,orden_dia,servicio_mensajeria,plazo_mensajeria_minutos)
    values((item->>'id')::uuid,attempt_key,item->>'proveedor',item->>'cliente',item->>'telefono',item->>'ci',
     item->>'direccion',item->>'municipio',item->>'producto',(item->>'total')::numeric,
     (item->>'costo_mensajeria')::numeric,(item->>'comision_total')::numeric,item->>'estado',
     item->>'garantia_venta',(item->>'garantia_dias')::integer,(item->>'subgestor_id')::uuid,item->>'subgestor_nombre',
-    (item->>'parent_gestor_id')::uuid,item->>'parent_gestor_nombre',(item->>'comision_subgestor')::numeric,reference);
+    (item->>'parent_gestor_id')::uuid,item->>'parent_gestor_nombre',(item->>'comision_subgestor')::numeric,reference,
+    coalesce(item->>'servicio_mensajeria','ordinary'),(item->>'plazo_mensajeria_minutos')::integer);
   end if;
   answer:=answer||jsonb_build_array(jsonb_build_object('id',item->>'id','orden_dia',reference,'proveedor',item->>'proveedor'));
  end loop;
@@ -97,4 +99,28 @@ end;
 $$;
 revoke all on function public.pth_insert_checkout(text,jsonb) from public,anon,authenticated;
 grant execute on function public.pth_insert_checkout(text,jsonb) to service_role;
+
+-- Keep the final read and the order insert in the same tariff lock window.
+-- Ordinary checkouts continue using the original two-argument RPC.
+create or replace function public.pth_insert_express_checkout(p_table text,p_rows jsonb,p_tariff jsonb)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare current_tariff jsonb;
+begin
+ select to_jsonb(rate) into strict current_tariff from public.tarifas_mensajeria t
+ cross join lateral (select t.municipio,t.localidad,t.precio_pequeno,t.precio_mediano,t.precio_grande,
+  t.precio_expres_pequeno,t.precio_expres_mediano,t.precio_expres_grande,
+  t.minutos_expres_pequeno,t.minutos_expres_mediano,t.minutos_expres_grande) rate
+ where t.municipio=p_tariff->>'municipio' and t.localidad=p_tariff->>'localidad'
+ for share of t;
+ if current_tariff is distinct from p_tariff then
+  raise sqlstate 'PT409' using message='Cambió la tarifa exprés';
+ end if;
+ return public.pth_insert_checkout(p_table,p_rows);
+exception when no_data_found or too_many_rows then
+ raise sqlstate 'PT409' using message='La tarifa exprés ya no es única o no está disponible';
+end;
+$$;
+revoke all on function public.pth_insert_express_checkout(text,jsonb,jsonb) from public,anon,authenticated;
+grant execute on function public.pth_insert_express_checkout(text,jsonb,jsonb) to service_role;
+notify pgrst, 'reload schema';
 commit;

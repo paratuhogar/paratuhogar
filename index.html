@@ -54,7 +54,7 @@
     <script src="js/product-description-editor.js?v=20260924-1" defer></script>
     <script src="js/checkout-submit-guard.js?v=20261017-checkout1" defer></script>
     <script src="js/pending-checkout.js?v=20261021-ci1" defer></script>
-    <script src="js/checkout-form-shared.js?v=20261112-medium1" defer></script>
+    <script src="js/checkout-form-shared.js?v=20261112-express1" defer></script>
     <script src="js/offline-checkout-copy.js?v=20261112-medium1" defer></script>
     <script src="js/checkout-recovery.js?v=20261002-lowdata1" defer></script>
 
@@ -2141,6 +2141,15 @@
                 class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 h-32 resize-none focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required></textarea>
         </div>
 
+        <div id="check-express-panel" class="hidden">
+            <label for="check-shipping-service" class="block text-sm font-bold text-gray-500 mb-1.5">Servicio de mensajería</label>
+            <select id="check-shipping-service" onchange="recalcularTotalFinal()" class="w-full rounded-2xl border-gray-200">
+                <option value="ordinary" selected>Ordinaria</option>
+                <option value="express">Exprés</option>
+            </select>
+            <p id="check-express-status" class="text-sm mt-1" aria-live="polite"></p>
+        </div>
+
         <!-- CAMPO DE NOTAS (NUEVO) -->
 <div class="mb-4">
     <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Notas / Observaciones</label>
@@ -2518,6 +2527,24 @@
             </div>
         </div>
 
+        <fieldset class="mt-4">
+            <legend class="text-sm font-bold">Mensajería exprés</legend>
+            <p class="text-xs text-gray-500">Precio final en USD, superior al ordinario. Deja ambos campos vacíos para no ofrecer el servicio.</p>
+            <div class="grid gap-2 mt-2 md:grid-cols-3">
+                <div><strong>Pequeño</strong>
+                    <label class="block text-xs">Precio USD <input class="w-full rounded-lg" type="number" min="0.01" step="0.01" id="precio_expres_pequeno"></label>
+                    <label class="block text-xs">Plazo estimado (min) <input class="w-full rounded-lg" type="number" min="1" step="1" id="minutos_expres_pequeno"></label>
+                </div>
+                <div><strong>Mediano</strong>
+                    <label class="block text-xs">Precio USD <input class="w-full rounded-lg" type="number" min="0.01" step="0.01" id="precio_expres_mediano"></label>
+                    <label class="block text-xs">Plazo estimado (min) <input class="w-full rounded-lg" type="number" min="1" step="1" id="minutos_expres_mediano"></label>
+                </div>
+                <div><strong>Grande</strong>
+                    <label class="block text-xs">Precio USD <input class="w-full rounded-lg" type="number" min="0.01" step="0.01" id="precio_expres_grande"></label>
+                    <label class="block text-xs">Plazo estimado (min) <input class="w-full rounded-lg" type="number" min="1" step="1" id="minutos_expres_grande"></label>
+                </div>
+            </div>
+        </fieldset>
         <div class="mt-3 flex gap-2 justify-end">
             <button type="button" onclick="limpiarFormMensajeria()" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-[10px] font-black uppercase border border-gray-200 shadow-sm hover:bg-gray-50">Cancelar</button>
             <button type="button" onclick="adminSaveMensajeria()" id="btn-save-mensajeria" class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all">Guardar Tarifa</button>
@@ -3273,9 +3300,9 @@
     <!-- Scripts de Lógica -->
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/gestor-registration-steps.js?v=20261016-captacion1" defer></script>
-    <script src="js/checkout-confirmation.js?v=20261017-checkout1" defer></script>
-    <script src="js/storefront.min.js?v=20261112-medium1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261112-medium1" defer></script>
+    <script src="js/checkout-confirmation.js?v=20261112-express1" defer></script>
+    <script src="js/storefront.min.js?v=20261112-express1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261112-express1" defer></script>
 
 
 

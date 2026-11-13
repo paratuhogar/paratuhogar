@@ -2,6 +2,51 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {deliveryCost} from '../supabase/functions/secure-data/checkout.mjs';
 import {fixture} from './fixtures/new-checkout.mjs';
+test('express binds price and minutes and saves one shipping charge',async()=>{
+ const f=await fixture();f.body.delivery.service='express';
+ const rate=f.rows.tarifas_mensajeria[0];
+ Object.assign(rate,{precio_expres_pequeno:12,minutos_expres_pequeno:60});
+ const q=await f.quote();assert.equal(q.error,null);
+ assert.deepEqual(q.data.terms.map(t=>[t.servicio_mensajeria,t.plazo_mensajeria_minutos,t.costo_mensajeria]),[['express',60,12],['express',60,0]]);
+ rate.minutos_expres_pequeno=90;
+ assert.equal((await f.submit(q)).error.code,'CONDITIONS_CHANGED');assert.equal(f.writes,0);
+ rate.minutos_expres_pequeno=60;
+ f.beforeExpressInsert=()=>{rate.minutos_expres_pequeno=75;};
+ assert.equal((await f.submit(q)).error.code,'CONDITIONS_CHANGED');assert.equal(f.writes,0);
+ f.beforeExpressInsert=null;rate.minutos_expres_pequeno=60;
+ const submitted=await f.submit(q);assert.equal(submitted.data.complete,true);
+ assert.deepEqual(f.rows.pedidos.slice(1).map(t=>[t.servicio_mensajeria,t.plazo_mensajeria_minutos,t.costo_mensajeria]),[['express',60,12],['express',60,0]]);
+ const recovered=await f.request({action:'checkout',operation:'receipt',attempt:q.data.attempt},null);
+ assert.deepEqual(recovered.data.confirmed,submitted.data.confirmed);
+ assert.ok(recovered.data.confirmed.every(row=>row.servicio_mensajeria==='express'&&row.plazo_mensajeria_minutos===60));
+ assert.doesNotMatch(JSON.stringify(recovered),/Synthetic Customer|telefono|cliente|direccion|comision|total|pago/);
+});
+test('express cannot be cheaper than the effective ordinary rate',async()=>{
+ const f=await fixture();f.body.delivery.service='express';
+ f.body.inputs[0]._lineas[0].cantidad=4;
+ Object.assign(f.rows.tarifas_mensajeria[0],{precio_expres_pequeno:8,minutos_expres_pequeno:60});
+ assert.equal((await f.quote()).error?.code,'DELIVERY_UNAVAILABLE');assert.equal(f.writes,0);
+});
+test('generic order writes cannot stamp an express snapshot',async()=>{
+ const f=await fixture();
+ const r=await f.request({action:'query',table:'pedidos',op:'insert',values:{...f.body.inputs[0],servicio_mensajeria:'express',plazo_mensajeria_minutos:60}});
+ assert.ok(r.error);assert.equal(f.writes,0);
+});
+test('only an admin can change express prices; logistics retains ordinary permissions',async()=>{
+ const f=await fixture();
+ const input={action:'query',table:'tarifas_mensajeria',op:'update',filters:[{column:'municipio',method:'eq',value:'Centro Habana'}],values:{precio_expres_pequeno:12,minutos_expres_pequeno:60}};
+ assert.ok((await f.request(input)).error);
+ f.rows.gestores[0].rol='logistica';
+ assert.ok((await f.request(input)).error);
+ f.rows.gestores[0].rol='admin';
+ assert.equal((await f.request(input)).error,null);
+ assert.equal(f.rows.tarifas_mensajeria[0].precio_expres_pequeno,12);
+ f.rows.gestores[0].rol='logistica';
+ assert.equal((await f.request({...input,values:{precio_pequeno:8}})).error,null);
+ assert.equal(f.rows.tarifas_mensajeria[0].precio_pequeno,8);
+ const products=await f.request({action:'query',table:'productos',columns:'id,tamaño_envio,categoria'});
+ assert.equal(products.error,null);assert.equal(products.data[0].tamaño_envio,'Pequeño');
+});
 test('new quote and atomic multi-provider insertion preserve historical data and existing commission rules',async()=>{
  const f=await fixture(),q=await f.quote();assert.equal(q.error,null);assert.deepEqual(q.data.terms.map(t=>t.total),[106,200]);assert.equal(q.data.attempt.includes('Synthetic Customer'),false);
  const r=await f.submit(q);assert.equal(r.data.complete,true);assert.equal(f.writes,1);assert.equal(f.rows.pedidos.length,3);assert.deepEqual(f.rows.pedidos[0],f.historical);assert.deepEqual(f.rows.pedidos.slice(1).map(r=>r.comision_total),[10,20]);assert.equal(f.trace.some(t=>['update','delete','upsert'].includes(t.op)),false);

@@ -19,6 +19,14 @@ try{
  grant select,insert on pedidos,pedidos_subgestores to service_role;
  insert into pth_private.pedido_consecutivos values('RO',21,now());`);
  const sql=new URL('../supabase/proposals/atomic-order-numbering.sql',import.meta.url);
+ await db.exec('create table tarifas_mensajeria(municipio text,localidad text,precio_pequeno numeric,precio_mediano numeric,precio_grande numeric);grant select,update on tarifas_mensajeria to service_role;');
+ await db.exec(fs.readFileSync(new URL('../supabase/proposals/express-shipping.sql',import.meta.url),'utf8'));
+ await check('express tariff requires both values and costs more than ordinary',async()=>{
+  await db.exec("insert into tarifas_mensajeria(municipio,localidad,precio_pequeno) values('Fixture','Centro',6)");
+  await assert.rejects(()=>db.exec('update tarifas_mensajeria set precio_expres_pequeno=10'));
+  await assert.rejects(()=>db.exec('update tarifas_mensajeria set precio_expres_pequeno=6,minutos_expres_pequeno=60'));
+  await db.exec('update tarifas_mensajeria set precio_expres_pequeno=10,minutos_expres_pequeno=60');
+ });
  if(fs.existsSync(sql))await db.exec(fs.readFileSync(sql,'utf8'));
  await db.exec('set role service_role');
  await check('canonical insert assigns RO-22, ignores supplied number and preserves money',async()=>{
@@ -55,6 +63,18 @@ try{
   await db.exec('grant execute on function reservar_consecutivo_pedido(text) to anon');
   await db.exec('set role anon');await assert.rejects(()=>db.query("select reservar_consecutivo_pedido('RO')"),/Actualiza la página/);await db.exec('reset role');
   assert.equal(Number((await db.query("select ultimo_numero from pth_private.pedido_consecutivos where proveedor='RO'")).rows[0].ultimo_numero),51);
+ });
+ await check('express rejects stale tariffs atomically; a current rate is stored once across providers',async()=>{
+  const tariff=(await db.query('select to_jsonb(t) tariff from tarifas_mensajeria t')).rows[0].tariff;
+  const rows=[{...row(60,'EX',60),costo_mensajeria:10},{...row(61,'EZ',60),costo_mensajeria:0}]
+    .map(item=>({...item,servicio_mensajeria:'express',plazo_mensajeria_minutos:60}));
+  const express=t=>db.query('select pth_insert_express_checkout($1,$2,$3)',['pedidos',JSON.stringify(rows),JSON.stringify(t)]);
+  await db.exec('set role anon');await assert.rejects(()=>express(tariff),e=>e.code==='42501');await db.exec('set role service_role');
+  await assert.rejects(()=>express({...tariff,minutos_expres_pequeno:90}),e=>e.code==='PT409');
+  assert.equal(await count("pth_private.pedido_consecutivos where proveedor in ('EX','EZ')"),0);
+  await express(tariff);await express(tariff);
+  const saved=(await db.query("select servicio_mensajeria,plazo_mensajeria_minutos,costo_mensajeria from pedidos where proveedor in ('EX','EZ') order by proveedor")).rows;
+  assert.deepEqual(saved.map(r=>[r.servicio_mensajeria,r.plazo_mensajeria_minutos,Number(r.costo_mensajeria)]),[['express',60,10],['express',60,0]]);
  });
  console.log(checks+' SQL checks passed; native multi-connection concurrency is a separate release gate.');
 }finally{await db.close();}

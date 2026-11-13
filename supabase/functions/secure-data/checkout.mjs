@@ -8,6 +8,7 @@ const cents=value=>Math.round(Number(value)*100);
 const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 const customerPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.length===10&&digits.startsWith('53')?digits.slice(2):digits;};
 const inputFields=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','proveedor','origen'];
+const tariffFields=['municipio','localidad','precio_pequeno','precio_mediano','precio_grande','precio_expres_pequeno','precio_expres_mediano','precio_expres_grande','minutos_expres_pequeno','minutos_expres_mediano','minutos_expres_grande'];
 function clean(body){
   if(!['pedidos','pedidos_subgestores'].includes(body.table)||!Array.isArray(body.inputs)||!body.inputs.length||body.inputs.length>30)fail('CHECKOUT_INVALID','Revisa los productos del pedido.');
   const providers=new Set();
@@ -25,7 +26,19 @@ function clean(body){
   if(inputs.reduce((sum,input)=>sum+input._lineas.length,0)>100)fail('CHECKOUT_INVALID','El pedido supera el límite de productos.');
   if(!d||typeof d.pickup!=='boolean'||typeof d.municipio!=='string'||typeof d.localidad!=='string'||d.municipio.length>200||d.localidad.length>200)fail('CHECKOUT_INVALID','Selecciona el lugar de entrega.');
   if(!/^[a-f0-9]{64}$/.test(body.intentId||'')||!Number.isFinite(body.intentCreatedAt))fail('CHECKOUT_INVALID','No se pudo verificar el borrador de este pedido.');
-  return {table:body.table,intentId:body.intentId,intentCreatedAt:body.intentCreatedAt,inputs,delivery:{pickup:d.pickup,municipio:d.municipio,localidad:d.localidad}};
+  if(d.service!==undefined&&!['ordinary','express'].includes(d.service))fail('CHECKOUT_INVALID','Servicio de entrega no válido.');
+  return {table:body.table,intentId:body.intentId,intentCreatedAt:body.intentCreatedAt,inputs,delivery:{pickup:d.pickup,municipio:d.municipio,localidad:d.localidad,...(d.service==='express'?{service:'express'}:{})}};
+}
+export function expressDelivery(products,lines,delivery,tariff){
+  if(delivery.pickup||products.some(p=>/MAYORISTA|B2B|MIPYME/.test(String(p.categoria||'').toUpperCase())))
+    fail('DELIVERY_UNAVAILABLE','Exprés no está disponible para este pedido.');
+  const ordinary=deliveryCost(products,lines,delivery,tariff);
+  const size=products.some(p=>p.tamaño_envio==='Grande')?'grande':products.some(p=>p.tamaño_envio==='Mediano')?'mediano':'pequeno';
+  const base=tariff['precio_'+size],raw=tariff['precio_expres_'+size];
+  const price=Number(raw),minutes=Number(tariff['minutos_expres_'+size]);
+  if(base==null||String(base).trim()===''||!Number.isFinite(Number(base))||Number(base)<0||raw==null||!Number.isFinite(price)||!Number.isSafeInteger(cents(price))||cents(price)<=cents(ordinary)||cents(price)<=cents(Number(base))||!Number.isInteger(minutes)||minutes<1||minutes>2147483647)
+    fail('DELIVERY_UNAVAILABLE','Exprés no está disponible para este pedido.');
+  return {price:cents(price)/100,minutes};
 }
 export function deliveryCost(products,lines,delivery,tariff){
   if(delivery.pickup)return 0;
@@ -64,19 +77,20 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     return data.issuedAt;
   }
   async function receipts(token,attempt){
-    const table=attempt.table,dateField=table==='pedidos'?'fecha':'created_at';
+    const table=attempt.table,columns='id,orden_dia,proveedor,servicio_mensajeria,plazo_mensajeria_minutos';
     // The exact signed capability is authoritative, including old phone-dated keys.
-    const result=await db.from(table).select('id,orden_dia,proveedor,'+dateField).eq('submission_token',token);
+    const result=await db.from(table).select(columns).eq('submission_token',token);
     if(result.error||!Array.isArray(result.data))fail('ORDER_OUTCOME_UNKNOWN','No se pudo comprobar la confirmación. Reintenta la consulta.');
     let found=result.data;
     // Approval may move a new child order into the existing principal table.
     // The exact signed key follows it; no name or historical ownership lookup.
     if(table==='pedidos_subgestores'&&found.length<attempt.count){
-      const approved=await db.from('pedidos').select('id,orden_dia,proveedor,fecha').eq('submission_token',token);
+      const approved=await db.from('pedidos').select(columns).eq('submission_token',token);
       if(approved.error||!Array.isArray(approved.data))fail('ORDER_OUTCOME_UNKNOWN','No se pudo comprobar la confirmación. Reintenta la consulta.');
       found=[...found,...approved.data];
     }
-    const confirmed=[...new Map(found.filter(row=>row.id).map(row=>[row.proveedor,{proveedor:row.proveedor,reference:row.orden_dia||row.id}])).values()];
+    const confirmed=[...new Map(found.filter(row=>row.id).map(row=>[row.proveedor,{proveedor:row.proveedor,reference:row.orden_dia||row.id,
+      ...(row.servicio_mensajeria==='express'?{servicio_mensajeria:'express',plazo_mensajeria_minutos:row.plazo_mensajeria_minutos}:{})}])).values()];
     return {confirmed,complete:new Set(confirmed.map(row=>row.proveedor)).size===attempt.count};
   }
   async function canonical(payload,actor,token,confirmed=[]){
@@ -87,10 +101,12 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     if(products.some(p=>p.disponible!=='SI'))fail('PRODUCT_UNAVAILABLE','Un producto dejó de estar disponible. Revisa el carrito.');
     let tariff;
     if(!payload.delivery.pickup){
-      const result=await db.from('tarifas_mensajeria').select('precio_pequeno,precio_mediano,precio_grande').eq('municipio',payload.delivery.municipio).eq('localidad',payload.delivery.localidad).maybeSingle();
+      const columns=payload.delivery.service==='express'?tariffFields.join(','):'precio_pequeno,precio_mediano,precio_grande';
+      const result=await db.from('tarifas_mensajeria').select(columns).eq('municipio',payload.delivery.municipio).eq('localidad',payload.delivery.localidad).maybeSingle();
       if(result.error||!result.data)fail('DELIVERY_UNAVAILABLE','No se pudo verificar una tarifa única para la localidad. Revisa la entrega.');tariff=result.data;
     }
-    const shipping=deliveryCost(products,allLines,payload.delivery,tariff),rows=[];
+    const express=payload.delivery.service==='express'?expressDelivery(products,allLines,payload.delivery,tariff):null;
+    const shipping=express?express.price:deliveryCost(products,allLines,payload.delivery,tariff),rows=[];
     for(let index=0;index<payload.inputs.length;index++){
       const input=payload.inputs[index];if(confirmed.some(row=>row.proveedor===input.proveedor))continue;
       if(payload.delivery.pickup&&(input.municipio!=='Almacén'||!String(input.direccion).startsWith('Recogida presencial en almacén')))fail('CHECKOUT_INVALID','Revisa la recogida en almacén.');
@@ -100,6 +116,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       const guarantee=lineProducts.map(p=>({nombre:p.nombre,garantia:String(p.garantia||'').trim()}));
       if(guarantee.some(p=>!p.garantia))fail('PRODUCT_UNAVAILABLE','Falta la garantía de un producto. Revisa el carrito.');
       const row=await canonicalSale(db,payload.table,{...input,costo_mensajeria:index===0?shipping:0,submission_token:token},actor,true);
+      if(express){row.servicio_mensajeria='express';row.plazo_mensajeria_minutos=express.minutes;}
       row.garantia_venta=guarantee.map(p=>`${p.nombre}: ${p.garantia}`).join(' | ');
       for(const price of row._checkout_prices||[])price.garantia=products.find(p=>p.id===price.id)?.garantia;
       const unique=[...new Set(guarantee.map(p=>p.garantia))];
@@ -109,9 +126,9 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       row.garantia_dias=number&&unit?Math.round(number*unit):null;
       rows.push(row);
     }
-    return rows;
+    return {rows,expressTariff:express?Object.fromEntries(tariffFields.map(field=>[field,tariff[field]??null])):null};
   }
-  const terms=rows=>rows.map(row=>({proveedor:row.proveedor,total:row.total,costo_mensajeria:row.costo_mensajeria,producto:row.producto,garantia_venta:row.garantia_venta,garantia_dias:row.garantia_dias??null,prices:row._checkout_prices||[]}));
+  const terms=rows=>rows.map(row=>({proveedor:row.proveedor,total:row.total,costo_mensajeria:row.costo_mensajeria,producto:row.producto,garantia_venta:row.garantia_venta,garantia_dias:row.garantia_dias??null,prices:row._checkout_prices||[],...(row.servicio_mensajeria==='express'?{servicio_mensajeria:'express',plazo_mensajeria_minutos:row.plazo_mensajeria_minutos}:{})}));
   async function recentDuplicates(rows,actor){
     // Only this signed-in seller's recent orders. No public lookup, name-based
     // ownership expansion, customer records, or commission data in the reply.
@@ -178,7 +195,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
       if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
       if((attempt.version==='pthn2'?attempt.issued:payload.intentCreatedAt)>=ciRequiredFrom&&payload.inputs.some(row=>typeof row.ci!=='string'||!/^[0-9]{11}$/.test(row.ci)))fail('CI_REQUIRED','Completa el carnet de identidad con exactamente 11 dígitos.');
-      const rows=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
+      const {rows,expressTariff}=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
       const duplicates=await recentDuplicates(rows,actor);
       const stamp=now(),digest=await sign('terms:'+JSON.stringify(currentTerms));
       if(body.operation==='quote'){
@@ -199,7 +216,10 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       }
       // Counter increments roll back with the batch. Same-attempt races return
       // the original receipt rather than updating accepted rows.
-      const inserted=await db.rpc('pth_insert_checkout',{p_table:payload.table,p_rows:rows});
+      const inserted=await (expressTariff
+        ? db.rpc('pth_insert_express_checkout',{p_table:payload.table,p_rows:rows,p_tariff:expressTariff})
+        : db.rpc('pth_insert_checkout',{p_table:payload.table,p_rows:rows}));
+      if(expressTariff&&inserted.error?.code==='PT409')fail('CONDITIONS_CHANGED','Cambió la tarifa exprés. Revisa la entrega y confirma nuevamente.');
       if(inserted.error&&inserted.error.code!=='23505')fail('ORDER_OUTCOME_UNKNOWN','Se perdió la confirmación. Comprueba el recibo antes de reintentar.');
       const result=await receipts(token,attempt);
       if(!result.complete)fail('ORDER_OUTCOME_UNKNOWN','Aún no se confirmó todo el pedido. Comprueba el recibo antes de reintentar.');

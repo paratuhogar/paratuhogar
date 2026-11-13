@@ -23,7 +23,9 @@ const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u03
 export function validateQuery(body,actor) {
   const {table,op='select',columns='*',filters=[],orders=[]}=body;
   if(!PROTECTED_TABLES.has(table)||!['select','insert','update','delete','upsert'].includes(op)) fail('Operación no permitida.');
-  if(typeof columns!=='string'||!/^(?:\*|[a-zA-Z0-9_, ]+)$/.test(columns)) fail('Selecciona únicamente campos de esta tabla.');
+  const safeProjection=typeof columns==='string'&&table==='productos'
+    ? columns.split(',').map(column=>column.trim()==='tamaño_envio'?'size':column).join(',') : columns;
+  if(typeof safeProjection!=='string'||!/^(?:\*|[a-zA-Z0-9_, ]+)$/.test(safeProjection)) fail('Selecciona únicamente campos de esta tabla.');
   if(!Array.isArray(filters)||filters.length>30||!Array.isArray(orders)||orders.length>8) fail('Consulta no válida.');
   const restricted=['public','subgestor','mensajero'].includes(actorKind(actor));
   const financial=/comision|costo_proveedor|pago_gestor|estado_financiero/i;
@@ -206,6 +208,12 @@ async function prepareWrite(db,body,actor) {
   for(const input of values) {
     scopeFor(body.table,actor,body.op,input);
     let row={...input};
+    if(body.table==='tarifas_mensajeria'&&String(actor?.rol).toLowerCase()==='logistica'&&
+       Object.keys(row).some(key=>/^(precio|minutos)_expres_/.test(key)))
+      fail('Solo un administrador puede configurar la mensajería exprés.',403);
+    if(['pedidos','pedidos_subgestores'].includes(body.table)&&
+       ['servicio_mensajeria','plazo_mensajeria_minutos'].some(key=>Object.hasOwn(row,key)))
+      fail('Usa la confirmación del pedido para elegir mensajería.');
     // Only canonicalSale's authorized, pending queue lookup may retain a new key.
     const approval=body.table==='pedidos'&&Boolean(row.subgestor_nombre);
     if(['pedidos','pedidos_subgestores'].includes(body.table)&&body.op==='insert'&&/^pthn[12]\./.test(String(row.submission_token||''))&&!approval) fail('Usa la confirmación de pedidos nuevos para esta clave.');

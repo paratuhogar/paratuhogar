@@ -9,6 +9,10 @@
   const inScope=entry=>entry.owner===owner()&&entry.token===token();
   const signature=e=>e.table+'|'+e.receipts.map(r=>r.reference).join('|');
   const actionable=entry=>inScope(entry)&&entries.at(-1)===entry&&!entry.dismissed;
+  const expressLabel=receipt=>receipt?.servicio_mensajeria==='express'&&Number.isInteger(receipt.plazo_mensajeria_minutos)&&receipt.plazo_mensajeria_minutos>0
+    ? 'Exprés · '+receipt.plazo_mensajeria_minutos+' min estimados' : '';
+  const receiptSummary=({reference,proveedor,servicio_mensajeria,plazo_mensajeria_minutos})=>({reference,proveedor,
+    ...(expressLabel({servicio_mensajeria,plazo_mensajeria_minutos})?{servicio_mensajeria,plazo_mensajeria_minutos}:{})});
   function retained(values){
     const current=values.filter(e=>valid(e)&&inScope(e)).sort((a,b)=>a.savedAt-b.savedAt);
     // Keep every minimal receipt within the existing seven-day retention.
@@ -22,11 +26,11 @@
     try {
       const saved=JSON.parse(root.localStorage.getItem(key)||'[]');
       const others=(Array.isArray(saved)?saved:[]).filter(e=>e&&typeof e.owner==='string'&&e.owner!==owner()&&valid(e,e.owner));
-      const minimal=[...others,...entries].map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts:receipts.map(({reference,proveedor})=>({reference,proveedor})),savedAt,dismissed:Boolean(dismissed)}));
+      const minimal=[...others,...entries].map(({owner,table,phone,receipts,savedAt,dismissed})=>({owner,table,phone,receipts:receipts.map(receiptSummary),savedAt,dismissed:Boolean(dismissed)}));
       root.localStorage.setItem(key,JSON.stringify(minimal));
     } catch(_) {}
   }
-  function url(entry){return 'https://api.whatsapp.com/send?phone='+entry.phone+'&text='+encodeURIComponent(entry.message||'Pedido confirmado: '+entry.receipts.map(r=>'#'+r.reference).join(', ')+'. Por favor, revisa los detalles en la web.');}
+  function url(entry){const label=expressLabel(entry.receipts.find(expressLabel));return 'https://api.whatsapp.com/send?phone='+entry.phone+'&text='+encodeURIComponent(entry.message||'Pedido confirmado: '+entry.receipts.map(r=>'#'+r.reference).join(', ')+'. '+(label?label+'. ':'')+'Por favor, revisa los detalles en la web.');}
   function render(){
     // Select before dismissal: closing the latest must not reveal older notices.
     const visible=entries.slice(-1).filter(entry=>!entry.dismissed);
@@ -36,6 +40,8 @@
     for(const entry of visible){
       const section=root.document.createElement('section'),title=root.document.createElement('h3'),status=root.document.createElement('p'),button=root.document.createElement('button'),close=root.document.createElement('button');
       title.textContent='Pedido recibido: '+entry.receipts.map(r=>'#'+r.reference).join(', ');
+      const label=expressLabel(entry.receipts.find(expressLabel));
+      if(label)title.textContent+=' — '+label;
       status.textContent=entry.loading?'Recuperando el vale confirmado…':entry.recoveryFailed?'No se pudo recuperar el vale. Reintenta con conexión o revísalo en Mi dashboard. No crees otro pedido.':'Pedido guardado. Si ya lo enviaste por WhatsApp, puedes cerrar este aviso.';
       button.type='button';button.className='pth-connectivity-action';button.textContent='Enviar pedido por WhatsApp';
       button.disabled=Boolean(entry.loading);
@@ -68,7 +74,7 @@
     const restored=new Map((Array.isArray(saved)?saved:[]).filter(e=>valid(e)).map(e=>{
       const before=previous.get(signature(e));
       if(before&&e.dismissed===true&&!before.dismissed){before.dismissed=true;dismissalChanged=true;}
-      const entry=before||{owner:e.owner,table:e.table,phone:e.phone,receipts:e.receipts.map(r=>({reference:r.reference,proveedor:r.proveedor})),savedAt:e.savedAt,dismissed:e.dismissed===true,token:token(),message:null};
+      const entry=before||{owner:e.owner,table:e.table,phone:e.phone,receipts:e.receipts.map(receiptSummary),savedAt:e.savedAt,dismissed:e.dismissed===true,token:token(),message:null};
       return [signature(entry),entry];
     }));
     // A quota/read failure cannot erase an acknowledged in-memory receipt.
@@ -86,6 +92,7 @@
         if(row.ci&&row.ci!=='No especificado')text+='CI: '+row.ci+'\n';
         text+='\n🛒 *DETALLE*\n'+String(row.producto||'').split(' + ').map(p=>'📦 '+p).join('\n')+'\n\n💰 *TOTAL A PAGAR: $'+total+' USD*\n(Equipos: $'+(total-shipping)+' + Envío: $'+shipping+')\n';
         const payment=String(row.direccion||'').match(/\[PAGO:\s*([^\]]+)\]/i);if(payment)text+='💳 *MÉTODO PAGO:* '+payment[1]+'\n';
+        if(expressLabel(row))text+='🚚 '+expressLabel(row)+'\n';
         if(isLogged){
           const commercial=isSubgestor?name:row.gestor||name;
           const commercialPhone=Object.prototype.hasOwnProperty.call(commercialPhones,commercial)?commercialPhones[commercial]:commercial===name?phone:'';
@@ -97,6 +104,7 @@
     configure(options){load=options.load;restore();},restore,
     show(value,{reopen=false}={}){
       const entry={...value,savedAt:Date.now(),token:token(),dismissed:false};if(!valid(entry))return;
+      entry.receipts=entry.receipts.map(receiptSummary);
       restore();entries=entries.filter(inScope);
       if(entries.some(e=>signature(e)===signature(entry))&&!reopen)return;
       entries=entries.filter(e=>signature(e)!==signature(entry));entries.push(entry);entries=retained(entries);
