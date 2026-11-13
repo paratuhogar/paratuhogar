@@ -47,7 +47,7 @@
     <meta name="pth-offline-shell-version" content="20261006-ready1">
     <script src="js/pwa.js?v=20261006-ready1" defer></script>
     <link rel="stylesheet" href="css/offline-storefront.css?v=20261017-worksettings1">
-    <link rel="stylesheet" href="css/admin-panel.css?v=20261003-recent2">
+    <link rel="stylesheet" href="css/admin-panel.css?v=20261113-tariffs1">
     <script src="js/admin-panel-data.js?v=20261003-recent2" defer></script>
     <link rel="stylesheet" href="css/feedback-announcement.css?v=20261001-1">
     <script src="js/product-availability-form.js?v=20260924-1" defer></script>
@@ -2487,81 +2487,66 @@
             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Configura el costo de envío por municipio y localidad</p>
         </div>
 
-        <!-- Buscador -->
-        <div class="relative w-full md:w-64">
-            <span class="material-symbols-outlined absolute left-3 top-2.5 text-gray-400 text-sm">search</span>
-            <input type="text" id="search-mensajeria" oninput="renderAdminMensajeria()" placeholder="Buscar municipio..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-bold focus:ring-indigo-500">
+        <div class="tariff-toolbar">
+            <input type="search" id="search-mensajeria" class="admin-control" aria-label="Buscar municipio o reparto" oninput="renderAdminMensajeria()" placeholder="Buscar municipio o reparto">
+            <button type="button" id="add-tariff-zone" class="admin-control tariff-primary" onclick="openTariffEditor()" disabled>Añadir zona</button>
+            <button type="button" id="reload-tariff-zones" class="admin-control" onclick="loadTarifasMensajeria()" hidden>Reintentar carga</button>
         </div>
     </div>
 
-    <!-- Formulario para Agregar/Editar -->
-    <div class="bg-indigo-50 dark:bg-gray-800/50 p-4 rounded-3xl border border-indigo-100 dark:border-gray-700">
-        <h4 class="text-xs font-black uppercase text-indigo-800 dark:text-indigo-400 mb-3" id="mensajeria-form-title">Añadir Nueva Tarifa</h4>
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-            <input type="hidden" id="m-id-edit">
-
-            <div class="md:col-span-1">
-                <label class="text-[9px] font-black uppercase text-gray-500">Municipio</label>
-                <input type="text" id="m-municipio" list="list-municipios" placeholder="Ej: Playa" class="w-full rounded-xl border-gray-200 text-xs font-bold">
-                <datalist id="list-municipios"></datalist>
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="text-[9px] font-black uppercase text-gray-500">Localidad / Reparto</label>
-                <input type="text" id="m-localidad" placeholder="Ej: Miramar o Todo el municipio" class="w-full rounded-xl border-gray-200 text-xs font-bold">
-            </div>
-
-            <div class="md:col-span-1">
-                <label class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Pequeño ($)</label>
-                <input type="number" id="m-precio-pq" placeholder="Ej: 6" class="w-full rounded-xl border-gray-200 text-sm font-black text-emerald-600">
-            </div>
-
-            <div class="md:col-span-1">
-                <label for="m-precio-md" class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Mediano ($)</label>
-                <input type="number" min="0" step="0.01" id="m-precio-md" placeholder="Por confirmar" class="w-full rounded-xl border-gray-200 text-sm font-black text-indigo-600">
-            </div>
-
-            <div class="md:col-span-1">
-                <label class="text-[9px] font-black uppercase text-gray-500">Precio Eq. Grande ($)</label>
-                <input type="number" id="m-precio-gr" placeholder="Ej: 10" class="w-full rounded-xl border-gray-200 text-sm font-black text-amber-600">
-            </div>
-        </div>
-
-        <fieldset class="mt-4">
-            <legend class="text-sm font-bold">Mensajería exprés</legend>
-            <p class="text-xs text-gray-500">Precio final en USD, superior al ordinario. Deja ambos campos vacíos para no ofrecer el servicio.</p>
-            <div class="grid gap-2 mt-2 md:grid-cols-3">
-                <div><strong>Pequeño</strong>
-                    <label class="block text-xs">Precio USD <input class="w-full rounded-lg" type="number" min="0.01" step="0.01" id="precio_expres_pequeno"></label>
-                    <label class="block text-xs">Plazo estimado (min) <input class="w-full rounded-lg" type="number" min="1" step="1" id="minutos_expres_pequeno"></label>
+    <dialog id="mensajeria-editor" aria-labelledby="mensajeria-form-title" oncancel="if (tariffEditorSaving) event.preventDefault()">
+        <form onsubmit="event.preventDefault(); adminSaveMensajeria()">
+            <header class="tariff-editor-heading">
+                <h4 id="mensajeria-form-title" tabindex="-1">Añadir zona</h4>
+                <p id="mensajeria-editor-location"></p>
+            </header>
+            <div class="tariff-editor-body">
+                <input type="hidden" id="m-id-edit">
+                <div class="tariff-zone-fields">
+                    <label>Municipio <input id="m-municipio" list="list-municipios" placeholder="Ej.: Playa" required></label>
+                    <datalist id="list-municipios"></datalist>
+                    <label>Localidad o reparto <input id="m-localidad" placeholder="Ej.: Miramar" required></label>
                 </div>
-                <div><strong>Mediano</strong>
-                    <label class="block text-xs">Precio USD <input class="w-full rounded-lg" type="number" min="0.01" step="0.01" id="precio_expres_mediano"></label>
-                    <label class="block text-xs">Plazo estimado (min) <input class="w-full rounded-lg" type="number" min="1" step="1" id="minutos_expres_mediano"></label>
-                </div>
-                <div><strong>Grande</strong>
-                    <label class="block text-xs">Precio USD <input class="w-full rounded-lg" type="number" min="0.01" step="0.01" id="precio_expres_grande"></label>
-                    <label class="block text-xs">Plazo estimado (min) <input class="w-full rounded-lg" type="number" min="1" step="1" id="minutos_expres_grande"></label>
-                </div>
+                <p class="tariff-editor-note">Exprés: el precio debe superar al ordinario. Si no ofreces Exprés para un tamaño, deja vacíos su precio y su plazo.</p>
+                <fieldset class="tariff-size">
+                    <legend>Equipo pequeño</legend>
+                    <label>Ordinaria (USD) <input type="number" step="any" id="m-precio-pq" required></label>
+                    <label>Exprés (USD) <input type="number" min="0.01" step="0.01" id="precio_expres_pequeno"></label>
+                    <label>Plazo (min) <input type="number" min="1" step="1" id="minutos_expres_pequeno"></label>
+                </fieldset>
+                <fieldset class="tariff-size">
+                    <legend>Equipo mediano</legend>
+                    <label>Ordinaria (USD) <input type="number" min="0" step="any" id="m-precio-md" placeholder="Opcional"></label>
+                    <label>Exprés (USD) <input type="number" min="0.01" step="0.01" id="precio_expres_mediano"></label>
+                    <label>Plazo (min) <input type="number" min="1" step="1" id="minutos_expres_mediano"></label>
+                </fieldset>
+                <fieldset class="tariff-size">
+                    <legend>Equipo grande</legend>
+                    <label>Ordinaria (USD) <input type="number" step="any" id="m-precio-gr" required></label>
+                    <label>Exprés (USD) <input type="number" min="0.01" step="0.01" id="precio_expres_grande"></label>
+                    <label>Plazo (min) <input type="number" min="1" step="1" id="minutos_expres_grande"></label>
+                </fieldset>
             </div>
-        </fieldset>
-        <div class="mt-3 flex gap-2 justify-end">
-            <button type="button" onclick="limpiarFormMensajeria()" class="px-4 py-2 bg-white text-gray-500 rounded-xl text-[10px] font-black uppercase border border-gray-200 shadow-sm hover:bg-gray-50">Cancelar</button>
-            <button type="button" onclick="adminSaveMensajeria()" id="btn-save-mensajeria" class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all">Guardar Tarifa</button>
-        </div>
-    </div>
+            <footer class="tariff-editor-footer">
+                <p id="mensajeria-editor-error" role="alert" hidden></p>
+                <div class="tariff-editor-actions">
+                    <button type="button" id="cancel-tariff-editor" class="admin-control" onclick="document.getElementById('mensajeria-editor').close()">Cancelar</button>
+                    <button type="submit" id="btn-save-mensajeria" class="admin-control tariff-primary">Guardar tarifa</button>
+                </div>
+            </footer>
+        </form>
+    </dialog>
+    <p id="mensajeria-list-status" class="admin-note tariff-list-status" role="status"></p>
 
     <!-- Lista/Tabla de Tarifas -->
-    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border shadow-sm">
+        <table class="tariff-list w-full text-left border-collapse">
             <thead class="bg-gray-50 dark:bg-gray-900/50 text-[10px] font-black uppercase text-gray-400 border-b dark:border-gray-700">
                 <tr>
-                    <th class="p-4">Municipio</th>
-                    <th class="p-4">Localidad</th>
-                    <th class="p-4 text-center">Eq. Pequeño (Olla)</th>
-                    <th class="p-4 text-center">Eq. Mediano</th>
-                    <th class="p-4 text-center">Eq. Grande (Refrigerador)</th>
-                    <th class="p-4 text-right">Acciones</th>
+                    <th scope="col">Zona</th>
+                    <th scope="col">Pequeño</th>
+                    <th scope="col">Mediano</th>
+                    <th scope="col">Grande</th>
                 </tr>
             </thead>
             <tbody id="list-admin-mensajeria" class="divide-y dark:divide-gray-700">
@@ -3301,8 +3286,8 @@
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/gestor-registration-steps.js?v=20261016-captacion1" defer></script>
     <script src="js/checkout-confirmation.js?v=20261112-express1" defer></script>
-    <script src="js/storefront.min.js?v=20261112-express1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261112-express1" defer></script>
+    <script src="js/storefront.min.js?v=20261113-tariffs1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261113-tariffs1" defer></script>
 
 
 

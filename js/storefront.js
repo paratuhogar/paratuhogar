@@ -140,6 +140,9 @@ async function checkShortLinks() {
         onClear: () => {
             productosRaw = []; catalogSourceProducts = []; selectedProduct = null; crmClients = []; checkoutClientChoices?.destroy(); checkoutClientChoices = null; crmLoadVersion++;
             tarifasMensajeria = {}; tarifasMensajeriaAdminRaw = [];
+            tariffAdminReady = false; ++tariffLoadVersion;
+            const addZone = document.getElementById('add-tariff-zone');
+            if (addZone) addZone.disabled = true;
             window.currentUserData = null; window.gestorName = null; window.isAdmin = false;
             document.getElementById('crm-datalist')?.replaceChildren();
             document.getElementById('checkout-form')?.reset();
@@ -11997,6 +12000,21 @@ function previewGithubImage(index) {
 // Variable global que ahora se llenará desde Supabase
 let tarifasMensajeria = {};
 let tarifasMensajeriaAdminRaw =[]; // Para el panel de administrador
+let tariffLoadVersion = 0;
+let tariffAdminReady = false;
+let tariffEditorSaving = false;
+let tariffEditorToken = null;
+
+function invalidateTariffEditor() {
+    const editor = document.getElementById('mensajeria-editor');
+    if (!editor?.open || tariffEditorToken === window.PTHSecureData.token()) return;
+    document.getElementById('mensajeria-list-status').textContent = 'La sesión cambió. Vuelve a abrir la tarifa antes de guardar.';
+    editor.close();
+}
+window.addEventListener('pth:session-changed', invalidateTariffEditor);
+window.addEventListener('storage', event => {
+    if (event.key === 'pth_secure_token' || event.key === null) invalidateTariffEditor();
+});
 
 // ==========================================
 // MÓDULO DE MENSAJERÍA (CONECTADO A SUPABASE)
@@ -12004,23 +12022,43 @@ let tarifasMensajeriaAdminRaw =[]; // Para el panel de administrador
 
 // 1. CARGAR DATOS (Se llama al cargar la página)
 async function loadTarifasMensajeria() {
+    const version = ++tariffLoadVersion;
     const local = offlineStorefront.current();
     let data, error;
-    if (local) data = local.tariffs;
-    else ({data, error} = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true }));
+    try {
+        if (local) data = local.tariffs;
+        else ({data, error} = await supabaseClient.from('tarifas_mensajeria').select('*').order('municipio', { ascending: true }));
+    } catch (e) { error = e; }
+    if (version !== tariffLoadVersion) return;
+    const retry = document.getElementById('reload-tariff-zones');
+    if (error || !Array.isArray(data)) {
+        if (!tariffAdminReady && retry) {
+            retry.hidden = false;
+            document.getElementById('mensajeria-list-status').textContent = 'No se pudieron cargar las zonas. Reintenta antes de añadir una.';
+        }
+        return;
+    }
+    tariffAdminReady = !local;
+    const add = document.getElementById('add-tariff-zone');
+    if (add) add.disabled = !tariffAdminReady;
+    if (tariffAdminReady && retry && !retry.hidden) {
+        retry.hidden = true;
+        document.getElementById('mensajeria-list-status').textContent = '';
+    }
+    applyTariffRows(data, !local);
+}
 
-    if (error || !data) return console.error("Error cargando tarifas");
-
-    if (!local) window.PTHPendingCheckoutUI?.saveDeliveryZones(data);
+function applyTariffRows(data, live) {
+    if (live) window.PTHPendingCheckoutUI?.saveDeliveryZones(data);
     tarifasMensajeriaAdminRaw = data;
-    tarifasMensajeria = {}; // Reseteamos el objeto
+    tarifasMensajeria = Object.create(null);
 
     // Reconstruimos el objeto para que la lógica del Carrito siga funcionando igual que antes
     const listaMunicipiosUnicos = new Set();
 
     data.forEach(item => {
         if (!tarifasMensajeria[item.municipio]) {
-            tarifasMensajeria[item.municipio] = {};
+            tarifasMensajeria[item.municipio] = Object.create(null);
         }
         // Creamos la estructura { pq: 6, gr: 10 }
         tarifasMensajeria[item.municipio][item.localidad] = {
@@ -12055,7 +12093,7 @@ async function loadTarifasMensajeria() {
     }
 
     // Si el admin está logueado, dibujamos la tabla
-    if (!local) renderAdminMensajeria();
+    if (live) renderAdminMensajeria();
     recalcularTotalFinal();
 }
 
@@ -12071,51 +12109,44 @@ function renderAdminMensajeria() {
     const searchInput = document.getElementById('search-mensajeria');
     if (!container) return;
 
-    const query = searchInput ? searchInput.value.toLowerCase() : "";
+    const searchKey = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const query = searchKey(searchInput?.value.trim());
 
     const filtradas = tarifasMensajeriaAdminRaw.filter(t =>
-        t.municipio.toLowerCase().includes(query) ||
-        t.localidad.toLowerCase().includes(query)
+        searchKey(t.municipio).includes(query) || searchKey(t.localidad).includes(query)
     );
     const expressSummary = (row, size) => {
         const price = row['precio_expres_' + size], minutes = row['minutos_expres_' + size];
-        return price == null || minutes == null ? '' : `<span class="block mt-1 text-xs font-bold text-blue-700 dark:text-blue-300">Exprés $${Number(price).toFixed(2)} · ${Number(minutes)} min</span>`;
+        return price == null || minutes == null ? '' : `<span class="tariff-express-summary">Exprés $${Number(price).toFixed(2)} · ${Number(minutes)} min</span>`;
     };
 
     container.innerHTML = filtradas.map(t => `
-        <tr class="hover:bg-slate-50 dark:hover:bg-gray-900/50 transition-colors">
-            <td class="p-4 align-middle">
-                <span class="text-xs font-black text-gray-700 dark:text-gray-300 uppercase">${t.municipio}</span>
+        <tr data-tariff-id="${escapeDetailText(t.id)}">
+            <td>
+                <strong class="tariff-locality">${escapeDetailText(t.localidad)}</strong>
+                <span class="tariff-municipality">${escapeDetailText(t.municipio)}</span>
+                <div class="tariff-row-actions">
+                    <button type="button" data-tariff-action="edit" class="admin-control" aria-label="Configurar ${escapeDetailText(t.localidad)}">Configurar</button>
+                    <button type="button" data-tariff-action="delete" class="admin-control tariff-delete" aria-label="Eliminar ${escapeDetailText(t.localidad)}" title="Eliminar zona">×</button>
+                </div>
             </td>
-            <td class="p-4 align-middle">
-                <span class="text-[10px] font-bold text-gray-500">${t.localidad}</span>
-            </td>
-            <td class="p-4 text-center align-middle">
-                <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">$${t.precio_pequeno}</span>
-                ${expressSummary(t, 'pequeno')}
-            </td>
-            <td class="p-4 text-center align-middle">
-                <span class="text-xs font-black text-indigo-600">${t.precio_mediano == null ? 'Por confirmar' : '$' + Number(t.precio_mediano)}</span>
-                ${expressSummary(t, 'mediano')}
-            </td>
-            <td class="p-4 text-center align-middle">
-                <span class="text-xs font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">$${t.precio_grande}</span>
-                ${expressSummary(t, 'grande')}
-            </td>
-            <td class="p-4 text-right align-middle">
-                <button onclick="adminEditMensajeria('${t.id}')" class="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm" title="Editar Precio">
-                    <span class="material-symbols-outlined text-sm">edit</span>
-                </button>
-                <button onclick="adminDeleteMensajeria('${t.id}', '${t.localidad}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors shadow-sm ml-1" title="Eliminar Localidad">
-                    <span class="material-symbols-outlined text-sm">delete</span>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+            ${['pequeno','mediano','grande'].map(size => `<td><strong>${t['precio_'+size] == null ? '—' : '$'+Number(t['precio_'+size])}</strong>${expressSummary(t,size)}</td>`).join('')}
+        </tr>`).join('') || '<tr><td colspan="4">No hay zonas que coincidan con la búsqueda.</td></tr>';
+    container.onclick = event => {
+        const button = event.target.closest('[data-tariff-action]');
+        if (!button) return;
+        const row = tarifasMensajeriaAdminRaw.find(t => String(t.id) === button.closest('tr').dataset.tariffId);
+        if (!row) return;
+        if (button.dataset.tariffAction === 'edit') openTariffEditor(row, button);
+        else adminDeleteMensajeria(row.id, row.localidad);
+    };
 }
 
 // 3. AGREGAR O EDITAR TARIFA
 async function adminSaveMensajeria() {
+    invalidateTariffEditor();
+    const editor = document.getElementById('mensajeria-editor');
+    if (!editor?.open || tariffEditorSaving) return;
     const id = document.getElementById('m-id-edit').value;
     const municipio = document.getElementById('m-municipio').value.trim();
     const localidad = document.getElementById('m-localidad').value.trim();
@@ -12124,32 +12155,53 @@ async function adminSaveMensajeria() {
     const medio = document.getElementById('m-precio-md').value.trim();
     const precio_md = medio === '' ? null : Number(medio);
 
+    const feedback = document.getElementById('mensajeria-editor-error');
+    feedback.hidden = true;
     if (!municipio || !localidad || !Number.isFinite(precio_pq) || !Number.isFinite(precio_gr) ||
         (precio_md !== null && (!Number.isFinite(precio_md) || precio_md < 0))) {
-        return alert("⚠️ Por favor completa todos los campos correctamente.");
+        feedback.textContent = 'Completa el municipio, el reparto y las tarifas ordinarias requeridas.';
+        feedback.hidden = false;
+        return;
     }
 
     const btn = document.getElementById('btn-save-mensajeria');
-    const originalText = btn.innerText;
+    const cancel = document.getElementById('cancel-tariff-editor');
+    const inputs = [...editor.querySelectorAll('input:not([disabled])')];
+    const token = tariffEditorToken;
+    tariffEditorSaving = true;
+    for (const input of inputs) input.readOnly = true;
     btn.innerText = "Guardando...";
-    btn.disabled = true;
+    btn.disabled = cancel.disabled = true;
 
     try {
         const row = { municipio, localidad, precio_pequeno: precio_pq, precio_mediano: precio_md, precio_grande: precio_gr };
         if (String(window.currentUserData?.rol).toLowerCase() !== 'logistica')
             Object.assign(row, window.PTHCheckoutForm.expressTariffFields(key => document.getElementById(key)?.value, row));
         const table = supabaseClient.from('tarifas_mensajeria');
-        const { error } = await (id ? table.update(row).eq('id', id) : table.insert([row]));
-        if (error) throw error;
+        const { data: saved, error } = await (id ? table.update(row).eq('id', id) : table.insert([row])).select('*').single().forSession(token);
+        if (error || !saved?.id) throw error || Error('No se recibió confirmación.');
+        invalidateTariffEditor();
+        if (!editor.open) return;
 
-        limpiarFormMensajeria();
-        await loadTarifasMensajeria(); // Recargar datos desde la nube
+        const rows = tarifasMensajeriaAdminRaw.map(item => String(item.id) === String(saved.id) ? saved : item);
+        if (!rows.some(item => String(item.id) === String(saved.id))) rows.push(saved);
+        // Don't let a read started before this acknowledgement undo the update.
+        ++tariffLoadVersion;
+        applyTariffRows(rows, true);
+        document.getElementById('mensajeria-list-status').textContent = id ? 'Tarifa actualizada.' : 'Zona añadida. Si no aparece, revisa la búsqueda.';
+        editor.close();
 
     } catch(e) {
-        alert("Error al guardar: " + e.message);
+        invalidateTariffEditor();
+        if (editor.open) {
+            feedback.textContent = 'No se pudo guardar. ' + (e.message || 'Revisa la conexión y vuelve a intentarlo.');
+            feedback.hidden = false;
+        }
     } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+        for (const input of inputs) input.readOnly = false;
+        btn.innerText = "Guardar tarifa";
+        btn.disabled = cancel.disabled = false;
+        tariffEditorSaving = false;
     }
 }
 
@@ -12162,35 +12214,42 @@ async function adminDeleteMensajeria(id, localidad) {
     loadTarifasMensajeria(); // Recargar de la nube
 }
 
-// 5. PREPARAR FORMULARIO PARA EDICIÓN
-function adminEditMensajeria(id) {
-    const tarifa = tarifasMensajeriaAdminRaw.find(t => t.id === id);
-    if (!tarifa) return;
-
-    document.getElementById('m-id-edit').value = tarifa.id;
-    document.getElementById('m-municipio').value = tarifa.municipio;
-    document.getElementById('m-localidad').value = tarifa.localidad;
-    document.getElementById('m-precio-pq').value = tarifa.precio_pequeno;
-    document.getElementById('m-precio-gr').value = tarifa.precio_grande;
+function openTariffEditor(tarifa = {}, trigger = document.getElementById('add-tariff-zone')) {
+    const editor = document.getElementById('mensajeria-editor');
+    if (!editor || editor.open || tariffEditorSaving || !tariffAdminReady) return;
+    tariffEditorToken = window.PTHSecureData.token();
+    document.getElementById('m-id-edit').value = tarifa.id ?? '';
+    document.getElementById('m-municipio').value = tarifa.municipio ?? '';
+    document.getElementById('m-localidad').value = tarifa.localidad ?? '';
+    document.getElementById('m-precio-pq').value = tarifa.precio_pequeno ?? '';
+    document.getElementById('m-precio-gr').value = tarifa.precio_grande ?? '';
     document.getElementById('m-precio-md').value = tarifa.precio_mediano ?? "";
     fillExpressTariffFields(tarifa);
 
-    document.getElementById('mensajeria-form-title').innerText = "Editando Tarifa";
-    document.getElementById('btn-save-mensajeria').innerText = "Actualizar Tarifa";
-}
-
-// 6. LIMPIAR FORMULARIO
-function limpiarFormMensajeria() {
-    document.getElementById('m-id-edit').value = "";
-    document.getElementById('m-municipio').value = "";
-    document.getElementById('m-localidad').value = "";
-    document.getElementById('m-precio-pq').value = "";
-    document.getElementById('m-precio-gr').value = "";
-    document.getElementById('m-precio-md').value = "";
-    fillExpressTariffFields({});
-
-    document.getElementById('mensajeria-form-title').innerText = "Añadir Nueva Tarifa";
-    document.getElementById('btn-save-mensajeria').innerText = "Guardar Tarifa";
+    const title = document.getElementById('mensajeria-form-title');
+    title.textContent = tarifa.id ? 'Configurar tarifa' : 'Añadir zona';
+    document.getElementById('mensajeria-editor-location').textContent = tarifa.id ? `${tarifa.municipio} · ${tarifa.localidad}` : '';
+    document.getElementById('mensajeria-editor-error').hidden = true;
+    const {scrollX: x, scrollY: y} = window;
+    const anchor = trigger?.getBoundingClientRect().top;
+    const rowIndex = trigger?.closest('tr')?.sectionRowIndex;
+    editor.addEventListener('close', () => {
+        if (editor.open || tariffEditorToken !== window.PTHSecureData.token() ||
+            !trigger || trigger.closest('.tab-cnt')?.classList.contains('hidden') ||
+            document.getElementById('sec-admin-master')?.classList.contains('hidden')) return;
+        const rows = [...document.querySelectorAll('#list-admin-mensajeria [data-tariff-id]')];
+        const updated = tarifa.id && rows.find(row => row.dataset.tariffId === String(tarifa.id));
+        const nearby = updated || (Number.isInteger(rowIndex) && rows[Math.min(rowIndex, rows.length - 1)]);
+        const rowAction = nearby ? nearby.querySelector('[data-tariff-action="edit"]') : null;
+        const target = rowAction || (trigger.isConnected ? trigger : document.getElementById('search-mensajeria'));
+        target?.focus({preventScroll:true});
+        const top = rowAction && Number.isFinite(anchor) ? window.scrollY + rowAction.getBoundingClientRect().top - anchor
+            : trigger.isConnected ? y : window.scrollY + (target?.getBoundingClientRect().top ?? 0) - window.innerHeight / 2;
+        window.scrollTo({left:x,top,behavior:'instant'});
+    }, {once:true});
+    editor.showModal();
+    title.focus({preventScroll:true});
+    editor.querySelector('.tariff-editor-body').scrollTop = 0;
 }
 
 // 7. BORRAR EL EVENTO VIEJO QUE INICIABA LOS MUNICIPIOS
@@ -12218,7 +12277,9 @@ window.actualizarLocalidades = function() {
     if(municipio && tarifasMensajeria[municipio]) {
         locSelect.disabled = false;
         Object.keys(tarifasMensajeria[municipio]).forEach(loc => {
-            locSelect.innerHTML += `<option value="${loc}">${loc}</option>`;
+            const option = document.createElement('option');
+            option.value = option.textContent = loc;
+            locSelect.append(option);
         });
     } else {
         locSelect.disabled = true;

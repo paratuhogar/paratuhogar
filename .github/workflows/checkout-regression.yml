@@ -44,3 +44,4 @@ jobs:
         run: |
           npm run check:checkout-release
           PTH_EXPRESS_SHIPPING=1 node tests/checkout-recovery-latest-browser.cjs
+          node tests/tariff-editor-browser.cjs
