@@ -591,7 +591,7 @@
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/cocina-20-royal/",
-    "updated_at": "2026-10-30T02:11:02.956356+00:00"
+    "updated_at": "2026-11-14T01:19:57.947541+00:00"
   },
   {
     "id": "617e9ade-555c-4b19-9ba9-c2ba8681b9ca",
@@ -1084,9 +1084,9 @@
     "slug": "estacion-portatil-ecoflow-delta-3",
     "nombre": "Estación portátil - Ecoflow Delta 3",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3/",
-    "updated_at": "2026-10-20T17:56:58.743948+00:00"
+    "updated_at": "2026-11-14T01:20:46.291155+00:00"
   },
   {
     "id": "4132edb9-3b94-4e7d-ac25-8f563d17163b",
@@ -2592,6 +2592,15 @@
     "updated_at": "2026-10-11T23:45:24.417432+00:00"
   },
   {
+    "id": "4788efbd-2b7f-4879-82cf-9f9205723867",
+    "slug": "nevera-16-pies-milexus-doble-puerta",
+    "nombre": "Nevera 16 pies Milexus doble puerta",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-16-pies-milexus-doble-puerta/",
+    "updated_at": "2026-11-13T20:36:12.476604+00:00"
+  },
+  {
     "id": "57564af5-3ff7-40d0-9e42-ce0219a73a75",
     "slug": "nevera-20-pies-milexus-doble-puerta",
     "nombre": "Nevera 20 pies Milexus Doble Puerta",
@@ -2605,9 +2614,9 @@
     "slug": "nevera-23-4-pies-godline-doble-puerta",
     "nombre": "Nevera 23.4 pies Godline Doble puerta",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-23-4-pies-godline-doble-puerta/",
-    "updated_at": "2026-11-13T17:02:34.308934+00:00"
+    "updated_at": "2026-11-13T20:36:56.328898+00:00"
   },
   {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
@@ -3910,9 +3919,9 @@
     "slug": "split-1t-godline-venta-mayorista",
     "nombre": "Split 1T  GODLINE",
     "categoria": "MUNDO FRIO ",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-godline-venta-mayorista/",
-    "updated_at": "2026-10-30T02:08:33.157504+00:00"
+    "updated_at": "2026-11-14T01:17:44.714119+00:00"
   },
   {
     "id": "7306dce3-836a-494a-bf58-a4c6a8aa41c7",
