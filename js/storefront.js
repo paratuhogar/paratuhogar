@@ -8585,7 +8585,11 @@ async function updateFormCategories() {
 }
     // --- FUNCIÓN DE EXPORTACIÓN EXCEL AVANZADA (LOGÍSTICA) ---
 async function exportLogisticaExcel() {
+    const token = window.PTHSecureData.token();
+    const statusFilter = currentStatusFilter;
+    if (!token) return alert("Inicia sesión para exportar los pedidos.");
     if (window.PTHAssets && !await window.PTHAssets.ensure('xlsx')) return;
+    if (window.PTHSecureData.token() !== token) return;
     // 1. Validar que haya datos
     if (!pedidosRawAdmin || pedidosRawAdmin.length === 0) {
         return alert("No hay datos cargados para exportar.");
@@ -8605,15 +8609,34 @@ async function exportLogisticaExcel() {
 
         // Filtro de Estado
         let estadoMatch = false;
-        if (currentStatusFilter === 'TODOS') estadoMatch = true;
-        else if (currentStatusFilter === 'FINALIZADOS') estadoMatch = (p.estado === 'Entregado' || p.estado === 'Cancelado');
-        else estadoMatch = (p.estado === currentStatusFilter);
+        if (statusFilter === 'TODOS') estadoMatch = true;
+        else if (statusFilter === 'FINALIZADOS') estadoMatch = (p.estado === 'Entregado' || p.estado === 'Cancelado');
+        else estadoMatch = (p.estado === statusFilter);
 
         return textoMatch && estadoMatch;
     });
 
     if (datosFiltrados.length === 0) {
         return alert("No hay pedidos que coincidan con los filtros actuales.");
+    }
+
+    // Resolve the saved assignment, including deactivated couriers. The
+    // active-only list for assigning new orders is not a historical directory.
+    const courierIds = [...new Set(datosFiltrados.map(p => p.mensajero_id).filter(Boolean))];
+    const courierNames = new Map();
+    try {
+        for (let offset = 0; offset < courierIds.length; offset += 100) {
+            const { data, error } = await supabaseClient.from('mensajeros')
+                .select('id,nombre').in('id', courierIds.slice(offset, offset + 100)).forSession(token);
+            if (window.PTHSecureData.token() !== token) return;
+            if (error || !Array.isArray(data)) throw error || new Error('Respuesta incompleta');
+            for (const { id, nombre } of data) {
+                if (typeof nombre === 'string' && nombre.trim()) courierNames.set(id, nombre.trim());
+            }
+        }
+    } catch (_) {
+        if (window.PTHSecureData.token() === token) alert("No se pudieron consultar los mensajeros. Intenta exportar de nuevo.");
+        return;
     }
 
     // 3. Formatear los datos para que el Excel se vea Profesional
@@ -8631,14 +8654,17 @@ async function exportLogisticaExcel() {
         "Total Venta": p.total,
         "Comisión Gestor": p.comision_total,
         "Estado Actual": p.estado,  // Saldrá el texto limpio (ej: "Pendiente")
+        "Mensajero asignado": p.mensajero_id ? (courierNames.get(p.mensajero_id) || 'Nombre no disponible') : 'Sin asignar',
         "Pago Comisión": p.pago_gestor || 'Pendiente'
     }));
 
     // 4. Generar el archivo
     const ws = XLSX.utils.json_to_sheet(dataParaExcel);
+    ws['!autofilter'] = { ref: ws['!ref'] };
 
     // Ajustar ancho de columnas automáticamente (Opcional, pero se ve mejor)
     const wscols = [
+        {wch: 15}, // ID pedido
         {wch: 12}, // Fecha
         {wch: 25}, // Cliente
         {wch: 15}, // CI
@@ -8650,6 +8676,7 @@ async function exportLogisticaExcel() {
         {wch: 10}, // Total
         {wch: 10}, // Comisión
         {wch: 15}, // Estado
+        {wch: 25}, // Mensajero
         {wch: 15}  // Pago
     ];
     ws['!cols'] = wscols;
@@ -8659,7 +8686,7 @@ async function exportLogisticaExcel() {
 
     // Nombre del archivo con fecha y filtro
     const fechaHoy = new Date().toLocaleDateString().replace(/\//g, '-');
-    XLSX.writeFile(wb, `Logistica_${currentStatusFilter}_${fechaHoy}.xlsx`);
+    XLSX.writeFile(wb, `Logistica_${statusFilter}_${fechaHoy}.xlsx`);
 }
 
 // --- FUNCIÓN PARA ACTUALIZAR PRECIO Y COMISIÓN ---
