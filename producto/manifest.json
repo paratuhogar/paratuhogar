@@ -15,7 +15,7 @@
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/arrocera-decakila-1-litros-con-vaporera/",
-    "updated_at": "2026-11-09T02:55:04.957637+00:00"
+    "updated_at": "2026-11-15T01:32:39.030774+00:00"
   },
   {
     "id": "23156c57-fa37-4134-b026-19727aaef40a",
@@ -115,6 +115,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/backups-salicru-850va/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "602b8e1c-eb19-4e34-af0f-723a8d771cd3",
+    "slug": "barra-de-sonido-maxell-usb-con-iluminacion-rgb",
+    "nombre": "Barra de sonido Maxell USB con iluminación RGB",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/barra-de-sonido-maxell-usb-con-iluminacion-rgb/",
+    "updated_at": "2026-11-14T23:43:44.78398+00:00"
   },
   {
     "id": "a39630b1-7e4b-4625-89b3-952abd86400d",
@@ -315,6 +324,24 @@
     "updated_at": "2026-10-02T18:57:51.053763+00:00"
   },
   {
+    "id": "ef2ad48f-518c-4fd0-a23b-06f6590c2708",
+    "slug": "bicicleta-electrica-aovopro",
+    "nombre": "Bicicleta eléctrica AOVOPRO",
+    "categoria": "TRANSPORTE",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/bicicleta-electrica-aovopro/",
+    "updated_at": "2026-11-15T01:03:42.756789+00:00"
+  },
+  {
+    "id": "05dc9e81-fb10-4df6-8d6b-a1dc8f429806",
+    "slug": "bicimoto-electrico-vedca",
+    "nombre": "Bicimoto eléctrico VEDCA",
+    "categoria": "TRANSPORTE",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/bicimoto-electrico-vedca/",
+    "updated_at": "2026-11-15T01:02:11.899302+00:00"
+  },
+  {
     "id": "a88e7e4a-bb9a-4112-9002-0faff8dd0bbc",
     "slug": "bicimoto-topmaq-evolution-2026",
     "nombre": "Bicimoto Topmaq Evolution 2026",
@@ -351,6 +378,15 @@
     "updated_at": "2026-11-05T02:30:19.665808+00:00"
   },
   {
+    "id": "c2e70799-b14b-4c7a-bc88-d50adc088512",
+    "slug": "bocinas-estereo-maxell-rgb-2-0",
+    "nombre": "Bocinas estéreo Maxell RGB 2.0",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/bocinas-estereo-maxell-rgb-2-0/",
+    "updated_at": "2026-11-14T23:37:50.613164+00:00"
+  },
+  {
     "id": "435f9f98-447d-4365-b10b-a5f1ba22cc47",
     "slug": "bocinas-logitech-z150-sonido-estereo",
     "nombre": "Bocinas Logitech Z150 *Sonido Estéreo*",
@@ -358,6 +394,15 @@
     "disponible": true,
     "url": "https://paratuhogar.org/producto/bocinas-logitech-z150-sonido-estereo/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "06ed6062-ee87-472c-8e5c-a261fe26cea4",
+    "slug": "bocinas-mini-maxell",
+    "nombre": "Bocinas mini Maxell",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/bocinas-mini-maxell/",
+    "updated_at": "2026-11-14T23:40:24.06509+00:00"
   },
   {
     "id": "5d7ad2de-31b6-4483-a3c1-941e9a3dc8a6",
@@ -412,6 +457,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/cable-fotovoltaico-x-rollo-25m/",
     "updated_at": "2026-08-18T18:24:07.280494+00:00"
+  },
+  {
+    "id": "c75792c5-ea59-452f-83f2-d8474f46c05a",
+    "slug": "cable-hdmi-plano",
+    "nombre": "Cable HDMI plano",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/cable-hdmi-plano/",
+    "updated_at": "2026-11-14T23:25:15.351028+00:00"
   },
   {
     "id": "1820b162-c5a1-405b-9dbf-7b544f0b3388",
@@ -1971,6 +2025,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "a7b0a485-4957-4195-800b-52a15fe81185",
+    "slug": "lampara-recargable-led-md-x1929",
+    "nombre": "Lámpara recargable LED MD-X1929",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/lampara-recargable-led-md-x1929/",
+    "updated_at": "2026-11-15T01:45:39.098713+00:00"
+  },
+  {
     "id": "cc4590cd-2ffa-4c01-9b1b-86a2e363672e",
     "slug": "lampara-solar-de-300w-sun",
     "nombre": "Lámpara solar de 300w SUN",
@@ -2502,6 +2565,15 @@
     "updated_at": "2026-08-31T19:41:46.196513+00:00"
   },
   {
+    "id": "3619118e-20d1-45a1-a74c-6cc7654210e9",
+    "slug": "moto-electrica-challenger-2026",
+    "nombre": "Moto eléctrica Challenger 2026",
+    "categoria": "TRANSPORTE",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/moto-electrica-challenger-2026/",
+    "updated_at": "2026-11-15T01:02:14.563609+00:00"
+  },
+  {
     "id": "404ef190-b252-4b2b-ae01-9bc998991c3f",
     "slug": "moto-electrica-yoazaky-707-galactica",
     "nombre": "Moto eléctrica Yoazaky 707 Galactica",
@@ -2527,6 +2599,24 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/mouse-gaming-tron-maxell/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "3654f188-8391-4bb5-ab5a-d7fe09394dba",
+    "slug": "mouse-inalambrico-maxell",
+    "nombre": "Mouse inalámbrico Maxell",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/mouse-inalambrico-maxell/",
+    "updated_at": "2026-11-14T23:29:00.03084+00:00"
+  },
+  {
+    "id": "59daba64-c2e3-4d1e-9cf5-0656dbc4451c",
+    "slug": "mouse-optico-maxell-5-botones",
+    "nombre": "Mouse Óptico Maxell 5 botones",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/mouse-optico-maxell-5-botones/",
+    "updated_at": "2026-11-14T23:32:01.351173+00:00"
   },
   {
     "id": "e394a998-5678-4206-9ca3-9b85981921d5",
@@ -2842,6 +2932,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-9-pies-sankey/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "5632bbf4-1d54-45fe-9133-0ead1975e7f7",
+    "slug": "nevera-exhibidora-11-5-pies-milexus",
+    "nombre": "NEVERA EXHIBIDORA  11.5 pies MILEXUS",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/nevera-exhibidora-11-5-pies-milexus/",
+    "updated_at": "2026-11-14T23:55:28.265812+00:00"
   },
   {
     "id": "fca90c66-2e13-45a5-9ab3-8fe9a392a775",
@@ -4149,6 +4248,15 @@
     "updated_at": "2026-09-29T19:14:16.304583+00:00"
   },
   {
+    "id": "88161334-4787-42f2-bfcb-762371efd61b",
+    "slug": "teclado-inalambrico-maxell-wireless-slim",
+    "nombre": "Teclado inalámbrico Maxell Wireless Slim",
+    "categoria": "TECNOLOGÍA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/teclado-inalambrico-maxell-wireless-slim/",
+    "updated_at": "2026-11-14T23:34:53.647137+00:00"
+  },
+  {
     "id": "e5c54b8f-80d9-49d0-b1dc-a57e71c22cef",
     "slug": "telefono-inalambrico-gigaset-a270-dect-duo-negro",
     "nombre": "Teléfono Inalámbrico Gigaset A270 DECT Duo Negro",
@@ -4183,6 +4291,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/triciclo-electrico-de-carga-1200w-viento-rapido-72v-500-kg-de-capacidad/",
     "updated_at": "2026-09-23T20:18:08.892337+00:00"
+  },
+  {
+    "id": "3dd06004-4b96-41d3-8e87-dc45d7306eea",
+    "slug": "triciclo-electrico-magikbike-n003",
+    "nombre": "Triciclo Eléctrico Magikbike N003!",
+    "categoria": "TRANSPORTE",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/triciclo-electrico-magikbike-n003/",
+    "updated_at": "2026-11-15T01:39:26.339678+00:00"
   },
   {
     "id": "c189a071-df3f-4fc9-979d-0fab3e9ce428",
