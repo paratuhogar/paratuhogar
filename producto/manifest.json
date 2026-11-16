@@ -2938,9 +2938,9 @@
     "slug": "nevera-exhibidora-11-5-pies-milexus",
     "nombre": "NEVERA EXHIBIDORA  11.5 pies MILEXUS",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-exhibidora-11-5-pies-milexus/",
-    "updated_at": "2026-11-14T23:55:28.265812+00:00"
+    "updated_at": "2026-11-16T15:55:08.011172+00:00"
   },
   {
     "id": "fca90c66-2e13-45a5-9ab3-8fe9a392a775",
@@ -3163,9 +3163,9 @@
     "slug": "olla-reina-6l-unizuki",
     "nombre": "Olla reina 6L UNIZUKI",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/olla-reina-6l-unizuki/",
-    "updated_at": "2026-11-02T16:40:30.666579+00:00"
+    "updated_at": "2026-11-16T14:51:17.001113+00:00"
   },
   {
     "id": "1407f1bc-c6c9-4337-a81d-6c231f727a87",
@@ -4335,7 +4335,7 @@
     "categoria": "VENTILADORES",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/ventilador-de-pedestal-16-midea/",
-    "updated_at": "2026-09-05T21:50:30.87499+00:00"
+    "updated_at": "2026-11-16T18:14:01.676703+00:00"
   },
   {
     "id": "c52849e6-710d-4c4d-b476-61705b3efc6f",
@@ -4360,9 +4360,9 @@
     "slug": "ventilador-recargable-16-eko",
     "nombre": "Ventilador recargable 16\" EKO",
     "categoria": "VENTILADORES",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/ventilador-recargable-16-eko/",
-    "updated_at": "2026-10-27T17:46:19.818401+00:00"
+    "updated_at": "2026-11-16T18:13:58.94399+00:00"
   },
   {
     "id": "d1511a74-52cb-41f6-a49b-652d329bfbeb",
