@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-11-15</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-11-15</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-11-16</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-11-16</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-11-15</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-11-15</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-11-13</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-11-16</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-11-14</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-11-10</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-11-14</lastmod></url>
@@ -42,6 +42,7 @@
   <url><loc>https://paratuhogar.org/producto/cafetera-electrica-6t-eko/</loc><lastmod>2026-09-05</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/cafetera_electrica_6t_eko_1.jpeg</image:loc><image:title>Cafetera eléctrica 6T EKO</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/cafetera-electrica-eko/</loc><lastmod>2026-07-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Cafeterael%C3%A9ctricaEKO.jpeg</image:loc><image:title>Cafetera eléctrica EKO</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/caja-fuerte-digital/</loc><lastmod>2026-10-21</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Cajafuertedigital.jpg</image:loc><image:title>Caja fuerte digital</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/calentador-de-agua-eko-50l/</loc><lastmod>2026-11-16</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Calentador_aguaEKO_50L.jpeg</image:loc><image:title>Calentador de agua EKO - 50L</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/calentador-de-agua-ruden-30-l/</loc><lastmod>2026-09-14</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Calentadorruden1.jpeg</image:loc><image:title>Calentador de agua Ruden - 30 L</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/calentador-de-agua-ruden-50l/</loc><lastmod>2026-10-30</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Calentadorruden1.jpeg</image:loc><image:title>Calentador de agua Ruden - 50L</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/movil-redmi-a5/</loc><lastmod>2026-10-09</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/RedmiA5.jpeg</image:loc><image:title>Celular Redmi A5</image:title></image:image></url>
