@@ -643,9 +643,9 @@
     "slug": "cocina-20-royal",
     "nombre": "Cocina 20\" Royal",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/cocina-20-royal/",
-    "updated_at": "2026-11-14T01:19:57.947541+00:00"
+    "updated_at": "2026-11-16T23:54:13.75211+00:00"
   },
   {
     "id": "617e9ade-555c-4b19-9ba9-c2ba8681b9ca",
@@ -3355,6 +3355,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/planta-electrica-3000w-saco/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "8b69dd16-c12e-4006-96c5-0a88ba2b8c28",
+    "slug": "generador-de-gasolina-epgen7000",
+    "nombre": "Planta Eléctrica 6.5kw Epgen7000",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/generador-de-gasolina-epgen7000/",
+    "updated_at": "2026-11-16T22:20:32.29031+00:00"
   },
   {
     "id": "b8a6b44b-0b23-4fa9-9c70-b959dc5a4869",
