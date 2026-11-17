@@ -24,7 +24,7 @@
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/arrocera-decakila-1-8-litros-con-vaporera/",
-    "updated_at": "2026-11-09T02:56:01.570421+00:00"
+    "updated_at": "2026-11-17T16:07:33.493666+00:00"
   },
   {
     "id": "6caaa472-56db-40d1-8c0f-ef4ed8498272",
@@ -132,7 +132,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/base-solar-1-panel/",
-    "updated_at": "2026-11-09T02:38:13.42758+00:00"
+    "updated_at": "2026-11-17T16:03:27.450696+00:00"
   },
   {
     "id": "634391c9-129c-4ea4-a9a8-7f99a372441e",
@@ -501,7 +501,7 @@
     "categoria": "MISCELANEA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/caja-fuerte-digital/",
-    "updated_at": "2026-10-21T14:35:08.584279+00:00"
+    "updated_at": "2026-11-17T16:01:55.434048+00:00"
   },
   {
     "id": "38d5e13f-f81f-4c48-9aee-72a29b5ddd86",
@@ -2479,9 +2479,9 @@
     "slug": "lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim",
     "nombre": "Monitor 24\" LG 24G411A-B  FHD IPS 144Hz 1ms Slim",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lg-24g411a-b-monitor-24-fhd-ips-144hz-1ms-slim/",
-    "updated_at": "2026-11-13T17:39:23.439973+00:00"
+    "updated_at": "2026-11-17T19:24:08.176335+00:00"
   },
   {
     "id": "c6ed4097-c972-4596-a645-e683368593ef",
@@ -3532,9 +3532,9 @@
     "slug": "refrigerador-7-3pies-royal",
     "nombre": "REFRIGERADOR 7.3pies ROYAL",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-7-3pies-royal/",
-    "updated_at": "2026-11-02T16:43:29.424767+00:00"
+    "updated_at": "2026-11-17T16:48:53.709327+00:00"
   },
   {
     "id": "c9bc122f-0db0-44a1-bf2a-2cdf94b8db70",
@@ -4072,9 +4072,9 @@
     "slug": "split-1t-rudenkov",
     "nombre": "Split 1T Rudenkov",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/split-1t-rudenkov/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-17T16:26:00.151579+00:00"
   },
   {
     "id": "40f82b55-4ae4-4ee3-beee-be2d45ce5b19",
