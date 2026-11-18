@@ -315,6 +315,15 @@
     "updated_at": "2026-10-02T18:57:40.282124+00:00"
   },
   {
+    "id": "71e146dd-8f08-44fe-89ae-0af9487167cf",
+    "slug": "bicicleta-de-montana-x-eko",
+    "nombre": "Bicicleta de montaña x\" EKO",
+    "categoria": "TRANSPORTE",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/bicicleta-de-montana-x-eko/",
+    "updated_at": "2026-11-18T19:52:37.830871+00:00"
+  },
+  {
     "id": "46747761-edaa-4f8d-a136-23350ce704cd",
     "slug": "bicicleta-de-paseo-26",
     "nombre": "Bicicleta de paseo 26",
@@ -1138,9 +1147,9 @@
     "slug": "estacion-portatil-ecoflow-delta-3",
     "nombre": "Estación portátil - Ecoflow Delta 3",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3/",
-    "updated_at": "2026-11-14T01:20:46.291155+00:00"
+    "updated_at": "2026-11-18T14:59:17.684469+00:00"
   },
   {
     "id": "4132edb9-3b94-4e7d-ac25-8f563d17163b",
