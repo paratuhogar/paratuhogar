@@ -2146,9 +2146,9 @@
     "slug": "lavadora-automatica-9kg-samsung",
     "nombre": "Lavadora automática 9Kg Samsung",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-samsung/",
-    "updated_at": "2026-08-10T15:21:32.39255+00:00"
+    "updated_at": "2026-11-19T01:20:01.685016+00:00"
   },
   {
     "id": "1ecfb4f0-7059-4624-9fed-1e23cffeae50",
@@ -2857,9 +2857,9 @@
     "slug": "nevera-7-pies-haitech",
     "nombre": "Nevera 5.6 pies Haitech",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-7-pies-haitech/",
-    "updated_at": "2026-11-11T18:01:46.613494+00:00"
+    "updated_at": "2026-11-19T01:18:31.535119+00:00"
   },
   {
     "id": "36adbce8-bc55-4f8b-8b60-3a3a0c903ce6",
