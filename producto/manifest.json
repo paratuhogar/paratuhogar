@@ -337,9 +337,9 @@
     "slug": "bicicleta-electrica-aovopro",
     "nombre": "Bicicleta eléctrica AOVOPRO",
     "categoria": "TRANSPORTE",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bicicleta-electrica-aovopro/",
-    "updated_at": "2026-11-15T20:22:44.925459+00:00"
+    "updated_at": "2026-11-20T12:12:58.075293+00:00"
   },
   {
     "id": "05dc9e81-fb10-4df6-8d6b-a1dc8f429806",
@@ -648,15 +648,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "8946972b-5f33-4889-a1d2-f785b9497de0",
-    "slug": "cocina-20-royal",
-    "nombre": "Cocina 20\" Royal",
-    "categoria": "COCINA",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/cocina-20-royal/",
-    "updated_at": "2026-11-16T23:54:13.75211+00:00"
-  },
-  {
     "id": "617e9ade-555c-4b19-9ba9-c2ba8681b9ca",
     "slug": "cocina-24-arco-sankey",
     "nombre": "Cocina 24 Arco Sankey",
@@ -673,6 +664,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/cocina-con-horno-milexus/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "8946972b-5f33-4889-a1d2-f785b9497de0",
+    "slug": "cocina-20-royal",
+    "nombre": "Cocina con horno 20\" Royal",
+    "categoria": "COCINA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/cocina-20-royal/",
+    "updated_at": "2026-11-20T18:46:57.739988+00:00"
   },
   {
     "id": "ebde7825-6095-438f-aff8-cb743c92232a",
@@ -2130,7 +2130,7 @@
     "categoria": "LAVADORAS",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-lg/",
-    "updated_at": "2026-11-01T00:54:24.262525+00:00"
+    "updated_at": "2026-11-20T17:48:10.20454+00:00"
   },
   {
     "id": "b7d336f8-1faa-411e-961e-952b7f5694a9",
@@ -2191,9 +2191,9 @@
     "slug": "lavadora-semiautomatica-5kg-premium",
     "nombre": "Lavadora semiautomática 5kg Premium",
     "categoria": "LAVADORAS",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-5kg-premium/",
-    "updated_at": "2026-11-19T23:55:06.175292+00:00"
+    "updated_at": "2026-11-20T14:50:45.902449+00:00"
   },
   {
     "id": "75ba0598-772c-4961-9122-a5dcaa54f0d2",
@@ -3260,11 +3260,11 @@
   {
     "id": "be913ffb-4a2c-46d3-bf41-3b1f829d2586",
     "slug": "panel-solar-615w-bifaciales-lobgi-himo-7",
-    "nombre": "Panel Solar 620W Bifaciales - Lobgi Himo- 7",
+    "nombre": "Panel Solar 620W Bifaciales - Longi Himo- 7",
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/panel-solar-615w-bifaciales-lobgi-himo-7/",
-    "updated_at": "2026-11-11T12:58:57.040753+00:00"
+    "updated_at": "2026-11-20T14:53:40.011247+00:00"
   },
   {
     "id": "c41b2de9-6af1-4fbf-a284-e1cb3a7c3971",
@@ -3901,9 +3901,9 @@
     "slug": "smart-tv-40-samsung",
     "nombre": "Smart TV 40 Samsung",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-11-19T23:35:51.137723+00:00"
+    "updated_at": "2026-11-20T19:52:55.782654+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
@@ -3987,6 +3987,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "9c629270-acf9-4642-8a71-2d2fa54c0c19",
+    "slug": "smart-tv-samsung-55-2026",
+    "nombre": "Smart TV Samsung 55\" 2026",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-samsung-55-2026/",
+    "updated_at": "2026-11-20T19:09:28.300776+00:00"
+  },
+  {
     "id": "70d0b615-dc8b-44fd-8e11-d0b36ba23870",
     "slug": "sofa-cama",
     "nombre": "Sofa cama",
@@ -4041,15 +4050,6 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "366126e1-6221-44aa-b6d1-1ce266c5574c",
-    "slug": "split-1t-lg",
-    "nombre": "Split 1T  - LG",
-    "categoria": "MUNDO FRIO",
-    "disponible": false,
-    "url": "https://paratuhogar.org/producto/split-1t-lg/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
-  },
-  {
     "id": "f4ce8b54-da86-4bf4-a7e1-07a52b482c7b",
     "slug": "split-1t-godline-venta-mayorista",
     "nombre": "Split 1T  GODLINE",
@@ -4057,6 +4057,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1t-godline-venta-mayorista/",
     "updated_at": "2026-11-14T01:17:44.714119+00:00"
+  },
+  {
+    "id": "366126e1-6221-44aa-b6d1-1ce266c5574c",
+    "slug": "split-1t-lg",
+    "nombre": "Split 1T  LG inverter",
+    "categoria": "MUNDO FRIO",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/split-1t-lg/",
+    "updated_at": "2026-11-20T18:12:43.947934+00:00"
   },
   {
     "id": "7306dce3-836a-494a-bf58-a4c6a8aa41c7",
@@ -4333,9 +4342,9 @@
     "slug": "triciclo-electrico-magikbike-n003",
     "nombre": "Triciclo Eléctrico Magikbike N003!",
     "categoria": "TRANSPORTE",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/triciclo-electrico-magikbike-n003/",
-    "updated_at": "2026-11-15T01:39:26.339678+00:00"
+    "updated_at": "2026-11-20T13:47:59.527305+00:00"
   },
   {
     "id": "c189a071-df3f-4fc9-979d-0fab3e9ce428",
