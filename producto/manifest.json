@@ -1183,9 +1183,9 @@
     "slug": "estacion-portatil-3600w-delta-pro",
     "nombre": "Estación portátil 3600W DELTA Pro",
     "categoria": "ENERGIA",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-3600w-delta-pro/",
-    "updated_at": "2026-09-11T19:16:43.138702+00:00"
+    "updated_at": "2026-11-20T23:00:19.654608+00:00"
   },
   {
     "id": "837cc1f5-12a8-4bd8-9454-1d531e5a3b52",
@@ -1743,7 +1743,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-6kw-con-14-3kwh-must/",
-    "updated_at": "2026-11-05T03:51:03.323072+00:00"
+    "updated_at": "2026-11-20T23:24:35.486206+00:00"
   },
   {
     "id": "dd1681e8-57ae-4f86-bd9d-6cc67ce0c435",
@@ -3550,9 +3550,9 @@
     "slug": "refrigerador-7-3-pies-hisense",
     "nombre": "Refrigerador 7.3 pies Hisense",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-7-3-pies-hisense/",
-    "updated_at": "2026-09-22T14:26:11.895781+00:00"
+    "updated_at": "2026-11-20T21:37:19.631249+00:00"
   },
   {
     "id": "892e8dc2-e061-457c-b461-639d14da3f5d",
@@ -3676,9 +3676,9 @@
     "slug": "refrigerador-lg-smart-inverter-12-pies",
     "nombre": "Refrigerador LG Smart Inverter 12 pies",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-lg-smart-inverter-12-pies/",
-    "updated_at": "2026-08-22T18:46:42.137256+00:00"
+    "updated_at": "2026-11-20T22:50:33.301622+00:00"
   },
   {
     "id": "495a9ac8-4d16-4f37-b6a4-e30d00d35bd7",
@@ -3901,9 +3901,9 @@
     "slug": "smart-tv-40-samsung",
     "nombre": "Smart TV 40 Samsung",
     "categoria": "SMART TV",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-11-20T19:52:55.782654+00:00"
+    "updated_at": "2026-11-21T02:41:08.672768+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
