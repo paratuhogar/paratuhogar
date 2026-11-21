@@ -670,9 +670,9 @@
     "slug": "cocina-20-royal",
     "nombre": "Cocina con horno 20\" Royal",
     "categoria": "COCINA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/cocina-20-royal/",
-    "updated_at": "2026-11-20T18:46:57.739988+00:00"
+    "updated_at": "2026-11-21T19:15:06.556129+00:00"
   },
   {
     "id": "ebde7825-6095-438f-aff8-cb743c92232a",
@@ -2146,9 +2146,9 @@
     "slug": "lavadora-automatica-9kg-samsung",
     "nombre": "Lavadora automática 9Kg Samsung",
     "categoria": "LAVADORAS",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-9kg-samsung/",
-    "updated_at": "2026-11-19T01:20:01.685016+00:00"
+    "updated_at": "2026-11-21T19:11:20.204236+00:00"
   },
   {
     "id": "1ecfb4f0-7059-4624-9fed-1e23cffeae50",
@@ -2193,7 +2193,7 @@
     "categoria": "LAVADORAS",
     "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-5kg-premium/",
-    "updated_at": "2026-11-20T14:50:45.902449+00:00"
+    "updated_at": "2026-11-21T15:46:18.765454+00:00"
   },
   {
     "id": "75ba0598-772c-4961-9122-a5dcaa54f0d2",
@@ -3991,9 +3991,9 @@
     "slug": "smart-tv-samsung-55-2026",
     "nombre": "Smart TV Samsung 55\" 2026",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-samsung-55-2026/",
-    "updated_at": "2026-11-20T19:09:28.300776+00:00"
+    "updated_at": "2026-11-21T17:28:43.39234+00:00"
   },
   {
     "id": "70d0b615-dc8b-44fd-8e11-d0b36ba23870",
