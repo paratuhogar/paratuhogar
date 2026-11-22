@@ -8,6 +8,12 @@ const fail=(code,message)=>{throw Object.assign(Error(message),{checkoutCode:cod
 const cents=value=>Math.round(Number(value)*100);
 const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 const customerPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.length===10&&digits.startsWith('53')?digits.slice(2):digits;};
+export const houseNumberMessage='Completa el número de casa o vivienda. Si no tiene número, escribe S/N.';
+export function deliveryHouseNumber(address){
+  const value=typeof address==='string'?/^N\.º ([^,\r\n]{1,32}), \S/s.exec(address)?.[1]:null;
+  return value&&/^(?:[0-9][0-9A-Za-z]*(?:[ /-][0-9A-Za-z]+)*|S\/N)$/i.test(value)?value:null;
+}
+export const isPickupAddress=row=>row.municipio==='Almacén'&&typeof row.direccion==='string'&&row.direccion.startsWith('Recogida presencial en almacén');
 const inputFields=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','proveedor','origen','_referral_reference'];
 const tariffFields=['municipio','localidad','precio_pequeno','precio_mediano','precio_grande','precio_expres_pequeno','precio_expres_mediano','precio_expres_grande','minutos_expres_pequeno','minutos_expres_mediano','minutos_expres_grande'];
 function clean(body){
@@ -62,7 +68,7 @@ export function deliveryCost(products,lines,delivery,tariff){
   if(!Number.isFinite(value)||value<0)fail('DELIVERY_UNAVAILABLE','La tarifa de entrega necesita revisión.');
   return cents(value)/100;
 }
-export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity,pointsEnabled=false,couponsEnabled=false}){
+export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity,houseNumberRequiredFrom=Infinity,pointsEnabled=false,couponsEnabled=false}){
   let signingKey;
   const key=()=>signingKey||(signingKey=crypto.subtle.importKey('raw',encode('pth-new-checkout-v1:'+signingSecret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']));
   const sign=async value=>hex(await crypto.subtle.sign('HMAC',await key(),encode(value)));
@@ -79,7 +85,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     const {data,error}=await db.rpc('pth_checkout_clock',{p_nonce:nonce,p_create:create});
     if(error||!Number.isSafeInteger(data?.issuedAt)||!Number.isSafeInteger(data?.serverNow)||data.issuedAt>data.serverNow)fail('CHECKOUT_UNAVAILABLE','No se pudo comprobar la hora del intento. Conserva el pedido y reintenta la comprobación.');
     if(data.serverNow-data.issuedAt>ATTEMPT_AGE)fail('ATTEMPT_EXPIRED','Este intento venció según la hora del servidor. Revisa su recepción antes de preparar otro.');
-    return data.issuedAt;
+    return data;
   }
   async function receipts(token,attempt){
     const table=attempt.table,columns='id,orden_dia,proveedor,servicio_mensajeria,plazo_mensajeria_minutos';
@@ -114,7 +120,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     const shipping=express?express.price:deliveryCost(products,allLines,payload.delivery,tariff),rows=[];
     for(let index=0;index<payload.inputs.length;index++){
       const input=payload.inputs[index];if(confirmed.some(row=>row.proveedor===input.proveedor))continue;
-      if(payload.delivery.pickup&&(input.municipio!=='Almacén'||!String(input.direccion).startsWith('Recogida presencial en almacén')))fail('CHECKOUT_INVALID','Revisa la recogida en almacén.');
+      if(payload.delivery.pickup&&!isPickupAddress(input))fail('CHECKOUT_INVALID','Revisa la recogida en almacén.');
       if(!payload.delivery.pickup&&(input.municipio!==payload.delivery.municipio||!String(input.direccion).includes('('+payload.delivery.localidad+')')))fail('CHECKOUT_INVALID','Revisa la dirección de entrega.');
       const lineProducts=input._lineas.map(line=>products.find(p=>p.id===line.producto_id));
       if(lineProducts.some(p=>p.proveedor!==input.proveedor))fail('PRODUCT_UNAVAILABLE','Revisa los proveedores del carrito.');
@@ -182,7 +188,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(!['quote','submit'].includes(body.operation))fail('CHECKOUT_INVALID','Operación de pedido no válida.');
       if(actor?.rol==='mensajero')fail('CHECKOUT_INVALID','Esta cuenta no puede iniciar pedidos.');
       const payload=clean(body),actorTag=await sign('actor:'+String(actor?.id||'public'));
-      let token=body.attempt,attempt;
+      let token=body.attempt,attempt,houseNumberRuleTime;
       if(token){
         attempt=await parse(token);
         if(attempt.actor!==actorTag)fail('SESSION_CHANGED','Vuelve a la cuenta que inició este pedido. Puedes comprobar el recibo sin sesión.');
@@ -195,12 +201,18 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
           if(attempt.payload!==await sign('payload:'+attempt.nonce+':'+signedPayload(legacy,attempt.version)))fail('PAYLOAD_CHANGED','Los datos del intento cambiaron. Comprueba primero el recibo antes de iniciar otro pedido.');
           payload.inputs=legacy.inputs;
         }
-        if(attempt.version==='pthn2'&&await clock(attempt.nonce)!==attempt.issued)fail('ATTEMPT_INVALID','No coincide la hora registrada del intento.');
+        if(attempt.version==='pthn2'&&(await clock(attempt.nonce)).issuedAt!==attempt.issued)fail('ATTEMPT_INVALID','No coincide la hora registrada del intento.');
+        // pthn1 was retired before this feature; its phone timestamp cannot
+        // date activation. Valid legacy signatures keep their original payload.
+        houseNumberRuleTime=attempt.version==='pthn2'?attempt.issued:-Infinity;
       }else{
         if(body.operation!=='quote')fail('ATTEMPT_INVALID','Primero comprueba las condiciones del pedido.');
         // Same random draft intent across tabs produces the same attempt. The
         // payload MAC binds customer/products/delivery without storing them.
-        const nonce=await sign('nonce:'+actorTag+':'+payload.table+':'+payload.intentId),issued=await clock(nonce,true);
+        const nonce=await sign('nonce:'+actorTag+':'+payload.table+':'+payload.intentId),{issuedAt:issued,serverNow}=await clock(nonce,true);
+        // Only a previously signed attempt can predate activation. A failed
+        // unsigned quote may reserve a clock, but must not bypass the rule.
+        houseNumberRuleTime=serverNow;
         const prefix=['pthn2',issued,payload.table==='pedidos'?'p':'s',payload.inputs.length,nonce,actorTag,await sign('payload:'+nonce+':'+signedPayload(payload,'pthn2')),await sign('providers:'+JSON.stringify(payload.inputs.map(row=>row.proveedor)))].join('.');
         token=prefix+'.'+await sign(prefix);attempt=await parse(token);
       }
@@ -208,6 +220,11 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
       if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
       if((attempt.version==='pthn2'?attempt.issued:payload.intentCreatedAt)>=ciRequiredFrom&&payload.inputs.some(row=>typeof row.ci!=='string'||!/^[0-9]{11}$/.test(row.ci)))fail('CI_REQUIRED','Completa el carnet de identidad con exactamente 11 dígitos.');
+      if(!payload.delivery.pickup&&houseNumberRuleTime>=houseNumberRequiredFrom){
+        const numbers=payload.inputs.map(row=>deliveryHouseNumber(row.direccion));
+        if(numbers.some(number=>!number))fail('HOUSE_NUMBER_REQUIRED',houseNumberMessage);
+        if(new Set(numbers).size!==1)fail('CHECKOUT_INVALID','El número de casa debe coincidir en toda la entrega.');
+      }
       const {rows,expressTariff}=await canonical(payload,actor,token,existing.confirmed);
       let coupon=null,currentTerms=terms(rows);
       if(payload.coupon){

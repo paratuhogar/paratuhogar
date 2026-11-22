@@ -1,7 +1,32 @@
 /* Shared checkout display rules. The server still validates every order. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PTHCheckoutForm=api;})(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
-  const fieldIds={nombre:'check-nombre',ci:'check-ci',tel:'check-tel',municipio:'check-municipio',localidad:'check-localidad',dir:'check-dir',notas:'check-notas',moneda:'check-moneda-pago',vuelto:'check-vuelto'};
+  const fieldIds={nombre:'check-nombre',ci:'check-ci',tel:'check-tel',municipio:'check-municipio',localidad:'check-localidad',dir:'check-dir',houseNumber:'check-houseNumber',notas:'check-notas',moneda:'check-moneda-pago',vuelto:'check-vuelto'};
+  const houseNumberPattern=/^(?:[0-9][0-9A-Za-z]*(?:[ /-][0-9A-Za-z]+)*|S\/N)$/i;
+  function validateHouseNumber(value,required=true){
+    const number=String(value??'').trim();
+    if(!number&&!required)return '';
+    if(number.length>32||!houseNumberPattern.test(number)){
+      const message='Completa el número de casa o vivienda. Si no tiene número, escribe S/N.';
+      throw Object.assign(Error(message),{code:'HOUSE_NUMBER_REQUIRED',safeMessage:message});
+    }
+    return /^s\/n$/i.test(number)?'S/N':number;
+  }
+  function checkoutAddress({address='',number,pickup=false,required=true}={}){
+    if(pickup)return 'Recogida presencial en almacén';
+    const valid=validateHouseNumber(number,required);
+    return valid?'N.º '+valid+', '+address.trim():address;
+  }
+  function splitHouseNumber(value){
+    const address=String(value??'');
+    const match=/^N\.º ([^,\r\n]{1,32}), (.+)$/s.exec(address);
+    return match&&houseNumberPattern.test(match[1])?{number:match[1],address:match[2]}:{number:'',address};
+  }
+  function setHouseNumberRequired(doc,{pickup,required=true}={}){
+    const input=doc.getElementById(fieldIds.houseNumber),wrapper=doc.getElementById('check-house-number-field');
+    if(input){input.required=!pickup&&required;input.disabled=Boolean(pickup);}
+    if(wrapper)wrapper.hidden=Boolean(pickup);
+  }
   function validateIdentity(value,required=true){
     const ci=String(value??'').trim();
     if(required&&!/^[0-9]{11}$/.test(ci))throw Object.assign(Error('Completa el carnet de identidad con exactamente 11 dígitos.'),{code:'CI_REQUIRED',safeMessage:'Completa el carnet de identidad con exactamente 11 dígitos.'});
@@ -72,7 +97,11 @@
     return {equipment:Number.isFinite(equipment)?equipment:null,shipping:delivery,total:Number.isFinite(equipment)&&delivery!==null?equipment+delivery:null};
   }
   function readForm(doc){const result={};for(const [field,id]of Object.entries(fieldIds))result[field]=doc.getElementById(id)?.value||'';result.pickup=doc.getElementById('check-recogida')?.checked===true;result.assisted=doc.getElementById('assisted-sale-checkbox')?.checked===true;return result;}
-  function fillClient(doc,client){if(!client)return;for(const [field,value]of Object.entries({nombre:client.cliente,ci:client.ci,tel:client.telefono,dir:client.direccion}))if(doc.getElementById(fieldIds[field]))doc.getElementById(fieldIds[field]).value=String(value||'');}
+  function clientForm(client){
+    const {number,address}=splitHouseNumber(client.direccion);
+    return {nombre:String(client.cliente||''),ci:String(client.ci||''),tel:String(client.telefono||''),dir:address,houseNumber:number};
+  }
+  function fillClient(doc,client){if(!client)return;for(const [field,value]of Object.entries(clientForm(client)))if(doc.getElementById(fieldIds[field]))doc.getElementById(fieldIds[field]).value=value;}
   function option(doc,value,label){const node=doc.createElement('option');node.value=value;node.textContent=label;return node;}
   // Names are search terms, never identities. Only a current explicit choice can fill a form.
   function bindClients(doc,{clients=[],onChange=()=>{},confirmReplace=message=>doc.defaultView.confirm(message)}={}){
@@ -83,8 +112,8 @@
     const help=doc.createElement('p');help.id='pth-crm-help';help.setAttribute('aria-live','polite');help.style.cssText='font-size:12px;margin-top:8px';
     datalist.after(help,choices);search.setAttribute('aria-describedby',help.id);search.setAttribute('autocomplete','off');
     let rows=[],generation=0,destroyed=false,lastFill=null,handledInput=search.value;
-    const fields=['nombre','ci','tel','dir'];
-    const values=client=>({nombre:String(client.cliente||''),ci:String(client.ci||''),tel:String(client.telefono||''),dir:String(client.direccion||'')});
+    const fields=['nombre','ci','tel','dir','houseNumber'];
+    const values=clientForm;
     const label=client=>String(client.cliente||'')+' | '+String(client.telefono||'');
     const key=client=>JSON.stringify(values(client));
     const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().trim();
@@ -120,7 +149,7 @@
     const map=tariffMap(tariffs),municipality=doc.getElementById('check-municipio'),locality=doc.getElementById('check-localidad'),pickup=doc.getElementById('check-recogida'),direction=doc.getElementById('check-dir');
     municipality.replaceChildren(option(doc,'','Seleccionar Municipio...'));for(const value of Object.keys(map))municipality.append(option(doc,value,value));
     const populateLocalities=()=>{const values=Object.keys(map[municipality.value]||{});locality.replaceChildren(option(doc,'',values.length?'Seleccionar Reparto...':'Elige municipio primero'));for(const value of values)locality.append(option(doc,value,value));locality.disabled=!values.length||pickup.checked;};
-    const togglePickup=()=>{municipality.disabled=pickup.checked;municipality.required=!pickup.checked;locality.required=!pickup.checked;direction.disabled=pickup.checked;direction.required=!pickup.checked;if(pickup.checked){municipality.value='';locality.replaceChildren(option(doc,'','No aplica'));locality.disabled=true;direction.value='Recogida en Almacén';}else{if(direction.value==='Recogida en Almacén')direction.value='';populateLocalities();}onChange();};
+    const togglePickup=()=>{municipality.disabled=pickup.checked;municipality.required=!pickup.checked;locality.required=!pickup.checked;direction.disabled=pickup.checked;direction.required=!pickup.checked;setHouseNumberRequired(doc,{pickup:pickup.checked});if(pickup.checked){municipality.value='';locality.replaceChildren(option(doc,'','No aplica'));locality.disabled=true;direction.value='Recogida en Almacén';}else{if(direction.value==='Recogida en Almacén')direction.value='';populateLocalities();}onChange();};
     municipality.onchange=()=>{populateLocalities();onChange();};locality.onchange=onChange;pickup.onchange=togglePickup;
     const clientChoices=bindClients(doc,{clients,onChange});
     togglePickup();return {populateLocalities,togglePickup,read:()=>readForm(doc),map,clients:clientChoices,destroy(){clientChoices.destroy();municipality.onchange=null;locality.onchange=null;pickup.onchange=null;}};
@@ -135,5 +164,5 @@
     let nombre='',dir='';if(split>=0){nombre=cleaned.substring(0,split);dir=cleaned.substring(split);}else if(cleaned.includes(',')){const parts=cleaned.split(',').sort((a,b)=>a.length-b.length);nombre=parts[0];dir=parts.slice(1).join(', ');}else nombre=cleaned;
     const trim=part=>part.replace(/^[\s,.-]+|[\s,.-]+$/g,'').trim();return {nombre:trim(nombre).replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.substring(1).toLowerCase()),ci,tel,dir:trim(dir)};
   }
-  return {fieldIds,tariffMap,shipping,expressOffer,expressTariffFields,estimate,isWholesale,readForm,fillClient,bindClients,bind,parseClipboard,validateIdentity,setIdentityRequired};
+  return {fieldIds,tariffMap,shipping,expressOffer,expressTariffFields,estimate,isWholesale,readForm,fillClient,bindClients,bind,parseClipboard,validateIdentity,setIdentityRequired,validateHouseNumber,checkoutAddress,splitHouseNumber,setHouseNumberRequired};
 });

@@ -2952,6 +2952,8 @@ function buildSubgestorWhatsappSummary(orderSubgestor, assignedCommission) {
 
 function getCheckoutFailureMessage(error) {
     switch (error?.code) {
+        case 'HOUSE_NUMBER_REQUIRED':
+            return 'Completa el número de casa o vivienda. Si no tiene número, escribe S/N. El pedido no se ha enviado.';
         case 'CI_REQUIRED':
             return 'Completa el carnet de identidad con exactamente 11 dígitos. El pedido no se ha enviado.';
         case 'COUPON_INVALID':
@@ -3119,6 +3121,14 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // === NUEVO: SABER SI ES RECOGIDA EN ALMACÉN ===
     const isRecogida = document.getElementById('check-recogida') ? document.getElementById('check-recogida').checked : false;
+    const addressInput = document.getElementById('check-dir');
+    const houseInput = document.getElementById('check-houseNumber');
+    const checkoutAddressText = addressInput.value;
+    const checkoutHouseNumber = houseInput?.value || '';
+    const dirC = window.PTHCheckoutForm.checkoutAddress({
+        address: checkoutAddressText, number: checkoutHouseNumber, pickup: isRecogida,
+        required: !previousOutcome?.attempt
+    });
 
     // === VERIFICACIÓN DE DISPONIBILIDAD EN TIEMPO REAL (ESCUDO ANTI-CACHÉ) ===
     let verifiedCheckoutProducts;
@@ -3250,7 +3260,6 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
 
     // Si marcó recogida, sobrescribimos Municipio y Dirección automáticamente
     const municipioC = isRecogida ? "Almacén" : document.getElementById('check-municipio').value;
-    const dirC = isRecogida ? "Recogida presencial en almacén" : document.getElementById('check-dir').value;
 
     const notasInput = document.getElementById('check-notas');
     const notasC = notasInput ? notasInput.value.trim() : "";
@@ -3522,7 +3531,9 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     const request = { table: orderSubgestor ? 'pedidos_subgestores' : 'pedidos', inputs: promesas, delivery: { pickup: isRecogida, municipio: municipioC, localidad: localidadC }, intentId: intent.intentId, intentCreatedAt: intent.savedAt, attempt: previousOutcome?.attempt, ...(couponCode ? {coupon:couponCode} : {}) };
     const deliveryUnchanged = () => (!couponCode || couponCode === window.PTHCoupons?.code() && document.getElementById('check-tel').value === telC) && expressSelected === expressShippingSelected()
         && Boolean(document.getElementById('check-recogida')?.checked) === isRecogida
-        && (isRecogida || (document.getElementById('check-municipio').value === municipioC && document.getElementById('check-localidad').value === localidadC));
+        && (isRecogida || (document.getElementById('check-municipio').value === municipioC
+            && document.getElementById('check-localidad').value === localidadC
+            && addressInput.value === checkoutAddressText && (houseInput?.value || '') === checkoutHouseNumber));
     if (expressSelected) request.delivery.service = 'express';
     const quote = await waitForCheckout(window.PTHSecureData.checkout({ ...request, operation: 'quote' }));
     if (quote.error) throw quote.error;
@@ -3872,7 +3883,13 @@ function toggleCartModal(show) {
     if (!cartModal) return;
     const shippingService = document.getElementById('check-shipping-service');
     if (!cart.length && shippingService) shippingService.value = 'ordinary';
-    if(show&&!window.PTHPendingCheckoutUI?.localForm())window.PTHCheckoutForm.setIdentityRequired(document,true);
+    if(show&&!window.PTHPendingCheckoutUI?.localForm()){
+        window.PTHCheckoutForm.setIdentityRequired(document,true);
+        window.PTHCheckoutForm.setHouseNumberRequired(document,{
+            pickup:document.getElementById('check-recogida')?.checked,
+            required:!readNewCheckoutOutcome()?.attempt
+        });
+    }
 
     // 1. Abre o cierra el modal
     cartModal.classList.toggle('hidden', !show);
@@ -9176,7 +9193,7 @@ function checkoutAutosaveKey(id, owner = currentNewCartOwner()) {
     return owner ? 'autosave_' + id + ':' + encodeURIComponent(owner) : null;
 }
 function restoreAccountFormDraft(owner = currentNewCartOwner()) {
-    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto']) {
+    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-houseNumber', 'check-vuelto']) {
         const el = document.getElementById(id); if (!el) continue;
         let saved; try { saved = JSON.parse(localStorage.getItem(checkoutAutosaveKey(id, owner)) || 'null'); } catch (_) {}
         const age = Date.now() - saved?.savedAt;
@@ -9185,7 +9202,7 @@ function restoreAccountFormDraft(owner = currentNewCartOwner()) {
 }
 function initAutoSaveSystem() {
     restoreAccountFormDraft();
-    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto']) {
+    for (const id of ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-houseNumber', 'check-vuelto']) {
         const el = document.getElementById(id); if (!el) continue;
         el.addEventListener('input', () => {
             if (window.PTHPendingCheckoutUI?.localForm()) return;
@@ -9197,7 +9214,7 @@ function initAutoSaveSystem() {
 
 function clearAutoSave() {
     // Borrar datos después de una venta exitosa
-    const fields = ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-vuelto'];
+    const fields = ['check-nombre', 'check-ci', 'check-tel', 'check-dir', 'check-houseNumber', 'check-vuelto'];
     fields.forEach(id => {
         const key = checkoutAutosaveKey(id); if (key) localStorage.removeItem(key);
         localStorage.removeItem('autosave_' + id);
@@ -9324,7 +9341,14 @@ async function magicPaste() {
 
         if (phone) document.getElementById('check-tel').value = phone;
         if (ci) document.getElementById('check-ci').value = ci;
-        if (direccion) document.getElementById('check-dir').value = direccion;
+        if (direccion) {
+            document.getElementById('check-dir').value = direccion;
+            const house = document.getElementById('check-houseNumber');
+            if (house) {
+                house.value = '';
+                house.dispatchEvent(new Event('input',{bubbles:true}));
+            }
+        }
 
         // Disparar evento
         document.getElementById('check-nombre').dispatchEvent(new Event('input'));
@@ -12422,6 +12446,9 @@ window.obtenerCostoMensajeriaGlobal = function() {
 
 window.toggleRecogidaEnAlmacen = function() {
     const isChecked = document.getElementById('check-recogida').checked;
+    const pending = window.PTHPendingCheckoutUI;
+    const houseNumberRequired = pending?.localForm() ? pending.houseNumberRequired() : !readNewCheckoutOutcome()?.attempt;
+    window.PTHCheckoutForm.setHouseNumberRequired(document,{pickup:isChecked,required:houseNumberRequired});
 
     const muni = document.getElementById('check-municipio');
     const loc = document.getElementById('check-localidad');

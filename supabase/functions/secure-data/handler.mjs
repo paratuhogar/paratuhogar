@@ -2,7 +2,7 @@ import './questionnaire-validation.js';
 import {announcement} from './announcement.mjs';
 import {feedback} from './feedback.mjs';
 import {pushSettings} from './push.mjs';
-import {createCheckoutService} from './checkout.mjs';
+import {createCheckoutService,deliveryHouseNumber,houseNumberMessage,isPickupAddress} from './checkout.mjs';
 import {publicName} from './public-name.mjs';
 import {ranking} from './ranking.mjs';
 import {pointsWallet} from './points-wallet.mjs';
@@ -253,13 +253,17 @@ async function prepareWrite(db,body,actor) {
   }
   return Array.isArray(body.values)?result:result[0];
 }
-async function dataQuery(db,body,actor) {
+async function dataQuery(db,body,actor,houseNumberRequiredFrom) {
   validateQuery(body,actor);
   const {table,op='select'}=body;
   const inputs=Array.isArray(body.values)?body.values:[body.values];
   if((table==='pedidos_subgestores'&&['update','delete','upsert'].includes(op)) ||
      (table==='pedidos'&&['insert','upsert'].includes(op)&&inputs.some(row=>row?.subgestor_nombre))) {
     fail('Actualiza la página y usa la revisión de pedidos para guardar, aprobar o rechazar.',409);
+  }
+  if(['pedidos','pedidos_subgestores'].includes(table)&&['insert','upsert'].includes(op)&&Date.now()>=houseNumberRequiredFrom){
+    if(op==='upsert')fail('Usa el formulario de confirmación para registrar un pedido nuevo.',409);
+    if(inputs.some(row=>!row||!isPickupAddress(row)&&!deliveryHouseNumber(row.direccion)))fail(houseNumberMessage+' Si no ves el campo, actualiza la página.',400,'HOUSE_NUMBER_REQUIRED');
   }
   if(table==='precios_personalizados'&&op!=='select'&&!actor)fail('Tu sesión venció. Vuelve a entrar para guardar los cambios.',401);
   // Old bulk clients must not overwrite existing prices/commissions, including
@@ -324,8 +328,8 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,pointsEnabled=false,couponsEnabled=false}) {
-  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom,pointsEnabled,couponsEnabled});
+export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,houseNumberRequiredFrom=Infinity,pointsEnabled=false,couponsEnabled=false}) {
+  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom,houseNumberRequiredFrom,pointsEnabled,couponsEnabled});
   return async request=>{
     const origin=request.headers.get('Origin');
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
@@ -358,7 +362,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequired
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
       else if(body.action==='checkout') result=await checkout(body,actor,{ip:request.headers.get('cf-connecting-ip')||request.headers.get('x-real-ip')||request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown'});
-      else if(body.action==='query') result=await dataQuery(db,body,actor);
+      else if(body.action==='query') result=await dataQuery(db,body,actor,houseNumberRequiredFrom);
       else if(body.action==='rpc') result=await rpcQuery(db,body,actor);
       else fail('Operación no permitida.');
       return new Response(JSON.stringify({...result,...(actor?{sessionExpiresAt:sessionExpiries.get(actor)}:{})}),{headers});

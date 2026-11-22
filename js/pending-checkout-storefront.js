@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-11-22-couponsqr1';
+  const shellVersion = 'pth-public-static-2026-11-22-house1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -186,7 +186,7 @@
   }
   function snapshot() {
     const values = {};
-    for (const field of ['nombre', 'ci', 'tel', 'municipio', 'localidad', 'dir', 'notas', 'vuelto']) values[field] = document.getElementById('check-' + field)?.value || '';
+    for (const field of ['nombre', 'ci', 'tel', 'municipio', 'localidad', 'dir', 'houseNumber', 'notas', 'vuelto']) values[field] = document.getElementById('check-' + field)?.value || '';
     values.moneda = document.getElementById('check-moneda-pago').value;
     values.pickup = document.getElementById('check-recogida').checked;
     values.assisted = Boolean(document.getElementById('assisted-sale-checkbox')?.checked);
@@ -196,7 +196,7 @@
       estimate.shipping = Number(newCheckoutShippingOverride.cost);
       estimate.total = estimate.equipment + estimate.shipping;
     }
-    return {lines: cart.map(product => ({id: product.id, qty: product.qty, price: Number(product.precio_venta)})), form: values, estimate,identityRequired:reviewing?reviewing.identityRequired:true};
+    return {lines: cart.map(product => ({id: product.id, qty: product.qty, price: Number(product.precio_venta)})), form: values, estimate,identityRequired:reviewing?reviewing.identityRequired:true,houseNumberRequired:!reviewing?.immutable};
   }
   function lockReviewFields(locked) {
     for (const input of form.querySelectorAll('input,select,textarea')) {
@@ -212,6 +212,7 @@
       shipping: newCheckoutShippingOverride, intent: volatileCheckoutIntent,
       modalClass: modal.className, inert: modal.inert,
       identityPattern:document.getElementById('check-ci').pattern,
+      houseHidden:document.getElementById('check-house-number-field')?.hidden,
       controls: [...form.querySelectorAll('input,select,textarea,button')].map(node => ({
         node, value: node.value, checked: node.checked, disabled: node.disabled,
         readOnly: node.readOnly, required: node.required, text: node.tagName === 'BUTTON' ? node.textContent : null,
@@ -236,11 +237,16 @@
     document.getElementById('cart-count').textContent = String(cart.reduce((sum, product) => sum + product.qty, 0));
     modal.className = saved.modalClass; modal.inert = saved.inert;
     document.getElementById('check-ci').pattern=saved.identityPattern;
+    const houseField=document.getElementById('check-house-number-field');
+    if(houseField)houseField.hidden=saved.houseHidden;
   }
   function bindForm(row) {
     const shippingService = document.getElementById('check-shipping-service');
     if (shippingService) shippingService.value = 'ordinary';
     window.PTHCheckoutForm.setIdentityRequired(document,row.identityRequired===true);
+    const house=document.getElementById('check-houseNumber');
+    if(house)house.value=row.form.houseNumber||'';
+    window.PTHCheckoutForm.setHouseNumberRequired(document,{pickup:row.form.pickup,required:!row.outcome?.attempt});
     if (row.lines.some(line => !productosRaw.some(product => product.id === line.id))) throw Object.assign(Error('PRODUCT_UNAVAILABLE'), {code: 'PRODUCT_UNAVAILABLE', safeMessage: 'Un producto no está disponible. Revisa el pendiente.'});
     cart = row.lines.map(line => {
       const product = productosRaw.find(item => item.id === line.id);
@@ -424,7 +430,7 @@
       await saveWithSessionGuard(account, data, saveIntent, expectedToken);
       if (!sameSession(account, expectedToken)) return;
       // A late IndexedDB response cannot erase another account's inputs.
-      for (const field of ['nombre', 'ci', 'tel', 'dir', 'vuelto']) {
+      for (const field of ['nombre', 'ci', 'tel', 'dir', 'houseNumber', 'vuelto']) {
         try { const key = checkoutAutosaveKey('check-' + field, account); if (key && JSON.parse(storage.getItem(key)||'null')?.value === data.form[field]) storage.removeItem(key); } catch (_) {}
       }
       lowConnectivity.clearDraft(account);
@@ -456,7 +462,8 @@
   }
   window.PTHPendingCheckoutUI = {
     active: () => active, cartLocked: () => Boolean(active || preparing || reviewing?.immutable),
-    localForm: () => Boolean(active || reviewing || preparing), outcome: () => active?.row.outcome || null,
+    localForm: () => Boolean(active || reviewing || preparing), houseNumberRequired: () => reviewing ? !reviewing.immutable : !active?.row.outcome?.attempt,
+    outcome: () => active?.row.outcome || null,
     intent: () => active ? {intentId: active.row.intentId || active.row.id, savedAt: active.row.createdAt} : null,
     async markOutcome(value) { if (active) await active.save({outcome: value}); },
     async reviewDuplicates(quote) {

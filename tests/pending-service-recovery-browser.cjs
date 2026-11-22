@@ -36,7 +36,7 @@ const executablePath=process.env.PTH_CHROMIUM||'/usr/bin/chromium';
   await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
   const original=await page.evaluate(async()=>{
    const q=PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB));
-   return q.save(PTHSecureData.accountId(),{lines:[{id:'pA',qty:1,price:100}],estimate:{equipment:100,shipping:6,total:106},form:{nombre:'Synthetic recovery',tel:'5351111111',ci:'11111111111',dir:'Synthetic fixture only',municipio:'Centro Habana',localidad:'Centro',moneda:'USD (Efectivo)'}});
+   return q.save(PTHSecureData.accountId(),{lines:[{id:'pA',qty:1,price:100}],estimate:{equipment:100,shipping:6,total:106},houseNumberRequired:true,form:{nombre:'Synthetic recovery',tel:'5351111111',ci:'11111111111',dir:'Synthetic fixture only',houseNumber:'123-A',municipio:'Centro Habana',localidad:'Centro',moneda:'USD (Efectivo)'}});
   });
   unavailable=true;
   await page.evaluate(()=>PTHPendingCheckoutUI.catalogReady());
@@ -63,9 +63,24 @@ const executablePath=process.env.PTH_CHROMIUM||'/usr/bin/chromium';
    await new Promise(resolve=>setTimeout(resolve,100));
   }while(Date.now()<deadline);
   assert.equal(confirmed?.state,'confirmed');
-  assert.equal(fixture.f.writes,1);console.log('PASS pending recovery and persistence');
-  await page.reload();await page.waitForFunction(()=>Boolean(window.PTHPendingCheckoutUI));
+  assert.equal(fixture.f.writes,1);assert.match(fixture.f.rows.pedidos.at(-1).direccion,/^N\.º 123-A, Synthetic fixture only/);console.log('PASS pending recovery and persistence');
+  await page.reload();await page.waitForFunction(()=>window.PTHPendingCheckoutUI&&typeof productosRaw!=='undefined'&&productosRaw.length===2);
   await page.evaluate(()=>PTHPendingCheckoutUI.catalogReady());assert.equal(fixture.f.writes,1);
+  // An older, unsigned draft is preserved for review instead of being sent
+  // without a number. Changing its delivery method must update the field.
+  const legacy=await page.evaluate(async()=>PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)).save(PTHSecureData.accountId(),{
+   lines:[{id:'pA',qty:1,price:100}],estimate:{equipment:100,shipping:6,total:106},
+   form:{nombre:'Synthetic old delivery',tel:'5352223333',ci:'11111111111',dir:'Old street',municipio:'Centro Habana',localidad:'Centro',moneda:'USD (Efectivo)'}
+  }));
+  await page.evaluate(()=>PTHPendingCheckoutUI.catalogReady());
+  await page.waitForFunction(async id=>(await PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)).read('actor-a',id))?.code==='HOUSE_NUMBER_REQUIRED',legacy.id);
+  assert.equal(fixture.f.writes,1);
+  await page.locator('#pth-pending-order-panel summary').click();
+  await page.locator('[data-pending-id="'+legacy.id+'"]').getByRole('button',{name:'Revisar pendiente'}).click();
+  const house=page.getByLabel('Número de casa o vivienda'),pickup=page.locator('#check-recogida');
+  assert.equal(await house.evaluate(input=>input.required&&!input.checkValidity()),true);
+  await pickup.check();assert.equal(await house.isVisible(),false);assert.equal(await house.isDisabled(),true);
+  await pickup.uncheck();assert.equal(await house.isVisible(),true);assert.equal(await house.evaluate(input=>input.required),true);
   assert.equal(c.pages().length,1);await c.close();
   // A real handler 401 must still invalidate the browser credential, not retry as a verified user.
   const denied=await context(),p=await denied.newPage();await p.goto(fixture.origin);

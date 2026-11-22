@@ -81,7 +81,7 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     await c.close();console.log('PASS fresh anonymous child QR link reaches real storefront checkout preparation with child UUID only; no order submitted');return;
   }
   if(process.env.PTH_EXPRESS_SHIPPING==='1'){
-    f=await fixture();
+    f=await fixture({houseNumberRequiredFrom:0});
     Object.assign(f.rows.tarifas_mensajeria[0],{precio_expres_pequeno:12,minutos_expres_pequeno:60});
     const {c,errors}=await context();const p=await main(c);await fillCart(p);
     await p.evaluate(async()=>{
@@ -92,6 +92,12 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
       recalcularTotalFinal();window.openedUrls=[];window.open=url=>openedUrls.push(url);
       generarComprobanteVenta=()=>{};
     });
+    const house=p.getByLabel('Número de casa o vivienda');
+    assert.equal(await house.evaluate(el=>el.required&&!el.checkValidity()),true);
+    await house.fill('   ');
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    assert.equal(f.writes,0);assert.match(await p.evaluate(()=>checkoutAlerts.at(-1)),/número de casa/);
+    await house.fill('123-A');
     const service=p.locator('#check-shipping-service');
     assert.equal(await service.inputValue(),'ordinary');
     await p.evaluate(()=>{
@@ -127,14 +133,23 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     assert.equal(f.writes,1);
     const saved=f.rows.pedidos.slice(1);
     assert.deepEqual(saved.map(r=>[r.servicio_mensajeria,r.plazo_mensajeria_minutos,r.costo_mensajeria]),[['express',60,12],['express',60,0]]);
+    assert.ok(saved.every(row=>row.direccion.startsWith('N.º 123-A, Synthetic address')));
     assert.match(await p.locator('#pth-checkout-confirmations').innerText(),/Exprés · 60 min estimados/);
     assert.deepEqual(errors,[]);await c.close();console.log('PASS express selection, confirmation, atomic charge and lost receipt');
     return;
   }
   if(process.env.PTH_ATOMIC_NUMBERING==='1')for(const width of [390,1280]){
-    f=await fixture();const {c,errors}=await context();const p=await main(c);await p.setViewportSize({width,height:844});
+    const delivery=process.env.PTH_PHONE_CLOCK_TEST!=='1'&&width===390;
+    f=await fixture({houseNumberRequiredFrom:0});const {c,errors}=await context();const p=await main(c);await p.setViewportSize({width,height:844});
     if(process.env.PTH_PHONE_CLOCK_TEST==='1')await p.evaluate(hours=>{const original=Date.now;Date.now=()=>original()+hours*3600000;},width===390?1:-1);
     await fillCart(p);
+    if(delivery)await p.evaluate(async()=>{
+      await loadTarifasMensajeria();
+      document.getElementById('check-recogida').checked=false;toggleRecogidaEnAlmacen();
+      document.getElementById('check-municipio').value='Centro Habana';actualizarLocalidades();
+      document.getElementById('check-localidad').value='Centro';document.getElementById('check-dir').value='Synthetic address';
+      document.getElementById('check-houseNumber').value='123-A';recalcularTotalFinal();
+    });
     await p.evaluate(()=>{
       const rpc=supabaseClient.rpc.bind(supabaseClient);supabaseClient.rpc=(name,...args)=>{if(name==='reservar_consecutivo_pedido')throw Error('RESERVATION_FORBIDDEN');return rpc(name,...args);};
       window.openedUrls=[];window.open=url=>openedUrls.push(url);
@@ -151,6 +166,10 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
     const message=await p.evaluate(()=>decodeURIComponent(openedUrls.at(-1)));
     assert.match(message,/#A-1/);assert.match(message,/#B-1/);assert.doesNotMatch(message,/undefined|FORGED|PENDIENTE/);
     await p.waitForFunction(()=>Boolean(window.pdfPayload));assert.deepEqual(await p.evaluate(()=>pdfPayload.referencias),['A-1','B-1']);
+    if(delivery){
+      assert.match(message,/Dirección: N\.º 123-A, Synthetic address/);
+      assert.match(await p.evaluate(()=>pdfPayload.direccion),/^N\.º 123-A, Synthetic address/);
+    }
     assert.equal(await p.evaluate(()=>cart.length),0);assert.deepEqual(errors,[]);
     await c.close();console.log('PASS atomic numbering, no reservation, confirmed WhatsApp references',width);
   }

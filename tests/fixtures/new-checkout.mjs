@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createHandler,hash} from '../../supabase/functions/secure-data/handler.mjs';
 const secret='synthetic-only-signing-material-not-a-production-secret';
-export async function fixture({ciRequiredFrom,serverNow=()=>Date.now(),couponsEnabled=false}={}){
+export async function fixture({ciRequiredFrom,houseNumberRequiredFrom,serverNow=()=>Date.now(),couponsEnabled=false}={}){
  const actor={id:'actor-a',nombre:'Shared Seller',rol:'gestor',estado:'activo',password:'synthetic-only',parent_id:null},token='a'.repeat(64),trace=[];
  const historical={id:'historical-order',gestor:actor.nombre,proveedor:'A',cliente:'Historical private name',telefono:'old private phone',total:999,comision_total:37,pago_gestor:'Pagado',estado:'Entregado',fecha:'2025-01-01',submission_token:'legacy-key'};
  const rows={gestores:[actor,{...actor,id:'same-name-other'}],pth_secure_sessions:[{token_hash:await hash(token),gestor_id:actor.id,credential_hash:await hash(actor.password),expires_at:'2099-01-01'}],productos:[{id:'pA',nombre:'Equipo A',precio:100,comision:10,precio_flexible:'NO',proveedor:'A',disponible:'SI',garantia:'1 año','tamaño_envio':'Pequeño'},{id:'pB',nombre:'Equipo B',precio:200,comision:20,precio_flexible:'NO',proveedor:'B',disponible:'SI',garantia:'1 año','tamaño_envio':'Pequeño'}],precios_personalizados:[],pedidos:[structuredClone(historical)],pedidos_subgestores:[],tarifas_mensajeria:[{municipio:'Centro Habana',localidad:'Centro',precio_pequeno:6,precio_grande:10}]};
@@ -59,7 +59,7 @@ export async function fixture({ciRequiredFrom,serverNow=()=>Date.now(),couponsEn
   writes++;existing.push(...saved);
   return drop?{data:null,error:{code:'synthetic-response-loss'}}:{data:saved,error:null};
  }};
- const handler=createHandler({db,checkoutSecret:secret,ciRequiredFrom,couponsEnabled});
+ const handler=createHandler({db,checkoutSecret:secret,ciRequiredFrom,houseNumberRequiredFrom,couponsEnabled});
  const input=(provider,id)=>({gestor:actor.nombre,proveedor:provider,cliente:'Synthetic Customer',telefono:'synthetic-phone',ci:'none',direccion:'Synthetic address (Centro)',municipio:'Centro Habana',origen:'Manual (Panel)',orden_dia:provider+'00001',_lineas:[{producto_id:id,cantidad:1}]});
  const body={action:'checkout',table:'pedidos',inputs:[input('A','pA'),input('B','pB')],delivery:{pickup:false,municipio:'Centro Habana',localidad:'Centro'},intentId:'b'.repeat(64),intentCreatedAt:Date.now()};
  let lastStatus=200;

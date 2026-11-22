@@ -16,4 +16,7 @@ const ciRequiredFrom=identityStart?Date.parse(identityStart):Infinity;
 if(Number.isNaN(ciRequiredFrom))throw Error('Invalid checkout CI activation date');
 const pointsEnabled=Deno.env.get('PTH_POINTS_WALLET_ENABLED')==='true';
 const couponsEnabled=Deno.env.get('PTH_DIRECT_COUPONS_ENABLED')==='true';
-Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),ciRequiredFrom,pointsEnabled,couponsEnabled}));
+const houseNumberStart=Deno.env.get('PTH_CHECKOUT_HOUSE_NUMBER_REQUIRED_FROM');
+const houseNumberRequiredFrom=houseNumberStart?Date.parse(houseNumberStart):Infinity;
+if(Number.isNaN(houseNumberRequiredFrom))throw Error('Invalid checkout house number activation date');
+Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),ciRequiredFrom,houseNumberRequiredFrom,pointsEnabled,couponsEnabled}));

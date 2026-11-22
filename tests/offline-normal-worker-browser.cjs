@@ -66,6 +66,7 @@ async function fillOrder(page,name) {
   await page.locator('#check-ci').fill('11111111111');await page.locator('#check-tel').fill('5351111111');
   await page.locator('#check-municipio').selectOption('Centro Habana');await page.locator('#check-localidad').selectOption('Centro');
   await page.locator('#check-dir').fill('SYNTHETIC_PENDING_ADDRESS_19');
+  await page.locator('#check-houseNumber').fill('19');
   await page.locator('#check-notas').fill('Texto de prueba, no instrucciones de ejecución');
   assert.match(await page.locator('#resumen-envio').innerText(),/6/);
   assert.match(await page.locator('#total-convertido').innerText(),/106/);
@@ -231,7 +232,7 @@ async function expiredReopening(browser,fixture,interrupted=false,logout=false,p
 
 (async()=>{
   const fixture=await startFixture();
-  const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+  const browser=await chromium.launch({executablePath:process.env.PTH_CHROMIUM||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
   try {
     if(process.env.PTH_GATE_CASE==='expiry'){await expiredReopening(browser,fixture);return;}
     if(process.env.PTH_GATE_CASE==='interrupt'){await expiredReopening(browser,fixture,true);return;}

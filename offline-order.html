@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="/css/offline-order.css?v=20261003-pending2">
   <script src="/js/low-connectivity.js?v=20261002-lowdata1" defer></script>
   <script src="/js/secure-data.js?v=20261122-couponsqr1" defer></script>
-  <script src="/js/pending-checkout.js?v=20261021-ci1" defer></script>
-  <script src="/js/checkout-form-shared.js?v=20261112-express1" defer></script>
+  <script src="/js/pending-checkout.js?v=20261122-house1" defer></script>
+  <script src="/js/checkout-form-shared.js?v=20261122-house1" defer></script>
   <script src="/js/offline-checkout-copy.js?v=20261112-medium1" defer></script>
-  <script src="/js/pending-checkout-page.js?v=20261021-ci1" defer></script>
+  <script src="/js/pending-checkout-page.js?v=20261122-house1" defer></script>
 </head>
 <body>
   <header><a href="/">paratuhogar</a><a href="/offline-catalog.html">Volver al catálogo</a></header>
@@ -127,9 +127,15 @@
             </div>
         </div>
 
+        <div id="check-house-number-field">
+            <label for="check-houseNumber" class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Número de casa o vivienda</label>
+            <input id="check-houseNumber" type="text" maxlength="32" required aria-describedby="check-house-number-help"
+                placeholder="Ej.: 123 o 123-A" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 font-bold">
+            <p id="check-house-number-help" class="text-sm text-gray-500 mt-1">Si la vivienda no tiene número, escribe S/N.</p>
+        </div>
         <div>
-            <label class="block text-sm font-bold text-gray-500 mb-1.5 ml-1" for="check-dir">Dirección Exacta</label>
-            <textarea id="check-dir" placeholder="Calle, Número, Entre Calles..."
+            <label for="check-dir" class="block text-sm font-bold text-gray-500 mb-1.5 ml-1">Dirección Exacta</label>
+            <textarea id="check-dir" placeholder="Calle, entre calles, edificio o apartamento..."
                 class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 text-lg font-bold text-slate-800 h-32 resize-none focus:bg-white focus:border-primary focus:ring-0 transition-all placeholder:text-gray-300" required></textarea>
         </div>
 
