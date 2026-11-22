@@ -13,15 +13,20 @@
     "test:points:unit": "node --test tests/points-wallet-gateway.test.mjs tests/points-wallet-client.test.cjs",
     "test:points:db": "node --test tests/points-wallet-db.cjs tests/points-referral-db.cjs",
     "test:points:integration": "node --test tests/points-wallet-integration.test.mjs",
-    "test:points:browser": "node --test tests/points-wallet-browser.cjs"
+    "test:points:browser": "node --test tests/points-wallet-browser.cjs",
+    "test:coupons:unit": "node --test tests/coupons-checkout.test.mjs tests/coupon-economics.test.cjs tests/coupons-documents.test.cjs",
+    "test:coupons:db": "node --test tests/customer-bindings-db.cjs tests/coupons-db.cjs tests/points-wallet-db.cjs tests/points-referral-db.cjs",
+    "test:coupons:browser": "node --test tests/coupons-browser.cjs tests/personal-qr-browser.cjs && node tests/coupons-checkout-browser.cjs && node tests/qr-checkout-browser.cjs"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.10",
     "@types/web-push": "3.6.4",
     "embedded-postgres": "17.12.0-beta.19",
+    "jsqr": "1.4.0",
     "pg": "8.23.1",
     "playwright": "1.62.1",
+    "pngjs": "7.0.0",
     "supabase": "3.2.0",
     "tailwindcss": "3.4.17",
     "terser": "5.51.2",

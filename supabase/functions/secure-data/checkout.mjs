@@ -1,3 +1,4 @@
+import {couponCode,quoteCoupon,couponFailure} from './coupons.mjs';
 /* New checkout only. No UPDATE, legacy lookup, backfill or ownership inference. */
 const ATTEMPT_AGE=7*86400000, QUOTE_AGE=120000;
 const encode=value=>new TextEncoder().encode(String(value));
@@ -31,7 +32,7 @@ function clean(body){
   if(!d||typeof d.pickup!=='boolean'||typeof d.municipio!=='string'||typeof d.localidad!=='string'||d.municipio.length>200||d.localidad.length>200)fail('CHECKOUT_INVALID','Selecciona el lugar de entrega.');
   if(!/^[a-f0-9]{64}$/.test(body.intentId||'')||!Number.isFinite(body.intentCreatedAt))fail('CHECKOUT_INVALID','No se pudo verificar el borrador de este pedido.');
   if(d.service!==undefined&&!['ordinary','express'].includes(d.service))fail('CHECKOUT_INVALID','Servicio de entrega no válido.');
-  return {table:body.table,intentId:body.intentId,intentCreatedAt:body.intentCreatedAt,inputs,delivery:{pickup:d.pickup,municipio:d.municipio,localidad:d.localidad,...(d.service==='express'?{service:'express'}:{})}};
+  return {table:body.table,intentId:body.intentId,intentCreatedAt:body.intentCreatedAt,inputs,delivery:{pickup:d.pickup,municipio:d.municipio,localidad:d.localidad,...(d.service==='express'?{service:'express'}:{})},...(body.coupon!==undefined&&body.coupon!==''?{coupon:couponCode(body.coupon)}:{})};
 }
 export function expressDelivery(products,lines,delivery,tariff){
   if(delivery.pickup||products.some(p=>/MAYORISTA|B2B|MIPYME/.test(String(p.categoria||'').toUpperCase())))
@@ -61,7 +62,7 @@ export function deliveryCost(products,lines,delivery,tariff){
   if(!Number.isFinite(value)||value<0)fail('DELIVERY_UNAVAILABLE','La tarifa de entrega necesita revisión.');
   return cents(value)/100;
 }
-export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity,pointsEnabled=false}){
+export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity,pointsEnabled=false,couponsEnabled=false}){
   let signingKey;
   const key=()=>signingKey||(signingKey=crypto.subtle.importKey('raw',encode('pth-new-checkout-v1:'+signingSecret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']));
   const sign=async value=>hex(await crypto.subtle.sign('HMAC',await key(),encode(value)));
@@ -170,7 +171,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
     const parts=String(proof||'').split('.');
     return parts.length===5&&parts[0]==='pthd1'&&/^\d{13}$/.test(parts[1])&&now()-Number(parts[1])>=0&&now()-Number(parts[1])<=ATTEMPT_AGE&&parts[2]===await sign('duplicates:'+JSON.stringify(duplicates))&&parts[3]===await sign('attempt:'+token)&&await verify(parts.slice(0,4).join('.'),parts[4]);
   }
-  return async function checkout(body,actor){
+  return async function checkout(body,actor,context={}){
     try{
       if(!signingSecret)fail('CHECKOUT_UNAVAILABLE','La confirmación de pedidos nuevos no está disponible.');
       if(body.operation==='receipt'){
@@ -207,7 +208,16 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(existing.complete)return {data:{...existing,attempt:token},error:null};
       if(existing.confirmed.length)fail('ORDER_OUTCOME_UNKNOWN','Hay una confirmación parcial que necesita revisión. No se reescribirá ningún pedido aceptado.');
       if((attempt.version==='pthn2'?attempt.issued:payload.intentCreatedAt)>=ciRequiredFrom&&payload.inputs.some(row=>typeof row.ci!=='string'||!/^[0-9]{11}$/.test(row.ci)))fail('CI_REQUIRED','Completa el carnet de identidad con exactamente 11 dígitos.');
-      const {rows,expressTariff}=await canonical(payload,actor,token,existing.confirmed),currentTerms=terms(rows);
+      const {rows,expressTariff}=await canonical(payload,actor,token,existing.confirmed);
+      let coupon=null,currentTerms=terms(rows);
+      if(payload.coupon){
+        if(!couponsEnabled)fail('COUPON_UNAVAILABLE','Los cupones todavía no están disponibles. No se envió el pedido.');
+        if(actor?.id||payload.table!=='pedidos'||payload.inputs.some(row=>row._referral_reference||row.subgestor_id)||rows.some(row=>row.gestor!=='Venta Directa'||Number(row.comision_total)!==0))fail('COUPON_INVALID','Los cupones solo están disponibles para compras directas sin gestor.');
+        const phone=payload.inputs[0].telefono;
+        if(payload.inputs.some(row=>customerPhone(row.telefono)!==customerPhone(phone)))fail('COUPON_INVALID','Revisa el teléfono del pedido.');
+        coupon=await quoteCoupon(db,{code:payload.coupon,rows,phone,rateKey:body.operation==='quote'?await sign('coupon-rate:'+String(context.ip||'unknown')):null});
+        currentTerms=currentTerms.map(term=>{const a=coupon.allocations.find(x=>x.proveedor===term.proveedor);return {...term,total:(a.net_cents+cents(term.costo_mensajeria))/100,subtotal_productos:a.gross_cents/100,descuento_productos:a.discount_cents/100,cupon_codigo:coupon.code,cupon_revision:coupon.revision};});
+      }
       const duplicates=await recentDuplicates(rows,actor);
       const stamp=now(),digest=await sign('terms:'+JSON.stringify(currentTerms));
       if(body.operation==='quote'){
@@ -231,12 +241,15 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       }
       // Counter increments roll back with the batch. Same-attempt races return
       // the original receipt rather than updating accepted rows.
-      const inserted=await (pointsEnabled
+      const inserted=await (coupon
+        ? db.rpc('pth_insert_coupon_checkout',{p_rows:rows,p_coupon:{...coupon,phone:payload.inputs[0].telefono},p_captures:pointsEnabled?pointCaptures:null,p_tariff:expressTariff})
+        : pointsEnabled
         ? db.rpc('pth_insert_checkout_points',{p_table:payload.table,p_rows:rows,p_captures:pointCaptures,p_tariff:expressTariff})
         : expressTariff
         ? db.rpc('pth_insert_express_checkout',{p_table:payload.table,p_rows:rows,p_tariff:expressTariff})
         : db.rpc('pth_insert_checkout',{p_table:payload.table,p_rows:rows}));
       if(expressTariff&&inserted.error?.code==='PT409')fail('CONDITIONS_CHANGED','Cambió la tarifa exprés. Revisa la entrega y confirma nuevamente.');
+      if(coupon&&inserted.error&&['PT400','PT403','PT409','PT429'].includes(inserted.error.code))couponFailure(inserted.error);
       if(inserted.error&&inserted.error.code!=='23505')fail('ORDER_OUTCOME_UNKNOWN','Se perdió la confirmación. Comprueba el recibo antes de reintentar.');
       const result=await receipts(token,attempt);
       if(!result.complete)fail('ORDER_OUTCOME_UNKNOWN','Aún no se confirmó todo el pedido. Comprueba el recibo antes de reintentar.');

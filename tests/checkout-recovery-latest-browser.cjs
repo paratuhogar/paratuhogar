@@ -4,7 +4,16 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),
 const root=process.env.PTH_FIXTURE_ROOT||path.resolve(__dirname,'..');
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jx1sAAAAASUVORK5CYII=','base64');
 (async()=>{
- const {fixture}=await import('./fixtures/new-checkout.mjs');let f=await fixture();
+ const {fixture}=await import('./fixtures/new-checkout.mjs');let f=await fixture({couponsEnabled:process.env.PTH_DIRECT_COUPONS==='1'});
+ if(process.env.PTH_DIRECT_COUPONS==='1'){
+  const rpc=f.db.rpc;
+  f.db.rpc=async(name,args)=>{
+   const coupon={id:'33333333-3333-4333-a333-333333333333',revision:1,code:'OFFER',subtotal_cents:30000,discount_cents:900,allocations:[{proveedor:'A',gross_cents:10000,discount_cents:300,net_cents:9700},{proveedor:'B',gross_cents:20000,discount_cents:600,net_cents:19400}]};
+   if(name==='pth_coupon_quote')return {data:coupon,error:null};
+   if(name==='pth_insert_coupon_checkout')return rpc('pth_insert_checkout',{p_table:'pedidos',p_rows:args.p_rows.map(row=>{const a=coupon.allocations.find(x=>x.proveedor===row.proveedor);return {...row,total:a.net_cents/100+row.costo_mensajeria,subtotal_productos:a.gross_cents/100,descuento_productos:a.discount_cents/100,cupon_codigo:coupon.code};})});
+   return rpc(name,args);
+  };
+ }
  const trace=[];let origin,dropSubmitResponse=false;
  const products=Array.from({length:430},(_,i)=>({id:'public-'+i,nombre:'Equipo público '+i,precio:100+i,categoria:i%2?'COCINA':'HOGAR',disponible:'SI',garantia:'1 año',thumbnail:'sample.jpg'}));
  const server=http.createServer(async(req,res)=>{
@@ -31,19 +40,46 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
  const browser=await chromium.launch({executablePath:process.env.PTH_CHROMIUM||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  try{
   const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'fixture-v1'}:table==='tarifas_mensajeria'?[{municipio:'Centro Habana',localidad:'Centro',precio_pequeno:6,precio_grande:10}]:[];return Promise.resolve({data:single?Array.isArray(data)?data[0]||null:data:data,error:null,count:0}).then(ok,no)}};for(const n of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[n]=()=>q;for(const n of ['single','maybeSingle'])q[n]=()=>{single=true;return q};return q;},rpc(name,p){return Promise.resolve({data:name==='reservar_consecutivo_pedido'?p.p_proveedor+String(++window.fixtureSequence):[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};window.fixtureSequence=0;`;
-  async function context(){
+  async function context(anonymous=false){
     const c=await browser.newContext({viewport:{width:Number(process.env.PTH_PENDING_WIDTH)||390,height:844},colorScheme:process.env.PTH_PENDING_DARK?'dark':'light'}),errors=[];
     c.on('page',p=>p.on('pageerror',e=>{errors.push(e.stack||e.message);console.error('PAGE',e.stack||e.message);}));
     await c.route('**/*',route=>{const url=new URL(route.request().url());if(url.pathname==='/js/vendor/supabase-2.57.4.js')return route.fulfill({contentType:'application/javascript',body:sdk});if(url.origin===origin)return route.continue();if(url.href.includes('@supabase/supabase-js'))return route.fulfill({contentType:'application/javascript',body:sdk});if(route.request().resourceType()==='stylesheet')return route.fulfill({contentType:'text/css',body:'.material-symbols-outlined{display:inline-block;width:1em;overflow:hidden}'});if(route.request().resourceType()==='image')return route.fulfill({contentType:'image/png',body:png});return route.fulfill({contentType:'application/json',body:'{"data":[],"error":null}'});});
-    await c.addInitScript(profile=>{if(window.top!==window||!/^http:\/\/(127\.0\.0\.1|localhost)/.test(location.href))return;if(!localStorage.getItem('fixture-initialized')){localStorage.setItem('fixture-initialized','true');sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_data_saving_v1','on');localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},f.rows.gestores[0]);
+    await c.addInitScript(profile=>{if(window.top!==window||!/^http:\/\/(127\.0\.0\.1|localhost)/.test(location.href))return;if(!localStorage.getItem('fixture-initialized')){localStorage.setItem('fixture-initialized','true');sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_data_saving_v1','on');if(profile){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}}},anonymous?null:f.rows.gestores[0]);
     return {c,errors};
   }
-  async function main(c,defaultDashboard=false){const p=await c.newPage();await p.goto(origin+'/',{waitUntil:'domcontentloaded'});await p.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===2);await p.evaluate(dashboard=>{document.getElementById('feedback-announcement')?.remove();if(!dashboard)showSection('catalogo');window.checkoutAlerts=[];window.alert=message=>checkoutAlerts.push(message);window.confirm=()=>true;obtenerDuenoReal=async()=> 'Shared Seller';},defaultDashboard);if(defaultDashboard)await p.locator('#sec-dashboard').waitFor({state:'visible'});return p;}
+  async function main(c,defaultDashboard=false,reference='',direct=false){const p=await c.newPage();await p.goto(origin+'/'+(reference?'?ref='+reference:''),{waitUntil:'domcontentloaded'});await p.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===2);await p.evaluate(({dashboard,reference,direct})=>{document.getElementById('feedback-announcement')?.remove();if(!dashboard)showSection('catalogo');window.checkoutAlerts=[];window.alert=message=>checkoutAlerts.push(message);window.confirm=()=>true;if(!reference&&!direct)obtenerDuenoReal=async()=> 'Shared Seller';},{dashboard:defaultDashboard,reference,direct});if(defaultDashboard)await p.locator('#sec-dashboard').waitFor({state:'visible'});return p;}
   async function row(p,account='actor-a'){return p.evaluate(async account=>PTHPendingCheckout.create(PTHPendingCheckout.indexedStore(indexedDB)).read(account),account);}
   async function waitState(p,state){const deadline=Date.now()+45000;while(Date.now()<deadline){const current=await row(p);if(current?.state===state)return;await p.waitForTimeout(200);}const current=await row(p);throw Error('Expected '+state+', got '+current?.state+' code='+current?.code+' message='+current?.message);}
   async function fillCart(p){await p.evaluate(()=>{addProductFromCard('Equipo A');addProductFromCard('Equipo B');toggleCartModal(true);document.getElementById('check-recogida').checked=true;toggleRecogidaEnAlmacen();document.getElementById('check-nombre').value='Synthetic Customer';document.getElementById('check-tel').value='synthetic-phone';document.getElementById('check-ci').value='00123456789';document.getElementById('check-notas').value='<script>untrusted submitted text</script>';});}
 
 
+  if(process.env.PTH_DIRECT_COUPONS==='1'){
+    const {c,errors}=await context(true),p=await main(c,false,'',true);await fillCart(p);
+    await p.evaluate(()=>{document.getElementById('check-tel').value='51234567';window.openedUrls=[];window.open=url=>openedUrls.push(url);generarComprobanteVenta=value=>window.pdfPayload=value;});
+    await p.locator('#pth-coupon-entry summary').click();await p.getByRole('button',{name:'Aplicar',exact:true}).click();assert.equal(f.writes,0);
+    await p.locator('#pth-coupon-code').fill('OFFER');await p.getByRole('button',{name:'Aplicar',exact:true}).click();
+    await p.waitForFunction(()=>document.getElementById('pth-coupon-status')?.textContent.includes('aplicado'));
+    assert.equal(f.writes,0,'Apply cannot authorize an insert');assert.match(await p.locator('#total-convertido').innerText(),/291/);
+    await p.locator('#final-submit-btn').click();await p.waitForFunction(()=>document.getElementById('pth-checkout-confirmations'));
+    assert.equal(f.writes,1);assert.deepEqual(f.rows.pedidos.slice(1).map(row=>row.total),[97,194]);
+    await p.waitForFunction(()=>!!window.pdfPayload);assert.equal(await p.evaluate(()=>pdfPayload.totalUSD),291);assert.equal(await p.evaluate(()=>pdfPayload.descuento),9);
+    assert.match(await p.evaluate(()=>decodeURIComponent(openedUrls[0])),/Descuento \(OFFER\)/);assert.deepEqual(errors,[]);
+    await c.close();console.log('PASS real anonymous storefront empty Apply, quote-only Apply, explicit Confirm, net WhatsApp/PDF and unchanged shipping; no production API');return;
+  }
+  if(process.env.PTH_QR_REFERRAL==='1'){
+    const parent='11111111-1111-4111-a111-111111111111',child='22222222-2222-4222-a222-222222222222';
+    f.rows.gestores.push({id:parent,nombre:'Synthetic parent',rol:'gestor',estado:'activo',activo:true,telefono:'50000001'},
+      {id:child,nombre:'Synthetic child',rol:'gestor',estado:'activo',activo:true,parent_id:parent,telefono:'50000002'});
+    f.rows.precios_personalizados=f.rows.productos.map(p=>({gestor:'Synthetic parent',producto_id:p.id,comision_subgestor:3,visible_subgestor:true}));
+    const {c,errors}=await context(true),p=await main(c,false,child);await fillCart(p);
+    await p.evaluate(()=>{window.preparedRequest=null;PTHSecureData.checkout=async body=>{window.preparedRequest=body;return {data:null,error:{code:'TEST_PREPARED',message:'Stop before transmission'}};};});
+    await p.evaluate(()=>document.getElementById('checkout-form').onsubmit({preventDefault(){}}));
+    const prepared=await p.evaluate(()=>preparedRequest);
+    assert.ok(prepared,JSON.stringify(await p.evaluate(()=>checkoutAlerts)));
+    assert.equal(prepared.table,'pedidos_subgestores');assert.ok(prepared.inputs.every(row=>row.subgestor_id===child&&row._referral_reference===child));
+    assert.equal(await p.evaluate(()=>PTHSecureData.token()),null);assert.equal(f.writes,0);assert.deepEqual(errors,[]);
+    await c.close();console.log('PASS fresh anonymous child QR link reaches real storefront checkout preparation with child UUID only; no order submitted');return;
+  }
   if(process.env.PTH_EXPRESS_SHIPPING==='1'){
     f=await fixture();
     Object.assign(f.rows.tarifas_mensajeria[0],{precio_expres_pequeno:12,minutos_expres_pequeno:60});

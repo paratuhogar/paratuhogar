@@ -5,6 +5,8 @@ import vm from 'node:vm';
 const root=new URL('../',import.meta.url);
 function publicResponse(request,status=200){const path=new URL(request.url).pathname;const content=fs.readFileSync(new URL(path.slice(1),root));const mime=path.endsWith('.html')?'text/html':path.endsWith('.css')?'text/css':'application/javascript';const response=new Response(content,{status,headers:{'content-type':mime}});Object.defineProperty(response,'type',{value:'basic'});return response;}
 const source=fs.readFileSync(new URL('../service-worker.js',import.meta.url),'utf8');
+const currentHTML=fs.readFileSync(new URL('index.html',root),'utf8');
+const currentPending=currentHTML.match(/src="(js\/pending-checkout-storefront\.js\?v=[^"]+)"/)[1];
 function fixture(){
   const events={},entries=new Map(),requests=[],puts=[],deleted=[];
   let writeFailure=false,fetching=async request=>publicResponse(request);
@@ -56,14 +58,14 @@ test('a template from a newer app release remains missing and reports an app upd
   const result=await f.message();assert.equal(result.ready,false);assert.equal(result.reason,'update');assert.equal(result.missingCount,1);assert.equal(f.puts.length,0);assert.ok(f.entries.has('/offline.html'));
 });
 test('an HTML fallback with HTTP 200 cannot satisfy a missing JavaScript or stylesheet',async()=>{
-  for(const url of ['/js/pending-checkout-storefront.js?v=20261122-pointref1','/css/offline-order.css?v=20261003-pending2']){
+  for(const url of ['/'+currentPending,'/css/offline-order.css?v=20261003-pending2']){
     const f=fixture();await f.install();f.entries.delete(url);f.fetchWith(async()=>{const r=new Response('<html>fallback</html>',{headers:{'content-type':'text/html'}});Object.defineProperty(r,'type',{value:'basic'});return r;});
     const result=await f.message();assert.equal(result.ready,false);assert.equal(result.missingCount,1);assert.equal(f.puts.length,0);
   }
 });
 test('unquoted future scripts, maintenance pages and external essential scripts cannot declare readiness',async()=>{
-  const html=fs.readFileSync(new URL('index.html',root),'utf8');
-  for(const content of [html.replace('src="js/pending-checkout-storefront.js?v=20261122-pointref1"','src=/js/pending-checkout-storefront.js?v=next-release'),'<html><body>Maintenance</body></html>',html.replace('src="js/pending-checkout-storefront.js?v=20261122-pointref1"','src="https://external.test/next-release.js"')]){
+  const html=currentHTML;
+  for(const content of [html.replace('src="'+currentPending+'"','src=/js/pending-checkout-storefront.js?v=next-release'),'<html><body>Maintenance</body></html>',html.replace('src="'+currentPending+'"','src="https://external.test/next-release.js"')]){
     const f=fixture();await f.install();f.entries.delete('/index.html');f.fetchWith(async()=>{const r=new Response(content,{headers:{'content-type':'text/html'}});Object.defineProperty(r,'type',{value:'basic'});return r;});
     const result=await f.message();assert.equal(result.ready,false);assert.equal(result.reason,'update');assert.equal(f.puts.length,0);
   }

@@ -1896,7 +1896,8 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
 
     const totalVentaRegistrado = Number(p.total);
     const mensajeria = Number(p.costo_mensajeria || 0);
-    const totalEquiposEnPedido = totalVentaRegistrado - mensajeria;
+    const couponSnapshot = window.PTHCouponEconomics?.snapshot(p);
+    const totalEquiposEnPedido = couponSnapshot?.gross ?? totalVentaRegistrado - mensajeria;
 
     const partes = p.producto.split(' + ');
     const itemsProcesados = [];
@@ -1912,7 +1913,7 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
         const productoEnCatalogo = productosRaw.find(prod => prod.nombre === nombreLimpio);
         let precioUnitario = 0;
 
-        if (productoEnCatalogo) {
+        if (productoEnCatalogo && !couponSnapshot) {
             precioUnitario = Number(productoEnCatalogo.precio);
             // Comprobar si pertenece a categoría B2B
             const cat = (productoEnCatalogo.categoria || "").toUpperCase();
@@ -1940,6 +1941,7 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
         });
     });
 
+    if (couponSnapshot) itemsProcesados.splice(0,itemsProcesados.length,{nombre:p.producto,qty:1,price:couponSnapshot.gross,total:couponSnapshot.gross});
     const datosParaPDF = {
         cliente: p.cliente,
         ci: p.ci || "---",
@@ -1947,6 +1949,8 @@ function prepararPDFDesdeHistorial(pedidoId, accion) {
         direccion: p.direccion,
         totalUSD: totalVentaRegistrado,
         mensajeria: mensajeria,
+        descuento: couponSnapshot?.discount || 0,
+        cupon: couponSnapshot?.code || null,
         items: itemsProcesados
     };
 
@@ -2950,6 +2954,10 @@ function getCheckoutFailureMessage(error) {
     switch (error?.code) {
         case 'CI_REQUIRED':
             return 'Completa el carnet de identidad con exactamente 11 dígitos. El pedido no se ha enviado.';
+        case 'COUPON_INVALID':
+        case 'COUPON_UNAVAILABLE':
+        case 'COUPON_RATE_LIMIT':
+            return error.message || 'No se pudo validar el cupón. Conservamos los datos; revisa el descuento antes de confirmar.';
         case 'SELLER_IDENTITY_AMBIGUOUS':
             return 'El enlace de atención necesita revisión. Pide al contacto que te lo envió que lo revise antes de confirmar. Tus datos siguen en esta pantalla.';
         case 'SELLER_NOT_FOUND':
@@ -3052,6 +3060,11 @@ function getCheckoutFailureMessage(error) {
 
 document.getElementById('checkout-form').onsubmit = async function(e) {
     e.preventDefault();
+    const couponPreviewOnly=window.PTHCoupons?.consumeApply()===true;
+    if (window.PTHCoupons?.code() && (navigator.onLine === false || offlineStorefront.usingCopy() || window.PTHPendingCheckoutUI?.shouldIntercept())) {
+        notifyNewCheckout('Conecta con la tienda para aplicar el cupón. No se enviará sin comprobar el descuento.');
+        return;
+    }
     if (window.PTHPendingCheckoutUI?.shouldIntercept()) {
         await window.PTHPendingCheckoutUI.interceptSubmit();
         return;
@@ -3504,8 +3517,10 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         volatileCheckoutIntent = { owner: submissionOwner, products: window.PTHLowConnectivity.fingerprint(cart), intentId: Array.from(crypto.getRandomValues(new Uint8Array(32)),v => v.toString(16).padStart(2,'0')).join(''), savedAt: Date.now() };
     }
     const intent = window.PTHPendingCheckoutUI?.intent() || draft || volatileCheckoutIntent;
-    const request = { table: orderSubgestor ? 'pedidos_subgestores' : 'pedidos', inputs: promesas, delivery: { pickup: isRecogida, municipio: municipioC, localidad: localidadC }, intentId: intent.intentId, intentCreatedAt: intent.savedAt, attempt: previousOutcome?.attempt };
-    const deliveryUnchanged = () => expressSelected === expressShippingSelected()
+    const couponCode = window.PTHCoupons?.code() || '';
+    if (couponCode && (window.PTHPendingCheckoutUI?.active() || offlineStorefront.usingCopy())) throw Object.assign(new Error('Conecta con la tienda para aplicar el cupón. El pedido no se ha enviado.'),{code:'COUPON_UNAVAILABLE'});
+    const request = { table: orderSubgestor ? 'pedidos_subgestores' : 'pedidos', inputs: promesas, delivery: { pickup: isRecogida, municipio: municipioC, localidad: localidadC }, intentId: intent.intentId, intentCreatedAt: intent.savedAt, attempt: previousOutcome?.attempt, ...(couponCode ? {coupon:couponCode} : {}) };
+    const deliveryUnchanged = () => (!couponCode || couponCode === window.PTHCoupons?.code() && document.getElementById('check-tel').value === telC) && expressSelected === expressShippingSelected()
         && Boolean(document.getElementById('check-recogida')?.checked) === isRecogida
         && (isRecogida || (document.getElementById('check-municipio').value === municipioC && document.getElementById('check-localidad').value === localidadC));
     if (expressSelected) request.delivery.service = 'express';
@@ -3518,12 +3533,16 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         notifyNewCheckout('El servidor ya confirmó este envío: ' + quote.data.confirmed.map(row => row.reference).join(', ') + '. No se creó otro pedido.');
         clearNewCheckoutOutcome(); checkoutSubmitGuard.succeed(); checkoutFinished = true; lowConnectivity.markSent(newCartOwner,newCartRevision); if (!window.PTHPendingCheckoutUI?.active()) lowConnectivity.clearDraft(newCartOwner); cart = []; newCartRevision = null; document.getElementById('cart-count').textContent = '0'; toggleCartModal(false); return;
     }
+    if (couponCode && !deliveryUnchanged()) {
+        window.PTHCoupons.failure({message:'Cambiaste el teléfono, el código o la entrega. Aplica el cupón otra vez.'});
+        return;
+    }
     window.PTHPendingCheckoutUI?.verifyEstimate(quote.data);
     const pendingOutcome = { token: submissionToken, attempt: quote.data.attempt, table: request.table, phone:whatsappDestino, providers: Object.keys(gruposPorProveedor), codes: protectionOrderIds, products: window.PTHLowConnectivity.fingerprint(cart), ...(expressSelected ? {express:true} : {}) };
     if (window.PTHPendingCheckoutUI?.active()) await markNewCheckoutOutcome(pendingOutcome);
     const changedTerms = quote.data.terms.some(term => {
         const expected = promesas.find(input => input.proveedor === term.proveedor);
-        return !expected || Math.abs(Number(expected.total)-Number(term.total)) > 0.001 || Math.abs(Number(expected.costo_mensajeria)-Number(term.costo_mensajeria)) > 0.001 || expected.garantia_venta !== term.garantia_venta;
+        return !expected || Math.abs(Number(expected.total)-Number(term.total)-Number(term.descuento_productos||0)) > 0.001 || Math.abs(Number(expected.costo_mensajeria)-Number(term.costo_mensajeria)) > 0.001 || expected.garantia_venta !== term.garantia_venta;
     });
     if (changedTerms) {
         for (const term of quote.data.terms) for (const price of term.prices || []) {
@@ -3532,6 +3551,14 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         if (expressSelected) await loadTarifasMensajeria();
         else newCheckoutShippingOverride = { fingerprint: window.PTHLowConnectivity.fingerprint(cart), municipio: municipioC, localidad: localidadC, pickup: isRecogida, cost: quote.data.terms.reduce((sum,term) => sum + Number(term.costo_mensajeria),0) };
         renderCart(); notifyNewCheckout('El servidor comprobó nuevas condiciones de precio, garantía o entrega. Revisa el total actualizado y pulsa Confirmar Pedido nuevamente.'); return;
+    }
+    if (couponCode && !window.PTHCoupons.review(request,quote.data)) return;
+    // Applying a code is a quote-only gesture, never authorization to insert.
+    if (couponPreviewOnly) return;
+    if (couponCode) for (const part of whatsappParts) {
+        const term=quote.data.terms.find(row=>row.proveedor===part.proveedor);
+        const oldTotal=promesas.find(row=>row.proveedor===part.proveedor).total;
+        part.body=part.body.replace(`$${oldTotal} USD*`,`$${Number(term.total).toFixed(2)} USD*`).replace(/\(Equipos:.*?\)\n/,window.PTHCouponEconomics.message(term));
     }
     let duplicateReview=null;
     if(quote.data.duplicates?.length){
@@ -3568,7 +3595,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     if (result.error) {
         // These gateway replies precede insertion. Never clear a marker
         // from an earlier attempt whose result was already uncertain.
-        if (!previousOutcome && ['CONDITIONS_CHANGED','DELIVERY_UNAVAILABLE','PRODUCT_UNAVAILABLE','POSSIBLE_DUPLICATE'].includes(result.error.code)) clearNewCheckoutOutcome();
+        if (!previousOutcome && ['CONDITIONS_CHANGED','DELIVERY_UNAVAILABLE','PRODUCT_UNAVAILABLE','POSSIBLE_DUPLICATE','COUPON_INVALID','COUPON_RATE_LIMIT'].includes(result.error.code)) clearNewCheckoutOutcome();
         throw result.error;
     }
     if (checkoutScope() !== submissionOwner || window.PTHPendingCheckoutUI?.guard() || window.PTHSecureData.token() !== submissionSession) throw Object.assign(new Error('Session changed'),{code:'SESSION_CHANGED'});
@@ -3640,8 +3667,10 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
         telefono: telC,
         direccion: dirPDF,
         referencias: [...protectionOrderIds],
-        totalUSD: totalGlobalProductos + envioTotalGlobal,
+        totalUSD: couponCode ? quote.data.terms.reduce((sum,t)=>sum+Number(t.total),0) : totalGlobalProductos + envioTotalGlobal,
         mensajeria: envioTotalGlobal,
+        descuento: couponCode ? quote.data.terms.reduce((sum,t)=>sum+Number(t.descuento_productos),0) : 0,
+        cupon: couponCode || null,
         items: cart.map(item => ({ nombre: item.nombre, qty: item.qty, price: item.precio_venta }))
     };
 
@@ -3668,6 +3697,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
     checkoutFinished = true;
     } catch (checkoutError) {
         console.error("Error inesperado al procesar el pedido:", checkoutError);
+        if (String(checkoutError.code||'').startsWith('COUPON_')) window.PTHCoupons?.failure(checkoutError);
         window.PTHPendingCheckoutUI?.failure(checkoutError,getCheckoutFailureMessage(checkoutError));
         if (!inSubmissionScope()) return;
         if (checkoutFinished) {
@@ -8662,6 +8692,10 @@ async function exportLogisticaExcel() {
         "Producto": p.producto,
         "Gestor": p.gestor,
         "Total Venta": p.total,
+        "Productos (antes del descuento)": p.subtotal_productos ?? '',
+        "Descuento productos": p.descuento_productos ?? '',
+        "Cupón": p.cupon_codigo || '',
+        "Mensajería": p.costo_mensajeria,
         "Comisión Gestor": p.comision_total,
         "Estado Actual": p.estado,  // Saldrá el texto limpio (ej: "Pendiente")
         "Mensajero asignado": p.mensajero_id ? (courierNames.get(p.mensajero_id) || 'Nombre no disponible') : 'Sin asignar',
@@ -8684,6 +8718,10 @@ async function exportLogisticaExcel() {
         {wch: 40}, // Producto
         {wch: 20}, // Gestor
         {wch: 10}, // Total
+        {wch: 20}, // Productos brutos
+        {wch: 20}, // Descuento
+        {wch: 20}, // Cupón
+        {wch: 15}, // Mensajería
         {wch: 10}, // Comisión
         {wch: 15}, // Estado
         {wch: 25}, // Mensajero
@@ -10039,76 +10077,25 @@ async function findPermanentCustomerOwner(phone) {
 
 async function recordCustomerClosure(phone, agentName, orderId = null) {
     const validAgent = typeof agentName === 'string' && agentName.trim() && agentName !== 'Venta Directa' && agentName !== 'Directo';
-    const canonicalPhone = canonicalCustomerPhone(phone);
-    if (!validAgent || !canonicalPhone) return { owner: null, created: false };
-
+    if (!validAgent || !canonicalCustomerPhone(phone)) return { owner: null, created: false, transferred: false };
+    // Compatibilidad de lectura: el servidor ya confirmó pedido y asignación en
+    // la misma transacción. Un cierre posterior nunca transfiere al propietario.
     const existing = await findPermanentCustomerOwner(phone);
-    const newOwner = agentName.trim();
-    const now = new Date();
-    const transferred = Boolean(existing?.agent_name && existing.agent_name !== newOwner);
-    const payload = {
-        agent_name: newOwner,
-        protected_until: null,
-        last_activity_at: now.toISOString(),
-        last_activity_type: transferred ? 'cierre_nuevo_gestor' : (existing ? 'compra_recurrente' : 'primera_compra'),
-        last_purchase_at: now.toISOString(),
-        last_order_id: orderId ? String(orderId) : null,
-        previous_agent_name: transferred ? existing.agent_name : (existing?.previous_agent_name || null),
-        transferred_at: transferred ? now.toISOString() : (existing?.transferred_at || null),
-        updated_at: now.toISOString()
-    };
-
-    let mutation;
-    if (existing) {
-        mutation = await supabaseClient.from('customer_bindings').update(payload).in('phone', customerPhoneCandidates(phone));
-    } else {
-        mutation = await supabaseClient.from('customer_bindings').insert([{ phone: canonicalPhone, ...payload }]);
-    }
-
-    // Sin la migración, mantenemos al menos la reasignación por cierre.
-    if (mutation.error && (mutation.error.code === '42703' || mutation.error.code === 'PGRST204')) {
-        mutation = existing
-            ? await supabaseClient.from('customer_bindings').update({ agent_name: newOwner }).in('phone', customerPhoneCandidates(phone))
-            : await supabaseClient.from('customer_bindings').insert([{ phone: canonicalPhone, agent_name: newOwner }]);
-    }
-
-    if (mutation.error) {
-        console.error('No se pudo registrar el cierre del cliente:', mutation.error);
-        return { owner: existing?.agent_name || null, created: false, error: mutation.error };
-    }
-
-    // Auditoría no bloqueante; requiere customer-protection.sql.
-    supabaseClient.from('customer_binding_events').insert([{
-        phone: canonicalPhone,
-        previous_agent_name: transferred ? existing.agent_name : null,
-        agent_name: newOwner,
-        event_type: payload.last_activity_type,
-        order_id: orderId ? String(orderId) : null,
-        protected_until: null
-    }]).then(({ error }) => { if (error) console.warn('Auditoría de atribución no disponible.', error); });
-
-    return { owner: newOwner, previousOwner: existing?.agent_name || null, created: !existing, transferred };
+    return { owner: existing?.agent_name || null, created: false, transferred: false };
 }
 
 async function renewCustomerProtection(phone, agentName, activityType = 'seguimiento_registrado') {
-    const binding = await findPermanentCustomerOwner(phone);
-    if (!binding?.agent_name || binding.agent_name !== agentName) return { renewed: false, reason: 'not_owner' };
-
-    const now = new Date();
-    const { error } = await supabaseClient.from('customer_bindings').update({
-        protected_until: null,
-        last_activity_at: now.toISOString(),
-        last_activity_type: activityType,
-        updated_at: now.toISOString()
-    }).in('phone', customerPhoneCandidates(phone)).eq('agent_name', agentName);
-
-    if (error) return { renewed: false, error };
-    supabaseClient.from('customer_binding_events').insert([{
-        phone: canonicalCustomerPhone(phone), agent_name: agentName, event_type: activityType,
-        protected_until: null
-    }]).then(() => {});
-    protectedCustomerCountOwner = null;
-    return { renewed: true };
+    try {
+        if (!window.PTHSecureData?.customerBinding) return { renewed: false, error: { code: 'CUSTOMER_BINDING_UNAVAILABLE' } };
+        // Identity, ownership, activity type and time are verified on the server.
+        const result = await window.PTHSecureData.customerBinding({ operation: 'renew', phone });
+        if (result.error) return { renewed: false, error: result.error };
+        if (result.data?.renewed !== true) return { renewed: false, error: { code: 'INVALID_RESPONSE' } };
+        protectedCustomerCountOwner = null;
+        return { renewed: true };
+    } catch (error) {
+        return { renewed: false, error };
+    }
 }
 
 window.renewCustomerProtection = renewCustomerProtection;
@@ -10466,6 +10453,10 @@ async function generarComprobanteVenta(datosPedido, accion) {
         filasTabla.unshift(...datosPedido.referencias.filter(ref=>typeof ref==='string'&&ref).map(ref=>['PEDIDO CONFIRMADO #'+ref,'','','']));
     }
 
+    if (Number(datosPedido.descuento) > 0) filasTabla.push([
+        'DESCUENTO ('+String(datosPedido.cupon||'')+')', '1',
+        '-$'+Number(datosPedido.descuento).toFixed(2), '-$'+Number(datosPedido.descuento).toFixed(2)
+    ]);
     if (Number(datosPedido.mensajeria) > 0) {
         filasTabla.push([
             'SERVICIO DE ENTREGA Y LOGÍSTICA A DOMICILIO',
@@ -10499,7 +10490,7 @@ async function generarComprobanteVenta(datosPedido, accion) {
     doc.setFontSize(10);
     doc.text("TOTAL A PAGAR:", 130, finalY + 9.5);
     doc.setFontSize(14);
-    doc.text(`$${datosPedido.totalUSD.toLocaleString()}.00`, 190, finalY + 9.5, { align: "right" });
+    doc.text(datosPedido.descuento ? '$'+Number(datosPedido.totalUSD).toFixed(2) : `$${datosPedido.totalUSD.toLocaleString()}.00`, 190, finalY + 9.5, { align: "right" });
 
     // --- 5. NOTAS Y PIE DE PÁGINA ---
     doc.setTextColor(...cLight);
@@ -11667,7 +11658,7 @@ async function reenviarPedidoAdmin(id) {
     }
 
     mensaje += `💰 *TOTAL A PAGAR: $${total} USD*\n`;
-    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+    mensaje += window.PTHCouponEconomics?.message(p) || `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
 
     if (metodoPago) {
         mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;
@@ -11735,7 +11726,7 @@ function reenviarValeAdmin(id) {
     mensaje += `📦 ${p.producto}\n\n`;
 
     mensaje += `💰 *TOTAL A PAGAR: $${totalCobrar} USD*\n`;
-    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+    mensaje += window.PTHCouponEconomics?.message(p) || `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
 
     // Datos internos para que el almacén sepa de quién es
     mensaje += `\n------------------------------------\n`;
@@ -11851,7 +11842,7 @@ async function reenviarValeAdmin(id) {
     }
 
     mensaje += `💰 *TOTAL A PAGAR: $${totalCobrar} USD*\n`;
-    mensaje += `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
+    mensaje += window.PTHCouponEconomics?.message(p) || `(Equipos: $${precioEquipos} + Envío: $${envio})\n`;
 
     if (metodoPago) {
         mensaje += `💳 *MÉTODO PAGO:* ${metodoPago}\n`;

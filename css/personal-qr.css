@@ -1,0 +1,35 @@
+/* ParaTuHogar blue/white; the unobscured QR is the only visual signature. */
+.pth-qr-dialog{--qr-blue:#1a4789;--qr-ink:#102b4e;--qr-line:#d6e2f1;box-sizing:border-box;width:min(100% - 24px,520px);max-height:calc(100dvh - 24px);margin:auto;padding:0;overflow:auto;border:1px solid var(--qr-line);border-radius:20px;background:#fff;color:var(--qr-ink);font-family:Manrope,Arial,sans-serif;box-shadow:0 24px 80px #102b4e40}
+.pth-qr-dialog::backdrop{background:#071a35b8}
+.pth-qr-dialog *{box-sizing:border-box}
+.pth-qr-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;border-bottom:1px solid var(--qr-line);background:#f2f7ff}
+.pth-qr-brand{margin:0 0 4px;color:#466285;font-size:11px;font-weight:700;letter-spacing:.03em}
+.pth-qr-header h2{margin:0;font-family:Rajdhani,Manrope,Arial,sans-serif;font-size:28px;font-weight:700;line-height:1.15}
+.pth-qr-content{padding:22px 24px 0}
+.pth-qr-name{margin:0 0 8px;font-size:20px;font-weight:800;overflow-wrap:anywhere}
+.pth-qr-caption{margin:0 0 16px;color:#466285;font-size:13px;line-height:1.55}
+.pth-qr-stage{display:flex;min-height:80px;align-items:center;justify-content:center;margin:0 auto 16px;background:#fff}
+.pth-qr-stage[aria-busy=true]{border:1px dashed var(--qr-line);border-radius:12px}
+.pth-qr-code{display:block;width:min(100%,320px);height:auto;aspect-ratio:1;background:#fff;image-rendering:pixelated}
+.pth-qr-link{display:block;margin:0 0 18px;color:#1a4789;font-size:12px;line-height:1.6;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere;user-select:all}
+.pth-qr-actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.pth-qr-button{display:inline-flex;min-height:44px;align-items:center;justify-content:center;padding:11px 15px;border:1px solid #bbcee6;border-radius:10px;background:#fff;color:#1a4789;font:700 13px/1.3 Manrope,Arial,sans-serif;cursor:pointer;text-align:center}
+.pth-qr-button:hover:not(:disabled){background:#edf4ff;border-color:#1a4789}
+.pth-qr-button:disabled{opacity:.55;cursor:not-allowed}
+.pth-qr-primary{background:#1a4789;border-color:#1a4789;color:#fff}
+.pth-qr-primary:hover:not(:disabled){background:#12396f;color:#fff}
+.pth-qr-secondary{font-size:12px}
+.pth-qr-close{flex-shrink:0;background:transparent}
+.pth-qr-status{min-height:2.8em;margin:0;padding:12px 24px 22px;color:#466285;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.pth-qr-search{display:flex;align-items:end;gap:8px;margin-bottom:16px}
+.pth-qr-search label{flex:1;min-width:0;color:#102b4e;font-size:12px;font-weight:700}
+.pth-qr-search input{display:block;width:100%;min-height:44px;margin-top:5px;padding:10px;border:1px solid #a9bfdb;border-radius:8px;background:#fff;color:#102b4e;font:400 13px/1.3 Manrope,Arial,sans-serif}
+.pth-qr-accounts{display:grid;gap:8px;margin-bottom:12px}
+.pth-qr-account{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--qr-line)}
+.pth-qr-account .pth-qr-button{flex:1;justify-content:flex-start;overflow-wrap:anywhere;text-align:left}
+.pth-qr-account-state{max-width:95px;color:#466285;font-size:11px;line-height:1.4;text-align:right}
+.pth-qr-entry{flex-shrink:0}
+.pth-qr-dialog :focus-visible,.pth-qr-entry:focus-visible{outline:3px solid #1474e5;outline-offset:3px}
+.pth-qr-header h2:focus{outline:none}
+@media(max-width:420px){.pth-qr-header{padding:16px}.pth-qr-content{padding:18px 16px 0}.pth-qr-status{padding:12px 16px 18px}.pth-qr-actions>.pth-qr-button{flex:1 1 130px}.pth-qr-header h2{font-size:25px}}
+@media(prefers-reduced-motion:reduce){.pth-qr-dialog *{scroll-behavior:auto!important;transition:none!important}}

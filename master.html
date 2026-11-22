@@ -1056,7 +1056,7 @@ async function loadConciliacion() {
     // 2. Obtener datos (AJUSTE: Trae los más recientes primero y hasta 2,000 registros)
     const { data: rawData, error } = await supabaseClient
         .from('pedidos')
-        .select('id, orden_dia, fecha, cliente, producto, proveedor, total, costo_mensajeria, estado_financiero, pago_gestor')
+        .select('id, orden_dia, fecha, cliente, producto, proveedor, total, costo_mensajeria, estado_financiero, pago_gestor, subtotal_productos, descuento_productos, cupon_codigo')
         .eq('estado', 'Entregado')
         .order('fecha', { ascending: false }) // <--- FIX 1: Los más nuevos arriba
         .limit(2000);                          // <--- FIX 2: Rompe el límite de 1,000
@@ -1131,6 +1131,7 @@ async function loadConciliacion() {
             </td>
             <td class="p-3 font-mono">
                 <span class="font-black text-white">$${totalEquipos.toFixed(2)}</span>
+                ${p.cupon_codigo ? `<span class="mt-1 block text-[10px] text-blue-300">Productos $${Number(p.subtotal_productos).toFixed(2)} · Descuento −$${Number(p.descuento_productos).toFixed(2)}</span>` : ''}
                 ${costoMensajeria > 0 ? `<span class="mt-1 block text-[9px] font-bold text-amber-400">+$${costoMensajeria.toFixed(2)} mensajería aparte</span>` : '<span class="mt-1 block text-[9px] text-slate-500">Sin mensajería</span>'}
             </td>
             

@@ -665,6 +665,10 @@ async function generarComprobanteB2B(datosPedido, accion) {
         `$ ${(i.price * i.qty).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
     ]);
     filasTabla.unshift(...referencias.map(ref=>['PEDIDO CONFIRMADO #'+ref,'','','']));
+    if (Number(datosPedido.descuento)>0) {
+        filasTabla.push(['DESCUENTO ('+String(datosPedido.cupon||'')+')','1','-$'+Number(datosPedido.descuento).toFixed(2),'-$'+Number(datosPedido.descuento).toFixed(2)]);
+        if (Number(datosPedido.mensajeria)>0) filasTabla.push(['MENSAJERÍA','1','$'+Number(datosPedido.mensajeria).toFixed(2),'$'+Number(datosPedido.mensajeria).toFixed(2)]);
+    }
 
     doc.autoTable({
         startY: 85,

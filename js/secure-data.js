@@ -195,6 +195,18 @@
   return changed()||identity(profile)!==owner?sessionError():result;
  };
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
+ // Separate operations keep their original token/owner throughout asynchronous
+ // restoration. A stale administrative form is never sent as another account.
+ for(const [method,action] of [['coupons','coupons'],['customerBinding','customer_binding']])root.PTHSecureData[method]=async body=>{
+  if(action==='coupons'&&body.operation==='settings')return send({action,operation:'settings'},null);
+  const token=storage.getItem(tokenKey),owner=identity(profile);
+  const changed=()=>!token||token!==storage.getItem(tokenKey)||owner!==identity(profile);
+  if(changed()||verifiedToken!==token)return {data:null,error:{message:'La sesión cambió. Vuelve a abrir la operación.',code:'SESSION_CHANGED'}};
+  try{await restore();}catch(error){return {data:null,error:{message:error.message,code:'SESSION_UNAVAILABLE'}};}
+  if(changed())return {data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}};
+  const result=await send({...body,action},token);
+  return changed()?{data:null,error:{message:'La sesión cambió.',code:'SESSION_CHANGED'}}:result;
+ };
  root.PTHSecureData.sessionExpired=sessionExpired;
  root.PTHSecureData.preserveOfflineOrders=owner=>{if(volatileIsolations.has(owner))return true;try{return storage.getItem(purgePrefix+encodeURIComponent(owner))==='2';}catch(_){return false;}};
  root.PTHSecureData.pendingPrivatePurgeOwners=pendingPrivatePurgeOwners;

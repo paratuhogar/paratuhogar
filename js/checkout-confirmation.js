@@ -91,6 +91,7 @@
         text+='👤 *CLIENTE*\nNombre: '+row.cliente+'\nTel: '+row.telefono+'\nDirección: '+(row.direccion||'')+'\n📍 Zona: '+(row.municipio||'')+'\n';
         if(row.ci&&row.ci!=='No especificado')text+='CI: '+row.ci+'\n';
         text+='\n🛒 *DETALLE*\n'+String(row.producto||'').split(' + ').map(p=>'📦 '+p).join('\n')+'\n\n💰 *TOTAL A PAGAR: $'+total+' USD*\n(Equipos: $'+(total-shipping)+' + Envío: $'+shipping+')\n';
+        if(root.PTHCouponEconomics?.snapshot(row))text=text.replace(/\(Equipos:.*?\)\n/,root.PTHCouponEconomics.message(row));
         const payment=String(row.direccion||'').match(/\[PAGO:\s*([^\]]+)\]/i);if(payment)text+='💳 *MÉTODO PAGO:* '+payment[1]+'\n';
         if(expressLabel(row))text+='🚚 '+expressLabel(row)+'\n';
         if(isLogged){

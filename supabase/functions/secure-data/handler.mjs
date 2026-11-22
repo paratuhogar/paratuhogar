@@ -6,6 +6,8 @@ import {createCheckoutService} from './checkout.mjs';
 import {publicName} from './public-name.mjs';
 import {ranking} from './ranking.mjs';
 import {pointsWallet} from './points-wallet.mjs';
+import {coupons} from './coupons.mjs';
+import {customerBindings} from './customer-bindings.mjs';
 import {reviewSubgestor} from './subgestor-review.mjs';
 import {assignHalfCommissions} from './commission-assignment.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
@@ -218,6 +220,8 @@ async function prepareWrite(db,body,actor) {
   for(const input of values) {
     scopeFor(body.table,actor,body.op,input);
     let row={...input};
+    if(['pedidos','pedidos_subgestores'].includes(body.table)&&['subtotal_productos','descuento_productos','cupon_codigo'].some(key=>Object.hasOwn(row,key)))
+      fail('El descuento se registra únicamente al confirmar el cupón.',403);
     if(body.table==='tarifas_mensajeria'&&String(actor?.rol).toLowerCase()==='logistica'&&
        Object.keys(row).some(key=>/^(precio|minutos)_expres_/.test(key)))
       fail('Solo un administrador puede configurar la mensajería exprés.',403);
@@ -320,8 +324,8 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,pointsEnabled=false}) {
-  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom,pointsEnabled});
+export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,pointsEnabled=false,couponsEnabled=false}) {
+  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom,pointsEnabled,couponsEnabled});
   return async request=>{
     const origin=request.headers.get('Origin');
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
@@ -347,11 +351,13 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequired
       else if(body.action==='public_name') result=await publicName(db,body,actor);
       else if(body.action==='ranking') result=await ranking(db,body,actor);
       else if(body.action==='points_wallet') result=await pointsWallet(db,body,actor);
+      else if(body.action==='coupons') result=await coupons(db,body,actor,couponsEnabled);
+      else if(body.action==='customer_binding') result=await customerBindings(db,body,actor);
       else if(body.action==='subgestor_review') result=await reviewSubgestor(db,body,actor);
       else if(body.action==='assign_half_commissions') result=await assignHalfCommissions(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);
       else if(body.action==='push') result=await pushSettings(db,body,actor,await hash(bearer),pushEnv,pushPilot);
-      else if(body.action==='checkout') result=await checkout(body,actor);
+      else if(body.action==='checkout') result=await checkout(body,actor,{ip:request.headers.get('cf-connecting-ip')||request.headers.get('x-real-ip')||request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown'});
       else if(body.action==='query') result=await dataQuery(db,body,actor);
       else if(body.action==='rpc') result=await rpcQuery(db,body,actor);
       else fail('Operación no permitida.');
