@@ -45,3 +45,38 @@ test('cancel stops awaiting interrupted operations promptly without using their 
  const pending = root.PTHStudioJobs.wait(new Promise(() => {}), controller.signal); controller.abort();
  await assert.rejects(pending, error => error.name === 'AbortError');
 });
+
+test('customer copy provides the current gestor WhatsApp link without a fallback contact', () => {
+ const { PTHStudioJobs: J } = fixture();
+ assert.match(J.copy([product], { mode: 'single', gestorPhone: '+53 (5555) 1234' }), /Consulta por WhatsApp: https:\/\/wa\.me\/5355551234/);
+ for (const gestorPhone of ['', 'abc']) assert.doesNotMatch(J.copy([product], { mode: 'single', gestorPhone }), /wa\.me\//);
+ assert.doesNotMatch(J.copy([product], { mode: 'single', gestorPhone: '5355551234', showPhone: false }), /wa\.me\//);
+});
+
+test('native single-image sharing carries the prepared caption with the gestor link', async () => {
+ const root = fixture(), batch = new root.PTHStudioJobs.Batch();
+ batch.ready = { files: [new File(['image'], 'p.jpg')], text: 'Consulta por WhatsApp: https://wa.me/5355551234', token: 'tenant-a', at: Date.now() };
+ root.navigator.canShare = () => true;
+ let payload; root.navigator.share = data => { payload = data; return Promise.resolve(); };
+ await batch.share(); assert.equal(payload.text, 'Consulta por WhatsApp: https://wa.me/5355551234');
+});
+
+test('all artwork themes and sizes display the complete gestor link and respect hidden contact', async () => {
+ const root = {}, drawn = [];
+ const drawing = new Proxy({ measureText: value => ({ width: value.length * 12 }), fillText: value => drawn.push(value) }, { get: (target, key) => key in target ? target[key] : () => {} });
+ class ImageFixture { naturalWidth = 500; naturalHeight = 700; set src(value) { if (value) queueMicrotask(() => this.onload?.()); } }
+ class FontFixture { load() { return Promise.resolve(this); } }
+ const context = vm.createContext({ window: root, Image: ImageFixture, FontFace: FontFixture, document: { fonts: { add() {} } }, setTimeout, clearTimeout, queueMicrotask, DOMException });
+ vm.runInContext(fs.readFileSync(new URL('../js/studio-designs.js', import.meta.url), 'utf8'), context);
+ for (const theme of ['essential', 'premium', 'technical', 'editorial']) for (const isStory of [true, false]) {
+  const canvas = { getContext: () => drawing };
+  for (const method of ['single', 'composition']) {
+   drawn.length = 0;
+   await root.PTHStudioDesigns[method](canvas, method === 'single' ? { ...product, thumbnail: 'test.jpg' } : [{ ...product, thumbnail: 'test.jpg' }, { ...product, id: 'q', thumbnail: 'test.jpg' }], { theme, isStory, gestorPhone: '+53 5555 1234', mode: 'bundle' });
+   assert.ok(drawn.includes('wa.me/5355551234'), `${theme}/${isStory}/${method}: complete link missing`);
+  }
+ }
+ drawn.length = 0;
+ await root.PTHStudioDesigns.single({ getContext: () => drawing }, { ...product, thumbnail: 'test.jpg' }, { gestorPhone: '5355551234', showPhone: false });
+ assert.ok(!drawn.some(text => text.includes('5355551234')));
+});

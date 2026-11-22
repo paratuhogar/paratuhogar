@@ -177,7 +177,7 @@
    if (!this.canShare()) return Promise.reject(Error('Descarga el ZIP completo para adjuntar las imágenes en WhatsApp.'));
    const ready = this.ready, epoch = this.epoch, next = ready.shareNext; this.busy = true;
    // No await before the native call: this uses the user's actual click activation.
-   let operation; try { operation = root.navigator.share({ files: ready.files }); } catch (error) { operation = Promise.reject(error); }
+   let operation; try { operation = root.navigator.share({ files: ready.files, ...(ready.text ? { text: ready.text } : {}) }); } catch (error) { operation = Promise.reject(error); }
    return Promise.resolve(operation).catch(error => {
     if (epoch === this.epoch && this.ready === ready && error.name === 'NotAllowedError' && ready.files.length > 1) {
      // Never retry the native API automatically: it consumes the user's activation.

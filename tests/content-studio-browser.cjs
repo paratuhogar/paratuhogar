@@ -57,7 +57,7 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.shareNext), 10);
   assert.doesNotMatch(await page.evaluate(() => PTHStudioPage.batch.ready.text), /PRIVATE_SENTINEL|comisi[oó]n|5356071095|Entrega 24/i);
   await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.completed);
-  assert.deepEqual(await page.evaluate(() => shareCalls[0]), { count: 10, activation: true, keys: ['files'] });
+  assert.deepEqual(await page.evaluate(() => shareCalls[0]), { count: 10, activation: true, keys: ['files', 'text'] });
   await page.waitForFunction(() => PTHStudioPage.batch.ready?.shareStart === 10 && PTHStudioPage.batch.valid());
   assert.match(await page.locator('[data-share]').textContent(), /11–20 de 23/, 'next share group is preloaded, no preparation click');
   const downloadPromise = page.waitForEvent('download'); await page.locator('[data-download]').click(); const download = await downloadPromise; await download.saveAs(path.join(out, 'batch.zip'));

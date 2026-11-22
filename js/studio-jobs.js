@@ -83,7 +83,8 @@
    result.push(...design.conditions(product, options)); result.push('');
   }
   if (['bundle', 'multi'].includes(options.mode) && options.showPrice !== false) result.push('Total del conjunto: ' + design.money(Number(options.promoPrice) || products.reduce((sum, p) => sum + Number(p.precio), 0)) + ' USD');
-  if (options.showPhone !== false && options.gestorPhone) result.push('Consulta por WhatsApp: +' + String(options.gestorPhone).replace(/\D/g, ''));
+  const phone = String(options.gestorPhone || '').replace(/\D/g, '');
+  if (options.showPhone !== false && phone) result.push('Consulta por WhatsApp: https://wa.me/' + phone);
   const params = new URLSearchParams({ ref: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options.gestorId || '') ? options.gestorId : options.gestorName || '' });
   if (options.gestorPhone) params.set('contact', String(options.gestorPhone).replace(/\D/g, ''));
   if (products.length === 1) params.set('search', products[0].nombre);
@@ -153,7 +154,7 @@
    const contextError = shareContextError(); if (contextError) return Promise.reject(contextError);
    if (!this.canShare()) return Promise.reject(Error('Este navegador no comparte archivos. Descarga la tanda y adjúntala en WhatsApp.'));
    this.busy = true; const epoch = this.epoch;
-   try { return Promise.resolve(root.navigator.share({ files: this.ready.files })).finally(() => { if (epoch === this.epoch) this.busy = false; }); }
+   try { return Promise.resolve(root.navigator.share({ files: this.ready.files, ...(this.ready.text ? { text: this.ready.text } : {}) })).finally(() => { if (epoch === this.epoch) this.busy = false; }); }
    catch (error) { this.busy = false; return Promise.reject(error); }
   }
  }

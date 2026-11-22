@@ -84,3 +84,11 @@ test('late native rejection after cancellation cannot resurrect private artwork'
  await assert.rejects(operation, { name: 'NotAllowedError' });
  assert.equal(batch.ready, null); assert.equal(batch.job, null); assert.equal(batch.busy, false);
 });
+
+test('each collection share includes the prepared caption and direct gestor contact', async () => {
+ const { root, batch } = fixture(2);
+ batch.ready.text = 'Consulta por WhatsApp: https://wa.me/5355551234';
+ let payload; root.navigator.share = data => { payload = data; return Promise.resolve(); };
+ await batch.loadShare(0);
+ await batch.share(); assert.equal(payload.text, 'Consulta por WhatsApp: https://wa.me/5355551234');
+});

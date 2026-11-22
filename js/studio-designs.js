@@ -104,7 +104,7 @@
   const fg = theme === themes.premium ? '#131d2c' : '#fff';
   text(ctx, 'Contáctanos', x + 30, y + 22, 35, w - 100, fg);
   const phone = options.showPhone !== false ? String(options.gestorPhone || '').replace(/\D/g, '') : '';
-  text(ctx, phone ? 'WhatsApp +' + phone : 'paratuhogar.org', x + 30, y + 69, 27, w - 80, fg, 600);
+  text(ctx, phone ? 'wa.me/' + phone : 'paratuhogar.org', x + 30, y + 69, 27, w - 80, fg, 600);
   arrow(ctx, x + w - 65, y + 37, 34, fg);
  }
  function arrow(ctx, x, y, size, color) {
@@ -152,7 +152,7 @@
    lines(ctx, legal, 64, 734, 23, 946, theme.ink, 2, 600);
    box(ctx, 0, 836, 1080, 244, 0, theme.accent); text(ctx, price, 64, 875, 91, 590, '#fff');
    text(ctx, 'Consulta este equipo', 665, 904, 28, 305, '#fff'); arrow(ctx, 987, 908, 24, '#fff'); text(ctx, 'paratuhogar.org', 665, 955, 26, 350, '#cfdff6', 600);
-   if (options.showPhone !== false && options.gestorPhone) text(ctx, '+' + String(options.gestorPhone).replace(/\D/g, ''), 64, 1005, 27, 920, '#fff', 600);
+   if (options.showPhone !== false && options.gestorPhone) text(ctx, 'wa.me/' + String(options.gestorPhone).replace(/\D/g, ''), 64, 1005, 27, 920, '#fff', 600);
   } else if (theme === themes.premium) {
    brand(ctx, 64, 56, theme.ink); text(ctx, product.categoria, 64, 156, 25, 450, theme.accent, 600);
    lines(ctx, product.nombre, 64, 207, 64, 451, theme.ink, 4);
@@ -165,7 +165,7 @@
    lines(ctx, product.nombre, 48, 128, 57, 960, theme.ink, 2); image(ctx, img, 576, 290, 445, 500);
    rows.slice(0, 5).forEach((row, i) => { box(ctx, 48, 288 + i * 98, 470, 91, 7, i % 2 ? '#fff' : '#f0f5fc'); text(ctx, row[0].toUpperCase(), 65, 300 + i * 98, 21, 430, theme.ink, 600); text(ctx, row[1], 65, 333 + i * 98, 30, 430, theme.ink); });
    if (options.showDelivery !== false) text(ctx, clean(product.mensajeria), 48, 808, 23, 960, theme.ink, 600);
-   box(ctx, 14, 865, 1052, 201, 0, theme.accent); text(ctx, price, 48, 901, 82, 600, '#fff'); text(ctx, 'Consulta este equipo', 668, 919, 28, 305, '#fff'); arrow(ctx, 990, 923, 24, '#fff'); text(ctx, options.showPhone !== false && options.gestorPhone ? '+' + String(options.gestorPhone).replace(/\D/g, '') : 'paratuhogar.org', 668, 971, 25, 350, '#fff', 600);
+   box(ctx, 14, 865, 1052, 201, 0, theme.accent); text(ctx, price, 48, 901, 82, 600, '#fff'); text(ctx, 'Consulta este equipo', 668, 919, 28, 305, '#fff'); arrow(ctx, 990, 923, 24, '#fff'); text(ctx, options.showPhone !== false && options.gestorPhone ? 'wa.me/' + String(options.gestorPhone).replace(/\D/g, '') : 'paratuhogar.org', 668, 971, 25, 350, '#fff', 600);
   } else {
    brand(ctx, 62, 42, theme.ink); text(ctx, 'EQUIPAR EL HOGAR', 690, 56, 23, 327, theme.ink, 600);
    text(ctx, 'Para tu hogar.', 62, 157, 80, 956, theme.ink);
