@@ -5,6 +5,7 @@ import {pushSettings} from './push.mjs';
 import {createCheckoutService} from './checkout.mjs';
 import {publicName} from './public-name.mjs';
 import {ranking} from './ranking.mjs';
+import {pointsWallet} from './points-wallet.mjs';
 import {reviewSubgestor} from './subgestor-review.mjs';
 import {assignHalfCommissions} from './commission-assignment.mjs';
 import {PROTECTED_TABLES,MY_RPCS,ADMIN_RPCS,OWNER_IDS,actorKind,scopeFor,projectRow,calculateSale} from './policy.mjs';
@@ -193,6 +194,7 @@ async function canonicalSale(db,table,input,actor,checkoutPrices=false) {
   row.comision_total=seller?sale.totalCommission:0;
   if(parent) {row.subgestor_id=seller.id;row.subgestor_nombre=seller.nombre;row.parent_gestor_id=parent.id;row.parent_gestor_nombre=parent.nombre;row.comision_subgestor=sale.subCommission;row.estado='Pendiente Aprobacion';delete row.gestor;delete row.origen;}
   else {row.gestor=seller?.nombre||'Venta Directa';delete row.comision_parent;delete row.comision_subgestor;row.estado='Pendiente';row.pago_gestor='Pendiente';}
+  if(checkoutPrices) row._points_capture={beneficiary_id:seller?.id||null,lines:lines.map(line=>({producto_id:line.producto_id,cantidad:Number(line.cantidad)}))};
   if(checkoutPrices) row._checkout_prices=lines.map(line=>{
     const product=products.find(p=>p.id===line.producto_id),custom=(prices||[]).find(p=>p.producto_id===line.producto_id);
     const base=Math.round(Number(product.precio)*100),value=Math.round(Number(custom?.nuevo_precio)*100);
@@ -310,8 +312,8 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom}) {
-  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom});
+export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,pointsEnabled=false}) {
+  const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom,pointsEnabled});
   return async request=>{
     const origin=request.headers.get('Origin');
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};
@@ -336,6 +338,7 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequired
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='public_name') result=await publicName(db,body,actor);
       else if(body.action==='ranking') result=await ranking(db,body,actor);
+      else if(body.action==='points_wallet') result=await pointsWallet(db,body,actor);
       else if(body.action==='subgestor_review') result=await reviewSubgestor(db,body,actor);
       else if(body.action==='assign_half_commissions') result=await assignHalfCommissions(db,body,actor);
       else if(body.action==='feedback') result=await feedback(db,body,actor);

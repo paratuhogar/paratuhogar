@@ -57,7 +57,7 @@ export function deliveryCost(products,lines,delivery,tariff){
   if(!Number.isFinite(value)||value<0)fail('DELIVERY_UNAVAILABLE','La tarifa de entrega necesita revisión.');
   return cents(value)/100;
 }
-export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity}){
+export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.now,ciRequiredFrom=Infinity,pointsEnabled=false}){
   let signingKey;
   const key=()=>signingKey||(signingKey=crypto.subtle.importKey('raw',encode('pth-new-checkout-v1:'+signingSecret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']));
   const sign=async value=>hex(await crypto.subtle.sign('HMAC',await key(),encode(value)));
@@ -205,6 +205,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       const proof=String(body.quote||'').split('.');
       if(proof.length!==5||proof[0]!=='pthq1'||!/^\d{13}$/.test(proof[1])||now()-Number(proof[1])<0||now()-Number(proof[1])>QUOTE_AGE||proof[2]!==digest||proof[3]!==await sign('attempt:'+token)||!await verify(proof.slice(0,4).join('.'),proof[4]))fail('CONDITIONS_CHANGED','Cambió el precio, la disponibilidad o la entrega. Comprueba el carrito y confirma nuevamente.');
       if(duplicates.length&&!await reviewedDuplicates(body.duplicateReview,token,duplicates))fail('POSSIBLE_DUPLICATE','Hay un pedido reciente parecido: '+duplicates.map(row=>row.reference).join(', ')+'. Revisa si ya se recibió antes de confirmar una compra distinta.');
+      const pointCaptures=[];
       for(const [index,row] of rows.entries()){
         // References are assigned in the same transaction as the insert.
         // Old pages may still send a reserved number: it is never authoritative.
@@ -213,10 +214,14 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
         // A deterministic new-row PK also fences a changed-payload race for
         // one draft intent. A collision never updates or reveals another row.
         const id=await sign('row-id:'+attempt.nonce+':'+(index===0?'anchor':'provider:'+row.proveedor));row.id=`${id.slice(0,8)}-${id.slice(8,12)}-4${id.slice(13,16)}-a${id.slice(17,20)}-${id.slice(20,32)}`;
+        if(pointsEnabled)pointCaptures.push({pedido_id:row.id,...row._points_capture});
+        delete row._points_capture;
       }
       // Counter increments roll back with the batch. Same-attempt races return
       // the original receipt rather than updating accepted rows.
-      const inserted=await (expressTariff
+      const inserted=await (pointsEnabled
+        ? db.rpc('pth_insert_checkout_points',{p_table:payload.table,p_rows:rows,p_captures:pointCaptures,p_tariff:expressTariff})
+        : expressTariff
         ? db.rpc('pth_insert_express_checkout',{p_table:payload.table,p_rows:rows,p_tariff:expressTariff})
         : db.rpc('pth_insert_checkout',{p_table:payload.table,p_rows:rows}));
       if(expressTariff&&inserted.error?.code==='PT409')fail('CONDITIONS_CHANGED','Cambió la tarifa exprés. Revisa la entrega y confirma nuevamente.');

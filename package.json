@@ -9,12 +9,20 @@
     "test:checkout:unit": "node --test tests/checkout-*.test.mjs tests/checkout-*.test.cjs tests/new-checkout.test.mjs tests/express-shipping.test.mjs tests/medium-shipping.test.mjs tests/pending-checkout.test.mjs tests/session-infrastructure-recovery.test.mjs tests/session-expiry-notice.test.mjs tests/session-renewal.test.mjs tests/offline-checkout-copy.test.cjs tests/offline-storefront-adapter.test.cjs tests/offline-context-owner.test.cjs tests/offline-expired-startup.test.cjs tests/offline-shell-upgrade.test.mjs tests/offline-shell-repair.test.mjs tests/startup-cache.test.mjs tests/offline-cold-start-lifecycle.test.mjs",
     "test:checkout:browser": "node tests/pending-service-recovery-browser.cjs && node tests/checkout-recovery-latest-browser.cjs && node tests/checkout-ci-browser.cjs && node tests/checkout-atomic-numbering-browser.cjs && node tests/checkout-server-clock-browser.cjs",
     "check:checkout-release": "npm run test:checkout:unit && npm run test:checkout:browser",
-    "check:css": "node scripts/build-support-css.cjs --check"
+    "check:css": "node scripts/build-support-css.cjs --check",
+    "test:points:unit": "node --test tests/points-wallet-gateway.test.mjs tests/points-wallet-client.test.cjs",
+    "test:points:db": "node --test tests/points-wallet-db.cjs",
+    "test:points:integration": "node --test tests/points-wallet-integration.test.mjs",
+    "test:points:browser": "node --test tests/points-wallet-browser.cjs"
   },
   "devDependencies": {
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.10",
     "@types/web-push": "3.6.4",
+    "embedded-postgres": "17.12.0-beta.19",
+    "pg": "8.23.1",
+    "playwright": "1.62.1",
+    "supabase": "3.2.0",
     "tailwindcss": "3.4.17",
     "terser": "5.51.2",
     "web-push": "3.6.7"

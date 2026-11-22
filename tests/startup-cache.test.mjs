@@ -20,15 +20,20 @@ test('normal public template and local SDK reopen without private response or pr
  assert.ok(f.entries.has('/js/checkout-confirmation.js?v=20261112-express1'),'persistent receipt action is in the offline shell');
  assert.equal([...f.entries.keys()].some(u=>/img_productos|functions\/v1|feedback\.html|notifications\.html|pedidos|secure_sessions/.test(u)),false);
  assert.ok(f.entries.has('/offline-order.html'));
- assert.ok(f.entries.has('/js/secure-data.js?v=20261112-medium1'),'static gateway adapter only; API responses are never cached');
+ assert.ok(f.entries.has('/js/secure-data.js?v=20261122-points1'),'static gateway adapter only; API responses are never cached');
 });
 test('cached root remains available offline; private routes get only offline fallback',async()=>{const f=fixture();let p;f.events.install({waitUntil:x=>p=x});await p;f.offline();
  for(const [url,expected] of [['/','/index.html'],['/?ref=cuenta','/index.html'],['/index.html','/index.html'],['/producto/modelo/','/index.html'],['/offline-catalog.html','/offline-catalog.html'],['/offline-catalog.html?catalog_q=panel','/offline-catalog.html'],['/offline-order.html','/offline-order.html'],['/offline-order.html?x=1','/offline-order.html'],['/feedback.html','/offline.html'],['/notifications.html','/offline.html'],['/catalog-maker.html','/offline.html']]){let response;f.events.fetch({request:{method:'GET',mode:'navigate',url:'https://paratuhogar.org'+url},respondWith:x=>response=x});assert.equal(await (await response).text(),fs.readFileSync(new URL(expected.slice(1),root),'utf8'));}
 });
 test('service worker never intercepts protected API or POST responses',()=>{const f=fixture();for(const req of [{method:'POST',url:'https://paratuhogar.org/'},{method:'GET',url:'https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data'}])f.events.fetch({request:req,respondWith:()=>assert.fail('must not cache protected response')});});
+test('the public wallet display is available offline but its private operations are never cached',async()=>{
+ const f=fixture();let install;f.events.install({waitUntil:p=>install=p});await install;
+ for(const path of ['/js/points-wallet.js?v=20261122-points1','/css/points-wallet.css?v=20261122-points1'])assert.ok(f.entries.has(path),'public wallet display in the shell');
+ f.events.fetch({request:{method:'POST',url:'https://ljqwaovevfatkiigirhf.supabase.co/functions/v1/secure-data',body:JSON.stringify({action:'points_wallet',operation:'summary'})},respondWith:()=>assert.fail('private wallet must bypass cache')});
+});
 test('catalogue upgrade installs the new reader and removes only previous static caches',async()=>{
  const f=fixture();let p;f.events.install({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.opened,['pth-public-static-2026-11-20-seo1']);
+ assert.deepEqual(f.opened,['pth-public-static-2026-11-22-points1']);
  assert.ok(f.entries.has('/css/storefront-support.css?v=20261120-seo1'));
  assert.ok(f.entries.has('/js/gestor-ranking.js?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));

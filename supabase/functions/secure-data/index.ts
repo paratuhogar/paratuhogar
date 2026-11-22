@@ -14,4 +14,5 @@ async function pushPilot(body:object){
 const identityStart=Deno.env.get('PTH_CHECKOUT_CI_REQUIRED_FROM')||'2026-10-21T21:07:00.000Z';
 const ciRequiredFrom=identityStart?Date.parse(identityStart):Infinity;
 if(Number.isNaN(ciRequiredFrom))throw Error('Invalid checkout CI activation date');
-Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),ciRequiredFrom}));
+const pointsEnabled=Deno.env.get('PTH_POINTS_WALLET_ENABLED')==='true';
+Deno.serve(createHandler({db,pushEnv,pushPilot,checkoutSecret:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),ciRequiredFrom,pointsEnabled}));

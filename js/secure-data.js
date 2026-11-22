@@ -180,6 +180,20 @@
  };
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
+ root.PTHSecureData.pointsWallet=async body=>{
+  const token=storage.getItem(tokenKey);
+  const changed=()=>!token||token!==storage.getItem(tokenKey);
+  const sessionError=()=>({data:null,error:{message:'La sesión cambió. Vuelve a abrir la billetera.',code:'SESSION_CHANGED'}});
+  // Another tab may replace storage before this call while restore() still
+  // holds the previous account's promise. Bind the new profile, but never send
+  // a stale form using the new account's credential.
+  if(token&&verifiedToken&&verifiedToken!==token){try{await refresh();}catch(_){/* A fresh explicit action may retry verification. */}return sessionError();}
+  try{await restore();}catch(error){return changed()?sessionError():{data:null,error:{message:error.message,code:error.code||'SESSION_UNAVAILABLE',status:error.status}};}
+  if(changed()||verifiedToken!==token)return sessionError();
+  const owner=identity(profile);
+  const result=await send({...body,action:'points_wallet'},token);
+  return changed()||identity(profile)!==owner?sessionError():result;
+ };
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;
  root.PTHSecureData.sessionExpired=sessionExpired;
  root.PTHSecureData.preserveOfflineOrders=owner=>{if(volatileIsolations.has(owner))return true;try{return storage.getItem(purgePrefix+encodeURIComponent(owner))==='2';}catch(_){return false;}};
