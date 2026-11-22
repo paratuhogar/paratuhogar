@@ -33,7 +33,9 @@ jobs:
           echo "PTH_NATIVE_PG=$PG_NATIVE" >> "$GITHUB_ENV"
           echo "PTH_PG_MODULE=$RUNNER_TEMP/pth-commissions/node_modules/pg" >> "$GITHUB_ENV"
           echo "PTH_PGLITE_MODULE=$RUNNER_TEMP/pth-commissions/node_modules/@electric-sql/pglite" >> "$GITHUB_ENV"
-          PTH_TEST_CHROME=$(NODE_PATH="$RUNNER_TEMP/pth-commissions/node_modules" node -p 'require("playwright").chromium.executablePath()')
+          # Resolve the isolated installation, not the project's own Playwright.
+          PTH_TEST_CHROME=$(NODE_PATH="$RUNNER_TEMP/pth-commissions/node_modules" node -p 'require(process.env.NODE_PATH + "/playwright").chromium.executablePath()')
+          test -x "$PTH_TEST_CHROME"
           echo "PTH_CHROMIUM=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
           echo "PTH_CHROMIUM_PATH=$PTH_TEST_CHROME" >> "$GITHUB_ENV"
       - name: Verificar compilación y regresiones unitarias
