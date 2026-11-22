@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const id='12345678-1234-4234-8234-123456789abc', other='12345678-1234-4234-8234-123456789abd';
 const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
-function fixture(initial={}) {
+function fixture(initial={},search='') {
  const values=new Map(Object.entries(initial));
- const root={localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},location:{origin:'https://paratuhogar.org',search:''},atob};
+ const root={localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},location:{origin:'https://paratuhogar.org',search},atob};
  const context=vm.createContext({window:root,URL,URLSearchParams,Date,TextDecoder,Uint8Array,console});
  vm.runInContext(read('js/affiliate-links.js'),context);return{root,values,context,A:root.PTHAffiliate};
 }
@@ -17,6 +17,30 @@ test('public alias or first name is display only; new links use unique account I
  assert.equal(url.searchParams.get('ref'),id);assert.equal(url.searchParams.get('catalog_q'),'moto');assert.equal(url.searchParams.get('search'),'Equipo');
  assert.doesNotMatch(url.href,/Alina|Rodríguez|tienda/);
  assert.equal(A.reference({...profile,id:other}),other,'same alias never collapses two accounts');
+});
+test('checkout referral comes from this entry URL, not retained ownership or logout memory',()=>{
+ const old={pth_referrer_smart:JSON.stringify({version:2,id,nombre:'Alina Rodríguez',expiresAt:null})};
+ const direct=fixture(old);assert.equal(direct.A.checkoutReference(),null);
+ direct.A.remember({id,nombre:'Alina Rodríguez'});assert.equal(direct.A.checkoutReference(),null,'logout cannot create a referral visit');
+ const referred=fixture(old,'?ref='+other);assert.equal(referred.A.checkoutReference(),other);
+ referred.root.location.search='';assert.equal(referred.A.checkoutReference(),other,'URL cleanup does not erase the current visit');
+ const fresh=fixture(Object.fromEntries(referred.values));assert.equal(fresh.A.checkoutReference(),null,'a later direct visit cannot inherit points provenance');
+});
+test('cleaning invalid old commission memory cannot erase a fresh referral entry',()=>{
+ for(const stored of ['invalid JSON',JSON.stringify({nombre:'Old',expiresAt:1}),JSON.stringify(null)]){
+  const f=fixture({pth_referrer_smart:stored},'?ref='+id);
+  assert.equal(f.A.read(),null);assert.equal(f.A.checkoutReference(),id);
+  f.A.clear();assert.equal(f.A.checkoutReference(),null,'explicit user removal still clears the visit');
+ }
+});
+test('organic returning-customer ownership never manufactures a referral visit',async()=>{
+ const f=fixture();
+ f.context.getActiveReferrer=async()=>null;
+ f.context.findPermanentCustomerOwner=async()=>({isActive:true,agent_name:'Alina Rodríguez'});
+ const source=read('js/storefront.js'),start=source.indexOf('async function obtenerDuenoReal(');
+ vm.runInContext(source.slice(start,source.indexOf('// --- SÚPER FUNCIÓN IA',start)),f.context);
+ assert.equal(await f.context.obtenerDuenoReal('55555555'),'Alina Rodríguez');
+ assert.equal(f.A.checkoutReference(),null);
 });
 test('old name and gestor links, UUID links and bounded opaque fallbacks remain data-compatible',()=>{
  const {A}=fixture();

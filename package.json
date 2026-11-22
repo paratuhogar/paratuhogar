@@ -11,7 +11,7 @@
     "check:checkout-release": "npm run test:checkout:unit && npm run test:checkout:browser",
     "check:css": "node scripts/build-support-css.cjs --check",
     "test:points:unit": "node --test tests/points-wallet-gateway.test.mjs tests/points-wallet-client.test.cjs",
-    "test:points:db": "node --test tests/points-wallet-db.cjs",
+    "test:points:db": "node --test tests/points-wallet-db.cjs tests/points-referral-db.cjs",
     "test:points:integration": "node --test tests/points-wallet-integration.test.mjs",
     "test:points:browser": "node --test tests/points-wallet-browser.cjs"
   },

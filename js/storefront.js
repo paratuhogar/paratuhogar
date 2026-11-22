@@ -103,7 +103,9 @@ async function checkShortLinks() {
             window.PTHAffiliate.remember({nombre:data.gestor, telefono:telOriginal});
 
             // Redirigir
-            window.location.href = data.original_url;
+            const target = new URL(data.original_url, window.location.origin);
+            window.location.href = !window.PTHAffiliate.incoming(target.search) && data.gestor
+                ? window.PTHAffiliate.link(target, {nombre:data.gestor, telefono:telOriginal}) : target.toString();
 
             // Detener ejecución para que no se registre nada en esta página intermedia
             return true;
@@ -3450,6 +3452,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             insertPromise = {
                 _lineas: productos.map(p => ({ producto_id: p.id, cantidad: p.qty })),
                 subgestor_id: orderSubgestor.agent.id,
+                _referral_reference: isLogged ? null : window.PTHAffiliate?.checkoutReference?.() || null,
                 subgestor_nombre: orderSubgestor.agent.nombre,
                 parent_gestor_id: orderSubgestor.parent.id,
                 parent_gestor_nombre: orderSubgestor.parent.nombre,
@@ -3473,6 +3476,7 @@ document.getElementById('checkout-form').onsubmit = async function(e) {
             insertPromise = {
                 _lineas: productos.map(p => ({ producto_id: p.id, cantidad: p.qty })),
                 gestor: activeGestor,
+                _referral_reference: isLogged ? null : window.PTHAffiliate?.checkoutReference?.() || null,
                 cliente: nombreC,
                 ci: ciC,
                 telefono: telC,

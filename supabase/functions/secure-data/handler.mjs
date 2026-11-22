@@ -194,7 +194,15 @@ async function canonicalSale(db,table,input,actor,checkoutPrices=false) {
   row.comision_total=seller?sale.totalCommission:0;
   if(parent) {row.subgestor_id=seller.id;row.subgestor_nombre=seller.nombre;row.parent_gestor_id=parent.id;row.parent_gestor_nombre=parent.nombre;row.comision_subgestor=sale.subCommission;row.estado='Pendiente Aprobacion';delete row.gestor;delete row.origen;}
   else {row.gestor=seller?.nombre||'Venta Directa';delete row.comision_parent;delete row.comision_subgestor;row.estado='Pendiente';row.pago_gestor='Pendiente';}
-  if(checkoutPrices) row._points_capture={beneficiary_id:seller?.id||null,lines:lines.map(line=>({producto_id:line.producto_id,cantidad:Number(line.cantidad)}))};
+  // A commission owner can come from an organic returning customer's binding.
+  // Only the separate entry-link reference may qualify it for points. The
+  // quote signs this reference; neither raw origen nor reward flags authorize it.
+  const referral=input._referral_reference;
+  const viaLink=!actor?.id&&seller?.id&&typeof referral==='string'&&
+    (referral===seller.id||referral===seller.nombre);
+  if(checkoutPrices) row._points_capture={beneficiary_id:seller?.id||null,
+    sales_channel:actor?.id?'manual':viaLink?'referral_link':'direct',
+    lines:lines.map(line=>({producto_id:line.producto_id,cantidad:Number(line.cantidad)}))};
   if(checkoutPrices) row._checkout_prices=lines.map(line=>{
     const product=products.find(p=>p.id===line.producto_id),custom=(prices||[]).find(p=>p.producto_id===line.producto_id);
     const base=Math.round(Number(product.precio)*100),value=Math.round(Number(custom?.nuevo_precio)*100);

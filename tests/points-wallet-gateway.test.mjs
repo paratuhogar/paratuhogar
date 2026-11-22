@@ -100,3 +100,62 @@ test('a receipt retry never recaptures or changes an acknowledged reward order',
  const body={...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote};await s.request(body);const rows=structuredClone(s.f.rows.pedidos);
  assert.equal((await s.request(body)).data.complete,true);assert.equal(s.calls.filter(c=>c.name==='pth_insert_checkout_points').length,1);assert.deepEqual(s.f.rows.pedidos,rows);
 });
+
+for (const role of ['gestor', 'admin']) test(`authenticated ${role} checkout cannot claim referral points through browser fields`, async () => {
+ const s=await setup({enabled:true,role});
+ for(const input of s.f.body.inputs)Object.assign(input,{origen:'Enlace de gestor',sales_channel:'referral_link',_points_capture:{beneficiary_id:own,sales_channel:'referral_link'}});
+ const q=await s.request({...s.f.body,operation:'quote'});assert.equal(q.error,null);
+ const r=await s.request({...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote});assert.equal(r.data.complete,true);
+ const captures=s.calls.find(c=>c.name==='pth_insert_checkout_points').args.p_captures;
+ assert.deepEqual(captures.map(c=>c.sales_channel),['manual','manual']);
+ assert.deepEqual(captures.map(c=>c.beneficiary_id),[own,own]);
+});
+
+for(const child of [false,true])test(`public customer checkout from a ${child?'subgestor':'gestor'} link captures the resolved link owner`,async()=>{
+ const s=await setup({enabled:true,parent:child?other:null});
+ if(child)s.f.body.table='pedidos_subgestores';
+ for(const input of s.f.body.inputs){
+  input._referral_reference=own;
+  if(child){delete input.gestor;input.subgestor_id=own;}
+  else input.gestor=own;
+ }
+ const q=await s.request({...s.f.body,operation:'quote'},null);assert.equal(q.error,null);
+ const r=await s.request({...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote},null);assert.equal(r.data.complete,true);
+ const captures=s.calls.find(c=>c.name==='pth_insert_checkout_points').args.p_captures;
+ assert.deepEqual(captures.map(c=>[c.sales_channel,c.beneficiary_id]),[['referral_link',own],['referral_link',own]]);
+ assert.deepEqual(s.f.rows[child?'pedidos_subgestores':'pedidos'].slice(child?0:1).map(r=>[r.total,r.comision_total]),[[106,10],[200,20]],'attribution does not alter order amounts or commissions');
+});
+
+test('public checkout without a resolved seller cannot become a referral sale',async()=>{
+ const s=await setup({enabled:true});
+ for(const input of s.f.body.inputs)Object.assign(input,{gestor:'Venta Directa',sales_channel:'referral_link',_points_capture:{beneficiary_id:own,sales_channel:'referral_link'}});
+ const q=await s.request({...s.f.body,operation:'quote'},null);assert.equal(q.error,null);
+ const r=await s.request({...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote},null);assert.equal(r.data.complete,true);
+ const captures=s.calls.find(c=>c.name==='pth_insert_checkout_points').args.p_captures;
+ assert.deepEqual(captures.map(c=>[c.sales_channel,c.beneficiary_id]),[['direct',null],['direct',null]]);
+});
+
+for(const reference of [undefined,other,true,''])test(`anonymous assigned-customer checkout without matching link (${String(reference)}) earns no referral points`,async()=>{
+ const s=await setup({enabled:true});
+ for(const input of s.f.body.inputs)Object.assign(input,{gestor:own,origen:'Enlace Compartido',_referral_reference:reference,sales_channel:'referral_link'});
+ const q=await s.request({...s.f.body,operation:'quote'},null);assert.equal(q.error,null);
+ const r=await s.request({...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote},null);assert.equal(r.data.complete,true);
+ const captures=s.calls.find(c=>c.name==='pth_insert_checkout_points').args.p_captures;
+ assert.deepEqual(captures.map(c=>c.sales_channel),['direct','direct']);
+ assert.deepEqual(captures.map(c=>c.beneficiary_id),[own,own],'commission ownership is preserved');
+});
+
+test('adding an empty reference does not invalidate a previously quoted manual draft',async()=>{
+ const s=await setup({enabled:true}),q=await s.request({...s.f.body,operation:'quote'});assert.equal(q.error,null);
+ for(const input of s.f.body.inputs)input._referral_reference=null;
+ const r=await s.request({...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote});assert.equal(r.data?.complete,true);
+});
+
+test('a legacy direct quote remains usable after an update but cannot gain referral points',async()=>{
+ const s=await setup({enabled:true});for(const input of s.f.body.inputs)input.gestor=own;
+ const q=await s.request({...s.f.body,operation:'quote'},null);assert.equal(q.error,null);
+ for(const input of s.f.body.inputs)input._referral_reference=own;
+ const r=await s.request({...s.f.body,operation:'submit',attempt:q.data.attempt,quote:q.data.quote},null);
+ assert.equal(r.data?.complete,true);assert.equal(s.f.writes,1);
+ assert.deepEqual(s.calls.find(c=>c.name==='pth_insert_checkout_points').args.p_captures.map(c=>c.sales_channel),['direct','direct']);
+});

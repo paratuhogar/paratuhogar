@@ -48,7 +48,7 @@
     if (key !== identity) { erase(); identity = key; }
     currentProfile = next;
     mountEntry('pth-points-open', 'Mis puntos', doc.getElementById('btn-dash-resumen')?.parentElement, !!next, () => open(false));
-    mountEntry('pth-points-admin-open', 'Puntos de gestores', doc.getElementById('sec-admin') || doc.getElementById('sec-admin-master'), isAdmin(next), () => open(true));
+    mountEntry('pth-points-admin-open', 'Puntos de gestores', doc.getElementById('admin-master-nav'), isAdmin(next), () => open(true));
     void refreshBadge();
     if (expiryTimer !== null) root.clearTimeout(expiryTimer);
     expiryTimer = next?.expires ? root.setTimeout(sync, Math.min(2147483647, Math.max(1, next.expires - Date.now()))) : null;
@@ -68,8 +68,9 @@
           badgeObserver.observe(entry);
         }
       }
-      if (id === 'pth-points-admin-open' && parent.firstElementChild) parent.firstElementChild.after(entry);
-      else parent.append(entry);
+      // The shared administration grid supplies the same styles as its other tools.
+      if (id === 'pth-points-admin-open') entry.className = '';
+      parent.append(entry);
     }
   }
   function paintBadge(balance, gain = 0) {
@@ -257,7 +258,7 @@
           }
           host.append(totals);
           const explainer = element('p', 'pth-points-explainer', data.enabled
-            ? 'Las ventas suman puntos al estar entregadas y conciliadas. Los pendientes todavía no forman parte del saldo.'
+            ? 'Las ventas realizadas por clientes desde tu enlace suman puntos al estar entregadas y conciliadas. Los pedidos que introduces manualmente no suman. Los puntos anteriores se conservan; los pendientes todavía no forman parte del saldo.'
             : 'El programa no está activo para ventas nuevas. Los movimientos y obligaciones anteriores se conservan.');
           if (!administrative && data.enabled) {
             const help = element('details','pth-points-earning-help'); help.append(element('summary','','Cómo sumar puntos'),explainer); host.append(help);

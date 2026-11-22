@@ -65,6 +65,56 @@ o registrados durante una pausa no les cree capturas retroactivas.
 
 ## Secuencia de publicación (pendiente de autorización)
 
+### Ajuste aprobado: puntos automáticos solo por ventas desde enlaces
+
+Autorizado por Marcel: completar, publicar y activar la regla estricta solo por
+enlaces. Base `c388af73`. La revisión detectó y corrigió la confusión entre
+propietario comercial y visita por enlace. La publicación se verifica después
+de las pruebas; este documento por sí solo no acredita un despliegue.
+
+- El navegador conserva una referencia **solo de esta entrada por enlace**, en
+  memoria de página, antes de limpiar la URL. No la recupera de los clientes
+  asignados, del cierre de sesión ni de la memoria comercial antigua. La
+  navegación interna originada únicamente en esa memoria lleva `_pth_ref=memory`
+  para no convertir una recompra orgánica en referido. Los enlaces cortos
+  resueltos conservan su referencia real.
+- El gateway determina `sales_channel` comprobando una referencia de entrada
+  que coincida con el UUID o nombre interno del vendedor resuelto y que no
+  haya sesión comercial: solo entonces usa `referral_link`. Una cuenta que
+  registra el pedido usa `manual`; las otras compras usan `direct`, aunque
+  tengan gestor asignado. La referencia queda vinculada a la firma del intento.
+  Una página actualizada puede completar un intento antiguo sin ese campo,
+  pero no convertirlo retroactivamente en una venta con puntos.
+  Ningún campo `origen`, bandera o captura enviado por el navegador puede
+  reemplazar esta decisión. Se conservan los enlaces antiguos admitidos por la web.
+- La migración `20261122175858_points_referral_sales_only.sql` limita las
+  capturas nuevas a `referral_link`. No edita capturas, movimientos, reglas,
+  configuración, precios, comisiones ni autenticación. Los pedidos sin canal
+  comprobado se registran normalmente, pero no generan puntos ni incidencias.
+- Las capturas anteriores conservan su saldo, obligaciones pendientes,
+  incidencias, reversos y restauraciones. Un reintento permite únicamente el
+  campo nuevo de canal sobre una captura antigua sin reescribirla; el resto
+  del contenido debe coincidir. Un pedido manual sin captura nunca se rellena
+  posteriormente, aunque un reintento reclame otro canal.
+- Los reconocimientos administrativos siguen disponibles. Los puntos de un
+  enlace de subgestor no se acreditan también al principal ni al aprobador.
+- La ayuda de «Mis puntos» explica la regla. «Puntos de gestores» se integra
+  en la cuadrícula administrativa, después de «Notificaciones», con los mismos
+  permisos. La caché web preparada es `20261122-pointref1`; los archivos de
+  Studio y sus enlaces de WhatsApp mantienen la versión publicada más reciente.
+
+Para publicar este ajuste, desplegar primero el gateway que añade el canal
+(sin cambiar secretos ni la bandera activa), verificarlo, aplicar **solo** la
+migración nueva y después publicar los assets web coherentes. No volver a
+ejecutar la migración inicial ni cambiar `started_at`. Comprobar que el corte
+no alteró el historial previo y revisar privilegios de ambas funciones; la
+comprobación nativa cubre permisos, concurrencia y el paso de la versión anterior.
+Las pruebas no requieren Docker ni ventas de prueba en producción. La copia
+previa del gateway y de ambas funciones SQL queda fuera del repositorio,
+en la carpeta local de respaldo de esta publicación.
+
+La secuencia siguiente corresponde a la **activación inicial**, no a este ajuste.
+
 1. Confirmar la revisión de código, las pruebas y la base remota. Conservar por
    separado el worktree del número de vivienda. Comprobar que están instaladas
    las funciones actuales `pth_insert_checkout`, `pth_insert_express_checkout`

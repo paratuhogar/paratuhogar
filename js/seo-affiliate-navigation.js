@@ -4,7 +4,7 @@
  const A = root.PTHAffiliate, d = root.document;
  if (!A || !d) return;
  const params = new URLSearchParams(root.location.search);
- const referralKeys = ['ref', 'gestor', 'contact', 'tel', 'r', 's'];
+ const referralKeys = ['ref', 'gestor', 'contact', 'tel', 'r', 's', '_pth_ref'];
  const short = params.get('s');
  const initialMemory = JSON.stringify(A.read());
  let pageRecord = null, pendingShort = short && /^[a-zA-Z0-9_-]{1,128}$/.test(short) ? short : null;
@@ -17,7 +17,13 @@
   // An explicitly attributed destination is a new link, never overwrite it.
   if (referralKeys.some(key => url.searchParams.has(key))) return href;
   if (slug) url.searchParams.set('s', slug);
-  else if (record) return A.link(url, record);
+  else if (record) {
+   const attributed = new URL(A.link(url, record));
+   // Preserve commission attribution without turning a direct visit into a
+   // points-eligible referral merely by following an internal product link.
+   if (A.checkoutReference?.() !== A.reference(record)) attributed.searchParams.set('_pth_ref', 'memory');
+   return attributed.toString();
+  }
   return url.toString();
  }
  function updateLinks() {
@@ -65,6 +71,7 @@
    }
    if (!incoming) return;
    pageRecord = A.remember(incoming);
+   A.acceptShortLink?.(incoming);
    memorySnapshot = JSON.stringify(A.read());
    pendingShort = null;
    cleanVisibleURL();

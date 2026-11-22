@@ -7,6 +7,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
+const adminNavigation = fs.readFileSync(path.join(root, 'index.html'), 'utf8').match(/<nav id="admin-master-nav"[\s\S]*?<\/nav>/)[0];
 const owner = { id: '11111111-1111-4111-8111-111111111111', nombre: 'Laura Pérez', rol: 'gestor', estado: 'activo', parent_id: null };
 const admin = { ...owner, id: '22222222-2222-4222-8222-222222222222', nombre: 'Administración', rol: 'admin' };
 const child = { ...owner, id: '33333333-3333-4333-8333-333333333333', nombre: 'Ana Subgestora', parent_id: owner.id };
@@ -61,13 +62,13 @@ before(async () => {
       }
       return;
     }
-    if (url.pathname === '/js/points-wallet.js' || url.pathname === '/css/points-wallet.css') {
+    if (['/js/points-wallet.js', '/css/points-wallet.css', '/css/admin-panel.css'].includes(url.pathname)) {
       const file = path.join(root,url.pathname);
       res.writeHead(200, {'Content-Type':url.pathname.endsWith('.js')?'text/javascript':'text/css'});
       res.end(fs.existsSync(file)?fs.readFileSync(file):''); return;
     }
     res.writeHead(200, {'Content-Type':'text/html'});
-    res.end('<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Arial,sans-serif;margin:0;padding:16px;background:#f8fafc}nav{display:flex;gap:8px;flex-wrap:wrap}button{font:inherit}h1,h2,h3,h4{font-size:inherit;font-weight:inherit}</style><link rel="stylesheet" href="/css/points-wallet.css"><title>Puntos · prueba local</title><nav><button id="btn-dash-resumen">Inicio</button></nav><section id="sec-admin-master"><h1>Administración</h1><div id="admin-listings">Listados existentes</div></section><script src="/js/points-wallet.js" defer></script></html>');
+    res.end('<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Arial,sans-serif;margin:0;padding:16px;background:#f8fafc}nav{display:flex;gap:8px;flex-wrap:wrap}button{font:inherit}h1,h2,h3,h4{font-size:inherit;font-weight:inherit}</style><link rel="stylesheet" href="/css/admin-panel.css"><link rel="stylesheet" href="/css/points-wallet.css"><title>Puntos · prueba local</title><nav><button id="btn-dash-resumen">Inicio</button></nav><section id="sec-admin-master"><h1>Administración</h1>' + adminNavigation + '<div id="admin-listings">Listados existentes</div></section><script src="/js/points-wallet.js" defer></script></html>');
   });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   origin = `http://127.0.0.1:${server.address().port}`;
@@ -115,6 +116,8 @@ for (const width of [320,390,1280]) test(`own wallet is responsive and paginates
   await page.click('#pth-points-open');
   await page.locator('#pth-points-balance').waitFor();
   assert.equal(await page.locator('#pth-points-balance').innerText(),'18');
+  await page.getByText('Cómo sumar puntos',{exact:true}).click();
+  assert.match(await page.locator('.pth-points-explainer').innerText(),/enlace.*entregadas y conciliadas/i,'wallet explains the referral-only earning condition');
   assert.equal(await page.locator('#pth-points-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)>=24&&Number(getComputedStyle(e).fontWeight)>=700),true,'dialog headings stay readable under storefront style reset');
   assert.match(await page.locator('#pth-points-dialog').innerText(),/8[\s\S]*Pendientes/);
   assert.match(await page.locator('#pth-points-dialog').innerText(),/2[\s\S]*Revertidos/);
@@ -144,6 +147,27 @@ test('principal and logistics cannot open child administration, even with legacy
   assert.equal(await page.locator('#pth-points-admin-open').count(),0);
   await switchSession(page,{...child,rol:'admin'});
   assert.equal(await page.locator('#pth-points-admin-open').count(),0,'parent-linked role cannot become admin');
+});
+
+for (const width of [320, 390, 1280]) test(`admin points opens from the shared navigation grid at ${width}px`, async t => {
+  const {page} = await fixture(t, admin, width);
+  const entry = page.locator('#pth-points-admin-open');
+  assert.equal(await page.locator('#admin-master-nav > #pth-points-admin-open').count(), 1);
+  assert.equal(await entry.evaluate(e => e.previousElementSibling.textContent.trim()), 'Notificaciones');
+  const styles = await page.locator('#admin-master-nav').evaluate(nav => {
+    const keys = ['backgroundColor', 'color', 'borderRadius', 'padding', 'font', 'whiteSpace'];
+    return [nav.querySelector('#pth-points-admin-open'), nav.querySelector('a')].map(e => Object.fromEntries(keys.map(key => [key, getComputedStyle(e)[key]])));
+  });
+  assert.deepEqual(styles[0], styles[1], 'points uses the same grid styling as its neighbours');
+  assert.equal(await entry.evaluate(e => e.scrollWidth <= e.clientWidth), true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  await entry.focus(); await page.keyboard.press('Enter');
+  await page.getByRole('button', {name:child.nombre, exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'pth-points-admin-open');
+  await switchSession(page, admin); assert.equal(await entry.count(), 1);
+  await switchSession(page, owner); assert.equal(await entry.count(), 0);
+  assert.equal(await page.locator('#pth-points-open').count(), 1);
 });
 
 test('account search is server paginated and grant confirmation names account, amount and reason',async t => {

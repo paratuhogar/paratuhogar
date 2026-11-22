@@ -36,6 +36,7 @@ function sale(w, { child = false, lines, beneficiary, id = randomUUID(), token =
   if (!child) delete row.comision_subgestor;
   return { table: child ? 'pedidos_subgestores' : 'pedidos', rows: [row], captures: [{ pedido_id: id,
     beneficiary_id: beneficiary === undefined ? (child ? w.child : w.parent) : beneficiary,
+    sales_channel: 'referral_link',
     lines: lines === undefined ? [{ producto_id: w.products[0], cantidad: 1 }, { producto_id: w.products[1], cantidad: 2 }, { producto_id: w.products[2], cantidad: 1 }] : lines }] };
 }
 async function insert(s, tariff = null) {
@@ -135,7 +136,7 @@ test('zero override replaces base and null restores defaults for future orders o
   assert.equal((await summary(w.parent)).balance, 9);
 });
 
-test('unknown classification and legacy inserts preserve sales as unresolved issues without guessing', async () => {
+test('unknown referral classification preserves an unresolved sale but unverified legacy inserts earn no points', async () => {
   const w = await world(); const s = sale(w, { lines: [{ producto_id: w.products[3], cantidad: 2 }] });
   await insert(s); await eligible(s);
   const legacy = sale(w, { child: true });
@@ -143,7 +144,7 @@ test('unknown classification and legacy inserts preserve sales as unresolved iss
   assert.equal((await summary(w.parent)).balance, 0);
   const issues = await rpc(w.admin, 'issues');
   const captures = (await db.query('select id from pth_points.captures where order_id=any($1)', [[s.rows[0].id, legacy.rows[0].id]])).rows;
-  assert.equal(captures.length, 2);
+  assert.equal(captures.length, 1);
   assert.ok(captures.every(c => issues.rows.some(i => i.id === c.id)));
   assert.equal((await db.query('select count(*) n from pedidos where id=$1', [s.rows[0].id])).rows[0].n, '1');
 });
@@ -302,19 +303,16 @@ test('database ACL and RLS deny browser roles and immutable ledger rejects privi
   assert.ok(functions.rows.every(f => !f.prosecdef && !f.anon && !f.authenticated));
 });
 
-test('missing trusted legacy beneficiary can be resolved once without changing capture ownership', async () => {
-  const w = await world(); const s = sale(w);
-  await db.service('select public.pth_insert_checkout($1,$2)', [s.table, JSON.stringify(s.rows)]);
-  await eligible(s);
-  const capture = (await db.query('select id,beneficiary_id from pth_points.captures where order_id=$1', [s.rows[0].id])).rows[0];
-  assert.equal(capture.beneficiary_id, null);
-  await grant(w, { captureId: capture.id, points: 11 });
-  assert.equal((await summary(w.parent)).balance, 11);
-  await db.service("update pedidos set estado='Cancelado' where id=$1", [s.rows[0].id]);
+test('new legacy writes without a verified referral channel do not create rewards or unresolved issues', async () => {
+  const w = await world();
+  for (const child of [false, true]) {
+    const s = sale(w, { child });
+    await db.service('select public.pth_insert_checkout($1,$2)', [s.table, JSON.stringify(s.rows)]);
+    await eligible(s);
+    assert.equal((await db.query('select count(*) n from pth_points.captures where order_id=$1', [s.rows[0].id])).rows[0].n, '0');
+  }
   assert.equal((await summary(w.parent)).balance, 0);
-  await eligible(s); assert.equal((await summary(w.parent)).balance, 11);
-  assert.equal((await db.query('select beneficiary_id from pth_points.captures where id=$1', [capture.id])).rows[0].beneficiary_id, null);
-  await assert.rejects(grant(w, { captureId: capture.id, beneficiaryId: w.other }), /resuelt|benefic|manual/i);
+  assert.equal((await summary(w.child)).balance, 0);
 });
 
 test('overlapping product rule periods are rejected by database even for service role', async () => {

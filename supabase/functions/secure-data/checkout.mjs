@@ -7,7 +7,7 @@ const fail=(code,message)=>{throw Object.assign(Error(message),{checkoutCode:cod
 const cents=value=>Math.round(Number(value)*100);
 const normalized=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 const customerPhone=value=>{const digits=String(value||'').replace(/\D/g,'');return digits.length===10&&digits.startsWith('53')?digits.slice(2):digits;};
-const inputFields=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','proveedor','origen'];
+const inputFields=['gestor','subgestor_id','cliente','telefono','ci','direccion','municipio','proveedor','origen','_referral_reference'];
 const tariffFields=['municipio','localidad','precio_pequeno','precio_mediano','precio_grande','precio_expres_pequeno','precio_expres_mediano','precio_expres_grande','minutos_expres_pequeno','minutos_expres_mediano','minutos_expres_grande'];
 function clean(body){
   if(!['pedidos','pedidos_subgestores'].includes(body.table)||!Array.isArray(body.inputs)||!body.inputs.length||body.inputs.length>30)fail('CHECKOUT_INVALID','Revisa los productos del pedido.');
@@ -16,7 +16,11 @@ function clean(body){
     if(!input||input._approval_id||typeof input.proveedor!=='string'||!input.proveedor||providers.has(input.proveedor))fail('CHECKOUT_INVALID','Revisa los proveedores del pedido.');
     providers.add(input.proveedor);
     const row={};
-    for(const field of inputFields)if(Object.hasOwn(input,field)){if(typeof input[field]==='string'&&input[field].length>5000)fail('CHECKOUT_INVALID','Revisa los datos del pedido.');row[field]=input[field];}
+    for(const field of inputFields)if(Object.hasOwn(input,field)){
+      // Empty/new optional metadata must not change a legacy draft's signed payload.
+      if(field==='_referral_reference'&&(typeof input[field]!=='string'||!input[field].trim()||input[field].length>200))continue;
+      if(typeof input[field]==='string'&&input[field].length>5000)fail('CHECKOUT_INVALID','Revisa los datos del pedido.');row[field]=input[field];
+    }
     if(['cliente','telefono','direccion','municipio'].some(field=>typeof row[field]!=='string'||!row[field].trim()))fail('CHECKOUT_INVALID','Completa nombre, teléfono y dirección.');
     if(!Array.isArray(input._lineas)||!input._lineas.length||input._lineas.length>100)fail('CHECKOUT_INVALID','Revisa los productos del pedido.');
     row._lineas=input._lineas.map(line=>{if(typeof line.producto_id!=='string'||!Number.isInteger(Number(line.cantidad))||Number(line.cantidad)<1||Number(line.cantidad)>10000)fail('CHECKOUT_INVALID','Revisa las cantidades.');return {producto_id:line.producto_id,cantidad:Number(line.cantidad)};});
@@ -181,7 +185,15 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(token){
         attempt=await parse(token);
         if(attempt.actor!==actorTag)fail('SESSION_CHANGED','Vuelve a la cuenta que inició este pedido. Puedes comprobar el recibo sin sesión.');
-        if(attempt.table!==payload.table||attempt.payload!==await sign('payload:'+attempt.nonce+':'+signedPayload(payload,attempt.version)))fail('PAYLOAD_CHANGED','Los datos del intento cambiaron. Comprueba primero el recibo antes de iniciar otro pedido.');
+        if(attempt.table!==payload.table)fail('PAYLOAD_CHANGED','Los datos del intento cambiaron. Comprueba primero el recibo antes de iniciar otro pedido.');
+        if(attempt.payload!==await sign('payload:'+attempt.nonce+':'+signedPayload(payload,attempt.version))){
+          // An updated page may add link metadata to a pre-existing attempt.
+          // Accept only the exact originally signed payload, and keep that
+          // attempt non-referral. Never upgrade its points origin on replay.
+          const legacy={...payload,inputs:payload.inputs.map(({_referral_reference,...row})=>row)};
+          if(attempt.payload!==await sign('payload:'+attempt.nonce+':'+signedPayload(legacy,attempt.version)))fail('PAYLOAD_CHANGED','Los datos del intento cambiaron. Comprueba primero el recibo antes de iniciar otro pedido.');
+          payload.inputs=legacy.inputs;
+        }
         if(attempt.version==='pthn2'&&await clock(attempt.nonce)!==attempt.issued)fail('ATTEMPT_INVALID','No coincide la hora registrada del intento.');
       }else{
         if(body.operation!=='quote')fail('ATTEMPT_INVALID','Primero comprueba las condiciones del pedido.');

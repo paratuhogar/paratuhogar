@@ -36,6 +36,10 @@ test('current UUID/contact and legacy names/opaque data share no artificial TTL 
 test('direct/no-ref visits retain last link; explicit new ref wins; removal and expired legacy memory stay removed',async()=>{
  const first=fixture('?ref='+id);await first.ready;
  const direct=fixture('',Object.fromEntries(first.values));await direct.ready;assert.equal(direct.A.read().id,id);
+ assert.equal(direct.A.checkoutReference(),null);
+ const rememberedLink=new URL(direct.links[0].href);assert.equal(rememberedLink.searchParams.get('_pth_ref'),'memory');
+ const rememberedVisit=fixture(rememberedLink.search,Object.fromEntries(direct.values));await rememberedVisit.ready;
+ assert.equal(rememberedVisit.A.checkoutReference(),null,'internal navigation cannot turn an organic repeat customer into a referral');
  const last=fixture('?ref='+other+'&r='+opaque('old'),Object.fromEntries(first.values));await last.ready;assert.equal(last.A.read().id,other);
  last.A.clear();last.clicks.click();assert.equal(new URL(last.links[0].href).searchParams.has('ref'),false);
  for(const initial of [{},{pth_referrer_smart:JSON.stringify({nombre:'expired',expiresAt:1}),pth_referrer:JSON.stringify({nombre:'older'})}]){
@@ -43,6 +47,7 @@ test('direct/no-ref visits retain last link; explicit new ref wins; removal and 
  }
  const fresh=fixture('?ref='+id);await fresh.ready;fresh.A.remember({id:other,nombre:other});fresh.listeners.storage({key:'pth_referrer_smart'});
  assert.equal(new URL(fresh.links[0].href).searchParams.get('ref'),other);
+ assert.equal(new URL(fresh.links[0].href).searchParams.get('_pth_ref'),'memory','another tab changing commission memory is not a new referral');
  fresh.A.clear();fresh.listeners.storage({key:null});assert.equal(new URL(fresh.links[0].href).search,'');
 });
 test('malformed input cannot replace memory or execute and disabled storage still carries an explicit link',async()=>{
@@ -65,6 +70,7 @@ test('short links parse current UUID/contact, old tel and opaque payload, with p
  for(const record of inputs){
   let request;const f=fixture('?s=abc_123',{pth_session:'PRIVATE_SESSION'},async(url,options)=>{request={url,options};return {ok:true,json:async()=>[record]};});await f.ready;
   assert.equal(f.A.read().nombre,record.original_url.includes(id)?id:'Alina');assert.equal(f.A.read().expiresAt,null);
+  assert.equal(f.A.checkoutReference(),record.original_url.includes(id)?id:'Alina','a successfully resolved short link is a real entry, not inherited memory');
   if(record.original_url!=='broken')assert.equal(f.A.read().telefono,'5350000000');
   assert.equal(request.options.credentials,'omit');assert.equal(request.options.referrerPolicy,'no-referrer');
   assert.equal(request.options.headers.Authorization,'Bearer public-fixture');assert.doesNotMatch(request.url,/PRIVATE_SESSION/);
