@@ -8,6 +8,9 @@
   const operationKey = () => Array.from(root.crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
   let identity = '', generation = 0, expiryTimer = null, dialog, title, status, networkNote, content, opener;
   let currentProfile = null;
+  const milestones = [5, 10, 25, 50, 100], badgeAge = 5 * 60 * 1000;
+  const elapsed = () => root.performance?.now?.() ?? Date.now();
+  let badgeState = {balance:null,checkedAt:null,loading:false,revision:0}, badgeObserver;
 
   function element(tag, className, text) {
     const node = doc.createElement(tag);
@@ -34,6 +37,8 @@
   const isAdmin = p => !!p && !p.parent_id && adminRoles.has(String(p.rol || '').toLowerCase());
   function erase() {
     generation++;
+    badgeState = {balance:null,checkedAt:null,loading:false,revision:0};
+    paintBadge(null);
     if (!dialog) return;
     content.replaceChildren(); status.textContent = ''; networkNote.textContent = '';
     if (dialog.open) dialog.close();
@@ -44,6 +49,7 @@
     currentProfile = next;
     mountEntry('pth-points-open', 'Mis puntos', doc.getElementById('btn-dash-resumen')?.parentElement, !!next, () => open(false));
     mountEntry('pth-points-admin-open', 'Puntos de gestores', doc.getElementById('sec-admin') || doc.getElementById('sec-admin-master'), isAdmin(next), () => open(true));
+    void refreshBadge();
     if (expiryTimer !== null) root.clearTimeout(expiryTimer);
     expiryTimer = next?.expires ? root.setTimeout(sync, Math.min(2147483647, Math.max(1, next.expires - Date.now()))) : null;
     return next;
@@ -53,9 +59,47 @@
     if (!allowed) { existing?.remove(); return; }
     if (!existing && parent) {
       const entry = button(text, action, 'pth-points-entry'); entry.id = id;
+      if (id === 'pth-points-open') {
+        parent.classList.add('pth-points-entry-nav');
+        const badge = element('span', 'pth-points-badge', '…'); badge.id = 'pth-points-badge'; badge.setAttribute('aria-hidden', 'true');
+        entry.append(badge); entry.setAttribute('aria-label', 'Mis puntos, saldo por consultar');
+        if (root.IntersectionObserver) {
+          badgeObserver ||= new root.IntersectionObserver(items => { if (items.some(item => item.isIntersecting)) void refreshBadge(); });
+          badgeObserver.observe(entry);
+        }
+      }
       if (id === 'pth-points-admin-open' && parent.firstElementChild) parent.firstElementChild.after(entry);
       else parent.append(entry);
     }
+  }
+  function paintBadge(balance, gain = 0) {
+    const badge = doc.getElementById('pth-points-badge'), entry = doc.getElementById('pth-points-open');
+    if (!badge || !entry) return;
+    badge.textContent = balance === null ? root.navigator.onLine === false ? '—' : '…' : number(balance);
+    badge.classList.toggle('pth-points-badge-gain', gain > 0);
+    entry.setAttribute('aria-label', balance === null ? 'Mis puntos, saldo por consultar' : `Mis puntos, ${number(balance)} puntos confirmados`);
+    entry.title = balance === null ? root.navigator.onLine === false ? 'Sin conexión. El saldo no se ha actualizado.' : 'Abre Mis puntos para comprobar el saldo confirmado.' : `${number(balance)} puntos confirmados. Los pendientes no se incluyen.`;
+  }
+  function rememberOwnSummary(data) {
+    if (root.navigator.onLine === false || data.beneficiary?.id !== currentProfile?.id || ownerKey(profile()) !== identity) return 0;
+    if (!Number.isSafeInteger(data.balance) || data.balance < 0) return 0;
+    const gain = badgeState.balance === null ? 0 : Math.max(0, data.balance - badgeState.balance);
+    badgeState.balance = data.balance; badgeState.checkedAt = elapsed();
+    paintBadge(data.balance, gain);
+    return gain;
+  }
+  async function refreshBadge(force = false) {
+    const entry = doc.getElementById('pth-points-open');
+    if (!identity || !entry?.getClientRects().length || doc.hidden || dialog?.open || root.navigator.onLine === false || badgeState.loading) return;
+    if (!force && badgeState.checkedAt !== null && elapsed() - badgeState.checkedAt < badgeAge) return;
+    const state = badgeState, revision = ++state.revision;
+    state.loading = true; paintBadge(null);
+    try {
+      const data = await request({operation:'summary',offset:0});
+      if (state === badgeState && revision === state.revision && root.navigator.onLine !== false) rememberOwnSummary(data);
+    }
+    catch (failure) { if (!failure.stale && state === badgeState && revision === state.revision) { paintBadge(null); state.checkedAt = elapsed(); } }
+    finally { if (state === badgeState) state.loading = false; }
   }
   function ensureDialog() {
     if (dialog) return;
@@ -70,10 +114,12 @@
     status = element('p', 'pth-points-status'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     content = element('div', 'pth-points-content');
     dialog.append(header, networkNote, status, content); doc.body.append(dialog);
-    dialog.addEventListener('close', () => { if (opener?.isConnected) opener.focus(); });
+    dialog.addEventListener('close', () => { if (opener?.isConnected) opener.focus(); void refreshBadge(); });
     // A native modal supplies keyboard containment and Escape; no custom focus trap.
   }
   function connection() {
+    if (root.navigator.onLine === false) { ++badgeState.revision; paintBadge(null); }
+    else void refreshBadge(true);
     if (!dialog) return;
     const offline = root.navigator.onLine === false;
     networkNote.hidden = false;
@@ -116,6 +162,7 @@
     const p = sync();
     if (!p || admin && !isAdmin(p)) return false;
     ensureDialog(); generation++; opener = doc.activeElement;
+    dialog.dataset.view = admin ? 'admin' : 'own';
     title.textContent = admin ? 'Puntos de gestores' : 'Mis puntos';
     content.replaceChildren(); setStatus(''); networkNote.hidden = true;
     if (!dialog.open) dialog.showModal();
@@ -132,34 +179,89 @@
     const parsed = new Date(value);
     return Number.isFinite(parsed.getTime()) ? parsed.toLocaleString('es', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Fecha no disponible';
   }
+  function ownProgress(data, gain) {
+    const balanceValue = data.balance, next = milestones.find(value => value > balanceValue);
+    const target = next || 100, completed = !next;
+    const hero = element('article', 'pth-points-hero');
+    const main = element('div', 'pth-points-hero-main');
+    main.append(element('span', 'pth-points-hero-tag', '✦ TU ESFUERZO SUMA'));
+    main.append(element('h3', 'pth-points-hero-heading', completed ? '¡Completaste tu ruta!' : balanceValue === 0 ? 'Aquí empieza tu próxima meta.' : 'Cada venta te lleva más lejos.'));
+    main.append(element('p', 'pth-points-hero-label', 'Puntos confirmados'));
+    const amount = element('div', 'pth-points-hero-amount');
+    const balance = element('strong', 'pth-points-balance', number(balanceValue)); balance.id = 'pth-points-balance';
+    amount.append(balance, element('span', '', 'puntos')); main.append(amount);
+    const ring = element('div', 'pth-points-goal-ring');
+    ring.setAttribute('role', 'progressbar'); ring.setAttribute('aria-label', completed ? 'Ruta de 100 puntos completada' : `Avance hacia ${target} puntos`);
+    ring.setAttribute('aria-valuemin','0'); ring.setAttribute('aria-valuemax',String(target)); ring.setAttribute('aria-valuenow',String(Math.min(balanceValue,target)));
+    const ns = 'http://www.w3.org/2000/svg', svg = doc.createElementNS(ns,'svg');
+    svg.setAttribute('viewBox','0 0 120 120'); svg.setAttribute('aria-hidden','true');
+    for (const className of ['pth-points-ring-track','pth-points-ring-fill']) {
+      const circle = doc.createElementNS(ns,'circle');
+      for (const [name,value] of Object.entries({cx:'60',cy:'60',r:'50',fill:'none',class:className})) circle.setAttribute(name,value);
+      if (className.endsWith('fill')) { circle.style.strokeDasharray = String(100 * Math.PI); circle.style.strokeDashoffset = String(100 * Math.PI * (1 - Math.min(balanceValue / target, 1))); }
+      svg.append(circle);
+    }
+    const center = element('div', 'pth-points-ring-center');
+    center.append(element('span', '', '✦'),element('strong', '', completed ? '5/5' : String(target)),element('small', '', completed ? 'hitos logrados' : 'próximo hito'));
+    ring.append(svg,center); hero.append(main,ring);
+    const footer = element('div', 'pth-points-hero-footer');
+    footer.append(element('p', '', completed ? 'Tus puntos siguen sumando. ¡Sigue construyendo tu historia!' : `Te faltan ${number(target - balanceValue)} puntos para tu próximo hito.`));
+    footer.append(button('Explorar catálogo', () => { dialog.close(); root.showSection?.('catalogo'); }, 'pth-points-explore'));
+    hero.append(footer);
+    const route = element('section', 'pth-points-route');
+    route.append(element('h3', '', 'Tu ruta de puntos'));
+    const list = element('ol', 'pth-points-milestones'); list.setAttribute('aria-label', 'Hitos personales');
+    for (const value of milestones) {
+      const item = element('li', 'pth-points-milestone', String(value)); item.dataset.reached = String(balanceValue >= value);
+      item.setAttribute('aria-label', `${value} puntos, ${balanceValue >= value ? 'alcanzado' : 'pendiente'}`);
+      if (value === next) item.setAttribute('aria-current','step');
+      list.append(item);
+    }
+    route.append(list,element('p', '', 'Hitos visuales personales. No representan premios ni canjes.'));
+    const wrapper = element('div', 'pth-points-own-progress');
+    if (gain > 0) { const celebration = element('p','pth-points-celebration',`Sumaste ${number(gain)} puntos confirmados.`); celebration.setAttribute('role','status'); wrapper.append(celebration); }
+    wrapper.append(hero,route);
+    return wrapper;
+  }
   function summaryView(host, beneficiary, administrative = false, onSummary) {
     let sequence = 0, offset = null, list, more, loading = false;
     const error = element('p', 'pth-points-error'); error.setAttribute('role', 'alert');
     async function load(append = false) {
       if (loading && append) return;
       const ticket = ++sequence; loading = true;
+      const ownRead = !append && (beneficiary?.id || currentProfile?.id) === currentProfile?.id
+        ? {state:badgeState,revision:++badgeState.revision} : null;
       if (!append) { host.replaceChildren(element('p', 'pth-points-muted', 'Cargando puntos…')); onSummary?.(null); }
       if (more) more.disabled = true;
       try {
         const data = await request({ operation: 'summary', ...(beneficiary ? { beneficiaryId: beneficiary.id } : {}), offset: append ? offset : 0 });
         if (ticket !== sequence || !host.isConnected) return;
+        if (ownRead && (ownRead.state !== badgeState || ownRead.revision !== badgeState.revision)) {
+          if (root.navigator.onLine === false) throw Error('Sin conexión. Vuelve a actualizar los puntos al reconectarte.');
+          return;
+        }
         if (!append) {
           host.replaceChildren();
           host.append(element('p', 'pth-points-account-name', data.beneficiary?.name || beneficiary?.name || currentProfile.nombre));
+          const gain = rememberOwnSummary(data);
           const totals = element('div', 'pth-points-totals');
+          if (!administrative) { host.append(ownProgress(data,gain)); totals.classList.add('pth-points-secondary-totals'); }
           const earned = element('div', 'pth-points-earned');
           earned.append(element('span', 'pth-points-metric-label', 'Puntos ganados'));
           const balance = element('strong', 'pth-points-balance', number(data.balance)); balance.id = 'pth-points-balance';
           earned.append(balance, element('span', 'pth-points-muted', 'Saldo del historial'));
-          totals.append(earned);
+          if (administrative) totals.append(earned);
           for (const [value, label, style] of [[data.pending, 'Pendientes de validar', 'pending'], [data.reversed, 'Revertidos', 'reversed']]) {
             const metric = element('div', 'pth-points-metric pth-points-' + style);
             metric.append(element('strong', '', number(value)), element('span', '', label)); totals.append(metric);
           }
           host.append(totals);
-          host.append(element('p', 'pth-points-explainer', data.enabled
+          const explainer = element('p', 'pth-points-explainer', data.enabled
             ? 'Las ventas suman puntos al estar entregadas y conciliadas. Los pendientes todavía no forman parte del saldo.'
-            : 'El programa no está activo para ventas nuevas. Los movimientos y obligaciones anteriores se conservan.'));
+            : 'El programa no está activo para ventas nuevas. Los movimientos y obligaciones anteriores se conservan.');
+          if (!administrative && data.enabled) {
+            const help = element('details','pth-points-earning-help'); help.append(element('summary','','Cómo sumar puntos'),explainer); host.append(help);
+          } else host.append(explainer);
           host.append(element('p', 'pth-points-consulted', 'Última consulta: ' + date(new Date().toISOString())));
           host.append(element('h3', 'pth-points-section-title', 'Historial de movimientos'));
           list = element('ol', 'pth-points-ledger'); host.append(list);
@@ -397,5 +499,7 @@
   root.addEventListener('pth:session-changed', sync);
   root.addEventListener('storage', event => { if (!event.key || ['pth_session','pth_secure_token','pth_secure_token_expires_at'].includes(event.key)) sync(); });
   root.addEventListener('offline', connection); root.addEventListener('online', connection);
+  root.addEventListener('focus', () => void refreshBadge());
+  doc.addEventListener('visibilitychange', () => { if (!doc.hidden) void refreshBadge(); });
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded',sync,{once:true}); else sync();
 })(window);

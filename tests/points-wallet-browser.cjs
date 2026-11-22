@@ -36,7 +36,7 @@ before(async () => {
       const body = JSON.parse(raw), state = scenarios.get(url.searchParams.get('case'));
       const actor = JSON.parse(req.headers['x-test-profile']);
       state.calls.push(body);
-      if (state.delay && body.operation === 'summary') await new Promise(resolve => state.release = resolve);
+      if (state.delay && body.operation === 'summary') await new Promise(resolve => {state.releases.push(resolve);state.release=()=>state.releases.splice(0).forEach(done=>done());});
       const write = ['grant', 'reverse', 'save_rule'].includes(body.operation);
       // Destroying TCP here lets Chromium transparently retransmit POST itself.
       // A gateway 503 isolates the UI's uncertain-outcome/no-replay contract.
@@ -45,7 +45,7 @@ before(async () => {
       if (state.failRead && !write) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({data:null,error:{message:'No se pudo consultar. Reintenta.',code:'SERVICE_UNAVAILABLE'}})); return; }
       let data;
       switch (body.operation) {
-        case 'summary': data = {...summary(body.beneficiaryId || actor.id, body.offset),enabled:state.enabled}; break;
+        case 'summary': data = {...summary(body.beneficiaryId || actor.id, body.offset),balance:state.balances[body.beneficiaryId||actor.id]??18,enabled:state.enabled}; break;
         case 'accounts': data = { rows: body.offset ? [{id:owner.id,name:owner.nombre,active:true}] : [{...account,active:!state.inactive}], nextOffset: body.offset ? null : 1 }; break;
         case 'rules': data = { rows: [{productId:product,name:'Lavadora compacta',size:state.missingClassification?null:'pequeno',pointsPerUnit:state.missingClassification?null:body.offset ? 0 : 1,customPoints:body.offset ? 0 : null}], nextOffset:body.offset ? null : 1 }; break;
         case 'issues': data = { rows: body.offset ? [] : [{id:capture,beneficiaryId:state.missingBeneficiary?null:child.id,name:state.missingBeneficiary?'Cuenta sin identificar':child.nombre,orderReference:'PTH-0999',reason:'missing_classification'}], nextOffset:body.offset ? null : 1 }; break;
@@ -76,7 +76,7 @@ before(async () => {
 after(async () => { await browser?.close(); await new Promise(resolve => server?.close(resolve)); });
 
 async function fixture(t, profile = owner, width = 390) {
-  const id = String(++serial), state = {profile,calls:[],failOnce:false,delay:false,failRead:false,enabled:true}; scenarios.set(id,state);
+  const id = String(++serial), state = {profile,calls:[],releases:[],balances:{},failOnce:false,delay:false,failRead:false,enabled:true}; scenarios.set(id,state);
   const page = await browser.newPage({viewport:{width,height:850}});
   page.setDefaultTimeout(5000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
@@ -309,10 +309,12 @@ test('disabled program preserves existing balances without claiming new sales ac
 
 test('issue without beneficiary requires selecting an account before reading or granting points',async t=>{
   const {page,state}=await fixture(t,admin);state.missingBeneficiary=true;
+  await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+  const before=state.calls.filter(c=>c.operation==='summary').length;
   await page.click('#pth-points-admin-open');await page.getByRole('button',{name:'Ventas por revisar',exact:true}).click();
   await page.getByRole('button',{name:'Resolver con puntos',exact:true}).click();
   await page.getByText('Selecciona el destinatario de esta venta.',{exact:true}).waitFor();
-  assert.equal(state.calls.filter(c=>c.operation==='summary').length,0,'missing owner never falls back to admin wallet');
+  assert.equal(state.calls.filter(c=>c.operation==='summary').length,before,'missing owner never falls back to admin wallet; own badge is unrelated');
   await page.getByRole('button',{name:child.nombre,exact:true}).click();await page.locator('#pth-points-balance').waitFor();
   await grant(page,'8','Destinatario y clasificación verificados');await page.getByRole('button',{name:'Confirmar reconocimiento',exact:true}).click();
   await page.getByText('Reconocimiento registrado.',{exact:true}).waitFor();
@@ -349,4 +351,117 @@ test('paused admin account hides new grants but retains audited reversals',async
   await page.getByRole('button',{name:'Confirmar reverso',exact:true}).click();
   await page.getByText('Reverso registrado.',{exact:true}).waitFor();
   assert.equal(state.calls.filter(c=>c.operation==='grant').length,0);
+});
+
+test('entry badge displays only confirmed own points and avoids repeated background reads',async t=>{
+ const {page,state}=await fixture(t);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ const calls=state.calls.filter(c=>c.operation==='summary').length;
+ for(let i=0;i<8;i++)await page.evaluate(()=>dispatchEvent(new Event('focus')));
+ assert.equal(state.calls.filter(c=>c.operation==='summary').length,calls,'recent verified badge does not poll on repeated focus');
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'18','8 pending points are not added');
+ assert.match(await page.locator('#pth-points-open').getAttribute('aria-label'),/18.*confirmados/);
+ assert.equal(await page.locator('#pth-points-badge').evaluate(e=>{const badge=e.getBoundingClientRect(),nav=e.parentElement.parentElement.getBoundingClientRect();return badge.top>=nav.top;}),true,'counter must not be clipped by the real scrolling navigation');
+ assert.equal(state.calls.some(c=>c.operation==='grant'||c.operation==='reverse'),false);
+});
+
+test('milestones use confirmed balance and celebrate only a new increase',async t=>{
+ const {page,state}=await fixture(t);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ await page.click('#pth-points-open');await page.locator('#pth-points-balance').waitFor();
+ assert.deepEqual(await page.locator('.pth-points-milestone[data-reached="true"]').allTextContents(),['5','10']);
+ assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuenow'),'18');
+ assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuemax'),'25');
+ assert.equal(await page.locator('.pth-points-celebration').count(),0,'opening an existing balance does not invent a new reward');
+ state.balances[owner.id]=25;
+ await page.getByRole('button',{name:'Actualizar puntos',exact:true}).click();
+ await page.getByText('Sumaste 7 puntos confirmados.',{exact:true}).waitFor();
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'25');
+ assert.deepEqual(await page.locator('.pth-points-milestone[data-reached="true"]').allTextContents(),['5','10','25']);
+ await page.getByRole('button',{name:'Actualizar puntos',exact:true}).click();await page.locator('#pth-points-balance').waitFor();
+ assert.equal(await page.locator('.pth-points-celebration').count(),0,'same balance is not celebrated again');
+ assert.match(await page.locator('#pth-points-dialog').innerText(),/hitos visuales|Hitos visuales/);
+});
+
+test('zero and completed milestones stay honest, including reduced motion',async t=>{
+ const {page,state}=await fixture(t,owner,320);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ state.balances[owner.id]=0;await page.click('#pth-points-open');await page.locator('#pth-points-balance').waitFor();
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'0');
+ assert.equal(await page.locator('.pth-points-milestone[data-reached="true"]').count(),0);
+ assert.equal(await page.getByRole('progressbar').getAttribute('aria-valuenow'),'0');
+ await page.emulateMedia({reducedMotion:'reduce'});state.balances[owner.id]=100;
+ await page.getByRole('button',{name:'Actualizar puntos',exact:true}).click();
+ await page.getByText('Sumaste 100 puntos confirmados.',{exact:true}).waitFor();
+ assert.equal(await page.locator('.pth-points-milestone[data-reached="true"]').count(),5);
+ assert.equal(await page.locator('.pth-points-celebration').evaluate(e=>getComputedStyle(e).animationName),'none');
+ assert.equal(await page.locator('#pth-points-dialog').evaluate(e=>e.scrollWidth<=e.clientWidth),true);
+});
+
+test('administrative inspection never replaces the administrator own badge',async t=>{
+ const {page,state}=await fixture(t,admin);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ state.balances[admin.id]=4;state.balances[child.id]=37;
+ await page.click('#pth-points-open');await page.locator('#pth-points-balance').waitFor();
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'4');
+ await page.getByRole('button',{name:'Cerrar puntos',exact:true}).click();await openAdmin(page);
+ assert.equal(await page.locator('#pth-points-balance').innerText(),'37');
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'4');
+});
+
+test('badge hides unverified amounts offline and discards a delayed old-account result',async t=>{
+ const {page,state}=await fixture(t);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ await page.context().setOffline(true);
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'—','offline badge is not a current balance');
+ state.delay=true;await page.context().setOffline(false);
+ await page.waitForFunction(()=>document.querySelector('#pth-points-badge').textContent==='…');
+ await switchSession(page,child);state.delay=false;state.release?.();
+ await page.click('#pth-points-open');await page.locator('#pth-points-balance').waitFor();
+ await switchSession(page,null,null);
+ assert.equal(await page.locator('#pth-points-badge').count(),0);
+ assert.equal(await page.locator('#pth-points-balance').count(),0);
+ assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage).filter(k=>/points|wallet/i.test(k))),[]);
+});
+
+async function holdBackgroundRead(page){
+ await page.evaluate(()=>{
+  const original=PTHSecureData.pointsWallet;
+  window.badgeHeld=false;window.badgeResultReady=false;window.holdBadge=true;
+  PTHSecureData.pointsWallet=async body=>{
+   const hold=window.holdBadge&&body.operation==='summary';let gate;
+   if(hold){window.badgeHeld=true;gate=new Promise(resolve=>window.releaseBadge=resolve);}
+   const result=await original(body);
+   if(hold){window.badgeResultReady=true;await gate;}
+   return result;
+  };
+  dispatchEvent(new Event('online'));window.holdBadge=false;
+ });
+ await page.waitForFunction(()=>!window.badgeHeld||window.badgeResultReady);
+}
+
+test('a delayed badge read cannot replace a newer wallet balance or repeat its celebration',async t=>{
+ const {page,state}=await fixture(t);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ await page.click('#pth-points-open');await page.locator('#pth-points-balance').waitFor();
+ await holdBackgroundRead(page);
+ state.balances[owner.id]=25;
+ await page.getByRole('button',{name:'Actualizar puntos',exact:true}).click();
+ await page.getByText('Sumaste 7 puntos confirmados.',{exact:true}).waitFor();
+ await page.evaluate(()=>window.releaseBadge?.());
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'25');
+ assert.equal(await page.locator('#pth-points-balance').innerText(),'25');
+ await page.getByRole('button',{name:'Actualizar puntos',exact:true}).click();await page.locator('#pth-points-balance').waitFor();
+ assert.equal(await page.locator('.pth-points-celebration').count(),0);
+});
+
+test('a previously confirmed in-flight response cannot repaint a current badge after going offline',async t=>{
+ const {page}=await fixture(t);
+ await page.locator('#pth-points-badge').filter({hasText:'18'}).waitFor();
+ await holdBackgroundRead(page);
+ assert.equal(await page.evaluate(()=>window.badgeHeld),true,'exercise an actual pending background request');
+ await page.context().setOffline(true);await page.evaluate(()=>window.releaseBadge());
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ assert.equal(await page.locator('#pth-points-badge').innerText(),'—');
 });

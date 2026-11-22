@@ -32,7 +32,7 @@
   let active = null, busy = false, panel = null, receiptsLink = null;
   let renderGeneration = 0, reviewing = null, preparing = false, saveIntent = null;
   let latestTariffs = [], copying = false, preparedToken = null;
-  const shellVersion = 'pth-public-static-2026-11-22-points1';
+  const shellVersion = 'pth-public-static-2026-11-22-workui1';
   let readinessGeneration=0, copyGeneration=0, copyOutcome=null;
   function readiness(text) {
     const account=localAccount();
@@ -45,13 +45,18 @@
       node.append(summary,result,retry);document.getElementById('pth-offline-options')?.append(node);
     }
     node.querySelector('#pth-device-readiness-summary').textContent=text;
-    const result=node.querySelector('#pth-device-copy-result');result.textContent=copyOutcome?.account===account?copyOutcome.text:'';result.hidden=!result.textContent;
+    const result=document.getElementById('pth-device-copy-result');result.textContent=copyOutcome?.account===account?copyOutcome.text:'';result.hidden=!result.textContent;
+    // Successful technical detail is optional; failures always stay by Retry.
+    const helpContent=document.getElementById('pth-offline-help-content');
+    const optional=copyOutcome?.account===account&&copyOutcome.dataSaved&&copyOutcome.ready&&helpContent;
+    if(optional){if(result.parentElement!==helpContent)helpContent.append(result);}
+    else if(result.parentElement!==node)node.insertBefore(result,node.querySelector('#pth-device-retry'));
     const retry=node.querySelector('#pth-device-retry');retry.disabled=Boolean(copying||preparing||active);retry.textContent=copying?'Preparando…':'Actualizar copia de trabajo';
     node.hidden=!account;
   }
-  function copyResult(account,text,{dataSaved=false,copyNotice=''}={}) {
+  function copyResult(account,text,{dataSaved=false,copyNotice='',ready=false}={}) {
     if(account!==localAccount())return;
-    copyOutcome={account,text,dataSaved,copyNotice};message(text);
+    copyOutcome={account,text,dataSaved,copyNotice,ready};message(text);
     const summary=document.getElementById('pth-device-readiness-summary')?.textContent||'Comprueba la preparación de este teléfono.';
     readiness(summary);
   }
@@ -106,7 +111,7 @@
   async function checkReadiness({repair=false,guard=()=>true}={}){
     if(copying&&!repair)return false;
     const epoch=++readinessGeneration,account=localAccount(),profile=PTHSecureData.offlineProfile?.();
-    if(!account||!profile){document.getElementById('pth-device-readiness')?.remove();return false;}
+    if(!account||!profile){document.getElementById('pth-device-readiness')?.remove();document.getElementById('pth-device-copy-result')?.remove();return false;}
     try{
       const copy=await copies?.read(account,{profile});
       if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
@@ -119,8 +124,8 @@
       if(!guard()||epoch!==readinessGeneration||account!==localAccount())return false;
       const complete=Boolean(copy&&shell.ready);
       if(!copy)preparedToken=null;
-      if(copyOutcome?.account===account&&copyOutcome.dataSaved)copyOutcome.text=(complete?'Copia guardada en este teléfono. Datos y archivos de la app comprobados para trabajar sin conexión.':'Copia de datos guardada en este teléfono. La preparación offline de la app aún está incompleta; revisa el aviso y reintenta con Internet.')+(copyOutcome.copyNotice||'');
-      let notice=complete?'Listo para trabajar sin conexión. Datos guardados y archivos de la app comprobados.':copy?'Datos guardados. Faltan archivos de la app o aún no se pudieron comprobar; este teléfono no está listo para abrirla sin conexión.':shell.ready?'Archivos de la app disponibles. Falta guardar la copia de datos de tu cuenta.':'Este teléfono aún no está listo sin conexión. Falta completar los datos y los archivos de la app.';
+      if(copyOutcome?.account===account&&copyOutcome.dataSaved){copyOutcome.ready=complete;copyOutcome.text=(complete?'Copia guardada en este teléfono. Datos y archivos de la app comprobados para trabajar sin conexión.':'Copia de datos guardada en este teléfono. La preparación offline de la app aún está incompleta; revisa el aviso y reintenta con Internet.')+(copyOutcome.copyNotice||'');}
+      let notice=complete?'Listo para trabajar sin conexión.':copy?'Datos guardados. Faltan archivos de la app o aún no se pudieron comprobar; este teléfono no está listo para abrirla sin conexión.':shell.ready?'Archivos de la app disponibles. Falta guardar la copia de datos de tu cuenta.':'Este teléfono aún no está listo sin conexión. Falta completar los datos y los archivos de la app.';
       if(!token())notice+=' Tu sesión necesita renovarse con conexión antes de enviar pedidos.';
       if(!shell.ready&&shell.reason==='update')notice+=shell.updatePending?' Hay una actualización de la app pendiente: pulsa Actualizar ahora en su aviso.':' Conéctate para completar la actualización de la app.';
       else if(!shell.ready)notice+=navigator.onLine===false?' Reintenta cuando tengas Internet.':' Mantén Internet y pulsa Actualizar copia de trabajo para reintentar.';
@@ -478,7 +483,8 @@
   const exitReview = document.createElement('button'); exitReview.type = 'button'; exitReview.id = 'pth-leave-pending-review'; exitReview.className = 'pth-connectivity-action'; exitReview.textContent = 'Volver a mi carrito'; exitReview.hidden = true; exitReview.onclick = leaveReview;
   const status = document.createElement('p'); status.id = 'pth-pending-message'; status.setAttribute('role', 'status');
   document.getElementById('final-submit-btn').before(queueButton, help, exitReview, status);
-  document.getElementById('pth-offline-options')?.append(copyButton, copyHelp);
+  document.getElementById('pth-offline-options')?.append(copyButton);
+  document.getElementById('pth-offline-help-content')?.append(copyHelp);
   queueButton.onclick = () => void savePending();
   async function prepareDevice(force=false) {
     if(copying)return;
@@ -518,7 +524,7 @@
       readiness('Comprobando los datos guardados y los archivos de la app para abrirla sin conexión…');
       const complete=await checkReadiness({repair:true,guard:current});
       if(!current())return;
-      if(!dataProblem)copyResult(account,(complete?'Copia guardada en este teléfono. Datos y archivos de la app comprobados para trabajar sin conexión.':'Copia de datos guardada en este teléfono. La preparación offline de la app aún está incompleta; revisa el aviso y reintenta con Internet.')+copyNotice,{dataSaved:true,copyNotice});
+      if(!dataProblem)copyResult(account,(complete?'Copia guardada en este teléfono. Datos y archivos de la app comprobados para trabajar sin conexión.':'Copia de datos guardada en este teléfono. La preparación offline de la app aún está incompleta; revisa el aviso y reintenta con Internet.')+copyNotice,{dataSaved:true,copyNotice,ready:complete});
     })();
     try{await Promise.race([attempt,new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('PREPARATION_TIMEOUT')),45000);})]);}
     catch(_){if(current()){stopped=true;++readinessGeneration;copyResult(account,'La preparación no terminó a tiempo. No se confirmó que el teléfono esté listo sin conexión. Los datos ya guardados y tus pendientes se conservan; puedes reintentar.');readiness('Preparación interrumpida. Reintenta con Internet para comprobar los datos y los archivos de la app.');}}

@@ -638,6 +638,27 @@ html.dark .pth-offline-storefront-status{border-color:#416185;background:#172b46
 /* Offline settings remain reachable without loading dashboard business data. */
 #sec-dashboard.pth-offline-settings-only > :not(#pth-offline-work) { display: none; }
 #pth-offline-work { scroll-margin-top: 100px; }
+#pth-offline-work{max-width:980px;margin-inline:auto;color:#1e293b;font:14px/1.55 Manrope,system-ui,sans-serif}
+#pth-offline-work-title{margin:18px 0 16px;font-size:24px;line-height:1.25;font-weight:800}
+#pth-offline-options{display:flex;flex-direction:column;gap:12px}
+#pth-device-readiness{order:-1}
+#pth-device-readiness-summary{margin:0;font-weight:700}
+#pth-offline-work .pth-connectivity-card h3{margin:0;font-size:16px;font-weight:800;line-height:1.4}
+#pth-offline-work .pth-saved-catalog-date{margin:0;color:#52627a;font-size:13px}
+#pth-offline-work .pth-connectivity-card{gap:12px;padding:18px}
+.pth-connectivity-help{margin-top:16px;border-top:1px solid #d6e2f2;color:#52627a}
+.pth-connectivity-help>summary{display:list-item;min-height:48px;padding:14px 4px;color:#1a4789;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation}
+.pth-connectivity-help>summary:focus-visible,#pth-offline-work .pth-connectivity-action:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+#pth-offline-help-content{display:grid;gap:12px;padding:0 4px 16px}
+#pth-offline-help-content p{margin:0;overflow-wrap:anywhere}
+#pth-connectivity-explanations{display:grid;gap:12px}
+#pth-offline-help-content .pth-cart-draft-note{padding:12px;margin:0}
+#pth-device-copy-result{margin:0;overflow-wrap:anywhere}
+html.dark #pth-offline-work{color:#edf4ff}
+html.dark #pth-offline-work .pth-saved-catalog-date,html.dark .pth-connectivity-help{color:#bdcde2}
+html.dark .pth-connectivity-help{border-color:#344a66}
+html.dark .pth-connectivity-help>summary{color:#bdd8ff}
+html.dark #pth-offline-help-content .pth-cart-draft-note{color:#dbeaff;background:#172b46}
 #pth-pending-order-panel > summary { cursor: pointer; min-height: 44px; padding: 10px 0; font-weight: 700; }
 
 /* admin-panel.css */

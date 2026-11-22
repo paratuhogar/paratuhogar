@@ -1,5 +1,9 @@
 /* The points dialog owns its styles; storefront sections keep their existing appearance. */
 .pth-points-entry{border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#1a4789;min-height:44px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:12px;line-height:1.3;white-space:nowrap;cursor:pointer;flex-shrink:0}
+#pth-points-open{position:relative;padding-right:30px;overflow:visible}
+.pth-points-entry-nav{padding-top:12px;padding-right:8px}
+.pth-points-badge{position:absolute;right:-5px;top:-11px;display:flex;align-items:center;justify-content:center;min-width:27px;height:27px;padding:0 6px;border:2px solid #fff;border-radius:99px;background:#f5c451;color:#503408;font-size:11px;font-weight:900;line-height:1;box-shadow:0 2px 7px #8a5c2033;font-variant-numeric:tabular-nums}
+.pth-points-badge-gain{animation:pth-points-pop .7s ease-out 1}
 .pth-points-dialog{--pw-navy:#1a4789;--pw-ink:#1e293b;--pw-muted:#64748b;--pw-line:#e2e8f0;--pw-paper:#fff;--pw-gain:#047857;--pw-pending:#92400e;box-sizing:border-box;width:min(960px,calc(100% - 32px));max-width:none;max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--pw-line);border-radius:24px;background:var(--pw-paper);color:var(--pw-ink);box-shadow:0 24px 90px #0f172a33;font-family:inherit;font-size:14px;line-height:1.5;overflow:auto;overscroll-behavior:contain;color-scheme:light}
 .pth-points-dialog::backdrop{background:#0f172a8c;backdrop-filter:blur(3px)}
 .pth-points-dialog *{box-sizing:border-box;min-width:0}
@@ -73,5 +77,44 @@
 .pth-points-notice{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6;margin:16px 28px 0!important}
 .pth-points-form .pth-points-notice{margin:0!important}
 .pth-points-error{color:#b91c1c;font-size:13px;overflow-wrap:anywhere}
+.pth-points-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 148px;align-items:center;gap:18px;padding:26px;border:1px solid #315c98;border-radius:23px;background:linear-gradient(125deg,#0f2b51,#194785 68%,#235ba0);color:#fff;box-shadow:0 12px 28px #143b7620;isolation:isolate;overflow:hidden}
+.pth-points-hero::before{content:'';position:absolute;z-index:-1;width:300px;height:300px;right:-150px;top:-145px;border:1px solid #ffffff20;border-radius:50%;box-shadow:0 0 0 36px #ffffff05,0 0 0 72px #ffffff05}
+.pth-points-hero-tag{color:#f9d47e;font-size:10px;font-weight:800;letter-spacing:.12em}
+.pth-points-dialog .pth-points-hero-heading{margin:10px 0 22px;font-size:20px;font-weight:750;line-height:1.3;letter-spacing:-.025em;max-width:380px}
+.pth-points-hero-label{color:#d4e3f9;font-size:12px;font-weight:600}
+.pth-points-hero-amount{display:flex;align-items:baseline;gap:10px;overflow-wrap:anywhere}
+.pth-points-hero .pth-points-balance{margin:3px 0;color:#fff;font-size:76px;line-height:1.05;letter-spacing:-.065em}
+.pth-points-hero-amount>span{font-size:13px;color:#d4e3f9}
+.pth-points-goal-ring{position:relative;width:148px;aspect-ratio:1;flex-shrink:0}
+.pth-points-goal-ring svg{display:block;width:100%;height:100%;transform:rotate(-90deg)}
+.pth-points-ring-track{stroke:#ffffff1f;stroke-width:7}
+.pth-points-ring-fill{stroke:#f5c451;stroke-width:7;stroke-linecap:round}
+.pth-points-ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pth-points-ring-center>span{color:#f9d47e;font-size:20px}
+.pth-points-ring-center strong{font-size:28px;line-height:1.2;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.pth-points-ring-center small{margin-top:3px;color:#d4e3f9;font-size:10px}
+.pth-points-hero-footer{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:18px;border-top:1px solid #ffffff26}
+.pth-points-hero-footer p{font-size:12px;color:#e1ebfb;max-width:350px}
+.pth-points-dialog .pth-points-explore{flex-shrink:0;background:#f5c451;border-color:#f5c451;color:#3f2a08;font-size:12px;box-shadow:0 3px 0 #b78028}
+.pth-points-dialog .pth-points-explore:hover{background:#ffdb81;border-color:#ffdb81}
+.pth-points-route{padding:22px 0 18px}
+.pth-points-dialog .pth-points-route h3{font-size:14px;font-weight:750}
+.pth-points-milestones{list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:16px 0 10px;padding:0}
+.pth-points-milestone{display:flex;flex-direction:column;align-items:center;gap:6px;color:#64748b;font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
+.pth-points-milestone::before{content:'';width:28px;height:28px;border:2px solid #d6dfec;border-radius:50%;background:#f4f7fc;box-shadow:0 0 0 5px #fff}
+.pth-points-milestone[data-reached=true]{color:#725011}
+.pth-points-milestone[data-reached=true]::before{border-color:#b78028;background:radial-gradient(circle,#fff1c2 20%,#f5c451 24%,#e1a82e 100%)}
+.pth-points-milestone[aria-current=step]::before{border-color:#1a4789;box-shadow:0 0 0 4px #e8f0fb;background:#fff}
+.pth-points-route>p{color:#64748b;font-size:11px;text-align:center}
+.pth-points-totals.pth-points-secondary-totals{grid-template-columns:1fr 1fr;border-radius:14px}
+.pth-points-secondary-totals .pth-points-metric{padding:14px 18px}
+.pth-points-secondary-totals .pth-points-metric strong{font-size:25px}
+.pth-points-earning-help{margin:16px 0 10px;color:#64748b}
+.pth-points-earning-help>summary{min-height:44px;cursor:pointer;padding:10px 0;font-weight:650;font-size:12px;color:#1a4789}
+.pth-points-earning-help>summary:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
+.pth-points-celebration{padding:12px 16px;margin-bottom:12px!important;border:1px solid #e9cf85;border-radius:12px;color:#67450e;background:#fff5d6;font-size:13px;font-weight:750;animation:pth-points-pop .7s ease-out 1}
+@keyframes pth-points-pop{0%{transform:scale(.94)}50%{transform:scale(1.025)}100%{transform:scale(1)}}
+@media(max-width:640px){.pth-points-hero{grid-template-columns:minmax(0,1fr) 104px;padding:19px 16px;gap:10px;border-radius:18px}.pth-points-dialog .pth-points-hero-heading{font-size:16px;margin:8px 0 18px}.pth-points-hero-tag{font-size:8px;letter-spacing:.09em}.pth-points-hero .pth-points-balance{font-size:58px}.pth-points-hero-amount{gap:6px;flex-wrap:wrap}.pth-points-hero-amount>span{font-size:11px}.pth-points-goal-ring{width:104px}.pth-points-ring-center>span{font-size:15px}.pth-points-ring-center strong{font-size:23px}.pth-points-ring-center small{font-size:8px}.pth-points-hero-footer{align-items:flex-start;flex-direction:column;gap:12px;padding-top:16px}.pth-points-explore{width:100%}.pth-points-secondary-totals .pth-points-metric{padding:13px 14px}.pth-points-milestones{gap:5px}.pth-points-route{padding-top:20px}}
 @media(max-width:640px){.pth-points-dialog{width:calc(100% - 16px);max-height:calc(100dvh - 16px);border-radius:19px}.pth-points-header{padding:20px 16px 18px;gap:10px}.pth-points-content{padding:0 16px 22px}.pth-points-status{padding-left:16px;padding-right:16px}.pth-points-eyebrow{font-size:9px;letter-spacing:.07em}.pth-points-dialog h2{font-size:24px}.pth-points-close{min-height:44px;padding:8px}.pth-points-totals{grid-template-columns:1fr 1fr}.pth-points-earned{grid-column:1/-1;border-right:0;border-bottom:1px solid var(--pw-line);padding:18px 20px}.pth-points-balance{font-size:52px}.pth-points-metric{padding:16px 20px}.pth-points-metric strong{font-size:26px}.pth-points-admin-columns{grid-template-columns:minmax(0,1fr);gap:18px}.pth-points-account-search{border-right:0;border-bottom:1px solid var(--pw-line);padding:0 0 18px}.pth-points-account-search .pth-points-list{display:flex;flex-wrap:wrap;gap:5px}.pth-points-account-result{width:auto;flex:1}.pth-points-tabs button{flex-basis:100%;justify-content:flex-start;padding-left:12px}.pth-points-form{padding:14px}.pth-points-notice{margin-left:16px!important;margin-right:16px!important}.pth-points-movement{gap:8px}.pth-points-movement-meta{padding-left:11px}.pth-points-amount{font-size:20px}.pth-points-form .pth-points-button{width:100%}.pth-points-confirm{padding:11px}.pth-points-dialog :is(input,textarea,select){font-size:16px}}
 @media(prefers-reduced-motion:reduce){.pth-points-button{transition:none}.pth-points-dialog::backdrop{backdrop-filter:none}}
+@media(prefers-reduced-motion:reduce){.pth-points-badge-gain,.pth-points-celebration{animation:none}}

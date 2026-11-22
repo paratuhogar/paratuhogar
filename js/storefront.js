@@ -261,7 +261,7 @@ async function checkShortLinks() {
             dataSavingEnabled = !dataSavingEnabled; lowConnectivity.setSaving(dataSavingEnabled);
             renderLowConnectivityPanel(); renderProducts();
         };
-        savingCard.append(heading, explanation, toggle);
+        savingCard.append(heading, toggle);
         const savedCard = document.createElement('section'); savedCard.className = 'pth-connectivity-card';
         savedCard.setAttribute('aria-labelledby', 'pth-saved-catalog-heading');
         const savedTitle = document.createElement('h3'); savedTitle.id = 'pth-saved-catalog-heading'; savedTitle.textContent = 'Tu web sin conexión';
@@ -279,8 +279,14 @@ async function checkShortLinks() {
             : 'Este catálogo se abre aquí con los productos previamente descargados. Para preparar pedidos sin conexión, entra primero en tu cuenta y guarda tus datos de trabajo.';
         const warning = document.createElement('p'); warning.id = 'pth-saved-catalog-warning'; warning.className = 'pth-saved-catalog-warning';
         warning.textContent = 'La tienda comprueba precios, disponibilidad y mensajería al recibir el pedido. Sin conexión se verán las fotos ya guardadas en este dispositivo.';
-        savedCard.append(savedTitle, copyHelp, copyDate, warning);
+        savedCard.append(savedTitle, copyDate);
         cards.append(savingCard, savedCard);
+        const helpContent = document.getElementById('pth-offline-help-content');
+        if (helpContent) {
+            let explanations = document.getElementById('pth-connectivity-explanations');
+            if (!explanations) { explanations = document.createElement('div'); explanations.id = 'pth-connectivity-explanations'; helpContent.append(explanations); }
+            explanations.replaceChildren(explanation, copyHelp, warning);
+        }
         // Keep existing manual receipt/cart actions separate from the copy's date.
         const status = document.createElement('p'); status.setAttribute('role', 'status'); status.className = 'pth-connectivity-status';
         document.getElementById('pth-offline-options')?.querySelector('.pth-connectivity-cards')?.remove();
