@@ -1,0 +1,48 @@
+/* Scoped blue/gold cash receipt; no checkout or storefront styles. */
+.pth-cash{--cash-blue:#1a4789;--cash-ink:#1e293b;--cash-gold:#f5c451;--cash-line:#dce5f1;--cash-muted:#64748b;margin-top:24px;padding-top:24px;border-top:2px solid var(--cash-line);color:var(--cash-ink);overflow-wrap:anywhere}
+.pth-cash *{box-sizing:border-box;min-width:0}
+.pth-cash [hidden]{display:none!important}
+.pth-cash-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.pth-cash .pth-cash-eyebrow{color:#785319;font-size:10px;font-weight:800;letter-spacing:.1em;margin-bottom:4px}
+.pth-cash h3{font-size:20px;font-weight:800;line-height:1.25;color:var(--cash-blue);letter-spacing:-.025em}
+.pth-cash h4{font-size:14px;font-weight:750;line-height:1.4}
+.pth-cash-receipt{padding:14px 18px;border-left:5px solid var(--cash-gold);border-radius:0 12px 12px 0;background:#f1f6fc}
+.pth-cash-receipt strong{font-size:20px;letter-spacing:-.025em;font-weight:800;color:var(--cash-blue);font-variant-numeric:tabular-nums}
+.pth-cash-receipt p{margin-top:4px;font-size:12px;color:#475569}
+.pth-cash-note{color:var(--cash-muted);font-size:12px;line-height:1.6;margin:10px 0!important}
+.pth-cash-status{color:#047857;font-size:13px;font-weight:650;margin:12px 0!important}
+.pth-cash-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1px;background:var(--cash-line);border:1px solid var(--cash-line);border-radius:12px;overflow:hidden;margin:16px 0}
+.pth-cash-metric{display:flex;flex-direction:column;gap:4px;padding:14px;background:#fff}
+.pth-cash-metric strong{font-size:26px;line-height:1.2;color:var(--cash-blue);font-weight:800;font-variant-numeric:tabular-nums}
+.pth-cash-metric span{font-size:11px;color:var(--cash-muted)}
+.pth-cash-filters{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;margin:22px 0 12px}
+.pth-cash-filters .pth-points-field{flex:1 1 160px}
+.pth-cash-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.pth-cash-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:start;gap:8px;border:1px solid var(--cash-line);border-radius:12px;padding:16px}
+.pth-cash-amount{font-size:18px;color:var(--cash-blue);font-variant-numeric:tabular-nums;font-weight:800}
+.pth-cash-state{grid-column:1/-1;justify-self:start;display:inline-block;border-radius:6px;background:#edf3fb;color:#1a4789;font-size:11px;font-weight:750;padding:4px 7px}
+.pth-cash-state[data-state=in_payment]{background:#fff3cc;color:#785319}
+.pth-cash-state[data-state=paid]{background:#e4f7ef;color:#066046}
+.pth-cash-state:is([data-state=rejected],[data-state=cancelled],[data-state=refunded]){background:#f1f5f9;color:#475569}
+.pth-cash-row>:is(p,button){grid-column:1/-1}
+.pth-cash-row .pth-cash-note{margin:0!important}
+.pth-cash-reason{font-size:12px;white-space:pre-wrap;color:#475569}
+.pth-cash-detail{border:1px solid #adc5e5;border-top:4px solid var(--cash-blue);border-radius:14px;padding:20px;margin-top:20px;background:#fbfdff}
+.pth-cash-detail h3{margin-bottom:14px}
+.pth-cash-detail-amount{display:block;font-size:25px;color:var(--cash-blue);font-variant-numeric:tabular-nums;margin:8px 0}
+.pth-cash-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.pth-cash .pth-cash-audit-heading{border-top:1px solid var(--cash-line);padding-top:18px;margin-top:18px}
+.pth-cash-audit{list-style:none;padding:0;margin:10px 0}
+.pth-cash-audit li{border-left:2px solid #cbd9eb;padding:0 0 16px 12px;font-size:12px;white-space:pre-wrap}
+.pth-cash-audit li:last-child{padding-bottom:0}
+.pth-cash-audit strong{font-size:12px}
+.pth-cash-audit p{font-size:12px}
+.pth-cash-confirm{display:flex;flex-wrap:wrap;gap:10px;border:1px solid #e6c775;border-radius:10px;background:#fffbeb;padding:14px}
+.pth-cash-confirm p{width:100%;color:#67450e;font-size:13px;font-weight:650}
+.pth-cash-recovery:not(:empty){border:1px solid #e6c775;border-radius:12px;background:#fffbeb;color:#67450e;padding:16px;margin:16px 0}
+.pth-cash-recovery p{font-size:12px;line-height:1.6;margin:8px 0 12px}
+.pth-cash .pth-cash-check{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:start;column-gap:10px}
+.pth-cash-check span{grid-column:2;grid-row:1;font-weight:650;line-height:1.5}
+.pth-cash .pth-cash-check input{grid-column:1;grid-row:1;width:20px;min-height:20px;height:20px;margin:0;accent-color:var(--cash-blue)}
+.pth-cash :is(button,input,textarea,select):focus-visible{outline:3px solid #60a5fa;outline-offset:3px}
+@media(max-width:640px){.pth-cash-header{align-items:flex-start;flex-direction:column}.pth-cash-header>.pth-points-button{width:100%}.pth-cash-list{grid-template-columns:minmax(0,1fr)}.pth-cash-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.pth-cash-metric:last-child:nth-child(odd){grid-column:1/-1}.pth-cash-row{padding:13px}.pth-cash-row h4{grid-column:1/-1}.pth-cash-amount{grid-column:1/-1}.pth-cash-detail{padding:14px}.pth-cash-actions>.pth-points-button{flex:1 1 100%}.pth-cash-filters>.pth-points-button{width:100%}.pth-cash h3{font-size:19px}.pth-cash-receipt{padding:12px}.pth-cash-detail-amount{font-size:22px}}

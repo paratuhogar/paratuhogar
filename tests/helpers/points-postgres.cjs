@@ -12,7 +12,7 @@ async function freePort() {
   return port;
 }
 
-exports.startPointsPostgres = async function startPointsPostgres({ referralOnly = true } = {}) {
+exports.startPointsPostgres = async function startPointsPostgres({ referralOnly = true, cashPayouts = false } = {}) {
   const { default: EmbeddedPostgres } = await import('embedded-postgres');
   const directory = await mkdtemp(path.join(tmpdir(), 'pth-points-postgres-'));
   const port = await freePort();
@@ -32,7 +32,8 @@ exports.startPointsPostgres = async function startPointsPostgres({ referralOnly 
     for (const file of ['tests/fixtures/points-wallet.sql',
       'supabase/proposals/atomic-order-numbering.sql', 'supabase/proposals/subgestor-review.sql',
       'supabase/migrations/20261122115426_points_wallet.sql',
-      ...(referralOnly ? ['supabase/migrations/20261122175858_points_referral_sales_only.sql'] : [])]) {
+      ...(referralOnly ? ['supabase/migrations/20261122175858_points_referral_sales_only.sql'] : []),
+      ...(cashPayouts ? ['supabase/migrations/20261122233906_points_cash_payouts.sql'] : [])]) {
       await pool.query(await readFile(path.join(root, file), 'utf8'));
     }
     return {

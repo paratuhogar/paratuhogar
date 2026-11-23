@@ -180,7 +180,7 @@
  };
  root.PTHSecureData.adoptOfflineProfile=adoptOfflineProfile;
  root.PTHSecureData.accountId=()=>profile?.id||null;
- root.PTHSecureData.pointsWallet=async body=>{
+ for(const [method,action] of [['pointsWallet','points_wallet'],['pointsCash','points_cash']])root.PTHSecureData[method]=async body=>{
   const token=storage.getItem(tokenKey);
   const changed=()=>!token||token!==storage.getItem(tokenKey);
   const sessionError=()=>({data:null,error:{message:'La sesión cambió. Vuelve a abrir la billetera.',code:'SESSION_CHANGED'}});
@@ -191,7 +191,7 @@
   try{await restore();}catch(error){return changed()?sessionError():{data:null,error:{message:error.message,code:error.code||'SESSION_UNAVAILABLE',status:error.status}};}
   if(changed()||verifiedToken!==token)return sessionError();
   const owner=identity(profile);
-  const result=await send({...body,action:'points_wallet'},token);
+  const result=await send({...body,action},token);
   return changed()||identity(profile)!==owner?sessionError():result;
  };
  root.PTHSecureData.expiredCheckoutOwner=()=>expiredCheckoutOwner;

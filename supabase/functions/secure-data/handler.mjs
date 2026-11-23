@@ -6,6 +6,7 @@ import {createCheckoutService,deliveryHouseNumber,houseNumberMessage,isPickupAdd
 import {publicName} from './public-name.mjs';
 import {ranking} from './ranking.mjs';
 import {pointsWallet} from './points-wallet.mjs';
+import {pointsCash} from './points-cash.mjs';
 import {coupons} from './coupons.mjs';
 import {customerBindings} from './customer-bindings.mjs';
 import {reviewSubgestor} from './subgestor-review.mjs';
@@ -328,7 +329,7 @@ async function rpcQuery(db,body,actor) {
   const {data,error,count}=await query;
   return {data,error:error?{message:error.message,code:error.code}:null,count};
 }
-export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,houseNumberRequiredFrom=Infinity,pointsEnabled=false,couponsEnabled=false}) {
+export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequiredFrom,houseNumberRequiredFrom=Infinity,pointsEnabled=false,pointsCashEnabled=false,couponsEnabled=false}) {
   const checkout=createCheckoutService({db,canonicalSale,signingSecret:checkoutSecret,ciRequiredFrom,houseNumberRequiredFrom,pointsEnabled,couponsEnabled});
   return async request=>{
     const origin=request.headers.get('Origin');
@@ -354,7 +355,12 @@ export function createHandler({db,pushEnv={},pushPilot,checkoutSecret,ciRequired
       else if(body.action==='announcement') result=await announcement(db,body,actor);
       else if(body.action==='public_name') result=await publicName(db,body,actor);
       else if(body.action==='ranking') result=await ranking(db,body,actor);
-      else if(body.action==='points_wallet') result=await pointsWallet(db,body,actor);
+      else if(body.action==='points_wallet') result=await pointsWallet(db,body,actor,pointsCashEnabled);
+      else if(body.action==='points_cash') {
+        if(!actor)fail('Inicia sesión para consultar tus cobros por puntos.',401);
+        if(pointsCashEnabled!==true)fail('Los cobros por puntos no están disponibles.',503,'POINTS_CASH_UNAVAILABLE');
+        result=await pointsCash(db,body,actor);
+      }
       else if(body.action==='coupons') result=await coupons(db,body,actor,couponsEnabled);
       else if(body.action==='customer_binding') result=await customerBindings(db,body,actor);
       else if(body.action==='subgestor_review') result=await reviewSubgestor(db,body,actor);

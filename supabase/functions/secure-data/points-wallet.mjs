@@ -1,11 +1,12 @@
 /* Rewards are independent of commission/payment permissions. */
+import {pointsCash} from './points-cash.mjs';
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value);
 const fail=(message,status=400)=>{throw Object.assign(Error(message),{status,publicCode:status===503?'POINTS_UNAVAILABLE':'POINTS_INVALID'});};
 const administrator=actor=>!actor.parent_id&&['admin','administrador','superadmin'].includes(String(actor.rol).toLowerCase());
 const fields={summary:['beneficiaryId','offset'],accounts:['search','offset'],rules:['search','offset'],save_rule:['productId','pointsPerUnit','reason','idempotencyKey'],grant:['beneficiaryId','points','reason','idempotencyKey','captureId'],reverse:['movementId','reason','idempotencyKey'],issues:['offset'],settings:[]};
 const writes=new Set(['grant','reverse','save_rule']);
 const integer=(value,min=0,max=2147483647)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
-export async function pointsWallet(db,body,actor){
+export async function pointsWallet(db,body,actor,pointsCashEnabled=false){
  if(!actor||actor.estado!=='activo'||actor.activo===false)fail('Inicia sesión para consultar tus puntos.',401);
  if(!uuid(actor.id)||String(actor.rol).toLowerCase()==='mensajero')fail('Esta cuenta no puede consultar puntos.',403);
  const allowed=fields[body.operation];if(!allowed)fail('Operación de puntos no válida.');
@@ -33,5 +34,9 @@ export async function pointsWallet(db,body,actor){
  }
  if(!data||typeof data!=='object'||Array.isArray(data))fail('No se pudo comprobar el resultado de los puntos. Vuelve a intentar.',503);
  if(body.operation==='summary'&&data.beneficiary?.id!==(args.beneficiaryId||actor.id))fail('No se pudo verificar el propietario de la billetera.',503);
+ if(body.operation==='summary'&&pointsCashEnabled===true&&['gestor','subgestor','admin','administrador','superadmin'].includes(String(actor.rol).toLowerCase())){
+  const cash=await pointsCash(db,{operation:'summary',...(args.beneficiaryId?{beneficiaryId:args.beneficiaryId}:{})},actor);
+  return {data:{...data,cash:cash.data},error:null};
+ }
  return {data,error:null};
 }

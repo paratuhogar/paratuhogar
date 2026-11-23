@@ -52,3 +52,7 @@ jobs:
         run: |
           npm run check:checkout-release
           node tests/checkout-crm-cache-browser.cjs
+      - name: Verificar incentivos por puntos sin pagos reales
+        run: |
+          npm run test:cash:db
+          npm run test:cash:browser

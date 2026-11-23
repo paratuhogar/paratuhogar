@@ -7,10 +7,10 @@
   const number = value => new Intl.NumberFormat('es').format(Number(value) || 0);
   const operationKey = () => Array.from(root.crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
   let identity = '', generation = 0, expiryTimer = null, dialog, title, status, networkNote, content, opener;
-  let currentProfile = null;
+  let currentProfile = null, cashViews = [];
   const milestones = [5, 10, 25, 50, 100], badgeAge = 5 * 60 * 1000;
   const elapsed = () => root.performance?.now?.() ?? Date.now();
-  let badgeState = {balance:null,checkedAt:null,loading:false,revision:0}, badgeObserver;
+  let badgeState = {balance:null,earned:null,checkedAt:null,loading:false,revision:0}, badgeObserver;
 
   function element(tag, className, text) {
     const node = doc.createElement(tag);
@@ -35,9 +35,11 @@
   }
   const ownerKey = p => p ? JSON.stringify([p.id, p.token, p.rol, p.parent_id || null]) : '';
   const isAdmin = p => !!p && !p.parent_id && adminRoles.has(String(p.rol || '').toLowerCase());
-  function erase() {
+  function detachCash() { for (const view of cashViews.splice(0)) view?.destroy(); }
+  function erase(clearCash = false) {
     generation++;
-    badgeState = {balance:null,checkedAt:null,loading:false,revision:0};
+    detachCash(); if (clearCash) root.PTHPointsCash?.clear();
+    badgeState = {balance:null,earned:null,checkedAt:null,loading:false,revision:0};
     paintBadge(null);
     if (!dialog) return;
     content.replaceChildren(); status.textContent = ''; networkNote.textContent = '';
@@ -45,7 +47,7 @@
   }
   function sync() {
     const next = profile(), key = ownerKey(next);
-    if (key !== identity) { erase(); identity = key; }
+    if (key !== identity) { erase(!!identity); identity = key; }
     currentProfile = next;
     mountEntry('pth-points-open', 'Mis puntos', doc.getElementById('btn-dash-resumen')?.parentElement, !!next, () => open(false));
     mountEntry('pth-points-admin-open', 'Puntos de gestores', doc.getElementById('admin-master-nav'), isAdmin(next), () => open(true));
@@ -78,15 +80,17 @@
     if (!badge || !entry) return;
     badge.textContent = balance === null ? root.navigator.onLine === false ? '—' : '…' : number(balance);
     badge.classList.toggle('pth-points-badge-gain', gain > 0);
-    entry.setAttribute('aria-label', balance === null ? 'Mis puntos, saldo por consultar' : `Mis puntos, ${number(balance)} puntos confirmados`);
-    entry.title = balance === null ? root.navigator.onLine === false ? 'Sin conexión. El saldo no se ha actualizado.' : 'Abre Mis puntos para comprobar el saldo confirmado.' : `${number(balance)} puntos confirmados. Los pendientes no se incluyen.`;
+    const description = badgeState.cash ? 'disponibles' : 'confirmados';
+    entry.setAttribute('aria-label', balance === null ? 'Mis puntos, saldo por consultar' : `Mis puntos, ${number(balance)} puntos ${description}`);
+    entry.title = balance === null ? root.navigator.onLine === false ? 'Sin conexión. El saldo no se ha actualizado.' : 'Abre Mis puntos para comprobar el saldo confirmado.' : `${number(balance)} puntos ${description}. Los pendientes${badgeState.cash ? ' y las reservas' : ''} no se incluyen.`;
   }
   function rememberOwnSummary(data) {
     if (root.navigator.onLine === false || data.beneficiary?.id !== currentProfile?.id || ownerKey(profile()) !== identity) return 0;
     if (!Number.isSafeInteger(data.balance) || data.balance < 0) return 0;
-    const gain = badgeState.balance === null ? 0 : Math.max(0, data.balance - badgeState.balance);
-    badgeState.balance = data.balance; badgeState.checkedAt = elapsed();
-    paintBadge(data.balance, gain);
+    const available = data.cash && Number.isSafeInteger(data.cash.available) && data.cash.available >= 0 ? data.cash.available : data.balance;
+    const gain = badgeState.earned === null ? 0 : Math.max(0, data.balance - badgeState.earned);
+    badgeState.earned = data.balance; badgeState.balance = available; badgeState.cash = !!data.cash; badgeState.checkedAt = elapsed();
+    paintBadge(available, gain);
     return gain;
   }
   async function refreshBadge(force = false) {
@@ -136,14 +140,15 @@
     if (ownerKey(profile()) !== key) { sync(); return false; }
     return generation === stamp && identity === key;
   }
-  async function request(body) {
+  async function request(body, cash = false) {
     const stamp = generation, key = identity;
     if (!key || !valid(stamp, key)) throw Object.assign(Error('La sesión cambió.'), { stale: true });
     if (root.navigator.onLine === false) throw Object.assign(Error('Sin conexión. Conéctate y vuelve a intentarlo.'), { code: 'OFFLINE' });
     let result;
     try {
-      if (!root.PTHSecureData?.pointsWallet) throw Error('La sección de puntos no está disponible. Actualiza la página.');
-      result = await root.PTHSecureData.pointsWallet(body);
+      const transport = cash ? root.PTHSecureData?.pointsCash : root.PTHSecureData?.pointsWallet;
+      if (!transport) throw Error('La sección de puntos no está disponible. Actualiza la página.');
+      result = await transport(body);
     } catch (error) {
       if (!valid(stamp, key)) throw Object.assign(Error('La sesión cambió.'), { stale: true });
       throw Object.assign(Error(error.message || 'No se pudo conectar.'), { code: error.code || 'NETWORK_ERROR' });
@@ -151,7 +156,7 @@
     if (!valid(stamp, key)) throw Object.assign(Error('La sesión cambió.'), { stale: true });
     if (result?.error) {
       if (['SESSION_CHANGED', 'SESSION_EXPIRED'].includes(result.error.code) || result.error.status === 401) {
-        erase();
+        erase(true);
         throw Object.assign(Error('La sesión cambió. Vuelve a abrir los puntos.'), { stale: true });
       }
       throw Object.assign(Error(result.error.message || 'No se pudo completar la operación.'), result.error);
@@ -165,14 +170,28 @@
     ensureDialog(); generation++; opener = doc.activeElement;
     dialog.dataset.view = admin ? 'admin' : 'own';
     title.textContent = admin ? 'Puntos de gestores' : 'Mis puntos';
+    detachCash();
     content.replaceChildren(); setStatus(''); networkNote.hidden = true;
     if (!dialog.open) dialog.showModal();
     if (root.navigator.onLine === false) connection();
     if (admin) renderAdmin();
     else {
-      const host = element('section'); content.append(host);
-      const view = summaryView(host);
-      content.prepend(button('Actualizar puntos', () => view.refresh(), 'pth-points-refresh'));
+      const host = element('section'), cashHost = element('section'); content.append(host, cashHost);
+      let cashView = null;
+      const view = summaryView(host, undefined, false, data => {
+        if (!data) return;
+        if (data.cash && root.PTHPointsCash && !cashView) {
+          cashView = root.PTHPointsCash.mount({container:cashHost,admin:false,profile:currentProfile,request:body => request(body,true),onChanged:() => view.refresh()});
+          if (cashView) cashViews.push(cashView);
+        } else if (!data.cash && cashView) {cashView.destroy();cashView = null;}
+      });
+      const refresh = button('Actualizar puntos', async () => {
+        if (refresh.disabled) return;
+        refresh.disabled = true;
+        try {await view.refresh();await cashView?.refresh();}
+        finally {if (refresh.isConnected) refresh.disabled = false;}
+      }, 'pth-points-refresh');
+      content.prepend(refresh);
     }
     return true;
   }
@@ -187,9 +206,9 @@
     const main = element('div', 'pth-points-hero-main');
     main.append(element('span', 'pth-points-hero-tag', '✦ TU ESFUERZO SUMA'));
     main.append(element('h3', 'pth-points-hero-heading', completed ? '¡Completaste tu ruta!' : balanceValue === 0 ? 'Aquí empieza tu próxima meta.' : 'Cada venta te lleva más lejos.'));
-    main.append(element('p', 'pth-points-hero-label', 'Puntos confirmados'));
+    main.append(element('p', 'pth-points-hero-label', data.cash ? 'Puntos disponibles' : 'Puntos confirmados'));
     const amount = element('div', 'pth-points-hero-amount');
-    const balance = element('strong', 'pth-points-balance', number(balanceValue)); balance.id = 'pth-points-balance';
+    const balance = element('strong', 'pth-points-balance', number(data.cash?.available ?? balanceValue)); balance.id = 'pth-points-balance';
     amount.append(balance, element('span', '', 'puntos')); main.append(amount);
     const ring = element('div', 'pth-points-goal-ring');
     ring.setAttribute('role', 'progressbar'); ring.setAttribute('aria-label', completed ? 'Ruta de 100 puntos completada' : `Avance hacia ${target} puntos`);
@@ -207,7 +226,7 @@
     ring.append(svg,center); hero.append(main,ring);
     const footer = element('div', 'pth-points-hero-footer');
     footer.append(element('p', '', completed ? 'Tus puntos siguen sumando. ¡Sigue construyendo tu historia!' : `Te faltan ${number(target - balanceValue)} puntos para tu próximo hito.`));
-    footer.append(button('Explorar catálogo', () => { dialog.close(); root.showSection?.('catalogo'); }, 'pth-points-explore'));
+    if (!data.cash) footer.append(button('Explorar catálogo', () => { dialog.close(); root.showSection?.('catalogo'); }, 'pth-points-explore'));
     hero.append(footer);
     const route = element('section', 'pth-points-route');
     route.append(element('h3', '', 'Tu ruta de puntos'));
@@ -218,7 +237,7 @@
       if (value === next) item.setAttribute('aria-current','step');
       list.append(item);
     }
-    route.append(list,element('p', '', 'Hitos visuales personales. No representan premios ni canjes.'));
+    route.append(list,element('p', '', data.cash ? 'Hitos por puntos ganados. Cobrar o liberar reservas no cambia tu ruta.' : 'Hitos visuales personales. No representan premios ni canjes.'));
     const wrapper = element('div', 'pth-points-own-progress');
     if (gain > 0) { const celebration = element('p','pth-points-celebration',`Sumaste ${number(gain)} puntos confirmados.`); celebration.setAttribute('role','status'); wrapper.append(celebration); }
     wrapper.append(hero,route);
@@ -398,10 +417,19 @@
     const workspace = element('section', 'pth-points-workspace');
     content.append(nav, settings, workspace);
     const tabs = [ ['Cuentas', () => accounts(workspace)], ['Reglas por producto', () => rules(workspace)], ['Ventas por revisar', () => issues(workspace)] ];
-    for (const [label, render] of tabs) {
-      const tab = button(label, () => { workspace.replaceChildren(); for (const sibling of nav.children) sibling.setAttribute('aria-pressed', String(sibling === tab)); setStatus(''); render(); });
+    function addTab(label, render) {
+      const tab = button(label, () => { detachCash(); workspace.replaceChildren(); for (const sibling of nav.children) sibling.setAttribute('aria-pressed', String(sibling === tab)); setStatus(''); render(); });
       tab.setAttribute('aria-pressed', String(!nav.children.length)); nav.append(tab);
     }
+    for (const [label, render] of tabs) addTab(label,render);
+    if (root.PTHPointsCash) request({operation:'summary',offset:0}).then(data => {
+      if (data.cash && nav.isConnected) addTab('Solicitudes de cobro',() => {
+        const view = root.PTHPointsCash.mount({container:workspace,admin:true,profile:currentProfile,request:body => request(body,true),onChanged:() =>
+          request({operation:'summary',offset:0}).then(rememberOwnSummary).catch(() => {})
+        });
+        if (view) cashViews.push(view);
+      });
+    }).catch(() => {});
     request({operation:'settings'}).then(data => {
       if (settings.isConnected) settings.textContent = data.enabled ? 'Programa activo para ventas nuevas.' : 'Programa detenido para ventas nuevas. El historial se conserva.';
     }).catch(failure => { if (!failure.stale && settings.isConnected) settings.textContent = 'No se pudo consultar el estado del programa.'; });
