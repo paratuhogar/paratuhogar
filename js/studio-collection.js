@@ -137,9 +137,12 @@
      } finally { canvas.width = canvas.height = 1; }
      progress(index + 1, count, 'Preparando todas las imágenes'); await tick();
     }
-    const text = J.copy(products, options), file = count === 1 ? await this.cache.get(job.id, 0, signal).then(row => { if (!row?.blob) throw missingError(); return new File([row.blob], row.name, { type: 'image/jpeg' }); }) : await archive(this.cache, job, text, token, signal, progress);
+    let text, copyError = false;
+    try { text = await J.wait(J.prepareCopy(products, options), signal); }
+    catch (error) { J.assertScope(token, signal); text = J.copy(products, options); copyError = true; }
+    const file = count === 1 ? await this.cache.get(job.id, 0, signal).then(row => { if (!row?.blob) throw missingError(); return new File([row.blob], row.name, { type: 'image/jpeg' }); }) : await archive(this.cache, job, text, token, signal, progress);
     J.assertScope(token, signal); if (epoch !== this.epoch) throw abortError();
-    this.ready = { archive: file, files: [], text, products: products.map(J.publicProduct), token, at: Date.now(), bytes: job.bytes, total: count, shareStart: 0, shareNext: 0 };
+    this.ready = { archive: file, files: [], text, copyError, copyOptions:{ ...options }, products: products.map(J.publicProduct), token, at: Date.now(), bytes: job.bytes, total: count, shareStart: 0, shareNext: 0 };
     await this.loadShare(0, signal);
     this.expiryTimer = setTimeout(() => { this.cancel(); this.onExpire?.(); }, J.MAX_AGE);
     progress(count, count, 'Selección completa preparada'); return this.ready;

@@ -494,14 +494,11 @@ async function sendWelcomeBackMsg(id, nombre, telefono, password) {
     if (telLimpio.length === 8) telLimpio = '53' + telLimpio;
 
     const baseUrl = window.location.origin + window.location.pathname;
-    const longLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${telLimpio}`;
+    const longLink = window.PTHAffiliate.link(baseUrl, { id, nombre, telefono:telLimpio });
 
-    let affiliateLink = longLink;
-    try {
-        if(typeof getOrGenerateShortLink === 'function') {
-            affiliateLink = await getOrGenerateShortLink(nombre, longLink);
-        }
-    } catch(e) { console.log("Usando link largo por defecto"); }
+    let affiliateLink;
+    try { affiliateLink = await getOrGenerateShortLink(nombre, longLink); }
+    catch (error) { return alert('No se pudo preparar el enlace corto. Comprueba la conexión y vuelve a intentar.'); }
 
     await supabaseClient
         .from('gestores')

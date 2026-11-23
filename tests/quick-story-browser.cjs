@@ -1,11 +1,11 @@
 // Actual quick UI, secure client, renderer and JPEGs. All traffic is intercepted.
 const { chromium } = require('playwright'), fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..'), out = '/tmp/pth-quick-story-tested';
-const profile = { id: 'actor-a', nombre: 'Contacto prueba', telefono: '5350000000', rol: 'gestor', estado: 'activo' };
+const profile = { id: '11111111-1111-4111-a111-111111111111', nombre: 'Contacto prueba', telefono: '5350000000', rol: 'gestor', estado: 'activo' };
 const products = Array.from({ length: 503 }, (_, i) => ({ id: 'p' + i, nombre: 'Nevera prueba ' + i, precio: 100 + i, precio_flexible: 'SI', disponible: 'SI', comision: 20, costo_proveedor: 'PRIVATE_SENTINEL', categoria: 'NEVERAS', thumbnail: 'test-' + i + '.svg', descripcion: '20 pies. Inverter.', garantia: '1 mes', mensajeria: 'Mensajería por costo adicional' }));
 const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900"><rect width="600" height="900" fill="white"/><rect x="125" y="70" width="350" height="750" rx="12" fill="#adb5bd"/><path d="M300 70v750" stroke="#344256" stroke-width="7"/></svg>';
-const fixture = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}</style><script src="/sdk.js" defer></script><script src="/js/secure-data.js" defer></script><script src="/js/internal-assets.js" defer></script></head><body><button id="opener">Crear Story</button><script>addEventListener('DOMContentLoaded',()=>{window.client=supabase.createClient('https://ljqwaovevfatkiigirhf.supabase.co','test-publishable');window.launch=async options=>{if(await PTHAssets.ensure('story'))window.story=PTHQuickStory.open(client,options)};document.getElementById('opener').onclick=()=>launch({productId:'p0'});});</script></body></html>`;
-const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Promise.resolve({data:[],error:null}).then(ok)}},rpc(){}}}};`;
+const fixture = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}</style><script src="/sdk.js" defer></script><script src="/js/secure-data.js" defer></script><script src="/js/short-links.js" defer></script><script src="/js/internal-assets.js" defer></script></head><body><button id="opener">Crear Story</button><script>addEventListener('DOMContentLoaded',()=>{window.client=supabase.createClient('https://ljqwaovevfatkiigirhf.supabase.co','test-publishable');window.launch=async options=>{if(await PTHAssets.ensure('story'))window.story=PTHQuickStory.open(client,options)};document.getElementById('opener').onclick=()=>launch({productId:'p0'});});</script></body></html>`;
+const sdk = fs.readFileSync(path.join(root,'js/vendor/supabase-2.57.4.js'),'utf8');
 (async () => {
  fs.mkdirSync(out, { recursive: true }); const { validateQuery } = await import('../supabase/functions/secure-data/handler.mjs');
  const browser = await chromium.launch({ executablePath: process.env.PTH_CHROMIUM || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
@@ -13,15 +13,20 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   for (const width of [320, 390, 1280]) {
    let version = 0, delay = false, imageFailure = false, hidden = false, sub = false, denied = false, offline = false, failLoad = width === 320;
    const context = await browser.newContext({ viewport: { width, height: 844 }, acceptDownloads: true }), page = await context.newPage();
-   const requests = [], queries = [], errors = [], alerts = [];
+   const requests = [], queries = [], errors = [], alerts = [], shortRows = [];
    page.on('pageerror', error => errors.push(error.message)); page.on('dialog', async dialog => { alerts.push(dialog.message()); await dialog.dismiss(); });
-   await page.addInitScript(() => { localStorage.setItem('pth_secure_token', 'actor-a-token'); window.createdURLs = []; window.revokedURLs = []; const create = URL.createObjectURL.bind(URL), revoke = URL.revokeObjectURL.bind(URL); URL.createObjectURL = blob => { const url = create(blob); createdURLs.push(url); return url; }; URL.revokeObjectURL = url => { revokedURLs.push(url); revoke(url); }; navigator.canShare = data => data.files.length === 1; window.shareCalls = []; navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive, keys: Object.keys(data) }); return Promise.resolve(); }; });
+   await page.addInitScript(() => { localStorage.setItem('pth_secure_token', '11111111-1111-4111-a111-111111111111-token'); window.createdURLs = []; window.revokedURLs = []; const create = URL.createObjectURL.bind(URL), revoke = URL.revokeObjectURL.bind(URL); URL.createObjectURL = blob => { const url = create(blob); createdURLs.push(url); return url; }; URL.revokeObjectURL = url => { revokedURLs.push(url); revoke(url); }; navigator.canShare = data => data.files.length === 1; window.shareCalls = []; navigator.share = data => { shareCalls.push({ count: data.files.length, activation: navigator.userActivation.isActive, keys: Object.keys(data) }); return Promise.resolve(); }; });
    await page.route('**/*', async route => {
     const url = new URL(route.request().url()); requests.push(url.href);
+    if (url.pathname === '/rest/v1/short_links') {
+     if(route.request().method()==='POST'){shortRows.push(route.request().postDataJSON()[0]);return route.fulfill({status:201,body:''});}
+     const rows=shortRows.filter(row=>['slug','original_url','gestor'].every(k=>!url.searchParams.has(k)||url.searchParams.get(k)==='eq.'+row[k]));
+     return route.fulfill({json:rows});
+    }
     if (url.pathname === '/functions/v1/secure-data') {
      if (offline) return route.abort('internetdisconnected');
      if (denied) return route.fulfill({ status: 403, json: { data: null, error: { message: 'Sesión vencida', status: 403 } } });
-     const body = route.request().postDataJSON(), actor = sub ? { ...profile, id: 'child-a', parent_id: profile.id, parent_nombre: profile.nombre } : profile;
+     const body = route.request().postDataJSON(), actor = sub ? { ...profile, id: '22222222-2222-4222-a222-222222222222', parent_id: profile.id, parent_nombre: profile.nombre } : profile;
      assert.ok(['session', 'query'].includes(body.action), 'Story must not mutate business data');
      if (delay) await new Promise(resolve => setTimeout(resolve, 350));
      if (body.action === 'session') return route.fulfill({ json: { data: { profile: actor }, error: null } });

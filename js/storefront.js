@@ -34,6 +34,7 @@
     const SUPABASE_URL = 'https://ljqwaovevfatkiigirhf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_DAuFcu0JjUo15yLDAev3MQ_9x5GIVXt'; // Asegúrate que esta sea la 'anon key'
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.PTHShortLinks?.configure(supabaseClient);
 
     // Alertas del Radar para gestores conectados en cualquier sección de la tienda.
     supabaseClient
@@ -71,52 +72,31 @@
         });
 
 async function checkShortLinks() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const slug = urlParams.get('s');
-
-    if (slug) {
-        // 1. BANDERA DE SEGURIDAD: Avisamos al navegador que estamos saltando
+    const slug = new URLSearchParams(window.location.search).get('s');
+    if (!slug) { sessionStorage.removeItem('pth_redirecting'); return false; }
+    try {
         sessionStorage.setItem('pth_redirecting', 'true');
-
-        const { data, error } = await supabaseClient
-            .from('short_links')
-            .select('*')
-            .eq('slug', slug)
-            .single();
-
-        if (data && !error) {
-            let telOriginal = "";
-            try {
-                const urlObj = new URL(data.original_url);
-                telOriginal = urlObj.searchParams.get('contact') || urlObj.searchParams.get('tel') || "";
-            } catch(e) {}
-
-            if (!telOriginal) {
-                const { data: gestorDB } = await supabaseClient
-                    .from('gestores')
-                    .select('telefono')
-                    .eq('nombre', data.gestor)
-                    .single();
-                if (gestorDB) telOriginal = gestorDB.telefono;
-            }
-
-            window.PTHAffiliate.remember({nombre:data.gestor, telefono:telOriginal});
-
-            // Redirigir
-            const target = new URL(data.original_url, window.location.origin);
-            window.location.href = !window.PTHAffiliate.incoming(target.search) && data.gestor
-                ? window.PTHAffiliate.link(target, {nombre:data.gestor, telefono:telOriginal}) : target.toString();
-
-            // Detener ejecución para que no se registre nada en esta página intermedia
-            return true;
+        if (!window.PTHShortLinks) throw Error('Enlaces no disponibles.');
+        const resolved = await window.PTHShortLinks.resolve(slug);
+        const target = new URL(resolved.url);
+        // Original UUID wins over labels and remembered parent/customer ownership.
+        if (!window.PTHAffiliate.incoming(target.search) && resolved.row.gestor && target.origin === 'https://paratuhogar.org') {
+            target.searchParams.set('ref', resolved.row.gestor);
         }
-    } else {
-        // Si NO hay slug, significa que ya aterrizamos. Quitamos la bandera.
-        // Pero lo hacemos con un pequeño delay para que el trackSpy no se dispare antes de tiempo
-        setTimeout(() => {
-            sessionStorage.removeItem('pth_redirecting');
-        }, 2000);
+        window.location.replace(target.href);
+    } catch (_) {
+        sessionStorage.removeItem('pth_redirecting');
+        document.getElementById('pth-short-link-error')?.remove();
+        const panel = document.createElement('section');
+        panel.id = 'pth-short-link-error'; panel.setAttribute('role', 'alert');
+        panel.style.cssText = 'position:fixed;inset:0;z-index:20000;background:#f8fafc;display:grid;place-content:center;padding:24px;text-align:center;color:#102b4e';
+        const title = document.createElement('h1'); title.textContent = 'No pudimos abrir este enlace';
+        const detail = document.createElement('p'); detail.textContent = 'Comprueba la conexión y reintenta. No se cambiará el gestor de este enlace.';
+        const retry = document.createElement('button'); retry.textContent = 'Reintentar'; retry.onclick = () => window.location.reload();
+        panel.append(title, detail, retry); document.body.append(panel);
     }
+    // An unresolved referral cannot fall through into an anonymous checkout.
+    return true;
 }
 
 // The startup handler resolves short links once before attribution/catalogue.
@@ -372,10 +352,8 @@ async function checkShortLinks() {
 
     // ... aquí sigue tu código original (await checkShortLinks(); etc...)
     // 1. Procesar identificación (Link corto y Referral) primero
-    if (navigator.onLine !== false) {
-        if (await checkShortLinks()) return;
-        await initSmartReferral();
-    }
+    if (await checkShortLinks()) return;
+    if (navigator.onLine !== false) await initSmartReferral();
 
     try {
         if (navigator.onLine === false || !window.PTHSecureData.token() && window.PTHSecureData.offlineProfile?.()) {
@@ -1293,6 +1271,7 @@ function renderMyOrdersList(lista) {
     if(document.getElementById('sec-links-gestor')) document.getElementById('sec-links-gestor').remove();
 
     const userData = window.currentUserData || {};
+    const linkSession = window.PTHSecureData.token();
     const baseUrl = window.location.origin + window.location.pathname;
 
     // --- BYPASS MODO DIOS (Marcel siempre Nivel 5) ---
@@ -1318,7 +1297,10 @@ function renderMyOrdersList(lista) {
     if (diasDuracion >= 365) diasDuracion = "1 AÑO";
 
     const myLongLink = window.PTHAffiliate.link(baseUrl, userData);
-    const linkParaMostrar = await getOrGenerateShortLink(nombre, myLongLink);
+    let linkParaMostrar = '';
+    try { linkParaMostrar = await getOrGenerateShortLink(nombre, myLongLink); }
+    catch (_) { /* Keep the dashboard usable; copying retries without a long fallback. */ }
+    if (window.currentUserData?.id !== userData.id || window.PTHSecureData.token() !== linkSession) return;
 
     // CAMBIO VISUAL: Quitamos mt-6 (margen arriba) y pusimos mb-8 (margen abajo)
     const html = `
@@ -1341,15 +1323,15 @@ function renderMyOrdersList(lista) {
             </p>
 
             <div class="flex gap-2 mb-4">
-                <input type="text" id="my-link-input" value="${linkParaMostrar}" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-gray-200 font-bold text-gray-500 shadow-inner focus:ring-0">
-                <button onclick="copy('my-link-input')" class="bg-primary hover:bg-[#2c6fb5] text-white px-6 rounded-xl font-black text-xs uppercase shadow-md transition-colors active:scale-95">Copiar</button>
+                <input type="text" id="my-link-input" value="${linkParaMostrar}" placeholder="Comprueba la conexión y pulsa Copiar para reintentar" readonly class="w-full bg-gray-50 dark:bg-gray-900 text-xs p-3 rounded-xl border-gray-200 font-bold text-gray-500 shadow-inner focus:ring-0">
+                <button onclick="copyGestorStoreLink()" class="bg-primary hover:bg-[#2c6fb5] text-white px-6 rounded-xl font-black text-xs uppercase shadow-md transition-colors active:scale-95">Copiar</button>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="window.open('https://wa.me/?text=${encodeURIComponent('Catálogo: ' + linkParaMostrar)}')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-transform">
+                <button onclick="shareGestorStoreLink('wa')" class="py-3 bg-[#25D366] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-transform">
                     <i class="fab fa-whatsapp text-lg"></i> Enviar por WhatsApp
                 </button>
-                <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkParaMostrar)}')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-transform">
+                <button onclick="shareGestorStoreLink('fb')" class="py-3 bg-[#1877F2] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-[1.02] transition-transform">
                     <i class="fab fa-facebook text-lg"></i> Compartir Facebook
                 </button>
             </div>
@@ -1588,15 +1570,7 @@ async function loadProducts() {
         ]);
         window.activeSalesHierarchy = salesHierarchy;
 
-        // Saneamiento de variables y redirección (Se mantiene intacto)
-        if (slug) {
-            const { data } = await supabaseClient.from('short_links').select('original_url, gestor').eq('slug', slug).single();
-            if (data) {
-                registrarRastroIP(data.gestor);
-                window.location.href = data.original_url;
-                return;
-            }
-        }
+        if (slug) { await checkShortLinks(); return; }
 
         if (urlGestor) {
             registrarRastroIP(urlGestor);
@@ -2165,27 +2139,6 @@ function getPermanentProductUrl(productOrName, absolute = false) {
     return absolute ? `${window.location.origin}${path}` : path;
 }
 
-function makeOpaqueAttributedFallback(longLink) {
-    try {
-        const url = new URL(longLink, window.location.origin);
-        const ref = url.searchParams.get('ref');
-        const contact = url.searchParams.get('contact');
-        if (!ref) return longLink;
-        const payload = JSON.stringify({ n: ref, t: contact || '' });
-        const token = btoa(unescape(encodeURIComponent(payload)))
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/g, '');
-        url.searchParams.delete('ref');
-        url.searchParams.delete('gestor');
-        url.searchParams.delete('contact');
-        url.searchParams.delete('tel');
-        url.searchParams.set('r', token);
-        return url.toString();
-    } catch (error) {
-        return longLink;
-    }
-}
 
 function openProductCard(event, productName) {
     if (event) event.preventDefault();
@@ -2343,7 +2296,7 @@ function openTechnicalSheet(encodedUrl) {
 async function copyTechnicalSheetLink(encodedUrl, button) {
     const url = normalizeTechnicalSheetUrl(decodeURIComponent(encodedUrl || ''));
     if (!url) return alert('La ficha técnica no tiene un enlace válido.');
-    let shareUrl = url;
+    let shareUrl = '';
     try {
         const manager = window.gestorName || 'ParaTuHogar';
         shareUrl = await getOrGenerateShortLink(manager, url);
@@ -2352,7 +2305,8 @@ async function copyTechnicalSheetLink(encodedUrl, button) {
         if (button) button.innerHTML = '<span class="material-symbols-outlined text-base">check</span> Copiado';
         setTimeout(() => { if (button && original) button.innerHTML = original; }, 1600);
     } catch (error) {
-        window.prompt('Copia el enlace de la ficha técnica:', shareUrl);
+        if (shareUrl) window.prompt('Copia el enlace de la ficha técnica:', shareUrl);
+        else alert('No se pudo preparar el enlace corto. Comprueba la conexión y vuelve a intentar.');
     }
 }
 
@@ -2362,7 +2316,9 @@ async function shareTechnicalSheetWhatsApp(encodedUrl, encodedProduct) {
     if (!url) return alert('La ficha técnica no tiene un enlace válido.');
     const shareWindow = window.open('about:blank', '_blank');
     const manager = window.gestorName || 'ParaTuHogar';
-    const shortUrl = await getOrGenerateShortLink(manager, url);
+    let shortUrl;
+    try { shortUrl = await getOrGenerateShortLink(manager, url); }
+    catch (error) { shareWindow?.close(); return alert(error.message); }
     const message = `Te comparto la ficha técnica de *${productName}*:\n${shortUrl}\n\nSi tienes alguna duda, puedo ayudarte a revisar sus características.`;
     const destination = `https://wa.me/?text=${encodeURIComponent(message)}`;
     if (shareWindow) shareWindow.location.replace(destination);
@@ -4103,25 +4059,43 @@ function getGestorStoreLink() {
     return window.PTHAffiliate.link(base, {...data,nombre:window.gestorName || data.nombre});
 }
 
-async function copyGestorStoreLink() {
-    const originalLink = getGestorStoreLink();
-    const manager = window.gestorName || window.currentUserData?.nombre || 'ParaTuHogar';
-    const link = await getOrGenerateShortLink(manager, originalLink);
-    if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(link).then(() => alert('✅ Enlace de tu tienda copiado.'));
-    } else {
-        const temp = document.createElement('textarea');
-        temp.value = link;
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand('copy');
-        temp.remove();
-        alert('✅ Enlace de tu tienda copiado.');
-    }
+async function verifiedGestorStoreLink() {
+    const account = window.currentUserData;
+    if (!window.PTHAffiliate.uuid(account?.id)) throw Error('Recarga la web para comprobar tu cuenta.');
+    const original = window.PTHAffiliate.link('https://paratuhogar.org/', account);
+    const link = await window.PTHShortLinks.shorten(original, { gestor:account.nombre, expectedRef:account.id });
+    if (window.currentUserData?.id !== account.id) throw Error('La sesión cambió. Vuelve a intentar.');
+    const input = document.getElementById('my-link-input'); if (input) input.value = link;
+    return link;
 }
 
-function openGestorClientView() {
-    window.open(getGestorStoreLink(), '_blank', 'noopener');
+async function copyGestorStoreLink() {
+    try {
+        const link = await verifiedGestorStoreLink();
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(link);
+        else {
+            const temp = document.createElement('textarea'); temp.value = link; document.body.appendChild(temp);
+            temp.select(); const copied = document.execCommand('copy'); temp.remove();
+            if (!copied) throw Error('No se pudo copiar. Selecciona el enlace corto y cópialo.');
+        }
+        alert('✅ Enlace de tu tienda copiado.');
+    } catch (error) { alert(error.message || 'No se pudo preparar el enlace corto. Comprueba la conexión y vuelve a intentar.'); }
+}
+
+async function shareGestorStoreLink(network) {
+    const tab = window.open('about:blank', '_blank');
+    try {
+        const link = await verifiedGestorStoreLink();
+        const destination = network === 'fb' ? 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link)
+            : 'https://wa.me/?text=' + encodeURIComponent('Catálogo: ' + link);
+        if (tab) tab.location.replace(destination); else window.location.href = destination;
+    } catch (error) { tab?.close(); alert(error.message); }
+}
+
+async function openGestorClientView() {
+    const tab = window.open('about:blank', '_blank');
+    try { const link = await verifiedGestorStoreLink(); if (tab) tab.location.replace(link); else window.location.href = link; }
+    catch (error) { tab?.close(); alert(error.message); }
 }
 
 function getGestorFollowupStats() {
@@ -6079,10 +6053,11 @@ function showSection(section) {
         const base = window.location.origin + window.location.pathname;
         const adminLongLink = `${base}?ref=${encodeURIComponent(name)}&contact=${tel}&admin=true`;
         const clientLongLink = `${base}?ref=${encodeURIComponent(name)}&contact=${tel}`;
-        const [adminLink, clientLink] = await Promise.all([
+        let adminLink, clientLink;
+        try { [adminLink, clientLink] = await Promise.all([
             getOrGenerateShortLink(name, adminLongLink),
             getOrGenerateShortLink(name, clientLongLink)
-        ]);
+        ]); } catch (error) { return alert(error.message); }
         document.getElementById('link-admin').value = adminLink;
         document.getElementById('link-client').value = clientLink;
         document.getElementById('links-result').classList.remove('hidden');
@@ -6480,14 +6455,8 @@ async function approveAndWelcomeGestor(id, nombre, telefono, password) {
 
         // 3. Generar Link Corto
         const baseUrl = window.location.origin + window.location.pathname;
-        const longLink = `${baseUrl}?ref=${encodeURIComponent(nombre)}&contact=${telLimpio}`;
-        let affiliateLink = longLink;
-
-        try {
-            if(typeof getOrGenerateShortLink === 'function') {
-                affiliateLink = await getOrGenerateShortLink(nombre, longLink);
-            }
-        } catch(e) { console.log("Usando link largo por defecto"); }
+        const longLink = window.PTHAffiliate.link(baseUrl, { id, nombre, telefono:telLimpio });
+        const affiliateLink = await getOrGenerateShortLink(nombre, longLink);
 
         // 4. Construir el mensaje exacto que pediste (Con Grupo de WA)
         const mensaje = `¡Hola *${nombre}*! 👋 Te escribo del equipo de *ParaTuHogar*.
@@ -7701,116 +7670,21 @@ function clearImageSlot(event, index) {
     }
 
 // --- SERVICIO CENTRAL DE ENLACES CORTOS ---
-// Reutiliza enlaces existentes, evita consultas repetidas con caché local y
-// conserva siempre el enlace largo como respaldo si Supabase no responde.
-const pendingShortLinkRequests = new Map();
-const SHORT_LINK_CACHE_KEY = 'pth_short_links_cache_v2';
-const SHORT_LINK_CACHE_LIMIT = 250;
-
-function getShortLinkCache() {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(SHORT_LINK_CACHE_KEY) || '[]');
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-        return [];
-    }
-}
-
-function findCachedShortLink(gestor, longLink) {
-    return getShortLinkCache().find(entry =>
-        entry.gestor === gestor && entry.original === longLink)?.short || '';
-}
-
-function cacheShortLink(gestor, longLink, shortLink) {
-    if (!shortLink || shortLink === longLink) return;
-    const withoutDuplicate = getShortLinkCache().filter(entry =>
-        !(entry.gestor === gestor && entry.original === longLink));
-    withoutDuplicate.unshift({
-        gestor,
-        original: longLink,
-        short: shortLink,
-        savedAt: Date.now()
-    });
-    try {
-        localStorage.setItem(SHORT_LINK_CACHE_KEY, JSON.stringify(withoutDuplicate.slice(0, SHORT_LINK_CACHE_LIMIT)));
-    } catch (error) {
-        // La falta de espacio local nunca debe impedir que se comparta.
-    }
-}
-
-function createShortSlug(length = 7) {
-    const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
-    if (window.crypto?.getRandomValues) {
-        const values = new Uint32Array(length);
-        window.crypto.getRandomValues(values);
-        return Array.from(values, value => alphabet[value % alphabet.length]).join('');
-    }
-    return Math.random().toString(36).slice(2, 2 + length);
-}
-
-async function requestShortLink(gestor, longLink) {
-    const { data: existing, error: fetchError } = await supabaseClient
-        .from('short_links')
-        .select('slug')
-        .eq('gestor', gestor)
-        .eq('original_url', longLink)
-        .limit(1)
-        .maybeSingle();
-    if (fetchError) throw fetchError;
-    if (existing?.slug) {
-        return `${window.location.origin}/?s=${existing.slug}`;
-    }
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-        const slug = createShortSlug();
-        const { error } = await supabaseClient.from('short_links').insert([{
-            slug,
-            original_url: longLink,
-            gestor
-        }]);
-        if (!error) return `${window.location.origin}/?s=${slug}`;
-        if (error.code !== '23505') throw error;
-    }
-    throw new Error('No fue posible generar un código corto único.');
-}
-
+// No long/opaque fallback: the action can be retried without sharing a bad URL.
 async function getOrGenerateShortLink(gestor, longLink) {
-    const cleanGestor = String(gestor || window.gestorName || 'ParaTuHogar').trim();
-    let cleanLongLink = String(longLink || '').trim();
-    if (!cleanLongLink) return '';
-    if (/[?&]s=[a-z0-9]+(?:&|$)/i.test(cleanLongLink)) return cleanLongLink;
-    if (window.PTHAffiliate) {
-        try {
-            const target = new URL(cleanLongLink, window.location.origin);
-            const ref = target.searchParams.get('ref') || target.searchParams.get('gestor');
-            if (ref && !window.PTHAffiliate.uuid(ref)) {
-                const hierarchy = await resolveSalesHierarchy(ref);
-                if (hierarchy?.agent?.id) cleanLongLink = window.PTHAffiliate.link(target, {...hierarchy.agent,telefono:target.searchParams.get('contact') || hierarchy.agent.telefono});
-            }
-        } catch (_) { /* Unresolved legacy identity is never silently reassigned. */ }
+    if (!window.PTHShortLinks) throw Error('Recarga la web para preparar el enlace corto.');
+    const target = window.PTHShortLinks.target(longLink);
+    const ref = target.searchParams.get('ref') || target.searchParams.get('gestor');
+    if (ref && !window.PTHAffiliate.uuid(ref)) {
+        const hierarchy = await resolveSalesHierarchy(ref);
+        if (!hierarchy?.agent?.id) throw Error('No se pudo comprobar el gestor del enlace. Vuelve a intentarlo.');
+        return window.PTHShortLinks.shorten(window.PTHAffiliate.link(target, hierarchy.agent), {
+            gestor: hierarchy.agent.nombre, expectedRef: hierarchy.agent.id
+        });
     }
-
-    const cached = findCachedShortLink(cleanGestor, cleanLongLink);
-    if (cached) return cached;
-
-    const requestKey = `${cleanGestor}\n${cleanLongLink}`;
-    if (pendingShortLinkRequests.has(requestKey)) return pendingShortLinkRequests.get(requestKey);
-
-    const request = requestShortLink(cleanGestor, cleanLongLink)
-        .then(shortLink => {
-            cacheShortLink(cleanGestor, cleanLongLink, shortLink);
-            return shortLink;
-        })
-        .catch(error => {
-            console.error('Error generando enlace corto:', error);
-            // Respaldo opaco: conserva la atribución sin mostrar nombres de
-            // parámetros, nombre del gestor ni teléfono en la dirección.
-            return makeOpaqueAttributedFallback(cleanLongLink);
-        })
-        .finally(() => pendingShortLinkRequests.delete(requestKey));
-
-    pendingShortLinkRequests.set(requestKey, request);
-    return request;
+    return window.PTHShortLinks.shorten(target.href, {
+        gestor: String(gestor || 'ParaTuHogar'), expectedRef: window.PTHAffiliate.uuid(ref) ? ref : ''
+    });
 }
 
     // Función para copiar texto de venta profesional con enlace de afiliado
@@ -7828,7 +7702,9 @@ async function getOrGenerateShortLink(gestor, longLink) {
     const longLink = permanentUrl.toString();
 
     // El link corto ahora guardará la dirección COMPLETA con el teléfono
-    const finalLink = await getOrGenerateShortLink(gestor, longLink);
+    let finalLink;
+    try { finalLink = await getOrGenerateShortLink(gestor, longLink); }
+    catch (error) { return alert(error.message); }
 
     const textoVenta =
 `🔥 *¡OFERTA ESPECIAL!* 🔥
@@ -8029,7 +7905,7 @@ async function copyProductOffer(name, button) {
             }, 1600);
         }
     } catch (error) {
-        alert('No se pudo copiar la oferta. Revisa los permisos del navegador.');
+        alert(error.message === 'PRODUCT_UNAVAILABLE' ? 'Este producto está agotado.' : 'No se pudo copiar la oferta. Comprueba la conexión y los permisos del navegador, y vuelve a intentar.');
     }
 }
 
@@ -8042,7 +7918,9 @@ async function shareProductWhatsApp(name) {
     }
     trackSpy('COMPARTIO_WHATSAPP', product.nombre);
     const shareWindow = window.open('about:blank', '_blank');
-    const offerText = await buildProductOfferText(product);
+    let offerText;
+    try { offerText = await buildProductOfferText(product); }
+    catch (_) { shareWindow?.close(); return alert('No se pudo preparar el enlace corto. Comprueba la conexión y vuelve a intentar.'); }
     rememberSharedProduct(product);
     const shareUrl = `https://wa.me/?text=${encodeURIComponent(offerText)}`;
     if (shareWindow) shareWindow.location.replace(shareUrl);
@@ -8311,7 +8189,9 @@ window.doLogout = function() {
     for (const p of visibleProducts) {
         // Construimos link con TU teléfono
         let rawLink = `${getPermanentProductUrl(p, true)}?ref=${encodeURIComponent(gestor)}&contact=${miTelefono}`;
-        let linkInteligente = await getOrGenerateShortLink(gestor, rawLink);
+        let linkInteligente;
+        try { linkInteligente = await getOrGenerateShortLink(gestor, rawLink); }
+        catch (error) { btn.innerHTML = originalText; return alert(error.message); }
 
         textoFinal += `📦 *${p.nombre}*\n`;
         textoFinal += `💰 Precio: $${p.precio} USD\n`;
@@ -8416,7 +8296,9 @@ window.doLogout = function() {
     if (gestor) rawLink += `&ref=${encodeURIComponent(gestor)}&contact=${miTelefono}`;
 
     // Generar link corto antes de compartir
-    const finalLink = await getOrGenerateShortLink(gestor, rawLink);
+    let finalLink;
+    try { finalLink = await getOrGenerateShortLink(gestor, rawLink); }
+    catch (error) { return alert(error.message); }
 
 
     if (network === 'wa') {
@@ -10397,9 +10279,10 @@ async function generarComprobanteVenta(datosPedido, accion) {
     let linkPersonal = window.location.origin + window.location.pathname;
     if (nombreFinal !== "ASESOR DE VENTAS") {
         linkPersonal += `?ref=${encodeURIComponent(nombreFinal)}&contact=${telfFinal}`;
-        linkPersonal = await getOrGenerateShortLink(nombreFinal, linkPersonal);
+        try { linkPersonal = await getOrGenerateShortLink(nombreFinal, linkPersonal); }
+        catch (error) { linkPersonal = ''; /* A promotional-link outage must not block an already-confirmed invoice. */ }
     } else {
-        linkPersonal += `?s=oficial`;
+        linkPersonal = 'https://paratuhogar.org/';
     }
 
     nombreFinal = window.PTHAffiliate.publicName(session?.data || window.PTHAffiliate.current(), 'Asesor de ventas');
@@ -10461,10 +10344,10 @@ async function generarComprobanteVenta(datosPedido, accion) {
     // Botón / Link Interactivo
     doc.setTextColor(...cSecondary);
     doc.setFont("helvetica", "bold");
-    doc.text("VISITAR MI TIENDA ONLINE", 120, 95);
+    doc.text(linkPersonal ? "VISITAR MI TIENDA ONLINE" : "PARATUHOGAR.ORG", 120, 95);
     doc.setDrawColor(...cSecondary);
     doc.line(120, 96, 172, 96);
-    doc.link(120, 92, 60, 6, { url: linkPersonal });
+    if (linkPersonal) doc.link(120, 92, 60, 6, { url: linkPersonal });
 
     // --- 3. TABLA DE PRODUCTOS ---
     const filasTabla = datosPedido.items.map(i => [
@@ -11397,16 +11280,7 @@ function captureGhostLead() {
              const cleanName = encodeURIComponent(p.nombre.trim());
              const longLink = `${window.location.origin}${window.location.pathname}?search=${cleanName}&ref=${encodeURIComponent(gestor)}&contact=${tel}`;
 
-             // Intentamos generar corto, si falla usamos largo
-             let finalLink = longLink;
-             try {
-                // Verificamos si la función existe antes de llamarla
-                if(typeof getOrGenerateShortLink === 'function') {
-                    finalLink = await getOrGenerateShortLink(gestor, longLink);
-                }
-             } catch(e) {
-                 console.log("Error generando link corto, usando largo.");
-             }
+             const finalLink = await getOrGenerateShortLink(gestor, longLink);
 
              preparedProducts.push({
                 name: p.nombre,

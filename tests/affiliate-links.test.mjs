@@ -70,7 +70,7 @@ test('Story and Magic Studio copy uses stable IDs and never shares the internal 
  const f=fixture();f.root.PTHSecureData={token:()=> 'synthetic'};
  for(const file of ['js/studio-designs.js','js/studio-jobs.js'])vm.runInContext(read(file),f.context);
  const text=f.root.PTHStudioJobs.copy([{id:'p',nombre:'Equipo',precio:100,comision:99,cliente:'PRIVATE_SENTINEL'}],{gestorId:id,gestorName:'Alina Rodríguez',gestorPhone:'5350000000',mode:'single'});
- assert.match(text,new RegExp(id));assert.doesNotMatch(text,/Alina|Rodríguez|PRIVATE_SENTINEL|comisi[oó]n/);
+ assert.doesNotMatch(text,/ref=|Alina|Rodríguez|PRIVATE_SENTINEL|comisi[oó]n/,'synchronous copy never creates a long fallback');
 });
 test('UUID hierarchy disambiguates identical historical names and keeps parent pricing; aliases are not lookup keys',async()=>{
  const f=fixture(),rows=[{id,nombre:'Same Internal',nombre_publico:'Same Alias',parent_id:null},{id:other,nombre:'Same Internal',nombre_publico:'Same Alias',parent_id:id}];let filters=[];

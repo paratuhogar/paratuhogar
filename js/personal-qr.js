@@ -110,7 +110,7 @@
     if (!active(result.data)) throw Error('Esta cuenta está inactiva. No se puede generar un QR nuevo.');
     return result.data;
   }
-  function personalLink(account) {
+  async function personalLink(account) {
     // Pass only the UUID: affiliate helpers also support phone and legacy names,
     // neither of which belongs in this public QR payload.
     if (!uuid(account.id) || !root.PTHAffiliate?.link) throw Error('No se pudo preparar el enlace personal. Recarga e intenta de nuevo.');
@@ -118,7 +118,9 @@
     const url = new URL(link);
     if (url.protocol !== 'https:' || url.hostname !== 'paratuhogar.org' || url.pathname !== '/' || url.username || url.password || url.hash ||
       url.searchParams.get('ref') !== account.id || [...url.searchParams.keys()].length !== 1) throw Error('No se pudo verificar el enlace personal.');
-    return url.href;
+    if (!root.PTHShortLinks) throw Error('Recarga la web para preparar el enlace corto.');
+    root.PTHShortLinks.configure(client());
+    return root.PTHShortLinks.shorten(url.href, { gestor:account.nombre, expectedRef:account.id });
   }
   function loadEncoder() {
     if (encoder) return Promise.resolve(encoder);
@@ -153,7 +155,8 @@
   }
   async function renderQR(request, account) {
     if (!current(request)) return;
-    const link = personalLink(account);
+    const link = await personalLink(account);
+    if (!current(request)) return;
     context = { request, accountId:account.id, link, png:null, canvas:null };
     content.replaceChildren();
     const accountName = node('h3', 'pth-qr-name', name(account)); accountName.id = 'pth-personal-qr-name';
@@ -206,7 +209,13 @@
       const actor = await actorFor(request); if (!actor) return false;
       const account = await verifiedAccount(id || actor.id, actor, request); if (!account) return false;
       await renderQR(request, account); return current(request);
-    } catch (error) { if (dialog.open && request.version === generation) status.textContent = error.message || 'No se pudo abrir el QR. Vuelve a intentar.'; return false; }
+    } catch (error) {
+      if (dialog.open && request.version === generation) {
+        status.textContent = error.message || 'No se pudo abrir el QR. Vuelve a intentar.';
+        content.replaceChildren(button('Reintentar enlace', () => selectAccount(id, mode)));
+      }
+      return false;
+    }
   }
   async function openAdmin() {
     const request = begin('admin');

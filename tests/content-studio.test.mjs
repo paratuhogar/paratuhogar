@@ -53,6 +53,17 @@ test('customer copy provides the current gestor WhatsApp link without a fallback
  assert.doesNotMatch(J.copy([product], { mode: 'single', gestorPhone: '5355551234', showPhone: false }), /wa\.me\//);
 });
 
+test('optional Studio copy uses a verified short link and never generates a long public URL', async () => {
+ const root=fixture(), J=root.PTHStudioJobs, id='22222222-2222-4222-a222-222222222222';let input,expected;
+ root.PTHShortLinks={shorten:async(url,options)=>{input=url;expected=options.expectedRef;return 'https://paratuhogar.org/?s=abc2345';}};
+ const text=await J.prepareCopy([product],{mode:'single',gestorId:id,gestorName:'Child'});
+ assert.match(text,/https:\/\/paratuhogar.org\/\?s=abc2345/);assert.doesNotMatch(text,/ref=|contact=|Child/);
+ assert.equal(new URL(input).searchParams.get('ref'),id);assert.equal(expected,id);
+ root.PTHShortLinks.shorten=async()=>{throw Error('offline');};
+ await assert.rejects(J.prepareCopy([product],{mode:'single',gestorId:id}));
+ assert.doesNotMatch(J.copy([product],{mode:'single',gestorId:id,gestorName:'Child'}),/paratuhogar.org/,'failed preparation cannot synthesize a long fallback');
+});
+
 for (const count of [1, 3]) test(`native sharing sends only ${count} images while retaining separate customer copy`, async () => {
  const root = fixture(), batch = new root.PTHStudioJobs.Batch();
  const files = Array.from({ length: count }, (_, i) => new File(['image'], `${i}.jpg`));

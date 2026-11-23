@@ -16,7 +16,7 @@ test('readiness acknowledges only a fully persisted application shell and reject
 });
 test('normal public template and local SDK reopen without private response or product image precaching',async()=>{const f=fixture();let install;f.events.install({waitUntil:p=>install=p});await install;
  for(const resource of ['/offline-catalog.html','/offline.html','/js/low-connectivity.js?v=20261002-lowdata1','/js/offline-catalog.js?v=20261002-lowdata2','/css/offline-catalog.css?v=20261002-lowdata1','/js/product-images.js?v=20261002-fasttools2'])assert.ok(f.entries.has(resource));
- for(const resource of ['/index.html','/js/gestor-questionnaire.js?v=20261008-questionnaire2','/js/gestor-registration-steps.js?v=20261016-captacion1','/js/vendor/supabase-2.57.4.js','/js/storefront.min.js?v=20261122-house1','/css/storefront-support.css?v=20261122-workui1','/js/offline-storefront-adapter.js?v=20261017-worksettings1','/js/checkout-form-shared.js?v=20261122-house1','/js/offline-checkout-copy.js?v=20261112-medium1'])assert.ok(f.entries.has(resource));
+ for(const resource of ['/index.html','/js/gestor-questionnaire.js?v=20261008-questionnaire2','/js/gestor-registration-steps.js?v=20261016-captacion1','/js/vendor/supabase-2.57.4.js','/js/storefront.min.js?v=20261123-shortlinks1','/css/storefront-support.css?v=20261122-workui1','/js/offline-storefront-adapter.js?v=20261017-worksettings1','/js/checkout-form-shared.js?v=20261122-house1','/js/offline-checkout-copy.js?v=20261112-medium1'])assert.ok(f.entries.has(resource));
  assert.ok(f.entries.has('/js/checkout-confirmation.js?v=20261122-couponsqr1'),'persistent receipt action is in the offline shell');
  assert.equal([...f.entries.keys()].some(u=>/img_productos|functions\/v1|feedback\.html|notifications\.html|pedidos|secure_sessions/.test(u)),false);
  assert.ok(f.entries.has('/offline-order.html'));
@@ -33,7 +33,7 @@ test('the public wallet display is available offline but its private operations 
 });
 test('catalogue upgrade installs the new reader and removes only previous static caches',async()=>{
  const f=fixture();let p;f.events.install({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.opened,['pth-public-static-2026-11-22-imagesonly1']);
+ assert.deepEqual(f.opened,['pth-public-static-2026-11-23-shortlinks1']);
  assert.ok(f.entries.has('/css/storefront-support.css?v=20261122-workui1'));
  assert.ok(f.entries.has('/js/gestor-ranking.js?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));

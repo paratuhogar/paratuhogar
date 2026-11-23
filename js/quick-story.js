@@ -133,7 +133,10 @@
    finally { this.downloading = false; this.buttons(); }
   }
   async copy() {
-   if (!this.ready()) return; const epoch = this.epoch, text = this.batch.ready.text;
+   if (!this.ready()) return; const epoch = this.epoch; let text;
+   try { text = await J.readyCopy(this.batch.ready); }
+   catch (_) { if (epoch === this.epoch && !this.disposed) this.message('No se pudo preparar el enlace corto. Tu imagen sigue lista. Comprueba la conexión y pulsa Copiar de nuevo.', true); return; }
+   if (epoch !== this.epoch || this.disposed || !this.ready()) return;
    try { await root.navigator.clipboard.writeText(text); if (epoch === this.epoch && !this.disposed) this.message('Información copiada. Pégala junto a la imagen.'); }
    catch (_) { if (epoch !== this.epoch || this.disposed) return; this.node('[data-preview] textarea')?.remove(); const textarea = el('textarea'); textarea.value = text; textarea.setAttribute('aria-label', 'Información para copiar'); this.node('[data-preview]').append(textarea); textarea.select(); this.message('Selecciona y copia la información que aparece debajo de la imagen.'); }
   }

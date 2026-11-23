@@ -36,6 +36,7 @@
   return result;
  }
  async function catalogue(client, signal) {
+  root.PTHShortLinks?.configure(client);
   const profile = await wait(root.PTHSecureData.restore(), signal), token = scope();
   if (!profile?.id || !profile.nombre) throw Error('Inicia sesión para usar esta herramienta.');
   assertScope(token, signal);
@@ -85,11 +86,24 @@
   if (['bundle', 'multi'].includes(options.mode) && options.showPrice !== false) result.push('Total del conjunto: ' + design.money(Number(options.promoPrice) || products.reduce((sum, p) => sum + Number(p.precio), 0)) + ' USD');
   const phone = String(options.gestorPhone || '').replace(/\D/g, '');
   if (options.showPhone !== false && phone) result.push('Consulta por WhatsApp: https://wa.me/' + phone);
-  const params = new URLSearchParams({ ref: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options.gestorId || '') ? options.gestorId : options.gestorName || '' });
-  if (options.gestorPhone) params.set('contact', String(options.gestorPhone).replace(/\D/g, ''));
-  if (products.length === 1) params.set('search', products[0].nombre);
-  result.push('https://paratuhogar.org/?' + params.toString());
+  if (/^https:\/\/paratuhogar\.org\/\?s=[a-zA-Z0-9_-]{1,128}$/.test(options.shortLink || '')) result.push(options.shortLink);
   return result.join('\n');
+ }
+ async function prepareCopy(products, options) {
+  const token = scope(); assertScope(token);
+  if (!root.PTHShortLinks || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options.gestorId || '')) throw Error('No se pudo comprobar el enlace de tu cuenta. Recarga y vuelve a intentar.');
+  const params = new URLSearchParams({ ref:options.gestorId });
+  if (products.length === 1) params.set('search', products[0].nombre);
+  const shortLink = await root.PTHShortLinks.shorten('https://paratuhogar.org/?' + params.toString(), { gestor:options.gestorName, expectedRef:options.gestorId });
+  assertScope(token); return copy(products, { ...options, shortLink });
+ }
+ async function readyCopy(ready) {
+  assertScope(ready?.token);
+  if (ready.copyError) {
+   const text = await prepareCopy(ready.products, ready.copyOptions);
+   assertScope(ready.token); ready.text = text; ready.copyError = false;
+  }
+  return ready.text;
  }
  const MAX_FILES = 10, MAX_BYTES = 12 * 1024 * 1024, MAX_AGE = 5 * 60 * 1000;
  function sharePolicyAllowed() {
@@ -143,7 +157,11 @@
     }
     assertScope(token, signal);
     if (epoch !== this.epoch) throw abortError();
-    this.ready = { files, text: copy(used, options), products: used, token, at: Date.now(), bytes, start, next: series ? start + files.length : products.length, total: products.length };
+    let text, copyError = false;
+    try { text = await wait(prepareCopy(used, options), signal); }
+    catch (error) { assertScope(token, signal); text = copy(used, options); copyError = true; }
+    assertScope(token, signal); if (epoch !== this.epoch) throw abortError();
+    this.ready = { files, text, copyError, copyOptions:{ ...options }, products: used, token, at: Date.now(), bytes, start, next: series ? start + files.length : products.length, total: products.length };
     progress(files.length, files.length, 'Tanda preparada'); return this.ready;
    } finally { if (epoch === this.epoch) { this.busy = false; this.controller = null; } }
   }
@@ -158,5 +176,5 @@
    catch (error) { this.busy = false; return Promise.reject(error); }
   }
  }
- root.PTHStudioJobs = { id, scope, assertScope, wait, catalogue, publicProduct, signature, validate, copy, sharePolicyAllowed, shareContextError, shareErrorMessage, Batch, MAX_FILES, MAX_BYTES, MAX_AGE };
+ root.PTHStudioJobs = { id, scope, assertScope, wait, catalogue, publicProduct, signature, validate, copy, prepareCopy, readyCopy, sharePolicyAllowed, shareContextError, shareErrorMessage, Batch, MAX_FILES, MAX_BYTES, MAX_AGE };
 })(window);

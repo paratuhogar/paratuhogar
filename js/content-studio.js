@@ -215,7 +215,10 @@
   }
   async copy() {
    if (!this.batch.valid()) { this.message('Vuelve a preparar la tanda para copiar su texto.', true); return; }
-   const text = this.batch.ready.text, epoch = this.queueEpoch;
+   const epoch = this.queueEpoch; let text;
+   try { text = await J.readyCopy(this.batch.ready); }
+   catch (_) { if (epoch === this.queueEpoch && !this.expired) this.message('No se pudo preparar el enlace corto. Tus imágenes siguen listas. Comprueba la conexión y pulsa Copiar de nuevo.', true); return; }
+   if (epoch !== this.queueEpoch || this.expired || !this.batch.valid()) return;
    try { await root.navigator.clipboard.writeText(text); if (epoch === this.queueEpoch && !this.expired) this.message('Texto copiado. Pégalo junto a las imágenes en WhatsApp.'); }
    catch (_) { if (epoch !== this.queueEpoch || this.expired) return; const textarea = el('textarea'); textarea.value = text; textarea.setAttribute('aria-label', 'Texto para compartir: selecciónalo y cópialo'); this.node('[data-preview]').append(textarea); textarea.select(); this.message('No se pudo copiar automáticamente. Selecciona y copia el texto que aparece bajo la vista previa.'); }
   }

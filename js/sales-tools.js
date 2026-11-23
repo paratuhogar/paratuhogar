@@ -110,6 +110,7 @@ function ensureSalesComposerModal() {
                                 <p class="text-[10px] text-slate-400">Puedes modificar el mensaje antes de compartirlo.</p>
                             </div>
                             <span id="sales-composer-link-status" class="text-[9px] font-bold text-slate-400">Preparando enlace…</span>
+                            <button type="button" id="sales-composer-link-retry" onclick="retrySalesComposerLink()" hidden>Reintentar enlace</button>
                         </div>
                         <textarea id="sales-composer-preview" class="h-[360px] min-h-[360px] flex-none resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-inner focus:border-indigo-400 focus:ring-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 lg:h-auto lg:min-h-[330px] lg:flex-1"></textarea>
 
@@ -152,7 +153,7 @@ async function openSalesComposer(mode = 'quick') {
         mode,
         products: products.slice(0, 30),
         selectedNames: new Set(products.slice(0, defaultCount).map(product => product.nombre)),
-        catalogLink: buildContextualCatalogUrl()
+        catalogLink: '', longLink:buildContextualCatalogUrl(), accountId:window.currentUserData?.id || null
     };
 
     const modal = document.getElementById('sales-composer-modal');
@@ -170,20 +171,32 @@ async function openSalesComposer(mode = 'quick') {
     renderSalesComposerProducts();
     refreshSalesComposerPreview();
 
-    const status = document.getElementById('sales-composer-link-status');
-    status.textContent = 'Preparando enlace…';
-    try {
-        const agent = window.gestorName || 'Ventas';
-        salesComposerState.catalogLink = await getOrGenerateShortLink(agent, salesComposerState.catalogLink);
-        status.textContent = 'Enlace de catálogo listo';
-    } catch (error) {
-        status.textContent = 'Se usará el enlace completo';
-    }
-    refreshSalesComposerPreview();
+    await retrySalesComposerLink();
     trackSpy('USO_HERRAMIENTA', isQuick ? 'Respuesta rápida' : 'Mensaje de difusión');
 }
 
+async function retrySalesComposerLink() {
+    const state = salesComposerState;
+    if (!state || state.pending || state.accountId !== (window.currentUserData?.id || null)) return;
+    state.pending = true; state.catalogLink = '';
+    const status = document.getElementById('sales-composer-link-status');
+    const retry = document.getElementById('sales-composer-link-retry');
+    status.textContent = 'Preparando enlace…'; retry.hidden = true; refreshSalesComposerPreview();
+    try {
+        const link = await getOrGenerateShortLink(window.gestorName || 'Ventas', state.longLink);
+        if (state !== salesComposerState || state.accountId !== (window.currentUserData?.id || null)) return;
+        state.catalogLink = link; status.textContent = 'Enlace corto listo';
+    } catch (_) {
+        if (state !== salesComposerState) return;
+        status.textContent = 'No se pudo preparar el enlace corto. Comprueba la conexión y reintenta.'; retry.hidden = false;
+    } finally {
+        state.pending = false;
+        if (state === salesComposerState) refreshSalesComposerPreview();
+    }
+}
+
 function closeSalesComposer() {
+    salesComposerState = null;
     document.getElementById('sales-composer-modal')?.classList.add('hidden');
     document.body.style.overflow = '';
 }
@@ -257,6 +270,7 @@ function cleanComposerDetail(value, fallback) {
 }
 
 function createSalesComposerMessage() {
+    if (!salesComposerReady()) return '';
     const products = getSalesComposerSelectedProducts();
     if (!products.length) return 'Selecciona al menos un producto.';
     const template = document.getElementById('sales-composer-template')?.value || salesComposerState.mode;
@@ -288,10 +302,16 @@ function createSalesComposerMessage() {
 
 function refreshSalesComposerPreview() {
     const preview = document.getElementById('sales-composer-preview');
-    if (preview) preview.value = createSalesComposerMessage();
+    if (preview) { preview.value = createSalesComposerMessage(); preview.readOnly = !salesComposerReady(); }
+    document.querySelectorAll('#sales-composer-modal button[onclick^="copySalesComposerMessage"], #sales-composer-modal button[onclick^="openSalesComposerWhatsApp"], #sales-composer-modal button[onclick^="shareSalesComposerMessage"]').forEach(button => { button.disabled = !salesComposerReady(); });
+}
+
+function salesComposerReady() {
+    return !!(salesComposerState && salesComposerState.accountId === (window.currentUserData?.id || null) && /^https:\/\/paratuhogar\.org\/\?s=[a-zA-Z0-9_-]{1,128}$/.test(salesComposerState.catalogLink));
 }
 
 async function copySalesComposerMessage(button) {
+    if (!salesComposerReady()) return;
     const preview = document.getElementById('sales-composer-preview');
     if (!preview?.value.trim()) return;
     try {
@@ -308,6 +328,7 @@ async function copySalesComposerMessage(button) {
 }
 
 function openSalesComposerWhatsApp() {
+    if (!salesComposerReady()) return;
     const message = document.getElementById('sales-composer-preview')?.value.trim();
     if (!message) return;
     trackSpy('MENSAJE_COMPARTIDO', 'WhatsApp');
@@ -315,6 +336,7 @@ function openSalesComposerWhatsApp() {
 }
 
 async function shareSalesComposerMessage() {
+    if (!salesComposerReady()) return;
     const message = document.getElementById('sales-composer-preview')?.value.trim();
     if (!message) return;
     if (navigator.share) {
@@ -426,5 +448,5 @@ async function downloadCatalogPDF() {
 
 
  root.PTHSalesTools={legacyCopyCategoryOffersV2,openSalesComposer,downloadCategoryPhotos,downloadCatalogPDF};
- Object.assign(root,{closeSalesComposer,setSalesComposerCount,toggleSalesComposerProduct,moveSalesComposerProduct,refreshSalesComposerPreview,copySalesComposerMessage,openSalesComposerWhatsApp,shareSalesComposerMessage});
+ Object.assign(root,{closeSalesComposer,retrySalesComposerLink,setSalesComposerCount,toggleSalesComposerProduct,moveSalesComposerProduct,refreshSalesComposerPreview,copySalesComposerMessage,openSalesComposerWhatsApp,shareSalesComposerMessage});
 })(window);

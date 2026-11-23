@@ -1,24 +1,29 @@
 // Real Chromium, local fixtures only: no production queries or WhatsApp messages.
 const { chromium } = require('playwright'), fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..'), out = process.env.PTH_STUDIO_TEST_OUTPUT || '/tmp/pth-studio-tested';
-const profile = { id: 'gestor-a', nombre: 'Gestor prueba', telefono: '', rol: 'gestor', estado: 'activo' };
+const profile = { id: '11111111-1111-4111-a111-111111111111', nombre: 'Gestor prueba', telefono: '', rol: 'gestor', estado: 'activo' };
 const products = Array.from({ length: 1003 }, (_, i) => ({ id: 'p' + String(i).padStart(4, '0'), nombre: i === 0 ? 'Refrigerador Royal Side by Side 20 pies' : (i < 603 ? 'Modelo Royal ' : 'Otro equipo ') + i, precio: i === 0 ? 890 : 100 + i, comision: 37, costo_proveedor: 'PRIVATE_SENTINEL', disponible: 'SI', precio_flexible: 'SI', categoria: i < 603 ? 'Refrigeración' : 'Cocina', thumbnail: 'test.svg', descripcion: 'Tecnología Inverter. Capacidad: 20 pies cúbicos. Dimensiones: 900 × 697 × 1865 mm', garantia: '1 mes', mensajeria: 'Mensajería por costo adicional' }));
 products[1].nombre += ' Ñandú';
 const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1400"><rect width="900" height="1400" fill="white"/><rect x="235" y="110" width="430" height="1170" rx="14" fill="#adb5bd"/><path d="M450 110v1170" stroke="#4c5662" stroke-width="7"/><path d="M410 420v280M490 420v280" stroke="#263442" stroke-width="14"/></svg>';
-const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Promise.resolve({data:[],error:null}).then(ok)}} ,rpc(){}}}};`;
+const sdk = fs.readFileSync(path.join(root,'js/vendor/supabase-2.57.4.js'),'utf8');
 (async () => {
  fs.mkdirSync(out, { recursive: true }); const { validateQuery } = await import('../supabase/functions/secure-data/handler.mjs');
  const browser = await chromium.launch({ executablePath: process.env.PTH_CHROMIUM || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
  try {
   let version = 0, hold = false, imageFailure = false, subgestor = false;
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }), page = await context.newPage(), errors = [], queries = [];
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }), page = await context.newPage(), errors = [], queries = [], shortRows = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(() => { localStorage.setItem('pth_secure_token', 'tenant-a'); localStorage.setItem('pth_session', JSON.stringify({ name: 'Gestor prueba', data: { id: 'gestor-a', nombre: 'Gestor prueba', rol: 'gestor' } })); });
+  await page.addInitScript(() => { localStorage.setItem('pth_secure_token', 'tenant-a'); localStorage.setItem('pth_session', JSON.stringify({ name: 'Gestor prueba', data: { id: '11111111-1111-4111-a111-111111111111', nombre: 'Gestor prueba', rol: 'gestor' } })); });
   await page.addInitScript(() => { window.copiedStudioText = ''; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedStudioText = text; } } }); });
   await page.route('**/*', async route => {
    const url = new URL(route.request().url());
+    if (url.pathname === '/rest/v1/short_links') {
+     if(route.request().method()==='POST'){shortRows.push(route.request().postDataJSON()[0]);return route.fulfill({status:201,body:''});}
+     const rows=shortRows.filter(row=>['slug','original_url','gestor'].every(k=>!url.searchParams.has(k)||url.searchParams.get(k)==='eq.'+row[k]));
+     return route.fulfill({json:rows});
+    }
    if (url.pathname === '/functions/v1/secure-data') {
-    const body = route.request().postDataJSON(), actor = subgestor ? { ...profile, id: 'sub-a', parent_id: 'gestor-a', parent_nombre: profile.nombre } : profile;
+    const body = route.request().postDataJSON(), actor = subgestor ? { ...profile, id: '22222222-2222-4222-a222-222222222222', parent_id: '11111111-1111-4111-a111-111111111111', parent_nombre: profile.nombre } : profile;
     assert.ok(['session', 'query'].includes(body.action), 'must not mutate any remote data');
     if (hold && body.action === 'query') { await new Promise(resolve => setTimeout(resolve, 400)); }
     if (body.action === 'session') return route.fulfill({ json: { data: { profile: actor }, error: null } });
@@ -58,6 +63,8 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.shareNext), 10);
   assert.doesNotMatch(await page.evaluate(() => PTHStudioPage.batch.ready.text), /PRIVATE_SENTINEL|comisi[oó]n|5356071095|Entrega 24/i);
   await page.locator('[data-copy]').click();
+  assert.match(await page.evaluate(() => copiedStudioText), /https:\/\/paratuhogar\.org\/\?s=[a-z0-9]{7}/);
+  assert.doesNotMatch(await page.evaluate(() => copiedStudioText), /ref=|contact=/);
   assert.match(await page.evaluate(() => copiedStudioText), /Modelo Royal 1 Ñandú — \$101 USD/);
   assert.match(await page.evaluate(() => copiedStudioText), /Capacidad: 20 pies cúbicos/);
   assert.doesNotMatch(await page.evaluate(() => copiedStudioText), /PRIVATE_SENTINEL|comisi[oó]n/);
