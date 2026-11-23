@@ -154,7 +154,7 @@
    const contextError = shareContextError(); if (contextError) return Promise.reject(contextError);
    if (!this.canShare()) return Promise.reject(Error('Este navegador no comparte archivos. Descarga la tanda y adjúntala en WhatsApp.'));
    this.busy = true; const epoch = this.epoch;
-   try { return Promise.resolve(root.navigator.share({ files: this.ready.files, ...(this.ready.text ? { text: this.ready.text } : {}) })).finally(() => { if (epoch === this.epoch) this.busy = false; }); }
+   try { return Promise.resolve(root.navigator.share({ files: this.ready.files })).finally(() => { if (epoch === this.epoch) this.busy = false; }); }
    catch (error) { this.busy = false; return Promise.reject(error); }
   }
  }

@@ -8,12 +8,13 @@ const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1400"><
 const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Promise.resolve({data:[],error:null}).then(ok)}} ,rpc(){}}}};`;
 (async () => {
  fs.mkdirSync(out, { recursive: true }); const { validateQuery } = await import('../supabase/functions/secure-data/handler.mjs');
- const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+ const browser = await chromium.launch({ executablePath: process.env.PTH_CHROMIUM || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
  try {
   let version = 0, hold = false, imageFailure = false, subgestor = false;
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true }), page = await context.newPage(), errors = [], queries = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => { localStorage.setItem('pth_secure_token', 'tenant-a'); localStorage.setItem('pth_session', JSON.stringify({ name: 'Gestor prueba', data: { id: 'gestor-a', nombre: 'Gestor prueba', rol: 'gestor' } })); });
+  await page.addInitScript(() => { window.copiedStudioText = ''; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedStudioText = text; } } }); });
   await page.route('**/*', async route => {
    const url = new URL(route.request().url());
    if (url.pathname === '/functions/v1/secure-data') {
@@ -56,8 +57,13 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.total), 23, 'one click prepares the entire selection');
   assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.shareNext), 10);
   assert.doesNotMatch(await page.evaluate(() => PTHStudioPage.batch.ready.text), /PRIVATE_SENTINEL|comisi[oó]n|5356071095|Entrega 24/i);
+  await page.locator('[data-copy]').click();
+  assert.match(await page.evaluate(() => copiedStudioText), /Modelo Royal 1 Ñandú — \$101 USD/);
+  assert.match(await page.evaluate(() => copiedStudioText), /Capacidad: 20 pies cúbicos/);
+  assert.doesNotMatch(await page.evaluate(() => copiedStudioText), /PRIVATE_SENTINEL|comisi[oó]n/);
+  assert.equal(await page.evaluate(() => shareCalls.length), 0, 'copying text does not open a share sheet');
   await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.completed);
-  assert.deepEqual(await page.evaluate(() => shareCalls[0]), { count: 10, activation: true, keys: ['files', 'text'] });
+  assert.deepEqual(await page.evaluate(() => shareCalls[0]), { count: 10, activation: true, keys: ['files'] });
   await page.waitForFunction(() => PTHStudioPage.batch.ready?.shareStart === 10 && PTHStudioPage.batch.valid());
   assert.match(await page.locator('[data-share]').textContent(), /11–20 de 23/, 'next share group is preloaded, no preparation click');
   const downloadPromise = page.waitForEvent('download'); await page.locator('[data-download]').click(); const download = await downloadPromise; await download.saveAs(path.join(out, 'batch.zip'));
@@ -68,6 +74,7 @@ const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Pro
   await page.locator('[data-share]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid() && !PTHStudioPage.batch.ready.files.length);
   assert.equal(await page.locator('[data-share]').isVisible(), false);
   assert.deepEqual(await page.evaluate(() => shareCalls.map(call => call.count)), [10, 10, 3], 'Chrome false-positive canShare still uses native-safe groups');
+  assert.deepEqual(await page.evaluate(() => shareCalls.map(call => call.keys)), [['files'], ['files'], ['files']], 'no group carries an automatic caption');
   // Runtime denial/cancel preserves the full download and retries with a fresh explicit click.
   await page.locator('[data-prepare]').click(); await page.waitForFunction(() => PTHStudioPage.batch.valid());
   assert.equal(await page.evaluate(() => PTHStudioPage.batch.ready.files.length), 10);

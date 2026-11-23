@@ -53,12 +53,17 @@ test('customer copy provides the current gestor WhatsApp link without a fallback
  assert.doesNotMatch(J.copy([product], { mode: 'single', gestorPhone: '5355551234', showPhone: false }), /wa\.me\//);
 });
 
-test('native single-image sharing carries the prepared caption with the gestor link', async () => {
+for (const count of [1, 3]) test(`native sharing sends only ${count} images while retaining separate customer copy`, async () => {
  const root = fixture(), batch = new root.PTHStudioJobs.Batch();
- batch.ready = { files: [new File(['image'], 'p.jpg')], text: 'Consulta por WhatsApp: https://wa.me/5355551234', token: 'tenant-a', at: Date.now() };
+ const files = Array.from({ length: count }, (_, i) => new File(['image'], `${i}.jpg`));
+ const text = 'Refrigerador 20 pies — $890 USD\nConsulta por WhatsApp: https://wa.me/5355551234';
+ batch.ready = { files, text, token: 'tenant-a', at: Date.now() };
  root.navigator.canShare = () => true;
  let payload; root.navigator.share = data => { payload = data; return Promise.resolve(); };
- await batch.share(); assert.equal(payload.text, 'Consulta por WhatsApp: https://wa.me/5355551234');
+ await batch.share();
+ assert.deepEqual(Object.keys(payload), ['files'], 'no automatic text, title or URL accompanies artwork');
+ assert.equal(payload.files, files);
+ assert.equal(batch.ready.text, text, 'the explicit copy action still has its prepared information');
 });
 
 test('all artwork themes and sizes display the complete gestor link and respect hidden contact', async () => {

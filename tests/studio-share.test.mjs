@@ -85,10 +85,16 @@ test('late native rejection after cancellation cannot resurrect private artwork'
  assert.equal(batch.ready, null); assert.equal(batch.job, null); assert.equal(batch.busy, false);
 });
 
-test('each collection share includes the prepared caption and direct gestor contact', async () => {
- const { root, batch } = fixture(2);
- batch.ready.text = 'Consulta por WhatsApp: https://wa.me/5355551234';
- let payload; root.navigator.share = data => { payload = data; return Promise.resolve(); };
+test('each collection group shares images alone and preserves separately copyable information', async () => {
+ const { root, batch } = fixture(23), sent = [];
+ const text = 'Arrocera — $28 USD\nCapacidad: 1 litro\nConsulta por WhatsApp: https://wa.me/5355551234';
+ batch.ready.text = text;
+ root.navigator.share = data => {
+  assert.deepEqual(Object.keys(data), ['files'], 'never attach the whole selection description to a group');
+  sent.push(...data.files.map(file => file.name)); return Promise.resolve();
+ };
  await batch.loadShare(0);
- await batch.share(); assert.equal(payload.text, 'Consulta por WhatsApp: https://wa.me/5355551234');
+ for (const next of [10, 20, 23]) { await batch.share(); assert.equal(batch.ready.shareStart, next); }
+ assert.deepEqual(sent, Array.from({ length: 23 }, (_, i) => `${i + 1}.jpg`));
+ assert.equal(batch.ready.text, text);
 });

@@ -1,5 +1,5 @@
 const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+(async()=>{const browser=await chromium.launch({executablePath:process.env.PTH_CHROMIUM||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  const page=await browser.newPage(),requests=[];let failXlsx=true;
  await page.route('**/*',async route=>{
   const url=route.request().url();requests.push(url);

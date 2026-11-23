@@ -8,7 +8,7 @@ const fixture = `<!doctype html><html lang="es"><head><meta charset="utf-8"><met
 const sdk = `window.supabase={createClient(){return {from(){return {then:ok=>Promise.resolve({data:[],error:null}).then(ok)}},rpc(){}}}};`;
 (async () => {
  fs.mkdirSync(out, { recursive: true }); const { validateQuery } = await import('../supabase/functions/secure-data/handler.mjs');
- const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+ const browser = await chromium.launch({ executablePath: process.env.PTH_CHROMIUM || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
  try {
   for (const width of [320, 390, 1280]) {
    let version = 0, delay = false, imageFailure = false, hidden = false, sub = false, denied = false, offline = false, failLoad = width === 320;
