@@ -166,9 +166,9 @@
     "slug": "bateria-15kwh-must",
     "nombre": "Bateria 15kWh Must",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/bateria-15kwh-must/",
-    "updated_at": "2026-11-12T23:02:57.917964+00:00"
+    "updated_at": "2026-11-23T16:08:12.256396+00:00"
   },
   {
     "id": "32b69ed7-e790-4761-89ae-c010f162d30e",
@@ -625,9 +625,9 @@
     "slug": "chasis-gaming-keepout-xc-200-micro-atx-black-glass-iluminacion-rgb-usb-3-0-negro",
     "nombre": "Chasis Gaming KeepOut XC-200 Micro-ATX | Black Glass | Iluminación RGB + USB 3.0 | Negro",
     "categoria": "TECNOLOGÍA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/chasis-gaming-keepout-xc-200-micro-atx-black-glass-iluminacion-rgb-usb-3-0-negro/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-23T21:48:03.150722+00:00"
   },
   {
     "id": "ef309517-28cd-4cec-8cc8-c7835225922e",
@@ -1183,9 +1183,9 @@
     "slug": "estacion-portatil-3600w-delta-pro",
     "nombre": "Estación portátil 3600W DELTA Pro",
     "categoria": "ENERGIA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estacion-portatil-3600w-delta-pro/",
-    "updated_at": "2026-11-20T23:00:19.654608+00:00"
+    "updated_at": "2026-11-23T16:49:54.011783+00:00"
   },
   {
     "id": "837cc1f5-12a8-4bd8-9454-1d531e5a3b52",
@@ -2740,9 +2740,9 @@
     "slug": "nevera-28-pies-royal",
     "nombre": "Nevera 28 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-28-pies-royal/",
-    "updated_at": "2026-11-11T17:48:46.608604+00:00"
+    "updated_at": "2026-11-23T15:37:34.834+00:00"
   },
   {
     "id": "f71753a1-1a6f-47ec-b9ac-64d8fbd436b9",
@@ -2767,9 +2767,9 @@
     "slug": "nevera-3-5-pies-royal",
     "nombre": "Nevera 3.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-3-5-pies-royal/",
-    "updated_at": "2026-11-09T19:42:40.481384+00:00"
+    "updated_at": "2026-11-23T16:50:22.662745+00:00"
   },
   {
     "id": "8e051ce8-436b-4b9f-8af9-491b32621b62",
@@ -3658,9 +3658,9 @@
     "slug": "refrigerador-lemax-7-5-pies-efecto-espejo",
     "nombre": "REFRIGERADOR LEMAX 7.5 PIES EFECTO ESPEJO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-lemax-7-5-pies-efecto-espejo/",
-    "updated_at": "2026-11-12T15:23:03.393287+00:00"
+    "updated_at": "2026-11-23T16:50:30.177115+00:00"
   },
   {
     "id": "8a877c73-19b8-4455-b6c8-479ffc0dc8b7",
@@ -3901,9 +3901,9 @@
     "slug": "smart-tv-40-samsung",
     "nombre": "Smart TV 40 Samsung",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-11-21T02:41:08.672768+00:00"
+    "updated_at": "2026-11-23T16:49:28.372007+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
@@ -3985,6 +3985,24 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-challenger-75-4k-led-tv75sm2025fl/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "11fd6677-0e82-4f19-814c-502d40a26443",
+    "slug": "smart-tv-lg-70-4k-ultra-hd",
+    "nombre": "SMART TV LG 70” – 4K ULTRA HD",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-lg-70-4k-ultra-hd/",
+    "updated_at": "2026-11-23T17:33:35.381028+00:00"
+  },
+  {
+    "id": "c33076e9-a4b7-41f3-9428-0e182d502adb",
+    "slug": "smart-tv-pioneer-55-modelo-2026",
+    "nombre": "SMART TV PIONEER 55” – MODELO 2026",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-pioneer-55-modelo-2026/",
+    "updated_at": "2026-11-23T17:29:17.22122+00:00"
   },
   {
     "id": "9c629270-acf9-4642-8a71-2d2fa54c0c19",
