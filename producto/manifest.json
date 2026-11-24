@@ -477,6 +477,15 @@
     "updated_at": "2026-11-14T23:25:15.351028+00:00"
   },
   {
+    "id": "b8d698f9-5a69-41c8-b5f5-9256bb8d2041",
+    "slug": "cable-solar-mc4-a-xt60i",
+    "nombre": "Cable solar MC4 a XT60i",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/cable-solar-mc4-a-xt60i/",
+    "updated_at": "2026-11-24T15:22:22.291541+00:00"
+  },
+  {
     "id": "1820b162-c5a1-405b-9dbf-7b544f0b3388",
     "slug": "cafetera-electrica-6t-eko",
     "nombre": "Cafetera eléctrica 6T EKO",
@@ -2218,9 +2227,9 @@
     "slug": "lavadora-semiautomatica-7kg-milexus",
     "nombre": "Lavadora semiautomática 7kg Milexus",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-7kg-milexus/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-24T17:21:23.743939+00:00"
   },
   {
     "id": "c683483f-a69b-443f-81ec-b9338aca82d1",
@@ -3834,6 +3843,15 @@
     "updated_at": "2026-10-26T16:59:53.983208+00:00"
   },
   {
+    "id": "4a8fe5cd-aec2-4f9b-920e-9b95c3924a0d",
+    "slug": "smart-mini-dc-ups-kp4",
+    "nombre": "Smart Mini DC UPS KP4",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-mini-dc-ups-kp4/",
+    "updated_at": "2026-11-24T16:55:03.116036+00:00"
+  },
+  {
     "id": "72ee7999-4078-4305-a34f-04a8c78bb8b5",
     "slug": "smart-tv-32-royal",
     "nombre": "Smart tv 32 - ROYAL",
@@ -3967,6 +3985,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-55-eko/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "a4462ac3-9521-4b2e-aeb0-c20d7822848a",
+    "slug": "smart-tv-55-hisense-2026",
+    "nombre": "Smart TV 55\" Hisense 2026",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-55-hisense-2026/",
+    "updated_at": "2026-11-24T20:30:10.330128+00:00"
   },
   {
     "id": "9afc6a7e-3cdb-4e4e-9c64-90c9deb35aaa",
