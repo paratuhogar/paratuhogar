@@ -1104,7 +1104,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-portatil-oukitel-2400w/",
-    "updated_at": "2026-10-22T14:37:32.785923+00:00"
+    "updated_at": "2026-11-24T00:28:50.680501+00:00"
   },
   {
     "id": "12caf6e0-3c75-4d86-809e-1d01bb1c3363",
@@ -1131,7 +1131,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-de-energia-portatil-oukitel-1800w/",
-    "updated_at": "2026-10-22T14:37:53.425432+00:00"
+    "updated_at": "2026-11-24T00:29:13.750793+00:00"
   },
   {
     "id": "4b8cd9e4-a2da-4309-9816-578b8f325b11",
@@ -2182,9 +2182,9 @@
     "slug": "lavadora-semiautomatica-11kg-godline",
     "nombre": "Lavadora semiautomática 11kg Godline",
     "categoria": "LAVADORAS",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-11kg-godline/",
-    "updated_at": "2026-11-19T23:55:34.555211+00:00"
+    "updated_at": "2026-11-24T00:46:05.289058+00:00"
   },
   {
     "id": "ae33493c-522e-4740-a5a1-553010d23baf",
@@ -2463,7 +2463,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/minibar-rudenkov/",
-    "updated_at": "2026-11-02T14:03:23.834629+00:00"
+    "updated_at": "2026-11-24T00:45:08.249616+00:00"
   },
   {
     "id": "923522df-dfb9-46ea-b720-5a958b98bedf",
@@ -3624,7 +3624,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-doble-puerta-14-pies-rudenkov/",
-    "updated_at": "2026-11-05T02:32:58.206687+00:00"
+    "updated_at": "2026-11-24T00:30:27.373826+00:00"
   },
   {
     "id": "1401db89-0f62-4a12-9bf9-9dd975ac3994",
@@ -3633,7 +3633,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-doble-puerta-18-pies-rukenkov/",
-    "updated_at": "2026-11-05T02:34:00.894468+00:00"
+    "updated_at": "2026-11-24T00:30:44.390267+00:00"
   },
   {
     "id": "38acd7e3-9e78-4cfa-bf93-fb838946f5d1",
