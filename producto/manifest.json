@@ -1167,7 +1167,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/estacion-portatil-ecoflow-delta-3-clasica/",
-    "updated_at": "2026-11-20T01:51:29.859548+00:00"
+    "updated_at": "2026-11-25T15:00:24.78483+00:00"
   },
   {
     "id": "4756718f-2263-4b41-8990-81708f50d980",
@@ -4099,9 +4099,9 @@
     "slug": "split-1-tonelada-eko",
     "nombre": "Split 1 tonelada EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-1-tonelada-eko/",
-    "updated_at": "2026-11-23T06:41:28.159238+00:00"
+    "updated_at": "2026-11-25T17:47:26.126891+00:00"
   },
   {
     "id": "8adbed80-8c00-48f3-9e4a-c1377c744ac2",
