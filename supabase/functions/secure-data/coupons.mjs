@@ -19,6 +19,7 @@ export async function quoteCoupon(db,{code,rows,phone,rateKey}){
  const q=result.data;
  if(q?.error)couponFailure({code:q.sqlstate});
  if(!q||typeof q.id!=='string'||!Number.isSafeInteger(q.revision)||q.code!==code||!Number.isSafeInteger(q.subtotal_cents)||!Number.isSafeInteger(q.discount_cents)||q.discount_cents<=0||q.discount_cents>q.subtotal_cents||!Array.isArray(q.allocations)||q.allocations.length!==rows.length)couponFailure(null);
+ if(Object.hasOwn(q,'eligible_subtotal_cents')&&(!Number.isSafeInteger(q.eligible_subtotal_cents)||q.eligible_subtotal_cents<=0||q.eligible_subtotal_cents>q.subtotal_cents||q.discount_cents>q.eligible_subtotal_cents))couponFailure(null);
  let gross=0,discount=0;const providers=new Set();
  for(const a of q.allocations){
   const row=rows.find(x=>x.proveedor===a.proveedor);

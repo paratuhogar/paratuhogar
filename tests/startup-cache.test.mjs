@@ -33,7 +33,7 @@ test('the public wallet display is available offline but its private operations 
 });
 test('catalogue upgrade installs the new reader and removes only previous static caches',async()=>{
  const f=fixture();let p;f.events.install({waitUntil:value=>p=value});await p;
- assert.deepEqual(f.opened,['pth-public-static-2026-11-23-shortlinks1']);
+ assert.deepEqual(f.opened,['pth-public-static-2026-11-25-couponscope1']);
  assert.ok(f.entries.has('/css/storefront-support.css?v=20261122-workui1'));
  assert.ok(f.entries.has('/js/gestor-ranking.js?v=20261004-rolling30'));
  assert.ok(f.entries.has('/js/offline-catalog.js?v=20261002-lowdata2'));

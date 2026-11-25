@@ -32,6 +32,13 @@ test('coupon is server quoted, signs net products, and leaves shipping and commi
  const saved=f.rows.pedidos.slice(1);assert.deepEqual(saved.map(x=>x.total),[104.33,196.67]);assert.deepEqual(saved.map(x=>x.comision_total),[0,0]);
  assert.ok(f.couponCalls.find(x=>x.name==='pth_insert_coupon_checkout').args.p_rows.every(x=>!Object.hasOwn(x,'descuento_productos')));
 });
+test('coupon eligibility carries only canonical product identifiers, unit cents and quantities into quote and final transaction',async()=>{
+ const f=await direct();const rpc=f.db.rpc;f.db.rpc=async(name,args)=>{const r=await rpc(name,args);if(name==='pth_coupon_quote')r.data.eligible_subtotal_cents=30000;return r;};f.body.inputs[0]._coupon_lines=[{producto_id:'FORGED',cantidad:99,unit_cents:1}];
+ const q=await f.q();assert.equal(q.error,null);
+ assert.deepEqual(f.couponCalls[0].args.p_rows[0]._coupon_lines,[{producto_id:'pA',cantidad:1,unit_cents:10000}]);
+ assert.equal((await f.s(q)).data?.complete,true);
+ assert.deepEqual(f.couponCalls.find(x=>x.name==='pth_insert_coupon_checkout').args.p_rows[1]._coupon_lines,[{producto_id:'pB',cantidad:1,unit_cents:20000}]);
+});
 test('disabled coupons never fall back to full price',async()=>{
  const f=await direct(false),q=await f.q();assert.equal(q.error?.code,'COUPON_UNAVAILABLE');assert.equal(f.writes,0);assert.equal(f.couponCalls.length,0);
 });

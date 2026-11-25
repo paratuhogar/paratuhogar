@@ -71,7 +71,7 @@
   if(result.error)throw Error(result.error.message);return result.data;
  }
  function field(form,label,name,type='text',value=''){
-  const wrap=node('label',label),input=node('input');input.name=name;input.type=type;input.value=value;input.required=true;
+  const wrap=node('label',label),input=node('input');input.name=name;input.type=type;input.value=value;input.defaultValue=value;input.required=true;
   if(type==='number'){input.min='1';input.step='1';}wrap.append(input);form.append(wrap);return input;
  }
  async function openAdmin(){
@@ -82,22 +82,35 @@
   const message=node('p');message.setAttribute('role','status');message.textContent='La mensajería se cobra íntegra. No cambia las comisiones.';dialog.append(message);
   const form=node('form');form.className='pth-coupon-form';
   field(form,'Código','code');const kindLabel=node('label','Descuento'),kind=node('select');kind.name='kind';for(const [v,t] of [['fixed','Importe en USD'],['percent','Porcentaje']]){const o=node('option',t);o.value=v;kind.append(o);}kindLabel.append(kind);form.append(kindLabel);
-  const value=field(form,'Valor','value','number');value.step='0.01';value.min='0.01';
+  const value=field(form,'Valor','value','number','1');value.step='0.01';value.min='0.01';
+  const sizeLabel=node('label','Tamaño de equipo'),size=node('select');size.name='product_size';size.required=true;
+  for(const [v,t] of [['Pequeño','Solo pequeños'],['Mediano','Solo medianos'],['Grande','Solo grandes']]){const o=node('option',t);o.value=v;size.append(o);}sizeLabel.append(size);form.append(sizeLabel);
+  const productMin=field(form,'Precio mínimo por equipo (USD)','product_minimum','number','0');productMin.min='0';productMin.step='0.01';
+  const productMax=field(form,'Precio máximo por equipo (USD, opcional)','product_maximum','number');productMax.min='0';productMax.step='0.01';productMax.required=false;
   const minimum=field(form,'Compra mínima de productos (USD)','minimum','number','0');minimum.min='0';minimum.step='0.01';
   field(form,'Inicio','starts_at','datetime-local');field(form,'Fin','ends_at','datetime-local');
   field(form,'Usos totales','total_limit','number','100');field(form,'Usos por teléfono','phone_limit','number','1');
   const activeLabel=node('label','Activo'),active=node('input');active.name='active';active.type='checkbox';activeLabel.append(active);form.append(activeLabel);
   const reason=field(form,'Motivo del cambio','reason');reason.maxLength=1000;
-  const save=node('button','Guardar cupón');save.type='submit';form.append(save);dialog.append(form);
+  const save=node('button','Guardar cupón');save.type='submit';form.append(save);
+  const presets=node('div');presets.className='pth-coupon-presets';presets.setAttribute('aria-label','Preparar nuevo cupón por tamaño');
+  for(const [s,amount,label] of [['Pequeño','1','Pequeños −$1'],['Mediano','3','Medianos −$3'],['Grande','10','Grandes −$10']])presets.append(button(label,()=>{
+   selected=null;form.reset();form.elements.code.readOnly=false;size.value=s;kind.value='fixed';value.value=amount;productMin.value='0';productMax.value='';active.checked=false;
+   message.textContent='Nuevo cupón preparado. Define el código, las fechas y los límites antes de guardarlo.';form.elements.code.focus();
+  }));
+  size.addEventListener('change',()=>{if(!selected&&kind.value==='fixed')value.value=({'Pequeño':'1','Mediano':'3','Grande':'10'})[size.value];});
+  dialog.append(presets,node('p','El tamaño es el configurado en cada producto. Los límites se comprueban por unidad, no por la suma de cantidades.'),form);
   const list=node('div');list.className='pth-coupon-list';dialog.append(list);dialog.showModal();
   let selected=null;
   const load=async()=>{
    const data=await adminRequest({operation:'list'});list.replaceChildren();
    for(const c of data.rows||[]){
     const item=node('article'),heading=node('strong',`${c.code} · ${c.active?'Activo':'Inactivo'}`),text=node('p',`${c.kind==='percent'?c.value+' %':money(c.value/100)} · ${c.used_count??c.uses??0}/${c.total_limit} usos · Revisión ${c.revision}`);
-    item.append(heading,text,button('Editar',()=>{
+    const scope=node('p',`${c.product_size?('Solo '+({'Pequeño':'pequeños','Mediano':'medianos','Grande':'grandes'})[c.product_size]):'Sin tamaño configurado'} · Por equipo: desde ${money((c.product_min_cents||0)/100)}${c.product_max_cents==null?' · Sin máximo':' hasta '+money(c.product_max_cents/100)}`);
+    item.append(heading,text,scope,button('Editar',()=>{
      selected=c;for(const k of ['code','kind','total_limit','phone_limit'])form.elements[k].value=c[k];form.elements.code.readOnly=true;
      value.value=c.kind==='fixed'?c.value/100:c.value;form.elements.minimum.value=c.minimum_cents/100;active.checked=!!c.active;
+     size.value=c.product_size||'';productMin.value=(c.product_min_cents||0)/100;productMax.value=c.product_max_cents==null?'':c.product_max_cents/100;
      for(const k of ['starts_at','ends_at']){const d=new Date(c[k]);form.elements[k].value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
      reason.value='';form.scrollIntoView({block:'nearest'});
     }));list.append(item);
@@ -108,7 +121,9 @@
    e.preventDefault();if(save.disabled)return;save.disabled=true;message.textContent='Guardando…';
    try{
     const values=new FormData(form),k=values.get('kind'),amount=Number(values.get('value'));
-    const campaign={...(selected?{id:selected.id,revision:selected.revision}:{}),code:values.get('code').trim().toUpperCase(),kind:k,value:k==='fixed'?Math.round(amount*100):amount,minimum_cents:Math.round(Number(values.get('minimum'))*100),starts_at:new Date(values.get('starts_at')).toISOString(),ends_at:new Date(values.get('ends_at')).toISOString(),total_limit:Number(values.get('total_limit')),phone_limit:Number(values.get('phone_limit')),active:active.checked,reason:values.get('reason').trim()};
+    const min=Math.round(Number(values.get('product_minimum'))*100),max=String(values.get('product_maximum')||'').trim()===''?null:Math.round(Number(values.get('product_maximum'))*100);
+    if(max!==null&&max<min)throw Error('El precio máximo por equipo no puede ser menor que el mínimo.');
+    const campaign={...(selected?{id:selected.id,revision:selected.revision}:{}),code:values.get('code').trim().toUpperCase(),kind:k,value:k==='fixed'?Math.round(amount*100):amount,minimum_cents:Math.round(Number(values.get('minimum'))*100),product_size:values.get('product_size'),product_min_cents:min,product_max_cents:max,starts_at:new Date(values.get('starts_at')).toISOString(),ends_at:new Date(values.get('ends_at')).toISOString(),total_limit:Number(values.get('total_limit')),phone_limit:Number(values.get('phone_limit')),active:active.checked,reason:values.get('reason').trim()};
     await adminRequest({operation:'save',campaign});await load();selected=null;form.reset();form.elements.code.readOnly=false;message.textContent='Cupón guardado. La activación general del módulo es independiente.';
    }catch(error){if(dialog.open)message.textContent=error.message;}finally{save.disabled=false;}
   });

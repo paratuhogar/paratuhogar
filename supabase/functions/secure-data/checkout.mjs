@@ -130,6 +130,7 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
       if(express){row.servicio_mensajeria='express';row.plazo_mensajeria_minutos=express.minutes;}
       row.garantia_venta=guarantee.map(p=>`${p.nombre}: ${p.garantia}`).join(' | ');
       for(const price of row._checkout_prices||[])price.garantia=products.find(p=>p.id===price.id)?.garantia;
+      if(payload.coupon)row._coupon_lines=input._lineas.map(line=>({producto_id:line.producto_id,cantidad:line.cantidad,unit_cents:cents(row._checkout_prices.find(price=>price.id===line.producto_id).price)}));
       const unique=[...new Set(guarantee.map(p=>p.garantia))];
       const warranty=unique.length===1?unique[0].toLowerCase():'';
       const number=Number((warranty.match(/\d+(?:[.,]\d+)?/)||['0'])[0].replace(',','.'));
@@ -250,6 +251,9 @@ export function createCheckoutService({db,canonicalSale,signingSecret,now=Date.n
         // Old pages may still send a reserved number: it is never authoritative.
         delete row.orden_dia;
         delete row._checkout_prices;
+        // Compatible staged rollout: the previous SQL ignores line metadata on
+        // quote but its insertion whitelist must not receive this new field.
+        if(!coupon||!Object.hasOwn(coupon,'eligible_subtotal_cents'))delete row._coupon_lines;
         // A deterministic new-row PK also fences a changed-payload race for
         // one draft intent. A collision never updates or reveals another row.
         const id=await sign('row-id:'+attempt.nonce+':'+(index===0?'anchor':'provider:'+row.proveedor));row.id=`${id.slice(0,8)}-${id.slice(8,12)}-4${id.slice(13,16)}-a${id.slice(17,20)}-${id.slice(20,32)}`;

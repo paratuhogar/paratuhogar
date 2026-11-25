@@ -15,7 +15,7 @@
     "test:points:integration": "node --test tests/points-wallet-integration.test.mjs",
     "test:points:browser": "node --test tests/points-wallet-browser.cjs",
     "test:coupons:unit": "node --test tests/coupons-checkout.test.mjs tests/coupon-economics.test.cjs tests/coupons-documents.test.cjs",
-    "test:coupons:db": "node --test tests/customer-bindings-db.cjs tests/coupons-db.cjs tests/points-wallet-db.cjs tests/points-referral-db.cjs",
+    "test:coupons:db": "node --test tests/customer-bindings-db.cjs tests/coupons-db.cjs tests/coupon-product-eligibility.test.cjs tests/points-wallet-db.cjs tests/points-referral-db.cjs",
     "test:coupons:browser": "node --test tests/coupons-browser.cjs tests/personal-qr-browser.cjs && node tests/coupons-checkout-browser.cjs && node tests/qr-checkout-browser.cjs",
     "test:cash:unit": "node --test tests/points-cash-gateway.test.mjs",
     "test:cash:db": "node --test tests/points-cash-db.cjs tests/points-cash-integration.test.mjs",
