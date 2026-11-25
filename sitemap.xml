@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-11-24</lastmod></url>
-  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-11-24</lastmod></url>
+  <url><loc>https://paratuhogar.org/</loc><lastmod>2026-11-25</lastmod></url>
+  <url><loc>https://paratuhogar.org/gestores.html</loc><lastmod>2026-11-25</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/cocina/</loc><lastmod>2026-11-21</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/energia/</loc><lastmod>2026-11-24</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/lavadoras/</loc><lastmod>2026-11-24</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/miscelanea/</loc><lastmod>2026-11-20</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/mundo-frio/</loc><lastmod>2026-11-24</lastmod></url>
-  <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-11-24</lastmod></url>
+  <url><loc>https://paratuhogar.org/categoria/smart-tv/</loc><lastmod>2026-11-25</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/tecnologia/</loc><lastmod>2026-11-23</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/transporte/</loc><lastmod>2026-11-20</lastmod></url>
   <url><loc>https://paratuhogar.org/categoria/ventiladores/</loc><lastmod>2026-11-16</lastmod></url>
@@ -223,8 +223,11 @@
   <url><loc>https://paratuhogar.org/producto/smart-mini-dc-ups-kp4/</loc><lastmod>2026-11-24</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/MiniupsMarsrivaKP4.png</image:loc><image:title>Smart Mini DC UPS KP4</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-40-samsung/</loc><lastmod>2026-11-23</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartSamsung40.png</image:loc><image:title>Smart TV 40 Samsung</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-43-lg-uhd-ai/</loc><lastmod>2026-11-10</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTV43-LGUHDAI.jpeg</image:loc><image:title>Smart TV 43 - LG UHD AI</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/smart-tv-43-milexus/</loc><lastmod>2026-11-25</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTVMilexus43.png</image:loc><image:title>Smart TV 43&quot; Milexus</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/smart-tv-50-jvc-v1-series/</loc><lastmod>2026-11-25</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTVJVC50.png</image:loc><image:title>Smart TV 50&quot; JVC V1 Series</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-55-lg-uhd-ai/</loc><lastmod>2026-10-26</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTV55-LGUHDAI.jpeg</image:loc><image:title>Smart TV 55 - LG UHD AI</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-55-hisense-2026/</loc><lastmod>2026-11-24</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTVHisense55.png</image:loc><image:title>Smart TV 55&quot; Hisense 2026</image:title></image:image></url>
+  <url><loc>https://paratuhogar.org/producto/smart-tv-65-hisense-a6-series/</loc><lastmod>2026-11-25</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/SmartTVHisense65.png</image:loc><image:title>Smart TV 65&quot; Hisense A6 Series</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-lg-70-4k-ultra-hd/</loc><lastmod>2026-11-23</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/LG70_UHDTV.png</image:loc><image:title>SMART TV LG 70” – 4K ULTRA HD</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-pioneer-55-modelo-2026/</loc><lastmod>2026-11-23</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Pioneer55_4KRokuTV.png</image:loc><image:title>SMART TV PIONEER 55” – MODELO 2026</image:title></image:image></url>
   <url><loc>https://paratuhogar.org/producto/smart-tv-samsung-55-2026/</loc><lastmod>2026-11-21</lastmod><image:image><image:loc>https://raw.githubusercontent.com/paratuhogar/paratuhogar-fotos/main/img_productos/Samsung55pulgadas2026.png</image:loc><image:title>Smart TV Samsung 55&quot; 2026</image:title></image:image></url>

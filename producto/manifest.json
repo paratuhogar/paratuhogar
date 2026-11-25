@@ -3951,6 +3951,15 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
+    "id": "95aca0c5-81df-4356-b3bd-cce994d2f688",
+    "slug": "smart-tv-43-milexus",
+    "nombre": "Smart TV 43\" Milexus",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-43-milexus/",
+    "updated_at": "2026-11-25T01:05:36.850929+00:00"
+  },
+  {
     "id": "cc472f28-e9cb-481f-8242-8a60b01bc2d0",
     "slug": "smart-tv-50-sankey",
     "nombre": "Smart TV 50 - Sankey",
@@ -3967,6 +3976,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-50-eko/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "3a5dd6b1-5ad3-4c0c-8a97-f9d89891c7a4",
+    "slug": "smart-tv-50-jvc-v1-series",
+    "nombre": "Smart TV 50\" JVC V1 Series",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-50-jvc-v1-series/",
+    "updated_at": "2026-11-25T00:58:27.775318+00:00"
   },
   {
     "id": "4072ee64-54a8-470b-bad1-ef42da2ff867",
@@ -4003,6 +4021,15 @@
     "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-60-sankey/",
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
+  },
+  {
+    "id": "94d5d025-f855-4a34-999d-83534a9d6fbe",
+    "slug": "smart-tv-65-hisense-a6-series",
+    "nombre": "Smart TV 65\" Hisense A6 Series",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-65-hisense-a6-series/",
+    "updated_at": "2026-11-25T01:09:04.292854+00:00"
   },
   {
     "id": "74dee11a-5135-46ad-aee9-703b9c5da2f5",
