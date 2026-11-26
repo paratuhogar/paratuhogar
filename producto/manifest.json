@@ -479,11 +479,20 @@
   {
     "id": "b8d698f9-5a69-41c8-b5f5-9256bb8d2041",
     "slug": "cable-solar-mc4-a-xt60i",
-    "nombre": "Cable solar MC4 a XT60i",
+    "nombre": "Cable solar MC4 a XT60i - 10m",
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/cable-solar-mc4-a-xt60i/",
     "updated_at": "2026-11-24T15:22:22.291541+00:00"
+  },
+  {
+    "id": "3f23ab56-bf35-4e78-959d-4195053a15af",
+    "slug": "cable-solar-mc4-a-xt60i-15m",
+    "nombre": "Cable solar MC4 a XT60i - 15m",
+    "categoria": "ENERGIA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/cable-solar-mc4-a-xt60i-15m/",
+    "updated_at": "2026-11-26T19:34:17.301813+00:00"
   },
   {
     "id": "1820b162-c5a1-405b-9dbf-7b544f0b3388",
@@ -1300,9 +1309,9 @@
     "slug": "estanteria-metalica-con-4-baldas-ajustables-7house-80409",
     "nombre": "Estantería Metálica con 4 Baldas Ajustables 7house - 80409",
     "categoria": "MISCELANEA",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/estanteria-metalica-con-4-baldas-ajustables-7house-80409/",
-    "updated_at": "2026-07-30T11:07:42.997639+00:00"
+    "updated_at": "2026-11-26T12:17:20.441188+00:00"
   },
   {
     "id": "d28397c5-44a4-455d-85cc-be1d0cd9952b",
@@ -2101,9 +2110,9 @@
     "slug": "lavadora-automatica-10kg-chiq",
     "nombre": "Lavadora automática 10kg CHIQ",
     "categoria": "LAVADORAS",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/lavadora-automatica-10kg-chiq/",
-    "updated_at": "2026-11-13T02:54:13.308938+00:00"
+    "updated_at": "2026-11-26T14:59:18.791206+00:00"
   },
   {
     "id": "7024c540-57dd-4569-b767-eebf3aa63bb6",
@@ -2200,9 +2209,9 @@
     "slug": "lavadora-semiautomatica-5kg-premium",
     "nombre": "Lavadora semiautomática 5kg Premium",
     "categoria": "LAVADORAS",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/lavadora-semiautomatica-5kg-premium/",
-    "updated_at": "2026-11-21T15:46:18.765454+00:00"
+    "updated_at": "2026-11-26T20:58:42.272049+00:00"
   },
   {
     "id": "75ba0598-772c-4961-9122-a5dcaa54f0d2",
@@ -2655,6 +2664,15 @@
     "updated_at": "2026-11-14T23:32:01.351173+00:00"
   },
   {
+    "id": "3f817f93-0f83-459a-927e-32cef5392db9",
+    "slug": "mousepad-maxell",
+    "nombre": "Mousepad  Maxell",
+    "categoria": "MISCELANEA",
+    "disponible": false,
+    "url": "https://paratuhogar.org/producto/mousepad-maxell/",
+    "updated_at": "2026-11-26T19:52:45.476004+00:00"
+  },
+  {
     "id": "e394a998-5678-4206-9ca3-9b85981921d5",
     "slug": "mppt-sun-dy-mlue-1000w-para-triciclo",
     "nombre": "MPPT SUN DY-MLUE-1000W para Triciclo",
@@ -2724,7 +2742,7 @@
     "categoria": "MUNDO FRIO",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-16-pies-milexus-doble-puerta/",
-    "updated_at": "2026-11-13T20:36:12.476604+00:00"
+    "updated_at": "2026-11-26T21:36:31.195308+00:00"
   },
   {
     "id": "57564af5-3ff7-40d0-9e42-ce0219a73a75",
@@ -2740,9 +2758,9 @@
     "slug": "nevera-23-4-pies-godline-doble-puerta",
     "nombre": "Nevera 23.4 pies Godline Doble puerta",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-23-4-pies-godline-doble-puerta/",
-    "updated_at": "2026-11-13T20:36:56.328898+00:00"
+    "updated_at": "2026-11-26T14:54:46.386175+00:00"
   },
   {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
@@ -4090,9 +4108,9 @@
     "slug": "split-eko-2t",
     "nombre": "Split  2T EKO",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/split-eko-2t/",
-    "updated_at": "2026-09-05T22:36:20.495169+00:00"
+    "updated_at": "2026-11-26T16:33:11.968959+00:00"
   },
   {
     "id": "7fc47e6b-214b-4f1a-b8ed-b7e3148fa24f",
