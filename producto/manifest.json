@@ -1,5 +1,14 @@
 [
   {
+    "id": "7cfd6420-9982-4841-8cd0-d8365dfdbd66",
+    "slug": "arrocera-decakila-1-litros-con-vaporera",
+    "nombre": "Arrocera 1 litros con vaporera Decakila",
+    "categoria": "COCINA",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/arrocera-decakila-1-litros-con-vaporera/",
+    "updated_at": "2026-11-15T01:32:39.030774+00:00"
+  },
+  {
     "id": "eb09cffe-9413-4921-8b35-61773d9e56c7",
     "slug": "arrocera-1-5l-con-vaporera-challenger",
     "nombre": "Arrocera 1.5L con Vaporera Challenger",
@@ -9,18 +18,9 @@
     "updated_at": "2026-07-30T11:07:42.997639+00:00"
   },
   {
-    "id": "7cfd6420-9982-4841-8cd0-d8365dfdbd66",
-    "slug": "arrocera-decakila-1-litros-con-vaporera",
-    "nombre": "Arrocera Decakila – 1 litros con vaporera",
-    "categoria": "COCINA",
-    "disponible": true,
-    "url": "https://paratuhogar.org/producto/arrocera-decakila-1-litros-con-vaporera/",
-    "updated_at": "2026-11-15T01:32:39.030774+00:00"
-  },
-  {
     "id": "23156c57-fa37-4134-b026-19727aaef40a",
     "slug": "arrocera-decakila-1-8-litros-con-vaporera",
-    "nombre": "Arrocera Decakila – 1.8 litros con vaporera",
+    "nombre": "Arrocera 1.8 litros con vaporera Decakila",
     "categoria": "COCINA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/arrocera-decakila-1-8-litros-con-vaporera/",
@@ -87,7 +87,7 @@
     "categoria": "ENERGIA",
     "disponible": true,
     "url": "https://paratuhogar.org/producto/backups-marsriva-1000va-600w/",
-    "updated_at": "2026-10-23T00:03:49.97839+00:00"
+    "updated_at": "2026-11-27T14:51:35.388828+00:00"
   },
   {
     "id": "b878a3c1-84f3-4ea1-8885-836a3b37df31",
@@ -2758,9 +2758,9 @@
     "slug": "nevera-23-4-pies-godline-doble-puerta",
     "nombre": "Nevera 23.4 pies Godline Doble puerta",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/nevera-23-4-pies-godline-doble-puerta/",
-    "updated_at": "2026-11-26T14:54:46.386175+00:00"
+    "updated_at": "2026-11-27T16:23:34.619844+00:00"
   },
   {
     "id": "4a61034a-dbba-45f8-b466-11f63e3dd00b",
@@ -3019,9 +3019,9 @@
     "slug": "nevera-exhibidora-doble-20-pies-milexus",
     "nombre": "Nevera Exhibidora doble 20 pies Milexus",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/nevera-exhibidora-doble-20-pies-milexus/",
-    "updated_at": "2026-11-20T01:49:38.375267+00:00"
+    "updated_at": "2026-11-27T14:54:08.005798+00:00"
   },
   {
     "id": "d973e9b4-8a55-4913-8736-20ecac114a5c",
@@ -3604,9 +3604,9 @@
     "slug": "refrigerador-8-5-pies-royal",
     "nombre": "Refrigerador 8.5 pies Royal",
     "categoria": "MUNDO FRIO",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/refrigerador-8-5-pies-royal/",
-    "updated_at": "2026-11-04T23:51:49.12607+00:00"
+    "updated_at": "2026-11-27T18:34:13.949374+00:00"
   },
   {
     "id": "5c67b520-97f8-4d45-a35c-516ea3673577",
@@ -3703,9 +3703,9 @@
     "slug": "refrigerador-lg-smart-inverter-12-pies",
     "nombre": "Refrigerador LG Smart Inverter 12 pies",
     "categoria": "MUNDO FRIO",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/refrigerador-lg-smart-inverter-12-pies/",
-    "updated_at": "2026-11-20T22:50:33.301622+00:00"
+    "updated_at": "2026-11-27T14:54:22.455622+00:00"
   },
   {
     "id": "495a9ac8-4d16-4f37-b6a4-e30d00d35bd7",
@@ -3937,9 +3937,9 @@
     "slug": "smart-tv-40-samsung",
     "nombre": "Smart TV 40 Samsung",
     "categoria": "SMART TV",
-    "disponible": false,
+    "disponible": true,
     "url": "https://paratuhogar.org/producto/smart-tv-40-samsung/",
-    "updated_at": "2026-11-23T16:49:28.372007+00:00"
+    "updated_at": "2026-11-27T14:55:25.71364+00:00"
   },
   {
     "id": "4369f7b7-7633-42a2-b79f-f3b9c9dd18d8",
@@ -4000,9 +4000,9 @@
     "slug": "smart-tv-50-jvc-v1-series",
     "nombre": "Smart TV 50\" JVC V1 Series",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-50-jvc-v1-series/",
-    "updated_at": "2026-11-25T00:58:27.775318+00:00"
+    "updated_at": "2026-11-27T14:55:06.517196+00:00"
   },
   {
     "id": "4072ee64-54a8-470b-bad1-ef42da2ff867",
@@ -4050,6 +4050,15 @@
     "updated_at": "2026-11-25T01:09:04.292854+00:00"
   },
   {
+    "id": "742d5670-28ba-4da6-b2ab-9b9e11295f99",
+    "slug": "smart-tv-65-samsung-u8000h-2026",
+    "nombre": "Smart TV 65\" Samsung U8000H (2026)",
+    "categoria": "SMART TV",
+    "disponible": true,
+    "url": "https://paratuhogar.org/producto/smart-tv-65-samsung-u8000h-2026/",
+    "updated_at": "2026-11-27T18:26:04.404141+00:00"
+  },
+  {
     "id": "74dee11a-5135-46ad-aee9-703b9c5da2f5",
     "slug": "smart-tv-challenger-75-4k-led-tv75sm2025fl",
     "nombre": "Smart TV Challenger 75 4K LED (TV75SM2025FL)",
@@ -4072,9 +4081,9 @@
     "slug": "smart-tv-pioneer-55-modelo-2026",
     "nombre": "SMART TV PIONEER 55” – MODELO 2026",
     "categoria": "SMART TV",
-    "disponible": true,
+    "disponible": false,
     "url": "https://paratuhogar.org/producto/smart-tv-pioneer-55-modelo-2026/",
-    "updated_at": "2026-11-23T17:29:17.22122+00:00"
+    "updated_at": "2026-11-27T13:52:49.392298+00:00"
   },
   {
     "id": "9c629270-acf9-4642-8a71-2d2fa54c0c19",
