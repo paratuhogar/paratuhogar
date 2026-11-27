@@ -3715,7 +3715,14 @@ document.getElementById('checkout-form').onsubmit = function(event) {
 // --- FUNCIÓN BLINDADA: CARGA FOTOS DESDE GITHUB Y CORRIGE NOMBRES ---
 // --- FUNCIÓN CORREGIDA: CARGA IMÁGENES DESDE GITHUB (CARPETA LOCAL) ---
 // --- FUNCIÓN DE ALTA PRECISIÓN PARA CARGAR FOTOS ---
+// Copying filenames from chats can carry invisible direction/format marks.
+// Preserve visible spelling, case, accents and meaningful joining characters.
+function cleanGithubImageName(value) {
+    return String(value ?? '').replace(/[\u200B\u200E\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g, '').trim();
+}
+
 function fixDriveUrl(url) {
+    url = cleanGithubImageName(url);
     // 1. Si no hay dato, devolver imagen por defecto
     if (!url || url === 'null' || url === 'undefined' || url.trim() === '') {
         return 'https://placehold.co/400x400/1a4789/ffffff?text=Sin+Foto';
@@ -3738,7 +3745,7 @@ function fixDriveUrl(url) {
     } catch(e) {}
 
     // Quitar comillas si las hubiera
-    nombreArchivo = nombreArchivo.trim().replace(/['"]/g, '');
+    nombreArchivo = cleanGithubImageName(nombreArchivo).replace(/['"]/g, '');
 
     // === REGLA DE ORO ===
     // Eliminamos espacios para estandarizar
@@ -7313,8 +7320,15 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
         if (fichaPdfInput && fichaPdfUrl) fichaPdfInput.value = fichaPdfUrl;
 
         // Validar antes de consultar: no gastar una petición si falta la foto.
-        const imgName = document.getElementById('p-img-name')?.value || '';
-        const tieneFoto = [0, 1, 2, 3].some(i => document.getElementById(`img-path-${i}`).value);
+        const uploadedImage = document.getElementById('p-img-name');
+        const imgName = cleanGithubImageName(uploadedImage?.value);
+        if (uploadedImage) uploadedImage.value = imgName;
+        const imageNames = [0, 1, 2, 3].map(i => {
+            const input = document.getElementById(`img-path-${i}`);
+            input.value = cleanGithubImageName(input.value);
+            return input.value;
+        });
+        const tieneFoto = imageNames.some(Boolean);
         if (!editId && !tieneFoto && !imgName) {
             alert("❌ Error: Debes subir al menos una foto.");
             return;
@@ -7328,10 +7342,10 @@ document.getElementById('form-nuevo-prod').addEventListener('submit', async func
             categoria: categoriaInput,
             descripcion: ProductDescriptionEditorApi.readProductDescription({ editor: quill }),
 
-            thumbnail: document.getElementById('img-path-0').value || imgName,
-            image1: document.getElementById('img-path-1').value,
-            image2: document.getElementById('img-path-2').value,
-            image3: document.getElementById('img-path-3').value,
+            thumbnail: imageNames[0] || imgName,
+            image1: imageNames[1],
+            image2: imageNames[2],
+            image3: imageNames[3],
 
             ficha_pdf: fichaPdfUrl || null,
             ficha_pdf_nombre: fichaPdfUrl
@@ -11880,16 +11894,12 @@ function previewGithubImage(index) {
     const icon = document.getElementById(`icon-github-${index}`);
 
     // Obtenemos lo que escribieron en el campo de texto
-    const fileName = input.value.trim();
+    const fileName = cleanGithubImageName(input.value);
+    input.value = fileName;
 
     if (fileName) {
-        // === CONFIGURACIÓN DEL NUEVO ALMACÉN ===
-        const GITHUB_USER = 'paratuhogar';
-        const REPO = 'paratuhogar-fotos'; // <--- ESTO ES LO IMPORTANTE
-        const BRANCH = 'main';
-
-        // Construimos la URL directa a la imagen
-        const fullUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO}/${BRANCH}/img_productos/${fileName}`;
+        // Use the same cleanup and repository path as the live catalogue.
+        const fullUrl = fixDriveUrl(fileName);
 
         // 1. Asignamos la URL a la etiqueta <img>
         img.src = fullUrl;

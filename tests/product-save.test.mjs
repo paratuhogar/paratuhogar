@@ -56,6 +56,8 @@ function fixture({ select, save, refresh, marker, confirm = true, editId = '', d
     vm.runInNewContext(fs.readFileSync(new URL('../js/' + file, import.meta.url), 'utf8'), context);
   }
   context.supabaseClient = context.supabase.createClient();
+  const imageCleanerStart = source.indexOf('function cleanGithubImageName(');
+  if (imageCleanerStart >= 0) vm.runInNewContext(source.slice(imageCleanerStart, source.indexOf('\n}', imageCleanerStart) + 2), context);
   if (descriptionError) context.ProductDescriptionEditorApi.readProductDescription = () => { throw Error('Editor no disponible'); };
   const modalStart = source.indexOf('// --- FUNCIONES PARA EL FORMULARIO DE PRODUCTOS ---');
   vm.runInNewContext(source.slice(modalStart, source.indexOf('// --- FUNCIÓN PARA PROCESAR Y SUBIR IMAGEN ---', modalStart)), context);
@@ -65,6 +67,22 @@ function fixture({ select, save, refresh, marker, confirm = true, editId = '', d
   return { context, nodes, requests, alerts, confirms, logs, submit: () => submit({ preventDefault() {} }), get closed() { return closed; } };
 }
 const writes = f => f.requests.filter(r => r.op === 'insert' || r.op === 'update');
+test('product save removes invisible paste marks from all four image fields before transport', async () => {
+  const f=fixture({editId:'image-fixture'});
+  f.nodes['img-path-0'].value='\u200e\u200eSmartTV65samsung2026.png';
+  f.nodes['img-path-1'].value='\ufeffFotoÉKO-1.JPG\u200f';
+  f.nodes['img-path-2'].value='\u2066Foto_2.webp\u2069';
+  f.nodes['img-path-3'].value='\u200b';
+  await f.submit();assert.equal(writes(f).length,1);
+  const row=writes(f)[0].values;
+  assert.equal(row.thumbnail,'SmartTV65samsung2026.png');assert.equal(row.image1,'FotoÉKO-1.JPG');assert.equal(row.image2,'Foto_2.webp');assert.equal(row.image3,'');
+  assert.equal(row.precio,370);assert.equal(row.comision,10);
+  assert.equal(f.nodes['img-path-0'].value,'SmartTV65samsung2026.png');
+});
+test('paste marks alone cannot satisfy the required photo when creating a product', async () => {
+  const f=fixture();f.nodes['img-path-0'].value='\u200e\ufeff';
+  await f.submit();assert.equal(f.requests.length,0);assert.match(f.alerts[0],/foto/);assert.equal(f.nodes['btn-save-prod'].disabled,false);
+});
 function preserved(f) {
   assert.equal(f.nodes['p-nombre'].value, 'Nevera Royal 10 pies');
   assert.match(f.nodes['editor-container'].innerHTML, /Con luz interior/);
