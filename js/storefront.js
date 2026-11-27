@@ -596,7 +596,7 @@ async function processRegister() {
         }
 
     } catch (e) {
-        if(status)status.textContent="No se pudo confirmar la solicitud. Tus respuestas siguen aquí; vuelve a intentar. "+e.message;
+        if(status)status.textContent=e.code==='PT409' ? e.message : "No se pudo confirmar la solicitud. Tus respuestas siguen aquí; vuelve a intentar. "+e.message;
     } finally {
         registrationBusy=false;
         btn.disabled = false;
