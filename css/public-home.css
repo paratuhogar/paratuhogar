@@ -1,0 +1,12 @@
+/* Public readability only: do not alter private dashboards or financial values. */
+.client-only-section .text-slate-400,
+#verified-social-proof-list .text-slate-400,
+.pth-verified-review .text-slate-400 {
+  color: #475569;
+}
+#category-list .text-gray-400 {
+  color: #64748b;
+}
+.pth-verified-review .bg-emerald-600 {
+  background-color: #047857;
+}

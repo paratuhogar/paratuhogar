@@ -12,7 +12,8 @@ const sources = [
   'low-connectivity',
   'offline-storefront',
   'admin-panel',
-  'feedback-announcement'
+  'feedback-announcement',
+  'public-home'
 ];
 const output = sources.map(name => {
   const css = fs.readFileSync(path.join(root, 'css', name + '.css'), 'utf8');

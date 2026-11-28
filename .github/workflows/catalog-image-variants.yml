@@ -1,0 +1,55 @@
+name: Actualizar miniaturas públicas del catálogo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "43 */6 * * *"
+
+# Same source-write permission as SEO maintenance; no database credentials.
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: catalog-image-variants
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar codificadores reproducibles
+        run: |
+          python -m pip install --only-binary=:all: Pillow==13.0.0
+      - name: Verificar refresh sin servicios externos
+        run: python -m unittest discover -s scripts -p 'test*image*.py' -v
+      - name: Actualizar solamente fotos públicas nuevas o modificadas
+        run: python scripts/refresh_catalog_image_variants.py
+      - name: Guardar solamente derivados y pruebas de origen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add js/image-variants.js scripts/active-catalog-images.txt scripts/catalog-image-sources.json img_productos/optimized
+          if git diff --cached --quiet; then
+            echo "Las miniaturas públicas ya están actualizadas."
+          else
+            git config user.name "paratuhogar-images-bot"
+            git config user.email "images-bot@users.noreply.github.com"
+            git commit -m "Actualizar miniaturas públicas del catálogo"
+            git pull --rebase
+            git push
+          fi
+          # GITHUB_TOKEN pushes do not automatically rebuild branch-based Pages.
+          # Request its normal build, without changing hosting settings or secrets.
+          # A clean rerun also recovers a previous push whose build request failed.
+          built_sha=$(gh api "repos/${GITHUB_REPOSITORY}/pages/builds/latest" --jq 'if .status == "built" then .commit else "" end' 2>/dev/null || true)
+          if [ "$built_sha" != "$(git rev-parse HEAD)" ]; then
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent
+          fi

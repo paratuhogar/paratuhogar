@@ -11,6 +11,45 @@
   const milestones = [5, 10, 25, 50, 100], badgeAge = 5 * 60 * 1000;
   const elapsed = () => root.performance?.now?.() ?? Date.now();
   let badgeState = {balance:null,earned:null,checkedAt:null,loading:false,revision:0}, badgeObserver;
+  let stylesReady = false, stylesPending = null, styleNotice = null, opening = null;
+
+  function loadStyles() {
+    if (stylesReady) return Promise.resolve();
+    if (stylesPending) return stylesPending;
+    // Standalone documents already include these links and need no loader or new fetch.
+    const paths = ['css/points-wallet.css', ...(root.PTHPointsCash ? ['css/points-cash.css'] : [])];
+    const local = () => Promise.all(paths.map(path => {
+      const url = new URL(path, new URL('/', doc.baseURI));
+      const existing = [...doc.querySelectorAll('link[rel="stylesheet"]')].find(link => new URL(link.href).pathname === url.pathname);
+      if (existing?.sheet) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const link = existing || doc.createElement('link');
+        const timer = root.setTimeout(() => finish(Error('Los estilos tardaron demasiado en cargar.')), 8000);
+        const loaded = () => finish(), failed = () => finish(Error('No se pudieron cargar los estilos.'));
+        const finish = error => { root.clearTimeout(timer); link.removeEventListener('load', loaded); link.removeEventListener('error', failed); if (error) { link.remove(); reject(error); } else resolve(); };
+        link.addEventListener('load', loaded); link.addEventListener('error', failed);
+        if (!existing) { link.rel = 'stylesheet'; link.href = url.href; doc.head.append(link); }
+      });
+    }));
+    stylesPending = Promise.resolve().then(() => root.PTHAssets?.load ? root.PTHAssets.load('pointsStyles') : local()).then(() => { stylesReady = true; }, error => { stylesPending = null; throw error; });
+    return stylesPending;
+  }
+  function styleMessage(failed, retry) {
+    if (!styleNotice) { styleNotice = element('p'); styleNotice.id = 'pth-points-style-status'; styleNotice.setAttribute('role', 'status'); doc.body.append(styleNotice); }
+    styleNotice.replaceChildren(doc.createTextNode(failed ? 'No se pudieron cargar los estilos de puntos. Comprueba la conexión. ' : 'Cargando estilos de puntos…'));
+    if (failed) { const control = element('button', '', 'Reintentar estilos de puntos'); control.type = 'button'; control.addEventListener('click', retry); styleNotice.append(control); }
+  }
+  function revealEntries() {
+    for (const id of ['pth-points-open', 'pth-points-admin-open']) doc.getElementById(id)?.style.removeProperty('visibility');
+    styleNotice?.remove(); styleNotice = null;
+    void refreshBadge();
+  }
+  function prepareEntries() {
+    if (stylesReady) { revealEntries(); return; }
+    if (!identity || !['pth-points-open', 'pth-points-admin-open'].some(id => doc.getElementById(id)?.getClientRects().length)) return;
+    const stamp = generation, key = identity;
+    void loadStyles().then(() => { if (valid(stamp, key)) revealEntries(); }).catch(() => { if (valid(stamp, key)) styleMessage(true, prepareEntries); });
+  }
 
   function element(tag, className, text) {
     const node = doc.createElement(tag);
@@ -38,6 +77,7 @@
   function detachCash() { for (const view of cashViews.splice(0)) view?.destroy(); }
   function erase(clearCash = false) {
     generation++;
+    opening = null; styleNotice?.remove(); styleNotice = null;
     detachCash(); if (clearCash) root.PTHPointsCash?.clear();
     badgeState = {balance:null,earned:null,checkedAt:null,loading:false,revision:0};
     paintBadge(null);
@@ -51,6 +91,7 @@
     currentProfile = next;
     mountEntry('pth-points-open', 'Mis puntos', doc.getElementById('btn-dash-resumen')?.parentElement, !!next, () => open(false));
     mountEntry('pth-points-admin-open', 'Puntos de gestores', doc.getElementById('admin-master-nav'), isAdmin(next), () => open(true));
+    prepareEntries();
     void refreshBadge();
     if (expiryTimer !== null) root.clearTimeout(expiryTimer);
     expiryTimer = next?.expires ? root.setTimeout(sync, Math.min(2147483647, Math.max(1, next.expires - Date.now()))) : null;
@@ -58,21 +99,22 @@
   }
   function mountEntry(id, text, parent, allowed, action) {
     const existing = doc.getElementById(id);
-    if (!allowed) { existing?.remove(); return; }
+    if (!allowed) { if (existing) badgeObserver?.unobserve(existing); existing?.remove(); return; }
     if (!existing && parent) {
       const entry = button(text, action, 'pth-points-entry'); entry.id = id;
+      if (!stylesReady) entry.style.visibility = 'hidden';
       if (id === 'pth-points-open') {
         parent.classList.add('pth-points-entry-nav');
         const badge = element('span', 'pth-points-badge', '…'); badge.id = 'pth-points-badge'; badge.setAttribute('aria-hidden', 'true');
         entry.append(badge); entry.setAttribute('aria-label', 'Mis puntos, saldo por consultar');
-        if (root.IntersectionObserver) {
-          badgeObserver ||= new root.IntersectionObserver(items => { if (items.some(item => item.isIntersecting)) void refreshBadge(); });
-          badgeObserver.observe(entry);
-        }
       }
       // The shared administration grid supplies the same styles as its other tools.
       if (id === 'pth-points-admin-open') entry.className = '';
       parent.append(entry);
+      if (root.IntersectionObserver) {
+        badgeObserver ||= new root.IntersectionObserver(items => { if (items.some(item => item.isIntersecting)) { prepareEntries(); void refreshBadge(); } });
+        badgeObserver.observe(entry);
+      }
     }
   }
   function paintBadge(balance, gain = 0) {
@@ -95,7 +137,7 @@
   }
   async function refreshBadge(force = false) {
     const entry = doc.getElementById('pth-points-open');
-    if (!identity || !entry?.getClientRects().length || doc.hidden || dialog?.open || root.navigator.onLine === false || badgeState.loading) return;
+    if (!stylesReady || !identity || !entry?.getClientRects().length || doc.hidden || dialog?.open || root.navigator.onLine === false || badgeState.loading) return;
     if (!force && badgeState.checkedAt !== null && elapsed() - badgeState.checkedAt < badgeAge) return;
     const state = badgeState, revision = ++state.revision;
     state.loading = true; paintBadge(null);
@@ -164,10 +206,24 @@
     if (!result || !result.data || typeof result.data !== 'object') throw Object.assign(Error('La respuesta no se pudo confirmar.'), { code: 'INVALID_RESPONSE' });
     return result.data;
   }
-  function open(admin) {
+  function open(admin, requestedOpener) {
     const p = sync();
     if (!p || admin && !isAdmin(p)) return false;
+    if (!stylesReady) {
+      if (opening?.key === identity && opening.admin === admin) return true;
+      const request = { stamp:++generation, key:identity, admin, opener:requestedOpener || doc.activeElement }; opening = request;
+      styleMessage(false);
+      void loadStyles().then(() => {
+        if (opening !== request || !valid(request.stamp, request.key)) return;
+        opening = null; revealEntries(); open(admin, request.opener);
+      }).catch(() => {
+        if (opening !== request || !valid(request.stamp, request.key)) return;
+        opening = null; styleMessage(true, () => open(admin, request.opener));
+      });
+      return true;
+    }
     ensureDialog(); generation++; opener = doc.activeElement;
+    if (requestedOpener?.isConnected) opener = requestedOpener;
     dialog.dataset.view = admin ? 'admin' : 'own';
     title.textContent = admin ? 'Puntos de gestores' : 'Mis puntos';
     detachCash();

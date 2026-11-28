@@ -31,14 +31,14 @@
     <!-- === FIN OPTIMIZACIÓN SEO PREMIUM === -->
 
     <!-- 2. Estilos y Fuentes -->
-    <link rel="stylesheet" href="css/tailwind.min.css?v=20261004-rolling30">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="css/tailwind.min.css?v=20261128-mobile1">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/storefront-support.css?v=20261122-workui1">
-    <link rel="stylesheet" href="css/points-wallet.css?v=20261122-workui1">
-    <link rel="stylesheet" href="css/points-cash.css?v=20261122-cash1">
-    <link rel="stylesheet" href="css/personal-qr.css?v=20261122-couponsqr1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="css/storefront-support.css?v=20261128-mobile1">
     <link rel="stylesheet" href="css/coupons.css?v=20261125-couponscope1">
 
 
@@ -68,7 +68,7 @@
     <script src="js/vendor/supabase-2.57.4.js" defer></script>
     <script src="js/secure-data.js?v=20261122-cash1" defer></script>
     <script src="js/points-cash.js?v=20261122-cash1" defer></script>
-    <script src="js/points-wallet.js?v=20261122-cash1" defer></script>
+    <script src="js/points-wallet.js?v=20261128-mobile1" defer></script>
     <script src="js/gestor-ranking.js?v=20261004-rolling30" defer></script>
     <script src="js/affiliate-links.js?v=20261122-pointref1" defer></script>
     <script src="js/short-links.js?v=20261123-shortlinks1" defer></script>
@@ -77,8 +77,8 @@
     <script src="js/public-name-editor.js?v=20261003-alias1" defer></script>
     <script src="js/offline-storefront-adapter.js?v=20261017-worksettings1" defer></script>
     <script src="js/feedback-announcement.js?v=20261003-welcome2" defer></script>
-    <script src="js/image-variants.js?v=20261001-images2" defer></script>
-    <script src="js/product-images.js?v=20261002-fasttools2" defer></script>
+    <script src="js/image-variants.js?v=20261128-mobile1" defer></script>
+    <script src="js/product-images.js?v=20261128-mobile1" defer></script>
     <script src="js/product-description-loader.js?v=20261001-images2" defer></script>
     <script src="js/admin-work-view.js?v=20260930-admins2" defer></script>
     <script src="js/admin-push-links.js?v=20261002-reminders1" defer></script>
@@ -86,7 +86,7 @@
     <!-- Las librerías pesadas de gestor/administración se cargan únicamente
          cuando existe una sesión interna. Un cliente público ya no descarga
          gráficas, Excel, editor, ZIP ni PDF para consultar el catálogo. -->
-    <script src="js/internal-assets.js?v=20261123-shortlinks1" defer></script>
+    <script src="js/internal-assets.js?v=20261128-mobile1" defer></script>
     <script>
         let quill = null;
         function loadInternalAssets() { window.PTHAssets?.scheduleSession(); }
@@ -208,7 +208,11 @@
             }
         }
         body { font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; display: inline-block; vertical-align: middle; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; display: inline-block; vertical-align: middle; width: 1em; height: 1em; overflow: hidden; white-space: nowrap; flex-shrink: 0; line-height: 1; }
+        .pth-home-hero { display: block; height: 220px; }
+        .pth-home-hero img { width: 100%; height: 100%; object-fit: cover; }
+        @media (min-width: 640px) { .pth-home-hero { height: 300px; } }
+        @media (min-width: 768px) { .pth-home-hero { height: 420px; } }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .category-tab.active { border-bottom: 3px solid #1a4789; color: #1a4789; }
         .loader { width: 40px; height: 40px; border: 4px solid #1a4789; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
@@ -469,8 +473,8 @@
         <!-- Logo -->
         <div class="flex items-center gap-8">
             <div class="flex items-center gap-2">
-                <img src="icons/icon-192.png" alt="Logo Paratuhogar" class="h-8 w-8 rounded-full border border-white/20 shadow-sm object-cover">
-                <h1 class="text-white text-xl font-extrabold tracking-tight">para<span class="text-slate-200">tuhogar</span></h1>
+                <img src="assets/icon-logo-96.webp" width="32" height="32" alt="Logo Paratuhogar" class="h-8 w-8 rounded-full border border-white/20 shadow-sm object-cover">
+                <p class="text-white text-xl font-extrabold tracking-tight">para<span class="text-slate-200">tuhogar</span></p>
             </div>
 
             <!-- Barra de Búsqueda (Estilo Transparente) -->
@@ -587,7 +591,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-black text-slate-800">Compras y opiniones verificadas</p>
-                    <p id="social-proof-delivered-count" class="text-[10px] font-bold text-slate-400">Consultando entregas confirmadas…</p>
+                    <p id="social-proof-delivered-count" class="text-[10px] font-bold text-slate-600">Consultando entregas confirmadas…</p>
                 </div>
             </div>
         </div>
@@ -595,9 +599,11 @@
         <!-- Columna Derecha: Foto de la Empresa / Equipos (RESTAURADA) -->
         <div class="lg:col-span-6 relative mt-2 md:mt-6 lg:mt-0">
             <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
-                <img src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1000&auto=format&fit=crop"
-                     alt="Equipos para el hogar"
-                     class="w-full h-[220px] sm:h-[300px] md:h-[420px] object-cover">
+                <picture class="pth-home-hero">
+                    <source type="image/avif" srcset="assets/home-hero-360.avif 360w, assets/home-hero-720.avif 720w, assets/home-hero-1000.avif 1000w" sizes="(min-width: 1024px) 48vw, calc(100vw - 40px)">
+                    <source type="image/webp" srcset="assets/home-hero-360.webp 360w, assets/home-hero-720.webp 720w, assets/home-hero-1000.webp 1000w" sizes="(min-width: 1024px) 48vw, calc(100vw - 40px)">
+                    <img src="assets/home-hero-720.webp" width="1000" height="667" alt="Equipos para el hogar" fetchpriority="high" loading="eager" decoding="async">
+                </picture>
             </div>
 
             <!-- Tarjeta Flotante sobre la Foto -->
@@ -945,7 +951,8 @@
             </div>
 
             <!-- Product Grid -->
-            <section id="productos-container" class="px-6 py-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
+            <h2 id="catalog-products-title" class="sr-only">Productos del catálogo</h2>
+            <section id="productos-container" aria-labelledby="catalog-products-title" class="px-6 py-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
                 <div class="col-span-full py-20 text-center"><span class="loader"></span></div>
             </section>
         </div> <!-- FIN sec-catalogo -->
@@ -3307,9 +3314,9 @@
     <script src="js/gestor-questionnaire.js?v=20261008-questionnaire2" defer></script>
     <script src="js/gestor-registration-steps.js?v=20261016-captacion1" defer></script>
     <script src="js/checkout-confirmation.js?v=20261122-couponsqr1" defer></script>
-    <script src="js/storefront.min.js?v=20261127-imagefix1" defer></script>
-    <script src="js/personal-qr.js?v=20261123-shortlinks1" defer></script>
-    <script src="js/pending-checkout-storefront.js?v=20261127-imagefix1" defer></script>
+    <script src="js/storefront.min.js?v=20261128-mobile1" defer></script>
+    <script src="js/personal-qr.js?v=20261128-mobile1" defer></script>
+    <script src="js/pending-checkout-storefront.js?v=20261128-mobile1" defer></script>
 
 
 

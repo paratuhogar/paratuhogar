@@ -9,9 +9,9 @@ const parent={id:'11111111-1111-4111-8111-111111111111',nombre:'Gestor Prueba',r
 const child={...parent,id:'22222222-2222-4222-8222-222222222222',nombre:'Sub Prueba',parent_id:parent.id,parent_nombre:parent.nombre};
 const admin={...parent,id:'44444444-4444-4444-8444-444444444444',rol:'admin'};
 const sdk=`window.supabase={createClient(){return {from(table){let single=false;const q={then(ok,no){let data=table==='control_sistema'?{valor:'v1'}:[];if(single&&Array.isArray(data))data=null;return Promise.resolve({data,error:null,count:0}).then(ok,no)}};for(const name of ['select','eq','neq','gt','gte','lt','lte','order','limit','range','in','is','not','or','insert','update','delete','upsert'])q[name]=()=>q;for(const name of ['single','maybeSingle'])q[name]=()=>{single=true;return q};return q;},rpc(){return Promise.resolve({data:[],error:null})},channel(){const q={on:()=>q,subscribe:()=>q};return q;},removeChannel(){}}}};`;
-(async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
+(async()=>{const {validateQuery}=await import('../supabase/functions/secure-data/handler.mjs');const browser=await chromium.launch({executablePath:process.env.PTH_CHROMIUM||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});try{
  for(const role of (baseline?['visitor']:['visitor','gestor','subgestor','admin'])){
- const context=await browser.newContext({viewport:{width:390,height:844}}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero,failSalesTools=true,failAlias=true;const profile={...(role==='subgestor'?child:role==='admin'?admin:parent)};
+ const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}),page=await context.newPage();const requests=[],errors=[],secureRequests=[];let navigations=0,heroFinished=false,productsAfterHero,failSalesTools=true,failAlias=true;const profile={...(role==='subgestor'?child:role==='admin'?admin:parent)};
  page.on('pageerror',e=>errors.push(e.stack));page.on('framenavigated',f=>{if(f===page.mainFrame())navigations++;});
  await page.addInitScript(({role,profile})=>{sessionStorage.setItem('pth_intro_vista','true');localStorage.setItem('pth_last_seen_level','0');localStorage.setItem('info_precios_v1','true');localStorage.setItem('sl_tutorial_completed_v1','true');localStorage.setItem('pth_subgestor_onboarding_v1','true');if(role!=='visitor'){localStorage.setItem('pth_secure_token','a'.repeat(64));localStorage.setItem('pth_session',JSON.stringify({name:profile.nombre,isAdmin:false,data:profile}));}},{role,profile});
  await page.route('**/*',async route=>{
@@ -23,6 +23,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  else if(b.action==='ranking'){
   assert.deepEqual(Object.keys(b),['action']); assert.ok(req.headers().authorization,'aggregate always requires a session, including a visitor who logs in during this test');
   const {summary}=await import('./fixtures/ranking.mjs');data=summary(profile.id);
+  data.period={...data.period,kind:'created-delivered-30d',cacheUntil:new Date(Date.now()+60000).toISOString()};
   data.self.participates=role!=='admin';
   data.top=[{id:'99999999-9999-4999-8999-999999999999',alias:'Tienda ficticia <img src=x onerror=window.rankInjection=true>',count:4,rank:1}];
  }
@@ -42,11 +43,12 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   for(const f of b.filters||[])if(f.method==='eq')data=data.filter(r=>r[f.column]===f.value);
   if(b.single){if(data.length>1){return route.fulfill({status:406,contentType:'application/json',body:JSON.stringify({data:null,error:{code:'PGRST116',message:'La consulta no devolvió un único registro.'}})});}data=data[0]||null;}
  }
- return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'http://127.0.0.1:8080'},body:JSON.stringify({data,error:null,count:0})});
+ return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'https://paratuhogar.org'},body:JSON.stringify({data,error:null,count:0})});
  }
- if(url.hostname==='127.0.0.1'){
+ if(url.hostname==='paratuhogar.org'){
  let rel=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname.slice(1));
- if(!/^(js\/vendor\/supabase-2\.57\.4\.js|index\.html|catalog-maker\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/fonts\/Manrope\.ttf|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
+ if(!/^(js\/vendor\/supabase-2\.57\.4\.js|index\.html|catalog-maker\.html|feedback\.html|log\.jpeg|js\/[\w.-]+\.(?:js|mjs)|css\/[\w.-]+\.css|assets\/(?:fonts\/Manrope\.ttf|(?:home-hero-[\w.-]+|icon-logo-96)\.(?:webp|avif))|icons\/[\w.-]+\.(?:svg|png))$/.test(rel))return route.fulfill({status:404,body:''});
+ if(rel.startsWith('assets/home-hero-')){await new Promise(r=>setTimeout(r,1000));heroFinished=true;}
  if(rel==='js/sales-tools.min.js'&&failSalesTools){failSalesTools=false;return route.abort();}
  if(rel==='js/vendor/supabase-2.57.4.js')return route.fulfill({contentType:'application/javascript',body:sdk});
  const file=path.join(root,rel);if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
@@ -60,7 +62,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  if(req.resourceType()==='script')return route.fulfill({contentType:'application/javascript',body:''});
  return route.fulfill({contentType:'application/json',body:'{"success":false}'});
  });
- await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
+ await page.goto('https://paratuhogar.org/',{waitUntil:'domcontentloaded'});
  if(role==='admin'){await page.waitForFunction(()=>window.currentUserData?.rol==='admin');await page.evaluate(()=>PTHWorkView.switchView('gestor'));}
  try{await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===30,{},{timeout:12000});}catch(e){throw Error(role+': '+errors.join(' | ')+' '+await page.locator('#productos-container').innerText());}
  if(baseline){assert.equal(navigations,2);assert.equal(productsAfterHero,true);console.log('BASELINE controlled fixture: 2 navigations; catalogue waits for delayed hero image');await context.close();continue;}
@@ -105,7 +107,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+15),'no overflow beyond existing 15px carousel margin');
  if(role==='visitor'){
   assert.equal(secureRequests.some(body=>body.action==='ranking'),false,'public visitors never request the ranking');
-  await page.goto('http://127.0.0.1:8080/?ref=Gestor%20Prueba&contact=5350000000',{waitUntil:'domcontentloaded'});
+  await page.goto('https://paratuhogar.org/?ref=Gestor%20Prueba&contact=5350000000',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>typeof productosRaw!=='undefined'&&productosRaw.length===30);
   assert.equal(new URL(page.url()).searchParams.get('ref'),'Gestor Prueba');assert.equal(new URL(page.url()).searchParams.has('v'),false);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('pth_referrer_smart')).nombre),'Gestor Prueba');
@@ -115,6 +117,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
    cart=[{...productosRaw[1],qty:1}];
    document.getElementById('check-recogida').checked=true;
    document.getElementById('check-nombre').value='Synthetic Customer';document.getElementById('check-tel').value='5350000000';
+   document.getElementById('check-ci').value='90010112345';
    await document.getElementById('checkout-form').onsubmit({preventDefault(){}});
    window.firstIdentityToken=sessionStorage.getItem('pth_checkout_submission_token');
    await document.getElementById('checkout-form').onsubmit({preventDefault(){}});
@@ -135,10 +138,10 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   assert.equal(await page.locator('#gestor-ranking').isVisible(),true,'beginner ranking is in Inicio, outside advanced analysis');
   assert.equal(await page.locator('#gestor-ranking img').count(),0,'alias is plain text');
   assert.equal(await page.evaluate(()=>window.rankInjection),undefined);
-  assert.match(await page.locator('#gestor-ranking [data-ranking-period]').textContent(),/octubre.*01\/10–31\/10.*Cuba/);
+  assert.match(await page.locator('#gestor-ranking [data-ranking-period]').textContent(),/01\/10\/2026–31\/10\/2026.*Cuba/);
   assert.equal(await page.evaluate(()=>window.currentGestorLevel||0),0,'fixture has no sales but ranking is available');
-  if(role!=='admin')assert.match(await page.locator('#gestor-ranking').textContent(),/Tu puesto#4.*Entregas del mes2.*Próxima meta3/);
-  else assert.match(await page.locator('#gestor-ranking').textContent(),/Vista de administración/);
+  if(role!=='admin')assert.match(await page.locator('#gestor-ranking').textContent(),/Tu puesto#4.*Pedidos entregados2.*Próxima meta3/);
+  else assert.match(await page.locator('#gestor-ranking').textContent(),/Administración.*esta cuenta no participa/);
   for(const width of [320,390,820]){await page.setViewportSize({width,height:844});assert.ok(await page.locator('#gestor-ranking').evaluate(node=>node.scrollWidth<=node.clientWidth),'ranking card fits '+width);}
   await page.setViewportSize({width:390,height:844});
   assert.equal(secureRequests.some(body=>body.table==='pedidos'&&body.columns==='gestor, comision_total, producto, fecha, estado'),false,'old attempted cross-account ranking query is gone');
@@ -167,8 +170,8 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   assert.equal(await page.evaluate(()=>currentUserData.nombre),profile.nombre);
   for(const width of [320,390,820]){await page.setViewportSize({width,height:844});assert.ok(await page.locator('#gestor-public-name').evaluate(node=>node.scrollWidth<=node.clientWidth),'alias editor fits mobile');}
   await page.setViewportSize({width:390,height:844});
-  const storeLink=await page.evaluate(()=>getGestorStoreLink());assert.doesNotMatch(storeLink,/Gestor|Sub|tienda|Prueba/);
-  assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('pth_short_links_cache_v2')||'[]').some(row=>new URL(row.original).searchParams.get('ref')===currentUserData.id)),'short link destination uses the stable ID');
+  const storeLink=await page.evaluate(()=>verifiedGestorStoreLink());assert.doesNotMatch(storeLink,/Gestor|Sub|tienda|Prueba/);
+  assert.ok(await page.evaluate(async link=>new URL((await PTHShortLinks.resolve(new URL(link).searchParams.get('s'))).url).searchParams.get('ref')===currentUserData.id,storeLink),'short link destination uses the stable ID');
   await page.evaluate(()=>showSection('catalogo'));
   await page.evaluate(()=>{toggleCartModal(false);openDetail('Nevera prueba 01');});
   assert.match(new URL(page.url()).pathname,/^\/producto\//,'test Stories after opening the actual product detail');
@@ -179,7 +182,11 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   assert.equal(await page.locator('dialog [data-select-results]').count(),0,'quick Story has no bulk editor controls');
   await page.evaluate(()=>{navigator.clipboard.writeText=async text=>{window.storyCopied=text;};});
   await page.locator('dialog [data-copy]').click();
-  assert.match(await page.evaluate(()=>storyCopied),new RegExp(profile.id));
+  assert.ok(await page.evaluate(async()=>{
+   const links=storyCopied.match(/https:\/\/paratuhogar\.org\/\?s=[A-Za-z0-9_-]+/g)||[];
+   const resolved=await Promise.all(links.map(link=>PTHShortLinks.resolve(new URL(link).searchParams.get('s'))));
+   return resolved.some(row=>new URL(row.url).searchParams.get('ref')===currentUserData.id);
+  }),'Story copy uses a verified short product link belonging to this account');
   assert.doesNotMatch(await page.evaluate(()=>storyCopied),/Gestor Prueba|Sub Prueba/);
   assert.ok(requests.some(u=>new URL(u).pathname==='/assets/fonts/Manrope.ttf'),'real Story font loads successfully');
   assert.equal(requests.some(u=>/\/producto\/.*\/(?:js|css|assets)\//.test(new URL(u).pathname)),false,'tools and fonts must load from the root');
@@ -200,6 +207,7 @@ const sdk=`window.supabase={createClient(){return {from(table){let single=false;
   await page.evaluate(()=>Promise.all([copyCategoryOffers(),copyCategoryOffers()]));
   assert.equal(requests.filter(u=>u.includes('/sales-tools.min.js')).length,2,'one failed request and one successful retry');
   assert.equal(await page.locator('#sales-composer-modal').count(),1);
+  await page.waitForFunction(()=>document.getElementById('sales-composer-preview')?.value.includes('Nevera prueba 01'));
   assert.match(await page.locator('#sales-composer-preview').inputValue(),/Nevera prueba 01/);
   assert.equal(await page.locator('#btn-copy-bulk').isEnabled(),true);
   await page.evaluate(()=>{window.syntheticShares=[];window.open=(url)=>{syntheticShares.push(url);return null;};});

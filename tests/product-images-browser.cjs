@@ -3,8 +3,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..'),ctx={window:{}};
 vm.runInNewContext(fs.readFileSync(path.join(root,'js/image-variants.js'),'utf8'),ctx);
 const [name,row]=Object.entries(ctx.window.PTH_IMAGE_VARIANTS).find(([,r])=>r.width360===360&&r.width720===720);
-(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});try{
- for(const [width,dpr,mode,expected] of [[390,2,'grid',360],[1280,2,'grid',720],[390,2,'list',720]]){
+(async()=>{const browser=await chromium.launch({executablePath:process.env.PTH_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox']});try{
+ for(const [width,dpr,mode,expected] of [[390,2,'grid',360],[1280,2,'grid',720],[390,2,'list',720],[390,2,'compact',360]]){
  const page=await browser.newPage({viewport:{width,height:844},deviceScaleFactor:dpr});let failVariant=false,failOriginal=false,originalRequests=0;
  await page.route('**/*',async route=>{const u=new URL(route.request().url());
  if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:'<div id="card" style="width:260px;height:260px"></div>'});

@@ -3,6 +3,8 @@
  'use strict';
  const pending=new Map();
  const definitions={
+  pointsStyles:[['style','css/points-wallet.css?v=20261122-workui1','pth-points-wallet-css'],['style','css/points-cash.css?v=20261122-cash1','pth-points-cash-css']],
+  personalQRStyles:[['style','css/personal-qr.css?v=20261122-couponsqr1','pth-personal-qr-css']],
   subgestorReview:[['style','css/subgestor-review.css?v=20261027-subreview1','pth-subgestor-review-css'],['script','js/subgestor-review.js?v=20261027-subreview1','pth-subgestor-review-js']],
   sales:[['script','js/sales-tools.min.js?v=20261123-shortlinks1','pth-sales-tools-js',30000]],
   story:[['style','css/content-studio.css?v=20261002-quickstory1','pth-content-studio-css'],['script','js/studio-designs.js?v=20261122-whatsapplink1','pth-studio-designs-js'],['script','js/studio-jobs.js?v=20261123-shortlinks1','pth-studio-jobs-js'],['script','js/quick-story.js?v=20261123-shortlinks1','pth-quick-story-js']],
@@ -18,18 +20,19 @@
  };
  function resource([kind,url,id,timeout=8000]){
   if(pending.has(id))return pending.get(id);
-  const existing=document.getElementById(id);
-  if(existing?.dataset.loaded==='true')return Promise.resolve();
+  const assetURL=new URL(url,new URL('/',document.baseURI)).href;
+  const existing=document.getElementById(id)||(kind==='style'?[...document.querySelectorAll('link[rel="stylesheet"]')].find(link=>new URL(link.href).pathname===new URL(assetURL).pathname):null);
+  if(existing?.dataset.loaded==='true'||kind==='style'&&existing?.sheet)return Promise.resolve();
   const promise=new Promise((resolve,reject)=>{
-   const node=document.createElement(kind==='style'?'link':'script');node.id=id;
+   const node=existing||document.createElement(kind==='style'?'link':'script');if(!existing)node.id=id;
    // Product details change the document URL with pushState. Local tools still
    // live at the site root, independently of the currently open product.
-   const assetURL=new URL(url,new URL('/',document.baseURI)).href;
-   if(kind==='style'){node.rel='stylesheet';node.href=assetURL;}else{node.src=assetURL;node.async=true;}
+   if(!existing){if(kind==='style'){node.rel='stylesheet';node.href=assetURL;}else{node.src=assetURL;node.async=true;}}
    const timer=setTimeout(()=>finish(Error('La herramienta tardó demasiado en cargar.')),timeout);
-   const finish=error=>{clearTimeout(timer);node.onload=node.onerror=null;if(error){node.remove();pending.delete(id);reject(error);}else{node.dataset.loaded='true';resolve();}};
-   node.onload=()=>finish();node.onerror=()=>finish(Error('No se pudo cargar la herramienta.'));
-   document.head.appendChild(node);
+   const loaded=()=>finish(),failed=()=>finish(Error('No se pudo cargar la herramienta.'));
+   const finish=error=>{clearTimeout(timer);node.removeEventListener('load',loaded);node.removeEventListener('error',failed);if(error){node.remove();pending.delete(id);reject(error);}else{node.dataset.loaded='true';resolve();}};
+   node.addEventListener('load',loaded);node.addEventListener('error',failed);
+   if(!existing)document.head.appendChild(node);
   });pending.set(id,promise);return promise;
  }
  async function load(name){

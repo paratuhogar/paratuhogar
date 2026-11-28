@@ -14,6 +14,52 @@
   const name = profile => root.PTHAffiliate?.publicName(profile) || clean(profile?.nombre_publico || profile?.nombre).split(/\s+/)[0] || 'ParaTuHogar';
   let dialog, title, content, status, opener, context = null, generation = 0, searchVersion = 0;
   let identity = '', expiryTimer = null, watchTimer = null, encoder = null, loadingEncoder = null;
+  let stylesReady = false, stylesPending = null, styleNotice = null, entryObserver;
+
+  function loadStyles() {
+    if (stylesReady) return Promise.resolve();
+    if (stylesPending) return stylesPending;
+    const local = () => {
+      const url = new URL('css/personal-qr.css', new URL('/', doc.baseURI));
+      const existing = [...doc.querySelectorAll('link[rel="stylesheet"]')].find(link => new URL(link.href).pathname === url.pathname);
+      if (existing?.sheet) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const link = existing || doc.createElement('link');
+        const timer = root.setTimeout(() => finish(Error('Los estilos tardaron demasiado en cargar.')), 8000);
+        const loaded = () => finish(), failed = () => finish(Error('No se pudieron cargar los estilos.'));
+        const finish = error => { root.clearTimeout(timer); link.removeEventListener('load', loaded); link.removeEventListener('error', failed); if (error) { link.remove(); reject(error); } else resolve(); };
+        link.addEventListener('load', loaded); link.addEventListener('error', failed);
+        if (!existing) { link.rel = 'stylesheet'; link.href = url.href; doc.head.append(link); }
+      });
+    };
+    stylesPending = Promise.resolve().then(() => root.PTHAssets?.load ? root.PTHAssets.load('personalQRStyles') : local()).then(() => { stylesReady = true; }, error => { stylesPending = null; throw error; });
+    return stylesPending;
+  }
+  function styleMessage(failed, retry) {
+    if (!styleNotice) { styleNotice = node('p'); styleNotice.id = 'pth-personal-qr-style-status'; styleNotice.setAttribute('role', 'status'); doc.body.append(styleNotice); }
+    styleNotice.replaceChildren(doc.createTextNode(failed ? 'No se pudieron cargar los estilos de QR. Comprueba la conexión. ' : 'Cargando estilos de QR…'));
+    if (failed) { const control = node('button', '', 'Reintentar estilos de QR'); control.type = 'button'; control.addEventListener('click', retry); styleNotice.append(control); }
+  }
+  function revealEntries() {
+    for (const id of ['pth-personal-qr-open', 'pth-personal-qr-admin-open']) doc.getElementById(id)?.style.removeProperty('visibility');
+    styleNotice?.remove(); styleNotice = null;
+  }
+  function prepareEntries() {
+    if (stylesReady) { revealEntries(); return; }
+    if (!identity || !['pth-personal-qr-open', 'pth-personal-qr-admin-open'].some(id => doc.getElementById(id)?.getClientRects().length)) return;
+    const stamp = generation, owner = identity;
+    void loadStyles().then(() => { if (stamp === generation && owner === key()) revealEntries(); }).catch(() => { if (stamp === generation && owner === key()) styleMessage(true, prepareEntries); });
+  }
+  async function styledBegin(mode, retry, requestedOpener) {
+    sync(); if (!saved()) return null;
+    const stamp = ++generation, owner = key(), target = requestedOpener || doc.activeElement;
+    if (!stylesReady) styleMessage(false);
+    try { await loadStyles(); }
+    catch (_) { if (stamp === generation && owner === key()) styleMessage(true, () => retry(target)); return null; }
+    if (stamp !== generation || owner !== key()) { sync(); return null; }
+    revealEntries();
+    return begin(mode, target);
+  }
 
   function node(tag, className, text) {
     const element = doc.createElement(tag);
@@ -42,6 +88,7 @@
   }
   function erase(restoreFocus = true) {
     generation++; searchVersion++; context = null;
+    styleNotice?.remove(); styleNotice = null;
     if (watchTimer !== null) root.clearInterval(watchTimer);
     watchTimer = null;
     content?.replaceChildren(); if (status) status.textContent = '';
@@ -72,10 +119,10 @@
       else if (!event.shiftKey && doc.activeElement === last) { event.preventDefault(); first.focus(); }
     });
   }
-  function begin(mode) {
+  function begin(mode, target = doc.activeElement) {
     sync(); ensureDialog();
     generation++; searchVersion++; context = null; content.replaceChildren(); status.textContent = 'Verificando la cuenta…';
-    if (!dialog.open) opener = doc.activeElement === doc.body ? null : doc.activeElement;
+    if (!dialog.open) opener = target === doc.body ? null : target;
     if (!dialog.open) dialog.showModal();
     title.textContent = mode === 'admin' ? 'QR de gestores' : 'Mi QR'; title.focus({ preventScroll:true });
     if (watchTimer === null) watchTimer = root.setInterval(sync, 500);
@@ -203,8 +250,8 @@
     // Browsers cannot confirm the save picker outcome. Do not claim completion.
     status.textContent = 'El navegador gestiona la descarga. Si la cancelas, puedes volver a intentarlo.';
   }
-  async function selectAccount(id, mode = 'own') {
-    const request = begin(mode);
+  async function selectAccount(id, mode = 'own', requestedOpener) {
+    const request = await styledBegin(mode, target => selectAccount(id, mode, target), requestedOpener); if (!request) return false;
     try {
       const actor = await actorFor(request); if (!actor) return false;
       const account = await verifiedAccount(id || actor.id, actor, request); if (!account) return false;
@@ -217,8 +264,8 @@
       return false;
     }
   }
-  async function openAdmin() {
-    const request = begin('admin');
+  async function openAdmin(requestedOpener) {
+    const request = await styledBegin('admin', target => openAdmin(target), requestedOpener); if (!request) return false;
     try {
       const actor = await actorFor(request); if (!actor) return false;
       const form = node('form', 'pth-qr-search'), label = node('label', '', 'Buscar cuenta');
@@ -258,10 +305,15 @@
   }
   function mountEntry(id, parent, label, allowed, action, after) {
     const existing = doc.getElementById(id);
-    if (!allowed) { existing?.remove(); return; }
+    if (!allowed) { if (existing) entryObserver?.unobserve(existing); existing?.remove(); return; }
     if (existing || !parent) return;
     const entry = button(label, action, 'pth-qr-entry'); entry.id = id;
+    if (!stylesReady) entry.style.visibility = 'hidden';
     if (after) after.insertAdjacentElement('afterend', entry); else parent.append(entry);
+    if (root.IntersectionObserver) {
+      entryObserver ||= new root.IntersectionObserver(items => { if (items.some(item => item.isIntersecting)) prepareEntries(); });
+      entryObserver.observe(entry);
+    }
   }
   function sync() {
     const next = saved(), nextKey = key();
@@ -269,6 +321,7 @@
     const personalLinkButton = doc.querySelector('[data-personal-link], [onclick*="copyGestorStoreLink"]');
     mountEntry('pth-personal-qr-open', personalLinkButton?.parentElement, 'Mi QR', !!next, () => selectAccount(null), personalLinkButton);
     mountEntry('pth-personal-qr-admin-open', doc.getElementById('admin-master-nav'), 'QR de gestores', administrator(next?.profile), openAdmin);
+    prepareEntries();
     if (expiryTimer !== null) root.clearTimeout(expiryTimer);
     expiryTimer = next ? root.setTimeout(sync, Math.min(2147483647, Math.max(1, next.expires - Date.now()))) : null;
   }

@@ -146,6 +146,14 @@ test('subgestor QR uses the child UUID, never parent contact or attribution',asy
   await scan.evaluate(async()=>{const resolved=await PTHShortLinks.resolve('qrchild');PTHAffiliate.acceptShortLink(PTHAffiliate.incoming(new URL(resolved.url).search));});
   assert.equal(await scan.evaluate(()=>PTHAffiliate.checkoutReference()),child.id);
 });
+test('closing the admin selector directly restores focus to its entry',async t=>{
+  const {page}=await fixture(t,admin);
+  await page.getByRole('button',{name:'QR de gestores',exact:true}).click();
+  await page.getByRole('button',{name:'Ana',exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'pth-personal-qr-admin-open');
+});
+
 test('admin selects a verified child account and inactive accounts cannot generate',async t=>{
   const {page,state}=await fixture(t,admin,{width:1280});
   await page.getByRole('button',{name:'QR de gestores',exact:true}).click();

@@ -16,8 +16,9 @@
   const row=root.PTH_IMAGE_VARIANTS?.[key(original)];
   const base=`loading="lazy" decoding="async" alt="${escape(alt)}" class="${escape(classes)}" data-original="${escape(original)}" onerror="PTHProductImages.fallback(this)"`;
   if(!row||!safePath(row.webp360)||!candidates(row,'webp'))return `<img src="${escape(original)}" data-original-attempt="1" ${base}>`;
-  const sizes=mode==='list'?'(min-width: 768px) 150px, calc(100vw - 64px)':'(min-width: 1024px) 260px, (min-width: 768px) 30vw, calc(50vw - 48px)';
-  return `<picture class="block h-full w-full"><source type="image/avif" srcset="${candidates(row,'avif')}" sizes="${sizes}"><source type="image/webp" srcset="${candidates(row,'webp')}" sizes="${sizes}"><img src="${row.webp360}" srcset="${candidates(row,'webp')}" sizes="${sizes}" width="${row.width720}" height="${row.height720}" ${base}></picture>`;
+  const sizes=mode==='compact'?'96px':mode==='list'?'(min-width: 768px) 150px, calc(100vw - 64px)':'(min-width: 1024px) 260px, (min-width: 768px) 30vw, calc(50vw - 48px)';
+  const pictureClass=mode==='compact'?'block shrink-0':'block h-full w-full';
+  return `<picture class="${pictureClass}"><source type="image/avif" srcset="${candidates(row,'avif')}" sizes="${sizes}"><source type="image/webp" srcset="${candidates(row,'webp')}" sizes="${sizes}"><img src="${row.webp360}" srcset="${candidates(row,'webp')}" sizes="${sizes}" width="${row.width720}" height="${row.height720}" ${base}></picture>`;
  }
  function fallback(img){
   img.closest('picture')?.querySelectorAll('source').forEach(source=>source.remove());

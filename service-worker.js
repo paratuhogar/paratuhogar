@@ -1,4 +1,4 @@
-const PTH_CACHE_VERSION = 'pth-public-static-2026-11-27-imagefix1';
+const PTH_CACHE_VERSION = 'pth-public-static-2026-11-28-mobile1';
 const PTH_IMAGE_CACHE = 'pth-public-images-v1';
 const PTH_IMAGE_LIMIT = 100;
 const PTH_CACHE_PREFIX = 'pth-public-static-';
@@ -12,15 +12,12 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/short-links.js?v=20261123-shortlinks1',
   '/js/public-name-editor.js?v=20261003-alias1',
   '/js/gestor-ranking.js?v=20261004-rolling30',
-  '/js/points-wallet.js?v=20261122-cash1',
+  '/js/points-wallet.js?v=20261128-mobile1',
   '/js/points-cash.js?v=20261122-cash1',
-  '/css/points-cash.css?v=20261122-cash1',
-  '/js/personal-qr.js?v=20261123-shortlinks1',
-  '/css/personal-qr.css?v=20261122-couponsqr1',
+  '/js/personal-qr.js?v=20261128-mobile1',
   '/js/coupons.js?v=20261125-couponscope1',
   '/css/coupons.css?v=20261125-couponscope1',
   '/js/coupon-economics.js?v=20261122-couponsqr1',
-  '/css/points-wallet.css?v=20261122-workui1',
   '/js/vendor/supabase-2.57.4.js',
   '/js/checkout-form-shared.js?v=20261122-house1',
   '/js/offline-checkout-copy.js?v=20261112-medium1',
@@ -28,12 +25,12 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/gestor-questionnaire.js?v=20261008-questionnaire2',
   '/js/gestor-registration-steps.js?v=20261016-captacion1',
   '/js/checkout-confirmation.js?v=20261122-couponsqr1',
-  '/js/storefront.min.js?v=20261127-imagefix1',
+  '/js/storefront.min.js?v=20261128-mobile1',
   '/js/storefront-extras.min.js?v=20261123-shortlinks1',
-  '/js/pending-checkout-storefront.js?v=20261127-imagefix1',
+  '/js/pending-checkout-storefront.js?v=20261128-mobile1',
   '/js/pwa.js?v=20261006-ready1',
-  '/css/tailwind.min.css?v=20261004-rolling30',
-  '/css/storefront-support.css?v=20261122-workui1',
+  '/css/tailwind.min.css?v=20261128-mobile1',
+  '/css/storefront-support.css?v=20261128-mobile1',
   '/js/gestor-guide.js?v=20261003-dashboard2',
   '/js/work-welcome.js?v=20261003-welcome2',
   '/js/admin-panel-data.js?v=20261003-recent2',
@@ -45,10 +42,13 @@ const PTH_NORMAL_BOOT = [PTH_APP_SHELL_URL,
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/admin-work-view.js?v=20260930-admins2',
   '/js/admin-push-links.js?v=20261002-reminders1',
-  '/js/internal-assets.js?v=20261123-shortlinks1',
+  '/js/internal-assets.js?v=20261128-mobile1',
   '/log.jpeg', '/icons/product-placeholder.svg'];
 // Public templates, local SDK and display code only. No private responses.
 const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, PTH_ORDER_SHELL_URL,
+  '/css/points-wallet.css?v=20261122-workui1',
+  '/css/points-cash.css?v=20261122-cash1',
+  '/css/personal-qr.css?v=20261122-couponsqr1',
   '/css/offline-order.css?v=20261003-pending2',
   '/js/pending-checkout.js?v=20261122-house1',
   '/js/pending-checkout-page.js?v=20261122-house1',
@@ -57,23 +57,26 @@ const PTH_MINIMAL_SHELL = [...PTH_NORMAL_BOOT, PTH_SHELL_URL, PTH_OFFLINE_URL, P
   '/js/public-catalog-api.js?v=20261002-lowdata1',
   '/js/offline-catalog.js?v=20261002-lowdata2',
   '/css/offline-catalog.css?v=20261002-lowdata1',
-  '/js/image-variants.js?v=20261001-images2',
-  '/js/product-images.js?v=20261002-fasttools2'];
+  '/js/image-variants.js?v=20261128-mobile1',
+  '/js/product-images.js?v=20261128-mobile1'];
 const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
+  '/assets/icon-logo-96.webp',
+  '/assets/home-hero-360.avif', '/assets/home-hero-720.avif', '/assets/home-hero-1000.avif',
+  '/assets/home-hero-360.webp', '/assets/home-hero-720.webp', '/assets/home-hero-1000.webp',
   '/js/vendor/qrcode-generator-2.0.4.js',
   '/js/subgestor-review.js?v=20261103-numbering1',
   '/css/subgestor-review.css?v=20261103-numbering1',
-  '/js/pending-checkout-storefront.js?v=20261127-imagefix1',
+  '/js/pending-checkout-storefront.js?v=20261128-mobile1',
   PTH_SHELL_URL,
   PTH_OFFLINE_URL,
   '/js/secure-data.js?v=20261122-cash1',
   '/js/gestor-questionnaire.js?v=20261008-questionnaire2',
   '/js/gestor-registration-steps.js?v=20261016-captacion1',
-  '/js/storefront.min.js?v=20261127-imagefix1',
+  '/js/storefront.min.js?v=20261128-mobile1',
   '/css/low-connectivity.css?v=20261003-pending2',
   '/js/product-description-loader.js?v=20261001-images2',
   '/js/storefront-extras.min.js?v=20261123-shortlinks1',
-  '/js/internal-assets.js?v=20261123-shortlinks1',
+  '/js/internal-assets.js?v=20261128-mobile1',
   '/js/product-availability-form.js?v=20260924-1',
   '/js/product-description-editor.js?v=20260924-1',
   '/js/checkout-submit-guard.js?v=20261017-checkout1',
@@ -88,7 +91,7 @@ const PTH_PUBLIC_ASSETS = [...PTH_MINIMAL_SHELL,
   '/manifest.webmanifest',
   '/css/tailwind.min.css?v=20261002-lowdata1',
   '/css/client-followup.css?v=2',
-  '/js/image-variants.js?v=20261001-images2',
+  '/js/image-variants.js?v=20261128-mobile1',
   '/js/pwa.js?v=20261006-ready1',
   '/log.jpeg',
   '/icons/product-placeholder.svg',
@@ -121,7 +124,7 @@ const PTH_TEMPLATE_VERSION='20261006-ready1';
 const PTH_TEMPLATE_DEPENDENCIES={
   '/index.html':[...PTH_NORMAL_BOOT.filter(url=>/\.(?:js|mjs|css)(?:\?|$)/.test(url)),'/js/secure-data.js?v=20261122-cash1','/js/pending-checkout.js?v=20261122-house1'],
   '/offline-catalog.html':['/css/offline-catalog.css?v=20261002-lowdata1','/js/low-connectivity.js?v=20261002-lowdata1','/js/public-catalog-api.js?v=20261002-lowdata1','/js/offline-catalog.js?v=20261002-lowdata2'],
-  '/offline-order.html':['/css/tailwind.min.css?v=20261004-rolling30','/css/offline-order.css?v=20261003-pending2','/js/secure-data.js?v=20261122-cash1','/js/pending-checkout.js?v=20261122-house1','/js/checkout-form-shared.js?v=20261122-house1','/js/offline-checkout-copy.js?v=20261112-medium1','/js/pending-checkout-page.js?v=20261122-house1'],
+  '/offline-order.html':['/css/tailwind.min.css?v=20261128-mobile1','/css/offline-order.css?v=20261003-pending2','/js/secure-data.js?v=20261122-cash1','/js/pending-checkout.js?v=20261122-house1','/js/checkout-form-shared.js?v=20261122-house1','/js/offline-checkout-copy.js?v=20261112-medium1','/js/pending-checkout-page.js?v=20261122-house1'],
   '/offline.html':[]
 };
 function templateAttribute(tag,name){
@@ -259,6 +262,31 @@ self.addEventListener('fetch', event => {
 
   const assetKey = `${url.pathname}${url.search}`;
   if (!PTH_PUBLIC_ASSETS.includes(assetKey)) return;
+
+  // This public map is maintained independently of app releases. Revalidate it
+  // online so new photos do not remain stuck on an older worker's mapping.
+  // Only this exact allowlisted static resource is mutable; no API is cached.
+  if (url.pathname === '/js/image-variants.js') {
+    event.respondWith((async () => {
+      let cache;
+      try { cache = await caches.open(PTH_CACHE_VERSION); } catch (_) { /* Optional storage. */ }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2500);
+      try {
+        const response = await fetch(request, {cache: 'no-cache', signal: controller.signal});
+        if (!response.ok) throw Error('Image map unavailable');
+        if (cache) try { await cache.put(request, response.clone()); } catch (_) { /* Quota. */ }
+        return response;
+      } catch (error) {
+        const cached = cache && await cache.match(request);
+        if (cached) return cached;
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    })());
+    return;
+  }
 
   event.respondWith((async () => {
     const cache = await caches.open(PTH_CACHE_VERSION);

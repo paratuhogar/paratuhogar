@@ -3818,7 +3818,7 @@ function renderFloatingWA(nombre, telefono) {
     container.innerHTML = `
         <a href="https://wa.me/${telLimpio}?text=${encodeURIComponent('Hola ' + primerNombre + ', estoy viendo el catálogo y me interesa un equipo.')}"
            target="_blank"
-           class="fixed bottom-6 left-6 z-[60] flex items-center gap-3 bg-[#25D366] text-white p-2 pr-5 rounded-full shadow-2xl hover:scale-105 transition-all active:scale-95 group pulse-wa">
+           class="fixed bottom-6 left-6 z-[60] flex items-center gap-3 bg-[#047857] text-white p-2 pr-5 rounded-full shadow-2xl hover:scale-105 transition-all active:scale-95 group pulse-wa">
 
             <div class="relative">
                 <div class="h-12 w-12 bg-white rounded-full flex items-center justify-center text-[#25D366] border-2 border-white">
@@ -3828,7 +3828,7 @@ function renderFloatingWA(nombre, telefono) {
             </div>
 
             <div class="flex flex-col">
-                <span class="text-[9px] font-black uppercase opacity-80 tracking-tighter leading-none mb-1">Comercial en línea</span>
+                <span class="text-[9px] font-black uppercase tracking-tighter leading-none mb-1">Comercial en línea</span>
                 <span class="text-sm font-black leading-none">${gestorSafeText(nombre.toUpperCase())}</span>
             </div>
 
@@ -13141,8 +13141,11 @@ function renderVerifiedOpinionCard(review, compact = false) {
     const authorizedPhoto = review.foto_autorizada && review.foto_url ? review.foto_url : '';
     const catalogPhoto = review.producto_imagen_url || catalogProduct?.thumbnail || catalogProduct?.imagen || '';
     const productReferencePhoto = catalogPhoto ? fixDriveUrl(catalogPhoto) : '';
+    const productImageClass = `${compact ? 'h-16 w-16' : 'h-24 w-24'} shrink-0 rounded-2xl border border-slate-100 bg-white object-contain p-2 shadow-sm`;
     const productImage = productReferencePhoto
-        ? `<img src="${gestorSafeText(productReferencePhoto)}" alt="Imagen del producto adquirido" class="${compact ? 'h-16 w-16' : 'h-24 w-24'} shrink-0 rounded-2xl border border-slate-100 bg-white object-contain p-2 shadow-sm" loading="lazy">`
+        ? (window.PTHProductImages
+            ? window.PTHProductImages.render(productReferencePhoto, 'Imagen del producto adquirido', productImageClass, 'compact')
+            : `<img src="${gestorSafeText(productReferencePhoto)}" alt="Imagen del producto adquirido" class="${productImageClass}" loading="lazy">`)
         : '';
     const realPhoto = authorizedPhoto
         ? `<figure class="mt-4">
@@ -13151,7 +13154,7 @@ function renderVerifiedOpinionCard(review, compact = false) {
         </figure>`
         : '';
     return `
-        <article class="relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-blue-50 ${compact ? 'p-4' : 'p-6'} shadow-sm">
+        <article class="pth-verified-review relative overflow-hidden rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-blue-50 ${compact ? 'p-4' : 'p-6'} shadow-sm">
             <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-white">
                     <span class="material-symbols-outlined text-xs">verified</span> Compra entregada
