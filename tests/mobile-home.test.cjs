@@ -28,7 +28,7 @@ test('optional private styles do not block the public head; icon fallback cannot
   const head = html.split('</head>')[0];
   assert.doesNotMatch(head, /<link[^>]+(?:points-wallet|points-cash|personal-qr)\.css/);
   assert.match(head, /<link[^>]+coupons\.css/);
-  assert.match(head, /rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin/);
+  assert.match(head, /rel="preload" href="\/assets\/fonts\/[^\"]+\.woff2" as="font"/);
   assert.match(head, /font-awesome[^>]+media="print"[^>]+onload=/);
   assert.match(head, /\.material-symbols-outlined\s*\{[^}]*width:\s*1em[^}]*overflow:\s*hidden/);
 });

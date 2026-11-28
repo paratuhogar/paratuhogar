@@ -13,7 +13,7 @@ test('mutable public image map revalidates online and preserves a verified offli
     caches: {open: async () => cache},
     fetch: async (_request, options) => {calls++; cacheMode = options?.cache; if (offline) throw Error('offline'); return new Response('new public map', {headers: {'content-type': 'application/javascript'}});}
   });
-  const request = {url: 'https://paratuhogar.org/js/image-variants.js?v=20261128-mobile1', method: 'GET', mode: 'same-origin', headers: new Headers()};
+  const request = {url: 'https://paratuhogar.org/js/image-variants.js?v=20261128-mobile2', method: 'GET', mode: 'same-origin', headers: new Headers()};
   entries.set(request.url, new Response('old public map'));
   const dispatch = async () => {let response; events.fetch({request, respondWith: p => response = p}); return (await response).text();};
   assert.equal(await dispatch(), 'new public map');
@@ -29,7 +29,7 @@ test('mutable public image map revalidates online and preserves a verified offli
 test('a stalled map revalidation falls back promptly instead of blocking ordered startup', async () => {
   const events = {};
   let timeoutMs;
-  const request = {url: 'https://paratuhogar.org/js/image-variants.js?v=20261128-mobile1', method: 'GET', mode: 'same-origin'};
+  const request = {url: 'https://paratuhogar.org/js/image-variants.js?v=20261128-mobile2', method: 'GET', mode: 'same-origin'};
   vm.runInNewContext(source, {
     URL, Response, AbortController, console, importScripts() {}, clearTimeout,
     setTimeout(fn, ms) {timeoutMs = ms; return setTimeout(fn, 1);},

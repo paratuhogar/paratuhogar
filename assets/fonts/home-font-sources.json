@@ -1,0 +1,160 @@
+{
+  "css_sources": [
+    "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;700;800&family=Rajdhani:wght@400;500;600;700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0..1&display=swap"
+  ],
+  "files": [
+    {
+      "family": "Manrope",
+      "source": "https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2",
+      "local": "/assets/fonts/pth-347c589d57130c68.woff2",
+      "sha256": "347c589d57130c68f9829c2cd24969eed590328078ff921ca6000a56e5a2cc84",
+      "bytes": 2584,
+      "latin": false
+    },
+    {
+      "family": "Manrope",
+      "source": "https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2",
+      "local": "/assets/fonts/pth-93bef303b8220d2f.woff2",
+      "sha256": "93bef303b8220d2f59dbe8db119891c9f38d94f48a26d373c28256fb2b50cba7",
+      "bytes": 14368,
+      "latin": false
+    },
+    {
+      "family": "Manrope",
+      "source": "https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2",
+      "local": "/assets/fonts/pth-6b478f45d63e1835.woff2",
+      "sha256": "6b478f45d63e18352735fd427e92ae4704800a998ec3337c01b59e4f6ef87d44",
+      "bytes": 9308,
+      "latin": false
+    },
+    {
+      "family": "Manrope",
+      "source": "https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2",
+      "local": "/assets/fonts/pth-ddbf28cebf2fbbf8.woff2",
+      "sha256": "ddbf28cebf2fbbf800d307f020689bed6d1a96c5a22aed50fee23bf7de80d0f1",
+      "bytes": 8356,
+      "latin": false
+    },
+    {
+      "family": "Manrope",
+      "source": "https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2",
+      "local": "/assets/fonts/pth-27eccb1f8944bc26.woff2",
+      "sha256": "27eccb1f8944bc26f6511601bac9284786feb5e5bbb0c8035ff09ac63aaf7c52",
+      "bytes": 15212,
+      "latin": false
+    },
+    {
+      "family": "Manrope",
+      "source": "https://fonts.gstatic.com/s/manrope/v23/xn7gYHE41ni1AdIRggexSvfedN4.woff2",
+      "local": "/assets/fonts/pth-8bd97e6bbbc1f602.woff2",
+      "sha256": "8bd97e6bbbc1f602a8f791530eed1064c9a357d5731bbc76e3fc587fb068728f",
+      "bytes": 24436,
+      "latin": true
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDIxapCSOBg7S-QT7p4GM-aGW-rOq7s.woff2",
+      "local": "/assets/fonts/pth-a3d5c0dadafc44da.woff2",
+      "sha256": "a3d5c0dadafc44da1b27db8d361bc699e2fe317bd4f1bbb03df5b18e5d805f0a",
+      "bytes": 39444,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDIxapCSOBg7S-QT7p4JM-aGW-rOq7s.woff2",
+      "local": "/assets/fonts/pth-f52d179d55090e94.woff2",
+      "sha256": "f52d179d55090e946b33bd0aa416c01429361f7a3a8a05fd88eb178c24e93b3a",
+      "bytes": 6860,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDIxapCSOBg7S-QT7p4HM-aGW-rO.woff2",
+      "local": "/assets/fonts/pth-e8dbeb7ec5d3c9b1.woff2",
+      "sha256": "e8dbeb7ec5d3c9b137965e9b2d3c04b79ef287d0c7403937e8d3992c708a4eb5",
+      "bytes": 8968,
+      "latin": true
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pb0EPOqeefkkbIxyyg.woff2",
+      "local": "/assets/fonts/pth-8dd77e3310adcae5.woff2",
+      "sha256": "8dd77e3310adcae53f7221ae63f3b8f46894aac4cc28ecd2766fc7420a85a408",
+      "bytes": 39852,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pb0EPOleefkkbIxyyg.woff2",
+      "local": "/assets/fonts/pth-6464c05505c4a3bc.woff2",
+      "sha256": "6464c05505c4a3bc7dce7021a89aa9102618ee4fea4c21942008bbb37b7fe85f",
+      "bytes": 6824,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pb0EPOreefkkbIx.woff2",
+      "local": "/assets/fonts/pth-4745b75b6e92d917.woff2",
+      "sha256": "4745b75b6e92d917e2402925dc1a6c1c6300e6e0f607a1ce286da54b33d80d3b",
+      "bytes": 8964,
+      "latin": true
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pbYF_OqeefkkbIxyyg.woff2",
+      "local": "/assets/fonts/pth-3477c6df9ea3e3ec.woff2",
+      "sha256": "3477c6df9ea3e3ecc42c6584b6720413706258af0bd2b6a8b7e0a23f79b4d319",
+      "bytes": 40056,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pbYF_OleefkkbIxyyg.woff2",
+      "local": "/assets/fonts/pth-bdf7c1b3c51cfc37.woff2",
+      "sha256": "bdf7c1b3c51cfc37d1a0e2b15d86d85f1fa0fdb87678277e11714f9470b734ed",
+      "bytes": 7208,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pbYF_OreefkkbIx.woff2",
+      "local": "/assets/fonts/pth-35f7e628ec8e7dd3.woff2",
+      "sha256": "35f7e628ec8e7dd3bf434e95ce28289803401f12d8605c56ca83db2b4b301d33",
+      "bytes": 9400,
+      "latin": true
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pa8FvOqeefkkbIxyyg.woff2",
+      "local": "/assets/fonts/pth-cc1a99ba7dbdbe10.woff2",
+      "sha256": "cc1a99ba7dbdbe106aa32c345d85c00a989b45b4edc02cc362a6634e9592b11c",
+      "bytes": 36428,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pa8FvOleefkkbIxyyg.woff2",
+      "local": "/assets/fonts/pth-0b49d495ac765440.woff2",
+      "sha256": "0b49d495ac765440570c07bf73f5b288e244c71e758f6d95ff481e9169b816f3",
+      "bytes": 6944,
+      "latin": false
+    },
+    {
+      "family": "Rajdhani",
+      "source": "https://fonts.gstatic.com/s/rajdhani/v17/LDI2apCSOBg7S-QT7pa8FvOreefkkbIx.woff2",
+      "local": "/assets/fonts/pth-7597c31a957ae3d2.woff2",
+      "sha256": "7597c31a957ae3d2e1ebc786238752d883c15ce2e6b5da617dc3453a9fd86335",
+      "bytes": 9304,
+      "latin": true
+    },
+    {
+      "family": "Material Symbols Outlined",
+      "source": "https://fonts.gstatic.com/s/materialsymbolsoutlined/v387/kJF4BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJU22ZZLsYEpzC_1ver5Y0J1Llf.woff2",
+      "local": "/assets/fonts/pth-04fd201535e4aa30.woff2",
+      "sha256": "04fd201535e4aa3014320a769af2d1a6c420ce5c1dc018d2e58c0eb3d591dbb5",
+      "bytes": 464692,
+      "latin": false
+    }
+  ]
+}

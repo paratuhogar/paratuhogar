@@ -1,0 +1,20 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+test('home fonts use local versioned CSS rather than render-blocking external font CSS', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8').split('</head>')[0];
+  assert.ok(!/<link[^>]+href="https:\/\/fonts\.googleapis\.com/.test(html));
+  assert.ok(/<link[^>]+css\/home-fonts\.css\?v=20261128-mobile2/.test(html));
+  const css = fs.readFileSync(path.join(root, 'css/home-fonts.css'), 'utf8');
+  for (const family of ['Manrope', 'Rajdhani', 'Material Symbols Outlined']) assert.ok(css.includes("font-family: '" + family + "'"));
+  assert.ok(!/url\(https?:/.test(css));
+  assert.ok(css.includes('font-display: swap'));
+  const files = [...css.matchAll(/url\((\/assets\/fonts\/[^)]+\.woff2)\)/g)].map(m => m[1]);
+  assert.ok(files.length > 2);
+  for (const file of files) assert.ok(fs.statSync(path.join(root, file)).size > 0);
+  const proof = JSON.parse(fs.readFileSync(path.join(root, 'assets/fonts/home-font-sources.json'), 'utf8'));
+  const icon = proof.files.find(f => f.family === 'Material Symbols Outlined');
+  assert.ok(icon.bytes < 500000, 'keep filled/unfilled glyphs, omit unused stroke weight axis');
+});
